@@ -784,3 +784,15 @@
 - **Confidence:** high · **Would reverse if:** a person wants the owner brief out of `migrate`'s merge altogether, which is D24's to reopen.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S02-68), `specs/001-faster-slipwai/slices/S02-runner-bookkeeping/tasks.md` (T013's fragment wording, through the delegate's brief)
 - **Status:** standing
+
+
+## D62 — Where does User Story 8 (provisional approval of easily reversible decisions) go in the split?
+- **Stage:** split (a person's scope through `/cruise-tell`, read at the boundary after implementation) · **Slice:** none (feature-level) · **When:** 2026-10-03T18:35:05Z · **Iteration:** 9
+- **Question:** The owner committed User Story 8 to the specification at `3927c3a` (FR-029 to FR-033, SC-011) and sent, in their words: *Owner scope addition: spec.md gained User Story 8 (opportunistic optimistic approval: reversibility score per decision, decide: provisional setting, ratify/revert, dependency tracking; FR-029 to FR-033). Append it to the split as slices behind the gate slices (after S06-scoped-gate's row, before the merge tree), MINOR. The PRD doc has the matching E9. Do not re-open finished slices for it.* How is it cut and where does it sit?
+- **Options:** (a) one slice for the whole story; (b) three slices along what an owner can use on its own — the score on every entry, the setting that acts on it, ratify and revert with the dependency ids — placed where the owner said; (c) behind every PRD slice, with the other additions.
+- **Decision:** (b), placed as sent. `S26-reversibility-line` (FR-029), `S27-provisional-decisions` (FR-030, FR-033) and `S28-ratify-revert` (FR-031, FR-032) follow `S06-scoped-gate`'s row and precede the merge tree; each is a MINOR; none re-opens a finished slice, and S02, in flight when the message came, is finished as planned. **The host's reading, not the owner's words:** the cut into three, their names, and `S28` depending on `S14-result-contract` because FR-032 names the result contract — where that makes `S28` wait past its row, the graph governs. The run never sets `decide: provisional` itself: a setting changes only through `/cruise-settings`.
+- **Why:** The owner's message and the specification they committed; three slices because each scenario group can be shown to an actor alone (owner brief, priority 4: smaller slices).
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** the owner wants one slice, another order, or `S28` cut so it does not wait on `S14`.
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (the three rows, the Slice graph, the Parking Lot)
+- **Status:** standing
