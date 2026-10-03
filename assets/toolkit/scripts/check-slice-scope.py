@@ -27,10 +27,13 @@ What a slice's change may contain — everything since the branch left `main`, c
   model names none — and, where the block names a `context`, nothing under another context's directory in
   `domain/` or `application/`. A browser app is open to every slice: a white box is one screen. A deployable
   recorded at `.` — an adopted repository's one application — owns every path no other deployable claims, its
-  tests and sibling directories included, except the host's surface: `project.json`, the root `Makefile`,
-  `.specify/`, CI configuration (`.github/` and its forge siblings, and `ci.gate`), harness guidance
-  (`AGENTS.md`, `CLAUDE.md`, `.claude/` and the other agents' directories), the delivery directory less
-  `survey/pinned.md` and `survey/running.md`, and every path in `<delivery>/.written`;
+  tests and sibling directories included, except the host's surface: `project.json`, the root `Makefile`
+  (`GNUmakefile` and `makefile` too), `.specify/`, CI configuration (`.github/` and its forge siblings, the other
+  CI systems `slipwai adopt` recognises, and `ci.gate`), the harnesses' files and directories as
+  `<delivery>/scripts/agents/registry.json` names them (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`,
+  `.claude/`, `.agents/`, `.kiro/` and the rest; a registry that is missing or unreadable adds nothing), the
+  delivery directory less `survey/pinned.md` and `survey/running.md`, and every path in `<delivery>/.written`.
+  Git hooks and `.gitignore` are the repository's own. A path is recorded as `x`, `x/` or `./x` alike;
 - **the context's events module additively**: a line may be added, none removed. It is the contract;
 - **new migration files only**, timestamped so two slices never mint the same name: `YYYYMMDDHHMM_<name>`,
   or `V<YYYYMMDDHHMM>__<name>` under Flyway. The shipped numbered ones keep working — the order is lexical
@@ -91,9 +94,11 @@ LAYERS_BY_CONTEXT = ("domain", "application")
 # The host's surface in a repository whose application is the root: what a slice never writes though the root
 # deployable would otherwise own it. A floor — `<delivery>/.written` only ever adds to it. The two survey pages
 # the ladder has a slice write are the one part of the delivery directory that is not the host's.
-HOST_FILES = ("project.json", "Makefile", "AGENTS.md", "CLAUDE.md", ".gitlab-ci.yml")
-HOST_DIRECTORIES = (".specify", ".github", ".gitea", ".forgejo", ".gitlab", ".claude", ".codex", ".cursor",
-                    ".gemini", ".opencode")
+HOST_FILES = ("project.json", "Makefile", "GNUmakefile", "makefile", "AGENTS.md", "CLAUDE.md", ".gitlab-ci.yml",
+              "Jenkinsfile", "azure-pipelines.yml", "bitbucket-pipelines.yml", ".woodpecker.yml", ".drone.yml",
+              ".travis.yml")
+HOST_DIRECTORIES = (".specify", ".github", ".gitea", ".forgejo", ".gitlab", ".circleci", ".claude", ".codex",
+                    ".cursor", ".gemini", ".opencode")
 SLICE_SURVEY_PAGES = ("survey/pinned.md", "survey/running.md")
 
 
@@ -105,6 +110,47 @@ def recorded_path(value: object) -> str | None:
     if not value.strip("/"):
         return ""
     return "/".join(part for part in value.split("/") if part not in ("", ".")) or "."
+
+
+def harness_paths(registry: Path) -> tuple[set[str], set[str]]:
+    """The files and the directories the harness registry names as the host's, read as `<delivery>/scripts/agents/
+    registry.json` lists them: every row's `contextFile`, `skillsDir`, `commandsDir`, `agentFile.dir`,
+    `hooks.projection.where` and `projectMcp.file`. A path with more than one segment makes its first segment the
+    host's whole, as `.claude/` is; one segment is that file. A path outside the repository (`~/…`, `/…`) is not
+    here, a row of the wrong shape adds nothing, and a registry that is absent, unreadable or not JSON adds
+    nothing at all: the fixed names still answer."""
+    try:
+        harnesses = json.loads(registry.read_text(encoding="utf-8")).get("harnesses")
+    except (OSError, ValueError, AttributeError):
+        return set(), set()
+    files: set[str] = set()
+    directories: set[str] = set()
+    for row in harnesses if isinstance(harnesses, list) else []:
+        found = row_paths(row)
+        for value in found:
+            parts = [part for part in value.split("/") if part not in ("", ".")]
+            if not value.startswith(("~", "/")) and parts:
+                (directories if len(parts) > 1 else files).add(parts[0])
+    return files, directories
+
+
+def row_paths(row: object) -> list[str]:
+    """The paths one registry row names, or none where the row is not shaped as the registry's rows are."""
+    if not isinstance(row, dict):
+        return []
+    found: list[object] = []
+    for keys in (("contextFile",), ("skillsDir",), ("commandsDir",), ("agentFile", "dir"),
+                 ("hooks", "projection", "where"), ("projectMcp", "file")):
+        value: object = row
+        for key in keys:
+            if value is None:
+                break  # a harness that has no such thing
+            if not isinstance(value, dict):
+                return []
+            value = value.get(key)
+        found.append(value)
+    return [] if any(value is not None and not isinstance(value, str) for value in found) else [
+        value for value in found if value]
 
 
 def git(*arguments: str) -> str | None:
@@ -218,6 +264,7 @@ class Scope:
         self.slice_id = slice_id
         self.base = base
         self.apps = deployables()
+        self.host: tuple[set[str], set[str], set[str]] | None = None
         model_text = (ROOT / MODEL).read_text(encoding="utf-8") if (ROOT / MODEL).is_file() else None
         self.model = load_model(model_text) if model_text is not None else None
         own = slices_of(self.model).get(slice_id, {})
@@ -252,17 +299,30 @@ class Scope:
         """Whether a path is the host's where the root deployable would own it: the fixed names, the delivery
         directory (unless it is the root) less the slice's two survey pages, the recorded CI gate, and every path
         the factory wrote under `<delivery>/.written`."""
-        if path in HOST_FILES or path.split("/")[0] in HOST_DIRECTORIES:
+        files, directories, written = self.host_names()
+        if path in files or path.split("/")[0] in directories or path in written:
             return True
         if DELIVERY != Path("."):
             inside = Path(path).is_relative_to(DELIVERY)
             if inside and path not in [(DELIVERY / page).as_posix() for page in SLICE_SURVEY_PAGES]:
                 return True
-        gate = (project_document().get("ci") or {}).get("gate")
-        if isinstance(gate, str) and path == recorded_path(gate):
-            return True
-        written = ROOT / DELIVERY / ".written"
-        return written.is_file() and path in written.read_text(encoding="utf-8").splitlines()
+        return False
+
+    def host_names(self) -> tuple[set[str], set[str], set[str]]:
+        """The host's files, directories and exact paths, read once for the run: the fixed names, the harness
+        registry, `ci.gate`, and `<delivery>/.written`."""
+        if self.host is None:
+            files, directories = harness_paths(ROOT / DELIVERY / "scripts/agents/registry.json")
+            files |= set(HOST_FILES)
+            directories |= set(HOST_DIRECTORIES)
+            ci = project_document().get("ci")
+            gate = ci.get("gate") if isinstance(ci, dict) else None
+            exact = {recorded_path(gate)} if isinstance(gate, str) else set()
+            written = ROOT / DELIVERY / ".written"
+            if written.is_file():
+                exact |= set(written.read_text(encoding="utf-8").splitlines())
+            self.host = files, directories, exact
+        return self.host
 
     def spec_violation(self, path: str) -> str | None:
         parts = path.split("/")

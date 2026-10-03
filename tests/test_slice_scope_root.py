@@ -7,10 +7,12 @@ temporary repository laid out as an adoption leaves one (the delivery material u
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -19,6 +21,7 @@ from support import NO_MAINTENANCE, commit_all
 from test_adopt import repository, slipwai
 
 from slipwai.assets import ROOT
+from slipwai.delivery_facts import CI_FORGES
 
 SCRIPTS = ROOT / "assets/toolkit/scripts"
 OUTSIDE = "outside every deployable"
@@ -35,13 +38,23 @@ slices:
 """
 
 
+def load_checker(path: Path, name: str):
+    """The checker as a module, from whichever copy `path` names, with no `__pycache__` left beside it."""
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.dont_write_bytecode = True
+    spec.loader.exec_module(module)
+    return module
+
+
 def git(repo: Path, *arguments: str) -> None:
     subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@local", *NO_MAINTENANCE, *arguments],
                    cwd=repo, capture_output=True, check=True)
 
 
 class SliceScopeRootTest(unittest.TestCase):
-    def repo(self, deployables: dict, model: bool = False, written: str | None = None, **project: object) -> Path:
+    def repo(self, deployables: dict, model: bool = False, written: str | None = None,
+             registry: bool | str = False, **project: object) -> Path:
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         repo = Path(directory.name)
@@ -52,6 +65,12 @@ class SliceScopeRootTest(unittest.TestCase):
         shutil.copy(SCRIPTS / "event-model/check.py", repo / "delivery/scripts/event-model")
         if written is not None:
             (repo / "delivery/.written").write_text(written)
+        if registry is True:
+            (repo / "delivery/scripts/agents").mkdir()
+            shutil.copy(SCRIPTS / "agents/registry.json", repo / "delivery/scripts/agents")
+        elif isinstance(registry, str):
+            (repo / "delivery/scripts/agents").mkdir()
+            (repo / "delivery/scripts/agents/registry.json").write_text(registry)
         if model:
             (repo / "delivery/docs/event-model").mkdir(parents=True)
             (repo / "delivery/docs/event-model/model.yaml").write_text(MODEL)
@@ -183,6 +202,67 @@ class SliceScopeRootTest(unittest.TestCase):
                 repo = self.repo(self.root(), ci={"gate": gate})
                 self.refused(repo, "ci/gate.yml")
                 self.green(repo, "ci/other.yml")
+
+    HARNESS_PATHS = (".mcp.json", "opencode.json", "GEMINI.md", ".agents/skills/x/SKILL.md", ".kiro/settings/mcp.json")
+    FLOOR = ("Makefile", ".github/workflows/x.yml", "AGENTS.md", ".claude/settings.json")
+
+    def test_every_path_a_harness_row_names_is_the_hosts(self) -> None:
+        """T008 (AC-S20-14): the registry beside the checker names the harness files; each is refused."""
+        self.refused(self.repo(self.root(), registry=True), *self.HARNESS_PATHS, ".cursor/hooks.json",
+                     ".github/copilot-instructions.md", ".junie/AGENTS.md")
+
+    def test_a_registry_that_is_gone_unreadable_or_malformed_adds_nothing(self) -> None:
+        """T008 (AC-S20-14): D18's names are still refused, the five pass, and there is never a traceback."""
+        for label, registry in (("absent", False), ("not json", "{nope"), ("a list", "[1, 2]"),
+                                ("harnesses a string", '{"harnesses": "x"}'), ("empty", "")):
+            with self.subTest(registry=label):
+                repo = self.repo(self.root(), registry=registry)
+                self.refused(repo, *self.FLOOR)
+                self.green(repo, *self.HARNESS_PATHS)
+        unreadable = self.repo(self.root())
+        (unreadable / "delivery/scripts/agents/registry.json").mkdir(parents=True)  # not readable as a file
+        self.refused(unreadable, *self.FLOOR)
+        self.green(unreadable, *self.HARNESS_PATHS)
+
+    def test_a_malformed_row_adds_nothing_and_does_not_hide_the_others(self) -> None:
+        """T008 (AC-S20-14, D20): a row of the wrong shape adds nothing; a well-formed row beside it still does."""
+        rows = [
+            "x", {"contextFile": 5, "skillsDir": ".zz/skills"}, {"agentFile": "oops", "commandsDir": ".yy/commands"},
+            {"hooks": {"projection": []}, "contextFile": "WRONG.md"},
+            {"contextFile": "GOOD.md", "skillsDir": "~/home/skills", "commandsDir": "/abs/commands",
+             "agentFile": {"dir": ".good/agents"}, "hooks": {"projection": {"where": ".goodhooks/h.json"}},
+             "projectMcp": {"file": ".good/nested/mcp.json"}},
+        ]
+        repo = self.repo(self.root(), registry=json.dumps({"harnesses": rows}))
+        self.refused(repo, "GOOD.md", ".good/agents/a.md", ".goodhooks/h.json", ".good/nested/mcp.json")
+        self.green(repo, ".zz/x", ".yy/x", "WRONG.md", "home/skills/x", "abs/commands/x")
+
+    def test_the_registry_is_read_once_not_per_path(self) -> None:
+        """T008: the harness names are read once for the run; replacing the file mid-run changes nothing."""
+        repo = self.repo(self.root(), registry=True)
+        checker = load_checker(repo / "delivery/scripts/check-slice-scope.py", "slice_scope_read_once")
+        scope = checker.Scope("S1", "HEAD")
+        self.assertTrue(scope.host_surface(".mcp.json"))
+        (repo / "delivery/scripts/agents/registry.json").write_text("{nope")
+        self.assertTrue(scope.host_surface("GEMINI.md"))
+
+    def test_the_other_ci_systems_and_makefile_spellings_are_the_hosts(self) -> None:
+        """T008 (AC-S20-15): what `adopt` recognises as CI, and `GNUmakefile` / `makefile`, are refused."""
+        self.refused(self.repo(self.root(), registry=True), "Jenkinsfile", "azure-pipelines.yml",
+                     "bitbucket-pipelines.yml", ".circleci/config.yml", ".woodpecker.yml", ".drone.yml",
+                     ".travis.yml", "GNUmakefile", "makefile")
+
+    def test_the_checker_names_every_ci_system_adopt_recognises(self) -> None:
+        """T008 (AC-S20-15): a forge `adopt` learns later and the checker does not is a red test, not a hole."""
+        checker = load_checker(SCRIPTS / "check-slice-scope.py", "slice_scope_names")
+        for key in CI_FORGES:
+            with self.subTest(ci=key):
+                self.assertTrue(key in checker.HOST_FILES or key.split("/")[0] in checker.HOST_DIRECTORIES, key)
+
+    def test_git_hooks_and_the_ignore_file_are_the_repositorys_own(self) -> None:
+        """T008 (AC-S20-16), held: green on arrival, and still green once the registry and CI names are read."""
+        self.green(self.repo(self.root(), registry=True), ".gitignore", ".githooks/pre-commit",
+                   ".pre-commit-config.yaml", ".husky/pre-commit")
 
     def test_a_real_adoption_at_the_root(self) -> None:
         """AC-S20-1, -2 on a tree `slipwai adopt` made: tests are the slice's, the Makefile and a written path not."""
