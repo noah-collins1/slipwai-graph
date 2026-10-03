@@ -72,5 +72,64 @@ class OneSessionTest(RenderCase):
                              [True] * log.sessions)
 
 
+@unittest.skipIf(IS_WINDOWS, "the stand-in's .bin/mmdc is a shebang script")
+class OnlyWhatChangedTest(RenderCase):
+    def svgs(self, repo: Path) -> dict[str, bytes]:
+        root = repo / MODEL_DIR
+        return {str(path.relative_to(root)): path.read_bytes() for path in sorted(root.rglob("*.svg"))}
+
+    def edit_model(self, repo: Path, old: str, new: str) -> None:
+        model = repo / MODEL_DIR / "model.yaml"
+        text = model.read_text()
+        self.assertIn(old, text)
+        model.write_text(text.replace(old, new, 1))
+
+    def test_e2_one_renamed_frame_draws_the_timeline_its_segment_and_its_slice_and_leaves_the_rest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 16)
+            self.model_log(repo)
+            before = self.svgs(repo)
+            self.edit_model(repo, "name: Done5}", "name: Finished5}")
+            log = self.model_log(repo)
+            self.assertEqual((log.sessions, log.draws, log.closes), (1, 3, 1))
+            after = self.svgs(repo)
+            self.assertEqual(sorted(name for name in after if after[name] != before[name]),
+                             sorted(["model.svg", "segments/model-3.svg", "slices/S5.svg"]))
+            self.assertEqual(len([name for name in after if after[name] == before[name]]), 22)
+
+    def test_e3_an_added_frame_redraws_every_later_slice_and_segment_and_no_earlier_slice(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 16)
+            self.model_log(repo)
+            before, hashes = self.svgs(repo), mmd_hashes(repo)
+            self.edit_model(repo, "      - {type: evt, name: Done5}\n",
+                            "      - {type: evt, name: Done5}\n      - {type: evt, name: Extra5}\n")
+            log = self.model_log(repo)
+            after = self.svgs(repo)
+            changed = {name for name, now in mmd_hashes(repo).items() if now != hashes.get(name)}
+            self.assertEqual(sorted(log.drawn_sources), sorted(
+                sha for name, sha in mmd_hashes(repo).items() if name in changed))
+            # A frame added to S5 renumbers what follows it in the timeline and in the segments after S5's, which
+            # is what is redrawn; a slice's own diagram numbers from its own frames, so a later slice's source
+            # does not change and it is not redrawn (the criterion's rule is: exactly the changed hashes).
+            self.assertIn("model.mmd", changed)
+            self.assertIn("slices/S5.mmd", changed)
+            for segment in range(3, 10):
+                self.assertIn(f"segments/model-{segment}.mmd", changed)
+            for segment in (1, 2):
+                self.assertNotIn(f"segments/model-{segment}.mmd", changed)
+                self.assertEqual(after[f"segments/model-{segment}.svg"], before[f"segments/model-{segment}.svg"])
+            for earlier in range(1, 5):
+                self.assertNotIn(f"slices/S{earlier}.mmd", changed)
+                self.assertEqual(after[f"slices/S{earlier}.svg"], before[f"slices/S{earlier}.svg"])
+
+    def test_nothing_to_draw_opens_no_session(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 16)
+            self.model_log(repo)
+            log = self.model_log(repo)
+            self.assertEqual((log.sessions, log.draws, log.closes), (0, 0, 0))
+
+
 if __name__ == "__main__":
     unittest.main()

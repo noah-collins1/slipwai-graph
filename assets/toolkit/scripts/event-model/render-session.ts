@@ -11,6 +11,7 @@
  * browser per diagram, which is what this replaces.
  */
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -63,6 +64,43 @@ export function installRenderer(): void {
       stdio: 'inherit',
     });
   }
+}
+
+/** Where mermaid itself sits in the prefix: hoisted beside mermaid-cli, or nested under it. */
+function mermaidManifests(): string[] {
+  return [
+    join(CLI_PREFIX, 'node_modules', 'mermaid', 'package.json'),
+    join(CLI_PREFIX, 'node_modules', '@mermaid-js', 'mermaid-cli', 'node_modules', 'mermaid', 'package.json'),
+  ].filter((path) => existsSync(path));
+}
+
+function versionOf(manifest: string): string {
+  return (JSON.parse(readFileSync(manifest, 'utf8')) as { version?: string }).version ?? '';
+}
+
+/** The scripts whose bytes decide how a diagram is drawn: a change to any of them redraws every diagram. */
+const DRAWING_SCRIPTS = ['render.ts', 'render-plan.ts', 'render-session.ts', 'patch-mermaid-swimlanes.ts'];
+
+/**
+ * Names the renderer that drew a diagram: SHA-256 over the installed mermaid-cli and mermaid versions, the
+ * drawing scripts' bytes, and the Puppeteer config's bytes (a fixed word when none is set). Computed once per
+ * run, after the install and the patch and before any comparison. Every part is length-prefixed, so two
+ * inputs cannot run together into a third that reads the same.
+ */
+export function rendererKey(): string {
+  const configPath = puppeteerConfigPath();
+  const parts: (Buffer | string)[] = [
+    versionOf(join(CLI_PREFIX, 'node_modules', '@mermaid-js', 'mermaid-cli', 'package.json')),
+    mermaidManifests().map(versionOf).join(','),
+    ...DRAWING_SCRIPTS.map((name) => readFileSync(join(SCRIPT_DIR, name))),
+    configPath === undefined ? 'no-puppeteer-config' : readFileSync(configPath),
+  ];
+  const hash = createHash('sha256');
+  for (const part of parts) {
+    const bytes = Buffer.from(part);
+    hash.update(`${String(bytes.length)}:`).update(bytes);
+  }
+  return hash.digest('hex');
 }
 
 /** The file a package's `.` export names for `import`, read the way Node would, from the prefix. */

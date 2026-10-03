@@ -9,12 +9,12 @@
  * the one browser a run draws through). `render-plan.ts` owns which diagrams there are and how they reach disk.
  * `make check-model` needs no browser at all, which is why *it* is the gate that runs in CI.
  */
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { drawDiagrams, drawPng, planDiagrams, readSvg, type Diagram } from './render-plan.ts';
+import { drawDiagrams, drawPng, isCurrent, planDiagrams, readSvg, removeOrphans, type Diagram } from './render-plan.ts';
 import { patchInstalledMermaid } from './patch-mermaid-swimlanes.ts';
-import { CLI_PREFIX, installRenderer, lazySession } from './render-session.ts';
+import { CLI_PREFIX, installRenderer, lazySession, rendererKey } from './render-session.ts';
 import { renderPage } from './page.ts';
 import { renderReadmeSection, withReadmeSection } from './readme.ts';
 import type { Model } from './model.ts';
@@ -82,18 +82,15 @@ async function main(): Promise<void> {
   }
 
   const diagrams = planDiagrams(model);
-  // Regenerated wholesale, so a renamed or deleted slice cannot leave an orphan diagram claiming to be current.
-  for (const dir of [SEGMENT_DIR, SLICE_DIR]) {
-    rmSync(join(ROOT, dir), { force: true, recursive: true });
-    mkdirSync(join(ROOT, dir), { recursive: true });
-  }
+  removeOrphans(diagrams);
   for (const diagram of diagrams) write(diagram.mmd, diagram.source);
 
   installRenderer();
   patchInstalledMermaid(CLI_PREFIX); // before the first draw: the swimlane fix lives in the tree we own
+  const key = rendererKey();
   const session = lazySession();
   try {
-    await drawDiagrams(diagrams, session);
+    await drawDiagrams(diagrams.filter((diagram) => !isCurrent(diagram, key)), session, key);
     if (wantPng) await drawPng(diagrams[0]?.source ?? '', session, MODEL_PNG);
   } finally {
     await session.close();
