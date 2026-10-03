@@ -4,8 +4,9 @@ PATCH
 walking gates listed `apps/` and `packages/` several times a run — three times over, and each browser app again,
 on a new Python project that holds 79 entries — and descended into `.venv` and `node_modules`, so after an install they read thousands of files
 that are not the project's. Each directory is now listed once, and five directories are not descended into:
-`.venv`, `node_modules`, `__pycache__` and `.git` wherever they are, and `target` where a `pom.xml` sits beside it
-— Maven's output, and the test is the `pom.xml`, whatever language the service is in. A `target` anywhere else is a source directory like any other and is read as before. Both
+`.venv`, `node_modules`, `__pycache__` and `.git` wherever they are, and `target` only at the root of a deployable
+`project.json` records as Java with a `pom.xml` there — Maven's output. Any other directory called `target` is
+read as before, and a deployable recorded inside a skipped name is still read. Both
 pass lines keep their words and end with what was read: `check-imports: inward dependency rule holds (79
 directory entries read)`. The count is a measurement, not a limit: no project fails on its size.
 
@@ -22,8 +23,9 @@ a file that was uncommitted then, a row the index rewrote since, a file git was 
 script or another database each mean that file, or everything, is compared again. A file it does not hash is one
 git reports unchanged and whose size, modification time, change time and identity all read as they did when the
 gate last hashed it — and a file written within two seconds of that run is hashed again regardless. What that leaves: a file whose bytes were changed while all four read as before — a clock
-set back, a filesystem that keeps no such times, or, on a platform with no change time, a tool that restores the
-modification time on a same-size rewrite — is not seen by a narrowed run; the next whole run sees it: the trunk,
+set back, a filesystem that keeps no such times, a write through a shared memory map where the filesystem moves no
+times for it, or, on a platform with no change time, a tool that restores the modification time on a same-size
+rewrite — is not seen by a narrowed run; the next whole run sees it: the trunk,
 any branch not named `slice/<id>`, or any run after `.codegraph/gate-memory.json` is deleted. On the trunk, on any
 other branch and in CI the check compares exactly as it did — every file, and the integrity check — and outside CI
 a passing run leaves the record a slice branch then starts from.

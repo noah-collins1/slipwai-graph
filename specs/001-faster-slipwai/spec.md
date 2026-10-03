@@ -699,21 +699,28 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
   a `domain/` file that imports an adapter and a contracting migration under `migrations/` — when either script
   runs, then its findings equal those of the tree without them, its count is higher by exactly the number of
   directories planted, and nothing inside them is listed, at any depth, in any walk the script makes (D45).
-- **AC-S01-4** — Given a Java service after a build — `target/` beside its `pom.xml`, holding a copy of a
-  contracting migration under `target/classes/db/migration/` and `.java` files under `target/generated-sources/` —
-  then findings equal those with `target/` deleted and it is not descended into (D45).
-- **AC-S01-5** — Given a directory called `target` with no `pom.xml` beside it, then it is read as today: in a
-  Python service recording the contexts `orders` and `target`, a domain file under `src/target/domain/` that
-  imports an adapter still fails, an import from `target` into the insides of `orders` still fails, and a
-  contracting migration under `src/target/migrations/` still fails `check-migrations`; and a Java package directory
-  `src/main/java/…/target/` is still read (D45).
+- **AC-S01-4** — *Rewritten by D52 (adversary A1).* Given a Java service `project.json` records — `language`
+  `java`, `path` `apps/service`, spelled `apps/service`, `apps/service/` or `./apps/service`, `generated` or not —
+  after a build: `target/` beside that path's `pom.xml`, holding a copy of a contracting migration under
+  `target/classes/db/migration/` and `.java` files under `target/generated-sources/` — then findings equal those
+  with `target/` deleted and it is not descended.
+- **AC-S01-5** — *Rewritten by D52.* Every other directory called `target` is read as before the slice, and each
+  of these fails as it did: an empty `pom.xml` beside a context directory `target/` under a Python service, at the
+  service's root and at depth, holding a `domain/` file that imports an adapter and a contracting migration (the
+  adversary's reproduction); a nested module's `target` below a recorded Java deployable's root; a `target` beside
+  a `pom.xml` under `packages/` with no record; any `target` in a tree with no `project.json`, or one whose record
+  is unreadable or carries a `path` or `language` that is not a string; a `target` with no `pom.xml` — a context
+  of that name whose domain file imports an adapter, an import from it into another context's insides, a
+  contracting migration under it; and a Java package directory `src/main/java/…/target/`.
 - **AC-S01-6** — Given a tree with violations outside any pruned directory, when either script runs, then its
   stderr and exit code are byte for byte what they were before this slice — the same findings in the same order,
   and no count (D47; SC-007).
 - **AC-S01-7** — Given a project whose walk lists more than 100 entries, then the gate passes with its count
   printed and no other word: 100 is a measurement on the skeleton, never a limit on a project (D47).
-- **AC-S01-8** — Given any run, then `check-imports` opens `project.json` at most once and `check-migrations` at
-  most once (it does not read it today and need not start); a tree with no `project.json` is answered as today.
+- **AC-S01-8** — *Reworded by D52.* Given any run, then `check-imports` opens `project.json` at most once and
+  `check-migrations` exactly once where it exists (to learn which deployables are Java; it did not read it before
+  the slice). A tree with no `project.json`, or an unreadable one, prunes no `target` and is answered as before
+  the slice — the same exit, and never a traceback the earlier script did not have.
 - **AC-S01-9** — Given a tree with neither `apps/` nor `packages/`, then both scripts pass as today, reporting 0
   entries; given a symbolic link to a directory under an app, then it is one entry and is not descended into, as
   the Python the skeleton pins (3.13) does today.
@@ -756,7 +763,7 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
   exactly as they did when the gate last hashed it and found it equal. *Added by D50 (converge T021):* a tracked file
   the index holds no row for is judged on a narrowed run by the whole run's own test, whatever git reports.
 - **AC-S01-22** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
-  whose first line is `PATCH`, naming the five directories, the `pom.xml` test and the one kind of finding that
+  whose first line is `PATCH`, naming the five directories, the record's test for `target` (D52) and the one kind of finding that
   can disappear (one inside a pruned directory), the count on the two pass lines, and where `check-codegraph`
   compares only what changed; it asks nothing of a generated repository; `VERSION` stays `1.5.2.dev0`; and no
   file `delivery/.written` lists changes in this repository (D9; the Pin stage's rows in
@@ -772,3 +779,6 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
 - **AC-S01-25** — *Added by D49.* Given a `touch`, a checkout or a rebase that moves a file's times without changing
   a byte, then a narrowed run hashes that file once, passes, renews its record, and does not hash it again on the
   next run. A memory without these records means the whole run with the one clause (AC-S01-17).
+- **AC-S01-26** — *Added by D52 (adversary A4).* Given a deployable recorded at, or beneath, a directory carrying
+  a pruned name, then that directory is descended in every walk of both scripts: all five rules of `check-imports`
+  and `check-migrations` read the deployable, as rules 4 and 5 always did.

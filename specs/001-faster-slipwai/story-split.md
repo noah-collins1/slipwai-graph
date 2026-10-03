@@ -259,6 +259,15 @@ that cannot delegate takes the earliest ready slice in split order and names the
   `domain/` file importing an adapter. Older than S01, which only made it visible (`0 directory entries read`).
   `LOW`; for the completion audit to place behind the PRD's slices (D39) or rule out.
 
+- **What S01's adversary pass and demo left (D52, D53), behind the PRD's slices (D39), for the completion audit.**
+  *`MEDIUM`, older:* `check-imports` rule 1 reads an import line for a layer name between separators, so in a
+  Python `domain/` file `from ..adapters import store`, `from shop.adapters import store`, `from .. import adapters`
+  and `from ..infrastructure import db` all pass (the hand's evidence:
+  `slices/S01-gate-walks/demo/import-spellings-both-scripts.txt`). *`LOW`:* an unreadable `apps/` passes both
+  walking gates with `0 directory entries read` (A3); `scripts/` linked from outside the project reads the wrong
+  root; a nested Maven module's `target` in an adopted repository is still walked, and tracked files force-added
+  under a recorded Java deployable's `target/` are not read (D52's residual).
+
 ## Next Step
 
 Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,
