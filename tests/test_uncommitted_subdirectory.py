@@ -7,6 +7,7 @@ named by the project's own spelling.
 """
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from test_adopt import repository, slipwai
 from test_adopt_next import in_terminal
 from test_candidates import MONOREPO
 from test_replay import git
+from test_uncommitted import settle_a_row
 
 PAGE = "delivery/docs/convergence.md"
 
@@ -76,3 +78,40 @@ class RefusalInSubdirectoryTest(FactoryTestCase):
             git(top, "-c", "user.name=t", "-c", "user.email=t@local", "commit", "-q", "-m", "untrack")
             self.assertTrue((project / PAGE).is_file())
             self.refused(project, "--refresh")
+
+
+    def test_hold_what_a_run_left_and_a_row_settled_by_hand_are_written_over_by_the_next_runs(self) -> None:
+        """R2e1, a hold: passes before (nothing was refused) and after (all of it is slipwai's)."""
+        with tempfile.TemporaryDirectory() as directory:
+            _, project = placed(Path(directory))
+            for step in (("--confirm", "sub"), None, ("--confirm", "themes"), ("--refresh",)):
+                if step is None:
+                    settle_a_row(project)
+                    continue
+                result = slipwai(project, "adopt", *step)
+                self.assertEqual(result.returncode, 0, f"{step}: {result.stderr}")
+
+    def recorded(self, project: Path) -> list[str]:
+        return sorted(json.loads((project / ".delivery-tools/written.json").read_text()))
+
+    def test_what_a_run_leaves_uncommitted_is_recorded_as_the_project_spells_it(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            top, project = placed(Path(directory))
+            self.assertEqual(slipwai(project, "adopt", "--confirm", "sub").returncode, 0)
+            keys = self.recorded(project)
+            self.assertTrue(keys, "written.json is not {}")
+            for key in keys:
+                self.assertTrue((project / key).exists(), key)
+                self.assertFalse(key.startswith("sub/"), key)
+            self.assertNotIn(".delivery-tools/written.json", git(top, "status", "--porcelain").stdout)
+
+    def test_an_edit_on_top_of_what_a_run_left_is_refused_naming_that_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            _, project = placed(Path(directory))
+            self.assertEqual(slipwai(project, "adopt", "--confirm", "sub").returncode, 0)
+            key = PAGE
+            self.assertIn(key, self.recorded(project), "the page is recorded as left")
+            with (project / key).open("a") as edited:
+                edited.write("\nA note of mine.\n")
+            self.refused(project, "--refresh", naming=key)
+            self.assertIn("A note of mine.", (project / key).read_text())
