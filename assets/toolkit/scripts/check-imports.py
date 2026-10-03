@@ -73,6 +73,17 @@ def under(directory: Path) -> list[Path]:
     return listing(directory)
 
 
+_manifest: dict | None = None
+
+
+def manifest() -> dict:
+    """`project.json` read once per run — an empty record where there is none."""
+    global _manifest
+    if _manifest is None:
+        _manifest = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.is_file() else {}
+    return _manifest
+
+
 def deployables(kind: str) -> list[dict]:
     """Every application record of one kind, from `project.json` — the one list this repository keeps.
 
@@ -81,9 +92,7 @@ def deployables(kind: str) -> list[dict]:
     *browser apps*, because it forbids each of the latter to import from any of the former; the context rule
     has to know which bounded contexts each service says it holds.
     """
-    if not MANIFEST.is_file():
-        return []
-    records = json.loads(MANIFEST.read_text(encoding="utf-8")).get("deployables", {})
+    records = manifest().get("deployables", {})
     return [
         record
         for record in records.values()
@@ -99,9 +108,7 @@ def unruled() -> list[str]:
     """The applications that existed before the method did (`"generated": false`) and do not declare the
     hexagonal layout — code the rules below were not written for, and pass over — whatever they are recorded
     as: a service, a library, a tool, a test suite, or an application whose role nobody has established."""
-    if not MANIFEST.is_file():
-        return []
-    records = json.loads(MANIFEST.read_text(encoding="utf-8")).get("deployables", {}).values()
+    records = manifest().get("deployables", {}).values()
     return [
         record["path"] for record in records
         if isinstance(record, dict) and isinstance(record.get("path"), str)

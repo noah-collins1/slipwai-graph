@@ -5,6 +5,7 @@ every directory listing returned. The count is a measurement, not a limit.
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -158,3 +159,35 @@ class GateWalkPrunedTest(FactoryTestCase):
                     self.assertTrue(any(path.startswith("apps/service/src/a/b") for path in audited.listed))
                     inside = [path for path in audited.listed if set(path.split("/")) & set(PRUNED)]
                     self.assertEqual(inside, [])
+
+
+class GateWalkManifestTest(FactoryTestCase):
+    """R5: `project.json` is opened at most once per run."""
+
+    def test_the_import_gate_opens_the_manifest_once(self) -> None:
+        """R5e1: a web app and a two-context service, so every rule that asks the manifest runs."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "once", "event-modelling", "python", frontend="react-vite")
+            manifest = json.loads((repo / "project.json").read_text())
+            manifest["deployables"]["service"]["contexts"] = ["orders", "billing"]
+            (repo / "project.json").write_text(json.dumps(manifest, indent=2) + "\n")
+            audited = Audited(repo, "scripts/check-imports.py")
+            self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
+            self.assertEqual(audited.opened.count("project.json"), 1)
+
+    def test_hold_the_migration_gate_does_not_read_the_manifest_more_than_once(self) -> None:
+        """R5e2, a hold: it reads none today, and must not gain a read per call."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "once", "event-modelling", "python")
+            audited = Audited(repo, "scripts/check-migrations.py")
+            self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
+            self.assertLessEqual(audited.opened.count("project.json"), 1)
+
+    def test_hold_without_a_manifest_both_gates_still_pass(self) -> None:
+        """R5e3, a hold: the rules that need the manifest find no applications."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "none", "event-modelling", "python", frontend="react-vite")
+            (repo / "project.json").unlink()
+            for script, line in GATES.items():
+                with self.subTest(script=script):
+                    reported(run_gate(repo, script), line)
