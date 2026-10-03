@@ -12,9 +12,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 import time
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TextIO
 
 Facts = tuple[Any, ...]
 # A file written less than this long before it was read may be written again within the clock's granularity
@@ -22,6 +23,38 @@ Facts = tuple[Any, ...]
 MARGIN_NS = 2_000_000_000
 # What the log's facts are while there is no log: the runner has looked, and found nothing to read.
 ABSENT: Facts = ()
+
+
+class NotRegular(OSError):
+    """A path the runner reads or appends to as its own holds something that is not a regular file."""
+
+
+def not_regular(path: Path, mode: int) -> NotRegular:
+    kind = {stat.S_IFIFO: "a FIFO", stat.S_IFDIR: "a directory", stat.S_IFCHR: "a character device",
+            stat.S_IFBLK: "a block device", stat.S_IFSOCK: "a socket"}.get(stat.S_IFMT(mode), "not a file")
+    return NotRegular(f"{path} is {kind}, not a regular file; the runner reads and appends to it as its own and "
+                      "will not wait on it")
+
+
+def append_regular(path: Path) -> TextIO:
+    """`path` opened for appending, only where it is a regular file: the open never waits for a reader of a FIFO, and
+    what is not a regular file raises `NotRegular` instead (D63)."""
+    flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, "O_NONBLOCK", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError:
+        try:
+            mode = os.stat(path).st_mode
+        except OSError:
+            raise  # not a matter of what the path holds
+        if not stat.S_ISREG(mode):
+            raise not_regular(path, mode) from None
+        raise
+    mode = os.fstat(descriptor).st_mode
+    if not stat.S_ISREG(mode):
+        os.close(descriptor)
+        raise not_regular(path, mode)
+    return os.fdopen(descriptor, "a", encoding="utf-8", newline="\n")
 
 
 def facts_of(status: Any, strict: bool) -> Facts | None:
@@ -111,6 +144,12 @@ class Log:
         if self.stands() and self.items is not None:
             return self.items
         self.items = self.facts = None
+        try:
+            mode = os.stat(self.path).st_mode
+        except OSError:
+            mode = None
+        if mode is not None and not stat.S_ISREG(mode):
+            raise not_regular(self.path, mode)
         if not self.path.is_file():
             self.items, self.facts = [], ABSENT
             return self.items
@@ -129,7 +168,7 @@ class Log:
         if not intact:
             self.items = self.facts = None
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a", encoding="utf-8", newline="\n") as handle:
+        with append_regular(self.path) as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
             handle.flush()
             status = os.fstat(handle.fileno())

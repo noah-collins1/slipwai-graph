@@ -86,7 +86,9 @@ class Resumable:
 
     def end(self) -> str:
         try:
-            self.process.wait(timeout=TIMEOUT)
+            self.process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            pass  # a run still going is ended below, and what it printed is the evidence
         finally:
             if self.process.poll() is None:
                 self.process.terminate()

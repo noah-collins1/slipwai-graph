@@ -802,13 +802,12 @@ def stream_use(iteration: int) -> tuple[list[dict[str, Any]] | None, int]:
         _, at, marker, identity = MARKED[0]
         try:
             status = os.stat(STREAM)
-            with open(STREAM, "rb") as handle:
-                handle.seek(at)
-                found = handle.read(len(marker.encode("utf-8")))
-            if found == marker.encode("utf-8") and (identity is None or identity == (status.st_dev, status.st_ino)):
-                offset = at
         except OSError:
-            pass
+            status = None
+        found = code_index.read_regular(STREAM, at, len(marker.encode("utf-8"))) if status is not None else None
+        if (found == marker.encode("utf-8") and status is not None
+                and (identity is None or identity == (status.st_dev, status.st_ino))):
+            offset = at
     used, read = code_index.delegate_use_read(STREAM, iteration, offset)
     return used.get(iteration), read
 
@@ -820,7 +819,11 @@ def iterate(template: str, prompt: str, environment: dict[str, str], iteration: 
     command = template.replace("{prompt}", shlex.quote(prompt))
     environment = {**environment, RUNNER_VARIABLE: "1", ITERATION_VARIABLE: str(iteration)}
     feed = Feed(stream)
-    raw = STREAM.open("a", encoding="utf-8", newline="\n") if stream else None
+    try:
+        # Only a regular file is appended to: a FIFO left at the path would wait here for a reader (D63).
+        raw = bookkeeping.append_regular(STREAM) if stream else None
+    except bookkeeping.NotRegular:
+        raw = None
     try:
         if raw is not None:
             # The byte the marker goes at, and the line itself, so the entry's `index_use` is read from there (D58).
@@ -1319,6 +1322,11 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         began = time.monotonic()
         # The model flag is read with the settings, so `/cruise-settings model=…` holds from the next iteration.
         last = iterate(template + model_flags(harness, table["model"]), ask, environment, iteration, stream)
+        # Before anything that reads a path the iteration could have left unreadable, and so the run could wait on:
+        # a control it changed is compared and named first (D63).
+        left_as = controls_signature()
+        parked_since = False
+        changed = controls_changed(controls_before, left_as)
         if INTERRUPTED:
             last = "interrupted: a person's message"
             cut_off_brackets("the iteration was ended by `tell --now`")
@@ -1340,9 +1348,6 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             entry["index_use"] = use
             for line in code_index.use_lines(iteration, use):
                 print(line, flush=True)
-        left_as = controls_signature()
-        parked_since = False
-        changed = controls_changed(controls_before, left_as)
         if changed:
             entry["controls_changed"] = changed
         if between:
@@ -1359,7 +1364,11 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         entry["bookkeeping"] = {"log_bytes": LOGBOOK.take()}
         if stream:
             entry["bookkeeping"]["stream_bytes"] = stream_read
-        record(entry)
+        unwritten: OSError | None = None
+        try:
+            record(entry)
+        except bookkeeping.NotRegular as error:
+            unwritten = error  # said after the controls, which are named first
         # The boundary `watch` returns on: the iteration, what it ended on, and how long it took.
         print(f"cruise: iteration {iteration} ended — {last or 'no last line'} ({duration(time.monotonic() - began)})",
               flush=True)
@@ -1371,6 +1380,8 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
                  "resume with a message", no_park, poll, seen)
             parked_since = True
             continue
+        if unwritten is not None:
+            raise unwritten
         if INTERRUPTED:
             # Ended for a message, not by its own last line: the next iteration is where the message goes, and it
             # starts now — there is nothing to park on and nothing to count.

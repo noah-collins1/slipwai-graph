@@ -51,6 +51,7 @@ import re
 import shlex
 import shutil
 import sqlite3
+import stat
 import subprocess
 import sys
 import time
@@ -569,15 +570,30 @@ def delegate_use(stream: Path, only: int | None = None, offset: int = 0) -> dict
     return delegate_use_read(stream, only, offset)[0]
 
 
+def read_regular(path: Path, offset: int = 0, length: int | None = None) -> bytes | None:
+    """The bytes of `path` from `offset`, only where it is a regular file: the open never waits for a writer of a FIFO,
+    and a directory, a device or a path that cannot be read gives None (D63)."""
+    try:
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0))
+    except OSError:
+        return None
+    if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+        os.close(descriptor)
+        return None
+    try:
+        with os.fdopen(descriptor, "rb") as handle:
+            handle.seek(offset)
+            return handle.read() if length is None else handle.read(length)
+    except OSError:
+        return None
+
+
 def delegate_use_read(stream: Path, only: int | None = None,
                       offset: int = 0) -> tuple[dict[int, list[dict[str, Any]]], int]:
     """`delegate_use`, and how many bytes of the stream were read to give it."""
     found: dict[int, list[dict[str, Any]]] = {}
-    try:
-        with open(stream, "rb") as handle:
-            handle.seek(offset)
-            data = handle.read()
-    except OSError:
+    data = read_regular(stream, offset)
+    if data is None:
         return found, 0
     iteration, agents = 0, {}
     for line in data.decode("utf-8", errors="replace").splitlines():
