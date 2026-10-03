@@ -5,12 +5,13 @@ carries it makes every diagram whose source names that slice refuse to draw.
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import FAIL_MARKER, IS_WINDOWS, MODEL_DIR, RenderCase, sha256_of, write_model
+from render_fixture import FAIL_MARKER, IS_WINDOWS, MODEL_DIR, RenderCase, sha256_of, write_model, wrote
 
 NAMES = [f"Do thing {i}" for i in range(1, 17)]
 
@@ -116,6 +117,61 @@ class FinishedFilesTest(RenderCase):
             root = repo / MODEL_DIR
             for name in ("model.mmd", "model.svg", "model.png", "model.html", "slices", "segments"):
                 self.assertFalse((root / name).exists(), name)
+
+    def test_e8_hold_a_redrawn_svg_and_png_arrive_as_new_files_never_written_in_place(self) -> None:
+        # A hold on the rename: a write to the final name keeps the inode,
+        # a rename of a finished file does not.
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 1)
+            self.model_log(repo, PNG="1")
+            root = repo / MODEL_DIR
+            names = ("slices/S1.svg", "model.png")
+            before = {name: (root / name).stat().st_ino for name in names}
+            svg = root / "slices/S1.svg"
+            svg.write_text(svg.read_text().rstrip()[: -len("</svg>")])  # torn, so it is drawn again
+            svg.chmod(0o444)
+            self.model_log(repo, PNG="1")
+            self.assertEqual(svg.read_text().rstrip()[-6:], "</svg>")
+            for name in names:
+                self.assertNotEqual((root / name).stat().st_ino, before[name], f"{name} was written in place")
+
+    @unittest.skipIf(not hasattr(os, "getuid") or os.getuid() == 0, "a directory the process cannot write into is only "
+                     "one for a user other than root")
+    def test_e8_a_rename_that_cannot_happen_fails_the_run_keeps_the_earlier_file_and_closes_the_session(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 1)
+            self.model_log(repo)
+            segments = repo / MODEL_DIR / "segments"
+            torn = segments / "model-1.svg"
+            torn.write_text(torn.read_text().rstrip()[: -len("</svg>")])  # to be drawn again, into a closed directory
+            before = torn.read_bytes()
+            segments.chmod(0o555)
+            try:
+                done = self.run_model(repo)
+                log = self.model_log_of(repo)
+                leftovers = self.leftovers(repo)
+                kept = torn.read_bytes()
+            finally:
+                segments.chmod(0o755)
+            self.assertNotEqual(done.returncode, 0)
+            self.assertEqual(kept, before, "the earlier file's bytes stand")
+            self.assertEqual(leftovers, [], "the temporary is removed")
+            self.assertEqual((log.sessions, log.closes), (1, 1))
+
+    def test_e12_every_text_output_is_written_only_where_it_differs(self) -> None:
+        # The sweep of T009: each write the scripts make under docs/event-model/ is named by a line of the first run
+        # and by none of the second, which is what makes write-if-different (the .mmd, the page, the README block).
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 2)
+            first = self.run_model(repo)
+            self.assertEqual(first.returncode, 0, first.stderr)
+            paths = wrote(first)
+            for expected in ("docs/event-model/model.mmd", "docs/event-model/slices/S1.mmd",
+                             "docs/event-model/segments/model-1.mmd", "docs/event-model/model.html",
+                             "README.md (event-model block)"):
+                self.assertIn(expected, paths)
+            second = self.run_model(repo)
+            self.assertEqual(wrote(second), [])
 
 
 if __name__ == "__main__":
