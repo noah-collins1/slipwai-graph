@@ -97,6 +97,16 @@ HOST_DIRECTORIES = (".specify", ".github", ".gitea", ".forgejo", ".gitlab", ".cl
 SLICE_SURVEY_PAGES = ("survey/pinned.md", "survey/running.md")
 
 
+def recorded_path(value: object) -> str | None:
+    """A path as `project.json` records it, in the one spelling git reports paths in: `x/`, `./x` and `.//x` are `x`;
+    `.`, `./` and `./.` are `.`, the whole repository; an empty path, or none, owns nothing."""
+    if not isinstance(value, str):
+        return None
+    if not value.strip("/"):
+        return ""
+    return "/".join(part for part in value.split("/") if part not in ("", ".")) or "."
+
+
 def git(*arguments: str) -> str | None:
     try:
         completed = subprocess.run(["git", *arguments], cwd=ROOT, text=True, capture_output=True, check=True)
@@ -216,8 +226,7 @@ class Scope:
 
     def service_path(self, name: str) -> str | None:
         record = self.apps.get(name)
-        path = record.get("path") if record else None
-        return path.strip("/") if isinstance(path, str) else None
+        return recorded_path(record.get("path") if record else None)
 
     def other_contexts(self) -> list[str]:
         if self.service is None or self.context is None:
@@ -250,7 +259,7 @@ class Scope:
             if inside and path not in [(DELIVERY / page).as_posix() for page in SLICE_SURVEY_PAGES]:
                 return True
         gate = (project_document().get("ci") or {}).get("gate")
-        if isinstance(gate, str) and path == gate.strip("/"):
+        if isinstance(gate, str) and path == recorded_path(gate):
             return True
         written = ROOT / DELIVERY / ".written"
         return written.is_file() and path in written.read_text(encoding="utf-8").splitlines()

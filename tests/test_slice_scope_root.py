@@ -166,6 +166,24 @@ class SliceScopeRootTest(unittest.TestCase):
         self.refused(repo, "ci/gate.yml")
         self.green(repo, "ci/other.yml")
 
+    def test_every_spelling_of_a_recorded_path_answers_alike(self) -> None:
+        """T007 (AC-S20-7, -8): `./apps/api` is `apps/api`; `ci.gate` spelled `./ci/gate.yml` is `ci/gate.yml`."""
+        for spelling in ("apps/api", "apps/api/", "./apps/api", "./apps/api/", ".//apps/api"):
+            with self.subTest(path=spelling):
+                repo = self.repo({**self.root(), "api": {"kind": "service", "path": spelling}}, model=True)
+                result = self.verdict(repo, "apps/api/x.py")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("service `api` is not slice `S1`'s", result.stderr)
+                self.green(repo, "tests/test_x.py")
+        for spelling in (".", "./", "./."):
+            with self.subTest(root=spelling):
+                self.green(self.repo(self.root(spelling)), "tests/test_x.py")
+        for gate in ("ci/gate.yml", "./ci/gate.yml", "ci/gate.yml/"):
+            with self.subTest(gate=gate):
+                repo = self.repo(self.root(), ci={"gate": gate})
+                self.refused(repo, "ci/gate.yml")
+                self.green(repo, "ci/other.yml")
+
     def test_a_real_adoption_at_the_root(self) -> None:
         """AC-S20-1, -2 on a tree `slipwai adopt` made: tests are the slice's, the Makefile and a written path not."""
         with tempfile.TemporaryDirectory() as directory:
