@@ -1,0 +1,25 @@
+PATCH
+
+**`check-imports`, `check-migrations` and `check-codegraph` stop reading what the answer never needed.** The two
+walking gates listed `apps/` and `packages/` several times a run — 256 directory entries on a new Python project
+that holds 79 — and descended into `.venv` and `node_modules`, so after an install they read thousands of files
+that are not the project's. Each directory is now listed once, and five directories are not descended into:
+`.venv`, `node_modules`, `__pycache__` and `.git` wherever they are, and `target` where a `pom.xml` sits beside it
+— Maven's output. A `target` anywhere else is a source directory like any other and is read as before. Both
+pass lines keep their words and end with what was read: `check-imports: inward dependency rule holds (79
+directory entries read)`. The count is a measurement, not a limit: no project fails on its size.
+
+One kind of finding can disappear: one on a file inside those directories — an installed package's `domain/`
+module or `migrations/`, or Maven's copy of a migration under `target/classes`. Findings on the project's own
+code are the same, in the same order, in the same words.
+
+On a `slice/<id>` branch on a developer's machine, `check-codegraph` now hashes only the files that changed since
+its last whole comparison instead of every tracked file, and leaves SQLite's integrity check to the full gate; its
+pass line says how many files it hashed, of how many, and since when. It remembers that comparison in
+`.codegraph/gate-memory.json`, beside the index git already ignores, and trusts it only for what it can vouch for:
+a file that was uncommitted then, a row the index rewrote since, a file git was told not to report, a changed gate
+script or another database each mean that file, or everything, is compared again. On the trunk, on any other
+branch and in CI the check does exactly what it did — every file, and the integrity check.
+
+`slipwai migrate` carries the three scripts; nothing is asked of a repository already generated. No setting, flag
+or generated file is added.

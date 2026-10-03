@@ -20,6 +20,7 @@ Every migration file under every `apps/*/` and `packages/*/` is checked: `migrat
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -65,10 +66,37 @@ NOT_NULL = re.compile(r"\bNOT\s+NULL\b", re.IGNORECASE)
 DEFAULT = re.compile(r"\bDEFAULT\b", re.IGNORECASE)
 
 
+PRUNED = {".venv", "node_modules", "__pycache__", ".git"}
+listings: dict[Path, list[Path]] = {}
+entries_read = 0
+
+
+def skipped(directory: Path, name: str) -> bool:
+    """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own."""
+    return name in PRUNED
+
+
+def listing(top: Path) -> list[Path]:
+    """Every path under `top`, files and directories, in `Path` order — listed once, links not followed.
+
+    The count of names every listing returned is what the pass line reports: a measurement, not a limit.
+    """
+    global entries_read
+    if top not in listings:
+        found: list[Path] = []
+        for current, directories, files in os.walk(top):
+            entries_read += len(directories) + len(files)
+            directory = Path(current)
+            directories[:] = [name for name in directories if not skipped(directory, name)]
+            found.extend(directory / name for name in directories + files)
+        listings[top] = sorted(found)
+    return listings[top]
+
+
 def migrations() -> list[Path]:
     found = []
     for area in ("apps", "packages"):
-        for path in sorted((ROOT / area).rglob("*")):
+        for path in listing(ROOT / area):
             if (
                 path.is_file()
                 and path.suffix in SUFFIXES
@@ -217,7 +245,7 @@ def main() -> int:
         return 1
     print(
         "check-migrations: every migration is additive, or a marked contraction of an earlier one; "
-        "Go migrate images embed their .sql files"
+        f"Go migrate images embed their .sql files ({entries_read} directory entries read)"
     )
     return 0
 

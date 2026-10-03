@@ -5,6 +5,7 @@ service — without assuming one language."""
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -34,6 +35,41 @@ OUTER_LAYER = re.compile(r"(?:^|[/._-])(adapter|adapters|infrastructure|delivery
 OUTER_LAYER_FROM_APPLICATION = re.compile(
     r"(?:^|[/._-])(adapter|adapters|composition|infrastructure|delivery)(?:[/._-]|$)", re.IGNORECASE
 )
+
+
+PRUNED = {".venv", "node_modules", "__pycache__", ".git"}
+listings: dict[Path, list[Path]] = {}
+entries_read = 0
+
+
+def skipped(directory: Path, name: str) -> bool:
+    """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own."""
+    return name in PRUNED
+
+
+def listing(top: Path) -> list[Path]:
+    """Every path under `top`, files and directories, in `Path` order — listed once, links not followed.
+
+    The count of names every listing returned is what the pass line reports: a measurement, not a limit.
+    """
+    global entries_read
+    if top not in listings:
+        found: list[Path] = []
+        for current, directories, files in os.walk(top):
+            entries_read += len(directories) + len(files)
+            directory = Path(current)
+            directories[:] = [name for name in directories if not skipped(directory, name)]
+            found.extend(directory / name for name in directories + files)
+        listings[top] = sorted(found)
+    return listings[top]
+
+
+def under(directory: Path) -> list[Path]:
+    """Every path under `directory`: filtered from a listing already taken where it sits inside one, else listed."""
+    for top, paths in listings.items():
+        if top in directory.parents or top == directory:
+            return [path for path in paths if directory == top or directory in path.parents]
+    return listing(directory)
 
 
 def deployables(kind: str) -> list[dict]:
@@ -186,7 +222,7 @@ def source_files(layer: str) -> list[Path]:
     for source_root in (ROOT / "apps", ROOT / "packages"):
         if not source_root.exists():
             continue
-        for path in sorted(source_root.rglob("*")):
+        for path in listing(source_root):
             relative = path.relative_to(source_root)
             if (
                 path.is_file() and path.suffix in SOURCE_SUFFIXES and layer in relative.parts
@@ -260,7 +296,7 @@ def main() -> int:
     for web in (ROOT / relative for relative in app_paths("web")):
         if not web.is_dir():
             continue
-        for path in sorted(web.rglob("*")):
+        for path in under(web):
             if not path.is_file() or path.suffix not in {".ts", ".tsx"}:
                 continue
             for number, line in enumerate(path.read_text(errors="replace", encoding="utf-8").splitlines(), start=1):
@@ -277,7 +313,7 @@ def main() -> int:
     #    code that lives in no context is where the contexts meet, and is not checked.
     for service_path, contexts in context_holders().items():
         service = ROOT / service_path
-        for path in sorted(service.rglob("*")) if service.is_dir() else []:
+        for path in under(service) if service.is_dir() else []:
             if not path.is_file() or path.suffix not in SOURCE_SUFFIXES:
                 continue
             directories = path.relative_to(service).parts[:-1]
@@ -299,7 +335,7 @@ def main() -> int:
     if violations:
         print("\n".join(sorted(set(violations))), file=sys.stderr)
         return 1
-    print("check-imports: inward dependency rule holds")
+    print(f"check-imports: inward dependency rule holds ({entries_read} directory entries read)")
     return 0
 
 
