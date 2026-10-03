@@ -39,6 +39,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import re
 import sqlite3
@@ -301,6 +302,24 @@ GIT_SILENT = "git could not say what changed"
 SHAPE = {"key": str, "commit": str, "dirty": list, "rows": dict, "database": list, "files": dict, "whole": (int, float)}
 
 
+def number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def readable(record: dict[str, Any]) -> bool:
+    """Whether every field is of the depth the run uses it at: a record can be the right shape and hold nonsense."""
+    try:
+        moment_of(float(record["whole"]))
+        return (number(record["whole"]) and all(isinstance(path, str) for path in record["dirty"])
+                and all(isinstance(path, str) and isinstance(digest_, str) for path, digest_ in record["rows"].items())
+                and len(record["database"]) == 2 and all(type(part) is int for part in record["database"])
+                and all(isinstance(path, str) and isinstance(seen, list) and len(seen) == 5
+                        and all(number(part) for part in seen) and all(type(part) is int for part in seen[:4])
+                        for path, seen in record["files"].items()))
+    except (ArithmeticError, OSError, ValueError):
+        return False
+
+
 def remembered() -> dict[str, Any] | str:
     """The memory of the last whole comparison, or the reason it cannot be used."""
     if not MEMORY.is_file():
@@ -310,6 +329,8 @@ def remembered() -> dict[str, Any] | str:
     except (OSError, ValueError):
         return UNREADABLE
     if not isinstance(record, dict) or any(not isinstance(record.get(name), kind) for name, kind in SHAPE.items()):
+        return UNREADABLE
+    if not readable(record):
         return UNREADABLE
     if record["key"] != gate_key():
         return SCRIPTS
@@ -480,7 +501,10 @@ def main() -> int:
     why = None
     if narrowable():
         record = remembered()
-        done = narrowed(tooling, record) if isinstance(record, dict) else record
+        try:
+            done = narrowed(tooling, record) if isinstance(record, dict) else record
+        except Exception:  # noqa: BLE001 — whatever the memory held, a record the run cannot use is the whole run
+            done = UNREADABLE
         if isinstance(done, int):
             return done
         why = done

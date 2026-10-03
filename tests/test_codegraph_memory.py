@@ -15,6 +15,7 @@ import shutil
 import sqlite3
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from support import FactoryTestCase
 from test_codegraph_narrowed import Project
@@ -139,6 +140,27 @@ class AMemoryThatCannotBeUsedTest(FactoryTestCase):
                 run = project.run()
                 self.assertEqual(run.returncode, 0, run.stderr)
                 self.assertRegex(run.stdout, whole_line("the record of the last whole comparison could not be read"))
+
+    def test_a_memory_of_the_right_shape_with_a_content_the_run_cannot_use(self) -> None:
+        """AC-S01-18's class: any content of the memory file, to the depth the run uses it, is the whole run."""
+        unusable: dict[str, list[Any]] = {
+            "dirty": [[["a"]], [1], "a"],
+            "whole": [1e300, float("inf"), float("nan"), True, "now", -1e300],
+            "rows": [{"a": 1}, {"a": ["x"]}],
+            "database": [["a"], [1.5, 2], [1]],
+            "files": [{"a": "x"}, {"a": [1, 2]}, {"a": [1, 2, 3, 4, "x"]}, {"a": None}],
+            "key": [None], "commit": [None, 1]}
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.prepared(directory)
+            record = json.loads(project.memory.read_text())
+            for field, values in unusable.items():
+                for value in values:
+                    with self.subTest(field=field, value=repr(value)):
+                        project.memory.write_text(json.dumps({**record, field: value}))
+                        run = project.run()
+                        self.assertEqual(run.returncode, 0, run.stderr)
+                        self.assertRegex(run.stdout,
+                                         whole_line("the record of the last whole comparison could not be read"))
 
     def test_a_commit_the_repository_no_longer_has(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
