@@ -516,7 +516,7 @@ would pass 350 lines.
 
 #### T018 — `HIGH` — The render tests pass whatever CI marker the suite itself runs under (found by the host at `1d336ea`)
 
-- [ ] Evidence: `CI=true make test TESTS="test_render_once"` → `FAILED (failures=3)` at `1d336ea`. Every render test
+- [x] *(done at `dde4317`: one helper, `render_env`, builds every render test's environment with the three markers removed unless the test sets one; five sites swept; the seven modules green plain, under `CI=true`, and under `GITHUB_ACTIONS=true GITLAB_CI=true`.)* Evidence: `CI=true make test TESTS="test_render_once"` → `FAILED (failures=3)` at `1d336ea`. Every render test
   hands `os.environ` to `make model`, and under `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` nothing is skipped (AC-S11-5), so
   in this factory's own CI every example that expects a diagram to be left fails: the full gate would be red on the
   forge and green here.
