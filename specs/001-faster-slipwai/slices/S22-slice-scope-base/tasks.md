@@ -233,7 +233,7 @@ green, then `make lint typecheck check-structure`. Commit.
 
 ### T009 — The release says what it is (R8 · AC-S22-21)
 
-- [ ] **Rule R8** — completes `changelog.d/slice-scope-base.md` (created in T002). First line `PATCH`; states
+- [x] **Rule R8** (8098aca; with the NOT-checked line naming the trunk, D31) — completes `changelog.d/slice-scope-base.md` (created in T002). First line `PATCH`; states
   separately the local promise (a developer's checkout with no trunk fails with the command to run) and the
   pull-request promise (the forge's target is a second candidate; a detached checkout with no base keeps exit 0 and
   says NOT checked, and `fetch-depth: 0` / `GIT_DEPTH: "0"` is what makes it hold — closed by `S24`); what a project
