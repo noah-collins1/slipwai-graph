@@ -493,10 +493,13 @@ def entries() -> list[dict[str, Any]]:
     return [json.loads(line) for line in LOG.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+# The log as the runner left it: what `drive()` asks per iteration, so the whole file is read once per process and
+# again only when it is not what the runner's own append left. The verbs that read it on demand call `entries()`.
+LOGBOOK = bookkeeping.Log(LOG)
+
+
 def record(entry: dict[str, Any]) -> None:
-    LOG.parent.mkdir(parents=True, exist_ok=True)
-    with LOG.open("a", encoding="utf-8", newline="\n") as handle:
-        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    LOGBOOK.append(entry)
 
 
 def child_environment(harness: dict[str, Any] | None) -> dict[str, str]:
@@ -1215,7 +1218,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
     started_run = time.monotonic()
     iterations_this_run = 0
     # An iteration a person ended for a message is not the run failing to move, so it is not in the stuck window.
-    fingerprints = [entry["fingerprint"] for entry in entries() if not entry.get("interrupted")]
+    fingerprints = [entry["fingerprint"] for entry in LOGBOOK.entries() if not entry.get("interrupted")]
     # The fingerprint a stuck run was already given its one unblocking iteration at, so it gets exactly one.
     unblocked_at: str | None = None
     ask, attempt = first, "kick-off" if first != prompt else None
@@ -1245,8 +1248,8 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
                 unblocked_at, attempt = None, None
             ask = prompt_for(harness, " ".join(part for part in (
                 feature, kickoff if attempt == "kick-off" else None, told_argument(messages)) if part))
-            print(f"cruise: iteration {len(entries()) + 1} carries {len(messages)} message(s) from a person", flush=True)
-        iteration = len(entries()) + 1
+            print(f"cruise: iteration {len(LOGBOOK.entries()) + 1} carries {len(messages)} message(s) from a person", flush=True)
+        iteration = len(LOGBOOK.entries()) + 1
         # The index an iteration starts against is the runner's to make sound, not the iteration's: a corrupt one is
         # moved aside and rebuilt, a stale one synced, and the entry says which — before the clock starts.
         index = code_index.health()
@@ -1294,6 +1297,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             entry["interrupted"] = True
             requeue(given)
         ask, attempt = prompt, None
+        entry["bookkeeping"] = {"log_bytes": LOGBOOK.take()}
         record(entry)
         # The boundary `watch` returns on: the iteration, what it ended on, and how long it took.
         print(f"cruise: iteration {iteration} ended — {last or 'no last line'} ({duration(time.monotonic() - began)})",

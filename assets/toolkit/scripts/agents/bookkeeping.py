@@ -10,6 +10,7 @@ can have changed. It lives in the process and is never written (D56, D57).
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import time
 from pathlib import Path
@@ -19,6 +20,8 @@ Facts = tuple[Any, ...]
 # A file written less than this long before it was read may be written again within the clock's granularity
 # without a fact moving, so it is not vouched for until it is older than this at the moment it was read.
 MARGIN_NS = 2_000_000_000
+# What the log's facts are while there is no log: the runner has looked, and found nothing to read.
+ABSENT: Facts = ()
 
 
 def facts_of(status: Any, strict: bool) -> Facts | None:
@@ -74,3 +77,68 @@ class Record:
 
     def __len__(self) -> int:
         return len(self.held)
+
+
+class Log:
+    """The runner's log as the runner left it (D58): the entries it read, and the file's facts after its own append.
+
+    The runner is the log's only writer, so while the file reads exactly as it was left, the only entry not yet
+    counted is the one the runner appended itself and no byte need be read. Any difference — a size, a time, an
+    identity, a file gone — and everything remembered is forgotten and the whole file is read again, which is what
+    the answer always was. Another hand's appended entry is not tailed: a stat cannot show that the earlier bytes
+    stand. `read_bytes` is what has been read since it was last taken."""
+
+    def __init__(self, path: Path, report: Callable[[Any], Any] | None = None) -> None:
+        self.path = path
+        self.report = report or (lambda status: status)
+        self.items: list[dict[str, Any]] | None = None
+        self.facts: Facts | None = None
+        self.read_bytes = 0
+
+    def stands(self) -> bool:
+        """Whether the file reads, now, exactly as it did after the runner's last append or read."""
+        if self.items is None or self.facts is None:
+            return False
+        if self.facts == ABSENT:
+            return not self.path.is_file()
+        try:
+            return facts_of(self.report(os.stat(self.path)), False) == self.facts
+        except OSError:
+            return False
+
+    def entries(self) -> list[dict[str, Any]]:
+        """Every entry in the log: the remembered ones where the file stands, otherwise a whole read. A line that
+        does not parse raises as it always did, and leaves nothing remembered."""
+        if self.stands() and self.items is not None:
+            return self.items
+        self.items = self.facts = None
+        if not self.path.is_file():
+            self.items, self.facts = [], ABSENT
+            return self.items
+        with open(self.path, "rb") as handle:
+            status = self.report(os.fstat(handle.fileno()))
+            data = handle.read()
+        self.read_bytes += len(data)
+        items = [json.loads(line) for line in data.decode("utf-8").splitlines() if line.strip()]
+        self.items, self.facts = items, facts_of(status, False)
+        return items
+
+    def append(self, entry: dict[str, Any]) -> None:
+        """Append one entry. The facts are checked first: a log that is not as it was left is forgotten, and this
+        entry is appended to whatever the file now is."""
+        intact = self.stands()
+        if not intact:
+            self.items = self.facts = None
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open("a", encoding="utf-8", newline="\n") as handle:
+            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            handle.flush()
+            status = self.report(os.fstat(handle.fileno()))
+        if intact and self.items is not None:
+            self.items.append(entry)
+            self.facts = facts_of(status, False)
+
+    def take(self) -> int:
+        """The bytes read since the last call."""
+        taken, self.read_bytes = self.read_bytes, 0
+        return taken
