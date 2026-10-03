@@ -783,6 +783,30 @@ class Feed:
         return []
 
 
+# What `iterate` wrote the stream's marker as: (iteration, byte offset, the line, the file's identity). One at a time.
+MARKED: list[tuple[int, int, str, tuple[int, int] | None]] = []
+
+
+def stream_use(iteration: int) -> tuple[list[dict[str, Any]] | None, int]:
+    """The entry's `index_use` for `iteration` and the bytes of the stream read for it. Read from the byte the
+    marker was written at where the path is still the file written through and the bytes there are the marker line;
+    otherwise the whole stream, as before. A stream that is gone gives nothing, having read nothing (D58)."""
+    offset = 0
+    if MARKED and MARKED[0][0] == iteration:
+        _, at, marker, identity = MARKED[0]
+        try:
+            status = os.stat(STREAM)
+            with open(STREAM, "rb") as handle:
+                handle.seek(at)
+                found = handle.read(len(marker.encode("utf-8")))
+            if found == marker.encode("utf-8") and (identity is None or identity == (status.st_dev, status.st_ino)):
+                offset = at
+        except OSError:
+            pass
+    used, read = code_index.delegate_use_read(STREAM, iteration, offset)
+    return used.get(iteration), read
+
+
 def iterate(template: str, prompt: str, environment: dict[str, str], iteration: int, stream: str | None) -> str | None:
     """Run one iteration, marked as the runner's, rendering what it does into the feed as it happens — the raw
     stream kept beside it — and return its last line."""
@@ -793,7 +817,12 @@ def iterate(template: str, prompt: str, environment: dict[str, str], iteration: 
     raw = STREAM.open("a", encoding="utf-8", newline="\n") if stream else None
     try:
         if raw is not None:
-            raw.write(f"# iteration {iteration} {now()}\n")
+            # The byte the marker goes at, and the line itself, so the entry's `index_use` is read from there (D58).
+            written = os.fstat(raw.fileno())
+            marker = f"# iteration {iteration} {now()}\n"
+            MARKED[:] = [(iteration, written.st_size, marker, (written.st_dev, written.st_ino) if written.st_ino else None)]
+            raw.write(marker)
+            raw.flush()
         # Its own process group, so ending the iteration ends everything the session started — a dev server, a
         # watcher — and not only the shell that started the session.
         with subprocess.Popen(command, shell=True, cwd=ROOT, text=True, stdout=subprocess.PIPE,
@@ -1280,7 +1309,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             entry["attempt"] = attempt
         if index:
             entry["index"] = index
-        use = code_index.delegate_use(STREAM, iteration).get(iteration) if index and stream else None
+        use, stream_read = stream_use(iteration) if index and stream else (None, 0)
         if use:
             entry["index_use"] = use
             for line in code_index.use_lines(iteration, use):
@@ -1298,6 +1327,8 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             requeue(given)
         ask, attempt = prompt, None
         entry["bookkeeping"] = {"log_bytes": LOGBOOK.take()}
+        if stream:
+            entry["bookkeeping"]["stream_bytes"] = stream_read
         record(entry)
         # The boundary `watch` returns on: the iteration, what it ended on, and how long it took.
         print(f"cruise: iteration {iteration} ended — {last or 'no last line'} ({duration(time.monotonic() - began)})",

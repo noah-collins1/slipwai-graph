@@ -559,16 +559,26 @@ def sync() -> int:
 # --- what the stream says each delegate did --------------------------------------------------------------------------
 
 
-def delegate_use(stream: Path, only: int | None = None) -> dict[int, list[dict[str, Any]]]:
+def delegate_use(stream: Path, only: int | None = None, offset: int = 0) -> dict[int, list[dict[str, Any]]]:
     """Per iteration of a runner's stream, per agent — the host session, then each delegate in the order it was sent —
     how often it asked the index, which symbols it searched the source for before it had, and how often `guard`
     refused it. Claude Code marks a delegate's events with `parent_tool_use_id`; a harness whose stream does not
-    is counted as the host alone."""
+    is counted as the host alone. Read from byte `offset`, which the caller vouches is the start of a line."""
+    return delegate_use_read(stream, only, offset)[0]
+
+
+def delegate_use_read(stream: Path, only: int | None = None,
+                      offset: int = 0) -> tuple[dict[int, list[dict[str, Any]]], int]:
+    """`delegate_use`, and how many bytes of the stream were read to give it."""
     found: dict[int, list[dict[str, Any]]] = {}
-    if not stream.is_file():
-        return found
+    try:
+        with open(stream, "rb") as handle:
+            handle.seek(offset)
+            data = handle.read()
+    except OSError:
+        return found, 0
     iteration, agents = 0, {}
-    for line in stream.read_text(errors="replace", encoding="utf-8").splitlines():
+    for line in data.decode("utf-8", errors="replace").splitlines():
         if line.startswith("# iteration "):
             iteration = int(line.split()[2])
             if only is not None and iteration != only:
@@ -612,7 +622,7 @@ def delegate_use(stream: Path, only: int | None = None) -> dict[int, list[dict[s
                 symbol = symbol_search("Bash", {"command": item.get("command", "")})
                 if symbol:
                     owner["searched_first"].append(symbol)
-    return found
+    return found, len(data)
 
 
 def use_lines(iteration: int, agents: list[dict[str, Any]]) -> list[str]:
