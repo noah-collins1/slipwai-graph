@@ -144,3 +144,63 @@ class WholeRunIsTodaysTest(FactoryTestCase):
                 refused = project.run(CODEGRAPH_GATE_NO_SYNC="1", **extra)
                 self.assertEqual(refused.returncode, 1)
                 self.assertIn("fails SQLite's integrity check", refused.stderr)
+
+
+class NarrowedRunTest(FactoryTestCase):
+    """R7: on a slice branch the gate hashes what changed, and the line says so."""
+
+    def test_nothing_changed_hashes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.whole()
+            project.slice()
+            audited = project.audited()
+            self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
+            self.assertRegex(audited.result.stdout, narrowed_line(0))
+            self.assertEqual(set(project.rows()) & set(audited.opened) - OWN, set())
+
+    def test_one_edited_file_is_the_one_file_hashed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.whole()
+            project.slice()
+            edited = project.edit()
+            project.resync()
+            audited = project.audited()
+            self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
+            self.assertRegex(audited.result.stdout, narrowed_line(1))
+            self.assertEqual(set(project.rows()) & set(audited.opened) - OWN, {edited})
+
+    def test_a_committed_edit_is_still_one_and_the_pass_renews_the_next_run_to_none(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.whole()
+            project.slice()
+            project.edit()
+            project.resync()
+            project.commit()
+            self.assertRegex(project.run().stdout, narrowed_line(1))
+            self.assertRegex(project.run().stdout, narrowed_line(0))
+
+    def test_an_index_behind_the_tree_is_synced_first_and_the_edit_hashed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.whole()
+            project.slice()
+            project.edit()
+            synced = project.run()
+            self.assertEqual(synced.returncode, 0, synced.stderr)
+            self.assertRegex(synced.stdout, narrowed_line(1, "synced 1 file(s) first; "))
+
+    def test_hold_without_repairing_a_stale_file_fails_with_todays_report(self) -> None:
+        """Green today as well — the whole run says this too — and it must say it on the narrowed path."""
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.whole()
+            project.slice()
+            edited = project.edit()
+            failed = project.run(CODEGRAPH_GATE_NO_SYNC="1")
+            self.assertEqual(failed.returncode, 1)
+            self.assertIn("check-codegraph: the code index no longer describes this working tree", failed.stderr)
+            self.assertIn("1 tracked file(s) changed since they were indexed:", failed.stderr)
+            self.assertIn(f"- {edited}", failed.stderr)

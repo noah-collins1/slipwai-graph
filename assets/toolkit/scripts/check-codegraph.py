@@ -38,12 +38,16 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 
 def project_root(script: Path, depth: int) -> Path:
@@ -62,6 +66,10 @@ def project_root(script: Path, depth: int) -> Path:
 
 ROOT = project_root(Path(__file__).resolve(), 1)
 INDEX = ROOT / ".codegraph/codegraph.db"
+# What the last whole comparison vouched for, so that a run on a `slice/<id>` branch need hash only what moved.
+MEMORY = ROOT / ".codegraph/gate-memory.json"
+SLICE_BRANCH = re.compile(r"^slice/[A-Za-z0-9][A-Za-z0-9._-]*$")
+CI_MARKERS = ("CI", "GITHUB_ACTIONS", "GITLAB_CI")
 # How many offending paths to name before summarising the rest: enough to recognise the shape of
 # what is missing, short enough that the gate's output stays readable.
 LISTED = 8
@@ -120,7 +128,11 @@ def indexed() -> dict[str, tuple[str, float]] | None:
     return {str(path): (str(digest), float(at or 0)) for path, digest, at in rows}
 
 
+HASHED = [0]  # how many files this run read to compare, said on a narrowed pass line
+
+
 def digest(path: Path) -> str:
+    HASHED[0] += 1
     sha = hashlib.sha256()
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(1 << 20), b""):
@@ -143,9 +155,10 @@ def listing(label: str, paths: list[str]) -> list[str]:
     return lines
 
 
-def drift() -> tuple[dict[str, tuple[str, float]], list[str], list[str]] | None:
+def drift(only: set[str] | None = None) -> tuple[dict[str, tuple[str, float]], list[str], list[str]] | None:
     """What the index holds, and the tracked files it has never seen or read before they changed; None where
-    there is no index, no `files` table to read, or no checkout to compare it with."""
+    there is no index, no `files` table to read, or no checkout to compare it with. `only` narrows the judgement to
+    those paths and nothing else; with none, every tracked file is judged, which is what `behind()` asks."""
     if not INDEX.is_file():
         return None
     rows = indexed()
@@ -160,7 +173,7 @@ def drift() -> tuple[dict[str, tuple[str, float]], list[str], list[str]] | None:
     last = max((at for _, at in rows.values()), default=0.0)
     missing, changed = [], []
     for path in paths:
-        if Path(path).suffix not in suffixes:
+        if Path(path).suffix not in suffixes or (only is not None and path not in only):
             continue
         absolute = ROOT / path
         if not absolute.is_file():
@@ -193,12 +206,138 @@ def code_index():
     return module
 
 
-def main() -> int:
-    if not INDEX.is_file():
-        print("check-codegraph: no .codegraph/ — this project carries no code index; nothing to "
-              "check")
+
+
+def git_output(*arguments: str) -> bytes | None:
+    """What git printed for these arguments in the project, or None where it could not answer."""
+    try:
+        done = subprocess.run(["git", *arguments], cwd=ROOT, capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return done.stdout
+
+
+def paths_of(output: bytes | None) -> list[str] | None:
+    return None if output is None else [path for path in output.decode("utf-8", "replace").split("\0") if path]
+
+
+def narrowable() -> bool:
+    """A developer's checkout of a `slice/<id>` branch: the one place the gate compares only what changed. The
+    trunk, any other branch, a detached `HEAD` and a run under any CI marker are compared whole, as ever."""
+    if any(os.environ.get(marker) for marker in CI_MARKERS):
+        return False
+    branch = git_output("symbolic-ref", "--short", "-q", "HEAD")
+    return branch is not None and SLICE_BRANCH.match(branch.decode("utf-8", "replace").strip()) is not None
+
+
+def gate_key() -> str | None:
+    """A digest of this script and of the one it loads: a changed gate does not trust an older gate's memory."""
+    try:
+        parts = [(Path(__file__).resolve().parent / name).read_bytes()
+                 for name in ("check-codegraph.py", "agents/code_index.py")]
+    except OSError:
+        return None
+    return "-".join(hashlib.sha256(part).hexdigest() for part in parts)
+
+
+def remember(rows: dict[str, tuple[str, float]], whole: float | None = None) -> None:
+    """Record what this passing run vouched for. Never fatal: a gate that cannot take notes is merely slower."""
+    if any(os.environ.get(marker) for marker in CI_MARKERS):
+        return
+    key, head = gate_key(), git_output("rev-parse", "HEAD")
+    dirty = paths_of(git_output("diff", "--name-only", "--no-renames", "-z", "--relative", "HEAD", "--"))
+    if key is None or head is None or dirty is None:
+        return
+    try:
+        stat = INDEX.stat()
+        record = {"key": key, "commit": head.decode().strip(), "dirty": dirty,
+                  "rows": {path: found[0] for path, found in rows.items()}, "database": [stat.st_dev, stat.st_ino],
+                  "whole": time.time() if whole is None else whole}
+        beside = MEMORY.with_name(MEMORY.name + ".tmp")
+        beside.write_text(json.dumps(record))
+        os.replace(beside, MEMORY)
+    except OSError:
+        pass
+
+
+def remembered() -> dict[str, Any] | None:
+    try:
+        record = json.loads(MEMORY.read_text())
+    except (OSError, ValueError):
+        return None
+    return record if isinstance(record, dict) else None
+
+
+def candidates_of(record: dict[str, Any]) -> set[str] | None:
+    """The tracked paths a narrowed run must hash, or None where git cannot say what changed."""
+    changed = paths_of(git_output("diff", "--name-only", "--no-renames", "-z", "--relative", str(record["commit"]),
+                                  "--"))
+    if changed is None:
+        return None
+    return set(changed)
+
+
+def moment_of(seconds: float) -> str:
+    return moment(seconds * 1000)
+
+
+def narrowed(tooling: Any, record: dict[str, Any]) -> int | None:
+    """The comparison of a `slice/<id>` branch: only the candidates are hashed. None where it cannot be made."""
+    rows = indexed()
+    candidates = candidates_of(record)
+    if rows is None or candidates is None:
+        return None
+    repairing = os.environ.get("CODEGRAPH_GATE_NO_SYNC") != "1" and tooling.route() is not None
+    HASHED[0] = 0
+    found = drift(candidates)
+    assert found is not None
+    synced = ""
+    if (found[1] or found[2]) and repairing:
+        done, said = tooling.cli("sync", ".")
+        synced = (f"synced {len(found[1]) + len(found[2])} file(s) first; " if done
+                  else f"`codegraph sync` did not take ({said}); ")
+        rows = indexed()
+        candidates = candidates_of(record)
+        if rows is None or candidates is None:
+            return None
+        HASHED[0] = 0
+        found = drift(candidates)
+        assert found is not None
+    return conclude(found, synced, f"hashed {HASHED[0]} of {len(found[0])} file(s), only what changed since the "
+                    f"last whole comparison ({moment_of(float(record['whole']))}); the integrity check was not "
+                    "run here and runs in the full gate", float(record["whole"]))
+
+
+def conclude(found: tuple[dict[str, tuple[str, float]], list[str], list[str]], synced: str, said: str,
+             whole: float | None = None) -> int:
+    """The verdict on a comparison, and the memory a pass leaves behind."""
+    rows, missing, changed = found
+    paths = tracked() or []
+    last = max((at for _, at in rows.values()), default=0.0)
+    # An index holding nothing describes nothing, and cannot say which files it should hold — the
+    # suffixes above come from what it has read. In a checkout with tracked files that is the same
+    # failure as a missing one, reported rather than passed for want of anything to compare.
+    if not rows and paths:
+        print("check-codegraph: the code index holds no files at all — it was emptied, or "
+              "nothing ever finished indexing\n", file=sys.stderr)
+        print(RESTORE, file=sys.stderr)
+        return 1
+    if not missing and not changed:
+        print(f"check-codegraph: {synced}index current — {said or f'{len(rows)} file(s), indexed {moment(last)}'}")
+        remember(rows, whole)
         return 0
-    tooling = code_index()
+    report = [f"check-codegraph: {synced}the code index no longer describes this working tree",
+              f"  last indexed: {moment(last)}"]
+    if missing:
+        report += listing("the index has never seen", missing)
+    if changed:
+        report += listing("changed since they were indexed", changed)
+    print("\n".join([*report, "", RESTORE]), file=sys.stderr)
+    return 1
+
+
+def whole(tooling: Any) -> int:
+    """Every tracked file compared, the integrity check run and a corrupt index repaired: today's gate."""
     try:
         problem = tooling.damage()
     except tooling.Unopened as error:
@@ -237,28 +376,21 @@ def main() -> int:
                   else f"`codegraph sync` did not take ({said}); ")
         found = drift()
         assert found is not None
-    rows, missing, changed = found
-    paths = tracked() or []
-    last = max((at for _, at in rows.values()), default=0.0)
-    # An index holding nothing describes nothing, and cannot say which files it should hold — the
-    # suffixes above come from what it has read. In a checkout with tracked files that is the same
-    # failure as a missing one, reported rather than passed for want of anything to compare.
-    if not rows and paths:
-        print("check-codegraph: the code index holds no files at all — it was emptied, or "
-              "nothing ever finished indexing\n", file=sys.stderr)
-        print(RESTORE, file=sys.stderr)
-        return 1
-    if not missing and not changed:
-        print(f"check-codegraph: {synced}index current — {len(rows)} file(s), indexed {moment(last)}")
+    return conclude(found, synced, "")
+
+
+def main() -> int:
+    if not INDEX.is_file():
+        print("check-codegraph: no .codegraph/ — this project carries no code index; nothing to "
+              "check")
         return 0
-    report = [f"check-codegraph: {synced}the code index no longer describes this working tree",
-              f"  last indexed: {moment(last)}"]
-    if missing:
-        report += listing("the index has never seen", missing)
-    if changed:
-        report += listing("changed since they were indexed", changed)
-    print("\n".join([*report, "", RESTORE]), file=sys.stderr)
-    return 1
+    tooling = code_index()
+    record = remembered() if narrowable() else None
+    if record is not None:
+        done = narrowed(tooling, record)
+        if done is not None:
+            return done
+    return whole(tooling)
 
 
 if __name__ == "__main__":
