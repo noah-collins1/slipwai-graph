@@ -334,3 +334,59 @@ and with what provenance was decided as D11 (AC-S00-6). AC-S00-7 states what the
 - **AC-S00-7** — Given the slice's diff, when it is reviewed, then nothing under `assets/`, `src/slipwai/`,
   `catalog.json` or the CLI changed: the slice is not user-visible, adds no `changelog.d/` fragment and leaves
   `VERSION` at `1.5.2.dev0`.
+
+### S20-slice-scope-root
+
+**Gaps reviewed** 2026-10-03, cruise iteration 3, host with `drive-skipper` for D18: the three examples in
+`story-split.md` and the D17 clause against the acceptance-criteria checklist — measurability,
+precondition/trigger/outcome, negative paths, completion. Eight gaps, all closed as the criteria below: "owning
+every path not under another deployable" contradicted the `Makefile` example and named no host surface
+(D18; AC-S20-2 to AC-S20-5); the delivery directory outside `docs/` had no rule at a root deployable (AC-S20-3);
+the survey pages the ladder makes a slice write were unplaced (AC-S20-4); the root manifest and lock were
+unplaced (AC-S20-6); a root deployable beside a subdirectory one had no owner rule (AC-S20-7); the spellings of
+the root path were unstated (AC-S20-8); "answers unchanged" had no measurement (AC-S20-9); and reading the
+register id whole would have turned records written under the bare prefix red (D19; AC-S20-10 to AC-S20-12).
+AC-S20-13 states the release level. Unless a criterion says otherwise, the project is one adopted at `.` with one
+deployable and `layout.delivery` set, and the check runs on a `slice/<id>` branch.
+
+- **AC-S20-1** — Given a changed file under `tests/`, `src/`, or a root `scripts/` or `docs/` directory, when
+  `make -f delivery/Makefile check-slice-scope` runs, then it exits 0 and prints *touches only what one slice may*.
+- **AC-S20-2** — Given a changed root `Makefile`, `project.json`, a file under `.specify/`, a file under
+  `.github/workflows/`, `AGENTS.md`, or a file under `.claude/` — one at a time — when the check runs, then it
+  exits non-zero naming the path with today's *outside every deployable … Land it on `main` before the fan-out*
+  message. The CI names held are `.github/`, `.gitea/`, `.forgejo/`, `.gitlab/`, `.gitlab-ci.yml` and
+  `project.json`'s `ci.gate`; the harness names are `AGENTS.md`, `CLAUDE.md`, `.claude/`, `.codex/`, `.cursor/`,
+  `.gemini/`, `.opencode/`.
+- **AC-S20-3** — Given a changed file under `<delivery>/scripts/`, `<delivery>/skills/` or `<delivery>/commands/`,
+  or `<delivery>/Makefile`, or `<delivery>/baseline.json`, when the check runs, then it is refused with the same
+  message; and a file under `<delivery>/docs/` other than the model, the canvas, a mockup and a new ADR keeps
+  today's *the docs are the host's* message.
+- **AC-S20-4** — Given a changed `<delivery>/survey/pinned.md` or `<delivery>/survey/running.md`, when the check
+  runs, then it is green; given any other page under `<delivery>/survey/`, then it is refused.
+- **AC-S20-5** — Given a path listed in `<delivery>/.written`, when it changes, then it is refused; given a path
+  on the fixed list whose line was deleted from `.written`, then it is still refused; given no `.written` file,
+  then the fixed list still holds and the check does not fail for its absence.
+- **AC-S20-6** — Given a changed root `pyproject.toml` (or `package.json`) or its lock, when the check runs, then
+  it is green, as a manifest inside `apps/<service>/` is today.
+- **AC-S20-7** — Given a second deployable of kind `service` under a subdirectory and a model block naming
+  another service for the slice, when a path under that subdirectory changes, then it gets today's *service … is
+  not slice …'s* message; and a path elsewhere falls to the root deployable and is green.
+- **AC-S20-8** — Given the root deployable's `path` recorded as `./` instead of `.`, when the check runs, then
+  every answer above is the same; given a deployable with an empty or missing `path`, then it owns nothing, as
+  today.
+- **AC-S20-9** — Given a generated project with its deployables under `apps/`, when the check runs, then every
+  assertion in `tests/test_parallel_slices.py`'s `SliceScopeGateTest` passes with the test unchanged, including
+  a root `Makefile` refused.
+- **AC-S20-10** — Given a register row whose first cell is `` `S00-run-path` `` and an adversary-log row headed
+  `## S00-run-path · …`, when `make check-decisions` runs, then it finds the row and passes.
+- **AC-S20-11** — Given the same register row and an adversary-log row headed `## S00 · …` (the bare prefix, as
+  D17 wrote them), when `make check-decisions` runs, then it still passes; given neither heading, then it fails
+  naming `S00-run-path`.
+- **AC-S20-12** — Given the same register row, when `make check-benchmark` runs, then it reads the record at
+  `slices/S00-run-path/benchmark.json`, or at `slices/S00/benchmark.json` where only that exists, and warns only
+  where neither does; a register's header and separator rows are still not ids, and an id with no slug reads as
+  today.
+- **AC-S20-13** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
+  whose first line is `PATCH`, saying what changed and that it asks nothing of a repository already generated;
+  `VERSION` stays `1.5.2.dev0`; nothing under `delivery/scripts/` changed (the fix reaches this repository
+  through a person's `slipwai migrate`, D9); and `make verify` and `make -f delivery/Makefile verify` are green.

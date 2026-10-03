@@ -117,6 +117,10 @@ that cannot delegate takes the earliest ready slice in split order and names the
   adoption (or says in writing that `slice/<id>` branches may be cut from `adopt-method`) **and** the
   slice-scope checker's root-path defect (`S20-slice-scope-root`, D13) has reached this repository through
   `slipwai migrate`; until both, no `slice/<id>` branch here passes `check-slice-scope`.
+- **`survey/pinned.md` on a slice branch where the adoption is under `apps/`** (found deciding D18): the Pin
+  stage makes a slice add its row to `<delivery>/survey/pinned.md`, and `check-slice-scope` refuses that file as
+  *outside every deployable* in a repository whose deployables are not at `.` — today and after `S20`, which is
+  held to the root case. A candidate PATCH slice for the completion audit to place; not planned yet.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 
