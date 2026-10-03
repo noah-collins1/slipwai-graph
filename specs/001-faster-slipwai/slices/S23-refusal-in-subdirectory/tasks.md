@@ -71,7 +71,7 @@ Every implementation task starts from the green committed suite its predecessor 
 
 ### T002 — A person's uncommitted change is refused by the project's name for it (R1 · AC-S23-1, -2)
 
-- [ ] **Rule R1** — a person's uncommitted change to a file the run writes is refused where the project sits in
+- [x] **Rule R1** (`45184be`) — a person's uncommitted change to a file the run writes is refused where the project sits in
   `sub/`, the path printed as the project spells it. **This is the first commit that changes `src/slipwai/`, so the
   R7 fragment lands in it** (a first draft; T008 completes the wording).
 
@@ -106,7 +106,7 @@ is in this commit, the first user-visible change (Principle VIII, AC-S23-10).
 
 ### T003 — What slipwai left is slipwai's (R2 · AC-S23-3, -4)
 
-- [ ] **Rule R2** — a run's own uncommitted regeneration is recorded, project-relative, and a later run writes over
+- [x] **Rule R2** (`16cd0c9`) — a run's own uncommitted regeneration is recorded, project-relative, and a later run writes over
   it; a person's edit on top of it is refused. Needs T002 (R1's change is what makes `stamp()` recognise the path).
 
 **Tests** (in `tests/test_uncommitted_subdirectory.py`):
@@ -131,7 +131,7 @@ reversal seen. If a test fails with R1's change in place, stop and report; do no
 
 ### T004 — What is outside the project is not this run's (R3 · AC-S23-5)
 
-- [ ] **Rule R3** — a change elsewhere in the repository refuses nothing and is never recorded. Needs T003 (same
+- [x] **Rule R3** (`aedacf3`) — a change elsewhere in the repository refuses nothing and is never recorded. Needs T003 (same
   test file, green suite).
 
 **RED** (in `tests/test_uncommitted_subdirectory.py`):
@@ -157,7 +157,7 @@ functions in the same module, on green.
 
 ### T005 — An earlier factory's leftovers are refused once (R5 · AC-S23-9)
 
-- [ ] **Rule R5** — an uncommitted regenerated file with no record is not told apart from a person's edit. Needs
+- [x] **Rule R5** (`e004e34`) — an uncommitted regenerated file with no record is not told apart from a person's edit. Needs
   T004 (same test file; the filter is in place).
 
 **Tests** (in `tests/test_uncommitted_subdirectory.py`):
@@ -178,7 +178,7 @@ stop and report; do not edit `uncommitted.py`.
 
 ### T006 — Wherever the project sits (R4 · AC-S23-6)
 
-- [ ] **Rule R4** — depth, a name git would quote, and a symbolic link change nothing. Needs T005 (the rules R1,
+- [x] **Rule R4** (`8b592d7`) — depth, a name git would quote, and a symbolic link change nothing. Needs T005 (the rules R1,
   R2 and R3 it repeats are in place).
 
 **Tests** (new `tests/test_uncommitted_places.py`, each a small run of the same three checks — R1e1, R2e2 and R3e1 —
@@ -203,7 +203,7 @@ placement fails with the production code as it stands, stop and report.
 
 ### T007 — At the top, and without git, every answer is today's (R6 · AC-S23-7, -8)
 
-- [ ] **Rule R6** — no change where the project is the repository's top, or is in no repository. **Every example is
+- [x] **Rule R6** (`d91b989`) — no change where the project is the repository's top, or is in no repository. **Every example is
   a hold: green before T002 and after; none is a RED, and each is written as a hold, saying so.** The task adds
   proof of what T002–T004 must not break. Needs T006 (same new file).
 
@@ -230,7 +230,7 @@ over `src/slipwai/uncommitted.py` (`git show <T001 commit>:src/slipwai/uncommitt
 
 ### T008 — The release says what it is (R7 · AC-S23-10)
 
-- [ ] **Rule R7** — one `PATCH` fragment, labelled experimental; `VERSION` unchanged; `add-service` untouched.
+- [x] **Rule R7** (`3f45d00`) — one `PATCH` fragment, labelled experimental; `VERSION` unchanged; `add-service` untouched.
   The fragment began in T002; this task completes its wording and adds the one sentence of documentation.
 
 **RED:** none — `tests/test_changelog.py` is already in the suite and passes from T002. The checks are R7e1 and
@@ -252,6 +252,14 @@ top of its repository.
 over the slice shows e2. Commit, level line (PATCH, `VERSION` not raised because it already carries 1.5.2.dev0).
 
 **Files:** `changelog.d/refusal-in-subdirectory.md`, `docs/adopting.md`.
+
+**Implementation record (host, cruise iteration 6).** T002–T008 each ran as one `drive-implement` delegate on
+sonnet, fresh context, boundary `rule`, cycle `rule`, no fan-out, one after another. What differs from the task
+text: with the project in `sub/` the candidate for the project's own directory is named `sub`, not `shop`, so
+R1e2, R2e1 and R5e1 confirm `sub`; `tests/test_uncommitted_places.py` adopts with `--name shop`, because a
+directory named `dé pt` is not a name adoption accepts on its own; and R3e2 uses `delivery/agents/drive-implement.md`
+at the repository's top with `--confirm sub` rather than `delivery/docs/convergence.md` with `--refresh`, so that the
+run records something and the *not recorded* assertion can fail (a confirm runs the same refresh).
 
 ---
 
