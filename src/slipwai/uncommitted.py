@@ -52,7 +52,7 @@ def changed(root: Path) -> list[str] | None:
         if len(entry) > 3:
             if entry[3:].startswith(prefix):
                 paths.append(entry[3:].removeprefix(prefix))
-            if entry[0] in "RC" and fields:  # a rename or copy names where it came from next
+            if set(entry[:2]) & set("RC") and fields:  # a rename or copy, in either column, names its origin next
                 fields.pop(0)
     return paths
 
