@@ -1091,18 +1091,21 @@ two iterations silently.*
 - **AC-S02-82** — Given a `Scope:` token holding more than one id-shaped head — a range `S01-S03`, two ids joined
   by a full stop — or any digit that is not ASCII, when `check-decisions` runs, then it exits 1 naming the entry,
   and the verb carries the entry as global (C2, C3). (D63)
-- **AC-S02-83** — Given an entry with more than one `Scope:` line, or more than one `Status:` line, at the start
-  of a line, when `check-decisions` runs, then it exits 1 naming the entry and which field is said twice, and the
-  verb carries the entry whatever either line says; lines are divided at line feeds only, so a form feed or U+2028
-  inside a field does not make a second field (T022, C7, C8). (D63)
+- **AC-S02-83** — *Reworded by D65.* Given an entry with more than one `Scope:` line at the start of a line, when
+  `check-decisions` runs, then it exits 1 naming the entry; given more than one `Status:` line, then it prints a
+  `note:` naming the entry and its exit code is what it would have been; in both cases the verb carries the entry
+  whatever either line says. Lines are divided at line feeds only, so a form feed or U+2028 inside a field does not
+  make a second field (T022, C7, C8). (D63, D65)
 - **AC-S02-84** — Given `--scope` with a value that is not id-shaped — empty, lower case, a path, a trailing
   space, another flag — or any argument the script does not know (`--scope=S02`, `-scope`), when it runs, then it
   prints the usage line on stderr and exits 2, and never runs the gate in its place; `--help` prints the usage and
   exits 0; with no argument, and with `--adversary-baseline`, the script does what it did (C4, C5). (D63)
-- **AC-S02-85** — Given a log holding a block under a `## ` heading the checker cannot read as `## D<n> —
-  <question>`, or a byte-order mark before the first entry, when the verb runs, then that block is printed in its
-  place and counted on the closing line as carried for want of a heading it can read, what was printed and what
-  was counted agree, and the verb exits 1 saying the log does not pass `check-decisions` (C6). (D63)
+- **AC-S02-85** — *Reworded by D65.* Given a log holding a block under a `## ` heading the checker cannot read as
+  `## D<n> — <question>`, when the verb runs, then that block is printed in its place and counted on the closing
+  line as carried for want of a heading it can read, what was printed and what was counted agree, and the verb
+  exits 1 saying the log does not pass `check-decisions`. A byte-order mark at the start of the file is read past
+  by the gate and the verb alike. And given any log with no `Scope:` line that is UTF-8, then the gate's exit code
+  and findings are the earlier checker's (C6). (D63, D65)
 - **AC-S02-86** — Given a `decisions.md` that is not UTF-8, when the gate or the verb runs, then it prints one
   line naming the file and exits 1, with no traceback (C9). (D63)
 - **AC-S02-87** — Given an index whose `files` table holds no row, when `health()` ends `current`, then it writes

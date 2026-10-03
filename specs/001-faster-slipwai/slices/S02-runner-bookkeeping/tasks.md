@@ -621,7 +621,7 @@ below is either.
 
 ### T020 — [LOW] The stream's identity is a second witness no example isolates (D58 · AC-S02-31)
 
-- [ ] **Found, by mutation.** `stream_use()` (`assets/toolkit/scripts/agents/cruise.py:796`–`813`) reads from the marker's
+- [x] *(closed by T025, 4cd0398)* **Found, by mutation.** `stream_use()` (`assets/toolkit/scripts/agents/cruise.py:796`–`813`) reads from the marker's
   byte only where the bytes there are the marker line *and* the path is still the file written through. With the
   identity clause removed (`if found == marker.encode("utf-8"):`) all six examples of `tests/test_runner_stream.py`
   pass; with the marker clause removed and the identity kept, only *cut short* goes red, so *replaced* is held by
@@ -634,7 +634,7 @@ below is either.
 
 ### T021 — [LOW] `health()`'s three `except Exception` arms are run by no example (D59 · AC-S02-37, -40; constitution III, V)
 
-- [ ] **Found, by mutation.** In `assets/toolkit/scripts/agents/code_index.py`: `compare()`'s arm (`:245`), `memory_of()`'s
+- [x] *(closed by T025, 4cd0398)* **Found, by mutation.** In `assets/toolkit/scripts/agents/code_index.py`: `compare()`'s arm (`:245`), `memory_of()`'s
   (`:258`) and `renew()`'s (`:273`). Each narrowed to an exception nothing raises (`except ZeroDivisionError:`), and
   `compare()`'s made to answer *current* (`return Compared(([], [], []), 0, None)`): `test_health_memory`,
   `test_health_memory_states` and `test_health_narrowed` pass whole all four times (20 tests each). The gate's own
@@ -650,7 +650,7 @@ below is either.
 
 ### T022 — [LOW] An entry with two `Scope:` lines passes the gate, and the verb reads the first (the hand's note 2 at the demo · D60)
 
-- [ ] The hand wrote `Scope: S11-render-once` followed by `Scope: global` in one entry: `check-decisions` passed and
+- [x] *(closed by T026, d368f3a)* The hand wrote `Scope: S11-render-once` followed by `Scope: global` in one entry: `check-decisions` passed and
   `--scope S02` left the entry out. D60 says the first line is the one read and that the filter never drops what it
   cannot place; an entry that says two things is one it cannot place. **GREEN closes the class:** an entry whose scope
   the checker cannot read as one statement — a second `Scope:` line among them — is refused by the gate naming it, and
@@ -662,7 +662,7 @@ Each is a failing test first, then the smallest change; each GREEN closes its cl
 
 ### T023 — [HIGH] A control changed between two iterations parks the run; across a park it is named (adversary A2 · D64 · AC-S02-70 … -79)
 
-- [ ] `drive()` in `assets/toolkit/scripts/agents/cruise.py` keeps the last after-signature and whether `park()` has
+- [x] *(cc4c3ee)* `drive()` in `assets/toolkit/scripts/agents/cruise.py` keeps the last after-signature and whether `park()` has
   returned since, and compares it with the next before-signature through `controls_changed()`: no park between → the
   run parks before the iteration starts (no entry, the number not consumed, a message already taken rides on); a park
   between → one `cruise:` line in the feed and `controls_changed_between` on the entry. D64 says what parks, what is
@@ -673,24 +673,31 @@ Each is a failing test first, then the smallest change; each GREEN closes its cl
 
 ### T024 — [HIGH] The runner never blocks on a path of its own that is not a regular file, and names a changed control first (adversary A1, B1, A3 · D63 · AC-S02-80)
 
-- [ ] `stream_use()` and the log's reader and appender (`cruise.py`, `bookkeeping.py`), `delegate_use_read()`
+- [x] *(a6ac3ce)* `stream_use()` and the log's reader and appender (`cruise.py`, `bookkeeping.py`), `delegate_use_read()`
   (`code_index.py`). Reproductions: `/tmp/s02-adv-A/probes5.sh` (`gate-and-stream-fifo`, `gate-and-log-fifo`),
   `/tmp/s02-adv-B/p11.sh`. Every test that could hang runs its child under a timeout, so a failure is an assertion.
 
 ### T025 — [LOW] `health()` says what it did and writes what a gate would; guard clauses are seen red or gone (adversary B2, B3; T020, T021 · AC-S02-87, -88)
 
-- [ ] `code_index.py` (`Compared.said()`, `renew()`, the three `except` arms), `cruise.py` (`stream_use()`'s identity
+- [x] *(4cd0398)* `code_index.py` (`Compared.said()`, `renew()`, the three `except` arms), `cruise.py` (`stream_use()`'s identity
   clause). Reproductions: `/tmp/s02-adv-B/p14.sh`, `p1.sh` (P3, P6).
 
 ### T026 — [HIGH] A `Scope:` the checker cannot read as one statement is refused by the gate and carried by the verb; ids meet on their head (adversary C1, C2, C3, C7, C8; T022 · D63 · AC-S02-81 … -83)
 
-- [ ] `assets/toolkit/scripts/check-decisions.py` (`meets()`, `SLICE_ID`, `scope_tokens`, `scope_finding`, the entry
+- [x] *(d368f3a — the Status and byte-order-mark refusals it built are withdrawn by D65, T028)* `assets/toolkit/scripts/check-decisions.py` (`meets()`, `SLICE_ID`, `scope_tokens`, `scope_finding`, the entry
   parser's line splitting). Reproduction: `python3 /tmp/s02-adv-C/repro.py`, blocks C1 to C3, C7, C8.
 
 ### T027 — [MEDIUM] The verb never answers a call it did not understand with a green run, never drops a block, never ends on a traceback (adversary C4, C5, C6, C9 · D63 · AC-S02-84 … -86)
 
-- [ ] `check-decisions.py` (argument handling, the verb's printing and closing line, the read). Reproduction:
+- [x] *(5c58152)* `check-decisions.py` (argument handling, the verb's printing and closing line, the read). Reproduction:
   `repro.py`, blocks C4 to C6, C9.
+
+### T028 — [MEDIUM] The gate refuses nothing a log written before this release can contain (D65 · AC-S02-57, -83, -85)
+
+- [ ] `check-decisions.py`: a second `Status:` line is a `note:`, not a finding; a byte-order mark at the start of the
+  file is read past by the gate and the verb; a differential example holds the gate's exit code and findings to the
+  checker at `596740f` over a set of logs with no `Scope:` line. The fragment gains the sentences T026 and T027 handed
+  back, as D65 leaves them.
 
 *(T022 is closed by T026; T020 and T021 by T025.)*
 
