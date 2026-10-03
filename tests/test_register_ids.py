@@ -2,10 +2,12 @@
 
 `check-decisions.py` reads a feature's register at `specs/<feature>/slices/README.md`, and held every done slice to
 a row in the adversary log. Read as the bare prefix, a slice with a slug was named wrongly and its row looked for
-under the wrong heading. A row headed with the whole id or with the bare prefix both satisfy it (decisions D17, D19).
+under the wrong heading. `check-benchmark` looks for the slice's record the same way: at `slices/<whole id>/`,
+then at `slices/<prefix>/`. A row headed with the whole id or with the bare prefix both satisfy it (decisions D17, D19).
 """
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -64,3 +66,47 @@ class RegisterIdsTest(FactoryTestCase):
             self.assertIn("no row for S1, which is done", refused.stderr)
             self.assertNotIn("Slice", refused.stderr)
             self.assertNotIn("---", refused.stderr)
+
+
+def warnings(repo: Path) -> list[str]:
+    result = subprocess.run(["python3", "scripts/agents/benchmark.py", "check"], cwd=repo, text=True,
+                            capture_output=True)
+    assert result.returncode == 0, result.stderr
+    return [line for line in result.stderr.splitlines() if "slices/" in line]
+
+
+def record_for(repo: Path, ident: str, folder: str | None) -> list[str]:
+    """Register `ident` as done, leave a closed record under `slices/<folder>/` (none when None), and run the check."""
+    slices = repo / "specs/f/slices"
+    slices.mkdir(parents=True, exist_ok=True)
+    (slices / "README.md").write_text(f"| Slice | Accepted |\n|---|---|\n| `{ident}` | 2026-09-22 |\n")
+    if folder:
+        (slices / folder).mkdir(parents=True, exist_ok=True)
+        (slices / folder / "benchmark.json").write_text(json.dumps({"slice": folder, "stages": [], "shape": {}}))
+    return warnings(repo)
+
+
+class RecordLookupTest(FactoryTestCase):
+    def test_a_record_under_the_whole_id_is_found(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "recwhole", "standard", "python")
+            self.assertEqual(record_for(repo, "S00-run-path", "S00-run-path"), [])
+
+    def test_a_record_under_the_bare_prefix_is_still_found(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "recbare", "standard", "python")
+            self.assertEqual(record_for(repo, "S00-run-path", "S00"), [])
+
+    def test_no_record_is_one_warning_naming_the_whole_id(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "recnone", "standard", "python")
+            found = record_for(repo, "S00-run-path", None)
+            self.assertEqual(len([line for line in found if "is done but has no" in line]), 1, found)
+            self.assertIn("specs/f/slices/S00-run-path is done but has no benchmark.json", found[0])
+
+    def test_a_register_id_without_a_slug_is_held_as_before(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "recplain", "standard", "python")
+            self.assertEqual(record_for(repo, "S1", "S1"), [])
+            (repo / "specs/f/slices/S1/benchmark.json").unlink()
+            self.assertIn("specs/f/slices/S1 is done but has no benchmark.json", record_for(repo, "S1", None)[0])
