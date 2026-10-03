@@ -243,10 +243,38 @@ def bases_of(name: str) -> tuple[bool, str | None]:
         return exists, None
     newest = bases[0]
     for candidate in bases[1:]:
-        # `--is-ancestor` exits 0, with nothing printed, when the first commit is an ancestor of the second.
-        if git("merge-base", "--is-ancestor", newest, candidate) is not None:
+        if is_ancestor(newest, candidate):
             newest = candidate
     return exists, newest
+
+
+def is_ancestor(older: str, newer: str) -> bool:
+    """`--is-ancestor` exits 0, with nothing printed, when the first commit is an ancestor of the second."""
+    return git("merge-base", "--is-ancestor", older, newer) is not None
+
+
+def target_base(trunk: str) -> str | None:
+    """The base under the name CI says the pull request targets (`GITHUB_BASE_REF`; GitLab's
+    `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`): the first of the two that is usable, has a ref, and is not the
+    trunk's own name. A branch can push what it likes but cannot change its target."""
+    for variable in ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"):
+        name = usable(os.environ.get(variable))
+        if name and name != trunk:
+            exists, base = bases_of(name)
+            if exists:
+                return base
+    return None
+
+
+def older_of(first: str, second: str | None) -> str:
+    """Across two names the older base: the one that is an ancestor of the other, else where the two histories
+    meet, else the first — the target can only move the base back."""
+    if second is None or second == first or is_ancestor(first, second):
+        return first
+    if is_ancestor(second, first):
+        return second
+    found = git("merge-base", first, second)
+    return found.strip() if found and found.strip() else first
 
 
 def usable(value: object) -> str | None:
@@ -284,7 +312,7 @@ def merge_base() -> Base:
     for name in names:
         exists, base = bases_of(name)
         if exists:
-            return Base(base, name, True, passed_over)
+            return Base(older_of(base, target_base(name)) if base else base, name, True, passed_over)
     return Base(None, names[0], False, passed_over)
 
 

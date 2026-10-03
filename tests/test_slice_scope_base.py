@@ -13,11 +13,11 @@ from test_slice_scope_root import SliceScopeFixtures, git
 
 
 class SliceScopeBaseTest(SliceScopeFixtures):
-    def run_gate(self, repo: Path) -> subprocess.CompletedProcess:
+    def run_gate(self, repo: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
         quiet = dict.fromkeys(("GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME", "GITHUB_BASE_REF",
                                "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"), "")
         return subprocess.run(["python3", self.script], cwd=repo, text=True, capture_output=True,
-                              env={**os.environ, **quiet})
+                              env={**os.environ, **quiet, **(env or {})})
 
     def commit(self, repo: Path, path: str) -> None:
         (repo / path).parent.mkdir(parents=True, exist_ok=True)
@@ -25,8 +25,8 @@ class SliceScopeBaseTest(SliceScopeFixtures):
         git(repo, "add", "--", path)
         git(repo, "commit", "-q", "-m", path)
 
-    def rejects(self, repo: Path, path: str) -> None:
-        result = self.run_gate(repo)
+    def rejects(self, repo: Path, path: str, env: dict[str, str] | None = None) -> None:
+        result = self.run_gate(repo, env)
         self.assertNotEqual(result.returncode, 0, f"{path} was let through")
         self.assertIn(path, result.stderr)
 
@@ -147,3 +147,47 @@ class RecordedNameTest(SliceScopeBaseTest):
         repo = self.repo(self.root())
         self.record(repo, "-x")
         self.assertIn("`ci.branch` names `-x`, which is not a branch name", self.run_gate(repo).stderr)
+
+
+class ForgeTargetTest(SliceScopeBaseTest):
+    """R3: the forge's target is a second candidate, and across two names the older base wins."""
+
+    TARGETS = ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME")
+
+    def test_the_target_outranks_a_recorded_name_minted_at_head(self) -> None:
+        """e1, e2: `ci.branch: evil` with `evil` at HEAD; the target is `main`, so `project.json` is refused."""
+        for variable in self.TARGETS:
+            with self.subTest(variable=variable):
+                repo = self.repo(self.root())
+                (repo / "project.json").write_text(json.dumps({"deployables": self.root(), "ci": {"branch": "evil"}}))
+                git(repo, "commit", "-q", "-am", "record")
+                git(repo, "update-ref", "refs/remotes/origin/evil", "HEAD")
+                self.rejects(repo, "project.json", {variable: "main"})
+
+    def test_the_target_outranks_a_main_minted_beside_a_master_trunk(self) -> None:
+        """e3: `master` is the trunk, `GITHUB_BASE_REF=master`, `refs/remotes/origin/main` minted at HEAD."""
+        repo = self.repo(self.root())
+        git(repo, "branch", "master")
+        git(repo, "branch", "-D", "main")
+        self.commit(repo, "Makefile")
+        git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+        self.rejects(repo, "Makefile", {"GITHUB_BASE_REF": "master"})
+
+    def test_a_target_ahead_of_main_moves_the_base_back_to_main(self) -> None:
+        """e4: `feature` is cut from `main` and ahead of it; the slice is cut from `feature`."""
+        repo = self.repo(self.root())
+        git(repo, "checkout", "-q", "-b", "feature")
+        self.commit(repo, "Makefile")
+        git(repo, "checkout", "-q", "slice/S1")
+        git(repo, "reset", "-q", "--hard", "feature")
+        self.rejects(repo, "Makefile", {"GITHUB_BASE_REF": "feature"})
+
+    def test_a_target_with_no_ref_or_no_name_is_ignored(self) -> None:
+        """e5, held: the recorded trunk answers; `nowhere` has no ref, `-x` is no name."""
+        for target in ("nowhere", "-x", "slice/S1", "refs/tags/main"):
+            with self.subTest(target=target):
+                repo = self.repo(self.root())
+                self.commit(repo, "specs/f/slices/S1/a.md")
+                self.passes(repo)
+                self.commit(repo, "Makefile")
+                self.rejects(repo, "Makefile", {"GITHUB_BASE_REF": target})
