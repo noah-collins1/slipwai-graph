@@ -567,3 +567,27 @@ with a host-surface change committed, no forge variable set, and a full clone.
   on a branch that is not `slice/<id>`, then the answer is today's *nothing to hold*, exit 0.
 - **AC-S22-24** — Given the factory's suite run with `CI=true GITHUB_ACTIONS=true` in its environment, then every
   test asserting a developer's exit 1 still passes: the gate under test is run with the markers cleared.
+- **AC-S22-25** — *Added by D33 (gaps G4).* Given a project with no `ci.branch`, a `master` trunk ahead of an older
+  `main`, and a slice cut from `master` that changes only its own files, when the check runs, then it compares
+  with `main`, refuses `master`'s own host-surface files, and its header says `master` is here too, that no trunk
+  is recorded, and the fix: set `ci.branch` to `master` in `project.json`, or delete the stale `main`. Given the
+  same repository once `ci.branch: master` is recorded on `master`, then the slice is green against `master`.
+  Given a `main` trunk with a `master` minted at the branch's head, then the refusal stands (AC-S22-1) and the
+  clause moves neither the base nor the exit. Given AC-S22-12's repository, or any usable `ci.branch` with a ref,
+  then the clause is absent.
+- **AC-S22-26** — *Added by D34 (gaps G1); amends the command named in AC-S22-7 and AC-S22-14.* Given a developer's
+  single-branch clone of a slice branch with no trunk ref, when the command the failure prints —
+  `git fetch origin <trunk>:refs/remotes/origin/<trunk>` — is run there and the check is run again, then the
+  check has moved on: to a verdict in a full clone, and in a shallow one to the `git fetch --unshallow origin`
+  line, which run in turn leads to a verdict. The passed-over note names the same form of fetch.
+- **AC-S22-27** — *Added by D34 (gaps G2).* Given a slice that commits `ci.branch: HEAD` (in any case) in a clone
+  whose `refs/remotes/origin/HEAD` points at the slice's own branch, when the check runs, then `HEAD` is not taken
+  as a trunk, the base is `main`'s, and `project.json` is refused; the same holds for `HEAD` in either target
+  variable; and a ref that is symbolic is never a trunk ref.
+- **AC-S22-28** — *Added by D34 (gaps G5–G8).* What the gate prints is true where it is printed: given a CI marker,
+  no base and a recorded `ci.branch` with no ref, then no `git fetch` command appears anywhere in the output;
+  given a recorded `slice/<id>` name, then the note says a slice branch is never the trunk, not that it is no
+  branch name; given a `ci.branch` that is not a string, then the output says the record was passed over; given a
+  developer's no-base failure, then it is one line of its own on stderr, exit 1, and the header *reaches outside
+  what one slice may touch* appears only where a path was refused or a record is about to be lost.
+

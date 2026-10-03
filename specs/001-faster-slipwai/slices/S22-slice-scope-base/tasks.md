@@ -434,3 +434,70 @@ file, `Makefile`) ahead of `refs/heads/main`, that commit merged into `slice/S1`
 that dies when the choice is removed. No production change expected.
 
 **Files:** `tests/test_slice_scope_base.py`.
+
+## Phase 4: Gaps after converge (2026-10-03; `drive-gaps`, read-only, at `2b43255`; triaged as D33 and D34)
+
+Eleven findings: one `HIGH`, three `MEDIUM`, seven `LOW`; the quickstart's steps ran as written. T017 (converge pass
+2) rides with T022. One task per commit, in this order — all but T022 and T023 edit the script.
+
+### T018 — The fetch the gate prints writes the ref it says is missing (`HIGH` G1 · AC-S22-26, D34)
+
+- [ ] **RED:** in a `--single-branch` clone (full, and `--depth 1`) the test reads the command out of the failure
+  line, runs it, and runs the gate again: today the same line comes back. The same for the passed-over note's fetch.
+  **GREEN names the class:** every `git fetch` the script prints — the no-trunk line and the passed-over note — is
+  `git fetch origin <name>:refs/remotes/origin/<name>`; the `--unshallow` line is already true and is run by the
+  shallow example to its verdict.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_no_base.py`,
+`tests/test_slice_scope_base.py` (the constant or assertions that quote the old command only).
+
+### T019 — `HEAD` is never a trunk's name, and a symbolic ref is never a trunk ref (`MEDIUM` G2 · AC-S22-27, D34)
+
+- [ ] **RED:** a slice commits `ci.branch: HEAD`; in a plain clone of a repository whose own `HEAD` is on the slice,
+  the gate passes today with *compared with `HEAD`*. **GREEN names the class:** `usable()` refuses `HEAD` in any
+  case from every source (`ci.branch`, both target variables); `bases_of()` skips a candidate ref that
+  `git symbolic-ref -q` resolves.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_base.py`.
+
+### T020 — An unrecorded `master` trunk beside a stale `main` is told what to record (`MEDIUM` G4 · AC-S22-25, D33)
+
+- [ ] **RED:** one test per clause of AC-S22-25. **GREEN:** the clause joins the existing passed-over words in
+  `merge_base()` where nothing usable is recorded, the trunk chosen is `main`, `master` has a ref and `master`'s
+  base is strictly newer than `main`'s; no base and no exit changes. Teeth: without *strictly newer*, AC-S22-12's
+  output changes.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_base.py` (or a new
+`tests/test_slice_scope_report.py` importing its helpers, if the file would pass 350 lines).
+
+### T021 — What the gate prints is true where it is printed (`LOW` G5, G6, G7, G8 · AC-S22-28, D34)
+
+- [ ] **RED:** one test per clause of AC-S22-28. **GREEN names the class:** every sentence on the report line, the
+  refusal header and the no-base lines, in every state they are printed in — the forge's output carries no fetch;
+  a slice-shaped record has its own sentence; a non-string record is said to be passed over; a developer's no-base
+  failure prints as its own one line (`check-slice-scope: slice/<id> has no …`), exit 1, stderr, with the
+  *reaches outside* header only above refused paths and lost records. Existing tests that pinned the old header on a
+  no-base failure (`fails_with` in `tests/test_slice_scope_no_base.py`) are rewritten to the decided shape.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_no_base.py`,
+`tests/test_slice_scope_base.py` (or `tests/test_slice_scope_report.py`).
+
+### T022 — Every clause of AC-S22-1, -2, -11, -19 and D32's *non-empty* is held (`LOW` T017, G10, G11 · tests only)
+
+- [ ] No production change expected; each assertion shown to have teeth by a one-line mutation restored with
+  `git checkout --`. T017: `origin/main` ahead of a local `main` and merged into the slice. G10: the header names
+  `main` in AC-S22-1's three examples; the pass line names `trunk` where `trunk` and `main` are different commits;
+  a lost record in the unrelated-trunk state, attached and under a marker. G11: `CI=false` is a marker.
+
+**Files:** `tests/test_slice_scope_base.py`, `tests/test_slice_scope_no_base.py` (or the new report file).
+
+### T023 — The fragment and the docstring say all of it (`MEDIUM` G3 · AC-S22-21, D33, D34) — last
+
+- [ ] `changelog.d/slice-scope-base.md`: the catch-up gains (1) a trunk named neither `main` nor `master`, recorded
+  in `ci.branch`, is compared with for the first time — slice branches in flight there are now held; (2) D33's
+  sentence for an unrecorded `master` trunk beside a stale `main`; (3) the fetch as T018 made it. The module
+  docstring's last paragraphs follow T018–T021 (the fetch form; `HEAD`; the clause; the one-line failure; *the pass
+  line and the refusal header end `compared with …`* made true). `tests/test_changelog.py` green.
+
+**Files:** `changelog.d/slice-scope-base.md`, `assets/toolkit/scripts/check-slice-scope.py` (docstring only).
+

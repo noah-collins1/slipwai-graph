@@ -193,6 +193,11 @@ that cannot delegate takes the earliest ready slice in split order and names the
   *nothing to hold* — S22 closed the trunk-name side only); and under a CI marker a full clone whose trunk is
   unrelated is told `fetch-depth: 0`, which would not help it (AC-S22-22 decides the line). For the completion audit.
 
+- **An unborn `HEAD` on a slice branch has nothing to hold** (S22's gaps pass, G9; older than the slice):
+  `git init -b slice/S1` with no commit reads as a detached checkout, though D31 says a new repository whose first
+  branch is a slice branch fails. `current_branch()` asks `rev-parse --abbrev-ref HEAD`; `symbolic-ref --short HEAD`
+  would answer. With the other `current_branch()` line above, for the completion audit.
+
 ## Next Step
 
 Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,
