@@ -44,7 +44,7 @@ None is marked: every implementation task shares a file with its neighbour.
 
 ### T001 — Pin what a refresh rewrites, refuses and leaves, and the strategy record a survey derives (host task)
 
-- [ ] **Host task — not delegated.** The host writes two rows in `delivery/survey/pinned.md` before T002 and commits
+- [x] **Host task — not delegated.** The host writes two rows in `delivery/survey/pinned.md` before T002 and commits
   them alone: (1) what a refresh rewrites, refuses and leaves, naming the holding tests —
   `tests/test_adopt_facts.py` (the record stays still between surveys; a file taken over stays taken; the page follows
   the record) and `tests/test_uncommitted.py` (a hand edit to a file a refresh writes is refused by name); (2) the
