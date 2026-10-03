@@ -343,6 +343,14 @@ appears only in a line that tells a person what to fetch.
 **Files (after the decision):** `changelog.d/slice-scope-base.md`, the docstring, and for (b)
 `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_no_base.py`.
 
+**Decided (D32, 2026-10-03):** option (b). T013 is a code task: `forge_checkout()` is also true where `GITHUB_ACTIONS`,
+`GITLAB_CI` or `CI` is non-empty; every no-base state there answers *NOT checked*, exit 0, stderr; with a usable base
+the slice is held as locally; a lost record still fails; AC-S22-22 to AC-S22-24 are its examples; every test that
+asserts a developer's exit 1 runs the gate with the three markers cleared (`run_gate` in
+`tests/test_slice_scope_base.py`, and the runner in `tests/test_slice_scope_no_base.py`); the docstring's last
+paragraph and the fragment's catch-up say *a CI run*, not only *a pull-request checkout*. **GREEN names the class:**
+every route by which a checkout is called the forge's, in every no-base state, on both streams.
+
 ### T014 — A slice name in another case is still a slice name (MEDIUM · R2, AC-S22-4 · not reproducible on this platform)
 
 - [ ] **MEDIUM.** `usable()` refuses a `slice/<id>` name by `SLICE_BRANCH`, which is case-sensitive; on a

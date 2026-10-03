@@ -540,7 +540,8 @@ with a host-surface change committed, no forge variable set, and a full clone.
   reads as a pass, and its stderr line says the slice was NOT checked and names `fetch-depth: 0`. The words
   *nothing to hold* do not appear.
 - **AC-S22-17** — Given `GITHUB_HEAD_REF=slice/<id>` set in a checkout whose `HEAD` is attached to a branch and
-  has no usable base, then the check exits 1: the variable alone does not buy the exit 0.
+  has no usable base, then the check exits 1: the branch-name variable alone does not buy the exit 0. *Amended by
+  D32:* and no CI marker (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`) is set.
 - **AC-S22-18** — Given a detached pull-request checkout with full history and the trunk ref, with
   `GITHUB_HEAD_REF=slice/<id>` and a host-surface change in the diff, then the change is refused exactly as
   locally.
@@ -554,3 +555,15 @@ with a host-surface change committed, no forge variable set, and a full clone.
   says what the change asks of a repository already generated: after `migrate`, a slice branch in a checkout
   with no trunk to compare with fails locally with the fetch to run, and CI on a default checkout says the slice
   was not checked.
+- **AC-S22-22** — *Added by D32 (converge T013).* Given a depth-1 single-branch clone of `slice/<id>` with `HEAD`
+  attached, no trunk ref, neither branch-name variable, and `GITHUB_ACTIONS=true` (separately `GITLAB_CI=true`, and
+  `CI=true` alone), when the check runs, then it exits 0, prints nothing on stdout, and stderr says the slice was
+  NOT checked, naming the trunk and `fetch-depth: 0`; neither *nothing to hold* nor `git fetch origin` appears.
+  The same holds, with a CI marker set, for a trunk ref with no common ancestor at this depth and for an unrelated
+  trunk.
+- **AC-S22-23** — Given a CI marker, an attached slice branch, a usable base and a host-surface change in the
+  diff, then the change is refused, exit 1, exactly as locally; given a CI marker, no base and a regular file at a
+  canonical slot, then the check exits 1 and prints the lost record beside the NOT checked line; given a CI marker
+  on a branch that is not `slice/<id>`, then the answer is today's *nothing to hold*, exit 0.
+- **AC-S22-24** — Given the factory's suite run with `CI=true GITHUB_ACTIONS=true` in its environment, then every
+  test asserting a developer's exit 1 still passes: the gate under test is run with the markers cleared.

@@ -49,7 +49,7 @@ checkouts are made with `git clone --depth 1 file://…`. No mocking framework.
 asset it copies into projects.
 **Performance Goals**: none; a handful of extra `git rev-parse` calls on a slice branch.
 **Constraints**: PATCH — no setting, flag or file added to a project; CI's exit code unchanged in every project
-(D31); nothing under `delivery/scripts/`, `tools/`, the `Makefile`, CI or hook settings changes in this
+(D31, D32); nothing under `delivery/scripts/`, `tools/`, the `Makefile`, CI or hook settings changes in this
 repository (cruise controls; the fix reaches here through a person's `slipwai migrate`, D9);
 `assets/toolkit/scripts/check-migrations.py`, `assets/targets/*/scripts/check-flags.py`,
 `src/slipwai/project/ci_workflows.py` and `adopted_ci.py` are not edited; `tests/test_parallel_slices.py` is not
