@@ -29,17 +29,24 @@ from .errors import GenerationError
 
 
 def changed(root: Path) -> list[str] | None:
-    """Every path with an uncommitted change, untracked ones included; None where this is not a Git repository."""
+    """Every path with an uncommitted change, untracked ones included, spelled from `root` as a run spells what it
+    writes; None where this is not a Git repository.
+
+    Git reports a path from the repository's top, so where `root` is a subdirectory of it the prefix
+    (`git rev-parse --show-prefix`, empty at the top) is taken off.
+    """
     status = subprocess.run(
         ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"], cwd=root, capture_output=True, check=False
     )
-    if status.returncode != 0:
+    where = subprocess.run(["git", "rev-parse", "--show-prefix"], cwd=root, capture_output=True, check=False)
+    if status.returncode != 0 or where.returncode != 0:
         return None
+    prefix = where.stdout.decode(errors="surrogateescape").rstrip("\n")
     fields, paths = status.stdout.decode(errors="surrogateescape").split("\0"), []
     while fields:
         entry = fields.pop(0)
         if len(entry) > 3:
-            paths.append(entry[3:])
+            paths.append(entry[3:].removeprefix(prefix))
             if entry[0] in "RC" and fields:  # a rename or copy names where it came from next
                 fields.pop(0)
     return paths
