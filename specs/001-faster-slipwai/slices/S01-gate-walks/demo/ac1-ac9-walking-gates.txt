@@ -1,0 +1,176 @@
+## AC-S01-3 / R2e1,e3,e4 - the four names under apps/service (and node_modules under apps/web)
+# planted 5 pruned directories (4 under apps/service, 1 under apps/web); the skeleton reads 79
+-- check-imports.py: new exit 0 | earlier exit 1 | stderr DIFFERS (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (84 directory entries read)
+   earlier stderr: apps/service/.venv/lib/pkg/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+   earlier stderr: apps/web/node_modules/pkg/src/x.ts:1: frontend imports backend implementation: import { x } from '../../../../service/src/shop/domain/x'
+   earlier stderr: apps/web/node_modules/pkg/src/x.ts:2: frontend imports backend implementation: import { x } from 'apps/service/src/x'
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (84 directory entries read)
+[audit] scripts/check-imports.py: exit 0; entries listed under apps/ and packages/ = 84; project.json opened 1 time(s); listings at or inside a pruned-name directory = 0
+[audit] scripts/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 84; project.json opened 0 time(s); listings at or inside a pruned-name directory = 0
+[audit] .old/check-imports.py: exit 1; entries listed under apps/ and packages/ = 628; project.json opened 7 time(s); listings at or inside a pruned-name directory = 84
+[audit]   listed: /tmp/s01-demo/w/ac3/apps/service/.git
+[audit]   listed: /tmp/s01-demo/w/ac3/apps/service/node_modules
+[audit]   listed: /tmp/s01-demo/w/ac3/apps/service/.venv
+[audit]   listed: /tmp/s01-demo/w/ac3/apps/service/src/__pycache__
+[audit]   listed: /tmp/s01-demo/w/ac3/apps/service/src/__pycache__
+[audit]   listed: /tmp/s01-demo/w/ac3/apps/service/.venv
+## AC-S01-3 / R2e2 - the same four, two directories deeper
+# planted a/, a/b/ and 4 pruned directories: 79 + 2 + 4 = 85 expected
+-- check-imports.py: new exit 0 | earlier exit 1 | stderr DIFFERS (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (85 directory entries read)
+   earlier stderr: apps/service/src/a/b/.venv/lib/pkg/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries read)
+[audit] scripts/check-imports.py: exit 0; entries listed under apps/ and packages/ = 85; project.json opened 1 time(s); listings at or inside a pruned-name directory = 0
+[audit] scripts/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 85; project.json opened 0 time(s); listings at or inside a pruned-name directory = 0
+
+## AC-S01-4 / R3e1 + quickstart step 4b - Java: target/ beside pom.xml
+# before planting:
+-- check-imports.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (130 directory entries read)
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (130 directory entries read)
+# planted target/ (count should rise by one: 130 -> 131):
+$ make check-migrations
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (131 directory entries read)
+[exit 0]
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (131 directory entries read)
+[exit 0]
+-- check-imports.py: new exit 0 | earlier exit 1 | stderr DIFFERS (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (131 directory entries read)
+   earlier stderr: apps/service/target/generated-sources/domain/Bad.java:2: domain imports a framework or driver package: jakarta.inject.Inject — the domain is provider-free
+-- check-migrations.py: new exit 0 | earlier exit 1 | stderr DIFFERS (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (131 directory entries read)
+   earlier stderr: check-migrations: a schema change does not follow expand/contract
+   earlier stderr: 
+   earlier stderr:   apps/service/target/classes/db/migration/V2__drop.sql: drops a table. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   earlier stderr: 
+[audit] scripts/check-imports.py: exit 0; entries listed under apps/ and packages/ = 131; project.json opened 1 time(s); listings at or inside a pruned-name directory = 0
+[audit] scripts/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 131; project.json opened 0 time(s); listings at or inside a pruned-name directory = 0
+## AC-S01-5 / R3e5 - a Java package directory named target under domain/ is read
+-- check-imports.py: new exit 1 | earlier exit 1 | stderr DIFFERS (170 bytes)
+   new stdout: 
+   new stderr: apps/service/src/main/java/com/example/shop/domain/target/Bad.java:2: domain imports a framework or driver package: jakarta.inject.Inject — the domain is provider-free
+   earlier stderr: apps/service/src/main/java/com/example/shop/domain/target/Bad.java:2: domain imports a framework or driver package: jakarta.inject.Inject — the domain is provider-free
+   earlier stderr: apps/service/target/generated-sources/domain/Bad.java:2: domain imports a framework or driver package: jakarta.inject.Inject — the domain is provider-free
+-- check-migrations.py: new exit 0 | earlier exit 1 | stderr DIFFERS (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (133 directory entries read)
+   earlier stderr: check-migrations: a schema change does not follow expand/contract
+   earlier stderr: 
+   earlier stderr:   apps/service/target/classes/db/migration/V2__drop.sql: drops a table. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   earlier stderr: 
+# a target under src/main/resources/db (no pom.xml beside) holding a DROP migration is read:
+-- check-imports.py: new exit 0 | earlier exit 1 | stderr DIFFERS (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (134 directory entries read)
+   earlier stderr: apps/service/target/generated-sources/domain/Bad.java:2: domain imports a framework or driver package: jakarta.inject.Inject — the domain is provider-free
+-- check-migrations.py: new exit 1 | earlier exit 1 | stderr DIFFERS (298 bytes)
+   new stdout: 
+   new stderr: check-migrations: a schema change does not follow expand/contract
+   new stderr: 
+   new stderr:   apps/service/src/main/resources/db/target/migration/V9__drop.sql: drops a table. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   new stderr: 
+   earlier stderr: check-migrations: a schema change does not follow expand/contract
+   earlier stderr: 
+   earlier stderr:   apps/service/src/main/resources/db/target/migration/V9__drop.sql: drops a table. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   earlier stderr:   apps/service/target/classes/db/migration/V2__drop.sql: drops a table. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   earlier stderr: 
+
+## AC-S01-5 / R3e2-e4 - Python service recording contexts orders and target
+# clean two-context tree:
+-- check-imports.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (85 directory entries read)
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries read)
+# e2 src/target/domain/bad.py:
+-- check-imports.py: new exit 1 | earlier exit 1 | stderr byte-identical (103 bytes)
+   new stdout: 
+   new stderr: apps/service/src/target/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (86 directory entries read)
+# e3 src/target/reach.py imports orders.domain:
+-- check-imports.py: new exit 1 | earlier exit 1 | stderr byte-identical (208 bytes)
+   new stdout: 
+   new stderr: apps/service/src/target/reach.py:1: target reaches into orders: from orders.domain import model — a context crosses into another only through its orders/public module, or by reading the events it publishes
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (86 directory entries read)
+# AC-5 an import from orders into the insides of target:
+-- check-imports.py: new exit 1 | earlier exit 1 | stderr byte-identical (208 bytes)
+   new stdout: 
+   new stderr: apps/service/src/orders/reach.py:1: orders reaches into target: from target.domain import thing — a context crosses into another only through its target/public module, or by reading the events it publishes
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (86 directory entries read)
+# e4 src/target/migrations/0002_drop.sql:
+-- check-imports.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (86 directory entries read)
+-- check-migrations.py: new exit 1 | earlier exit 1 | stderr byte-identical (282 bytes)
+   new stdout: 
+   new stderr: check-migrations: a schema change does not follow expand/contract
+   new stderr: 
+   new stderr:   apps/service/src/target/migrations/0002_drop.sql: drops a table. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   new stderr: 
+
+## AC-S01-6 / R4 - several violations outside any pruned directory, both scripts, bytes compared
+-- check-imports.py: new exit 1 | earlier exit 1 | stderr byte-identical (427 bytes)
+   new stdout: 
+   new stderr: apps/service/src/shop/application/use.py:1: application imports an outer layer: from shop.adapters.driven import store
+   new stderr: apps/service/src/shop/domain/aa.py:1: domain imports an outer layer: import shop.adapters
+   new stderr: apps/service/src/shop/domain/zz.py:1: domain imports an outer layer: from ..adapters.store import x
+   new stderr: apps/web/src/reach.ts:1: frontend imports backend implementation: import { x } from '../../service/src/shop/domain/x'
+-- check-migrations.py: new exit 1 | earlier exit 1 | stderr byte-identical (553 bytes)
+   new stdout: 
+   new stderr: check-migrations: a schema change does not follow expand/contract
+   new stderr: 
+   new stderr:   apps/service/migrations/005_drop.sql: drops a column. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   new stderr:   apps/service/migrations/006_notnull.sql: adds a NOT NULL column with no default, which fails every INSERT the running release makes. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   new stderr: 
+# the same in the Java project:
+-- check-imports.py: new exit 1 | earlier exit 1 | stderr byte-identical (297 bytes)
+   new stdout: 
+   new stderr: apps/service/src/main/java/com/example/shop/domain/Bad.java:2: domain imports a framework or driver package: jakarta.inject.Inject — the domain is provider-free
+   new stderr: apps/service/src/main/java/com/example/shop/domain/Bad.java:3: domain imports an outer layer: import com.example.shop.adapters.Store;
+-- check-migrations.py: new exit 1 | earlier exit 1 | stderr byte-identical (292 bytes)
+   new stdout: 
+   new stderr: check-migrations: a schema change does not follow expand/contract
+   new stderr: 
+   new stderr:   apps/service/src/main/resources/db/migration/V99__drop.sql: drops a table. A contracting migration names the additive one it completes — `contract: <migration>` in a comment line — and ships in a later change than it.
+   new stderr: 
+
+## AC-S01-7 / R1e3 - 150 empty files under apps/service/src/extra/
+# expected count 79 + 1 + 150 = 230
+-- check-imports.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (230 directory entries read)
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (230 directory entries read)
+
+## AC-S01-8 / R5 - project.json opened how often (web app + two-context service)
+[audit] scripts/check-imports.py: exit 0; entries listed under apps/ and packages/ = 81; project.json opened 1 time(s); listings at or inside a pruned-name directory = 0
+[audit] scripts/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 81; project.json opened 0 time(s); listings at or inside a pruned-name directory = 0
+[audit] .old/check-imports.py: exit 0; entries listed under apps/ and packages/ = 634; project.json opened 5 time(s); listings at or inside a pruned-name directory = 0
+[audit] .old/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 169; project.json opened 0 time(s); listings at or inside a pruned-name directory = 0
+# R5e3 project.json deleted (the earlier scripts are run from scripts/ in a twin copy, so both find the root the same way):
+new:     check-imports: inward dependency rule holds (81 directory entries read) [exit 0]
+earlier: check-imports: inward dependency rule holds [exit 0]
+new:     check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (81 directory entries read) [exit 0]
+earlier: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files [exit 0]
+
+## AC-S01-9 / R1e4 - a project holding only project.json and scripts/
+-- check-imports.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (0 directory entries read)
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (0 directory entries read)
+## AC-S01-9 / R1e5 - a symbolic link under apps/service/ to a directory outside apps/ holding a domain/ violation
+-- check-imports.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (80 directory entries read)
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (80 directory entries read)
+[audit] scripts/check-imports.py: exit 0; entries listed under apps/ and packages/ = 80; project.json opened 1 time(s); listings at or inside a pruned-name directory = 0
+# a link named domain pointing at a directory of violations:
+-- check-imports.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-imports: inward dependency rule holds (81 directory entries read)
+-- check-migrations.py: new exit 0 | earlier exit 0 | stderr byte-identical (0 bytes)
+   new stdout: check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (81 directory entries read)

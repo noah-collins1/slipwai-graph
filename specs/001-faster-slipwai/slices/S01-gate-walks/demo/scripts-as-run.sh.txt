@@ -1,0 +1,404 @@
+######## /tmp/s01-demo/env.sh
+# The real codegraph CLI (1.6.0) with a scratch home: its telemetry file, uv's cache and git's identity stay under /tmp/s01-demo.
+export HOME=/tmp/s01-demo/home DO_NOT_TRACK=1 CODEGRAPH_NO_UPDATE_CHECK=1 PATH=/home/noahc/.codegraph/versions/v1.6.0/bin:$PATH
+export GIT_AUTHOR_NAME=demo GIT_AUTHOR_EMAIL=demo@example.invalid GIT_COMMITTER_NAME=demo GIT_COMMITTER_EMAIL=demo@example.invalid
+unset CI GITHUB_ACTIONS GITLAB_CI
+run() { echo "\$ $*"; "$@"; echo "[exit $?]"; }
+
+######## /tmp/s01-demo/steps1-4.sh
+# Quickstart steps 1-4 as the actor typed them. P = the scratch project (the quickstart's setup block with
+# --output /tmp/s01-demo/q); .old/ = the same scripts as they were at ed91b20, run beside the new ones.
+# count.py (in scripts-as-run.sh.txt) runs a script under sys.addaudithook and sums what each os.scandir listed.
+P=/tmp/s01-demo/q/shop; OLD=/tmp/s01-demo/old
+cd $P
+run() { echo "\$ $*"; "$@"; echo "[exit $?]"; }
+both() { # run new and old, compare stderr and exit
+  python3 scripts/$1 >/tmp/s01-demo/new.out 2>/tmp/s01-demo/new.err; n=$?
+  python3 .old/$1 >/tmp/s01-demo/old.out 2>/tmp/s01-demo/old.err; o=$?
+  echo "# $1: new exit $n, earlier exit $o; stderr $(cmp -s /tmp/s01-demo/new.err /tmp/s01-demo/old.err && echo byte-identical || echo DIFFERS) ($(wc -c </tmp/s01-demo/new.err) bytes); new stdout $(wc -c </tmp/s01-demo/new.out) bytes"
+  cat /tmp/s01-demo/new.err /tmp/s01-demo/new.out
+}
+mkdir -p .old; cp $OLD/check-imports.py $OLD/check-migrations.py .old/
+echo "python3 here: $(python3 --version) (the skeleton pins $(cat .python-version))"
+echo "## step 1 - the count"
+run make check-imports
+run make check-migrations
+echo "# independent enumeration: find apps packages, minus the two tops = $(( $(find apps packages | wc -l) - 2 ))"
+echo "# the earlier scripts, same tree:"
+run python3 .old/check-imports.py
+run python3 .old/check-migrations.py
+for s in .old/check-imports.py scripts/check-imports.py .old/check-migrations.py scripts/check-migrations.py; do python3 /tmp/s01-demo/count.py $s 2>&1 | grep audit; done
+
+echo; echo "## step 2 - pruned directories cost one entry each (bad import exactly as the quickstart words it)"
+mkdir -p apps/service/.venv/lib/pkg/domain apps/web/node_modules/pkg
+for i in $(seq 1 300); do echo "x = $i" > apps/service/.venv/lib/pkg/f$i.py; echo "export const x = $i" > apps/web/node_modules/pkg/f$i.js; done
+printf 'from ..adapters import store\n' > apps/service/.venv/lib/pkg/domain/bad.py
+echo "# planted: $(find apps/service/.venv apps/web/node_modules -type f | wc -l) files"
+run make check-imports
+run make check-migrations
+run python3 .old/check-imports.py
+echo "# ^ the earlier script passes too: 'from ..adapters import store' is not a line either script has ever reported (see step 3)."
+echo "# the same file with a spelling the gate does report, 'from ..adapters.store import x':"
+printf 'from ..adapters.store import x\n' > apps/service/.venv/lib/pkg/domain/bad.py
+run make check-imports
+run python3 .old/check-imports.py
+for s in .old/check-imports.py scripts/check-imports.py .old/check-migrations.py scripts/check-migrations.py; do python3 /tmp/s01-demo/count.py $s 2>&1 | grep audit; done
+echo "# git status in the project (planted directories are ignored):"; git status --short
+
+echo; echo "## step 3 - a real violation is still found"
+echo "# 3(i) to the letter: the generated service has no apps/service/src/domain/ (its domain is apps/service/src/shop/domain/); made as written"
+mkdir -p apps/service/src/domain; printf 'from ..adapters import store\n' > apps/service/src/domain/bad.py
+run make check-imports
+run python3 .old/check-imports.py
+rm -r apps/service/src/domain
+echo "# 3(ii) the same line in the domain the project has, apps/service/src/shop/domain/bad.py"
+printf 'from ..adapters import store\n' > apps/service/src/shop/domain/bad.py
+run make check-imports
+run python3 .old/check-imports.py
+echo "# 3(iii) a spelling the gate reports: 'from ..adapters.store import x'"
+printf 'from ..adapters.store import x\n' > apps/service/src/shop/domain/bad.py
+run make check-imports
+both check-imports.py
+rm apps/service/src/shop/domain/bad.py
+
+echo; echo "## step 4a - target with no pom.xml is read"
+mkdir -p apps/service/src/target/domain
+echo "# as written:"
+printf 'from ..adapters import store\n' > apps/service/src/target/domain/bad.py
+run make check-imports
+echo "# with the reported spelling:"
+printf 'from ..adapters.store import x\n' > apps/service/src/target/domain/bad.py
+run make check-imports
+both check-imports.py
+rm -r apps/service/src/target
+echo "# a 'target' WITH a pom.xml beside it in this Python service is skipped (one entry for target, one for pom.xml):"
+mkdir -p apps/service/src/target/domain; : > apps/service/src/pom.xml
+printf 'from ..adapters.store import x\n' > apps/service/src/target/domain/bad.py
+run make check-imports
+rm -r apps/service/src/target apps/service/src/pom.xml
+run make check-imports
+
+######## /tmp/s01-demo/count.py
+import os, sys, runpy
+total = 0
+inside = []
+def hook(event, args):
+    global total
+    if event == "os.scandir" and args and args[0] is not None:
+        p = os.fspath(args[0])
+        if isinstance(p, bytes): p = p.decode()
+        a = os.path.abspath(p)
+        if "/apps" in a or "/packages" in a:
+            try: total += len(os.listdir(a))
+            except OSError: pass
+        for name in (".venv", "node_modules", "__pycache__", ".git", "target"):
+            if f"/{name}/" in a + "/" and "/apps/" in a: inside.append(a)
+    if event == "open" and args and str(args[0]).endswith("project.json"):
+        opens.append(args[0])
+opens = []
+sys.addaudithook(hook)
+script = sys.argv[1]; sys.argv = [script]
+try: runpy.run_path(script, run_name="__main__")
+except SystemExit as e: code = e.code
+else: code = 0
+print(f"[audit] {script}: exit {code}; entries listed under apps/ and packages/ = {total}; project.json opened {len(opens)} time(s); listings at or inside a pruned-name directory = {len(inside)}", file=sys.stderr)
+for a in inside[:6]: print("[audit]   listed:", a, file=sys.stderr)
+
+######## /tmp/s01-demo/ac-walks.sh
+# AC-S01-1..9 at the command line. Each case is a fresh copy of a pristine generated project;
+# .old/ holds the same scripts as they were at ed91b20. count.py audits os.scandir and open().
+OLD=/tmp/s01-demo/old; W=/tmp/s01-demo/w; rm -rf $W; mkdir -p $W
+fresh() { rm -rf $W/$2; cp -r /tmp/s01-demo/$1/shop $W/$2; mkdir -p $W/$2/.old; cp $OLD/check-imports.py $OLD/check-migrations.py $W/$2/.old/; cd $W/$2; }
+both() { for s in check-imports.py check-migrations.py; do
+  python3 scripts/$s >/tmp/s01-demo/new.out 2>/tmp/s01-demo/new.err; n=$?
+  python3 .old/$s >/tmp/s01-demo/old.out 2>/tmp/s01-demo/old.err; o=$?
+  echo "-- $s: new exit $n | earlier exit $o | stderr $(cmp -s /tmp/s01-demo/new.err /tmp/s01-demo/old.err && echo byte-identical || echo DIFFERS) ($(wc -c </tmp/s01-demo/new.err) bytes)"
+  echo "   new stdout: $(cat /tmp/s01-demo/new.out)"; sed 's/^/   new stderr: /' /tmp/s01-demo/new.err
+  cmp -s /tmp/s01-demo/new.err /tmp/s01-demo/old.err || sed 's/^/   earlier stderr: /' /tmp/s01-demo/old.err
+done; }
+audit() { for s in "$@"; do python3 /tmp/s01-demo/count.py $s 2>&1 | grep audit; done; }
+BAD='from ..adapters.store import x'
+
+echo "## AC-S01-3 / R2e1,e3,e4 - the four names under apps/service (and node_modules under apps/web)"
+fresh p ac3
+mkdir -p apps/service/.venv/lib/pkg/domain apps/service/node_modules/pkg/migrations apps/service/src/__pycache__ apps/service/.git/hooks apps/web/node_modules/pkg/src
+echo "$BAD" > apps/service/.venv/lib/pkg/domain/bad.py
+echo 'DROP TABLE events;' > apps/service/node_modules/pkg/migrations/0001_drop.sql
+echo "$BAD" > apps/service/src/__pycache__/x.py; echo x > apps/service/.git/hooks/x
+echo "import { x } from '../../../../service/src/shop/domain/x'" > apps/web/node_modules/pkg/src/x.ts
+echo "import { x } from 'apps/service/src/x'" >> apps/web/node_modules/pkg/src/x.ts
+echo "# planted 5 pruned directories (4 under apps/service, 1 under apps/web); the skeleton reads 79"
+both; audit scripts/check-imports.py scripts/check-migrations.py .old/check-imports.py
+echo "## AC-S01-3 / R2e2 - the same four, two directories deeper"
+fresh p ac3b
+D=apps/service/src/a/b; mkdir -p $D/.venv/lib/pkg/domain $D/node_modules/pkg/migrations $D/__pycache__ $D/.git/hooks
+echo "$BAD" > $D/.venv/lib/pkg/domain/bad.py; echo 'DROP TABLE events;' > $D/node_modules/pkg/migrations/0001_drop.sql; echo "$BAD" > $D/__pycache__/x.py; echo x > $D/.git/hooks/x
+echo "# planted a/, a/b/ and 4 pruned directories: 79 + 2 + 4 = 85 expected"
+both; audit scripts/check-imports.py scripts/check-migrations.py
+
+echo; echo "## AC-S01-4 / R3e1 + quickstart step 4b - Java: target/ beside pom.xml"
+fresh j ac4
+echo "# before planting:"; both
+mkdir -p apps/service/target/classes/db/migration apps/service/target/generated-sources/domain
+echo 'DROP TABLE events;' > apps/service/target/classes/db/migration/V2__drop.sql
+printf 'package x.domain;\nimport jakarta.inject.Inject;\nclass Bad {}\n' > apps/service/target/generated-sources/domain/Bad.java
+echo "# planted target/ (count should rise by one: 130 -> 131):"
+run() { echo "\$ $*"; "$@"; echo "[exit $?]"; }
+run make check-migrations; run make check-imports
+both; audit scripts/check-imports.py scripts/check-migrations.py
+echo "## AC-S01-5 / R3e5 - a Java package directory named target under domain/ is read"
+P=apps/service/src/main/java/com/example/shop/domain/target; mkdir -p $P
+printf 'package com.example.shop.domain.target;\nimport jakarta.inject.Inject;\nclass Bad {}\n' > $P/Bad.java
+both
+echo "# a target under src/main/resources/db (no pom.xml beside) holding a DROP migration is read:"
+rm -r $P; mkdir -p apps/service/src/main/resources/db/target/migration; echo 'DROP TABLE events;' > apps/service/src/main/resources/db/target/migration/V9__drop.sql
+both
+
+echo; echo "## AC-S01-5 / R3e2-e4 - Python service recording contexts orders and target"
+fresh p ac5
+python3 - <<'PY'
+import json; m=json.load(open("project.json")); m["deployables"]["service"]["contexts"]=["orders","target"]; json.dump(m,open("project.json","w"),indent=2)
+PY
+mkdir -p apps/service/src/target/domain apps/service/src/target/migrations apps/service/src/orders/domain
+: > apps/service/src/orders/domain/model.py
+echo "# clean two-context tree:"; both
+echo "$BAD" > apps/service/src/target/domain/bad.py; echo "# e2 src/target/domain/bad.py:"; both; rm apps/service/src/target/domain/bad.py
+echo 'from orders.domain import model' > apps/service/src/target/reach.py; echo "# e3 src/target/reach.py imports orders.domain:"; both; rm apps/service/src/target/reach.py
+echo 'from target.domain import thing' > apps/service/src/orders/reach.py; echo "# AC-5 an import from orders into the insides of target:"; both; rm apps/service/src/orders/reach.py
+echo 'DROP TABLE events;' > apps/service/src/target/migrations/0002_drop.sql; echo "# e4 src/target/migrations/0002_drop.sql:"; both
+
+echo; echo "## AC-S01-6 / R4 - several violations outside any pruned directory, both scripts, bytes compared"
+fresh p ac6
+echo "$BAD" > apps/service/src/shop/domain/zz.py; echo 'import shop.adapters' > apps/service/src/shop/domain/aa.py
+echo 'import requests' >> apps/service/src/shop/domain/aa.py
+echo 'from shop.adapters.driven import store' > apps/service/src/shop/application/use.py
+mkdir -p apps/web/src; echo "import { x } from '../../service/src/shop/domain/x'" > apps/web/src/reach.ts
+echo 'ALTER TABLE events DROP COLUMN tags;' > apps/service/migrations/005_drop.sql
+echo 'ALTER TABLE events ADD COLUMN n int NOT NULL;' > apps/service/migrations/006_notnull.sql
+both
+echo "# the same in the Java project:"
+fresh j ac6j
+printf 'package com.example.shop.domain;\nimport jakarta.inject.Inject;\nimport com.example.shop.adapters.Store;\nclass Bad {}\n' > apps/service/src/main/java/com/example/shop/domain/Bad.java
+echo 'DROP TABLE events;' > apps/service/src/main/resources/db/migration/V99__drop.sql
+both
+
+echo; echo "## AC-S01-7 / R1e3 - 150 empty files under apps/service/src/extra/"
+fresh p ac7; mkdir -p apps/service/src/extra; for i in $(seq 1 150); do : > apps/service/src/extra/f$i.py; done
+echo "# expected count 79 + 1 + 150 = 230"; both
+
+echo; echo "## AC-S01-8 / R5 - project.json opened how often (web app + two-context service)"
+fresh p ac8
+python3 - <<'PY'
+import json; m=json.load(open("project.json")); m["deployables"]["service"]["contexts"]=["orders","billing"]; json.dump(m,open("project.json","w"),indent=2)
+PY
+mkdir -p apps/service/src/orders apps/service/src/billing
+audit scripts/check-imports.py scripts/check-migrations.py .old/check-imports.py .old/check-migrations.py
+echo "# R5e3 project.json deleted (the earlier scripts are run from scripts/ in a twin copy, so both find the root the same way):"
+rm project.json; rm -rf $W/ac8old; cp -r $W/ac8 $W/ac8old; cp .old/*.py $W/ac8old/scripts/
+for s in check-imports.py check-migrations.py; do echo "new:     $(python3 scripts/$s 2>&1) [exit $?]"; echo "earlier: $(python3 $W/ac8old/scripts/$s 2>&1) [exit $?]"; done
+
+echo; echo "## AC-S01-9 / R1e4 - a project holding only project.json and scripts/"
+fresh p ac9; rm -rf apps packages; both
+echo "## AC-S01-9 / R1e5 - a symbolic link under apps/service/ to a directory outside apps/ holding a domain/ violation"
+fresh p ac9b; mkdir -p outside/domain; echo "$BAD" > outside/domain/bad.py; ln -s ../../outside apps/service/linked
+both; audit scripts/check-imports.py
+echo "# a link named domain pointing at a directory of violations:"
+ln -s ../../../../outside/domain apps/service/src/shop/domain2; both
+
+######## /tmp/s01-demo/step5.sh
+# Quickstart step 5 with the real codegraph CLI. ./init --extension codegraph was run first (init-real tail below).
+. /tmp/s01-demo/env.sh
+cd /tmp/s01-demo/c/shop
+echo "codegraph on PATH: $(which codegraph) ($(codegraph --version)); CI markers: CI='${CI-}' GITHUB_ACTIONS='${GITHUB_ACTIONS-}' GITLAB_CI='${GITLAB_CI-}'"
+echo "# tail of ./init --extension codegraph (exit 0):"; grep -A12 "Initializing CodeGraph" /tmp/s01-demo/init-real.txt | sed 's/^/   /'
+mkdir -p .old/agents; cp /tmp/s01-demo/old/check-codegraph.py .old/; cp /tmp/s01-demo/old/agents/code_index.py .old/agents/; echo .old/ >> .git/info/exclude
+run git add -A; git commit -qm "init with the code index" ; echo "[commit exit $?] $(git log --oneline | head -1); branch $(git branch --show-current)"
+echo "## on main"
+run make check-codegraph
+echo "# the earlier script, same tree and index:"; run python3 .old/check-codegraph.py
+python3 scripts/check-codegraph.py > /tmp/s01-demo/cg-new.out 2>&1; python3 .old/check-codegraph.py > /tmp/s01-demo/cg-old.out 2>&1; cmp /tmp/s01-demo/cg-new.out /tmp/s01-demo/cg-old.out && echo "# new and earlier output on main: byte-identical"
+echo "# the record: $(ls -la .codegraph | grep gate-memory)"; run git status --short
+echo "## git checkout -b slice/S1, and the gate straight away (within two seconds of the checkout)"
+run git checkout -q -b slice/S1
+run make check-codegraph
+echo "# ...and again after three seconds:"; sleep 3
+run make check-codegraph
+run make check-codegraph
+echo "## edit one source file, scripts/codegraph sync, run again"
+F=apps/service/src/shop/domain/demo_edit.py; ls apps/service/src/shop/application/*.py | head -3
+E=$(git ls-files 'apps/service/src/shop/*.py' | head -1); echo "# editing $E"; echo "# a line the demo added" >> $E
+run scripts/codegraph sync
+run make check-codegraph
+sleep 3
+echo "# again (the pass above renewed the record):"; run make check-codegraph
+echo "## CI=true on the slice branch"
+CI=true make check-codegraph; echo "[exit $?]"
+echo "# the earlier script on the same tree:"; run python3 .old/check-codegraph.py
+echo "# GITHUB_ACTIONS=true, GITLAB_CI=true:"; GITHUB_ACTIONS=true python3 scripts/check-codegraph.py; GITLAB_CI=true python3 scripts/check-codegraph.py
+echo "## edit a file and do NOT sync"
+echo "# another line" >> $E
+run make check-codegraph
+sleep 3; run make check-codegraph
+echo "## and with CODEGRAPH_GATE_NO_SYNC=1 after a further edit"
+echo "# third line" >> $E
+CODEGRAPH_GATE_NO_SYNC=1 make check-codegraph; echo "[exit $?]"
+echo "# the earlier script, same state, NO_SYNC:"; CODEGRAPH_GATE_NO_SYNC=1 python3 .old/check-codegraph.py; echo "[exit $?]"
+run scripts/codegraph sync; run make check-codegraph
+run git status --short
+
+######## /tmp/s01-demo/opened.py
+# run a script under an audit hook; report how many git-tracked, indexed files it opened
+import os, sys, runpy, subprocess, sqlite3
+tracked = set(subprocess.run(["git","ls-files","-z"],capture_output=True).stdout.decode().split("\0")) - {""}
+rows = {r[0] for r in sqlite3.connect("file:.codegraph/codegraph.db?mode=ro",uri=True).execute("select path from files")}
+root = os.getcwd(); seen = set()
+def hook(event, args):
+    if event == "open" and isinstance(args[0], (str, bytes, os.PathLike)):
+        p = os.fspath(args[0]); p = p.decode() if isinstance(p, bytes) else p
+        r = os.path.relpath(os.path.abspath(p), root)
+        if r in tracked and r in rows and not r.startswith("scripts/"): seen.add(r)
+sys.addaudithook(hook)
+script = sys.argv[1]; sys.argv = [script]
+try: runpy.run_path(script, run_name="__main__")
+except SystemExit as e: code = e.code
+print(f"[audit] exit {code}; indexed tracked files opened (outside scripts/): {len(seen)} of {len((tracked & rows) - {t for t in tracked if t.startswith('scripts/')})} {sorted(seen)[:3] if len(seen) < 4 else ''}")
+
+######## /tmp/s01-demo/shim/git
+#!/bin/sh
+# a git that cannot say what changed: `git diff` fails, everything else is the real git
+for a in "$@"; do [ "$a" = diff ] && { echo "fatal: demo shim: diff refused" >&2; exit 128; }; done
+exec /usr/bin/git "$@"
+
+######## /tmp/s01-demo/ac-codegraph.sh
+# AC-S01-10..25 against a real CodeGraph 1.6.0 index (a copy of the step-5 project, new inodes).
+# N = the narrowed run with no sync allowed; W = the whole run on the same tree and index (CI=true, no sync, writes no record).
+. /tmp/s01-demo/env.sh
+rm -rf /tmp/s01-demo/cg; mkdir -p /tmp/s01-demo/cg; cp -a /tmp/s01-demo/c/shop /tmp/s01-demo/cg/shop; cd /tmp/s01-demo/cg/shop
+M=.codegraph/gate-memory.json; G="python3 scripts/check-codegraph.py"; F=apps/service/src/shop/__init__.py; F2=apps/service/src/shop/composition.py
+[ -f $F2 ] || F2=$(git ls-files 'apps/service/src/shop/*.py' | sed -n 2p)
+git checkout -q -f main; git reset -q --hard; BASE=$(git rev-parse HEAD)
+short() { head -${2:-5} "$1" | cut -c1-330; }
+g() { "$@" >/tmp/s01-demo/o.txt 2>&1; c=$?; short /tmp/s01-demo/o.txt; echo "[exit $c]"; }
+N() { CODEGRAPH_GATE_NO_SYNC=1 $G; }
+nw() { # narrowed and whole on the same tree and index, both without sync; are the verdicts the same?
+  CODEGRAPH_GATE_NO_SYNC=1 $G >/tmp/s01-demo/n.txt 2>&1; n=$?; CI=true CODEGRAPH_GATE_NO_SYNC=1 $G >/tmp/s01-demo/w.txt 2>&1; w=$?
+  echo "N [exit $n]:"; short /tmp/s01-demo/n.txt 5 | sed 's/^/   /'; echo "W [exit $w]: $(cmp -s /tmp/s01-demo/n.txt /tmp/s01-demo/w.txt && echo 'output byte-identical to N' || (echo; short /tmp/s01-demo/w.txt 5 | sed 's/^/   /'))"; }
+sum() { sha256sum $M | cut -c1-16; }
+reset() { git checkout -q -f main; git reset -q --hard $BASE; git clean -qfd -e .old; codegraph sync >/dev/null 2>&1; $G >/tmp/s01-demo/o.txt 2>&1 || { echo "RESET: whole run on main failed:"; cat /tmp/s01-demo/o.txt; }; git checkout -q -B slice/S1; sleep 2.3; }
+
+echo "## the copy: a database with another identity (cp -a), on slice/S1"
+git checkout -q -B slice/S1; g $G; sleep 2.3; g $G
+
+echo; echo "## AC-S01-10 / R7"
+reset; echo "# e1 nothing changed:"; g $G; python3 /tmp/s01-demo/opened.py scripts/check-codegraph.py | grep audit
+echo "# e2 one file edited and synced:"; echo "# demo" >> $F; codegraph sync >/dev/null 2>&1; g $G; python3 /tmp/s01-demo/opened.py scripts/check-codegraph.py | grep audit
+echo "# e3 the edit committed on the slice branch:"; git commit -qam "slice edit"; g $G; sleep 2.3; echo "# and the next run:"; g $G
+echo "# e4 edited, not synced, CLI reachable:"; echo "# demo2" >> $F; g $G
+echo "# e5 edited, not synced, CODEGRAPH_GATE_NO_SYNC=1:"; echo "# demo3" >> $F; g N
+
+echo; echo "## AC-S01-11 / R6 - off a slice branch and in CI the run is the earlier one"
+reset; git checkout -q main
+for s in scripts .old; do python3 $s/check-codegraph.py; done; python3 /tmp/s01-demo/opened.py scripts/check-codegraph.py | grep audit
+git checkout -q slice/S1; b=$(sum); for m in CI GITHUB_ACTIONS GITLAB_CI; do echo "# $m=true on slice/S1:"; env $m=true $G; done; echo "# earlier script:"; python3 .old/check-codegraph.py
+CI=true python3 /tmp/s01-demo/opened.py scripts/check-codegraph.py | grep audit; echo "# record bytes before/after the three CI runs: $b / $(sum)"
+git checkout -q -b feature/x; echo "# on feature/x:"; $G; git checkout -q --detach; echo "# detached HEAD:"; $G; python3 /tmp/s01-demo/opened.py scripts/check-codegraph.py | grep audit
+
+echo; echo "## AC-S01-12 / R6e4 - a corrupt database on the trunk and under CI"
+reset; git checkout -q main; cp -a .codegraph /tmp/s01-demo/cg-keep; rm -f .codegraph/codegraph.db-wal .codegraph/codegraph.db-shm
+head -c 4096 /dev/urandom > .codegraph/codegraph.db
+echo "# main, no sync - new, then earlier:"; g N 2; CODEGRAPH_GATE_NO_SYNC=1 g python3 .old/check-codegraph.py 2
+git checkout -q slice/S1; echo "# slice/S1 with CI=true, no sync:"; CI=true g N 2
+echo "# AC-S01-18 / R9e5 slice/S1 narrowed, no sync (never 'skipped'):"; g N 2
+echo "# AC-S01-18 slice/S1 narrowed, CLI reachable (rebuilt):"; g $G 3
+reset; git checkout -q main; rm -f .codegraph/codegraph.db-wal .codegraph/codegraph.db-shm; head -c 4096 /dev/urandom > .codegraph/codegraph.db
+echo "# main, CLI reachable (rebuilt as before):"; g $G 3
+echo "# AC-S01-18 a sound database whose files table cannot be read (renamed), narrowed then whole:"
+reset; python3 -c "import sqlite3; c=sqlite3.connect('.codegraph/codegraph.db'); c.execute('alter table files rename to files_x'); c.commit()"; nw
+python3 -c "import sqlite3; c=sqlite3.connect('.codegraph/codegraph.db'); c.execute('alter table files_x rename to files'); c.commit()"
+
+echo; echo "## AC-S01-13 / R8e1 - dirty when the record was written, reverted afterwards"
+reset; git checkout -q main; echo "# dirty" >> $F; codegraph sync >/dev/null 2>&1; echo "# whole run on main with the dirty file indexed:"; g $G
+git checkout -q slice/S1; git checkout -- $F; sleep 2.3; nw
+
+echo; echo "## AC-S01-14 / R8e2-e4,e6 - rows moved behind the record"
+reset; python3 -c "import sqlite3; c=sqlite3.connect('.codegraph/codegraph.db'); c.execute(\"update files set content_hash='0'*64 where path='$F'\"); c.commit()"; echo "# e2 one row's content_hash rewritten, indexed_at untouched:"; nw
+reset; python3 -c "import sqlite3; c=sqlite3.connect('.codegraph/codegraph.db'); c.execute(\"delete from files where path='$F'\"); c.commit()"; echo "# e3 a row deleted:"; nw
+reset; U=$(python3 - <<'PY'
+import sqlite3, subprocess
+rows={r[0] for r in sqlite3.connect("file:.codegraph/codegraph.db?mode=ro",uri=True).execute("select path from files")}
+t=[p for p in subprocess.run(["git","ls-files"],capture_output=True,text=True).stdout.split("\n") if p and p not in rows and p.endswith(".md")]
+print(t[0])
+PY
+); python3 -c "import sqlite3; c=sqlite3.connect('.codegraph/codegraph.db'); c.execute(\"insert into files(path,content_hash,language,size,modified_at,indexed_at) values('$U','1'*64,'markdown',1,1,1)\"); c.commit()"; echo "# e4 a row added for the tracked file $U (wrong digest):"; nw
+reset; cp .codegraph/codegraph.db .codegraph/copy.db; mv .codegraph/copy.db .codegraph/codegraph.db; echo "# e6 the database replaced by a copy of itself:"; g $G
+
+echo; echo "## AC-S01-15 / R8e5 - a file git was told not to report"
+reset; git update-index --assume-unchanged $F; echo "# hidden edit" >> $F; echo "# assume-unchanged; git status says: '$(git status --short)'"; nw; git update-index --no-assume-unchanged $F
+reset; git update-index --skip-worktree $F; echo "# hidden edit" >> $F; echo "# skip-worktree; git status says: '$(git status --short)'"; nw; git update-index --no-skip-worktree $F
+
+echo; echo "## AC-S01-16 / R9e4 - the gate's own scripts edited since the record"
+reset; echo "# comment" >> scripts/check-codegraph.py; g $G; git checkout -- scripts/check-codegraph.py
+reset; echo "# comment" >> scripts/agents/code_index.py; g $G; git checkout -- scripts/agents/code_index.py
+
+echo; echo "## AC-S01-17 / R9e1-e3 - a record that cannot be used"
+reset; rm $M; echo "# e1 no record:"; g $G; echo "# and the run after it:"; sleep 2.3; g $G
+reset; printf '{' > $M; echo "# e2 the record holds '{':"; g $G
+reset; python3 -c "import json; m=json.load(open('$M')); m['commit']='0'*40; json.dump(m,open('$M','w'))"; echo "# e3 the record's commit is forty zeros:"; g $G
+reset; echo "# git cannot list what changed (a git on PATH whose 'diff' fails):"; PATH=/tmp/s01-demo/shim:$PATH g $G
+reset; python3 -c "import json; m=json.load(open('$M')); del m['files']; json.dump(m,open('$M','w'))"; echo "# AC-S01-25 a record without the per-file records:"; g $G
+
+echo; echo "## AC-S01-19 / R10e1,e2 - only a pass writes the record"
+reset; echo "# stale" >> $F; b=$(sum); echo "# a failing run:"; g N 2; echo "# record before/after: $b / $(sum)"
+echo "# a narrowed run that syncs and passes, then the next:"; g $G; echo "# record now: $(sum)"; sleep 2.3; g $G
+echo "# a skipped run (files table renamed) leaves the record:"; b=$(sum); python3 -c "import sqlite3; c=sqlite3.connect('.codegraph/codegraph.db'); c.execute('alter table files rename to files_x'); c.commit()"; g $G 1; echo "# record before/after: $b / $(sum)"
+python3 -c "import sqlite3; c=sqlite3.connect('.codegraph/codegraph.db'); c.execute('alter table files_x rename to files'); c.commit()"
+
+echo; echo "## AC-S01-20 / R10e3-e5"
+reset; g $G; echo "# git status --porcelain after the runs: '$(git status --porcelain)'; ignored: $(git status --porcelain --ignored | grep codegraph)"
+echo "# e5 .codegraph/ copied into a second clone at another commit, narrowed there with no sync:"
+rm -rf /tmp/s01-demo/cg2; git clone -q /tmp/s01-demo/cg/shop /tmp/s01-demo/cg2 2>/dev/null; ( cd /tmp/s01-demo/cg2; git checkout -q -B main; echo "# other" >> $F; git commit -qam other; cp -a /tmp/s01-demo/cg/shop/.codegraph .; git checkout -q -b slice/S1; sleep 2.3; nw )
+echo "# e4 git does not ignore .codegraph/ (both ignore files emptied and committed):"
+reset; git checkout -q main; cat .codegraph/.gitignore | head -3; rm $M; : > .codegraph/.gitignore; sed -i '/codegraph/d' .gitignore; git add .gitignore; git commit -qm "stop ignoring the index"; git checkout -q -B slice/S1
+g $G; g $G; echo "# record written? $(ls $M 2>&1)"; git checkout -q main; echo "# on main there: $($G)"; echo "# record written? $(ls $M 2>&1)"
+cd /tmp/s01-demo/cg/shop; git checkout -q -f main; git reset -q --hard $BASE; git checkout -- . ; git checkout HEAD -- .gitignore; cp /tmp/s01-demo/cg-keep/.gitignore .codegraph/.gitignore
+
+echo; echo "## AC-S01-23 - bytes changed in ways git's comparison does not report"
+reset; echo "# .gitattributes: $(grep -m1 'text' .gitattributes)"
+T=$(git ls-files 'docs/*.md' | head -1); python3 -c "import sqlite3; print('# indexed?', sqlite3.connect('file:.codegraph/codegraph.db?mode=ro',uri=True).execute(\"select count(*) from files where path='$F'\").fetchone())"
+sed -i 's/$/\r/' $F; git add $F 2>/dev/null; echo "# $F rewritten with CRLF and added; git diff --name-only HEAD says: '$(git diff --name-only HEAD)' status: '$(git status --short)'"; nw
+reset; python3 - "$F2" <<'PY'
+import os, sys
+p=sys.argv[1]; s=os.stat(p); b=open(p,"rb").read()
+i=b.index(b"\n"); nb=b[:i]+b" "+b[i+1:] if False else bytes([b[0]^0x01 if chr(b[0]).isalpha() else b[0]])+b[1:]
+if nb==b: nb=b[:-1]+b"#"
+f=os.open(p,os.O_WRONLY); os.write(f,nb); os.close(f); os.utime(p,ns=(s.st_atime_ns,s.st_mtime_ns))
+print(f"# {p}: one byte changed in place, same size {len(nb)}, modification time restored; inode same: {os.stat(p).st_ino==s.st_ino}")
+PY
+git update-index --assume-unchanged $F2 2>/dev/null; git update-index --no-assume-unchanged $F2; echo "# git status: '$(git status --short)'"; nw
+
+echo; echo "## AC-S01-25 - times moved, no byte changed"
+reset; touch $F $F2; sleep 2.3; echo "# two files touched:"; g $G; echo "# next run:"; g $G
+echo "## AC-S01-24 - a file written within two seconds of the run that vouches for it"
+reset; touch $F; echo "# touched, gate at once:"; g $G; echo "# again at once:"; g $G; sleep 2.3; echo "# after 2.3 s:"; g $G; echo "# and again:"; g $G
+
+echo; echo "## D50 - a tracked source file the index holds no row for"
+reset; echo "x = 1" > apps/service/src/shop/domain/new_thing.py; git add apps/service/src/shop/domain/new_thing.py; git commit -qm "a new file"; nw
+git status --short | head -3
+
+######## /tmp/s01-demo/renew.sh
+# Does a passing narrowed run renew the record so that the next run hashes 0? (plan R7e3, R10e2)
+. /tmp/s01-demo/env.sh; cd /tmp/s01-demo/cg/shop; G="python3 scripts/check-codegraph.py"; F=apps/service/src/shop/__init__.py; M=.codegraph/gate-memory.json
+line() { $G 2>&1 | head -1 | cut -c1-110; }
+rec() { python3 -c "import json; m=json.load(open('$M')); print('   record: commit', m['commit'][:7], 'dirty', m['dirty'], 'whole', m['whole'])"; }
+git checkout -q -f main; git reset -q --hard; git clean -qfd -e .old; codegraph sync >/dev/null 2>&1; echo "main: $(line)"; echo "HEAD $(git rev-parse --short HEAD)"; rec
+git checkout -q -B slice/S1; sleep 2.3
+echo "## (a) R10e2: one file edited, not synced; the narrowed run syncs and passes; then four more runs 2.3 s apart, the edit left uncommitted"
+echo "# demo" >> $F; line; rec; for i in 1 2 3 4; do sleep 2.3; line; done; rec
+echo "## (b) R7e3: the edit committed on the slice branch; four runs 2.3 s apart"
+git commit -qam "slice edit"; echo "HEAD $(git rev-parse --short HEAD)"; for i in 1 2 3 4; do line; sleep 2.3; done; rec
+echo "## (c) a second file edited, synced, committed; three runs"
+F2=apps/service/src/shop/composition.py; echo "# demo" >> $F2; codegraph sync >/dev/null 2>&1; git commit -qam "second"; for i in 1 2 3; do line; sleep 2.3; done; rec
+echo "## (d) back on main: one whole run, then slice/S1 again"
+git checkout -q main; git merge -q --ff-only slice/S1; echo "main: $(line)"; git checkout -q slice/S1; sleep 2.3; line; rec
+git status --short
+

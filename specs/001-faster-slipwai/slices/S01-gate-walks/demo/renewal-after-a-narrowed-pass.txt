@@ -1,0 +1,35 @@
+main: check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:09:07
+HEAD 2ce316a
+   record: commit 2ce316a dirty [] whole 1791040183.045122
+## (a) R10e2: one file edited, not synced; the narrowed run syncs and passes; then four more runs 2.3 s apart, the edit left uncommitted
+check-codegraph: synced 1 file(s) first; index current — hashed 1 of 100 file(s), only what changed since th
+   record: commit 2ce316a dirty ['apps/service/src/shop/__init__.py'] whole 1791040183.045122
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison 
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison 
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison 
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison 
+   record: commit 2ce316a dirty ['apps/service/src/shop/__init__.py'] whole 1791040183.045122
+## (b) R7e3: the edit committed on the slice branch; four runs 2.3 s apart
+warning: in the working copy of 'apps/service/src/shop/__init__.py', CRLF will be replaced by LF the next time Git touches it
+HEAD 74864dd
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison 
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison 
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison 
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison 
+   record: commit 74864dd dirty [] whole 1791040183.045122
+## (c) a second file edited, synced, committed; three runs
+On branch slice/S1
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	apps/service/src/shop/composition.py
+
+nothing added to commit but untracked files present (use "git add" to track)
+check-codegraph: index current — hashed 0 of 101 file(s), only what changed since the last whole comparison 
+check-codegraph: index current — hashed 0 of 101 file(s), only what changed since the last whole comparison 
+check-codegraph: index current — hashed 0 of 101 file(s), only what changed since the last whole comparison 
+   record: commit 74864dd dirty [] whole 1791040183.045122
+## (d) back on main: one whole run, then slice/S1 again
+main: check-codegraph: synced 1 file(s) first; index current — 101 file(s), indexed 2026-10-03 10:10:13
+check-codegraph: index current — hashed 1 of 101 file(s), only what changed since the last whole comparison 
+   record: commit 74864dd dirty [] whole 1791040213.4687262
+?? apps/service/src/shop/composition.py

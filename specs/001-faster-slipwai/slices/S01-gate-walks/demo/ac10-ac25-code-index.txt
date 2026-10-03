@@ -1,0 +1,278 @@
+## the copy: a database with another identity (cp -a), on slice/S1
+check-codegraph: synced 1 file(s) first; index current — 100 file(s), indexed 2026-10-03 10:07:42 (compared everything: the index database is not the one it was compared against)
+[exit 0]
+check-codegraph: index current — hashed 100 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:07:42); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+
+## AC-S01-10 / R7
+# e1 nothing changed:
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:07:45); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+[audit] exit 0; indexed tracked files opened (outside scripts/): 0 of 59 []
+# e2 one file edited and synced:
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:07:45); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+[audit] exit 0; indexed tracked files opened (outside scripts/): 1 of 59 ['apps/service/src/shop/__init__.py']
+# e3 the edit committed on the slice branch:
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:07:45); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# and the next run:
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:07:45); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# e4 edited, not synced, CLI reachable:
+check-codegraph: synced 1 file(s) first; index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:07:45); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# e5 edited, not synced, CODEGRAPH_GATE_NO_SYNC=1:
+check-codegraph: the code index no longer describes this working tree
+  last indexed: 2026-10-03 10:07:51
+  1 tracked file(s) changed since they were indexed:
+    - apps/service/src/shop/__init__.py
+
+[exit 1]
+
+## AC-S01-11 / R6 - off a slice branch and in CI the run is the earlier one
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:07:51
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:07:51
+[audit] exit 0; indexed tracked files opened (outside scripts/): 59 of 59 
+# CI=true on slice/S1:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:07:51
+# GITHUB_ACTIONS=true on slice/S1:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:07:51
+# GITLAB_CI=true on slice/S1:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:07:51
+# earlier script:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:07:51
+[audit] exit 0; indexed tracked files opened (outside scripts/): 59 of 59 
+# record bytes before/after the three CI runs: 8a0612eee0b5a898 / 8a0612eee0b5a898
+# on feature/x:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:07:51
+# detached HEAD:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:07:51
+[audit] exit 0; indexed tracked files opened (outside scripts/): 59 of 59 
+
+## AC-S01-12 / R6e4 - a corrupt database on the trunk and under CI
+# main, no sync - new, then earlier:
+check-codegraph: .codegraph/codegraph.db fails SQLite's integrity check (file is not a database). CodeGraph's own `status` and `sync` do not notice this; its queries fail. The database is derived from the source and ignored by Git, so nothing is lost by rebuilding it: `python3 scripts/agents/code_index.py health` moves it aside 
+[exit 1]
+check-codegraph: .codegraph/codegraph.db fails SQLite's integrity check (file is not a database). CodeGraph's own `status` and `sync` do not notice this; its queries fail. The database is derived from the source and ignored by Git, so nothing is lost by rebuilding it: `python3 scripts/agents/code_index.py health` moves it aside 
+[exit 1]
+# slice/S1 with CI=true, no sync:
+check-codegraph: .codegraph/codegraph.db fails SQLite's integrity check (file is not a database). CodeGraph's own `status` and `sync` do not notice this; its queries fail. The database is derived from the source and ignored by Git, so nothing is lost by rebuilding it: `python3 scripts/agents/code_index.py health` moves it aside 
+[exit 1]
+# AC-S01-18 / R9e5 slice/S1 narrowed, no sync (never 'skipped'):
+check-codegraph: .codegraph/codegraph.db fails SQLite's integrity check (file is not a database). CodeGraph's own `status` and `sync` do not notice this; its queries fail. The database is derived from the source and ignored by Git, so nothing is lost by rebuilding it: `python3 scripts/agents/code_index.py health` moves it aside 
+[exit 1]
+# AC-S01-18 slice/S1 narrowed, CLI reachable (rebuilt):
+check-codegraph: rebuilt a corrupt database first (1.1s); index current — 100 file(s), indexed 2026-10-03 10:07:58 (compared everything: the index could not be read)
+[exit 0]
+# main, CLI reachable (rebuilt as before):
+check-codegraph: rebuilt a corrupt database first (1.1s); index current — 100 file(s), indexed 2026-10-03 10:08:02
+[exit 0]
+# AC-S01-18 a sound database whose files table cannot be read (renamed), narrowed then whole:
+N [exit 0]:
+   check-codegraph: .codegraph/codegraph.db does not carry the `files` table this check reads; CodeGraph's schema may have moved on — skipped
+W [exit 0]: output byte-identical to N
+
+## AC-S01-13 / R8e1 - dirty when the record was written, reverted afterwards
+# whole run on main with the dirty file indexed:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:08
+[exit 0]
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:08:08
+     1 tracked file(s) changed since they were indexed:
+       - apps/service/src/shop/__init__.py
+   
+W [exit 1]: output byte-identical to N
+
+## AC-S01-14 / R8e2-e4,e6 - rows moved behind the record
+# e2 one row's content_hash rewritten, indexed_at untouched:
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:08:11
+     1 tracked file(s) changed since they were indexed:
+       - apps/service/src/shop/__init__.py
+   
+W [exit 1]: output byte-identical to N
+RESET: whole run on main failed:
+check-codegraph: synced 1 file(s) first; the code index no longer describes this working tree
+  last indexed: 2026-10-03 10:08:11
+  1 tracked file(s) changed since they were indexed:
+    - apps/service/src/shop/__init__.py
+
+This is not a rebuild you forgot to run. CodeGraph keeps itself current only while a
+client is attached: the watcher lives in a daemon that starts with an MCP client or a
+`codegraph` command and shuts down on its idle timeout. A checkout opened where that
+tooling is absent — a container, a sandbox, a CI runner, a machine where the CLI was
+never installed — keeps this database and never writes to it again.
+
+Attaching a client once catches the backlog up on its own. From a terminal, in this
+directory: `scripts/codegraph sync`, which runs the pinned CLI through `npx` or an
+installed `codegraph`. From an agent session: configure the CodeGraph MCP server for this
+project. To put the tooling back for good, install it and re-adopt the extension, which
+is also what re-points the agent at the index:
+
+  curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+  ./init --extension codegraph
+
+Until one of those has run, treat this index as absent rather than empty: it answers
+about the code it last read, and says nothing about the rest.
+# e3 a row deleted:
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:08:02
+     1 tracked file(s) the index has never seen:
+       - apps/service/src/shop/__init__.py
+   
+W [exit 1]: output byte-identical to N
+# e4 a row added for the tracked file .github/PULL_REQUEST_TEMPLATE.md (wrong digest):
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:08:17
+     1 tracked file(s) changed since they were indexed:
+       - .github/PULL_REQUEST_TEMPLATE.md
+   
+W [exit 1]: output byte-identical to N
+# e6 the database replaced by a copy of itself:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:17 (compared everything: the index database is not the one it was compared against)
+[exit 0]
+
+## AC-S01-15 / R8e5 - a file git was told not to report
+# assume-unchanged; git status says: ''
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:08:17
+     1 tracked file(s) changed since they were indexed:
+       - apps/service/src/shop/__init__.py
+   
+W [exit 1]: output byte-identical to N
+# skip-worktree; git status says: ''
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:08:17
+     1 tracked file(s) changed since they were indexed:
+       - apps/service/src/shop/__init__.py
+   
+W [exit 1]: output byte-identical to N
+
+## AC-S01-16 / R9e4 - the gate's own scripts edited since the record
+check-codegraph: synced 1 file(s) first; index current — 100 file(s), indexed 2026-10-03 10:08:31 (compared everything: the gate's scripts changed since)
+[exit 0]
+check-codegraph: synced 1 file(s) first; index current — 100 file(s), indexed 2026-10-03 10:08:35 (compared everything: the gate's scripts changed since)
+[exit 0]
+
+## AC-S01-17 / R9e1-e3 - a record that cannot be used
+# e1 no record:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:35 (compared everything: no earlier whole comparison is recorded)
+[exit 0]
+# and the run after it:
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:08:38); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# e2 the record holds '{':
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:35 (compared everything: the record of the last whole comparison could not be read)
+[exit 0]
+# e3 the record's commit is forty zeros:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:35 (compared everything: the commit it was taken at is gone)
+[exit 0]
+# git cannot list what changed (a git on PATH whose 'diff' fails):
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:35 (compared everything: git could not say what changed)
+[exit 0]
+# AC-S01-25 a record without the per-file records:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:35 (compared everything: the record of the last whole comparison could not be read)
+[exit 0]
+
+## AC-S01-19 / R10e1,e2 - only a pass writes the record
+# a failing run:
+check-codegraph: the code index no longer describes this working tree
+  last indexed: 2026-10-03 10:08:35
+  1 tracked file(s) changed since they were indexed:
+    - apps/service/src/shop/__init__.py
+
+[exit 1]
+# record before/after: 3c033c23ab0b76cb / 3c033c23ab0b76cb
+# a narrowed run that syncs and passes, then the next:
+check-codegraph: synced 1 file(s) first; index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:08:51); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# record now: 0f2ad7009ac6c747
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:08:51); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# a skipped run (files table renamed) leaves the record:
+check-codegraph: .codegraph/codegraph.db does not carry the `files` table this check reads; CodeGraph's schema may have moved on — skipped
+[exit 0]
+# record before/after: 509521d823488166 / 509521d823488166
+
+## AC-S01-20 / R10e3-e5
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:08:57); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# git status --porcelain after the runs: ''; ignored: !! .codegraph/
+# e5 .codegraph/ copied into a second clone at another commit, narrowed there with no sync:
+fatal: a branch named 'slice/S1' already exists
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:08:57
+     1 tracked file(s) changed since they were indexed:
+       - apps/service/src/shop/__init__.py
+   
+W [exit 1]: output byte-identical to N
+# e4 git does not ignore .codegraph/ (both ignore files emptied and committed):
+# CodeGraph data files — local to each machine, not for committing.
+# Ignore everything in .codegraph/ except this file itself, so transient
+# files (the database, daemon.pid, sockets, logs) never show up in git.
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:57 (compared everything: the record cannot be kept here: git does not ignore `.codegraph/`)
+[exit 0]
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:57 (compared everything: the record cannot be kept here: git does not ignore `.codegraph/`)
+[exit 0]
+# record written? ls: cannot access '.codegraph/gate-memory.json': No such file or directory
+# on main there: check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:08:57
+# record written? ls: cannot access '.codegraph/gate-memory.json': No such file or directory
+
+## AC-S01-23 - bytes changed in ways git's comparison does not report
+# .gitattributes: * text=auto eol=lf
+# indexed? (1,)
+# apps/service/src/shop/__init__.py rewritten with CRLF and added; git diff --name-only HEAD says: '' status: ''
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:08:57
+     1 tracked file(s) changed since they were indexed:
+       - apps/service/src/shop/__init__.py
+   
+W [exit 1]: output byte-identical to N
+# apps/service/src/shop/adapters/driven/checkpoint_store_memory.py: one byte changed in place, same size 2377, modification time restored; inode same: True
+# git status: ' M apps/service/src/shop/adapters/driven/checkpoint_store_memory.py'
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:09:07
+     1 tracked file(s) changed since they were indexed:
+       - apps/service/src/shop/adapters/driven/checkpoint_store_memory.py
+   
+W [exit 1]: output byte-identical to N
+
+## AC-S01-25 - times moved, no byte changed
+# two files touched:
+check-codegraph: index current — hashed 2 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:09:10); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# next run:
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:09:10); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+## AC-S01-24 - a file written within two seconds of the run that vouches for it
+# touched, gate at once:
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:09:15); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# again at once:
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:09:15); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# after 2.3 s:
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:09:15); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# and again:
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:09:15); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+
+## D50 - a tracked source file the index holds no row for
+N [exit 1]:
+   check-codegraph: the code index no longer describes this working tree
+     last indexed: 2026-10-03 10:09:07
+     1 tracked file(s) the index has never seen:
+       - apps/service/src/shop/domain/new_thing.py
+   
+W [exit 1]: output byte-identical to N

@@ -1,11 +1,11 @@
 PATCH
 
 **`check-imports`, `check-migrations` and `check-codegraph` stop reading what the answer never needed.** The two
-walking gates listed `apps/` and `packages/` several times a run — 256 directory entries on a new Python project
-that holds 79 — and descended into `.venv` and `node_modules`, so after an install they read thousands of files
+walking gates listed `apps/` and `packages/` several times a run — three times over, and each browser app again,
+on a new Python project that holds 79 entries — and descended into `.venv` and `node_modules`, so after an install they read thousands of files
 that are not the project's. Each directory is now listed once, and five directories are not descended into:
 `.venv`, `node_modules`, `__pycache__` and `.git` wherever they are, and `target` where a `pom.xml` sits beside it
-— Maven's output. A `target` anywhere else is a source directory like any other and is read as before. Both
+— Maven's output, and the test is the `pom.xml`, whatever language the service is in. A `target` anywhere else is a source directory like any other and is read as before. Both
 pass lines keep their words and end with what was read: `check-imports: inward dependency rule holds (79
 directory entries read)`. The count is a measurement, not a limit: no project fails on its size.
 

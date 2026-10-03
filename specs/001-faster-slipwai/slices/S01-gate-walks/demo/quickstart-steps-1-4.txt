@@ -1,0 +1,125 @@
+python3 here: Python 3.14.4 (the skeleton pins 3.13)
+## step 1 - the count
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (79 directory entries read)
+[exit 0]
+$ make check-migrations
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (79 directory entries read)
+[exit 0]
+# independent enumeration: find apps packages, minus the two tops = 79
+# the earlier scripts, same tree:
+$ python3 .old/check-imports.py
+check-imports: inward dependency rule holds
+[exit 0]
+$ python3 .old/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files
+[exit 0]
+[audit] .old/check-imports.py: exit 0; entries listed under apps/ and packages/ = 512; project.json opened 5 time(s); listings at or inside a pruned-name directory = 0
+[audit] scripts/check-imports.py: exit 0; entries listed under apps/ and packages/ = 79; project.json opened 1 time(s); listings at or inside a pruned-name directory = 0
+[audit] .old/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 165; project.json opened 0 time(s); listings at or inside a pruned-name directory = 0
+[audit] scripts/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 79; project.json opened 0 time(s); listings at or inside a pruned-name directory = 0
+
+## step 2 - pruned directories cost one entry each (bad import exactly as the quickstart words it)
+# planted: 601 files
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (81 directory entries read)
+[exit 0]
+$ make check-migrations
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (81 directory entries read)
+[exit 0]
+$ python3 .old/check-imports.py
+check-imports: inward dependency rule holds
+[exit 0]
+# ^ the earlier script passes too: 'from ..adapters import store' is not a line either script has ever reported (see step 3).
+# the same file with a spelling the gate does report, 'from ..adapters.store import x':
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (81 directory entries read)
+[exit 0]
+$ python3 .old/check-imports.py
+apps/service/.venv/lib/pkg/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+[exit 1]
+[audit] .old/check-imports.py: exit 1; entries listed under apps/ and packages/ = 4758; project.json opened 7 time(s); listings at or inside a pruned-name directory = 40
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv/lib
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv/lib
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv/lib/pkg
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv/lib/pkg
+[audit] scripts/check-imports.py: exit 0; entries listed under apps/ and packages/ = 81; project.json opened 1 time(s); listings at or inside a pruned-name directory = 0
+[audit] .old/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 1379; project.json opened 0 time(s); listings at or inside a pruned-name directory = 12
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv/lib
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv/lib
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv/lib/pkg
+[audit]   listed: /tmp/s01-demo/q/shop/apps/service/.venv/lib/pkg
+[audit] scripts/check-migrations.py: exit 0; entries listed under apps/ and packages/ = 81; project.json opened 0 time(s); listings at or inside a pruned-name directory = 0
+# git status in the project (planted directories are ignored):
+?? .old/
+
+## step 3 - a real violation is still found
+# 3(i) to the letter: the generated service has no apps/service/src/domain/ (its domain is apps/service/src/shop/domain/); made as written
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (83 directory entries read)
+[exit 0]
+$ python3 .old/check-imports.py
+apps/service/.venv/lib/pkg/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+[exit 1]
+# 3(ii) the same line in the domain the project has, apps/service/src/shop/domain/bad.py
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (82 directory entries read)
+[exit 0]
+$ python3 .old/check-imports.py
+apps/service/.venv/lib/pkg/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+[exit 1]
+# 3(iii) a spelling the gate reports: 'from ..adapters.store import x'
+$ make check-imports
+python3 scripts/check-imports.py
+apps/service/src/shop/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+make: *** [Makefile:100: check-imports] Error 1
+[exit 2]
+# check-imports.py: new exit 1, earlier exit 1; stderr DIFFERS (101 bytes); new stdout 0 bytes
+apps/service/src/shop/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+
+## step 4a - target with no pom.xml is read
+# as written:
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (84 directory entries read)
+[exit 0]
+# with the reported spelling:
+$ make check-imports
+python3 scripts/check-imports.py
+apps/service/src/target/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+make: *** [Makefile:100: check-imports] Error 1
+[exit 2]
+# check-imports.py: new exit 1, earlier exit 1; stderr DIFFERS (103 bytes); new stdout 0 bytes
+apps/service/src/target/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+# a 'target' WITH a pom.xml beside it in this Python service is skipped (one entry for target, one for pom.xml):
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (83 directory entries read)
+[exit 0]
+$ make check-imports
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (81 directory entries read)
+[exit 0]
+
+# Reading notes (the hand's):
+# - Steps 3(iii) and 4a say "stderr DIFFERS" only because step 2's planted apps/service/.venv/lib/pkg/domain/bad.py was
+#   still there holding the reported spelling: the earlier script prints that file as a second finding (shown under 3(i)),
+#   the new one does not enter .venv. On trees with no pruned directory the two are byte-identical: ac1-ac9-walking-gates.txt, AC-S01-6.
+# - "512" for the earlier check-imports is what os.scandir listed under Python 3.14.4, which lists each directory twice
+#   inside rglob; the fragment's 256 is the same walk on the pinned 3.13, which is not on this machine.
+# - 'from ..adapters import store', the line the quickstart gives, is reported by neither script in any directory;
+#   'from ..adapters.store import x' is reported by both. Six spellings tried against both scripts in the project's own domain:
+#     from ..adapters import store       -> passes (both)      from ..adapters.store import x   -> fails (both)
+#     from shop.adapters import store    -> passes (both)      import shop.adapters             -> fails (both)
+#     from .. import adapters            -> passes (both)      from ..infrastructure import db  -> passes (both)

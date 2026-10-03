@@ -1,0 +1,164 @@
+codegraph on PATH: /home/noahc/.codegraph/versions/v1.6.0/bin/codegraph (1.6.0); CI markers: CI='' GITHUB_ACTIONS='' GITLAB_CI=''
+# tail of ./init --extension codegraph (exit 0):
+   ┌  Initializing CodeGraph
+   │
+   ◆  Initialized in /tmp/s01-demo/c/shop
+   │
+   Scanning files...
+   Parsing code...
+   Resolving refs...
+   Linking dynamic dispatch...
+   │
+   ◆  Indexed 100 files
+   │
+   ●  1,994 nodes, 5,487 edges in 226ms
+   │
+$ git add -A
+[exit 0]
+[commit exit 0] 2ce316a init with the code index; branch main
+## on main
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:05:29
+[exit 0]
+# the earlier script, same tree and index:
+$ python3 .old/check-codegraph.py
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:05:29
+[exit 0]
+# new and earlier output on main: byte-identical
+# the record: -rw-rw-r--  1 noahc noahc   22989 Oct  3 10:05 gate-memory.json
+$ git status --short
+[exit 0]
+## git checkout -b slice/S1, and the gate straight away (within two seconds of the checkout)
+$ git checkout -q -b slice/S1
+[exit 0]
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:05:58); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# ...and again after three seconds:
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:05:58); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: index current — hashed 0 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:05:58); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+## edit one source file, scripts/codegraph sync, run again
+ls: cannot access 'apps/service/src/shop/application/*.py': No such file or directory
+# editing apps/service/src/shop/__init__.py
+$ scripts/codegraph sync
+┌  Syncing CodeGraph
+│
+Scanning files...
+Parsing code...
+Resolving refs...
+│
+◆  Synced 1 changed files
+│
+●  Modified: 1 — 4 nodes in 48ms
+│
+└  Done
+
+[exit 0]
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:05:58); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+# again (the pass above renewed the record):
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:05:58); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+## CI=true on the slice branch
+python3 scripts/check-codegraph.py
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:06:04
+[exit 0]
+# the earlier script on the same tree:
+$ python3 .old/check-codegraph.py
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:06:04
+[exit 0]
+# GITHUB_ACTIONS=true, GITLAB_CI=true:
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:06:04
+check-codegraph: index current — 100 file(s), indexed 2026-10-03 10:06:04
+## edit a file and do NOT sync
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: synced 1 file(s) first; index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:05:58); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:05:58); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+## and with CODEGRAPH_GATE_NO_SYNC=1 after a further edit
+python3 scripts/check-codegraph.py
+check-codegraph: the code index no longer describes this working tree
+  last indexed: 2026-10-03 10:06:08
+  1 tracked file(s) changed since they were indexed:
+    - apps/service/src/shop/__init__.py
+
+This is not a rebuild you forgot to run. CodeGraph keeps itself current only while a
+client is attached: the watcher lives in a daemon that starts with an MCP client or a
+`codegraph` command and shuts down on its idle timeout. A checkout opened where that
+tooling is absent — a container, a sandbox, a CI runner, a machine where the CLI was
+never installed — keeps this database and never writes to it again.
+
+Attaching a client once catches the backlog up on its own. From a terminal, in this
+directory: `scripts/codegraph sync`, which runs the pinned CLI through `npx` or an
+installed `codegraph`. From an agent session: configure the CodeGraph MCP server for this
+project. To put the tooling back for good, install it and re-adopt the extension, which
+is also what re-points the agent at the index:
+
+  curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+  ./init --extension codegraph
+
+Until one of those has run, treat this index as absent rather than empty: it answers
+about the code it last read, and says nothing about the rest.
+make: *** [Makefile:110: check-codegraph] Error 1
+[exit 2]
+# the earlier script, same state, NO_SYNC:
+check-codegraph: the code index no longer describes this working tree
+  last indexed: 2026-10-03 10:06:08
+  1 tracked file(s) changed since they were indexed:
+    - apps/service/src/shop/__init__.py
+
+This is not a rebuild you forgot to run. CodeGraph keeps itself current only while a
+client is attached: the watcher lives in a daemon that starts with an MCP client or a
+`codegraph` command and shuts down on its idle timeout. A checkout opened where that
+tooling is absent — a container, a sandbox, a CI runner, a machine where the CLI was
+never installed — keeps this database and never writes to it again.
+
+Attaching a client once catches the backlog up on its own. From a terminal, in this
+directory: `scripts/codegraph sync`, which runs the pinned CLI through `npx` or an
+installed `codegraph`. From an agent session: configure the CodeGraph MCP server for this
+project. To put the tooling back for good, install it and re-adopt the extension, which
+is also what re-points the agent at the index:
+
+  curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+  ./init --extension codegraph
+
+Until one of those has run, treat this index as absent rather than empty: it answers
+about the code it last read, and says nothing about the rest.
+[exit 1]
+$ scripts/codegraph sync
+┌  Syncing CodeGraph
+│
+Scanning files...
+Parsing code...
+Resolving refs...
+│
+◆  Synced 1 changed files
+│
+●  Modified: 1 — 4 nodes in 49ms
+│
+└  Done
+
+[exit 0]
+$ make check-codegraph
+python3 scripts/check-codegraph.py
+check-codegraph: index current — hashed 1 of 100 file(s), only what changed since the last whole comparison (2026-10-03 10:05:58); the integrity check was not run here: it runs on the trunk, on any other branch and in CI
+[exit 0]
+$ git status --short
+ M apps/service/src/shop/__init__.py
+[exit 0]

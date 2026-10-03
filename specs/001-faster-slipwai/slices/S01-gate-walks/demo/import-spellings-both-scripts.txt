@@ -1,0 +1,31 @@
+# The six spellings, run: a file apps/service/src/shop/domain/bad.py holding one line, new script then the earlier one (ed91b20).
+== from ..adapters import store
+check-imports: inward dependency rule holds (80 directory entries read)
+   [new exit 0]
+check-imports: inward dependency rule holds
+   [earlier exit 0]
+== from ..adapters.store import x
+apps/service/src/shop/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+   [new exit 1]
+apps/service/src/shop/domain/bad.py:1: domain imports an outer layer: from ..adapters.store import x
+   [earlier exit 1]
+== from shop.adapters import store
+check-imports: inward dependency rule holds (80 directory entries read)
+   [new exit 0]
+check-imports: inward dependency rule holds
+   [earlier exit 0]
+== import shop.adapters
+apps/service/src/shop/domain/bad.py:1: domain imports an outer layer: import shop.adapters
+   [new exit 1]
+apps/service/src/shop/domain/bad.py:1: domain imports an outer layer: import shop.adapters
+   [earlier exit 1]
+== from .. import adapters
+check-imports: inward dependency rule holds (80 directory entries read)
+   [new exit 0]
+check-imports: inward dependency rule holds
+   [earlier exit 0]
+== from ..infrastructure import db
+check-imports: inward dependency rule holds (80 directory entries read)
+   [new exit 0]
+check-imports: inward dependency rule holds
+   [earlier exit 0]
