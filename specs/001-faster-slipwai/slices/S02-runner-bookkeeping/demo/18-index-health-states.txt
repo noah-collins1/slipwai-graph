@@ -1,0 +1,177 @@
+Real codegraph CLI through a logging wrapper on PATH; [observer] lines are the demo's own instrumentation (Python audit hook on file opens, files under scripts/ not counted; a log of every codegraph CLI call).
+
+##### plain, then CI markers (AC-S02-34, -38)
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] codegraph CLI calls: 
+$ CI=true python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree
+  [observer] tracked files outside scripts/ opened by this process: 47 (47 distinct)
+  [observer] codegraph CLI calls: 
+$ GITHUB_ACTIONS=true python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree
+  [observer] tracked files outside scripts/ opened by this process: 47 (47 distinct)
+  [observer] codegraph CLI calls: 
+  gate-memory.json: size, times and bytes unchanged across the two CI runs
+
+##### AC-S02-41: touch apps/service/migrations/apply.py, then twice
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] codegraph CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] codegraph CLI calls: 
+
+##### AC-S02-35: one tracked file edited (apps/service/migrations/apply.py), then twice
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: synced — 1 tracked file(s) were ahead of the index; synced it; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 2 (1 distinct): apps/service/migrations/apply.py
+  [observer] codegraph CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] codegraph CLI calls: 
+(committed the edit)
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] codegraph CLI calls: 
+
+##### AC-S02-34: other branches and a detached HEAD, nothing changed
+branch slice/S02-demo
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] codegraph CLI calls: 
+branch feature/other
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] codegraph CLI calls: 
+detached HEAD
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:23:50)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] codegraph CLI calls: 
+
+##### the changelog's sentence: deleting .codegraph/gate-memory.json makes the next comparison whole
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; compared everything: no earlier whole comparison is recorded
+  [observer] tracked files outside scripts/ opened by this process: 47 (47 distinct)
+  [observer] codegraph CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:29)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] codegraph CLI calls: 
+
+##### AC-S02-37: a memory the check cannot use — not JSON
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; compared everything: the record of the last whole comparison could not be read
+  [observer] tracked files outside scripts/ opened by this process: 47 (47 distinct)
+  [observer] codegraph CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:29)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] codegraph CLI calls: 
+
+##### AC-S02-39: a corrupt database with a usable memory
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: rebuilt — the database failed its integrity check (database disk image is malformed); moved it to .codegraph/corrupt/ and rebuilt it with `codegraph init`
+  [observer] tracked files outside scripts/ opened by this process: 47 (47 distinct)
+  [observer] codegraph CLI calls: 
+codegraph.db
+codegraph.db-shm
+codegraph.db-wal
+corrupt
+gate-memory.json
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; compared everything: the index database is not the one it was compared against
+  [observer] tracked files outside scripts/ opened by this process: 47 (47 distinct)
+  [observer] codegraph CLI calls: 
+
+##### AC-S02-45: git status and __pycache__ afterwards
+  __pycache__ under scripts/: 0
+
+################ second pass, with the two-second window respected and the pinned CLI's calls logged (the scripts reach it through npx)
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] CLI calls: 
+
+##### AC-S02-41: touch apps/service/migrations/apply.py, wait 3 s, then twice
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] CLI calls: 
+
+##### touch, run at once (inside the two-second window), run, wait 3 s, run, run
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 0 (0 distinct)
+  [observer] CLI calls: 
+
+##### AC-S02-35/-43: one tracked file edited, wait 3 s, then twice
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: synced — 1 tracked file(s) were ahead of the index; synced it; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 2 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: npx -y @colbymchenry/codegraph@1.6.0 sync .;
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: 
+
+##### AC-S02-44 unchanged claim is in 20-check-codegraph-both-scripts.txt
+
+##### git status:
+ M apps/service/migrations/apply.py
+
+##### the run after a sync, again: is the synced file settled? (three more runs, 3 s apart)
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 1 (1 distinct): apps/service/migrations/apply.py
+  [observer] CLI calls: 
+
+##### a second file edited, wait 3 s; run (synced), wait 3 s, run, run
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: synced — 1 tracked file(s) were ahead of the index; synced it; hashed 2 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 4 (2 distinct): apps/service/migrations/apply.py, apps/service/src/shop/__init__.py
+  [observer] CLI calls: npx -y @colbymchenry/codegraph@1.6.0 sync .;
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 2 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 2 (2 distinct): apps/service/migrations/apply.py, apps/service/src/shop/__init__.py
+  [observer] CLI calls: 
+$ A=1 python3 scripts/agents/code_index.py health
+code-index: current — opens, passes its integrity check, and describes the tree; hashed 2 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:24:31)
+  [observer] tracked files outside scripts/ opened by this process: 2 (2 distinct): apps/service/migrations/apply.py, apps/service/src/shop/__init__.py
+  [observer] CLI calls: 

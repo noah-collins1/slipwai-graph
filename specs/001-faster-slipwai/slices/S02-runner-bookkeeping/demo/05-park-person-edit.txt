@@ -1,0 +1,34 @@
+stand-in:
+    | case "$n" in
+    |  1) echo "cruise: parked: a question only a person can answer";;
+    |  2) echo "cruise: continue";;
+    |  3) echo "# a line a later iteration added" >> scripts/check-imports.py; echo "cruise: continue";;
+    |  *) echo "cruise: continue";;
+    | esac
+>>> person: while the run is parked, appends a line to scripts/check-imports.py, then: cruise.py tell go on
+cruise: queued; the run parked after iteration 64 and resumes with it within the second — unless something already resumed it, in which case the next iteration carries it
+runner exit 0
+--- runner output:
+cruise: iteration 64 started 2026-10-03T19:20:26Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:20:26  iteration 1 of the stand-in harness
+14:20:26  cruise: parked: a question only a person can answer
+cruise: iteration 64 ended — cruise: parked: a question only a person can answer (0s)
+cruise: parked — a question only a person can answer
+cruise: waiting; `touch .specify/cruise.stop` ends the run, a change under specs/, a commit or a message (`python3 scripts/agents/cruise.py tell …`) resumes it
+cruise: a person's message; resuming
+cruise: iteration 65 carries 1 message(s) from a person
+cruise: iteration 65 started 2026-10-03T19:20:26Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written, with `told: go on` as its argument.`
+14:20:26  iteration 2 of the stand-in harness
+14:20:26  cruise: continue
+cruise: iteration 65 ended — cruise: continue (0s)
+cruise: iteration 66 started 2026-10-03T19:20:26Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:20:26  iteration 3 of the stand-in harness
+14:20:26  cruise: continue
+cruise: iteration 66 ended — cruise: continue (0s)
+cruise: parked — iteration 66 changed a gate or a control of the run — scripts/check-imports.py (modified) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+cruise: waiting; `touch .specify/cruise.stop` ends the run, a change under specs/, a commit or a message (`python3 scripts/agents/cruise.py tell …`) resumes it
+cruise: stopped by human
+--- entries this run wrote:
+{"iteration": 64, "started": "2026-10-03T19:20:26Z", "ended": "2026-10-03T19:20:26Z", "harness": "override", "last_line": "cruise: parked: a question only a person can answer", "fingerprint": "7a8a86d324f5df31", "bookkeeping": {"log_bytes": 11785}}
+{"iteration": 65, "started": "2026-10-03T19:20:26Z", "ended": "2026-10-03T19:20:26Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "32c9ef9c4b764e83", "told": ["go on"], "bookkeeping": {"log_bytes": 0}}
+{"iteration": 66, "started": "2026-10-03T19:20:26Z", "ended": "2026-10-03T19:20:26Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "32c9ef9c4b764e83", "controls_changed": ["scripts/check-imports.py (modified)"], "bookkeeping": {"log_bytes": 0}}

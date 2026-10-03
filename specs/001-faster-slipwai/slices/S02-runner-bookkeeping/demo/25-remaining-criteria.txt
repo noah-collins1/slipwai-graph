@@ -1,0 +1,54 @@
+=================== [this slice] AC-S02-8: an iteration leaves a control unreadable (chmod 000)
+14:28:17  chmod 000 scripts/check-imports.py
+cruise: parked — iteration 7 changed a gate or a control of the run — scripts/check-imports.py (deleted) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+exit 3
+=================== [this slice] AC-S02-11: a control edited while no runner is alive, then a new runner process, two idle iterations
+cruise: budget spent — 2 iteration(s)
+exit 0
+entries carrying controls_changed: 0
+=================== [the runner as it was at 596740f] AC-S02-8: an iteration leaves a control unreadable (chmod 000)
+14:28:18  chmod 000 scripts/check-imports.py
+cruise: parked — iteration 7 changed a gate or a control of the run — scripts/check-imports.py (deleted) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+exit 3
+=================== [the runner as it was at 596740f] AC-S02-11: a control edited while no runner is alive, then a new runner process, two idle iterations
+cruise: budget spent — 2 iteration(s)
+exit 0
+entries carrying controls_changed: 0
+=================== [this slice] AC-S02-20 and the changelog's catch-up sentence: a log whose last entries carry one fingerprint the earlier code wrote; stuck_after=3, max_iterations=8, idle stand-in
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: iteration 8 ended — cruise: continue (0s)
+cruise: iteration 9 ended — cruise: continue (0s)
+cruise: no progress since iteration 7; one iteration to unblock, then park
+cruise: iteration 10 ended — cruise: continue (0s)
+cruise: parked — no progress since iteration 8, and the bosun's iteration did not move it
+exit 3
+  1 aaaaaaaaaaaaaaaa 
+  2 aaaaaaaaaaaaaaaa 
+  3 aaaaaaaaaaaaaaaa 
+  4 aaaaaaaaaaaaaaaa 
+  5 aaaaaaaaaaaaaaaa 
+  6 aaaaaaaaaaaaaaaa 
+  7 e839e53aaf1392a1 
+  8 e839e53aaf1392a1 
+  9 e839e53aaf1392a1 
+  10 e839e53aaf1392a1 unblock
+=================== the changelog: with no index the gate says so and passes
+$ make check-codegraph   (no .codegraph/ here)
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+exit 0
+=================== AC-S02-46: the generated pages say the runner's check narrows too
+scripts/extensions/codegraph/init.py:16:`.codegraph/gate-memory.json`, and deleting that file makes the next run whole).
+scripts/extensions/codegraph/init.py:18:hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
+scripts/extensions/codegraph/init.py:109:check to the trunk and CI; it keeps that record in `.codegraph/gate-memory.json` (ignored by Git), and deleting that
+scripts/extensions/codegraph/init.py:112:hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
+docs/gates.md:17:`.codegraph/gate-memory.json` (ignored by Git), and deleting that file makes the next run whole.
+docs/gates.md:19:hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
+21:whole comparison and leaves the integrity check to the trunk and CI; it keeps that record in
+23:`health` is the runner's check before an iteration, and the runner's check before an iteration narrows the same way —
+25:hashes only what changed since the last whole comparison, says how many files that was of how many, and always runs
+26:the integrity check. What a narrowed comparison cannot see — a file whose bytes changed while its size, times and
+=================== AC-S02-69 (read only, in the checkout)
+VERSION: 1.6.0.dev0
+changelog.d/runner-bookkeeping.md line 1: MINOR
+git diff 596740f..HEAD --stat -- delivery: '' (empty means no file delivery/.written lists changed)

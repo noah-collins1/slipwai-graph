@@ -1,0 +1,95 @@
+##### AC-S02-47: 100 standing entries — 4 name S02-runner-bookkeeping, 10 global, 86 name other slices
+$ python3 scripts/check-decisions.py --scope S02-runner-bookkeeping
+  printed:  D7 D10 D20 D30 D33 D40 D50 D58 D60 D70 D80 D90 D91 D100
+  last line: check-decisions: carried 14 of 100 entries for S02-runner-bookkeeping: 4 in scope, 10 global, 0 carried as global for want of a line; 86 left out as out of scope; overridden and left out: none
+  exit 0
+  verbatim, in number order: True
+
+##### AC-S02-48: D1 Scope: S02-runner-bookkeeping, S14-result-contract
+$ python3 scripts/check-decisions.py --scope S02-runner-bookkeeping
+  printed:  D1
+  last line: check-decisions: carried 1 of 1 entries for S02-runner-bookkeeping: 1 in scope, 0 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: none
+  exit 0
+$ python3 scripts/check-decisions.py --scope S14-result-contract
+  printed:  D1
+  last line: check-decisions: carried 1 of 1 entries for S14-result-contract: 1 in scope, 0 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: none
+  exit 0
+$ python3 scripts/check-decisions.py --scope S11-render-once
+  printed: 
+  last line: check-decisions: carried 0 of 1 entries for S11-render-once: 0 in scope, 0 global, 0 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+  exit 0
+
+##### AC-S02-49: D1 Scope: S02 · D2 Scope: S12-model-sidecar
+$ python3 scripts/check-decisions.py --scope S02-runner-bookkeeping
+  printed:  D1
+  last line: check-decisions: carried 1 of 2 entries for S02-runner-bookkeeping: 1 in scope, 0 global, 0 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+  exit 0
+$ python3 scripts/check-decisions.py --scope S1
+  printed: 
+  last line: check-decisions: carried 0 of 2 entries for S1: 0 in scope, 0 global, 0 carried as global for want of a line; 2 left out as out of scope; overridden and left out: none
+  exit 0
+$ python3 scripts/check-decisions.py --scope S12
+  printed:  D2
+  last line: check-decisions: carried 1 of 2 entries for S12: 1 in scope, 0 global, 0 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+  exit 0
+
+##### AC-S02-50/-54: D1 no line · D2 global · D3 S02; a slice id no entry names
+$ python3 scripts/check-decisions.py --scope S99-nobody
+  printed:  D1 D2
+  last line: check-decisions: carried 2 of 3 entries for S99-nobody: 0 in scope, 1 global, 1 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+  exit 0
+
+##### AC-S02-51: D1 empty Scope · D2 unreadable ('the runner') · D3 'global, S02-runner-bookkeeping'
+$ python3 scripts/check-decisions.py --scope S11-render-once
+  printed:  D1 D2 D3
+  last line: check-decisions: carried 3 of 3 entries for S11-render-once: 0 in scope, 3 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: none
+  exit 0
+
+##### AC-S02-52: D1 S02 overridden by D3 · D2 global overridden by human 2026-10-01 · D3 S02 standing · D4 S11 overridden by D3 (out of scope)
+$ python3 scripts/check-decisions.py --scope S02
+  printed:  D3
+  last line: check-decisions: carried 1 of 4 entries for S02: 1 in scope, 0 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: D1 (overridden by D3), D2 (overridden by human 2026-10-01), D4 (overridden by D3)
+  exit 0
+
+##### AC-S02-55: two features' decisions.md and no --feature; then --feature; then a feature that is not there
+$ python3 scripts/check-decisions.py --scope S02
+  printed: 
+  stderr: check-decisions: specs/ holds several decisions.md; choose one with --feature <name>: demo, other
+  exit 1
+$ python3 scripts/check-decisions.py --scope S02 --feature demo
+  printed:  D3
+  last line: check-decisions: carried 1 of 4 entries for S02: 1 in scope, 0 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: D1 (overridden by D3), D2 (overridden by human 2026-10-01), D4 (overridden by D3)
+  exit 0
+$ python3 scripts/check-decisions.py --scope S02 --feature other
+  printed:  D1 D2
+  last line: check-decisions: carried 2 of 2 entries for S02: 1 in scope, 1 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: none
+  exit 0
+$ python3 scripts/check-decisions.py --scope S02 --feature nosuch
+  printed: 
+  stderr: check-decisions: no decisions.md under specs/ for feature nosuch
+  exit 1
+
+##### malformed command lines
+$ python3 scripts/check-decisions.py --scope
+  printed: 
+  stderr: usage: check-decisions.py --scope <slice-id> [--feature <name>]
+  exit 2
+$ python3 scripts/check-decisions.py --scope S02 --feature
+  printed: 
+  stderr: usage: check-decisions.py --scope <slice-id> [--feature <name>]
+  exit 2
+$ python3 scripts/check-decisions.py --scope S02 extra
+  printed: 
+  stderr: usage: check-decisions.py --scope <slice-id> [--feature <name>]
+  exit 2
+
+##### no decisions.md at all
+$ python3 scripts/check-decisions.py --scope S02
+  printed: 
+  stderr: check-decisions: no decisions.md under specs/
+  exit 1
+
+##### AC-S02-56: tree after all of the above
+ M .specify/cruise.json
+?? specs/
+  __pycache__ directories: 0

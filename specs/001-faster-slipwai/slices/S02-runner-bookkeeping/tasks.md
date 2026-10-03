@@ -496,7 +496,7 @@ the next comparison whole. The four pages reworded.
 
 ### T014 — Both full gates on the final tip (host task)
 
-- [ ] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T013; both
+- [x] *(both green at `4dda695`, after T015–T019: `demo/gates-4dda695.txt`)* **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T013; both
   green (Principle XIV). Confirm `VERSION` is `1.6.0.dev0` and the slice's diff touches nothing under `delivery/`, `tools/`,
   `.github/`, the `Makefile` or hook settings; no file over 350 lines. Then the demo from [quickstart.md](quickstart.md).
 
@@ -614,6 +614,49 @@ names the class it closes, not the one instance.
 - **GREEN — the class:** a parameter exists because a caller passes it; drop the two, or have the tests construct
   through them.
 
+## Phase 4: Convergence, pass 2 (written by `drive-converge` at `4dda695`; to be copied under the pass-1 tasks)
+
+Grades as in pass 1: `CRITICAL` and `HIGH` re-open the loop, and past the bound only a `CRITICAL` does. Neither task
+below is either.
+
+### T020 — [LOW] The stream's identity is a second witness no example isolates (D58 · AC-S02-31)
+
+- [ ] **Found, by mutation.** `stream_use()` (`assets/toolkit/scripts/agents/cruise.py:796`–`813`) reads from the marker's
+  byte only where the bytes there are the marker line *and* the path is still the file written through. With the
+  identity clause removed (`if found == marker.encode("utf-8"):`) all six examples of `tests/test_runner_stream.py`
+  pass; with the marker clause removed and the identity kept, only *cut short* goes red, so *replaced* is held by
+  the marker alone. The same shape pass 1's T016 note records for the control record's identity.
+- **GREEN — the class:** a clause in a guard is either seen red when removed, or the docstring beside it says which
+  other clause it rides behind and that no example isolates it; here, an example where another file is moved into the
+  path with the same marker line at the same byte, or one sentence in `stream_use()`'s docstring and the module
+  docstring of `test_runner_stream.py`. The answer is the same either way (the last marker for the iteration wins in a
+  whole read too), which is why this is `LOW`.
+
+### T021 — [LOW] `health()`'s three `except Exception` arms are run by no example (D59 · AC-S02-37, -40; constitution III, V)
+
+- [ ] **Found, by mutation.** In `assets/toolkit/scripts/agents/code_index.py`: `compare()`'s arm (`:245`), `memory_of()`'s
+  (`:258`) and `renew()`'s (`:273`). Each narrowed to an exception nothing raises (`except ZeroDivisionError:`), and
+  `compare()`'s made to answer *current* (`return Compared(([], [], []), 0, None)`): `test_health_memory`,
+  `test_health_memory_states` and `test_health_narrowed` pass whole all four times (20 tests each). The gate's own
+  functions already turn every failure the examples provoke into a reason (`remembered()`,
+  `check-codegraph.py:386`–`411`) or swallow it (`remember()`, `:318`), so the arms are a second line nothing reaches.
+  Each fails toward the whole comparison or toward not writing the memory, so nothing unsafe hides behind them; what
+  is unproved is only that they do what their comments say.
+- **GREEN — the class:** an `except` arm that changes what a comparison answers is run by an example or is not there:
+  a fake `tooling` written in the test tree (a class with the gate's functions, one of which raises — `compare()`,
+  `memory_of()` and `renew()` take it as an argument, so no mocking framework is involved) showing *compared
+  everything: the record … could not be read*, and a `renew()` that raises leaving `health()`'s answer as it was;
+  or the arms are dropped where the gate's own handling is the whole of it.
+
+### T022 — [LOW] An entry with two `Scope:` lines passes the gate, and the verb reads the first (the hand's note 2 at the demo · D60)
+
+- [ ] The hand wrote `Scope: S11-render-once` followed by `Scope: global` in one entry: `check-decisions` passed and
+  `--scope S02` left the entry out. D60 says the first line is the one read and that the filter never drops what it
+  cannot place; an entry that says two things is one it cannot place. **GREEN closes the class:** an entry whose scope
+  the checker cannot read as one statement — a second `Scope:` line among them — is refused by the gate naming it, and
+  carried as global by the verb. Taken in Phase 4 with the adversary's findings, through a failing test.
+
+
 ## Convergence
 
 **Pass 1 — NOT CONVERGED: two `HIGH` (T015, T016), one `MEDIUM` (T017), two `LOW` (T018, T019). Incomplete — the budget
@@ -684,3 +727,127 @@ under `/tmp/s02-converge/`.
   `delivery/scripts/…` rests on reading `Layout.relocate` (`src/slipwai/layout.py:90`), not on a run.
 - T018 was read, not mutated; the stream's offset (T012) and `health()`'s exception paths were not mutated.
 - This file now has two `## Phase 4` headings (User Story 3's, and the one above, which the brief named).
+
+### Pass 2
+
+**Pass 2 — CONVERGED: no `CRITICAL`, no `HIGH`, no `MEDIUM`; two `LOW` (T020, T021), which the slice may ship
+without. T015 and T016 are closed as classes; T017, T018 and T019 are closed. Complete for what the brief named;
+what was not re-done is listed last.** Judged at `4dda695` (`adopt-method`), in clones under `/tmp/s02-converge2/`
+(removed); nothing in the checkout was written, run or mutated. Every mutation was restored with
+`git checkout -- <path>` and the clone's `git status` read empty after each batch.
+
+**Nothing found is a `CRITICAL`.** No route was found by which an iteration changes a gate unseen on an ordinary
+filesystem with no clock moved: see T015 and T016 below.
+
+#### What pass 1 found, re-run at this tip
+
+- **T015 — closed as a class.** `control_paths()` (`cruise.py:527`–`541`) takes the registry's hash through
+  `CONTROL_RECORD.digest(REGISTRY)` on every call and derives the hook files again whenever it is not the hash they
+  came from; `controls_signature()` (`:548`–`571`) uses that same hash as the registry's entry, so the path set and the
+  signature are of one reading. The registry is the only input that decides which paths are covered — the rest are
+  constants (`CONTROL_PATHS` `:147`, `SKIPPED_DIRECTORIES` `:150`). Reproduced in a generated `standard`/`python`
+  project, the runner loaded as `tests/test_runner_controls.py` loads it, **on the real clock**, the project settled
+  2.2 s so the record vouched for the registry (`registry_held_at_before: true`):
+  (a) a row gains a hook file → `[".newharness/hooks.json (added)", "scripts/agents/registry.json (modified)"]`;
+  (b) the registry rewritten again at once, inside the margin, at the same size with its modification time restored
+  (both checked equal), naming another file → `[".newharness/hooks.json (deleted)", ".oldharness/hooks.json (added)",
+  "scripts/agents/registry.json (modified)"]`, and an edit of that file → `[".oldharness/hooks.json (modified)"]`;
+  (c) a new process, the registry held, rewritten at the same size with its modification time restored → the registry
+  `(modified)`, the new file `(added)`, the old `(deleted)`, and its edit `(modified)`. Only the change time cannot be
+  put back, which is the fragment's stated residual (a clock set back). `guard()` (`:589`) runs in a process of its
+  own per edit, with an empty record, so it hashes the registry and derives the paths afresh: a new process listed
+  the gained file among `control_paths()`. A deleted registry raises `FileNotFoundError` from the signature, as it did
+  at `596740f`, where `registry()` was read on every call — loud, and unchanged by the slice.
+  AC-S02-1 is kept: `test_a_registry_change_is_read_once_and_a_registry_no_one_touches_is_not_opened_again` green.
+  The three examples of `tests/test_runner_controls_paths.py` are red against `7b481a6^`'s `cruise.py` (3 of 3) and
+  green at the tip.
+- **T016 — closed as a class.** `Record.digest` (`bookkeeping.py:56`–`72`) weakened in the clone, the park, controls
+  and paths suites run each time (15 tests, green unmutated):
+  reuse any held hash → 5 park holds red (append, in-place, rename, the person's edit, unreadable), 9 red in all;
+  size and modification time only → 3 park holds red (in-place, rename, unreadable);
+  no change time → 2 park holds red (in-place, unreadable).
+  These are the counts `924e19b` and the module docstring claim. Pass 1 saw 0, 0 and 0 park holds red. The identity
+  alone is not isolated, and the docstring says so (`tests/test_runner_controls_park.py`, *Not shown red*).
+- **T017 — closed.** `changelog.d/runner-bookkeeping.md:9` now names CI only *where CI has a code index*, and says why.
+- **T018 — closed.** The row's name (`RECENT_ROW`, `tests/test_health_memory_states.py:166`) says what it rides on.
+- **T019 — closed.** `Record.__init__` takes `strict` and `report` (`bookkeeping.py:48`), `Log.__init__` the path
+  (`:91`); the three instances are `cruise.py:463`, `:498`, `:545`; the one `report=` caller is
+  `tests/test_runner_controls.py:129`.
+
+#### What pass 1 did not finish
+
+- **AC-S02-18** — `tests/test_runner_fingerprint.py:143`: two probe processes over one tree, values asserted equal.
+- **AC-S02-19** — `:152`: a stray file outside `specs/`, then an empty commit; both move the value and
+  `opened("specs")` is `[]` both times.
+- **AC-S02-20** — `:172`: a log carrying two earlier-code fingerprints; exit 3, *no progress since iteration 3*, entries
+  1–4.
+- **AC-S02-32** — `tests/test_runner_log_stale.py:142`: `status`, `where`, `resume`, `tell hello` over fifty entries,
+  exit code and stdout equal to text captured before the slice. (`where` and `resume` print nothing in that state, so
+  for those two the hold is the exit code and the silence.)
+- **AC-S02-33** — `:163`: the log emptied during a park; *parked — no progress* twice, the first naming iteration 1.
+- **AC-S02-42** — `tests/test_health_narrowed.py:203`: fifty `health()` runs, each `current` and `hashed 0 of N`; at
+  iterations 2 and 50 no tracked file is among the files opened.
+- **AC-S02-43** — `:68`: `current` → no call; behind → exactly `["sync ."]`; no database → `["init -y ."]`; garbage →
+  `rebuilt`, `["init -y ."]`; no route → no call.
+- **AC-S02-44** — `:99`: the gate's stdout on `feature/x`, detached and under each CI marker equals today's, after
+  `health()` has run beside it; the corrupt-database rebuild line asserted, with no `hashed`.
+- **AC-S02-68** — `tests/test_cruise_scope_writers.py:73`: a brief seeded without the line and then edited is
+  byte-equal after `migrate`, `git status` empty; the *add it by hand* half is the fragment's **Catch-up** paragraph
+  (`changelog.d/runner-bookkeeping.md`, last paragraph), by reading.
+- **The stream offset (AC-S02-30, -31), by mutation** of `stream_use()`: no verification at all → both *cut short* and
+  *replaced* red; never the offset → both e30 examples red; identity only → *cut short* red; marker only → all green
+  (T020). `delegate_use_read()` (`code_index.py:572`) seeks to the offset it is given and reports `len(data)`; the
+  e30 assertions on `stream_bytes` are what hold it.
+- **`health()`'s exception arms, by mutation:** none is reached by an example (T021).
+- **An adopted layout, by a run:** `slipwai adopt --yes --no-init` in a scratch repository. `delivery/commands/cruise.md`
+  (`:35`, `:115`), `delivery/agents/drive-skipper.md:17` and `delivery/agents/drive-bosun.md:17` say
+  `python3 delivery/scripts/check-decisions.py --scope <slice-id>`; that command, run there over an empty
+  `decisions.md`, printed the closing line and exited 0. The runner loaded from `delivery/scripts/agents/cruise.py`
+  signs 31 files, `delivery/scripts/agents/registry.json` among them, and reports it `(modified)` when edited.
+
+#### Constitution, principle by principle (what changed since pass 1)
+
+- **I (owns its files, passes its own gate; a memoised gate is additive).** Pass 1's one unmet reach is met: the
+  controls comparison covers every path the registry names at the moment of the signature (`cruise.py:534`–`541`,
+  `:565`–`566`), and no check was removed to make the loop faster. `VERSION:1` is `1.6.0.dev0`;
+  `changelog.d/runner-bookkeeping.md:1` claims `MINOR`; since pass 1 the user-visible trees changed in
+  `bookkeeping.py`, `cruise.py` and the fragment only, each commit saying its level.
+- **III (simplicity, the rung).** T019's surplus is gone (`bookkeeping.py:48`, `:91`). The fix for T015 added no second
+  cache: one tuple beside the record it is keyed on (`cruise.py:524`). Remaining surplus: T021's arms.
+- **V (acceptance at the use case).** Met for AC-S02-2, -3, -4, -6, -8 as proof: the holds run with the record vouching
+  for the file and go red under each weakening (above). Fakes are written in the test tree (`fake_harness`, the
+  `mutate.py` script); no mocking framework. Unproved: T020, T021.
+- **VII (observability).** Unchanged: `bookkeeping.log_bytes` and `stream_bytes` on the entry (`cruise.py:1335`–`1337`),
+  `health()`'s one-line account (`code_index.py:219`–`226`).
+- **VIII (a persisted schema is additive; readers tolerate).** Unchanged since pass 1; `_HOOKS` and both records live
+  in the process and are never written.
+- **XIII (target, not in force).** The park suite now has one real wait of 2.2 s for the module and one more in the
+  person's example (`tests/test_runner_controls_park.py`, `SETTLED`); no assertion reads a clock. The three health
+  suites took about 145 s together in the clone, as before the fixes.
+- **XIV (the same bar).** No specification, criterion or constitution edited by `7b481a6..b5f15bc`; the full gates are
+  the host's and were not run here.
+- **II, IV (target), VI, IX–XII, XV:** not touched by this diff.
+
+#### Level by level
+
+1. **Logic.** *Proved:* the path set is as fresh as the signature (T015, by run and by its three examples seen red on
+   the earlier code); the record's rule is held by the park holds (T016, three weakenings); the offset is taken only
+   where the marker is at its byte and is what bounds `stream_bytes`. *Not proved:* the stream's identity clause
+   (T020); the three `except` arms (T021).
+2. **Use case.** One iteration through the runner as a subprocess: park on a gained hook file and on its later edit
+   (`test_runner_controls_paths.py`, third example), park on each fooling edit with the record engaged. `health()`
+   before it: sync at most once, traced to `test_health_narrowed.py:68`.
+3. **Delivery adapter.** `check-decisions.py --scope` run in an adopted layout from its relocated path: stdout, exit 0.
+   The log entry's `bookkeeping` unchanged.
+4. **Screen.** None in this slice.
+5. **Published contract.** The fragment's sentence on CI is corrected (T017); the adopted layout's briefs and command
+   page carry the relocated verb path, seen in a run rather than read off `Layout.relocate`.
+
+#### Not re-done in this pass
+
+- The criteria pass 1 traced were not traced again; of the 69, this pass followed the nine pass 1 left, and
+  AC-S02-1 to -8, -30 and -31 by run or mutation.
+- Of the slice's fifteen targeted suites, seven were run here (`test_runner_controls`, `_park`, `_paths`,
+  `test_runner_stream`, `test_health_memory`, `_states`, `test_health_narrowed`), all green unmutated; the other
+  eight rest on pass 1's run and on the host's gates.
+- The generated (non-adopted) pages were not regenerated; pass 1 read them.

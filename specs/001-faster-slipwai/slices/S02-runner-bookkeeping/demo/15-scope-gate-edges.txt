@@ -1,0 +1,89 @@
+Each fixture is checked by this slice's gate and by the checker as it was at 596740f, over the same file.
+
+##### AC-S02-58/-63: Scope: global · Scope: S02-runner-bookkeeping, S14-result-contract (bare) · Scope: `S02-runner-bookkeeping`, `S11-render-once` (backticks) — all after the Stage line
+$ python3 scripts/check-decisions.py
+  new: check-decisions: 3 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  new: exit 0
+  596740f: check-decisions: 3 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### AC-S02-59: an entry with '- **Scope:**' and no value
+$ python3 scripts/check-decisions.py
+  new: check-decisions: the record is not in the shape commands/cruise.md shows
+  new: 
+  new:   specs/demo/decisions.md:15: D2 `Scope` is ''; it is `global` alone or slice ids separated by commas
+  new: 
+  new: exit 1
+  596740f: check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### AC-S02-60: Scope: global, S02-runner-bookkeeping
+$ python3 scripts/check-decisions.py
+  new: check-decisions: the record is not in the shape commands/cruise.md shows
+  new: 
+  new:   specs/demo/decisions.md:3: D1 `Scope` is 'global, S02-runner-bookkeeping'; it is `global` alone or slice ids separated by commas
+  new: 
+  new: exit 1
+  596740f: check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### AC-S02-60: Scope: the runner
+$ python3 scripts/check-decisions.py
+  new: check-decisions: the record is not in the shape commands/cruise.md shows
+  new: 
+  new:   specs/demo/decisions.md:3: D1 `Scope` is 'the runner'; it is `global` alone or slice ids separated by commas
+  new: 
+  new: exit 1
+  596740f: check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### AC-S02-61: Scope: S77-no-such-slice
+$ python3 scripts/check-decisions.py
+  new: check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  new: exit 0
+  596740f: check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### AC-S02-62: D1 Scope: S02 · D2 no line
+$ python3 scripts/check-decisions.py
+  new: check-decisions: note: specs/demo/decisions.md:15: D2 has no `Scope:` line after an entry that has one; it is carried as global
+  new: check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  new: exit 0
+  596740f: check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### no entry carries a line (no note expected)
+$ python3 scripts/check-decisions.py
+  new: check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  new: exit 0
+  596740f: check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### a Scope line placed after Question instead of directly after Stage
+$ python3 scripts/check-decisions.py
+  new: check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  new: exit 0
+  596740f: check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### two Scope lines in one entry
+$ python3 scripts/check-decisions.py
+  new: check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  new: exit 0
+  596740f: check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+  596740f: exit 0
+
+##### AC-S02-57: this repository's own decisions.md (62 entries, none with a Scope line), same file to both
+  new: exit 1, 138 lines of output
+  596740f: exit 1, 138 lines of output
+  output identical byte for byte
+  | check-decisions: the record is not in the shape commands/cruise.md shows
+  | 
+  |   specs/demo/decisions.md:3: D1 `Written to` names `specs/001-faster-slipwai/decisions.md`, which is not in the tree
+  |   specs/demo/decisions.md:14: D2 `Written to` names `specs/001-faster-slipwai/decisions.md`, which is not in the tree
+##### probe beyond the criteria: a Scope: S11-render-once line placed after Question; the verb for S02
+check-decisions: carried 0 of 1 entries for S02: 0 in scope, 0 global, 0 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+##### probe: two Scope lines (S11-render-once, then global); the verb for S02
+check-decisions: carried 0 of 1 entries for S02: 0 in scope, 0 global, 0 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log

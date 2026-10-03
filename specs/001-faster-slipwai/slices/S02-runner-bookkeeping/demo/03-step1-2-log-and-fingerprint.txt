@@ -1,0 +1,25 @@
+$ python3 scripts/agents/cruise.py --set max_iterations=2
+max_iterations = 2
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+$ CRUISE_HARNESS_COMMAND='echo "cruise: continue"' python3 scripts/agents/cruise.py run --no-park
+cruise: harness: CRUISE_HARNESS_COMMAND, as given
+cruise: each iteration runs `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.` in a fresh session; `touch .specify/cruise.stop` stops it
+cruise: iteration 51 started 2026-10-03T19:19:27Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:19:27  cruise: continue
+cruise: iteration 51 ended — cruise: continue (0s)
+cruise: iteration 52 started 2026-10-03T19:19:27Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:19:27  cruise: continue
+cruise: iteration 52 ended — cruise: continue (0s)
+cruise: budget spent — 2 iteration(s)
+exit 0
+--- entries 51..
+{"iteration": 51, "started": "2026-10-03T19:19:27Z", "ended": "2026-10-03T19:19:27Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "549c1c1a7e11105d", "bookkeeping": {"log_bytes": 8741}}
+{"iteration": 52, "started": "2026-10-03T19:19:27Z", "ended": "2026-10-03T19:19:27Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "549c1c1a7e11105d", "bookkeeping": {"log_bytes": 0}}
+
+=== step 2: fingerprint across runs
+run A (spec.md planted): exit 0 53 a21cf9ad68e06f44 {'log_bytes': 9164}
+run B (nothing changed): exit 0 54 a21cf9ad68e06f44 {'log_bytes': 9377}
+run C (after touch specs/*/spec.md): exit 0 55 a21cf9ad68e06f44 {'log_bytes': 9590}
+rewritten with same bytes
+run D (same bytes rewritten): exit 0 56 a21cf9ad68e06f44 {'log_bytes': 9803}
+run E (one byte edited, same size): exit 0 57 3935544012bad62c {'log_bytes': 10016}

@@ -1,0 +1,19 @@
+One runner process, eight iterations; what each did to specs/ and the fingerprint its entry carries.
+14:21:56  nothing
+14:21:59  touch specs/demo/spec.md
+14:21:59  rewrote specs/demo/spec.md with the same bytes
+14:22:02  edited specs/demo/spec.md in place, same size, modification time restored
+14:22:02  nothing
+14:22:02  added specs/demo/added.md
+14:22:02  renamed it, bytes unchanged
+14:22:02  removed it
+cruise: budget spent — 8 iteration(s)
+exit 0
+ iteration 51 a21cf9ad68e06f44 {'log_bytes': 8741}
+ iteration 52 a21cf9ad68e06f44 {'log_bytes': 0}
+ iteration 53 a21cf9ad68e06f44 {'log_bytes': 0}
+ iteration 54 5143f3576a9a243a {'log_bytes': 0}
+ iteration 55 5143f3576a9a243a {'log_bytes': 0}
+ iteration 56 0e0e0a5997057bef {'log_bytes': 0}
+ iteration 57 f60fe70c27dd04ff {'log_bytes': 0}
+ iteration 58 5143f3576a9a243a {'log_bytes': 0}

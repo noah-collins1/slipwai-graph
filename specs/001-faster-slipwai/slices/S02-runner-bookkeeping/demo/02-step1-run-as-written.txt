@@ -1,0 +1,27 @@
+seeded log: 8741 bytes, 50 entries
+$ CRUISE_HARNESS_COMMAND='echo "cruise: continue"' python3 scripts/agents/cruise.py run --max-iterations 2   (as written; timeout 60s)
+cruise: harness: CRUISE_HARNESS_COMMAND, as given
+cruise: the first iteration runs `Run the /cruise command: read commands/cruise.md and follow it exactly as written, with `--max-iterations 2` as its argument.`, the kick-off; every later one runs `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: each iteration runs `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.` in a fresh session; `touch .specify/cruise.stop` stops it
+cruise: iteration 51 started 2026-10-03T19:18:15Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written, with `--max-iterations 2` as its argument.`
+14:18:15  cruise: continue
+cruise: iteration 51 ended — cruise: continue (0s)
+cruise: iteration 52 started 2026-10-03T19:18:15Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:18:15  cruise: continue
+cruise: iteration 52 ended — cruise: continue (0s)
+cruise: iteration 53 started 2026-10-03T19:18:15Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:18:15  cruise: continue
+cruise: iteration 53 ended — cruise: continue (0s)
+cruise: no progress since iteration 51; one iteration to unblock, then park
+cruise: iteration 54 started 2026-10-03T19:18:15Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written, with `unblock: no progress since iteration 51` as its argument.`
+14:18:15  cruise: continue
+cruise: iteration 54 ended — cruise: continue (0s)
+cruise: parked — no progress since iteration 52, and the bosun's iteration did not move it
+cruise: waiting; `touch .specify/cruise.stop` ends the run, a change under specs/, a commit or a message (`python3 scripts/agents/cruise.py tell …`) resumes it
+exit 124
+
+entries after:
+{"iteration": 51, "started": "2026-10-03T19:18:15Z", "ended": "2026-10-03T19:18:15Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "549c1c1a7e11105d", "attempt": "kick-off", "bookkeeping": {"log_bytes": 8741}}
+{"iteration": 52, "started": "2026-10-03T19:18:15Z", "ended": "2026-10-03T19:18:15Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "549c1c1a7e11105d", "bookkeeping": {"log_bytes": 0}}
+{"iteration": 53, "started": "2026-10-03T19:18:15Z", "ended": "2026-10-03T19:18:15Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "549c1c1a7e11105d", "bookkeeping": {"log_bytes": 0}}
+{"iteration": 54, "started": "2026-10-03T19:18:15Z", "ended": "2026-10-03T19:18:15Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "549c1c1a7e11105d", "attempt": "unblock", "bookkeeping": {"log_bytes": 0}}

@@ -1,0 +1,31 @@
+Controls at rest for 3 s before the run; the change is made by iteration 2, 3 s after iteration 1 (outside the two-second window, so the runner's record is in play).
+=================== stand-in: inplace at iteration 2
+cruise: iteration 67 started 2026-10-03T19:20:41Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:20:41  iteration 1 of the stand-in harness
+14:20:41  cruise: continue
+cruise: iteration 67 ended — cruise: continue (0s)
+cruise: iteration 68 started 2026-10-03T19:20:41Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:20:41  iteration 2 of the stand-in harness
+14:20:44  in place: size 20611 -> 20611 mtime_ns 1791055238365905436 -> 1791055238365905436 inode 82914730 -> 82914730
+14:20:44  cruise: continue
+cruise: iteration 68 ended — cruise: continue (3s)
+cruise: parked — iteration 68 changed a gate or a control of the run — scripts/check-imports.py (modified) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+exit 3
+--- entries this run wrote:
+{"iteration": 67, "started": "2026-10-03T19:20:41Z", "ended": "2026-10-03T19:20:41Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "7a8a86d324f5df31", "bookkeeping": {"log_bytes": 12534}}
+{"iteration": 68, "started": "2026-10-03T19:20:41Z", "ended": "2026-10-03T19:20:44Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "32c9ef9c4b764e83", "controls_changed": ["scripts/check-imports.py (modified)"], "bookkeeping": {"log_bytes": 0}}
+=================== stand-in: rename at iteration 2
+cruise: iteration 69 started 2026-10-03T19:20:47Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:20:47  iteration 1 of the stand-in harness
+14:20:47  cruise: continue
+cruise: iteration 69 ended — cruise: continue (0s)
+cruise: iteration 70 started 2026-10-03T19:20:47Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:20:47  iteration 2 of the stand-in harness
+14:20:50  by rename: size 20611 -> 20611 mtime_ns 1791055244583902410 -> 1791055244583902410 inode 82946433 -> 82959400
+14:20:50  cruise: continue
+cruise: iteration 70 ended — cruise: continue (3s)
+cruise: parked — iteration 70 changed a gate or a control of the run — scripts/check-imports.py (modified) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+exit 3
+--- entries this run wrote:
+{"iteration": 69, "started": "2026-10-03T19:20:47Z", "ended": "2026-10-03T19:20:47Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "7a8a86d324f5df31", "bookkeeping": {"log_bytes": 13019}}
+{"iteration": 70, "started": "2026-10-03T19:20:47Z", "ended": "2026-10-03T19:20:50Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "32c9ef9c4b764e83", "controls_changed": ["scripts/check-imports.py (modified)"], "bookkeeping": {"log_bytes": 0}}

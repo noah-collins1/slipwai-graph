@@ -1,0 +1,115 @@
+=================== stand-in: append
+    | if [ "$n" -eq 1 ]; then echo "# a line the iteration added" >> scripts/check-imports.py; fi
+    | echo "cruise: continue"
+$ python3 scripts/agents/cruise.py run --no-park
+cruise: iteration 58 started 2026-10-03T19:19:52Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:19:52  iteration 1 of the stand-in harness
+14:19:52  cruise: continue
+cruise: iteration 58 ended — cruise: continue (0s)
+cruise: parked — iteration 58 changed a gate or a control of the run — scripts/check-imports.py (modified) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+exit 3
+--- entries this run wrote:
+{"iteration": 58, "started": "2026-10-03T19:19:52Z", "ended": "2026-10-03T19:19:52Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "d89168c815da73c3", "controls_changed": ["scripts/check-imports.py (modified)"], "bookkeeping": {"log_bytes": 10230}}
+--- git status:
+ M .specify/cruise.json
+ M scripts/check-imports.py
+?? specs/
+=================== stand-in: inplace
+    | if [ "$n" -eq 1 ]; then python3 - <<'PY'
+    | import os
+    | p = "scripts/check-imports.py"
+    | s = os.stat(p)
+    | data = bytearray(open(p, "rb").read())
+    | i = data.index(b"import")
+    | data[i:i+6] = b"IMPORT"
+    | with open(p, "r+b") as h:
+    |     h.write(bytes(data))
+    | os.utime(p, ns=(s.st_atime_ns, s.st_mtime_ns))
+    | t = os.stat(p)
+    | print("in place: size", s.st_size, "->", t.st_size, "mtime_ns", s.st_mtime_ns, "->", t.st_mtime_ns, "inode", s.st_ino, "->", t.st_ino)
+    | PY
+    | fi
+    | echo "cruise: continue"
+$ python3 scripts/agents/cruise.py run --no-park
+cruise: iteration 59 started 2026-10-03T19:19:52Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:19:52  iteration 1 of the stand-in harness
+14:19:52  in place: size 20611 -> 20611 mtime_ns 1791055192601927706 -> 1791055192601927706 inode 82833760 -> 82833760
+14:19:52  cruise: continue
+cruise: iteration 59 ended — cruise: continue (0s)
+cruise: parked — iteration 59 changed a gate or a control of the run — scripts/check-imports.py (modified) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+exit 3
+--- entries this run wrote:
+{"iteration": 59, "started": "2026-10-03T19:19:52Z", "ended": "2026-10-03T19:19:52Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "d89168c815da73c3", "controls_changed": ["scripts/check-imports.py (modified)"], "bookkeeping": {"log_bytes": 10505}}
+--- git status:
+ M .specify/cruise.json
+ M scripts/check-imports.py
+?? specs/
+=================== stand-in: rename
+    | if [ "$n" -eq 1 ]; then python3 - <<'PY'
+    | import os
+    | p = "scripts/check-imports.py"
+    | s = os.stat(p)
+    | data = open(p, "rb").read().replace(b"import", b"IMPORT", 1)
+    | open(p + ".new", "wb").write(data)
+    | os.utime(p + ".new", ns=(s.st_atime_ns, s.st_mtime_ns))
+    | os.replace(p + ".new", p)
+    | t = os.stat(p)
+    | print("by rename: size", s.st_size, "->", t.st_size, "mtime_ns", s.st_mtime_ns, "->", t.st_mtime_ns, "inode", s.st_ino, "->", t.st_ino)
+    | PY
+    | fi
+    | echo "cruise: continue"
+$ python3 scripts/agents/cruise.py run --no-park
+cruise: iteration 60 started 2026-10-03T19:19:52Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:19:52  iteration 1 of the stand-in harness
+14:19:52  by rename: size 20611 -> 20611 mtime_ns 1791055192818927601 -> 1791055192818927601 inode 82833768 -> 82833773
+14:19:52  cruise: continue
+cruise: iteration 60 ended — cruise: continue (0s)
+cruise: parked — iteration 60 changed a gate or a control of the run — scripts/check-imports.py (modified) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+exit 3
+--- entries this run wrote:
+{"iteration": 60, "started": "2026-10-03T19:19:52Z", "ended": "2026-10-03T19:19:52Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "d89168c815da73c3", "controls_changed": ["scripts/check-imports.py (modified)"], "bookkeeping": {"log_bytes": 10780}}
+--- git status:
+ M .specify/cruise.json
+ M scripts/check-imports.py
+?? specs/
+=================== stand-in: touch
+    | if [ "$n" -eq 1 ]; then touch scripts/check-imports.py; python3 -c "
+    | p='scripts/check-codegraph.py'
+    | d=open(p,'rb').read(); open(p,'wb').write(d)"; mkdir -p specs; echo x > specs/progress-$n; fi
+    | echo "cruise: continue"
+$ python3 scripts/agents/cruise.py run --no-park
+cruise: iteration 61 started 2026-10-03T19:19:53Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:19:53  iteration 1 of the stand-in harness
+14:19:53  cruise: continue
+cruise: iteration 61 ended — cruise: continue (0s)
+cruise: iteration 62 started 2026-10-03T19:19:53Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:19:53  iteration 2 of the stand-in harness
+14:19:53  cruise: continue
+cruise: iteration 62 ended — cruise: continue (0s)
+cruise: budget spent — 2 iteration(s)
+exit 0
+--- entries this run wrote:
+{"iteration": 61, "started": "2026-10-03T19:19:53Z", "ended": "2026-10-03T19:19:53Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "7a8a86d324f5df31", "bookkeeping": {"log_bytes": 11055}}
+{"iteration": 62, "started": "2026-10-03T19:19:53Z", "ended": "2026-10-03T19:19:53Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "7a8a86d324f5df31", "bookkeeping": {"log_bytes": 0}}
+--- git status:
+ M .specify/cruise.json
+?? specs/
+=================== stand-in: deladd
+    | if [ "$n" -eq 1 ]; then rm scripts/check-imports.py; echo "print(1)" > scripts/check-new.py; echo x > tools/added-under-tools.txt 2>/dev/null || { mkdir -p tools; echo x > tools/added-under-tools.txt; }; fi
+    | echo "cruise: continue"
+$ python3 scripts/agents/cruise.py run --no-park
+cruise: iteration 63 started 2026-10-03T19:19:53Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:19:53  iteration 1 of the stand-in harness
+14:19:53  /tmp/s02-demo/h/deladd/harness.sh: 5: cannot create tools/added-under-tools.txt: Directory nonexistent
+14:19:53  cruise: continue
+cruise: iteration 63 ended — cruise: continue (0s)
+cruise: parked — iteration 63 changed a gate or a control of the run — scripts/check-imports.py (deleted), scripts/check-new.py (added) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+exit 3
+--- entries this run wrote:
+{"iteration": 63, "started": "2026-10-03T19:19:53Z", "ended": "2026-10-03T19:19:53Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "001297cf79c57375", "controls_changed": ["scripts/check-imports.py (deleted)", "scripts/check-new.py (added)"], "bookkeeping": {"log_bytes": 11479}}
+--- git status:
+ M .specify/cruise.json
+ D scripts/check-imports.py
+?? scripts/check-new.py
+?? specs/
+?? tools/

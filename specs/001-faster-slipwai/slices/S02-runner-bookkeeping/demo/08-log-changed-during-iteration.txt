@@ -1,0 +1,87 @@
+=================== during iteration 1 (numbered 7) the log is: cut    — seeded 6 entries, 1044 bytes
+    | if [ "$n" -eq 1 ]; then head -n 3 specs/cruise-log.jsonl > /tmp/s02-demo/h/cut.tmp; cat /tmp/s02-demo/h/cut.tmp > specs/cruise-log.jsonl; fi
+cruise: iteration 7 started 2026-10-03T19:21:07Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: iteration 5 started 2026-10-03T19:21:07Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 5 ended — cruise: continue (0s)
+cruise: budget spent — 2 iteration(s)
+exit 0
+--- the log afterwards: 5 lines, 945 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   7  fingerprint cfcca45b943e6e5a  bookkeeping {'log_bytes': 1044}
+  at byte   734: iteration   5  fingerprint c2e795034ff7fb59  bookkeeping {'log_bytes': 734}
+=================== during iteration 1 (numbered 7) the log is: delete    — seeded 6 entries, 1044 bytes
+    | if [ "$n" -eq 1 ]; then rm specs/cruise-log.jsonl; fi
+cruise: iteration 7 started 2026-10-03T19:21:07Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: iteration 2 started 2026-10-03T19:21:07Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 2 ended — cruise: continue (0s)
+cruise: budget spent — 2 iteration(s)
+exit 0
+--- the log afterwards: 2 lines, 423 bytes
+  at byte     0: iteration   7  fingerprint cfcca45b943e6e5a  bookkeeping {'log_bytes': 1044}
+  at byte   212: iteration   2  fingerprint c2e795034ff7fb59  bookkeeping {'log_bytes': 212}
+=================== during iteration 1 (numbered 7) the log is: replace    — seeded 6 entries, 1044 bytes
+    | if [ "$n" -eq 1 ]; then cp specs/cruise-log.jsonl /tmp/s02-demo/h/copy.tmp; mv /tmp/s02-demo/h/copy.tmp specs/cruise-log.jsonl; fi
+cruise: iteration 7 started 2026-10-03T19:21:07Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: iteration 8 started 2026-10-03T19:21:07Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 8 ended — cruise: continue (0s)
+cruise: budget spent — 2 iteration(s)
+exit 0
+--- the log afterwards: 8 lines, 1468 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: iteration   7  fingerprint cfcca45b943e6e5a  bookkeeping {'log_bytes': 1044}
+  at byte  1256: iteration   8  fingerprint c2e795034ff7fb59  bookkeeping {'log_bytes': 1256}
+=================== during iteration 1 (numbered 7) the log is: edit    — seeded 6 entries, 1044 bytes
+    | if [ "$n" -eq 1 ]; then python3 /tmp/s02-demo/h/edit.py specs/cruise-log.jsonl; fi
+cruise: iteration 7 started 2026-10-03T19:21:08Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: iteration 8 started 2026-10-03T19:21:08Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 8 ended — cruise: continue (0s)
+cruise: budget spent — 2 iteration(s)
+exit 0
+--- the log afterwards: 8 lines, 1468 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000009  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: iteration   7  fingerprint cfcca45b943e6e5a  bookkeeping {'log_bytes': 1044}
+  at byte  1256: iteration   8  fingerprint c2e795034ff7fb59  bookkeeping {'log_bytes': 1256}
+=================== during iteration 1 (numbered 7) the log is: append    — seeded 6 entries, 1044 bytes
+    | if [ "$n" -eq 1 ]; then printf '%s\\n' '{"iteration": 99, "last_line": "cruise: continue", "fingerprint": "00000000000000ff"}' >> specs/cruise-log.jsonl; fi
+cruise: iteration 7 started 2026-10-03T19:21:08Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: Extra data: line 1 column 86 (char 85)
+exit 1
+--- the log afterwards: 7 lines, 1343 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: NOT AN ENTRY: b'{"iteration": 99, "last_line": "cruise: continue", "fingerprint": "00000000000000ff"}\\n{"iteration": 7, "started": "2026-10-03T19:21:08Z", "ended": "2026-10-03T19:21:08Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "cfcca45b943e6e5a", "bookkeeping": {"log_bytes": 1044}}\n'
+=================== during iteration 1 (numbered 7) the log is: half    — seeded 6 entries, 1044 bytes
+    | if [ "$n" -eq 1 ]; then printf '{"iteration": 9, "la' >> specs/cruise-log.jsonl; fi
+cruise: iteration 7 started 2026-10-03T19:21:08Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: Expecting ':' delimiter: line 1 column 23 (char 22)
+exit 1
+--- the log afterwards: 7 lines, 1276 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: NOT AN ENTRY: b'{"iteration": 9, "la{"iteration": 7, "started": "2026-10-03T19:21:08Z", "ended": "2026-10-03T19:21:08Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "cfcca45b943e6e5a", "bookkeeping": {"log_bytes": 1044}}\n'

@@ -1,0 +1,273 @@
+=================== mk.sh
+#!/bin/sh
+# mk.sh <name> <behaviour-file>: builds a counting stand-in harness dir, prints CRUISE_HARNESS_COMMAND
+name=$1; d=/tmp/s02-demo/h/$name; rm -rf "$d"; mkdir -p "$d"
+{ printf '#!/bin/sh\nd="$(dirname "$0")"\nn=$(cat "$d/calls" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "$d/calls"\necho "iteration $n of the stand-in harness"\n'; cat "$2"; } > "$d/harness.sh"
+echo "sh $d/harness.sh {prompt}"
+
+=================== drive-park.sh
+#!/bin/bash
+# drive-park.sh <scenario> : runs the runner in the background (parking allowed), acts as the person, stops it.
+s=$1; cd /tmp/s02-demo/q/shop; unset CRUISE_RUNNER CRUISE_ITERATION
+export CRUISE_POLL_SECONDS=0.2 CRUISE_HARNESS_COMMAND="$(sh /tmp/s02-demo/h/mk.sh $s /tmp/s02-demo/h/$s.b)"
+out=/tmp/s02-demo/h/$s/runner.out; start=$(wc -l < specs/cruise-log.jsonl)
+timeout 90 python3 scripts/agents/cruise.py run </dev/null >"$out" 2>&1 & pid=$!
+waitfor(){ for i in $(seq 1 150); do grep -q "$1" "$out" && [ "$(grep -c 'cruise: waiting' "$out")" -ge "$2" ] && return 0; sleep 0.2; done; echo "(timed out waiting for park $2)"; }
+person(){ echo ">>> person: $*"; }
+if [ "$s" = parkedit ]; then
+  waitfor "parked" 1; person "while the run is parked, appends a line to scripts/check-imports.py, then: cruise.py tell go on"
+  echo "# a line a person added during the park" >> scripts/check-imports.py
+  python3 scripts/agents/cruise.py tell "go on"
+  waitfor "parked" 2
+else
+  waitfor "parked" 1; person "keeps the change on purpose: cruise.py tell keep the hook file"
+  python3 scripts/agents/cruise.py tell "keep the hook file"
+  waitfor "parked" 2
+fi
+touch .specify/cruise.stop; wait $pid; echo "runner exit $?"
+echo "--- runner output:"; grep -v "each iteration runs\|harness: CRUISE" "$out"
+echo "--- entries this run wrote:"; tail -n +$((start+1)) specs/cruise-log.jsonl
+rm -f .specify/cruise.stop
+
+=================== dec.py
+#!/usr/bin/env python3
+"""dec.py <out> <spec>... : write a decisions.md. Each spec is `scope[;status]`; scope `-` means no Scope line."""
+import sys
+out, specs = sys.argv[1], sys.argv[2:]
+text = "# Decisions\n\n"
+for n, spec in enumerate(specs, 1):
+    scope, _, status = spec.partition(";")
+    line = "" if scope == "-" else ("- **Scope:**" + ("" if scope == "EMPTY" else " " + scope) + "\n")
+    text += (f"## D{n} — question {n}\n"
+             f"- **Stage:** specify · **Slice:** S02-runner-bookkeeping · **When:** 2026-10-03T10:00:00Z · **Iteration:** {n}\n"
+             f"{line}"
+             f"- **Question:** question {n}?\n- **Options:** a (recommended) | b\n- **Decision:** a\n- **Why:** because {n}\n"
+             f"- **Decided by:** host (stage recommendation)\n- **Confidence:** high · **Would reverse if:** never\n"
+             f"- **Written to:** README.md\n- **Status:** {status or 'standing'}\n\n")
+open(out, "w").write(text)
+
+=================== opens.py
+"""Run scripts/agents/code_index.py health in-process and count which tracked files it opens for content."""
+import runpy, subprocess, sys, os
+tracked = set(subprocess.run(["git", "ls-files"], capture_output=True, text=True).stdout.split("\n"))
+root = os.getcwd(); seen = []
+def hook(event, args):
+    if event == "open" and isinstance(args[0], str):
+        rel = os.path.relpath(args[0], root) if os.path.isabs(args[0]) else args[0]
+        if rel in tracked and not rel.startswith("scripts/"):
+            seen.append(rel)
+sys.addaudithook(hook)
+sys.argv = ["scripts/agents/code_index.py", "health"]
+sys.dont_write_bytecode = True
+try:
+    runpy.run_path("scripts/agents/code_index.py", run_name="__main__")
+except SystemExit as e:
+    code = e.code
+else:
+    code = 0
+print(f"  [observer] tracked files outside scripts/ opened by this process: {len(seen)} ({len(set(seen))} distinct)" + (": " + ", ".join(sorted(set(seen))[:4]) if 0 < len(set(seen)) <= 4 else ""))
+
+=================== edit.py
+import sys
+with open(sys.argv[1], "r+b") as handle:
+    data = bytearray(handle.read())
+    data[data.index(b"0000000000000002") + 15] = ord("9")
+    handle.seek(0)
+    handle.write(bytes(data))
+
+=================== whole.py
+import importlib.util,sys,json
+from pathlib import Path
+sys.dont_write_bytecode=True
+def use(scripts):
+    sys.path.insert(0,scripts+"/agents")
+    s=importlib.util.spec_from_file_location("ci_"+scripts.replace("/","_").replace(".","_"),scripts+"/agents/code_index.py"); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); sys.path.pop(0)
+    return m.delegate_use(Path(".specify/cruise-stream.jsonl"),51).get(51)
+e=json.loads(open("specs/cruise-log.jsonl").read().splitlines()[-1])
+print("  entry", e["iteration"], "index_use:", json.dumps(e.get("index_use")), " bookkeeping:", e.get("bookkeeping"))
+p=Path(".specify/cruise-stream.jsonl")
+if p.exists():
+    raw=p.read_bytes(); i=raw.rfind(b"# iteration 51 ")
+    print("  stream now", len(raw), "bytes; this iteration's marker at byte", i, "-> marker to end:", len(raw)-i, "bytes")
+    print("  whole-file delegate_use(STREAM, 51), this slice:", json.dumps(use("scripts")))
+    print("  whole-file delegate_use(STREAM, 51), 596740f:   ", json.dumps(use(".old/scripts")))
+else: print("  stream: gone")
+
+=================== append.b
+if [ "$n" -eq 1 ]; then echo "# a line the iteration added" >> scripts/check-imports.py; fi
+echo "cruise: continue"
+
+=================== deladd.b
+if [ "$n" -eq 1 ]; then rm scripts/check-imports.py; echo "print(1)" > scripts/check-new.py; echo x > tools/added-under-tools.txt 2>/dev/null || { mkdir -p tools; echo x > tools/added-under-tools.txt; }; fi
+echo "cruise: continue"
+
+=================== fp.b
+p=specs/demo/spec.md
+case "$n" in
+ 1) echo "nothing";;
+ 2) sleep 3; touch $p; echo "touch $p";;
+ 3) python3 -c "
+p='$p'; d=open(p,'rb').read(); open(p,'wb').write(d)"; echo "rewrote $p with the same bytes";;
+ 4) sleep 3; python3 -c "
+import os
+p='$p'; s=os.stat(p); d=open(p,'rb').read().replace(b'line', b'LINE')
+h=open(p,'r+b'); h.write(d); h.close(); os.utime(p, ns=(s.st_atime_ns, s.st_mtime_ns))"; echo "edited $p in place, same size, modification time restored";;
+ 5) echo "nothing";;
+ 6) echo "new" > specs/demo/added.md; echo "added specs/demo/added.md";;
+ 7) mv specs/demo/added.md specs/demo/renamed.md; echo "renamed it, bytes unchanged";;
+ 8) rm specs/demo/renamed.md; echo "removed it";;
+esac
+echo "cruise: continue"
+
+=================== hook.b
+case "$n" in
+ 1) python3 - <<'PY'
+import json, pathlib
+p = pathlib.Path("scripts/agents/registry.json")
+r = json.loads(p.read_text())
+row = r["harnesses"][0]
+row["hooks"] = {"projection": {"where": ".newharness/hooks.json"}}
+p.write_text(json.dumps(r, indent=2) + "\n")
+pathlib.Path(".newharness").mkdir(exist_ok=True)
+pathlib.Path(".newharness/hooks.json").write_text('{"hooks": []}\n')
+print("row", row.get("key") or row.get("name"), "gained hooks.projection.where = .newharness/hooks.json")
+PY
+    echo "cruise: continue";;
+ 2) echo '{"hooks": ["rewritten by iteration 2"]}' > .newharness/hooks.json; echo "cruise: continue";;
+ *) echo "cruise: continue";;
+esac
+
+=================== idle.b
+echo "cruise: continue"
+
+=================== inplace.b
+if [ "$n" -eq 1 ]; then python3 - <<'PY'
+import os
+p = "scripts/check-imports.py"
+s = os.stat(p)
+data = bytearray(open(p, "rb").read())
+i = data.index(b"import")
+data[i:i+6] = b"IMPORT"
+with open(p, "r+b") as h:
+    h.write(bytes(data))
+os.utime(p, ns=(s.st_atime_ns, s.st_mtime_ns))
+t = os.stat(p)
+print("in place: size", s.st_size, "->", t.st_size, "mtime_ns", s.st_mtime_ns, "->", t.st_mtime_ns, "inode", s.st_ino, "->", t.st_ino)
+PY
+fi
+echo "cruise: continue"
+
+=================== inplace-late.b
+if [ "$n" -eq 2 ]; then sleep 3; python3 - <<'PY'
+import os
+p = "scripts/check-imports.py"
+s = os.stat(p)
+data = bytearray(open(p, "rb").read())
+i = data.index(b"import")
+data[i:i+6] = b"IMPORT"
+with open(p, "r+b") as h:
+    h.write(bytes(data))
+os.utime(p, ns=(s.st_atime_ns, s.st_mtime_ns))
+t = os.stat(p)
+print("in place: size", s.st_size, "->", t.st_size, "mtime_ns", s.st_mtime_ns, "->", t.st_mtime_ns, "inode", s.st_ino, "->", t.st_ino)
+PY
+fi
+echo "cruise: continue"
+
+=================== ixrun.b
+f=apps/service/migrations/apply.py
+case "$n" in
+ 3) echo "# iteration 3 edits a tracked file and leaves it for the next readying" >> $f; echo "edited $f";;
+esac
+echo "--- codegraph CLI calls so far: $(wc -l < /tmp/s02-demo/h/codegraph-calls.log)"
+echo "cruise: continue"
+
+=================== log-append.b
+mkdir -p specs && touch "specs/progress-$n"
+if [ "$n" -eq 1 ]; then echo '{"iteration": 99, "last_line": "cruise: continue", "fingerprint": "00000000000000ff"}' >> specs/cruise-log.jsonl; fi
+echo "cruise: continue"
+
+=================== log-cut.b
+mkdir -p specs && touch "specs/progress-$n"
+if [ "$n" -eq 1 ]; then head -n 3 specs/cruise-log.jsonl > /tmp/s02-demo/h/cut.tmp; cat /tmp/s02-demo/h/cut.tmp > specs/cruise-log.jsonl; fi
+echo "cruise: continue"
+
+=================== log-delete.b
+mkdir -p specs && touch "specs/progress-$n"
+if [ "$n" -eq 1 ]; then rm specs/cruise-log.jsonl; fi
+echo "cruise: continue"
+
+=================== log-edit.b
+mkdir -p specs && touch "specs/progress-$n"
+if [ "$n" -eq 1 ]; then python3 /tmp/s02-demo/h/edit.py specs/cruise-log.jsonl; fi
+echo "cruise: continue"
+
+=================== log-half.b
+mkdir -p specs && touch "specs/progress-$n"
+if [ "$n" -eq 1 ]; then printf '{"iteration": 9, "la' >> specs/cruise-log.jsonl; fi
+echo "cruise: continue"
+
+=================== log-replace.b
+mkdir -p specs && touch "specs/progress-$n"
+if [ "$n" -eq 1 ]; then cp specs/cruise-log.jsonl /tmp/s02-demo/h/copy.tmp; mv /tmp/s02-demo/h/copy.tmp specs/cruise-log.jsonl; fi
+echo "cruise: continue"
+
+=================== parkedit.b
+case "$n" in
+ 1) echo "cruise: parked: a question only a person can answer";;
+ 2) echo "cruise: continue";;
+ 3) echo "# a line a later iteration added" >> scripts/check-imports.py; echo "cruise: continue";;
+ *) echo "cruise: continue";;
+esac
+
+=================== rename.b
+if [ "$n" -eq 1 ]; then python3 - <<'PY'
+import os
+p = "scripts/check-imports.py"
+s = os.stat(p)
+data = open(p, "rb").read().replace(b"import", b"IMPORT", 1)
+open(p + ".new", "wb").write(data)
+os.utime(p + ".new", ns=(s.st_atime_ns, s.st_mtime_ns))
+os.replace(p + ".new", p)
+t = os.stat(p)
+print("by rename: size", s.st_size, "->", t.st_size, "mtime_ns", s.st_mtime_ns, "->", t.st_mtime_ns, "inode", s.st_ino, "->", t.st_ino)
+PY
+fi
+echo "cruise: continue"
+
+=================== rename-late.b
+if [ "$n" -eq 2 ]; then sleep 3; python3 - <<'PY'
+import os
+p = "scripts/check-imports.py"
+s = os.stat(p)
+data = open(p, "rb").read().replace(b"import", b"IMPORT", 1)
+open(p + ".new", "wb").write(data)
+os.utime(p + ".new", ns=(s.st_atime_ns, s.st_mtime_ns))
+os.replace(p + ".new", p)
+t = os.stat(p)
+print("by rename: size", s.st_size, "->", t.st_size, "mtime_ns", s.st_mtime_ns, "->", t.st_mtime_ns, "inode", s.st_ino, "->", t.st_ino)
+PY
+fi
+echo "cruise: continue"
+
+=================== spin.b
+touch specs/demo/spec.md; echo "touched specs/demo/spec.md and did nothing else"
+echo "cruise: continue"
+
+=================== stream.b
+rm .specify/cruise-stream.jsonl; echo 'cruise: continue'
+
+=================== touch.b
+if [ "$n" -eq 1 ]; then touch scripts/check-imports.py; python3 -c "
+p='scripts/check-codegraph.py'
+d=open(p,'rb').read(); open(p,'wb').write(d)"; mkdir -p specs; echo x > specs/progress-$n; fi
+echo "cruise: continue"
+
+=================== unreadable.b
+if [ "$n" -eq 1 ]; then chmod 000 scripts/check-imports.py; echo "chmod 000 scripts/check-imports.py"; fi
+echo "cruise: continue"
+
+=================== /tmp/s02-demo/bin/npx (the CLI call logger)
+#!/bin/sh
+echo "npx $*" >> /tmp/s02-demo/h/codegraph-calls.log
+exec /usr/bin/npx "$@"

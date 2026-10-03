@@ -1,0 +1,84 @@
+=================== [this slice] during iteration 1 the log is: append — seeded 6 entries, 1044 bytes
+cruise: iteration 7 started 2026-10-03T19:21:29Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: iteration 9 started 2026-10-03T19:21:29Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 9 ended — cruise: continue (0s)
+cruise: budget spent — 2 iteration(s)
+exit 0
+--- the log afterwards: 9 lines, 1554 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: iteration  99  fingerprint 00000000000000ff  bookkeeping None
+  at byte  1130: iteration   7  fingerprint cfcca45b943e6e5a  bookkeeping {'log_bytes': 1044}
+  at byte  1342: iteration   9  fingerprint c2e795034ff7fb59  bookkeeping {'log_bytes': 1342}
+=================== [this slice] during iteration 1 the log is: half — seeded 6 entries, 1044 bytes
+cruise: iteration 7 started 2026-10-03T19:21:29Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: Expecting ':' delimiter: line 1 column 23 (char 22)
+exit 1
+--- the log afterwards: 7 lines, 1276 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: NOT AN ENTRY: b'{"iteration": 9, "la{"iteration": 7, "started": "2026-10-03T'...
+=================== [this slice] the log's last line is half an entry when the runner starts — 1064 bytes
+cruise: Unterminated string starting at: line 1 column 18 (char 17)
+exit 1
+--- the log afterwards: 6 lines, 1064 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: NOT AN ENTRY: b'{"iteration": 9, "la'...
+log bytes unchanged by the run
+=================== [the runner as it was at 596740f] during iteration 1 the log is: append — seeded 6 entries, 1044 bytes
+cruise: iteration 7 started 2026-10-03T19:21:29Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: iteration 9 started 2026-10-03T19:21:30Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 9 ended — cruise: continue (0s)
+cruise: budget spent — 2 iteration(s)
+exit 0
+--- the log afterwards: 9 lines, 1482 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: iteration  99  fingerprint 00000000000000ff  bookkeeping None
+  at byte  1130: iteration   7  fingerprint 388e3a050af40160  bookkeeping None
+  at byte  1306: iteration   9  fingerprint 26663d812b2c0baa  bookkeeping None
+=================== [the runner as it was at 596740f] during iteration 1 the log is: half — seeded 6 entries, 1044 bytes
+cruise: iteration 7 started 2026-10-03T19:21:30Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+cruise: iteration 7 ended — cruise: continue (0s)
+cruise: Expecting ':' delimiter: line 1 column 23 (char 22)
+exit 1
+--- the log afterwards: 7 lines, 1240 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: NOT AN ENTRY: b'{"iteration": 9, "la{"iteration": 7, "started": "2026-10-03T'...
+=================== [the runner as it was at 596740f] the log's last line is half an entry when the runner starts — 1064 bytes
+cruise: Unterminated string starting at: line 1 column 18 (char 17)
+exit 1
+--- the log afterwards: 6 lines, 1064 bytes
+  at byte     0: iteration   1  fingerprint 0000000000000001  bookkeeping None
+  at byte   174: iteration   2  fingerprint 0000000000000002  bookkeeping None
+  at byte   348: iteration   3  fingerprint 0000000000000003  bookkeeping None
+  at byte   522: iteration   4  fingerprint 0000000000000004  bookkeeping None
+  at byte   696: iteration   5  fingerprint 0000000000000005  bookkeeping None
+  at byte   870: iteration   6  fingerprint 0000000000000006  bookkeeping None
+  at byte  1044: NOT AN ENTRY: b'{"iteration": 9, "la'...
+log bytes unchanged by the run

@@ -9,8 +9,9 @@ D=$(mktemp -d) && ./slipwai generate shop --profile event-modelling --backend py
 
 1. **The log.** Enable the run (`python3 scripts/agents/cruise.py --set enabled=true`), write a 50-entry
    `specs/cruise-log.jsonl`, and run two iterations against a stand-in harness
-   (`CRUISE_HARNESS_COMMAND='echo "cruise: continue"' python3 scripts/agents/cruise.py run --max-iterations 2`
-   — see `python3 scripts/agents/cruise.py run --help` for the flags as they are). Entries 51 and 52 follow; 51's
+   (`python3 scripts/agents/cruise.py --set max_iterations=2`, then
+   `CRUISE_HARNESS_COMMAND='echo "cruise: continue"' python3 scripts/agents/cruise.py run --no-park` — the budget
+   is a setting, not a flag of `run`; corrected after the demo, where the step as first written parked and waited). Entries 51 and 52 follow; 51's
    `bookkeeping.log_bytes` is the 50-entry file's size and 52's is `0`.
 2. **The fingerprint.** In the same run both entries carry the same `fingerprint`; `touch specs/*/spec.md` between
    two runs does not change it; editing a byte does.

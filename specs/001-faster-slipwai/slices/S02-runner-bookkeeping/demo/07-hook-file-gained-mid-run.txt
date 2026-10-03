@@ -1,0 +1,40 @@
+stand-in:
+    | case "$n" in
+    |  1) python3 - <<'PY'
+    | import json, pathlib
+    | p = pathlib.Path("scripts/agents/registry.json")
+    | r = json.loads(p.read_text())
+    | row = r["harnesses"][0]
+    | row["hooks"] = {"projection": {"where": ".newharness/hooks.json"}}
+    | p.write_text(json.dumps(r, indent=2) + "\n")
+    | pathlib.Path(".newharness").mkdir(exist_ok=True)
+    | pathlib.Path(".newharness/hooks.json").write_text('{"hooks": []}\n')
+    | print("row", row.get("key") or row.get("name"), "gained hooks.projection.where = .newharness/hooks.json")
+    | PY
+    |     echo "cruise: continue";;
+    |  2) echo '{"hooks": ["rewritten by iteration 2"]}' > .newharness/hooks.json; echo "cruise: continue";;
+    |  *) echo "cruise: continue";;
+    | esac
+>>> person: keeps the change on purpose: cruise.py tell keep the hook file
+cruise: queued for the next iteration; the one in flight ends first — the runner (pid 3557261) reads the inbox before each iteration, and the iteration itself between stages. `python3 scripts/agents/cruise.py tell --now …` would end the one in flight for it
+runner exit 0
+--- runner output:
+cruise: iteration 71 started 2026-10-03T19:20:53Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:20:53  iteration 1 of the stand-in harness
+14:20:53  row agy gained hooks.projection.where = .newharness/hooks.json
+14:20:53  cruise: continue
+cruise: iteration 71 ended — cruise: continue (0s)
+cruise: parked — iteration 71 changed a gate or a control of the run — .newharness/hooks.json (added), scripts/agents/registry.json (modified) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+cruise: waiting; `touch .specify/cruise.stop` ends the run, a change under specs/, a commit or a message (`python3 scripts/agents/cruise.py tell …`) resumes it
+cruise: a person's message; resuming
+cruise: iteration 72 carries 1 message(s) from a person
+cruise: iteration 72 started 2026-10-03T19:20:54Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written, with `told: keep the hook file` as its argument.`
+14:20:54  iteration 2 of the stand-in harness
+14:20:54  cruise: continue
+cruise: iteration 72 ended — cruise: continue (0s)
+cruise: parked — iteration 72 changed a gate or a control of the run — .newharness/hooks.json (modified) — and a gate is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and resume with a message
+cruise: waiting; `touch .specify/cruise.stop` ends the run, a change under specs/, a commit or a message (`python3 scripts/agents/cruise.py tell …`) resumes it
+cruise: stopped by human
+--- entries this run wrote:
+{"iteration": 71, "started": "2026-10-03T19:20:53Z", "ended": "2026-10-03T19:20:53Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "8a83abbdf4029abf", "controls_changed": [".newharness/hooks.json (added)", "scripts/agents/registry.json (modified)"], "bookkeeping": {"log_bytes": 13504}}
+{"iteration": 72, "started": "2026-10-03T19:20:54Z", "ended": "2026-10-03T19:20:54Z", "harness": "override", "last_line": "cruise: continue", "fingerprint": "8a83abbdf4029abf", "controls_changed": [".newharness/hooks.json (modified)"], "told": ["keep the hook file"], "bookkeeping": {"log_bytes": 0}}

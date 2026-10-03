@@ -1,0 +1,37 @@
+One tree, one index: this slice's gate (`python3 scripts/check-codegraph.py`, what `make check-codegraph` runs) and the gate as generated at 596740f, placed untracked and excluded at .old/scripts/, run one after the other in each state. Every state is first brought to current by the new gate so neither run syncs unless the state says so.
+
+##### trunk (main), index current
+  new: check-codegraph: index current — 89 file(s), indexed 2026-10-03 14:25:44
+  new: exit 0
+  596740f: identical, byte for byte
+
+##### a branch not shaped slice/<id> (feature/other)
+  new: check-codegraph: index current — 89 file(s), indexed 2026-10-03 14:26:05
+  new: exit 0
+  596740f: identical, byte for byte
+
+##### detached HEAD
+  new: check-codegraph: index current — 89 file(s), indexed 2026-10-03 14:26:05
+  new: exit 0
+  596740f: identical, byte for byte
+
+##### slice/S02-demo with CI=true
+  new: check-codegraph: index current — 89 file(s), indexed 2026-10-03 14:26:05
+  new: exit 0
+  596740f: identical, byte for byte
+
+##### trunk with one tracked file the index has not read (the new gate syncs it; the file is edited again before the earlier gate runs)
+  new: check-codegraph: synced 1 file(s) first; index current — 89 file(s), indexed 2026-10-03 14:26:08
+  new: exit 0
+  596740f DIFFERS:
+  596740f: check-codegraph: synced 1 file(s) first; index current — 89 file(s), indexed 2026-10-03 14:26:09
+  596740f: exit 0
+
+##### trunk with a corrupt database (corrupted the same way before each gate)
+  new: check-codegraph: rebuilt a corrupt database first (1.2s); index current — 89 file(s), indexed 2026-10-03 14:26:11
+  new: exit 0
+  596740f DIFFERS:
+  596740f: check-codegraph: rebuilt a corrupt database first (1.2s); index current — 89 file(s), indexed 2026-10-03 14:26:12
+  596740f: exit 0
+
+##### git status afterwards:

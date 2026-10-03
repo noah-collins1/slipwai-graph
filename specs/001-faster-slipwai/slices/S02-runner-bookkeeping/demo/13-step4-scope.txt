@@ -1,0 +1,74 @@
+specs/demo/decisions.md: D1 Scope: S02 · D2 Scope: global · D3 Scope: S11-render-once · D4 no Scope line
+
+$ python3 scripts/check-decisions.py --scope S02
+## D1 — question 1
+- **Stage:** specify · **Slice:** S02-runner-bookkeeping · **When:** 2026-10-03T10:00:00Z · **Iteration:** 1
+- **Scope:** S02
+- **Question:** question 1?
+- **Options:** a (recommended) | b
+- **Decision:** a
+- **Why:** because 1
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** never
+- **Written to:** README.md
+- **Status:** standing
+
+## D2 — question 2
+- **Stage:** specify · **Slice:** S02-runner-bookkeeping · **When:** 2026-10-03T10:00:00Z · **Iteration:** 2
+- **Scope:** global
+- **Question:** question 2?
+- **Options:** a (recommended) | b
+- **Decision:** a
+- **Why:** because 2
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** never
+- **Written to:** README.md
+- **Status:** standing
+
+## D4 — question 4
+- **Stage:** specify · **Slice:** S02-runner-bookkeeping · **When:** 2026-10-03T10:00:00Z · **Iteration:** 4
+- **Question:** question 4?
+- **Options:** a (recommended) | b
+- **Decision:** a
+- **Why:** because 4
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** never
+- **Written to:** README.md
+- **Status:** standing
+
+check-decisions: carried 3 of 4 entries for S02: 1 in scope, 1 global, 1 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+exit 0
+(every file in the tree hashes as before the verb ran; no __pycache__: 0)
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: note: specs/demo/decisions.md:39: D4 has no `Scope:` line after an entry that has one; it is carried as global
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+exit 0
+
+D5 added with an empty '- **Scope:**'
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:50: D5 `Scope` is ''; it is `global` alone or slice ids separated by commas
+
+check-decisions: note: specs/demo/decisions.md:39: D4 has no `Scope:` line after an entry that has one; it is carried as global
+make: *** [Makefile:58: check-decisions] Error 1
+exit 2
+$ python3 scripts/check-decisions.py --scope S02 | tail -n 14   (the verb over the same log: AC-S02-51)
+
+## D5 — question 5
+- **Stage:** specify · **Slice:** S02-runner-bookkeeping · **When:** 2026-10-03T10:00:00Z · **Iteration:** 5
+- **Scope:**
+- **Question:** question 5?
+- **Options:** a (recommended) | b
+- **Decision:** a
+- **Why:** because 5
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** never
+- **Written to:** README.md
+- **Status:** standing
+
+check-decisions: carried 4 of 5 entries for S02: 1 in scope, 2 global, 1 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+exit 0

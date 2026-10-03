@@ -1,0 +1,8 @@
+$ python3 scripts/agents/cruise.py --set enabled=true
+enabled = true
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+exit 0
+$ python3 scripts/agents/cruise.py run --help
+cruise: no initialised harness this loop can run an iteration through is on PATH: no harness is initialised here. On PATH but never initialised here, so its commands, delegate types and hooks are not projected: Claude Code (`./init --integration claude`) — that init adds it beside what is installed; then run again. Or set CRUISE_HARNESS_COMMAND to a shell template with {prompt}
+exit 1
+ M .specify/cruise.json

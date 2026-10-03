@@ -1,0 +1,17 @@
+=================== [this slice] a run that only touches specs/demo/spec.md every iteration; stuck_after=3, max_iterations=8
+cruise: iteration 51 ended — cruise: continue (0s)
+cruise: iteration 52 ended — cruise: continue (0s)
+cruise: iteration 53 ended — cruise: continue (0s)
+cruise: no progress since iteration 51; one iteration to unblock, then park
+cruise: iteration 54 ended — cruise: continue (0s)
+cruise: parked — no progress since iteration 52, and the bosun's iteration did not move it
+exit 3
+=================== [the runner as it was at 596740f] a run that only touches specs/demo/spec.md every iteration; stuck_after=3, max_iterations=8
+cruise: iteration 51 carries 1 message(s) from a person
+cruise: iteration 51 ended — cruise: continue (0s)
+cruise: iteration 52 ended — cruise: continue (0s)
+cruise: iteration 53 ended — cruise: continue (0s)
+cruise: no progress since iteration 51; one iteration to unblock, then park
+cruise: iteration 54 ended — cruise: continue (0s)
+cruise: parked — no progress since iteration 52, and the bosun's iteration did not move it
+exit 3

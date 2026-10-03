@@ -1,0 +1,40 @@
+Iteration 51 over a 50-entry log and a stream already holding 50 iterations (19041 bytes), CRUISE_HARNESS_STREAM=claude, real code index present.
+
+##### AC-S02-30: the stand-in writes two index calls and its result
+    | cat /tmp/s02-demo/h/mine.jsonl
+  runner exit 0
+  entry 51 index_use: [{"agent": "host", "queries": 2, "searched_first": [], "refused": 0}]  bookkeeping: {'log_bytes': 8741, 'stream_bytes': 646}
+  stream now 19687 bytes; this iteration's marker at byte 19041 -> marker to end: 646 bytes
+  whole-file delegate_use(STREAM, 51), this slice: [{"agent": "host", "queries": 2, "searched_first": [], "refused": 0}]
+  whole-file delegate_use(STREAM, 51), 596740f:    [{"agent": "host", "queries": 2, "searched_first": [], "refused": 0}]
+
+##### AC-S02-31: the stream cut short to a marker elsewhere
+    | printf '%s\n' '# iteration 51 2026-10-03T11:00:00Z' > .specify/cruise-stream.jsonl; cat /tmp/s02-demo/h/mine.jsonl
+  runner exit 0
+  entry 51 index_use: [{"agent": "host", "queries": 2, "searched_first": [], "refused": 0}]  bookkeeping: {'log_bytes': 8741, 'stream_bytes': 610}
+  stream now 610 bytes; this iteration's marker at byte 0 -> marker to end: 610 bytes
+  whole-file delegate_use(STREAM, 51), this slice: [{"agent": "host", "queries": 2, "searched_first": [], "refused": 0}]
+  whole-file delegate_use(STREAM, 51), 596740f:    [{"agent": "host", "queries": 2, "searched_first": [], "refused": 0}]
+
+##### AC-S02-31: the stream replaced by another file with the marker at another byte
+    | cp /tmp/s02-demo/h/new.jsonl /tmp/s02-demo/h/new2.jsonl; mv /tmp/s02-demo/h/new2.jsonl .specify/cruise-stream.jsonl
+  runner exit 0
+  entry 51 index_use: [{"agent": "host", "queries": 3, "searched_first": [], "refused": 0}]  bookkeeping: {'log_bytes': 8741, 'stream_bytes': 909}
+  stream now 909 bytes; this iteration's marker at byte 70 -> marker to end: 839 bytes
+  whole-file delegate_use(STREAM, 51), this slice: [{"agent": "host", "queries": 3, "searched_first": [], "refused": 0}]
+  whole-file delegate_use(STREAM, 51), 596740f:    [{"agent": "host", "queries": 3, "searched_first": [], "refused": 0}]
+
+##### AC-S02-31: the stream deleted
+    | rm .specify/cruise-stream.jsonl; echo 'cruise: continue'
+  runner exit 0
+  entry 51 index_use: null  bookkeeping: {'log_bytes': 8741, 'stream_bytes': 0}
+  stream: gone
+
+--- runner output of the last case:
+cruise: the code index is reached through the `codegraph` CLI; the registry knows no project MCP file for GitHub Copilot
+cruise: code index before iteration 51 — current: opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22) (0.1s)
+cruise: iteration 51 started 2026-10-03T19:26:52Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:26:52  iteration 1 of the stand-in harness
+14:26:52  cruise: continue
+cruise: iteration 51 ended — cruise: continue (0s)
+cruise: budget spent — 1 iteration(s)

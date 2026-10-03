@@ -1,0 +1,46 @@
+$ slipwai adopt --yes --no-init --no-install    (in a repository the factory did not make: src/app.py, pyproject.toml)
+adopted adopted with slipwai 1.6.0.dev0 — experimental: this path is new, its shape may change in a MINOR, and what surprised you belongs on the public issue tracker
+296 files written under delivery/ and beside it; nothing of the repository's own was written over. One commit by the factory; `git reset --hard HEAD^` undoes all of it.
+  adopted: . (python; what it is for is not recorded), 1 of 8 targets have a command; the rest are written no's
+  Nobody has looked at it: every fact above is the survey's own reading, recorded `detected`. /ground asks, and `/survey` refreshes what stays the tree's word.
+CI: none found in this repository, so nothing was written; when there is one, have it run `make -f delivery/Makefile verify`.
+How a change reaches production: not recorded — nothing in the tree says, and nobody has yet; `--release` or project.json's `release` is where to say it, and /drive asks before the first slice (unrecorded).
+exit 0
+
+$ grep -n "check-decisions.py" delivery/commands/cruise.md delivery/agents/drive-skipper.md delivery/agents/drive-bosun.md
+delivery/agents/drive-skipper.md:17:`specs/<feature>/decisions.md`. For a question that names a slice, read its standing entries through `python3 delivery/scripts/check-decisions.py --scope <slice-id>` (add
+delivery/commands/cruise.md:35:and every standing entry in `specs/<feature>/decisions.md` (a slice's question reads those `python3 delivery/scripts/check-decisions.py --scope <slice-id>` prints; a
+delivery/commands/cruise.md:115:other: for a slice's question, those `python3 delivery/scripts/check-decisions.py --scope <slice-id>` prints; for a feature-level one, every standing entry.
+delivery/agents/drive-bosun.md:17:entries of `specs/<feature>/decisions.md` before you move. For a question that names a slice, read its standing entries through `python3 delivery/scripts/check-decisions.py --scope <slice-id>` (add
+
+$ grep -n "Scope" delivery/commands/cruise.md delivery/agents/*.md .specify/product-owner.md
+delivery/commands/cruise.md:138:- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
+.specify/product-owner.md:59:- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
+delivery/agents/drive-skipper.md:34:You write nothing. Return the whole entry, in the shape `specs/<feature>/decisions.md` shows, with its `Scope:` line (the slice ids whose
+delivery/agents/drive-bosun.md:35:`Scope:` line (the slice ids whose later decisions must agree with it, or `global`); its *Would reverse if* naming what a
+
+$ python3 delivery/scripts/check-decisions.py --scope S02 | grep "^## D\|^check-decisions"
+## D1 — question 1
+## D2 — question 2
+## D4 — question 4
+check-decisions: carried 3 of 4 entries for S02: 1 in scope, 1 global, 1 carried as global for want of a line; 1 left out as out of scope; overridden and left out: none
+exit 0
+
+$ make -f delivery/Makefile check-decisions
+python3 delivery/scripts/check-decisions.py
+check-decisions: note: specs/demo/decisions.md:39: D4 has no `Scope:` line after an entry that has one; it is carried as global
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+exit 0
+
+(D2 given an empty Scope)
+$ make -f delivery/Makefile check-decisions
+python3 delivery/scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:15: D2 `Scope` is ''; it is `global` alone or slice ids separated by commas
+
+make: *** [delivery/Makefile:45: check-decisions] Error 1
+exit 2
+
+$ grep -rn "python3 scripts/check-decisions" delivery/commands delivery/agents | wc -l    (a path that would not exist here)
+0

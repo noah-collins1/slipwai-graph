@@ -1,0 +1,64 @@
+$ grep -n "Scope\|check-decisions" commands/cruise.md agents/drive-skipper.md agents/drive-bosun.md .specify/product-owner.md
+agents/drive-bosun.md:17:entries of `specs/<feature>/decisions.md` before you move. For a question that names a slice, read its standing entries through `python3 scripts/check-decisions.py --scope <slice-id>` (add
+agents/drive-bosun.md:35:`Scope:` line (the slice ids whose later decisions must agree with it, or `global`); its *Would reverse if* naming what a
+.specify/product-owner.md:59:- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
+.specify/product-owner.md:82:`make check-decisions` holds both files to those shapes — and every finished slice to a row in
+commands/cruise.md:33:and every standing entry in `specs/<feature>/decisions.md` (a slice's question reads those `python3 scripts/check-decisions.py --scope <slice-id>` prints; a
+commands/cruise.md:108:other: for a slice's question, those `python3 scripts/check-decisions.py --scope <slice-id>` prints; for a feature-level one, every standing entry.
+commands/cruise.md:126:The entry's shape, which `make check-decisions` holds:
+commands/cruise.md:131:- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
+agents/drive-skipper.md:17:`specs/<feature>/decisions.md`. For a question that names a slice, read its standing entries through `python3 scripts/check-decisions.py --scope <slice-id>` (add
+agents/drive-skipper.md:34:You write nothing. Return the whole entry, in the shape `specs/<feature>/decisions.md` shows, with its `Scope:` line (the slice ids whose
+
+$ sed -n 126,140p commands/cruise.md
+The entry's shape, which `make check-decisions` holds:
+
+```markdown
+## D<n> — <the question, in one line>
+- **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
+- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
+- **Question:** <as the stage raised it>
+- **Options:** <each, marking the one the stage recommended>
+- **Decision:** <one>
+- **Why:** <in the actor's terms>
+- **Decided by:** host (stage recommendation) | host (standing decision D<m>) | drive-skipper (<model>) | drive-bosun | human
+- **Confidence:** high | medium | low · **Would reverse if:** <the one condition>
+- **Written to:** <the artifact paths the answer went into>
+- **Status:** standing | overridden by D<m> | overridden by human <date>
+```
+
+$ sed -n 28,36p commands/cruise.md
+`python3 scripts/agents/cruise.py start` with everything typed after `/cruise` as its arguments, verbatim, and repeat what it
+printed: the runner it started drives the ladder from here, one fresh session per iteration, and this session
+runs no stage of it. A refusal is the whole answer — a runner already running, the stop file present, no
+harness on PATH it can run an iteration through. Then take the watch seat (*The watch seat*, below). **Where
+it says the outer loop started this session**, this is an iteration: read the owner brief (`.specify/product-owner.md`)
+and every standing entry in `specs/<feature>/decisions.md` (a slice's question reads those `python3 scripts/check-decisions.py --scope <slice-id>` prints; a
+feature-level one reads all), and say the iteration number from `specs/cruise-log.jsonl`, the branch and its distance from
+trunk, and that a person stops this run with `touch .specify/cruise.stop`. Where `.codegraph/` is in the
+tree, the runner has already opened, checked and synced it for this iteration: a caller or blast-radius question
+
+$ sed -n 15,20p agents/drive-skipper.md; sed -n 34,37p agents/drive-skipper.md
+decides from, in this order: the specification (`specs/<feature>/spec.md`), the constitution
+(`.specify/memory/constitution.md`), the owner brief (`.specify/product-owner.md`) and the standing entries of
+`specs/<feature>/decisions.md`. For a question that names a slice, read its standing entries through `python3 scripts/check-decisions.py --scope <slice-id>` (add
+`--feature <name>` where `specs/` holds more than one `decisions.md`); read every standing
+entry in `specs/<feature>/decisions.md` where the brief names no slice. A decision that contradicts a standing one is wrong unless it says which entry it overrides and
+why; a decision that contradicts a constitution MUST is not available, and you say so rather than picking the
+You write nothing. Return the whole entry, in the shape `specs/<feature>/decisions.md` shows, with its `Scope:` line (the slice ids whose
+later decisions must agree with it, or `global`), under the number the brief gave
+it — `D<n>` is allocated by the session that delegated you, before dispatch, so that several of you deciding
+at once cannot come back with the same one — with `Decided by:` naming this type and the model you ran on.
+
+$ sed -n 52,62p .specify/product-owner.md
+Every decision a run takes is appended to `specs/<feature>/decisions.md`, one entry in this shape, and the artifact the stage
+owns is written in the same step. The session running `/cruise` allocates the number before a delegate
+decides, so two decided at once never share one:
+
+```markdown
+## D<n> — <the question, in one line>
+- **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
+- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
+- **Question:** <as the stage raised it>
+- **Options:** <each, marking the one the stage recommended>
+- **Decision:** <one>

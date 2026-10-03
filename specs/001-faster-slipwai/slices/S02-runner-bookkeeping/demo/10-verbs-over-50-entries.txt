@@ -1,0 +1,24 @@
+status, where, resume, tell, status, told over the same 50-entry log: this slice's runner, then the diff against the runner at 596740f (instants masked)
+$ python3 scripts/agents/cruise.py status
+cruise: no runner is running here
+cruise: 50 iteration(s) logged; the last ended <instant> with `cruise: continue`
+exit 0
+$ python3 scripts/agents/cruise.py where
+exit 0
+$ python3 scripts/agents/cruise.py resume
+exit 0
+$ python3 scripts/agents/cruise.py tell a message from a person
+cruise: queued; no runner is running here — the first iteration of the next run carries it (`/cruise` starts one)
+exit 0
+$ python3 scripts/agents/cruise.py status
+cruise: no runner is running here
+cruise: 1 message(s) queued for the next iteration (.specify/cruise-inbox.jsonl):
+cruise:   a message from a person
+cruise: 50 iteration(s) logged; the last ended <instant> with `cruise: continue`
+exit 0
+$ python3 scripts/agents/cruise.py told
+cruise: 1 message(s) from a person since this iteration started; act on each before the next stage, and write down what must outlive this iteration
+cruise: told: a message from a person
+exit 0
+=== diff new vs 596740f:
+(identical)

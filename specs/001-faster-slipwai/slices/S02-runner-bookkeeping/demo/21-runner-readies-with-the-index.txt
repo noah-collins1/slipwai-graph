@@ -1,0 +1,53 @@
+The runner over a project with the real code index, six stand-in iterations; iteration 3 edits one tracked file. Every codegraph CLI call is logged by a wrapper on PATH.
+cruise: the code index is reached through the `codegraph` CLI; the registry knows no project MCP file for GitHub Copilot
+cruise: code index before iteration 1 — current: opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22) (0.1s)
+cruise: iteration 1 started 2026-10-03T19:26:25Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:26:25  iteration 1 of the stand-in harness
+14:26:25  --- codegraph CLI calls so far: 0
+14:26:25  cruise: continue
+cruise: iteration 1 ended — cruise: continue (0s)
+cruise: code index before iteration 2 — current: opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22) (0.0s)
+cruise: iteration 2 started 2026-10-03T19:26:25Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:26:25  iteration 2 of the stand-in harness
+14:26:25  --- codegraph CLI calls so far: 0
+14:26:25  cruise: continue
+cruise: iteration 2 ended — cruise: continue (0s)
+cruise: code index before iteration 3 — current: opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22) (0.0s)
+cruise: iteration 3 started 2026-10-03T19:26:25Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:26:25  iteration 3 of the stand-in harness
+14:26:25  edited apps/service/migrations/apply.py
+14:26:25  --- codegraph CLI calls so far: 0
+14:26:25  cruise: continue
+cruise: iteration 3 ended — cruise: continue (0s)
+cruise: code index before iteration 4 — synced: 1 tracked file(s) were ahead of the index; synced it; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22) (0.9s)
+cruise: iteration 4 started 2026-10-03T19:26:26Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:26:26  iteration 4 of the stand-in harness
+14:26:26  --- codegraph CLI calls so far: 1
+14:26:26  cruise: continue
+cruise: iteration 4 ended — cruise: continue (0s)
+cruise: code index before iteration 5 — current: opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22) (0.0s)
+cruise: iteration 5 started 2026-10-03T19:26:26Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:26:26  iteration 5 of the stand-in harness
+14:26:26  --- codegraph CLI calls so far: 1
+14:26:26  cruise: continue
+cruise: iteration 5 ended — cruise: continue (0s)
+cruise: code index before iteration 6 — current: opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22) (0.0s)
+cruise: iteration 6 started 2026-10-03T19:26:27Z, running `Run the /cruise command: read commands/cruise.md and follow it exactly as written; it is given no argument.`
+14:26:27  iteration 6 of the stand-in harness
+14:26:27  --- codegraph CLI calls so far: 1
+14:26:27  cruise: continue
+cruise: iteration 6 ended — cruise: continue (0s)
+cruise: budget spent — 6 iteration(s)
+exit 0
+--- every codegraph CLI call during the run:
+npx -y @colbymchenry/codegraph@1.6.0 sync .
+--- entries:
+{"iteration": 1, "started": "2026-10-03T19:26:25Z", "ended": "2026-10-03T19:26:25Z", "harness": "copilot", "last_line": "cruise: continue", "fingerprint": "99c599f65f80983d", "index": {"state": "current", "detail": "opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22)", "seconds": 0.1}, "bookkeeping": {"log_bytes": 0}}
+{"iteration": 2, "started": "2026-10-03T19:26:25Z", "ended": "2026-10-03T19:26:25Z", "harness": "copilot", "last_line": "cruise: continue", "fingerprint": "99c599f65f80983d", "index": {"state": "current", "detail": "opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22)", "seconds": 0.0}, "bookkeeping": {"log_bytes": 0}}
+{"iteration": 3, "started": "2026-10-03T19:26:25Z", "ended": "2026-10-03T19:26:25Z", "harness": "copilot", "last_line": "cruise: continue", "fingerprint": "f72c3b040834e503", "index": {"state": "current", "detail": "opens, passes its integrity check, and describes the tree; hashed 0 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22)", "seconds": 0.0}, "bookkeeping": {"log_bytes": 0}}
+{"iteration": 4, "started": "2026-10-03T19:26:26Z", "ended": "2026-10-03T19:26:26Z", "harness": "copilot", "last_line": "cruise: continue", "fingerprint": "f72c3b040834e503", "index": {"state": "synced", "detail": "1 tracked file(s) were ahead of the index; synced it; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22)", "seconds": 0.9}, "bookkeeping": {"log_bytes": 0}}
+{"iteration": 5, "started": "2026-10-03T19:26:26Z", "ended": "2026-10-03T19:26:26Z", "harness": "copilot", "last_line": "cruise: continue", "fingerprint": "f72c3b040834e503", "index": {"state": "current", "detail": "opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22)", "seconds": 0.0}, "bookkeeping": {"log_bytes": 0}}
+{"iteration": 6, "started": "2026-10-03T19:26:27Z", "ended": "2026-10-03T19:26:27Z", "harness": "copilot", "last_line": "cruise: continue", "fingerprint": "f72c3b040834e503", "index": {"state": "current", "detail": "opens, passes its integrity check, and describes the tree; hashed 1 of 89 file(s), only what changed since the last whole comparison (2026-10-03 14:26:22)", "seconds": 0.0}, "bookkeeping": {"log_bytes": 0}}
+--- git status:
+ M apps/service/migrations/apply.py
+?? specs/
