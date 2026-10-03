@@ -64,6 +64,45 @@ class CurrentTest(RenderCase):
             svg.write_text(svg.read_text().rstrip()[: -len("</svg>")])
             self.only_the(repo, "model.mmd")
 
+    def spoil(self, repo: Path, change) -> Path:
+        svg = repo / MODEL_DIR / "slices/S1.svg"
+        change(svg, svg.read_text().split("\n", 2))
+        return svg
+
+    def test_e5_a_renderer_line_on_line_three_is_a_diagram_redrawn_once(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.one_slice(directory)
+            self.spoil(repo, lambda svg, lines: svg.write_text("\n".join([lines[0], "", lines[1], lines[2]])))
+            self.only_the(repo, "slices/S1.mmd")
+
+    def test_e5_the_two_stamps_swapped_are_a_diagram_redrawn_once(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.one_slice(directory)
+            self.spoil(repo, lambda svg, lines: svg.write_text("\n".join([lines[1], lines[0], lines[2]])))
+            self.only_the(repo, "slices/S1.mmd")
+
+    def test_e5_both_stamps_on_one_line_are_a_diagram_redrawn_once(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.one_slice(directory)
+            self.spoil(repo, lambda svg, lines: svg.write_text(" ".join(lines[:2]) + "\n" + lines[2]))
+            self.only_the(repo, "slices/S1.mmd")
+
+    def test_e5_crlf_line_ends_are_a_diagram_redrawn_once(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.one_slice(directory)
+            self.spoil(repo, lambda svg, lines: svg.write_bytes("\r\n".join(lines).encode()))
+            self.only_the(repo, "slices/S1.mmd")
+
+    def test_e5_a_second_wrong_source_stamp_on_line_three_is_left_and_the_gate_agrees(self) -> None:
+        # Both readers look at the first stamp only: `isCurrent` at line one, `extractHash` at its first match.
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.one_slice(directory)
+            self.spoil(repo, lambda svg, lines: svg.write_text(
+                "\n".join([lines[0], lines[1], f"<!-- em-source-sha256: {ZEROS} -->", lines[2]])))
+            self.assertEqual(self.model_log(repo).draws, 0, "left")
+            gate = subprocess.run(["make", "check-model"], cwd=repo, text=True, capture_output=True)
+            self.assertEqual(gate.returncode, 0, gate.stdout + gate.stderr)
+
     def test_e5_each_ci_marker_redraws_every_diagram_and_an_empty_one_is_no_marker(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.one_slice(directory)
