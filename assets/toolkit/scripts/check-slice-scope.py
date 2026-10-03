@@ -622,7 +622,7 @@ def lost_records() -> list[str]:
 
 
 def check(branch: str | None) -> tuple[list[str], str, str]:
-    """The violations, the one line to print when there are none, and what was passed over (empty if nothing)."""
+    """The violations, the one line to print when there are none, and what the refusal header ends with."""
     violations = lost_records()
     match = SLICE_BRANCH.match(branch or "")
     if match is None:
@@ -634,13 +634,16 @@ def check(branch: str | None) -> tuple[list[str], str, str]:
     note = f"; {found_base.passed_over}" if found_base.passed_over else ""
     if base is None:
         return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold", note
+    short = (git("rev-parse", "--short", base) or base).strip()
+    compared = f"compared with `{found_base.trunk}` at {short}"
     scope = Scope(slice_id, base)
     for path, status in sorted(changed_files(base).items()):
         found = scope.violation(path, status)
         if found:
             violations.append(found)
     violations.extend(scope.model_violations())
-    return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may{note}", note
+    return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may ({compared}){note}", \
+        f" — {compared}{note}"
 
 
 def main() -> int:

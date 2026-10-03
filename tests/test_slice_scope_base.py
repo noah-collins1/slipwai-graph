@@ -191,3 +191,28 @@ class ForgeTargetTest(SliceScopeBaseTest):
                 self.passes(repo)
                 self.commit(repo, "Makefile")
                 self.rejects(repo, "Makefile", {"GITHUB_BASE_REF": target})
+
+
+class ReportTest(SliceScopeBaseTest):
+    """R4: the line says which trunk and which commit were compared."""
+
+    def short(self, repo: Path, ref: str) -> str:
+        return subprocess.run(["git", "rev-parse", "--short", ref], cwd=repo, text=True, capture_output=True,
+                              check=True).stdout.strip()
+
+    def test_the_pass_line_names_the_trunk_and_the_base_commit(self) -> None:
+        """e1: the words before the bracket are unchanged."""
+        repo = self.repo(self.root())
+        self.commit(repo, "specs/f/slices/S1/a.md")
+        line = self.run_gate(repo).stdout.strip()
+        self.assertEqual(line, "check-slice-scope: slice/S1 touches only what one slice may "
+                               f"(compared with `main` at {self.short(repo, 'main')})")
+        self.assertRegex(line, r"at [0-9a-f]{7,}\)$")
+
+    def test_the_refusal_header_ends_with_what_was_compared(self) -> None:
+        """e2: the header names the trunk and the short commit."""
+        repo = self.repo(self.root())
+        self.commit(repo, "Makefile")
+        header = self.run_gate(repo).stderr.splitlines()[0]
+        self.assertTrue(header.startswith("check-slice-scope: a slice branch reaches outside what one slice may touch"))
+        self.assertTrue(header.endswith(f" — compared with `main` at {self.short(repo, 'main')}"), header)
