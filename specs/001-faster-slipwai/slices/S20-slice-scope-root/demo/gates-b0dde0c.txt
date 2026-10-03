@@ -1,0 +1,27 @@
+# Gates on b0dde0c (cruise iteration 3, CRUISE_RUNNER and CRUISE_ITERATION set)
+tip=b0dde0c
+verify_rc=0
+delivery_rc=0
+done
+
+## make verify — last lines
+----------------------------------------------------------------------
+Ran 892 tests in 1049.101s
+
+OK (skipped=9)
+
+verify: all gates passed
+
+## make -f delivery/Makefile verify — last lines
+  path-to-production: `scripted` — below `pipeline-decides`
+  integration: `unknown` — unrecorded: nothing has established it; /drive asks before the first slice
+  safety-net: `tests-pass` — below `mutation-measured`
+  structure: `named` — below `typed`
+  platform: `supported` — below `audited`
+  constitution: `template` — below `in-full`
+  data: `settled` — at target
+  infrastructure: `settled` — at target
+  strategy: `done` — at target
+check-convergence: 3 of 9 axes at target; the map is delivery/docs/convergence.md
+
+verify: all gates passed

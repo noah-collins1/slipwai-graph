@@ -474,3 +474,16 @@ Each is a failing test first, through the checker's command line in a temporary 
   boundary), and the slug is what follows a `-` or `.` and ends on a letter or digit. Held: `S00-run-path`, `S1`,
   `S1.2`, `S1 — name`, the header and separator rows read as they do now.
 
+## Done — gates on the final commit (AC-S20-13)
+
+`make verify` and `make -f delivery/Makefile verify` both exited 0 on `b0dde0c`, run one after the other inside
+cruise iteration 3 with `CRUISE_RUNNER` and `CRUISE_ITERATION` set: 892 tests, `skipped=9` (the count S00
+recorded), *verify: all gates passed* twice, no `delivery/baseline.json` written. Their last lines are kept in
+[`demo/gates-b0dde0c.txt`](demo/gates-b0dde0c.txt). One earlier run was red — typecheck, three errors in the new
+test's module loader on `4f16fd5`, fixed in `93cfe91`; the baseline file the delivery gate's ratchet wrote from
+that red run was removed with the errors, never committed. Three runs were stopped by the host before finishing
+because a later stage was about to change the tree they read. Mutation: not run — this repository records no
+mutation command (`story-split.md`, Parking Lot; as S00). Demo 1 was accepted at `cd6689d` over AC-S20-1 to -16;
+AC-S20-17 to -19 and the adversary fixes landed after it and are held by their tests and these gates, not by a
+second demo.
+
