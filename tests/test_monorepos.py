@@ -235,6 +235,8 @@ class MonorepoTest(FactoryTestCase):
                     "skills/event-sourcing/SKILL.md",
                     "skills/global-event-model/SKILL.md",
                     "scripts/event-model/render.ts",
+                    "scripts/event-model/render-plan.ts",
+                    "scripts/event-model/render-session.ts",
                     "scripts/event-model/patch-mermaid-swimlanes.ts",
                     "scripts/event-model/page.ts",
                     "scripts/event-model/package.json",

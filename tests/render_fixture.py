@@ -8,13 +8,17 @@ what the run printed. It is a fake written in the test tree, validated against t
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import stat
 import subprocess
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+
+from support import FactoryTestCase
 
 LOG_VARIABLE = "STAND_IN_LOG"
 FAIL_MARKER = "STAND-IN-DRAW-FAILS"
@@ -45,15 +49,22 @@ function draw(definition, format) {{
 """
 
 MMDC = "#!/usr/bin/env node\n" + _LOG_AND_DRAW + """
+const path = require('node:path');
+function chunkFixed() {
+  const chunk = path.join(__dirname, '..', 'mermaid', 'dist', 'chunks', 'mermaid.esm', 'chunk-stand-in.mjs');
+  return fs.readFileSync(chunk, 'utf8').includes('boundaryMin');
+}
 const argv = process.argv.slice(2);
 const value = (flag) => { const at = argv.indexOf(flag); return at < 0 ? undefined : argv[at + 1]; };
 const input = value('--input');
 const output = value('--output');
 const config = value('--puppeteerConfigFile');
 // One process is one browser session and one draw: that is what this shape means today.
-log({ event: 'session', via: 'mmdc', options: config ? JSON.parse(fs.readFileSync(config, 'utf8')) : {} });
+log({ event: 'session', via: 'mmdc', chunk_fixed: chunkFixed(),
+  options: config ? JSON.parse(fs.readFileSync(config, 'utf8')) : {} });
 const definition = fs.readFileSync(input, 'utf8');
-log({ event: 'draw', via: 'mmdc', input, output, source_sha256: sha(definition) });
+log({ event: 'draw', via: 'mmdc', input, output, source_sha256: sha(definition), width: Number(value('--width')),
+  background: value('--backgroundColor') || 'white' });
 try {
   fs.writeFileSync(output, draw(definition, output.endsWith('.png') ? 'png' : 'svg'));
 } catch (error) {
@@ -69,7 +80,8 @@ MERMAID_CLI_MODULE = """import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 """ + _LOG_AND_DRAW + """
 export async function renderMermaid(browser, definition, outputFormat, opts = {}) {
-  log({ event: 'draw', via: 'module', format: outputFormat, source_sha256: sha(definition) });
+  log({ event: 'draw', via: 'module', format: outputFormat, source_sha256: sha(definition),
+    width: opts.viewport && opts.viewport.width, background: opts.backgroundColor });
   return { data: new Uint8Array(draw(definition, outputFormat)), title: null, desc: null };
 }
 export async function run() { throw new Error('stand-in: run is not provided'); }
@@ -78,21 +90,36 @@ export function error() { throw new Error('stand-in: error is not provided'); }
 """
 
 PUPPETEER_MODULE = """import fs from 'node:fs';
+function chunkFixed() {
+  const chunk = new URL('../../mermaid/dist/chunks/mermaid.esm/chunk-stand-in.mjs', import.meta.url);
+  return fs.readFileSync(chunk, 'utf8').includes('boundaryMin');
+}
 function log(entry) {
   const path = process.env.__LOG__;
   if (path) fs.appendFileSync(path, JSON.stringify(entry) + '\\n');
 }
 export default {
   async launch(options = {}) {
-    log({ event: 'session', via: 'module', options });
+    log({ event: 'session', via: 'module', chunk_fixed: chunkFixed(), options });
     return { async close() { log({ event: 'close', via: 'module' }); } };
   },
 };
 """.replace("__LOG__", LOG_VARIABLE)
 
 
-def install_stand_in(project: Path) -> None:
-    """Write the stand-in renderer where `render.ts` looks for an installed one."""
+def broken_swimlane_chunk(project: Path) -> str:
+    """A chunk in the broken shape of mermaid#7925, built from the patcher's own text, so it is the patcher's to fix."""
+    patcher = (project / EVENT_MODEL / "patch-mermaid-swimlanes.ts").read_text()
+    parts = [re.search(rf"const {name} = `(.*?)`;", patcher, re.S) for name in
+             ("BROKEN_FIND", "BROKEN_CALCULATE", "BROKEN_CREATE")]
+    return "\n".join(match.group(1) for match in parts if match) + "\n"
+
+
+def install_stand_in(project: Path, *, unpatched: bool = False) -> None:
+    """Write the stand-in renderer where `render.ts` looks for an installed one.
+
+    `unpatched` leaves mermaid in the shape the swimlane patcher has to fix, so the stand-in can say at launch
+    whether the patch had already run."""
     prefix = project / EVENT_MODEL / ".mermaid-cli"
     modules = prefix / "node_modules"
     prefix.mkdir(parents=True, exist_ok=True)
@@ -107,7 +134,8 @@ def install_stand_in(project: Path) -> None:
 
     package("@mermaid-js/mermaid-cli", {"src/index.js": MERMAID_CLI_MODULE}, _MODULE_EXPORTS)
     package("puppeteer", {"src/index.js": PUPPETEER_MODULE}, _MODULE_EXPORTS)
-    package("mermaid", {"dist/chunks/mermaid.esm/chunk-stand-in.mjs": _ALREADY_FIXED}, {})
+    chunk = broken_swimlane_chunk(project) if unpatched else _ALREADY_FIXED
+    package("mermaid", {"dist/chunks/mermaid.esm/chunk-stand-in.mjs": chunk}, {})
     bin_dir = modules / ".bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
     mmdc = bin_dir / "mmdc"
@@ -149,6 +177,15 @@ class RendererLog:
         return sum(1 for entry in self.entries if entry["event"] == "draw")
 
     @property
+    def drawn_sources(self) -> list[str]:
+        """SHA-256 of the Mermaid source of each draw, in order (what `sha256_of` gives for a `.mmd`)."""
+        return [str(entry["source_sha256"]) for entry in self.entries if entry["event"] == "draw"]
+
+    @property
+    def closes(self) -> int:
+        return sum(1 for entry in self.entries if entry["event"] == "close")
+
+    @property
     def launch_options(self) -> list[object]:
         return [entry["options"] for entry in self.entries if entry["event"] == "session"]
 
@@ -169,3 +206,32 @@ def make_model(
     return subprocess.run(
         ["make", "model"], cwd=project, text=True, capture_output=True, env={**os.environ, **env}
     )
+
+
+def sha256_of(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def mmd_hashes(project: Path) -> dict[str, str]:
+    """Every `.mmd` the run wrote, by path under `docs/event-model/`, with the SHA-256 of its bytes."""
+    root = project / MODEL_DIR
+    return {str(path.relative_to(root)): sha256_of(path) for path in sorted(root.rglob("*.mmd"))}
+
+
+class RenderCase(FactoryTestCase):
+    """A generated project with the stand-in installed, run through its own `make model`."""
+
+    def project(self, directory: str, slices: int | list[str], name: str = "render-case") -> Path:
+        repo = self.generate(directory, name)
+        install_stand_in(repo)
+        write_model(repo, slices)
+        return repo
+
+    def run_model(self, repo: Path, **env: str) -> subprocess.CompletedProcess[str]:
+        return make_model(repo, repo.parent / "renderer.log", **env)
+
+    def model_log(self, repo: Path, **env: str) -> RendererLog:
+        """Run `make model`, require it to succeed, and return what the stand-in recorded for that run."""
+        done = self.run_model(repo, **env)
+        self.assertEqual(done.returncode, 0, done.stderr + done.stdout)
+        return read_log(repo.parent / "renderer.log")
