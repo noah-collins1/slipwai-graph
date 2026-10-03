@@ -6,10 +6,12 @@ whose bytes changed in a way git's comparison normalises away. Helpers are those
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import tempfile
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+from typing import Any
 
 from support import FactoryTestCase
 from test_codegraph_memory import whole_line
@@ -219,3 +221,17 @@ class ATrackedFileTheIndexHoldsNoRowForTest(FactoryTestCase):
                 else:
                     project.git("add", *how.split()[1:], "brand_new.py")
                 self.same_as_the_whole_run(project, "brand_new.py")
+
+
+class APathKeyedInTheMemoryIsSpelledAsGitSpellsItTest(FactoryTestCase):
+    """One spelling, POSIX, wherever a path is a key: git and the index use `/`, so a record keyed otherwise is never
+    found. Written with a Windows path, since no other platform's separator is the one that goes wrong."""
+
+    def test_a_file_in_a_subdirectory_is_keyed_with_slashes_whatever_the_platform(self) -> None:
+        specification = importlib.util.spec_from_file_location(
+            "check_codegraph_keyed", Path(__file__).resolve().parents[1] / "assets/toolkit/scripts/check-codegraph.py")
+        assert specification is not None and specification.loader is not None
+        gate: Any = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(gate)
+        gate.ROOT = PureWindowsPath("C:/project")
+        self.assertEqual(gate.key(PureWindowsPath("C:/project/apps/service/app.py")), "apps/service/app.py")

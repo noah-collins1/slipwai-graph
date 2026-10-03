@@ -47,7 +47,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any
 
 
@@ -138,12 +138,17 @@ SAFELY = 2.0  # seconds a file's times must be older than the run that vouched f
 # timestamp granularity is not known
 
 
+def key(path: PurePath) -> str:
+    """The spelling of a file under the project that the index, git and the memory share."""
+    return path.relative_to(ROOT).as_posix()
+
+
 def digest(path: Path) -> str:
     HASHED[0] += 1
     sha = hashlib.sha256()
     with path.open("rb") as handle:
         seen = os.fstat(handle.fileno())  # the file as opened, before its bytes are read
-        STATS[str(path)] = [seen.st_size, seen.st_mtime_ns, seen.st_ctime_ns, seen.st_ino]
+        STATS[key(path)] = [seen.st_size, seen.st_mtime_ns, seen.st_ctime_ns, seen.st_ino]
         for block in iter(lambda: handle.read(1 << 20), b""):
             sha.update(block)
     return sha.hexdigest()
@@ -268,7 +273,7 @@ def unreported() -> set[str] | None:
 def files_of(rows: dict[str, tuple[str, float]], kept: dict[str, Any] | None) -> dict[str, list[float]]:
     """What the memory records of each file: the stat taken as it was hashed this run and the moment this run began;
     for a file this run did not hash, what the memory recorded of it before (a narrowed run, which stat-checked it)."""
-    found = {str(Path(path).relative_to(ROOT)): [*seen, START] for path, seen in STATS.items()}
+    found = {path: [*seen, START] for path, seen in STATS.items()}
     return {path: record for path, record in {**(kept or {}), **found}.items() if path in rows}
 
 
