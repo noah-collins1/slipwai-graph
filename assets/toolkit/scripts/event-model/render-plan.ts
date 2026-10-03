@@ -2,7 +2,7 @@
  * What `make model` draws, and how it reaches disk: the diagrams the model produces, in order, and the draw of
  * those through a `RenderSession`.
  */
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
 import { extractHash, renderGlobalMermaid, renderSegmentMermaid, renderSliceMermaid } from './mermaid.ts';
@@ -100,23 +100,54 @@ export function removeOrphans(diagrams: readonly Diagram[]): void {
   }
 }
 
-/** Draws the diagrams through the session, up to four at a time, and writes each SVG as it is drawn. */
+/**
+ * A file reaches its name finished, or not at all: written whole beside it and renamed over it, so nothing that
+ * reads the output (the gate, a browser, `git`) ever sees half of one. The temporary sits in `slices/`, which
+ * is already ignored and on the same filesystem as every output; its name — a leading dot, a kind, the file's
+ * own name — is one the model never produces, so `removeOrphans` takes one a killed run left behind.
+ */
+function writeFinished(kind: Diagram['kind'], path: string, bytes: string | Uint8Array): void {
+  const temporary = join(ROOT, SLICE_DIR, `.tmp-${kind}-${basename(path)}`);
+  try {
+    mkdirSync(dirname(temporary), { recursive: true });
+    writeFileSync(temporary, bytes);
+    renameSync(temporary, join(ROOT, path));
+  } catch (error) {
+    rmSync(temporary, { force: true });
+    throw error;
+  }
+  console.log(`  wrote ${path}`);
+}
+
+/**
+ * Draws the diagrams through the session, up to four at a time, and writes each SVG as it is drawn. When a
+ * draw fails no further one is started; the ones in flight finish and are written like any other; then the
+ * run says which diagrams failed, and fails.
+ */
 export async function drawDiagrams(diagrams: readonly Diagram[], session: RenderSession, key: string): Promise<void> {
-  for (let start = 0; start < diagrams.length; start += IN_FLIGHT) {
+  const failed: string[] = [];
+  for (let start = 0; start < diagrams.length && failed.length === 0; start += IN_FLIGHT) {
     const batch = diagrams.slice(start, start + IN_FLIGHT);
-    const drawn = await Promise.all(batch.map((diagram) => session.draw(diagram.source, 'svg')));
+    const settled = await Promise.allSettled(batch.map((diagram) => session.draw(diagram.source, 'svg')));
     batch.forEach((diagram, index) => {
-      const svg = Buffer.from(drawn[index] as Uint8Array).toString('utf8');
-      writeFileSync(join(ROOT, diagram.svg), `${sourceStamp(diagram)}\n${rendererStamp(key)}\n${svg}`, 'utf8');
-      console.log(`  wrote ${diagram.svg}`);
+      const result = settled[index] as PromiseSettledResult<Uint8Array>;
+      if (result.status === 'rejected') {
+        const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+        failed.push(`${diagram.svg}: ${reason}`);
+        return;
+      }
+      const svg = Buffer.from(result.value).toString('utf8');
+      writeFinished(diagram.kind, diagram.svg, `${sourceStamp(diagram)}\n${rendererStamp(key)}\n${svg}`);
     });
+  }
+  if (failed.length > 0) {
+    throw new Error(`render: could not draw ${failed.join('\nrender: could not draw ')}`);
   }
 }
 
-/** The raster copy of the whole timeline, drawn through the same session when asked for. */
+/** The raster copy of the whole timeline, drawn on every run that asks, in the same session, and renamed into place. */
 export async function drawPng(source: string, session: RenderSession, path: string): Promise<void> {
-  writeFileSync(join(ROOT, path), await session.draw(source, 'png'));
-  console.log(`  wrote ${path}`);
+  writeFinished('global', path, await session.draw(source, 'png'));
 }
 
 export function readSvg(diagram: Diagram): string {

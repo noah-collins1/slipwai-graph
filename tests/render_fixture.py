@@ -182,6 +182,10 @@ class RendererLog:
         return [str(entry["source_sha256"]) for entry in self.entries if entry["event"] == "draw"]
 
     @property
+    def png_draws(self) -> int:
+        return sum(1 for entry in self.entries if entry["event"] == "draw" and entry.get("format") == "png")
+
+    @property
     def closes(self) -> int:
         return sum(1 for entry in self.entries if entry["event"] == "close")
 
@@ -234,4 +238,8 @@ class RenderCase(FactoryTestCase):
         """Run `make model`, require it to succeed, and return what the stand-in recorded for that run."""
         done = self.run_model(repo, **env)
         self.assertEqual(done.returncode, 0, done.stderr + done.stdout)
+        return self.model_log_of(repo)
+
+    def model_log_of(self, repo: Path) -> RendererLog:
+        """What the stand-in recorded for the last run, whether it succeeded or not."""
         return read_log(repo.parent / "renderer.log")
