@@ -62,7 +62,7 @@ None is marked: every implementation task edits `assets/toolkit/scripts/check-sl
 
 ### T002 — The base is where the branch left the trunk, by full ref name (R1 · AC-S22-1, -2, -3, -11, -12, -21 begun)
 
-- [ ] **Rule R1** — only `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>` answer; within the one name the newest
+- [x] **Rule R1** (f93da6d) — only `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>` answer; within the one name the newest
   base wins; `master` counts only as the recorded name or where no `main` has a ref. **This is the first change to
   the asset, so `changelog.d/slice-scope-base.md` is created in this commit** (Principle VIII).
 
