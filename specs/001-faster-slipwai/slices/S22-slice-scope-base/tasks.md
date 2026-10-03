@@ -98,7 +98,7 @@ green, then `make lint typecheck check-structure`. `VERSION` untouched. Commit �
 
 ### T003 — The record's name is read tolerantly and is never a slice's (R2 · AC-S22-4, -5, -6, -7)
 
-- [ ] **Rule R2** — a `ci.branch` that is unusable, a `slice/<id>` name, or without a ref adds nothing; `main`
+- [x] **Rule R2** (604cc7d) — a `ci.branch` that is unusable, a `slice/<id>` name, or without a ref adds nothing; `main`
   answers. Needs T002.
 
 **RED** (in `tests/test_slice_scope_base.py`; e1 to e4 and e7 fail today or after T002 because the recorded name is
