@@ -31,6 +31,9 @@ FAIL_MARKER = "STAND-IN-DRAW-FAILS"
 EVENT_MODEL = Path("scripts/event-model")
 MODEL_DIR = Path("docs/event-model")
 IS_WINDOWS = os.name == "nt"
+WINDOWS_SKIP = (
+    "the tests generate a project through the `./slipwai` launcher, a shebang script, and run its `make model`"
+)
 
 # The text `applySwimlaneFix` reads as "already fixed", so the patcher leaves the stand-in alone.
 _ALREADY_FIXED = "function findSwimlaneByNamespace(swimlanes, namespace, boundaryMin, boundaryMax) {}\n"

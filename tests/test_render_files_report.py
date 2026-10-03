@@ -7,11 +7,24 @@ too coarse to show one the example skips, saying so.
 from __future__ import annotations
 
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import IS_WINDOWS, MODEL_DIR, RenderCase, mtimes, rename_frame, write_model, wrote
+from render_fixture import (
+    EVENT_MODEL,
+    IS_WINDOWS,
+    LOG_VARIABLE,
+    MODEL_DIR,
+    WINDOWS_SKIP,
+    RenderCase,
+    mtimes,
+    read_log,
+    rename_frame,
+    write_model,
+    wrote,
+)
 
 OPEN = "Open docs/event-model/model.html to browse it."
 FIRST = f"model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. {OPEN}"
@@ -28,7 +41,7 @@ def clock_is_fine(directory: Path) -> bool:
     return probe.stat().st_mtime_ns != first
 
 
-@unittest.skipIf(IS_WINDOWS, "the stand-in's .bin/mmdc is a shebang script")
+@unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class ReportTest(RenderCase):
     def closing(self, repo: Path, **env: str) -> str:
         done = self.run_model(repo, **env)
@@ -52,6 +65,33 @@ class ReportTest(RenderCase):
             self.closing(repo)
             png = f"model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged. {OPEN}"
             self.assertEqual(self.closing(repo, PNG="1"), png)
+
+    def test_e13_a_one_slice_model_agrees_its_nouns_with_their_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 1)
+            self.assertEqual(self.closing(repo), f"model: 1 slice, 3 of 3 diagrams drawn, 0 unchanged. {OPEN}")
+            self.assertEqual(self.closing(repo),
+                             f"model: 1 slice, 0 of 3 diagrams drawn, 3 unchanged; no browser started. {OPEN}")
+
+    def test_e9_the_png_flag_asks_for_the_raster_copy_as_the_variable_does(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 1)
+            log = self.model_log(repo)  # the project's own run, which installs the TypeScript runner
+            self.assertEqual(log.png_draws, 0)
+            png = repo / MODEL_DIR / "model.png"
+            self.assertFalse(png.exists())
+            done = subprocess.run(
+                ["node", str(repo / EVENT_MODEL / "node_modules/tsx/dist/cli.mjs"),
+                 str(repo / EVENT_MODEL / "render.ts"), "--png"],
+                cwd=repo, text=True, capture_output=True,
+                env={**os.environ, LOG_VARIABLE: str(repo.parent / "flag.log")},
+            )
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertTrue(png.read_bytes().startswith(b"\x89PNG"))
+            self.assertEqual(self.read_flag_log(repo).png_draws, 1)
+
+    def read_flag_log(self, repo: Path):
+        return read_log(repo.parent / "flag.log")
 
     def test_e13_the_empty_model_message_is_unchanged(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

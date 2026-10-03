@@ -19,6 +19,7 @@ from render_fixture import (
     LAUNCH_FAILS_VARIABLE,
     MODEL_DIR,
     PNG_FAILS_VARIABLE,
+    WINDOWS_SKIP,
     RenderCase,
 )
 
@@ -41,7 +42,7 @@ def render_lines(stderr: str) -> list[str]:
     return [line for line in stderr.splitlines() if line.startswith("render:")]
 
 
-@unittest.skipIf(IS_WINDOWS, "the tests run the project's `make model` recipe, which needs make")
+@unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class FailuresTest(RenderCase):
     def test_e8_a_browser_that_cannot_start_is_one_line_about_the_browser_and_blames_no_diagram(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

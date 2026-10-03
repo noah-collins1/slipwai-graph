@@ -200,7 +200,8 @@ export interface Report {
 }
 
 export function closingLine(report: Report, pagePath: string): string {
-  const counts = `${String(report.slices)} slices, ${String(report.drawn)} of ${String(report.diagrams)} diagrams drawn, ${String(report.unchanged)} unchanged`;
+  const noun = (count: number, word: string): string => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
+  const counts = `${noun(report.slices, 'slice')}, ${String(report.drawn)} of ${noun(report.diagrams, 'diagram')} drawn, ${String(report.unchanged)} unchanged`;
   const browser = report.sessionOpened ? '' : '; no browser started';
   return `model: ${counts}${browser}. Open ${pagePath} to browse it.`;
 }

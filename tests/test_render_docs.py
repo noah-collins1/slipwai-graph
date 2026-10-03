@@ -13,7 +13,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import IS_WINDOWS, MODEL_DIR, RenderCase
+from render_fixture import IS_WINDOWS, MODEL_DIR, WINDOWS_SKIP, RenderCase
 
 from slipwai.assets import ROOT, VERSION
 
@@ -57,7 +57,7 @@ class SaysItTest(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
 
 
-@unittest.skipIf(IS_WINDOWS, "the stand-in's .bin/mmdc is a shebang script")
+@unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class FollowedTest(RenderCase):
     def test_e10_deleting_a_diagram_redraws_it_alone_and_deleting_the_two_directories_redraws_what_they_held(
         self,

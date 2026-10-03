@@ -13,6 +13,7 @@ from pathlib import Path
 from render_fixture import (
     IS_WINDOWS,
     MODEL_DIR,
+    WINDOWS_SKIP,
     RenderCase,
     install_stand_in,
     mmd_hashes,
@@ -20,7 +21,7 @@ from render_fixture import (
 )
 
 
-@unittest.skipIf(IS_WINDOWS, "the stand-in's .bin/mmdc is a shebang script")
+@unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class OneSessionTest(RenderCase):
     def test_e1_a_first_run_opens_one_session_and_draws_every_diagram_through_it(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -72,7 +73,7 @@ class OneSessionTest(RenderCase):
                              [True] * log.sessions)
 
 
-@unittest.skipIf(IS_WINDOWS, "the stand-in's .bin/mmdc is a shebang script")
+@unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class OnlyWhatChangedTest(RenderCase):
     def svgs(self, repo: Path) -> dict[str, bytes]:
         root = repo / MODEL_DIR

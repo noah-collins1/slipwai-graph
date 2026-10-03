@@ -12,14 +12,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import EVENT_MODEL, IS_WINDOWS, MODEL_DIR, RenderCase, sha256_of
+from render_fixture import EVENT_MODEL, IS_WINDOWS, MODEL_DIR, WINDOWS_SKIP, RenderCase, sha256_of
 
 SOURCE_LINE = re.compile(r"<!-- em-source-sha256: [0-9a-f]{64} -->")
 RENDERER_LINE = re.compile(r"<!-- em-renderer-sha256: ([0-9a-f]{64}) -->")
 ZEROS = "0" * 64
 
 
-@unittest.skipIf(IS_WINDOWS, "the stand-in's .bin/mmdc is a shebang script")
+@unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class CurrentTest(RenderCase):
     def one_slice(self, directory: str) -> Path:
         repo = self.project(directory, 1)

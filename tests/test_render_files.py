@@ -11,12 +11,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import FAIL_MARKER, IS_WINDOWS, MODEL_DIR, RenderCase, sha256_of, write_model, wrote
+from render_fixture import FAIL_MARKER, IS_WINDOWS, MODEL_DIR, WINDOWS_SKIP, RenderCase, sha256_of, write_model, wrote
 
 NAMES = [f"Do thing {i}" for i in range(1, 17)]
 
 
-@unittest.skipIf(IS_WINDOWS, "the stand-in's .bin/mmdc is a shebang script")
+@unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class FinishedFilesTest(RenderCase):
     def svgs(self, repo: Path) -> dict[str, bytes]:
         root = repo / MODEL_DIR
