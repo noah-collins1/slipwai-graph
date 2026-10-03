@@ -120,3 +120,49 @@ class WhereNothingChanges(FactoryTestCase):
             self.assertNotIn("Traceback", result.stderr)
             self.assertNotIn("uncommitted", result.stderr, "nothing is refused where git cannot answer")
             self.assertFalse((copy / ".delivery-tools/written.json").exists(), "nothing to record without git")
+
+
+class WhereGitCannotAnswer(FactoryTestCase):
+    """Holds (S23, R6; AC-S23-8, T010): every way `changed()` answers None, at the top and in a subdirectory.
+
+    As today the refresh runs, exits 0, refuses nothing, records nothing, and writes over a person's edit to a
+    file it owns: a change in any of the four (a refusal, a traceback, a record, an edit kept) is seen here.
+    """
+
+    def unreadable(self, top: Path, project: Path, where: Path) -> Path:
+        (top / ".git/HEAD").write_text("garbage\n")
+        return project
+
+    def corrupt_index(self, top: Path, project: Path, where: Path) -> Path:
+        """`git status` fails (index file smaller than expected) while `rev-parse --show-prefix` answers."""
+        (top / ".git/index").write_text("garbage\n")
+        return project
+
+    def copied_out(self, top: Path, project: Path, where: Path) -> Path:
+        copy = where / "shop"
+        shutil.copytree(project, copy, ignore=shutil.ignore_patterns(".git"))
+        return copy
+
+    STATES = {"no repository": copied_out, "unreadable HEAD": unreadable, "unreadable index": corrupt_index}
+
+    def refresh_without_an_answer(self, at: str, state: str) -> None:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as elsewhere:
+            top, project = placed(Path(directory), at) if at else (adopted(Path(directory)),) * 2
+            run_in = self.STATES[state](self, top, project, Path(elsewhere))
+            probe = subprocess.run(["git", "rev-parse"], cwd=run_in, capture_output=True)
+            if state == "no repository" and probe.returncode == 0:
+                self.skipTest("the temporary directory sits inside a git repository on this machine")
+            page = run_in / PAGE
+            page.write_text(page.read_text() + "\nA note of mine.\n")
+            result = slipwai(run_in, "adopt", "--refresh")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertNotIn("uncommitted", result.stderr, "nothing is refused where git cannot answer")
+            self.assertFalse((run_in / ".delivery-tools/written.json").exists(), "nothing recorded")
+            self.assertNotIn("A note of mine.", page.read_text(), "as today, the edit is written over")
+
+    def test_hold_where_git_gives_no_answer_a_refresh_refuses_and_records_nothing_and_overwrites(self) -> None:
+        for at in ("", "sub"):
+            for state in self.STATES:
+                with self.subTest(project_at=at or "the top", git=state):
+                    self.refresh_without_an_answer(at, state)
