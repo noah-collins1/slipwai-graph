@@ -211,6 +211,20 @@ that cannot delegate takes the earliest ready slice in split order and names the
   `S24-ci-fetches-slice-base` (approved; the host's reading of *taken after S01*), `S02-runner-bookkeeping`,
   `S11-render-once`, and on through the PRD's order. A slice an adversary or gaps finding opens from here on
   goes behind the PRD's slices unless the finding is `CRITICAL`.
+- **`GIT_DIR` exported with no `GIT_WORK_TREE`, project in a subdirectory (D40; found by S23's converge pass, T012).**
+  An absolute `GIT_DIR` makes git take the project's directory for the top of the work tree, so every run is refused
+  and *commit or stash* cannot clear it; a relative one finds no repository, so nothing is refused and an uncommitted
+  edit is written over (AC-S23-8's *git cannot read*, as today). `LOW`, older than S23, correct at the top and
+  wherever `GIT_WORK_TREE` is also set. Not to be fixed by removing git's variables from the environment: that writes
+  over an edit where the repository is kept outside the work tree. If taken up: one sentence naming the variable,
+  swept over every `GIT_*` variable that moves the repository, the work tree or the index, for both callers of
+  `changed()`. For the completion audit to place behind the PRD's slices (D39) or rule out.
+- **`git` not installed (D41; found by S23's converge pass, T013).** With no `git` on `PATH`, `adopt --refresh`,
+  `--confirm` and `--decline` end on a `FileNotFoundError` traceback from `changed()` (`src/slipwai/uncommitted.py`),
+  exit 1, nothing written; older than S23 and the same at the top. When placed: a one-line refusal that the command
+  needs git, exit 2 — never *as not a repository*, which would let a run write over an edit it could not see — swept
+  over every `git` call an adopted project's commands reach (`uncommitted.py`, `structure.py`, `quick_wins.py`,
+  `add_service.py`'s `refuse_uncommitted`). `LOW`; behind the PRD's slices (D39).
 
 ## Next Step
 

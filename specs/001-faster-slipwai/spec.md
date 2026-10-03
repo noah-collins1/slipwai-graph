@@ -655,8 +655,10 @@ with the adoption committed, a sibling directory `other/` beside it, and every c
 - **AC-S23-7** — Given a project at the top of its repository, then every answer is today's: the assertions
   `tests/test_uncommitted.py` and `tests/test_refresh_owned.py` already make pass unchanged, and the paths in
   `written.json` are spelled as before.
-- **AC-S23-8** — Given a project directory that is not in a git repository, or one git cannot read, then nothing is
-  refused and nothing is recorded, as today, and no run ends on a traceback.
+- **AC-S23-8** — *Narrowed by D41.* Given a machine where `git` runs, and a project directory that is not in a git
+  repository, or in one git cannot read, then nothing is refused and nothing is recorded, as today, and no run ends
+  on a traceback. A machine with no `git` on `PATH` is neither state and is not changed by this slice (D41): the
+  run ends as it did before, writing nothing.
 - **AC-S23-9** — Given a repository adopted in a subdirectory where an earlier factory's `--confirm` or `--refresh`
   left regenerated files uncommitted (it recorded nothing there), when the first run after this change meets them,
   then it refuses naming them, as it does a person's edit — it cannot tell the two apart — and committing or

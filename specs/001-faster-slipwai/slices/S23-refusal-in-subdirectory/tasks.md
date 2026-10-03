@@ -405,7 +405,7 @@ have met changes.
 
 ### T012 — `GIT_DIR` in the environment, with no `GIT_WORK_TREE` (`LOW` · **needs a decision** · AC-S23-8, D36)
 
-- [ ] Not answered by the criteria, the plan or D36–D38. With `GIT_DIR=<absolute>/.git` exported and the project
+- [x] **Decided by D40: option (a), no files, no criterion; a Parking Lot line.** Not answered by the criteria, the plan or D36–D38. With `GIT_DIR=<absolute>/.git` exported and the project
   in `sub/`, git takes `sub/` for the top of the working tree: on a clean tree `adopt --refresh` exits 2 naming
   284 files (*… and 276 more*), and *commit or stash* cannot clear it. With `GIT_DIR=.git` (relative) git finds no
   repository from `sub/`: exit 0 and a person's edit to `delivery/docs/convergence.md` is written over. Before this
@@ -420,7 +420,7 @@ have met changes.
 
 ### T013 — `git` is not installed (`LOW` · **needs a decision** · AC-S23-8)
 
-- [ ] With no `git` on `PATH`, `adopt --refresh` ends on a `FileNotFoundError` traceback raised in `changed()`
+- [x] **Decided by D41: option (c); AC-S23-8 narrowed to a machine where `git` runs; a Parking Lot line.** With no `git` on `PATH`, `adopt --refresh` ends on a `FileNotFoundError` traceback raised in `changed()`
   (`uncommitted.py:39`, from `resurvey.py:167`), exit 1, nothing written. It is older than this slice and the same
   at the top. AC-S23-8 says *no run ends on a traceback* of a directory *git cannot read*; whether a machine without
   git is that state is not said. **Options:** (a) as *not a repository* — `None`, nothing refused, nothing recorded;
@@ -452,3 +452,7 @@ a recorded path (for `a/b/`, at the top *and* in `a/`) neither refuses nor is re
   assertion on stderr for each; a `PATCH` clause in a fragment, since the message is what a person reads.
 
 **Files:** `src/slipwai/confirm.py`, `tests/test_uncommitted.py` is not to be edited — a new example beside it.
+
+**Host note on T010, T011, T014, T015 (D42).** All four are this slice's, each through its test. T015's files:
+`src/slipwai/confirm.py`, a new example in `tests/test_uncommitted_subdirectory.py`, and a clause in
+`changelog.d/refusal-in-subdirectory.md`; T011's fragment clause the same way where a person could have met it.
