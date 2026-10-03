@@ -102,9 +102,12 @@ class ABlockTheVerbCannotReadTest(unittest.TestCase):
         self.check(result, bad.strip(), carried=3, of=3)
         self.assertEqual(1, result.stdout.count("## D1 — "))
 
-    def test_e85_a_byte_order_mark_before_the_first_entry_prints_that_entry_and_fails(self) -> None:
+    def test_e85_a_byte_order_mark_before_the_first_entry_is_read_past_and_the_entry_printed_and_counted(self) -> None:
         result = self.verb(b"\xef\xbb\xbf" + (entry(1, SLICE) + "\n" + entry(2, "S05-other")).encode("utf-8"))
-        self.check(result, "## D1 — Question 1", carried=1, of=2)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(["D1"], printed(result))
+        self.assertIn(f"carried 1 of 2 entries for {SLICE}: 1 in scope", result.stdout.splitlines()[-1])
+        self.assertEqual("", result.stderr)
 
     def test_e85_the_gate_refuses_a_log_with_such_a_block_too(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

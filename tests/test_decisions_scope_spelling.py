@@ -2,8 +2,9 @@
 
 The filter never drops what it cannot place. So ids meet on their head (the letters, case set aside, and the number,
 read as a number) whatever the slug; and a `Scope:` the checker cannot read as `global` alone or a list of single
-ASCII ids, or an entry that says its scope or its status twice, is refused by the gate and carried as global by the
-verb, so no spelling can make a decision that binds a slice vanish from it.
+ASCII ids, or an entry that says its scope twice, is refused by the gate and carried as global by the
+verb (a status said twice is only noted by the gate, D65, and carried the same), so no spelling can make a
+decision that binds a slice vanish from it.
 """
 from __future__ import annotations
 
@@ -105,14 +106,23 @@ class AnEntryThatSaysAFieldTwiceTest(unittest.TestCase):
         self.check("Scope", "global", "S11-render-once")
         self.check("Scope", "S11-render-once", "S12-model-sidecar", "S12")
 
-    def test_e83_two_status_lines_are_refused_and_carried_even_where_one_says_overridden(self) -> None:
-        self.check("Status", "overridden by D1", "standing")
-        self.check("Status", "standing", "overridden by D1")
+    def test_e83_two_status_lines_are_a_note_for_the_gate_and_carried_by_the_verb_either_way_round(self) -> None:
+        for first, second in (("overridden by D1", "standing"), ("standing", "overridden by D1")):
+            log = entry(1, "S11-render-once") + "\n" + self.twice("Status", first, second)
+            gate, verb = gate_and_verb(log)
+            self.assertEqual((0, ""), (gate.returncode, gate.stderr), (first, gate.stdout))
+            notes = [line for line in gate.stdout.splitlines() if "note:" in line]
+            self.assertEqual(1, len(notes), gate.stdout)
+            self.assertIn("D2", notes[0])
+            self.assertIn("`Status:`", notes[0])
+            self.assertEqual(0, verb.returncode, verb.stderr)
+            self.assertEqual(["D2"], printed(verb), (first, second))
 
     def test_e83_a_quoted_line_inside_a_fence_counts_as_a_second_line_at_the_start_of_a_line(self) -> None:
         text = entry(1, "global").replace("- **Status:**", "```\n- **Status:** overridden by D9\n```\n- **Status:**")
         gate, verb = gate_and_verb(text)
-        self.assertEqual(1, gate.returncode)
+        self.assertEqual(0, gate.returncode, gate.stderr)
+        self.assertIn("note:", gate.stdout)
         self.assertEqual(["D1"], printed(verb))
 
     def test_e83_hold_a_scope_or_status_label_said_mid_line_is_not_a_second_line(self) -> None:

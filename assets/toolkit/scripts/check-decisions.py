@@ -34,15 +34,18 @@ the slug, so `S02`, `S2` and `s02-runner` meet `S02-runner-bookkeeping` and `S1`
 say `global`, and the ones with no line or no readable one, which are carried as global because a filter that could
 hide a binding decision is the wrong one. A value is unreadable when it is not `global` alone or a list of single
 ASCII ids (`S01-S03` is two ids, not one), and an entry that says its `Scope:` or its `Status:` on more than one line
-is unreadable whole: the gate refuses each, naming the entry, and the verb carries them as global. It ends with one line of counts, names
+is unreadable whole: the verb carries it as global. The gate refuses a second `Scope:` line, which is new with that
+line, naming the entry; a second `Status:` line it only notes (`check-decisions: note:`, exit code unchanged), because a
+log written before this release can hold one and the gate does not newly refuse what an earlier checker passed. For a log
+with no `Scope:` line the gate answers exactly as the checker before it did, a byte-order mark included. It ends with one line of counts, names
 each overridden entry with what overrode it, writes nothing, and needs `--feature` only when `specs/` holds more
 than one `decisions.md`.
 
 A call it does not understand is usage and exit 2, never a run of something else: `--scope` wants an id of upper-case
 letters and a number, `--feature` a name, each once, and `--help` prints the usage and exits 0. A block under a `##`
-heading it cannot read as `## D<n> — <question>` (or a byte-order mark before the first entry) is printed in its place
-and counted as carried for want of a heading it can read, and the verb then exits 1 saying the log does not pass. A
-log that is not UTF-8 is one line naming the file and exit 1, for the gate and for the verb alike.
+heading it cannot read as `## D<n> — <question>` is printed in its place and counted as carried for want of a heading it can read, and the verb then exits 1 saying the log does not pass. A
+log that is not UTF-8 is one line naming the file and exit 1, for the gate and for the verb alike. The verb reads past a byte-order mark at the start of the log, so its first entry is
+printed and counted as an entry; the gate does not.
 
 `python3 scripts/check-decisions.py --adversary-baseline` is for a project that migrated across that last rule: it
 writes, once, a `## <id> · predates the adversary gate · <date>` row for every done slice without one, which the gate accepts
@@ -123,14 +126,36 @@ def lines_of(text: str) -> list[str]:
     return text.split("\n")
 
 
-def entries(text: str, heading: re.Pattern[str]) -> list[Entry]:
+def decisions_text(path: Path) -> str:
+    """A decisions log as the verb reads it, a byte-order mark at the very start read past so the first entry is an
+    entry (D65). The gate does not: it reads such a log as the checker before the `Scope:` line did."""
+    return read(path).removeprefix("\ufeff")
+
+
+def pieces(text: str, legacy: bool) -> list[tuple[str, bool]]:
+    """The lines of a log, each with whether it begins a line of the log. The verb reads line feeds only, so what it
+    prints is what is written; the gate reads as the checker did before the `Scope:` line (`str.splitlines`, which
+    also breaks at a form feed, U+2028 or U+0085), so a log it passed it still passes, and takes a `Scope:` label
+    only where a line feed began its line."""
+    if not legacy:
+        return [(line, True) for line in lines_of(text)]
+    found, begins = [], True
+    for piece in text.splitlines(keepends=True):
+        found.append((piece.splitlines()[0], begins))
+        begins = piece.endswith("\n")
+    return found
+
+
+def entries(text: str, heading: re.Pattern[str], legacy: bool = False) -> list[Entry]:
     """Each entry as (line number, its heading match or None for a heading in the wrong shape, its fields)."""
     found: list[Entry] = []
-    for number, line in enumerate(lines_of(text), start=1):
-        if line.startswith("## ") or (number == 1 and line.startswith("\ufeff## ")):  # a mark before the first entry
+    for number, (line, begins) in enumerate(pieces(text, legacy), start=1):
+        if line.startswith("## "):
             found.append((number, heading.match(line), Fields()))
         elif found and (field := FIELD.match(line)):
             label = field.group(1).split(":")[0].strip()
+            if label == "Scope" and not begins:
+                continue
             if label in found[-1][2]:
                 found[-1][2].twice.add(label)
             else:
@@ -186,12 +211,17 @@ def scope_finding(where: str, number: int, value: str) -> list[str]:
 
 
 def scope_notes(path: Path) -> list[str]:
-    """One note per entry with no `Scope:` line after an entry that has one: it is carried as global."""
+    """One note per entry with no `Scope:` line after an entry that has one (it is carried as global), and one per
+    entry that says `Status:` twice (the first is read): a log written before the `Scope:` line can hold the second,
+    so the gate says it and does not refuse it (D65)."""
     relative = path.relative_to(ROOT).as_posix()
     notes, seen = [], False
-    for line, heading, fields in entries(read(path), DECISION_HEADING):
+    for line, heading, fields in entries(read(path), DECISION_HEADING, legacy=True):
         if heading is None:
             continue
+        if "Status" in fields.twice:
+            notes.append(f"check-decisions: note: {relative}:{line}: D{heading.group(1)} has more than one "
+                         "`Status:` line; the first is the one read, and the verb carries the entry")
         if "Scope" in fields:
             seen = True
         elif seen:
@@ -204,7 +234,7 @@ def check_decisions(path: Path) -> list[str]:
     relative = path.relative_to(ROOT).as_posix()
     findings: list[str] = []
     expected = 1
-    for line, heading, fields in entries(read(path), DECISION_HEADING):
+    for line, heading, fields in entries(read(path), DECISION_HEADING, legacy=True):
         where = f"{relative}:{line}"
         if heading is None:
             findings.append(f"{where}: a heading that is not `## D<n> — <question>`")
@@ -227,10 +257,8 @@ def check_decisions(path: Path) -> list[str]:
         if not STATUS.match(fields["Status"]):
             findings.append(f"{where}: D{number} `Status` is {fields['Status']!r}; it is standing, overridden by "
                             "D<m> or overridden by human <date>")
-        for label in ("Scope", "Status"):
-            if label in fields.twice:
-                findings.append(f"{where}: D{number} has more than one `{label}:` line; an entry says its "
-                                f"{label.lower()} once")
+        if "Scope" in fields.twice:
+            findings.append(f"{where}: D{number} has more than one `Scope:` line; an entry says its scope once")
         if "Scope" in fields:
             findings += scope_finding(where, number, fields["Scope"])
         findings += path_findings(where, f"D{number} `Written to`", fields["Written to"], ROOT)
@@ -240,7 +268,7 @@ def check_decisions(path: Path) -> list[str]:
 def check_demo_log(path: Path) -> list[str]:
     relative = path.relative_to(ROOT).as_posix()
     findings: list[str] = []
-    for line, heading, fields in entries(read(path), DEMO_HEADING):
+    for line, heading, fields in entries(read(path), DEMO_HEADING, legacy=True):
         where = f"{relative}:{line}"
         if heading is None:
             findings.append(f"{where}: a heading that is not `## <instant> — <verdict> · iteration <n> · drive-hand (<model>)`")
@@ -400,7 +428,7 @@ def scope_verb(wanted: str, feature: str | None) -> int:
         print("check-decisions: no decisions.md under specs/" + (f" for feature {feature}" if feature else ""),
               file=sys.stderr)
         return 1
-    text = read(logs[0])
+    text = decisions_text(logs[0])
     lines = lines_of(text)
     found = entries(text, DECISION_HEADING)
     count = {"scope": 0, "global": 0, "unlined": 0, "unread": 0, "out": 0}
@@ -464,8 +492,8 @@ def gate() -> int:
             print(f"  {finding}", file=sys.stderr)
         print(file=sys.stderr)
         return 1
-    counted = sum(len(entries(read(p), DECISION_HEADING)) for p in decisions)
-    demos = sum(len(entries(read(p), DEMO_HEADING)) for p in logs)
+    counted = sum(len(entries(read(p), DECISION_HEADING, legacy=True)) for p in decisions)
+    demos = sum(len(entries(read(p), DEMO_HEADING, legacy=True)) for p in logs)
     print(f"check-decisions: {counted} decision(s) in {len(decisions)} file(s), {demos} demo(s) in {len(logs)} log(s), "
           "every field present and every path in the tree, every done slice in the adversary log")
     return 0
