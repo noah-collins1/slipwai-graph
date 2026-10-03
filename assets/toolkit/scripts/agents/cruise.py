@@ -1257,6 +1257,12 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
     # The fingerprint a stuck run was already given its one unblocking iteration at, so it gets exactly one.
     unblocked_at: str | None = None
     ask, attempt = first, "kick-off" if first != prompt else None
+    # What this process saw of the controls when the last iteration ended, and whether a park has returned since:
+    # the next iteration's before-signature is compared with it, so no control changes between two iterations
+    # silently (D64). Messages taken for an iteration a park put off ride on the one that runs.
+    left_as: dict[str, str] | None = None
+    parked_since = False
+    carried: list[str] = []
     global INTERRUPTED
     while True:
         table = settings_now(table)
@@ -1277,13 +1283,15 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         # A person's message rides on this iteration's argument: after the kick-off on the first, in place of
         # the bosun's `unblock:` — a person's word is the likelier thing to move a stuck run, and the bosun's one
         # iteration is kept for after it — and alone on any other.
-        messages = deliver()
+        taken = deliver()
+        messages, carried = carried + taken, []
         if messages:
             if attempt == "unblock":
                 unblocked_at, attempt = None, None
             ask = prompt_for(harness, " ".join(part for part in (
                 feature, kickoff if attempt == "kick-off" else None, told_argument(messages)) if part))
-            print(f"cruise: iteration {len(LOGBOOK.entries()) + 1} carries {len(messages)} message(s) from a person", flush=True)
+            if taken:
+                print(f"cruise: iteration {len(LOGBOOK.entries()) + 1} carries {len(taken)} message(s) from a person", flush=True)
         iteration = len(LOGBOOK.entries()) + 1
         # The index an iteration starts against is the runner's to make sound, not the iteration's: a corrupt one is
         # moved aside and rebuilt, a stale one synced, and the entry says which — before the clock starts.
@@ -1291,12 +1299,24 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         if index:
             print(f"cruise: code index before iteration {iteration} — {index['state']}: {index['detail']} "
                   f"({index['seconds']}s)", flush=True)
+        controls_before = controls_signature()
+        between = controls_changed(left_as, controls_before) if left_as is not None else []
+        if between and not parked_since:
+            # Nothing parked the run since the last iteration ended, so whatever changed a control did it on its own:
+            # the run parks before this iteration starts, with no entry and the number not consumed.
+            carried, parked_since = messages, True
+            park(f"a gate or a control of the run changed between iterations {iteration - 1} and {iteration} — "
+                 f"{', '.join(between)} — and nothing an iteration starts may change one; revert the change, or keep "
+                 "it on purpose and resume with a message", no_park, poll, fingerprint())
+            continue
+        if between:
+            print(f"cruise: {', '.join(between)} changed while the run was parked; iteration {iteration} starts "
+                  "against them", flush=True)
         started = now()
         LAST_RESPONSE.unlink(missing_ok=True)
         INTERRUPTED = False
         print(f"cruise: iteration {iteration} started {started}, running `{ask}`", flush=True)
         began = time.monotonic()
-        controls_before = controls_signature()
         # The model flag is read with the settings, so `/cruise-settings model=…` holds from the next iteration.
         last = iterate(template + model_flags(harness, table["model"]), ask, environment, iteration, stream)
         if INTERRUPTED:
@@ -1320,9 +1340,13 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             entry["index_use"] = use
             for line in code_index.use_lines(iteration, use):
                 print(line, flush=True)
-        changed = controls_changed(controls_before, controls_signature())
+        left_as = controls_signature()
+        parked_since = False
+        changed = controls_changed(controls_before, left_as)
         if changed:
             entry["controls_changed"] = changed
+        if between:
+            entry["controls_changed_between"] = between
         given = delivered()
         if given:
             entry["told"] = [str(each["text"]) for each in given]
@@ -1345,6 +1369,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             park(f"iteration {iteration} changed a gate or a control of the run — {', '.join(changed)} — and a gate "
                  "is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and "
                  "resume with a message", no_park, poll, seen)
+            parked_since = True
             continue
         if INTERRUPTED:
             # Ended for a message, not by its own last line: the next iteration is where the message goes, and it
@@ -1358,6 +1383,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             return
         if last is not None and last.startswith("cruise: parked: "):
             park(last.removeprefix("cruise: parked: "), no_park, poll, seen)
+            parked_since = True
             continue
         window = fingerprints[-table["stuck_after"]:]
         if len(window) == table["stuck_after"] and len(set(window)) == 1:
@@ -1371,6 +1397,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
                 continue
             park(f"no progress since iteration {since}, and the bosun's iteration did not move it"
                  if unblocked_at == seen else f"no progress since iteration {since}", no_park, poll, seen)
+            parked_since = True
 
 
 def start(arguments: list[str]) -> None:

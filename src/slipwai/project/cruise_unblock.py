@@ -64,5 +64,8 @@ not left to the text: on Claude Code, `python3 {script} guard` runs as the `PreT
 tool and refuses, in a runner's session, an edit under `scripts/`, `tools/`, the `Makefile`, CI or the hook
 settings before it lands; and the runner compares those files before and after every iteration, on every
 harness, and parks the run on any change — `controls_changed` on the log entry names the files — whatever
-the iteration's last line said. A file installed under `tools/` by `./init --extension` is not a change.
+the iteration's last line said. It compares them between iterations too: a control changed after one iteration
+ended and before the next began, with no park between, parks the run before the next starts; one changed while
+the run was parked is named on the next entry (`controls_changed_between`) and in the feed, and does not park it
+again. A file installed under `tools/` by `./init --extension` is not a change.
 """

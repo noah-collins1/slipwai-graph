@@ -445,7 +445,13 @@ started, refuses an edit to any of those paths before it lands, with the reason 
 under those paths before an iteration and compares it after: any file modified, deleted or added — except a
 file installed under `tools/`, which is what `./init --extension` does — parks the run at once, naming the
 files, whatever the iteration's last line said; the log entry carries them as `controls_changed`. A person
-reverts the change, or keeps it on purpose and resumes with a message. Outside a runner's iteration neither
+reverts the change, or keeps it on purpose and resumes with a message. The runner also compares the controls
+between two iterations, which is where a process an iteration left behind would change one: with no park
+between, a difference parks the run before the next iteration starts (no entry, the number not consumed); a
+difference across a park — a person's edit, or a process's — is named on the next entry as
+`controls_changed_between` and in the feed, and does not park the run again. A control changed between two
+runner processes (after a `--no-park` exit, a spent budget, a stop) is not seen by the runner; `git status`
+shows it, except under a `tools/` directory Git ignores. Outside a runner's iteration neither
 control does anything: a person's `/drive` session edits a gate when a gate needs editing.
 
 ## The limits
