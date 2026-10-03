@@ -141,3 +141,32 @@ class RefusalInSubdirectoryTest(FactoryTestCase):
             self.assertEqual((top / name).read_text(), "the top's own, edited\n")
             self.assertIn(PAGE, self.recorded(project), "the run did record what it left")
             self.assertNotIn(name, self.recorded(project))
+
+    def left_uncommitted(self, top: Path, project: Path) -> list[str]:
+        """What the first run left uncommitted, spelled as the project spells it, read from `git status`."""
+        self.assertEqual(slipwai(project, "adopt", "--confirm", "sub").returncode, 0)
+        (project / ".delivery-tools/written.json").write_text("{}\n")  # what an earlier factory left: no record
+        lines = git(top, "status", "--porcelain", "-uall").stdout.splitlines()
+        left = [line[3:].removeprefix("sub/") for line in lines if line[3:].startswith("sub/")]
+        self.assertTrue(left, "the first run left files uncommitted")
+        return sorted(left)
+
+    def test_an_earlier_factorys_uncommitted_leftovers_are_refused_once_naming_them(self) -> None:
+        """R5e1: with no record, a regenerated file is not told apart from a person's edit."""
+        with tempfile.TemporaryDirectory() as directory:
+            top, project = placed(Path(directory))
+            left = self.left_uncommitted(top, project)
+            result = slipwai(project, "adopt", "--refresh")
+            self.assertEqual(result.returncode, 2, f"exit {result.returncode}: {result.stdout + result.stderr}")
+            self.assertTrue(any(f"`{name}`" in result.stderr for name in left), result.stderr)
+            self.assertNotIn("sub/delivery", result.stderr)
+
+    def test_hold_those_files_committed_the_refresh_exits_zero(self) -> None:
+        """R5e2, a hold: passes before (nothing was refused) and after (nothing is left uncommitted)."""
+        with tempfile.TemporaryDirectory() as directory:
+            top, project = placed(Path(directory))
+            self.left_uncommitted(top, project)
+            git(top, "add", "-A")
+            git(top, "-c", "user.name=t", "-c", "user.email=t@local", "commit", "-q", "-m", "leftovers")
+            result = slipwai(project, "adopt", "--refresh")
+            self.assertEqual(result.returncode, 0, result.stderr)
