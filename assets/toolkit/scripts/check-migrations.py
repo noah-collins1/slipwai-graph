@@ -68,6 +68,7 @@ DEFAULT = re.compile(r"\bDEFAULT\b", re.IGNORECASE)
 
 PRUNED = {".venv", "node_modules", "__pycache__", ".git"}
 listings: dict[Path, list[Path]] = {}
+members: dict[Path, frozenset[Path]] = {}
 entries_read = 0
 
 
@@ -91,7 +92,18 @@ def listing(top: Path) -> list[Path]:
             directories[:] = [name for name in directories if not skipped(directory, name)]
             found.extend(directory / name for name in directories + files)
         listings[top] = sorted(found)
+        members[top] = frozenset(found)
     return listings[top]
+
+
+def children(directory: Path) -> list[Path]:
+    """What `directory` holds, from a listing already taken where that listing holds the directory as one of its
+    own entries, spelled as it is spelled here, and not a link; anything else is listed on its own, counted.
+    No directory is read except through `listing()`, so the count is the sum of what the listings returned."""
+    for top, paths in listings.items():
+        if top in directory.parents and directory in members[top] and not directory.is_symlink():
+            return [path for path in paths if path.parent == directory]
+    return [path for path in listing(directory) if path.parent == directory]
 
 
 def migrations() -> list[Path]:
@@ -185,11 +197,11 @@ def go_migrate_embeds() -> list[str]:
     apps = ROOT / "apps"
     if not apps.is_dir():
         return violations
-    for app in sorted(apps.iterdir()):
+    for app in children(apps):
         migrations_dir = app / "migrations"
         if not migrations_dir.is_dir():
             continue
-        if not any(migrations_dir.glob("*.sql")):
+        if not any(path.name.endswith(".sql") for path in children(migrations_dir)):
             continue
         if not (app / "cmd" / "migrate").is_dir():
             continue
@@ -221,7 +233,7 @@ def check() -> list[str]:
             )
             continue
         name = Path(marker.group(1)).stem
-        expand = next((p for p in path.parent.iterdir() if p.stem == name and p != path), None)
+        expand = next((p for p in children(path.parent) if p.stem == name and p != path), None)
         if expand is None:
             violations.append(f"{relative}: {what}, and names `{name}`, which is not a migration beside it.")
         elif expand.name >= path.name:

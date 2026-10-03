@@ -7,12 +7,14 @@ trees, exactly, and the findings with the four pruned directories planted beside
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
 
-from support import FactoryTestCase
-from test_gate_walks import GATES, IMPORTS_LINE, entries, reported, run_gate
+from gate_audit import Audited
+from support import FactoryTestCase, commit_all
+from test_gate_walks import GATES, IMPORTS_LINE, MIGRATIONS_LINE, entries, reported, run_gate
 from test_gate_walks_pinned import (
     IMPORT_FINDINGS,
     MIGRATION_FINDINGS,
@@ -70,3 +72,38 @@ class CountOnATreeThatReachesTheCodeTest(FactoryTestCase):
                     result = subprocess.run(["python3", script], cwd=repo, text=True, capture_output=True)
                     self.assertEqual((result.returncode, result.stdout), (1, ""))
                     self.assertEqual(result.stderr, findings)
+
+
+class EachDirectoryIsListedOnceTest(FactoryTestCase):
+    """T025: under the audit hook, `check-migrations` lists no directory twice, and its count is the names the
+    listings returned — on the reference skeleton, with a marked contraction, and on a Go project."""
+
+    def assert_listed_once_and_counted(self, repo: Path) -> None:
+        audited = Audited(repo, "scripts/check-migrations.py")
+        self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
+        self.assertEqual(sorted(set(audited.listed)), sorted(audited.listed), "a directory was listed twice")
+        names = sum(len(os.listdir(repo / path)) for path in audited.listed)
+        self.assertEqual(reported(audited.result, MIGRATIONS_LINE), names)
+
+    def test_the_reference_skeleton(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "once-web", "event-modelling", "python", frontend="react-vite")
+            self.assert_listed_once_and_counted(repo)
+
+    def test_a_marked_contraction(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "once-contract", "event-modelling", "python", frontend="react-vite")
+            migrations = repo / "apps/service/migrations"
+            (migrations / "001_add_status.sql").write_text("ALTER TABLE events ADD COLUMN status text;\n")
+            commit_all(repo, "expand")
+            (migrations / "002_drop_state.sql").write_text(
+                "-- contract: 001_add_status\nALTER TABLE events DROP COLUMN state;\n")
+            self.assert_listed_once_and_counted(repo)
+
+    def test_a_go_project(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "once-go", language="go", target="aws", event_store="postgres",
+                                 http="net-http", auth="none")
+            self.assert_listed_once_and_counted(repo)
+            (repo / "apps/service/migrations/0001_init.sql").write_text("CREATE TABLE events (id int);\n")
+            self.assert_listed_once_and_counted(repo)
