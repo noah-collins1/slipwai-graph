@@ -24,6 +24,7 @@ SEAM = "a seam requests enter through"
 PINNED = "`/characterise` pinning each seam"
 WHY = "split it so teams can move"
 DERIVED = ("recommended", "because", "decided", "finished", "programme")
+UNKNOWN = "the path to production is `unknown`"
 
 
 def adopted(parent: Path) -> Path:
@@ -73,6 +74,35 @@ class RefreshStrategyTest(FactoryTestCase):
     def test_a_structure_recorded_above_as_found_is_not_named_a_prerequisite(self) -> None:
         self.gone("structure", "named", ROLES)
 
+    def test_a_row_a_person_overrode_above_the_rung_is_not_named_a_prerequisite(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            document = record(repo)
+            for row in document["convergence"]:
+                if row["axis"] == "safety-net":
+                    row.update(rung="tests-pass", provenance="overridden")
+            (repo / "project.json").write_text(json.dumps(document, indent=2) + "\n")
+            commit(repo)
+            refresh(repo)
+            self.assertEqual(leads(repo, SUITE), (False, False))
+
+    def test_a_safety_net_recorded_at_none_keeps_its_entry_and_names_none(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            recorded(repo, "safety-net", "none")
+            refresh(repo)
+            self.assertEqual(leads(repo, "the safety net is `none`"), (True, True))
+            self.assertEqual(leads(repo, "the safety net is `tests-exist`"), (False, False))
+
+    def test_a_path_to_production_recorded_at_manual_keeps_its_entry_and_names_manual(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            self.assertEqual(leads(repo, UNKNOWN), (True, True))
+            recorded(repo, "path-to-production", "manual")
+            refresh(repo)
+            self.assertEqual(leads(repo, "the path to production is `manual`"), (True, True))
+            self.assertEqual(leads(repo, UNKNOWN), (False, False))
+
     def test_a_row_left_at_the_rung_the_tree_reads_keeps_its_entry(self) -> None:
         """A hold: today's behaviour, green before the change."""
         with tempfile.TemporaryDirectory() as directory:
@@ -92,6 +122,8 @@ class RefreshStrategyTest(FactoryTestCase):
             second = record(repo)["strategy"]
             for key in DERIVED:
                 self.assertEqual(second[key], first[key], key)
+            self.assertEqual({k: v for k, v in second.items() if k != "before"},
+                             {k: v for k, v in first.items() if k != "before"}, "every key but `before`")
             commit(repo)
             settled = (repo / "project.json").read_text(), (repo / PAGE).read_text()
             refresh(repo)

@@ -52,6 +52,15 @@ class RefreshKeepsOwnedTest(FactoryTestCase):
     def test_a_committed_cruise_json_is_left_as_it_is(self) -> None:
         self.one(CRUISE)
 
+    def test_a_cruise_json_with_the_settings_of_a_run_is_left_as_it_is(self) -> None:
+        """AC-S21-1's literal: `enabled: true` and `max_iterations: 10`, which the factory's default is neither of."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            (repo / CRUISE).write_text(json.dumps({"enabled": True, "max_iterations": 10}, indent=2) + "\n")
+            commit(repo)
+            self.kept(repo, "--refresh")
+            self.assertEqual(json.loads((repo / CRUISE).read_text()), {"enabled": True, "max_iterations": 10})
+
     def test_a_filled_in_owner_brief_is_left_as_it_is(self) -> None:
         self.one(OWNER)
 
@@ -60,6 +69,13 @@ class RefreshKeepsOwnedTest(FactoryTestCase):
 
     def test_a_drive_json_that_is_not_the_default_is_left_as_it_is(self) -> None:
         self.one(DRIVE)
+
+    def test_a_decline_leaves_all_four_as_they_are(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            for name in FOUR:
+                settings(repo, name)
+            self.kept(repo, "--decline", "themes")
 
     def test_a_confirm_leaves_all_four_as_they_are(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -107,6 +123,7 @@ class HeldTest(FactoryTestCase):
     """Today's behaviour, green on arrival and green after: the edit must not skip more than the four present."""
 
     def missing(self, name: str) -> None:
+        """Deleted and committed: written back with the factory's default, and counted (AC-S21-4)."""
         with tempfile.TemporaryDirectory() as directory:
             repo = adopted(Path(directory))
             default = (repo / name).read_text()
@@ -116,12 +133,19 @@ class HeldTest(FactoryTestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual((repo / name).read_text(), default)
             self.assertIn(name, git(repo, "status", "--porcelain").stdout)
+            self.assertIn("\n1 file(s) rewritten", result.stdout)
 
     def test_a_missing_cruise_json_is_written_with_the_default(self) -> None:
         self.missing(CRUISE)
 
     def test_a_missing_owner_brief_is_written_with_the_default(self) -> None:
         self.missing(OWNER)
+
+    def test_a_missing_models_json_is_written_with_the_default(self) -> None:
+        self.missing(MODELS)
+
+    def test_a_missing_drive_json_is_written_with_the_default(self) -> None:
+        self.missing(DRIVE)
 
     def test_a_row_moved_by_hand_reaches_the_convergence_page(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -178,3 +202,18 @@ class UncommittedTest(FactoryTestCase):
             self.assertEqual(refused.returncode, 2)
             self.assertIn(f"`{CRUISE}`", refused.stderr)
             self.assertFalse((repo / CRUISE).exists(), "and nothing was written")
+
+
+    def test_a_confirm_over_an_uncommitted_edit_to_a_seeded_file_is_not_refused_and_it_stands(self) -> None:
+        for step in (("--confirm", "shop"), ("--decline", "themes")):
+            with self.subTest(step=step), tempfile.TemporaryDirectory() as directory:
+                repo = adopted(Path(directory))
+                edited = {}
+                for name in FOUR:
+                    path = repo / name
+                    path.write_text(path.read_text() + ("\n" if name == OWNER else " "))
+                    edited[name] = path.read_text()
+                result = slipwai(repo, "adopt", *step)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                for name in FOUR:
+                    self.assertEqual((repo / name).read_text(), edited[name], name)
