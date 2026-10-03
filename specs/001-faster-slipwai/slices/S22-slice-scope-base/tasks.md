@@ -516,7 +516,7 @@ One task per commit, in order; all edit the script. New tests go in new files (`
 
 ### T024 — A name that cannot be compared with is not a base and not the end of the search (`HIGH` B1 · `MEDIUM` A1 · AC-S22-29)
 
-- [ ] **RED:** B1's and A1's reproductions from the log, through the command line, each failing today. **GREEN names
+- [x] (9b41d68) **RED:** B1's and A1's reproductions from the log, through the command line, each failing today. **GREEN names
   the class:** every candidate name — recorded, `main`, `master`, the target — in the state *has a ref, shares no
   history*: a trunk candidate is passed over for the next and said so; a target is no base at all. The existing
   no-base examples (an unrelated `main` and nothing else) keep their answers.
@@ -525,7 +525,7 @@ One task per commit, in order; all edit the script. New tests go in new files (`
 
 ### T025 — The gate ends in a verdict whatever it is given (`MEDIUM` A2, A3, B4 · AC-S22-30)
 
-- [ ] **RED:** a NUL and a lone surrogate in `ci.branch`; `project.json` and `model.yaml` as symlinks to `/dev/zero`
+- [x] (3037ae5; cap 8 MiB; `project.json` as a symlink was already a verdict — a hold) **RED:** a NUL and a lone surrogate in `ci.branch`; `project.json` and `model.yaml` as symlinks to `/dev/zero`
   and to a FIFO (the test bounds each run with a timeout); `GIT_DIR` pointing nowhere. **GREEN names the class:**
   every `git()` call survives any `ValueError`; every working-tree read goes through one guard (regular file, size
   cap); where `git rev-parse --git-dir` fails the gate says so with git's first line and exits 0, as before the slice.
