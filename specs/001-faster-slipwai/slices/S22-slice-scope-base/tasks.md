@@ -255,7 +255,7 @@ itself plus the docstring, so this task has no new failing test — it is the wo
 
 ### T010 — Both full gates (host task)
 
-- [ ] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` once on the final tip
+- [x] (both green at `27acb52`, 2026-10-03: `make verify` — 1071 tests, *all gates passed*; `make -f delivery/Makefile verify` — *all gates passed*; evidence `demo/gates-27acb52.txt`) **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` once on the final tip
   after T009; both green. Confirm the diff touches under `delivery/` only `delivery/survey/pinned.md`, `VERSION` is
   `1.5.2.dev0`, and `check-migrations.py` and `tests/test_parallel_slices.py` are unedited. Then the demo from
   [quickstart.md](quickstart.md).
