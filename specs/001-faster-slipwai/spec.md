@@ -215,6 +215,36 @@ blocks; a run with an unratified provisional decision past its date ends `parked
 
 ---
 
+### User Story 9 - A learned classifier chooses the model for each spec node (Priority: P3)
+
+Model routing is not left to a hand-written rule. A JEV-style joint-embedding predictive model, or an open-source
+equivalent that runs locally, is the classifier: for each spec node it reads the slice block, its one-hop
+contracts, the task manifest, the planner's difficulty score and the agent's role, and returns the model tier.
+It is calibrated on this repository's own result contracts and benchmark records, and the rule-based policy of
+User Story 6 is its fallback while it has too little data or is unavailable.
+
+**Why this priority**: Depends on User Stories 6 and 7 for its inputs and training data, and on the gate slices
+for a cheap enough loop to measure it.
+
+**Independent Test**: With `route_by_difficulty: model`, dispatching a worker on a fixture spec node produces a
+tier from the classifier with its inputs and confidence logged; with the classifier absent or below its record
+floor, the same dispatch logs `fallback: rule` and the rule's tier; the merge root's gate findings are
+unchanged either way.
+
+**Acceptance Scenarios**:
+
+1. **Given** `route_by_difficulty: model` and a calibrated classifier, **When** a worker is dispatched on a spec
+   node, **Then** the tier comes from the classifier and the log names the node, role, inputs, tier and
+   confidence.
+2. **Given** fewer than the record floor of result contracts, or the classifier unreachable, **When** a worker is
+   dispatched, **Then** the rule-based policy decides and the log says `fallback: rule`.
+3. **Given** a worker's scoped gate fails after a low-tier dispatch, **When** it is re-dispatched, **Then** the
+   cascade goes one tier up and the outcome is recorded against the classifier's prediction.
+4. **Given** the open-source backend is selected, **When** the classifier runs, **Then** no spec text leaves the
+   machine.
+
+---
+
 ### Edge Cases
 
 - A stamped tree whose toolchain changed (new ruff, new mypy): the stamp key includes recorded tool versions,
@@ -309,6 +339,19 @@ blocks; a run with an unratified provisional decision past its date ends `parked
 - **FR-033**: Provisional approval MUST never widen what the merge root or CI checks, flip a flag, or take a
   `hard` decision.
 
+- **FR-034**: `models.json` MUST accept `route_by_difficulty: off | log | rule | model`; `model` MUST route each
+  spec node through a classifier whose backend is pluggable: a JEV-style joint-embedding predictive model where
+  one is available, otherwise an open-source equivalent that runs locally.
+- **FR-035**: The classifier's inputs MUST be the spec node's block, its one-hop contracts, the task manifest,
+  the planner's difficulty score and the agent's role; its output MUST be a tier and a confidence, both logged.
+- **FR-036**: The classifier MUST be calibrated on this repository's result contracts and benchmark records, and
+  MUST fall back to the rule-based policy (FR-027) below a documented record floor or when unreachable, logging
+  `fallback: rule`.
+- **FR-037**: Planner, judge/converge, skipper and adversary roles MUST keep the fixed tiers of FR-027; the
+  classifier decides workers only, and a failed scoped gate MUST cascade one tier up with the outcome recorded
+  against the prediction.
+- **FR-038**: With the open-source backend, no spec text MUST leave the machine.
+
 ### Key Entities
 
 - **Verify stamp**: tree hash, gate script hash, tool versions, timestamp, result.
@@ -335,6 +378,8 @@ blocks; a run with an unratified provisional decision past its date ends `parked
   renders only that file's previews, and the four method-file checks report that they were skipped.
 - **SC-011**: Under `decide: provisional`, the guarded fixture proceeds, the D54 fixture blocks, and an
   unratified provisional decision past its date parks the run rather than ending it.
+- **SC-012**: Over one feature with `route_by_difficulty: model`, the classifier's predicted tier and the
+  realised outcome are joined per task in `make benchmark`, with the fallback rate reported.
 - **SC-010**: After one feature, `make benchmark` prints K-effective, Gini, top-3 share and the
   context-expansion count per slice.
 
