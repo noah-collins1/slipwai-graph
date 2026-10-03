@@ -150,7 +150,8 @@ result = {"held": [held, held_added, held_removed, held_renamed],
         self.assertEqual(values[0], values[1])
 
     def test_hold_a_commit_or_a_change_outside_specs_moves_the_value_and_opens_no_file_under_specs(self) -> None:
-        """AC-S02-19 (hold for the value; the second call's reads are the count)."""
+        """AC-S02-19: a change outside `specs/` that alters `git status`, and then a commit that alters nothing but
+        HEAD, each move the value; neither opens a file under `specs/` (the reads are the part that failed before)."""
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "outside", "standard", "python")
             populate(repo)
@@ -159,11 +160,12 @@ cruise.SPECS_RECORD.clock = later()
 first = cruise.fingerprint(); opened()
 open("apps/stray.txt", "w").write("x\\n")
 changed = cruise.fingerprint(); changed_reads = opened("specs")
+os.remove("apps/stray.txt")
 import subprocess
-subprocess.run(["git", "add", "-A"], check=True)
-subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x"], check=True)
+subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty",
+                "-m", "x"], check=True)
 committed = cruise.fingerprint(); committed_reads = opened("specs")
-result = {"moved": [first != changed, changed != committed], "reads": [changed_reads, committed_reads]}""")
+result = {"moved": [first != changed, committed != first], "reads": [changed_reads, committed_reads]}""")
         self.assertEqual(seen["moved"], [True, True])
         self.assertEqual(seen["reads"], [[], []])
 
