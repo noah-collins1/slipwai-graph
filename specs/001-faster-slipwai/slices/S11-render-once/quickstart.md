@@ -28,15 +28,17 @@ variable: `echo '{"args": ["--no-sandbox", "--disable-dev-shm-usage"]}' > /tmp/s
 3. Rename one frame of `S7` in `model.yaml` (its `cmd`, say), then `time make model` — one browser;
    `model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged.`; `wrote` lines for `model.mmd`, `model.svg`, S7's
    segment and S7's slice (`.mmd` and `.svg` each) and `model.html`; **the whole recipe under 2 seconds**
-   (AC-S11-15, SC-004). One real browser start is confirmed by a means other than that line — for example
-   `strace -f -e trace=execve -o /tmp/s11-demo/exec.log make model` after another one-frame edit, counting the
-   `chrome-headless-shell` executions, or a wrapper named as `executablePath` in the Puppeteer config that logs
-   each start.
-4. Remove slice `S16` from the model, `make model` — `slices/S16.svg` and `S16.mmd` are gone, and so is a segment
-   the model no longer fills.
+   (AC-S11-15, SC-004). One real browser start is confirmed by a means other than that line: after another
+   one-frame edit, `strace -f -e trace=execve -o /tmp/s11-demo/exec.log make model`, then count the executions of
+   the browser's binary whose arguments carry no `--type=` (Chromium starts its helper processes from the same
+   binary with `--type=…`; the browser itself is the one without). Do not name a wrapper as `executablePath` in
+   the Puppeteer config to count: the config's bytes are in the renderer key, so that run redraws all 25.
+4. Remove slices `S15` and `S16` from the model, `make model` — `slices/S15.*` and `slices/S16.*` are gone, and so
+   is `segments/model-8.*`, which the model no longer fills (the fixture packs two slices to a segment).
 5. Truncate one SVG (cut its last line), `make model` — that diagram is drawn again.
 6. `PNG=1 make model` twice — `model.png` drawn both times.
-7. `CI=true make model` — 25 of 25 drawn.
+7. `CI=true make model` — every diagram drawn, and the closing line says a CI marker is set.
+8. Delete `docs/event-model/model.svg`, `segments/` and `slices/`, `make model` — every diagram drawn (the page's one sentence on redrawing everything, followed as written).
 
 **Measured at the demo** (the hand writes these into its demo log; the host copies them here):
 

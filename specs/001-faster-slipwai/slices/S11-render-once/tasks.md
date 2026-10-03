@@ -484,6 +484,36 @@ name; the root line is printed only when the step that failed is the start.
 **Files:** `assets/toolkit/scripts/event-model/render-session.ts`, `tests/test_render_failures.py`,
 `tests/render_fixture.py` (additions only).
 
+### After-converge gaps (2026-10-03, `drive-gaps` at `107f008`; D71)
+
+#### T016 — `MEDIUM` — The way to redraw everything names the whole timeline's file (G1 · AC-S11-10)
+
+- [ ] `docs/event-model/model.svg` is outside `segments/` and `slices/`, so the remedy as written redraws 24 of 25.
+  **RED:** `tests/test_render_docs.py`'s followed example deletes exactly what the sentence names and expects every
+  diagram drawn (today: the timeline is left). **GREEN (the class):** every text that gives the remedy — the README
+  block under `assets/toolkit/docs/event-model/README.md` (both places: forcing a redraw, and the browser behind an
+  `executablePath`), `docs/event-model.md`, `changelog.d/render-once.md` — names `docs/event-model/model.svg`,
+  `segments/` and `slices/`; sweep the three for any other sentence that says what a deletion redraws.
+
+**Files:** `assets/toolkit/docs/event-model/README.md`, `docs/event-model.md`, `changelog.d/render-once.md`,
+`tests/test_render_docs.py`.
+
+#### T017 — `LOW` — Two runs, a CI marker, and an edited `render.ts` are each said (G4, G6, G7 · AC-S11-18, -19, -20)
+
+- [ ] (a) The temporary's name carries the process id (`.tmp-<kind>-<pid>-<file name>`); removal of what the model
+  does not produce still takes any `.tmp-` entry; the README says one run per tree at a time. **RED:** an example
+  that reads the temporary's name while a draw is held (the stand-in can pause on a marker file) or, failing that, a
+  probe importing `writeFinished`'s naming — and the hold that a leftover `.tmp-` of any process is removed.
+  (b) Under a CI marker the closing line gains one clause saying everything was drawn because one is set; AC-S11-13's
+  two lines are byte for byte unchanged where none is. **RED:** `CI=true` on a drawn tree → the clause. (c) The
+  fragment's catch-up gains the sentence of AC-S11-20; `tests/test_render_docs.py` asserts it.
+  **Sweep:** every place the three scripts print a count or name a temporary.
+
+**Files:** `assets/toolkit/scripts/event-model/render-plan.ts`, `render.ts`, `assets/toolkit/docs/event-model/README.md`,
+`changelog.d/render-once.md`, `tests/test_render_files.py`, `tests/test_render_files_report.py`,
+`tests/test_render_docs.py`, `tests/render_fixture.py` (additions only), a new `tests/test_render_runs.py` if a file
+would pass 350 lines.
+
 ## Convergence
 
 **Converged at `107f008`, at the loop's bound: two passes** (`drive-converge`, host model, fresh context each). Pass 1

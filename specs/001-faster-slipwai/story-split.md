@@ -122,6 +122,10 @@ that cannot delegate takes the earliest ready slice in split order and names the
   (`S09`, `S10`), each a MINOR; the PRD's E9 is their source. No finished slice is re-opened for them: the entries
   D1 to D62 gain no `Reversibility:` line by hand, and `S02`'s `Scope:` line stands as shipped. `S28` waits on
   `S14-result-contract` for FR-032, wherever the order puts it.
+- **For a person, from S11's after-converge gaps (D71, G5).** Slice ids that differ only in case (`S1`, `s1`) pass
+  `check-model` and are one file on a case-insensitive filesystem: one slice's diagram overwrites the other's, the
+  page shows one picture for both since it is built from the files, and one of the two is redrawn on every run.
+  Refusing such ids is a new refusal in a gate the merge root and CI run — the owner's to approve.
 - **Seen at S11's gaps stage (D68), behind the PRD's slices (D39), for the completion audit to place.** `mermaidCli()`
   in `assets/toolkit/scripts/event-model/render.ts` installs only where the `mmdc` binary is absent, so a raised pin
   does not reinstall in a tree that already has one: S11's renderer key reads the installed versions, so its skip

@@ -1218,8 +1218,9 @@ saving and the single browser is the saving everywhere.
 - **AC-S11-9** — Given `PNG=1` or `--png`, then `model.png` is drawn on every such run, never left, in the same
   session and by the same rename; not asked for, an existing `model.png` is left as today. (D68)
 - **AC-S11-10** — Given a person who wants everything redrawn, then there is no setting and no flag: deleting a
-  diagram, or `segments/` and `slices/`, is the way, and `assets/toolkit/docs/event-model/README.md` says so in one
-  sentence. (D68)
+  diagram redraws it, and deleting `docs/event-model/model.svg`, `segments/` and `slices/` redraws all of them —
+  the whole timeline sits outside the two directories — and `assets/toolkit/docs/event-model/README.md` says so in
+  one sentence. (D68, D71)
 - **AC-S11-11** — Given `segments/` and `slices/`, when a run starts, then every entry whose name the current model
   does not produce (`model-<i>.mmd` and `model-<i>.svg` per segment, `<slice id>.mmd` and `<slice id>.svg` per
   slice) is removed before anything is drawn — file or directory, a leftover temporary included — so a renamed or
@@ -1247,6 +1248,15 @@ saving and the single browser is the saving everywhere.
   first `make model` redraws every diagram once, and since the output is ignored nothing committed changes; one
   that removed the ignore lines and commits the diagrams sees the second comment line in each SVG once. The
   fragment in `changelog.d/` says both and claims PATCH; `VERSION` stays `1.6.0.dev0`. (D68)
+
+- **AC-S11-18** — Given two runs in one tree, then they never write the same temporary: its name carries the
+  process id. The page says one run per tree at a time; a run whose temporary another run removed fails naming
+  the file, and the next run draws it. (D71)
+- **AC-S11-19** — Given a CI marker, then the closing line says in one clause that everything was drawn because
+  one is set; the two lines of AC-S11-13 are unchanged where none is. (D71)
+- **AC-S11-20** — Given a repository that edited `render.ts`, then the fragment's catch-up says `slipwai migrate`
+  may meet a conflict there, because the renderer's pin, width and browser handling moved to `render-session.ts`.
+  (D71)
 
 ### S24-ci-fetches-slice-base
 
