@@ -122,6 +122,16 @@ def declined(project: Project) -> None:
     os.utime(target, (0, 0))
 
 
+def recent_then_rewritten(project: Project) -> Step | None:
+    """AC-S01-24: a committed, indexed file written within two seconds of the run that records the memory, so the
+    memory cannot vouch for it; it is rewritten in place afterwards (see `RECENT`: that run is not settled)."""
+    project.settle()
+    project.edit()
+    project.resync()
+    project.commit("a file written just before the whole comparison")
+    return None
+
+
 def extra(project: Project) -> None:
     """A tracked file the index never saw, older than the index, as the added-row state needs it."""
     target = project.repo / "extra.py"
@@ -149,16 +159,20 @@ STATES: list[tuple[str, Before, Step]] = [
     ("AC-S01-23 CRLF written over LF", lambda p: None, crlf),
     ("AC-S01-23 a same-size rewrite with its time restored", lambda p: None, same_size_with_its_time_restored),
     ("AC-S01-21 a tracked file with no row, touched", declined, touched_declined_file),
+    ("AC-S01-24 a file not safely older than the run that vouched for it, rewritten", recent_then_rewritten,
+     same_size_with_its_time_restored),
 ]
+# The states whose whole comparison runs at once, without waiting for the files to age: that is the state.
+RECENT = {"AC-S01-24 a file not safely older than the run that vouched for it, rewritten"}
 
 
 class EveryStateAnswersAsTheWholeComparisonDoesTest(FactoryTestCase):
-    def both(self, directory: str, before: Before, after: Step) -> tuple[Health, Health]:
+    def both(self, directory: str, before: Before, after: Step, settled: bool = True) -> tuple[Health, Health]:
         project = Project(self, directory)
         project.git("config", "core.trustctime", "false")
         project.git("config", "core.checkStat", "minimal")
         reverts = before(project)
-        project.whole()
+        project.whole(settled)
         after(project)
         if reverts is not None:
             reverts(project)
@@ -172,7 +186,7 @@ class EveryStateAnswersAsTheWholeComparisonDoesTest(FactoryTestCase):
     def test_e36_each_state_gives_the_state_the_whole_comparison_gives(self) -> None:
         for name, before, after in STATES:
             with self.subTest(name), tempfile.TemporaryDirectory() as directory:
-                narrowed, whole = self.both(directory, before, after)
+                narrowed, whole = self.both(directory, before, after, name not in RECENT)
                 self.assertNotEqual(whole.state, "", whole.result.stderr)
                 self.assertEqual(narrowed.state, whole.state, f"{narrowed.detail} | {whole.detail}")
                 self.assertTrue(narrowed.state in ("current", "synced", "rebuilt"), narrowed.detail)
