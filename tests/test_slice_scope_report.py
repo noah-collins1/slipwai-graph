@@ -179,6 +179,28 @@ class NoBaseReportTest(SliceScopeBaseTest):
                 self.assertNotIn("git fetch", result.stdout + result.stderr)
                 self.assertEqual(result.returncode, 1 if lost else 0)
 
+    def test_a_lost_record_in_the_unrelated_trunk_state_fails_attached_and_under_a_marker(self) -> None:
+        """D32/AC-S22-19: `HEAD` attached, a trunk sharing no history; the findings come first, whoever runs it."""
+        for env, words in (({}, "shares no history with `main`"), ({"CI": "true"}, "was NOT checked")):
+            with self.subTest(env=env):
+                repo = self.unrelated()
+                self.lose(repo)
+                result = self.run_gate(repo, env)
+                self.assertEqual(result.returncode, 1)
+                lines = result.stderr.splitlines()
+                self.assertIn(self.HEADER, lines[0])
+                self.assertIn("specs/f/plan.md", result.stderr)
+                self.assertIn(words, lines[-1])
+
+    def test_a_marker_set_to_false_is_still_a_marker(self) -> None:
+        """D32 *non-empty*: `CI=false` is how a person says no, and the check reads it as a run that is CI."""
+        for marker in ("CI", "GITHUB_ACTIONS", "GITLAB_CI"):
+            with self.subTest(marker=marker):
+                result = self.run_gate(self.no_trunk(), {marker: "false"})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, "")
+                self.assertIn("was NOT checked", result.stderr)
+
 
 class RecordShapeTest(SliceScopeBaseTest):
     """AC-S22-28 (G6, G7): a record that was passed over is said so, in words that are true."""
@@ -211,3 +233,48 @@ class RecordShapeTest(SliceScopeBaseTest):
         repo = self.repo(self.root(), ci={})
         self.commit(repo, OWN)
         self.assertNotIn("passed over", self.run_gate(repo).stdout)
+
+
+class NamedTrunkTest(SliceScopeBaseTest):
+    """AC-S22-1, -2, -11: what the line and the header say they compared with, and which of two refs of one name."""
+
+    def test_an_origin_ahead_of_a_local_main_and_merged_is_the_base(self) -> None:
+        """AC-S22-11, the inverse order: `origin/main` fetched past a `main` not pulled; `main`'s files are not ours."""
+        repo = self.repo(self.root())
+        git(repo, "checkout", "-q", "-b", "fetched", "main")
+        self.commit(repo, "Makefile")
+        git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+        git(repo, "checkout", "-q", "slice/S1")
+        git(repo, "branch", "-q", "-D", "fetched")
+        git(repo, "merge", "-q", "--no-edit", "refs/remotes/origin/main")
+        self.commit(repo, OWN)
+        result = self.run_gate(repo)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        newer = self.short(repo, "refs/remotes/origin/main")
+        self.assertNotEqual(newer, self.short(repo, "refs/heads/main"))
+        self.assertIn(f"compared with `main` at {newer}", result.stdout)
+
+    def test_the_header_names_main_in_each_minted_ref_example(self) -> None:
+        """AC-S22-1: a `master` branch, an `origin/master`, a tag `main` at the head; the refusal says `main`."""
+        minted = (("branch", "-q", "master"), ("update-ref", "refs/remotes/origin/master", "HEAD"),
+                  ("tag", "main", "HEAD"))
+        for mint in minted:
+            with self.subTest(mint=mint):
+                repo = self.repo(self.root())
+                self.commit(repo, "Makefile")
+                git(repo, *mint)
+                result = self.run_gate(repo)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("compared with `main` at", result.stderr.splitlines()[0])
+                self.assertNotIn("compared with `master`", result.stderr)
+
+    def test_the_pass_line_names_the_recorded_trunk_where_it_differs_from_main(self) -> None:
+        """AC-S22-2: `trunk` one commit past `main`; the line names `trunk` and the commit it is at, not `main`'s."""
+        repo = self.repo(self.root(), ci={"branch": "trunk"})
+        self.commit(repo, "Makefile")
+        git(repo, "branch", "trunk", "HEAD")
+        self.commit(repo, OWN)
+        result = self.run_gate(repo)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotEqual(self.short(repo, "trunk"), self.short(repo, "main"))
+        self.assertIn(f"compared with `trunk` at {self.short(repo, 'trunk')}", result.stdout)
