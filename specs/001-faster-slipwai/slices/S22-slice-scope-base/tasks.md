@@ -128,7 +128,7 @@ then `make lint typecheck check-structure`. Commit.
 
 ### T004 — The forge's target is a second candidate, oldest across names (R3 · AC-S22-8, -9, -10)
 
-- [ ] **Rule R3** — where `GITHUB_BASE_REF` or `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` is usable and has a ref it is a
+- [x] **Rule R3** (aad35a9; e4 and e5 were holds, e4's teeth checked) — where `GITHUB_BASE_REF` or `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` is usable and has a ref it is a
   candidate; across two names the older base wins. Needs T003 (`usable`).
 
 **RED** (in `tests/test_slice_scope_base.py`; if the file would pass 350 lines, put R3 in a second new file
