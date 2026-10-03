@@ -8,11 +8,13 @@ a file git was told not to report, a database that is not the one that was compa
 """
 from __future__ import annotations
 
+import copy
 import json
 import os
 import shutil
 import sqlite3
 import tempfile
+from pathlib import Path
 
 from support import FactoryTestCase
 from test_codegraph_narrowed import Project
@@ -172,3 +174,82 @@ class AMemoryThatCannotBeUsedTest(FactoryTestCase):
             self.assertEqual(refused.returncode, 1)
             self.assertIn("fails SQLite's integrity check", refused.stderr)
             self.assertNotIn("skipped", refused.stdout + refused.stderr)
+
+
+class TheMemoryIsWrittenOnlyByAPassTest(FactoryTestCase):
+    """R10: no renewal after a failure; nothing in `git status`; it lives and dies with `.codegraph/`."""
+
+    def test_hold_a_failing_run_leaves_the_memory_as_it_was(self) -> None:
+        """Green at the tree where only a pass writes; seen failing with the write moved before the verdict."""
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.whole()
+            before = project.remembered()
+            project.slice()
+            project.edit()
+            self.assertEqual(project.run(**NO_SYNC).returncode, 1)
+            self.assertEqual(project.remembered(), before)
+
+    def test_a_narrowed_pass_that_synced_renews_the_memory_and_keeps_the_whole_moment(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.whole()
+            whole = json.loads(project.memory.read_text())["whole"]
+            project.slice()
+            project.edit()
+            project.commit()
+            first = project.run()
+            self.assertIn("synced 1 file(s) first; index current — hashed 1 of", first.stdout)
+            second = project.run()
+            self.assertIn("index current — hashed 0 of", second.stdout)
+            self.assertEqual(json.loads(project.memory.read_text())["whole"], whole)
+            self.assertEqual(first.stdout.split("(")[-2].split(")")[0], second.stdout.split("(")[-2].split(")")[0])
+
+    def test_hold_git_never_sees_the_memory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.whole()
+            project.slice()
+            project.run()
+            self.assertTrue(project.memory.is_file())
+            self.assertEqual(project.git("status", "--porcelain"), "")
+
+    def test_where_git_would_see_it_no_memory_is_written_and_every_run_is_whole(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            ignore = project.repo / ".gitignore"
+            ignore.write_text("".join(line for line in ignore.read_text().splitlines(keepends=True)
+                                      if line.strip() != ".codegraph/"))
+            project.commit("stop ignoring the index")
+            project.whole()
+            self.assertFalse(project.memory.exists())
+            project.slice()
+            run = project.run()
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertRegex(run.stdout, whole_line("no earlier whole comparison is recorded"))
+            self.assertFalse(project.memory.exists())
+
+    def test_hold_a_memory_copied_into_a_clone_at_another_commit_is_not_trusted(self) -> None:
+        """A copy of `.codegraph/` (another inode), and a hard link to it (the same inode and device): the commit
+        and the rows say it is not this tree's, whichever way the database came."""
+        for name, put in (("copy", shutil.copy2), ("link", os.link)):
+            with self.subTest(name), tempfile.TemporaryDirectory() as directory:
+                project = Project(self, directory, name)
+                project.whole()
+                edited = project.edit()
+                project.commit("a later commit")
+                clone = copy.copy(project)
+                clone.repo = Path(directory) / f"{name}-clone"
+                project.git("clone", "-q", str(project.repo), str(clone.repo))
+                clone.memory = clone.repo / ".codegraph/gate-memory.json"
+                clone.database = clone.repo / ".codegraph/codegraph.db"
+                clone.memory.parent.mkdir()
+                put(project.memory, clone.memory)
+                put(project.database, clone.database)
+                clone.git("checkout", "-q", "-b", "slice/S1")
+                narrowed = clone.run(**NO_SYNC)
+                clone.git("checkout", "-q", "main")
+                whole = clone.run(**NO_SYNC)
+                self.assertEqual((narrowed.returncode, narrowed.stderr), (whole.returncode, whole.stderr))
+                self.assertEqual(whole.returncode, 1)
+                self.assertIn(f"- {edited}", whole.stderr)

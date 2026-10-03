@@ -242,7 +242,9 @@ def gate_key() -> str | None:
 
 def remember(rows: dict[str, tuple[str, float]], whole: float | None = None) -> None:
     """Record what this passing run vouched for. Never fatal: a gate that cannot take notes is merely slower."""
-    if any(os.environ.get(marker) for marker in CI_MARKERS):
+    # Written only where git ignores it: a record `git status` reported would be a change nobody made.
+    if any(os.environ.get(marker) for marker in CI_MARKERS) or git_output("check-ignore", "-q", "--",
+                                                                         str(MEMORY)) is None:
         return
     key, head = gate_key(), git_output("rev-parse", "HEAD")
     dirty = paths_of(git_output("diff", "--name-only", "--no-renames", "-z", "--relative", "HEAD", "--"))
