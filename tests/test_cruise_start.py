@@ -279,8 +279,8 @@ if [ "$n" -lt 3 ]; then echo "cruise: continue"; else echo "cruise: done"; fi"""
 
             env = fake_harness(Path(directory), 'echo "cruise: done"')
             said = io.StringIO()
-            with (mock.patch.dict(module.os.environ, outside_a_run(env), clear=True), mock.patch.object(module.subprocess, "Popen", ending(0)),
-                  contextlib.redirect_stdout(said)):
+            with (mock.patch.dict(module.os.environ, outside_a_run(env), clear=True),
+                  mock.patch.object(module.subprocess, "Popen", ending(0)), contextlib.redirect_stdout(said)):
                 module.start([])
             self.assertRegex(said.getvalue(), re.escape(
                 "cruise: the runner started and already ended (harness: CRUISE_HARNESS_COMMAND, as given); "
@@ -289,8 +289,8 @@ if [ "$n" -lt 3 ]; then echo "cruise: continue"; else echo "cruise: done"; fi"""
                             "cruise: done — every specification is satisfied\n"))
             self.assertEqual(said.getvalue().count("\n"), 1)
             self.assertFalse((repo / RUNNER_PID).exists())
-            with (mock.patch.dict(module.os.environ, outside_a_run(env), clear=True), mock.patch.object(module.subprocess, "Popen", ending(1)),
-                  self.assertRaises(RuntimeError) as refused):
+            with (mock.patch.dict(module.os.environ, outside_a_run(env), clear=True),
+                  mock.patch.object(module.subprocess, "Popen", ending(1)), self.assertRaises(RuntimeError) as refused):
                 module.start([])
             self.assertTrue(str(refused.exception).startswith(
                 f"the runner ended at once (exit 1); {RUNNER_LOG} says: "), str(refused.exception))
