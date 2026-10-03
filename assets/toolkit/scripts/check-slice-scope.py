@@ -64,12 +64,22 @@ only in prose is not read.
 The base the branch is compared with is where it left the trunk, or last merged it in, and the trunk is found
 by its full ref name: only `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>` answer, so a tag, or a
 `master` branch made at the slice's head, cannot stand in for it. The trunk is `ci.branch` in `project.json`
-where that is a branch name, not a `slice/<id>`, and has a ref in this checkout; else `main`; else `master`. Where
+where that is a branch name, not a `slice/<id>` and not `HEAD`, and has a ref in this checkout; else `main`; else
+`master`. A ref that is a symbolic ref, such as `origin/HEAD`, is where a remote's checkout points and never a trunk
+ref. Where
 CI names the pull request's target (`GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`) and it has a ref, it
 is a second candidate, and where the two bases differ the older one wins, so the target can only move the base
 back. Within one name the newer of its local and `origin` base wins: `origin/main` alone goes stale the moment
-`main` moves locally and is not yet pushed, and a stale base charges the slice with `main`'s own files. What was
-compared is said: the pass line and the refusal header end `compared with `<trunk>` at <commit>`.
+`main` moves locally and is not yet pushed, and a stale base charges the slice with `main`'s own files. Where
+there is a base, what was compared is said: the pass line and the refusal header each carry
+`compared with `<trunk>` at <commit>`, with nothing after it but words about a recorded name that was passed over
+or the `master` clause below. Where there is none, the no-base line below says so instead.
+
+Where `project.json` records no usable trunk, `main` and `master` both have refs, and `master`'s base is strictly
+newer than `main`'s, the same line and header add that `master` is here too and `project.json` records no trunk,
+and what to do: set `ci.branch` to `master` in `project.json` on it, or delete the stale `main`. That is words
+only: `main` is still the trunk, no base and no exit code changes, and a `master` that is older or level, or a
+recorded name that is usable, adds no such clause.
 
 What is promised differs by where it runs. On a developer's machine nothing the slice commits, and no stray
 `master`, `origin/master` or tag named `main`, moves the base forward; a person who moves refs in their own
@@ -78,14 +88,18 @@ branch commits or pushes moves the base forward — given a base to compare with
 pull-request target has only the local promise, and a pull request aimed at another branch is held only as far as
 `project.json` reaches.
 
-With no base to compare with, a developer's checkout fails with the command to run: `git fetch origin <trunk>`
-where there is no trunk ref, `git fetch --unshallow origin` where a shallow clone is too short to reach the
-branch point. A CI run — a detached pull-request checkout (the branch name in `GITHUB_HEAD_REF` or
+With no base to compare with, a developer's checkout fails with one line on stderr, of its own and under no
+header, naming the command to run: `git fetch origin <trunk>:refs/remotes/origin/<trunk>` where there is no trunk
+ref (a bare `git fetch origin <trunk>` in a single-branch clone writes only `FETCH_HEAD`, and the check would say
+the same again), `git fetch --unshallow origin` where a shallow clone is too short to reach the branch point. A
+header, `a slice branch reaches outside what one slice may touch`, stands only above refused paths and lost
+records, with that line after them. A CI run — a detached pull-request checkout (the branch name in `GITHUB_HEAD_REF` or
 `CI_COMMIT_REF_NAME`, `HEAD` detached) or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — exits 0 and says
 on stderr that the slice was NOT checked, because that checkout is depth 1; the verify job's checkout needs
 `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`) for the check to hold there. A local shell with one of those
-variables set gets the same NOT-checked line. With a usable base a CI run is held as locally, and a lost record
-still fails it.
+variables set gets the same NOT-checked line, and one set to `false` still counts: any non-empty value does.
+That line carries no `git fetch`, since nobody can run one on a runner. With a usable base a CI run is held
+as locally, and a lost record still fails it.
 """
 
 from __future__ import annotations

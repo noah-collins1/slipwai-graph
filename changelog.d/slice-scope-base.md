@@ -21,9 +21,18 @@ at a branch other than the trunk is held only as far as `project.json` reaches.
 
 **Catch-up.** `slipwai migrate` carries the corrected script; nothing else in a repository changes. Two things you
 may see afterwards. On a developer's machine, a slice branch with no trunk to compare with — no `main` ref, or a
-shallow clone too short to reach the branch point — used to pass as "nothing to hold"; it now fails with the
-command to run (`git fetch origin <trunk>`, or `git fetch --unshallow origin`). In any CI run with no trunk to
-compare with — a pull-request checkout, which is depth 1 by default, or a run with `CI`, `GITHUB_ACTIONS` or
+shallow clone too short to reach the branch point — used to pass as "nothing to hold"; it now fails with a
+single line that names the command to run (`git fetch origin <trunk>:refs/remotes/origin/<trunk>`, or
+`git fetch --unshallow origin`); the longer form is there because a bare `git fetch origin <trunk>` in a
+single-branch clone leaves no ref for the check to find. In any CI run with no trunk to compare with — a pull-request checkout, which is depth 1 by default, or a run with `CI`, `GITHUB_ACTIONS` or
 `GITLAB_CI` set — the check still exits 0 and now says on stderr that the slice was NOT checked. A maintainer who
 wants it held there adds `fetch-depth: 0` to the verify job's checkout (`GIT_DEPTH: "0"` on GitLab). A local shell
-with one of those variables set gets the same line instead of the failure. No setting, flag or file is added.
+with one of those variables set gets the same line instead of the failure.
+
+Two more things, for a repository whose trunk is not the usual one. A trunk named neither `main` nor `master`,
+recorded in `ci.branch`, is compared with for the first time, so slice branches already in flight in such a
+repository are now held to the files one slice may touch, and may be refused where they were not. And where
+`project.json` records no trunk, `main` and `master` both exist and `master` is the newer, the check still
+compares with `main` and says so, on its pass line and where it fails: that `master` is here too, and that the fix
+is to set `ci.branch` to `master` in `project.json` on the trunk, or to delete the stale `main`.
+No setting, flag or file is added.
