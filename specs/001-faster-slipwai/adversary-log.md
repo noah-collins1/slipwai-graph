@@ -152,3 +152,19 @@ Findings: eight, none `CRITICAL` (no actor's data reaches another and no actor g
 | B2 | B | LOW | `delivery/` as a nested repository or a gitlink: git prints the directory, not its files, and an edit under it is written over | confirmed; older, the same at the top | declined here — Parking Lot (D44) |
 | B3 | B | LOW | `git update-index --assume-unchanged` or `--skip-worktree` on a written path hides the edit from the refusal | confirmed; older; the person hid the file from git themselves | declined here — Parking Lot (D44) |
 | B4 | B | LOW | A `written.json` of 100,000 nested brackets ends the run on a `RecursionError` traceback (`recorded()` catches `OSError` and `ValueError` only) | confirmed with a dirty tree, before any write; self-inflicted | declined here — Parking Lot (D44) |
+
+## S01 · 4357da0 · 2026-10-03
+
+Slice `S01-gate-walks` (cruise iteration 7), diff `ed91b20..4357da0`: `assets/toolkit/scripts/check-imports.py`
+and `check-migrations.py` (one pruned listing, the count on the pass line, one read of `project.json`),
+`assets/toolkit/scripts/check-codegraph.py` (the narrowed comparison on a `slice/<id>` branch and its record,
+`.codegraph/gate-memory.json`), the pages that describe them, eleven test modules, one fragment.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | Three commands a project runs from `make verify`: both walking gates' pass lines changed and what they descend changed (`assets/toolkit/scripts/check-imports.py` `listing()`, `under()`; `assets/toolkit/scripts/check-migrations.py` `listing()`, `children()`); `check-codegraph` has a second mode with its own pass line and clauses (`assets/toolkit/scripts/check-codegraph.py` `narrowed()`, `conclude()`). No earlier row covers any of the three |
+| driven adapter or the provider types behind one | widened | git behind `check-codegraph` — five new calls (`symbolic-ref`, `diff --name-only`, `ls-files -v`, `check-ignore`, `cat-file -e`); the filesystem behind all three (`os.walk` in place of `rglob`, `os.fstat` records); SQLite read without the integrity check on a narrowed run |
+| authorisation decision (who can reach one that already exists) | not present | No decision about who may do what; the gates read and report |
+| concurrency, idempotency, ordering, retention, or time | widened | A record kept between runs and trusted by the next (`remember()`, `remembered()`), written by rename; a two-second rule on file times (`SAFELY`); a claim that a narrowed verdict equals the whole run's |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
