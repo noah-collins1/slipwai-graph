@@ -29,6 +29,7 @@ from .origin import Adoption, adoption_of
 from .platform import with_platform
 from .programme import expired
 from .project.adopted import WRITTEN
+from .project.seeded import kept
 from .project.structure_page import structure_page
 from .scaffold import FACTORY_IDENTITY, project_files
 from .services import App, wrapped_of
@@ -248,8 +249,7 @@ def refresh(root: Path, clean_checked: bool = False) -> Refreshed:
     after = project_files(*arguments, updated, layout, after_adoption)
     executables = {layout.place(path) for path in executable_paths(document["profile"], updated)}
     # A file the factory wrote before, still on disk and no longer listed in `.written`, is the repository's own from
-    # then on: taking one over is deleting its line, and the factory leaves it alone and says so — the third real
-    # adoption could not edit the gate's workflow for its own default branch and had to add a second one beside it.
+    # then on: taking one over is deleting its line, and the factory leaves it alone and says so.
     listing = root / layout.under(WRITTEN)
     listed = set(listing.read_text(encoding="utf-8").split()) if listing.is_file() else set()
     owned = {
@@ -262,11 +262,12 @@ def refresh(root: Path, clean_checked: bool = False) -> Refreshed:
         after[layout.under(WRITTEN)] = "".join(
             f"{path}\n" for path in sorted(set(after[layout.under(WRITTEN)].split()) - owned)
         )
-    # Rewritten wherever the disk differs from what the record now drives — not wherever the record moved, since a
-    # person edits `project.json` by hand (a confirmed version, a row moved) and the files it drives have to follow.
+    # Rewritten wherever the disk differs from what the record now drives, since a hand edit to `project.json` has to
+    # be followed — except the seeded files a project owns (`seeded.py`), which are not compared where they exist.
+    left = kept(root, layout)
     for relative, content in after.items():
         path = root / relative
-        if relative == "project.json" or relative in owned or (
+        if relative == "project.json" or relative in owned or relative in left or (
                 path.is_file() and path.read_text(encoding="utf-8") == content):
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -291,8 +292,7 @@ def refresh(root: Path, clean_checked: bool = False) -> Refreshed:
     for key in ("database", "infrastructure", "ci", "release", "platform", "strategy", "convergence", "survey"):
         document[key] = manifest[key]
     document["generator"] = wrote_here(document.get("generator"))
-    # Four files follow the record as it now stands rather than the assembly before: the manifest, the survey
-    # page, the architecture view, and the map's page — a row a person moved by hand is what the page catches up with.
+    # These four follow the record as it now stands, not the assembly before: a row moved by hand reaches the page.
     convergence_page = layout.under("docs/convergence.md")
     shape = structure(root, updated, layout.delivery, FACTORY_IDENTITY["GIT_AUTHOR_EMAIL"])
     view = structure_page(shape, after_adoption, layout)
@@ -306,7 +306,7 @@ def refresh(root: Path, clean_checked: bool = False) -> Refreshed:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8", newline="\n")
         done.rewritten.append(relative)
-    stamp(root, (set(after) - owned) | writes(root, layout))  # what a later answer may write over as its own
+    stamp(root, ((set(after) - owned) | writes(root, layout)) - left)  # what a later answer may write over as its own
     return done
 
 

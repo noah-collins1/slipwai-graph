@@ -146,7 +146,7 @@ it of, so `adopt` refuses rather than guessing.
 | Flag | Answers |
 |---|---|
 | `--yes` | Everything, as the survey found it — nothing is asked, and each fact is recorded `detected` |
-| `--refresh` | In an adopted repository: survey again, refresh what was only detected, report what disagrees with what a person decided, and regenerate what the record drives. This is what `/survey` runs |
+| `--refresh` | In an adopted repository: survey again, refresh what was only detected, report what disagrees with what a person decided, and regenerate what the record drives; it leaves `.specify/cruise.json`, `product-owner.md`, `models.json` and `drive.json` as they are wherever they exist, and writes one only where it is missing. This is what `/survey` runs |
 | `--confirm NAME` | In an adopted repository: a candidate that is an application, recorded as one with `confirmed` provenance. `--as NAME=NEW` names it something other than its directory; `--kind`, `--purpose`, `--command` and `--hexagonal` describe it. Everything the record drives is regenerated. Repeatable |
 | `--decline NAME` | In an adopted repository: a candidate that is not an application. Dropped, with nothing recorded in its place. Repeatable |
 | `--next` | In an adopted repository: where it stands in the sequence this report names — what is done, what is next, and why. Read off the tree, not remembered: `./init` leaves `.specify/integration.json`, the first gate run leaves the baseline, `/ground` moves a row off `unrecorded`, a strategy is an accepted ADR |
