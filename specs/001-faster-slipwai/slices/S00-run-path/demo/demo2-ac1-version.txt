@@ -1,0 +1,7 @@
+$ git rev-parse --short HEAD
+2108b81
+$ cat VERSION
+1.5.2.dev0
+$ ./slipwai --version
+slipwai 1.5.2.dev0
+exit=0

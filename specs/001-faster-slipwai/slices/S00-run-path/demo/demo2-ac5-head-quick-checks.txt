@@ -1,0 +1,34 @@
+$ env | grep CRUISE_
+CRUISE_RUNNER=1
+CRUISE_ITERATION=2
+$ git rev-parse --short HEAD
+2108b81
+
+$ make -f delivery/Makefile check-decisions
+python3 delivery/scripts/check-decisions.py
+check-decisions: 16 decision(s) in 1 file(s), 1 demo(s) in 1 log(s), every field present and every path in the tree, every done slice in the adversary log
+exit=0
+
+$ make -f delivery/Makefile check-constitution
+python3 delivery/scripts/check-constitution.py
+check-constitution: 15 required principle(s) covered, 7 of them as targets held to the convergence map
+exit=0
+
+$ make -f delivery/Makefile check-convergence
+python3 delivery/scripts/check-convergence.py
+  path-to-production: `scripted` — below `pipeline-decides`
+  integration: `unknown` — unrecorded: nothing has established it; /drive asks before the first slice
+  safety-net: `tests-pass` — below `mutation-measured`
+  structure: `named` — below `typed`
+  platform: `supported` — below `audited`
+  constitution: `template` — below `in-full`
+  data: `settled` — at target
+  infrastructure: `settled` — at target
+  strategy: `done` — at target
+check-convergence: 3 of 9 axes at target; the map is delivery/docs/convergence.md
+exit=0
+
+$ make -f delivery/Makefile check-slice-scope
+python3 delivery/scripts/check-slice-scope.py
+check-slice-scope: on `adopt-method`, not a `slice/<id>` branch — nothing to hold
+exit=0

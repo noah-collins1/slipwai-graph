@@ -1,0 +1,47 @@
+$ python3 -c "import json; print(json.dumps([r for r in json.load(open('project.json'))['convergence'] if r['axis']=='safety-net'][0], indent=2))"
+{
+  "axis": "safety-net",
+  "rung": "tests-pass",
+  "target": "mutation-measured",
+  "evidence": "make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) \u2014 no person has read the gate",
+  "provenance": "confirmed",
+  "planned": null
+}
+
+$ grep -n 'Safety net' delivery/docs/convergence.md
+22:| Safety net | `tests-pass` | `mutation-measured` | make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) — no person has read the gate | *not yet* | `confirmed` |
+48:### Safety net
+
+$ grep -n 'journey: acceptance-driven-testing' .specify/memory/constitution.md  (expect none)
+grep exit=1
+
+$ grep -nE '^## |^### |In force since|journey:' .specify/memory/constitution.md | sed -n '1,60p'
+22:## Core Principles
+24:### I. A Generated Project Owns Its Files and Passes Its Own Gate (NON-NEGOTIABLE)
+39:### II. Idempotency and Retry Safety (NON-NEGOTIABLE)
+54:### III. Simplicity, and the Rung You Are On
+72:### IV. Hexagonal Architecture — Domain Isolated from Infrastructure
+74:<!-- journey: hexagonal-boundary at named -->
+100:### V. Acceptance-Driven Development from Given-When-Then
+102:**In force since 2026-10-03** (`001-faster-slipwai`, slice `S00-run-path`, cruise iteration 2): the *safety net* row
+181:### VI. Contract-Bounded Integrations
+204:### VII. Observability and Auditability
+217:### VIII. Versioning and Breaking Changes
+230:### IX. Security, Privacy, and Compliance
+245:### X. Continuous Integration on Trunk (NON-NEGOTIABLE)
+247:<!-- journey: trunk-based-integration at unknown -->
+291:### XI. One Path to Production, and the Pipeline Decides (NON-NEGOTIABLE)
+293:<!-- journey: one-path-to-production at scripted -->
+329:### XII. Build Once, Deploy Anywhere; Deploy Is Not Release
+331:<!-- journey: build-once-deploy-is-not-release at scripted -->
+365:### XIII. Fast Feedback, or It Is Not Feedback
+367:<!-- journey: fast-feedback at tests-pass -->
+403:### XIV. Agent-Generated Change Meets the Same Bar (NON-NEGOTIABLE)
+437:### XV. Ubiquitous Language and Domain Types
+439:<!-- journey: ubiquitous-language-and-domain-types at named -->
+474:## Additional Constraints
+485:### Technology Stack
+490:<!-- journey: strict-typing at named -->
+515:## Development Workflow and Quality Gates
+548:## Governance
+568:     a principle marked `journey:` is a target, not yet in force, and check-constitution holds it to the

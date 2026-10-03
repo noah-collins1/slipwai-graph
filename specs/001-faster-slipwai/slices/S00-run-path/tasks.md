@@ -190,6 +190,9 @@ edited by hand; `project.json`'s row is T004's deliberate edit, which `AGENTS.md
 
 ### T006 — Nothing user-visible changed (AC-S00-7)
 
+- [x] **Done** — host, after demo 2: `git diff --stat 5460bf9..HEAD -- assets src/slipwai catalog.json VERSION
+  changelog.d` prints nothing at `2108b81`; the hand saw the same in both demos.
+
 Run `git diff --stat 5460bf9..HEAD -- assets src/slipwai catalog.json VERSION changelog.d`: the output is
 empty. Run it as the last task, after T005 (and once at the end of the implementation stage, which it passes
 without T004 and T005). A non-empty diff is a defect to report, not to repair here. No file is written.
@@ -348,6 +351,13 @@ it) and regenerate `change-strategy.md`; (b) a factory PATCH slice beside `S21` 
 | `make verify` | `030ad00` | `CRUISE_RUNNER=1 CRUISE_ITERATION=2` | 0 | `Ran 830 tests in 1033.794s` · `OK (skipped=9)` | n/a (root gate) |
 | `make -f delivery/Makefile verify` | `030ad00` | `CRUISE_RUNNER=1 CRUISE_ITERATION=2` | 0 | `Ran 830 tests in 1033.990s` · `OK (skipped=9)` | lint, typecheck, test all exit 0 with no prior entry → nothing recorded, no `delivery/baseline.json`; not quarantined |
 
+| `make verify` | `2108b81` (final commit) | `CRUISE_RUNNER=1 CRUISE_ITERATION=2` | 0 | `Ran 830 tests in 1034.209s` · `OK (skipped=9)` · 04:15–04:33Z | n/a (root gate) |
+| `make -f delivery/Makefile verify` | `2108b81` (final commit) | `CRUISE_RUNNER=1 CRUISE_ITERATION=2` | 0 | `Ran 830 tests in 1036.656s` · `OK (skipped=9)` · 04:33–04:50Z | silent (no entry, nothing recorded); `check-decisions: 16 decision(s) … 1 demo(s)`; `check-benchmark: nothing open` |
+
+The two final-commit runs (`/tmp/gate3.log`, `/tmp/gate4.log`) are the runs AC-S00-5 asks for *at the slice's
+final commit*; their summaries are held in the tree at `demo/demo2-ac5-gate-logs.txt`. The Phase 4 record commit
+after `2108b81` changes only `specs/`; the delivery gate's non-test checks are re-run on it and the suites are not.
+
 Pre-slice baseline (marks cleared, `5460bf9`): `Ran 829 tests in 1033.671s` · `OK (skipped=9)`. The 830th test
 is T001's example; `skipped=` is unchanged at 9 (AC-S00-5). Logs: `/tmp/gate1.log`, `/tmp/gate2.log`
 (03:08–03:25Z and 03:25–03:42Z, 2026-10-03). The delivery gate's own lines: `check-slice-scope: on
@@ -425,3 +435,22 @@ AC-S00-7 the empty diff. Five findings, traced (`gaps=5`), all paper and closed 
 target at `tests-pass`; `project.json`'s row and `delivery/docs/convergence.md` agree; no CRITICAL or HIGH. One
 LOW appended, **T011** (the strategy page's `before` sentence still says `tests-exist`), carried to the split as
 D16 and not re-opening anything. The loop stopped at its bound of two passes with nothing open above LOW.
+
+### Demo and Phase 4 — 2026-10-03
+
+- **Demo 1** (`demo-log.md`, 04:06Z): `implementation` — AC-S00-5 red at tip `3764193` on `check-decisions`
+  (T010). **Demo 2** (04:5xZ, at `2108b81`): **`accepted`**, seven of seven; `accepted-by: drive-hand`.
+- **Adversary:** `specs/001-faster-slipwai/adversary-log.md`, row `S00-run-path · 2108b81` — every trigger
+  `not present` (tests, a survey page, a convergence row, the constitution's journey text; no adapter, command,
+  authorisation or timing claim changed); not the slice that closes the split; **skipped, recorded**: `Spawned:
+  none`, `Findings: none`, `seams=0 findings=0`.
+- **Mutation:** **N/A, recorded.** `project.json` records `commands.mutation: null` for `slipwai-graph` and D8's
+  Parking Lot rules a factory mutation command out of this run's scope; the ecosystem tool is not configured, so
+  nothing ran and no score is claimed (`delivery/commands/mutation.md`: report the setup decision rather than
+  pretend). Principle V's evidence gate is met by recorded reachability instead: converge pass 1's mutant of
+  `outside_a_run` turned the new example and the six R2 tests red (above), and the two gate runs at `2108b81`.
+- **Gates after acceptance:** at `2108b81`, both green (table above). The record commit after it changes only
+  `specs/`; `make -f delivery/Makefile check-decisions check-benchmark check-convergence check-slice-scope` re-run on it.
+- **Register:** row written in `specs/001-faster-slipwai/slices/README.md`; `benchmark.py close` run.
+- **Still a person's:** merging `adopt-method` to `main` and pushing (D12); `slipwai migrate` once S20/S21 ship
+  (D9, D13, D15, D16); the four survey disagreements (T005); reading the gate the row rests on (D11, D14).

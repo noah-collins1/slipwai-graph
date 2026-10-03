@@ -1,0 +1,147 @@
+$ git rev-parse --short HEAD
+2108b81
+
+=== /tmp/gate3.log  (5129 lines, 2026-10-02 23:33:02.334982219 -0500)
+$ head -1 /tmp/gate3.log
+commit=2108b81 start=2026-10-03T04:15:47Z
+$ grep -nE '^exit=|^end=|^Ran [0-9]+ tests|^OK|^FAILED|^ERROR|verify: all gates' /tmp/gate3.log
+162:verify: all gates passed
+330:verify: all gates passed
+478:verify: all gates passed
+613:verify: all gates passed
+706:verify: all gates passed
+2029:verify: all gates passed
+2091:verify: all gates passed
+2146:verify: all gates passed
+2186:verify: all gates passed
+2240:verify: all gates passed
+2350:verify: all gates passed
+2471:verify: all gates passed
+2610:verify: all gates passed
+2696:verify: all gates passed
+2797:verify: all gates passed
+2874:verify: all gates passed
+2984:verify: all gates passed
+3065:verify: all gates passed
+3142:verify: all gates passed
+3223:verify: all gates passed
+3300:verify: all gates passed
+3394:verify: all gates passed
+3493:verify: all gates passed
+3544:verify: all gates passed
+3590:verify: all gates passed
+3656:verify: all gates passed
+3717:verify: all gates passed
+3798:verify: all gates passed
+3879:verify: all gates passed
+3982:verify: all gates passed
+4032:verify: all gates passed
+4097:verify: all gates passed
+4497:verify: all gates passed
+5123:Ran 830 tests in 1034.209s
+5125:OK (skipped=9)
+5127:verify: all gates passed
+5128:exit=0
+5129:end=2026-10-03T04:33:02Z
+$ grep -cE '^ratchet:' /tmp/gate3.log   (lines the ratchet printed; expect 0)
+0
+$ grep -c QUARANTINED /tmp/gate3.log   (expect 0)
+0
+$ grep -c 'already under way' /tmp/gate3.log   (expect 0)
+0
+$ grep -nE 'FAIL|Error' /tmp/gate3.log | grep -vE '\.\.\. ok$|^[0-9]+:test_|ok$' | head -5
+
+=== /tmp/gate4.log  (5174 lines, 2026-10-02 23:50:19.988455191 -0500)
+$ head -1 /tmp/gate4.log
+commit=2108b81 start=2026-10-03T04:33:02Z
+$ grep -nE '^exit=|^end=|^Ran [0-9]+ tests|^OK|^FAILED|^ERROR|verify: all gates' /tmp/gate4.log
+186:verify: all gates passed
+346:verify: all gates passed
+492:verify: all gates passed
+627:verify: all gates passed
+698:verify: all gates passed
+1192:verify: all gates passed
+1254:verify: all gates passed
+1309:verify: all gates passed
+1349:verify: all gates passed
+1397:verify: all gates passed
+1507:verify: all gates passed
+1628:verify: all gates passed
+1767:verify: all gates passed
+1853:verify: all gates passed
+1948:verify: all gates passed
+2025:verify: all gates passed
+2135:verify: all gates passed
+2212:verify: all gates passed
+2289:verify: all gates passed
+2370:verify: all gates passed
+2447:verify: all gates passed
+2541:verify: all gates passed
+2640:verify: all gates passed
+2686:verify: all gates passed
+2732:verify: all gates passed
+2787:verify: all gates passed
+2842:verify: all gates passed
+2923:verify: all gates passed
+3004:verify: all gates passed
+3107:verify: all gates passed
+3157:verify: all gates passed
+3216:verify: all gates passed
+3494:verify: all gates passed
+5157:Ran 830 tests in 1036.656s
+5159:OK (skipped=9)
+5172:verify: all gates passed
+5173:exit=0
+5174:end=2026-10-03T04:50:19Z
+$ grep -cE '^ratchet:' /tmp/gate4.log   (lines the ratchet printed; expect 0)
+0
+$ grep -c QUARANTINED /tmp/gate4.log   (expect 0)
+0
+$ grep -c 'already under way' /tmp/gate4.log   (expect 0)
+0
+$ grep -nE 'FAIL|Error' /tmp/gate4.log | grep -vE '\.\.\. ok$|^[0-9]+:test_|ok$' | head -5
+
+$ ls delivery/baseline.json
+ls: cannot access 'delivery/baseline.json': No such file or directory
+
+=== gate4 check summary lines
+2:python3 delivery/scripts/ratchet.py slipwai-graph lint -- 'make lint'
+7:python3 delivery/scripts/ratchet.py slipwai-graph typecheck -- 'make typecheck'
+13:python3 delivery/scripts/check-imports.py
+14:check-imports: inward dependency rule holds
+15:python3 delivery/scripts/check-migrations.py
+16:check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files
+17:python3 delivery/scripts/check-slice-scope.py
+18:check-slice-scope: on `adopt-method`, not a `slice/<id>` branch — nothing to hold
+19:python3 delivery/scripts/extensions/project.py --check
+20:check-extensions: no extension elected; nothing to project
+21:python3 delivery/scripts/agents/project.py --check
+22:check-agents: 234 projected files match
+23:python3 delivery/scripts/agents/models.py --check && python3 delivery/scripts/agents/drive.py --check && python3 delivery/scripts/agents/cruise.py --check
+24:check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+25:check-drive: .specify/drive.json delegates per story and cycles per rule
+26:check-cruise: .specify/cruise.json is well-formed; /cruise is enabled
+27:python3 delivery/scripts/check-speckit.py
+28:check-speckit: 2 manifest(s) match, 1 preset(s) valid
+29:python3 delivery/scripts/check-codegraph.py
+30:check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+31:python3 delivery/scripts/check-ux-gates.py
+32:check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+33:python3 delivery/scripts/check-constitution.py
+34:check-constitution: 15 required principle(s) covered, 7 of them as targets held to the convergence map
+35:python3 delivery/scripts/test_benchmark.py && python3 delivery/scripts/agents/benchmark.py check
+36:check-benchmark: 2 boundary and rendering checks pass
+37:check-benchmark: 2 record(s), nothing open, every done slice recorded and closed
+38:python3 delivery/scripts/check-decisions.py
+39:check-decisions: 16 decision(s) in 1 file(s), 1 demo(s) in 1 log(s), every field present and every path in the tree, every done slice in the adversary log
+40:python3 delivery/scripts/ratchet.py slipwai-graph test -- 'make test'
+102:check-imports: inward dependency rule holds
+104:check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files
+106:check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+108:check-extensions: no extension elected; nothing to project
+110:check-agents: not initialized; no projections expected yet
+112:check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+113:check-drive: .specify/drive.json delegates per story and cycles per rule
+114:check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+116:check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+118:check-codegraph: no .codegraph/ — this project carries no code index; nothing to check

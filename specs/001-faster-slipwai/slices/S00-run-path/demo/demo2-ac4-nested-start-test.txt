@@ -1,0 +1,29 @@
+$ grep -n -A1 'test_a_typed_cruise_starts_the_runner_detached_and_a_person_stops_it_from_anywhere' demo2-ac3-ac4-cruise-tests.txt
+97:test_a_typed_cruise_starts_the_runner_detached_and_a_person_stops_it_from_anywhere (test_cruise_start.CruiseStartTest.test_a_typed_cruise_starts_the_runner_detached_and_a_person_stops_it_from_anywhere)
+98-A `/cruise` typed into a session has nobody to re-invoke it, on any harness, so the command starts ... created: /tmp/tmph7327r66/start
+
+$ grep -n 'CRUISE_RUNNER\|CRUISE_ITERATION' tests/test_cruise_start.py
+174:            nested = cruise(repo, "start", env={**env, "CRUISE_RUNNER": "1", "CRUISE_ITERATION": "5"})
+
+$ sed -n '165,185p' tests/test_cruise_start.py
+        is running; `stop` ends it after the iteration in flight, and `--now` ends that iteration too."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "start", "standard", "python")
+            refused = cruise(repo, "start")
+            self.assertEqual(refused.returncode, 1)
+            self.assertIn("not enabled", refused.stderr)
+            enable(repo)
+            env = fake_harness(Path(directory), """mkdir -p specs && touch "specs/progress-$n"; sleep 0.3
+if [ "$n" -lt 3 ]; then echo "cruise: continue"; else echo "cruise: done"; fi""")
+            nested = cruise(repo, "start", env={**env, "CRUISE_RUNNER": "1", "CRUISE_ITERATION": "5"})
+            self.assertEqual(nested.returncode, 1)
+            self.assertIn("this session is iteration 5 of a run already under way", nested.stderr)
+            (repo / STOP_FILE).touch()
+            halted = cruise(repo, "start", env=env)
+            self.assertEqual(halted.returncode, 1)
+            self.assertIn(f"{STOP_FILE} is present: a person ended the last run", halted.stderr)
+            (repo / STOP_FILE).unlink()
+            self.assertIn("cruise: no runner is running here", cruise(repo, "status").stdout)
+            started = cruise(repo, "start", "--feature", "001-campaign", env=env)
+            self.assertEqual(started.returncode, 0, started.stderr)
+            self.assertRegex(started.stdout, r"cruise: runner started as pid \d+, detached from this session "

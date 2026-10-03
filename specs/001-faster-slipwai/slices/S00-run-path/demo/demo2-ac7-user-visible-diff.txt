@@ -1,0 +1,12 @@
+$ git diff --stat 5460bf9..HEAD -- assets src/slipwai catalog.json VERSION changelog.d
+exit=0 (lines of output above: 0)
+
+$ git log --oneline 5460bf9..HEAD
+2108b81 S00-run-path: converge pass 2 (converged), T011 carried to the split as D16
+dcd9d53 S00-run-path: demo 1 (implementation), D14/D15 in the checker's shape, T009/T010 recorded
+4a9dc00 Restore os.environ through mock.patch.dict in the inherited-marks example (S00-run-path, T009)
+3764193 Redraw the convergence map after the Safety net row moved (S00-run-path, T005)
+986074f Safety net reaches tests-pass; principle V comes into force; S00-run-path's record (cruise iteration 2)
+030ad00 Wrap the two patch.dict lines T001 lengthened past the 120-column lint budget
+fdb9956 Record the proven run path for slipwai-graph in delivery/survey/running.md
+e12ca58 Keep the runner's marks out of a test's child: one outside_a_run helper for the five cruise test sites
