@@ -1,12 +1,12 @@
-<!-- convergence: 70f1140a290b9c07 -->
+<!-- convergence: 132c92db73d3a43d -->
 # Where `slipwai-graph` stands
 
 > **Experimental.** Brownfield adoption is new and will change shape while real repositories teach it what it got wrong: the files under the delivery directory, the facts `project.json` records and the questions `adopt` asks may change in a MINOR release, and `slipwai migrate` brings each change here with a note saying what to do. Every place this reaches you says so until it stops being true. What surprised you — a detection that was wrong, a gate that went red, a sentence this page should have had — belongs on the public issue tracker.
 
 A generated project starts at the top of every ladder below and the method keeps it there. This repository
 started wherever it was; this page says where that is, axis by axis, and the loop climbs one rung per slice
-until nothing here differs from a generated project — at which point `slipwai converge` makes it one. **2** of
-9 axes are at their target, **6** below it, **1** unrecorded.
+until nothing here differs from a generated project — at which point `slipwai converge` makes it one. **3** of
+9 axes are at their target, **5** below it, **1** unrecorded.
 
 Every row is a fact `project.json` holds under `convergence`, with where it came from: `detected` from the tree,
 `confirmed` or `overridden` by a person, `unrecorded` where nothing has said. Nothing is a default. To move a
@@ -25,7 +25,7 @@ first slice and offers the next unplanned row as a method slice beside the produ
 | Constitution | `template` | `in-full` | .specify/memory/constitution.md | *not yet* | `detected` |
 | Data | `settled` | `settled` | schema: none | *not yet* | `overridden` |
 | Infrastructure | `settled` | `settled` | home: none | *not yet* | `overridden` |
-| Strategy | `recommended` | `done` | why: Make the delivery loop faster without weakening its gates: tree-shaped merges, scoped and memoised gates, incremental event-model rendering, routing by difficulty and role (PRD: Faster Slipwai); recommended: leave-it | *not yet* | `detected` |
+| Strategy | `done` | `done` | ADR delivery/docs/adr/0002-change-strategy.md: leave-it | *not yet* | `detected` |
 
 ## The ladders
 

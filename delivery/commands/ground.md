@@ -90,7 +90,7 @@ direction, at any point.
 | Constitution | `template` | `detected` | .specify/memory/constitution.md |
 | Data | `settled` | `overridden` | schema: none |
 | Infrastructure | `settled` | `overridden` | home: none |
-| Strategy | `recommended` | `detected` | why: Make the delivery loop faster without weakening its gates: tree-shaped merges, scoped and memoised gates, incremental event-model rendering, routing by difficulty and role (PRD: Faster Slipwai); recommended: leave-it |
+| Strategy | `done` | `detected` | ADR delivery/docs/adr/0002-change-strategy.md: leave-it |
 
 ## The questions
 

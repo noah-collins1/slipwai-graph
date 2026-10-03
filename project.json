@@ -121,9 +121,9 @@
       "a green suite in the gate \u2014 the safety net is `tests-exist`"
     ],
     "stop": "now, as far as the architecture goes",
-    "decided": null,
-    "adr": null,
-    "finished": false,
+    "decided": "leave-it",
+    "adr": "delivery/docs/adr/0002-change-strategy.md",
+    "finished": true,
     "programme": [
       {
         "kind": "quick-win",
@@ -267,9 +267,9 @@
     },
     {
       "axis": "strategy",
-      "rung": "recommended",
+      "rung": "done",
       "target": "done",
-      "evidence": "why: Make the delivery loop faster without weakening its gates: tree-shaped merges, scoped and memoised gates, incremental event-model rendering, routing by difficulty and role (PRD: Faster Slipwai); recommended: leave-it",
+      "evidence": "ADR delivery/docs/adr/0002-change-strategy.md: leave-it",
       "provenance": "detected",
       "planned": null
     }

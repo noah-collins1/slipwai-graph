@@ -23,7 +23,7 @@ Before anything architectural is worth starting, the map says these have to hold
 
 It stops now, as far as the architecture goes.
 
-**Nothing is decided yet.** A recommendation is the factory's reading; the decision is a person's, written as an accepted ADR under `delivery/docs/adr/` (Nygard's five sections, as `0001` shows) carrying one line `Strategy: <leave-it | in-place | modular-monolith | strangler-fig | rewrite>`. `/survey` reads it, the map's Strategy row moves to `decided`, and `/strangle` will not move a capability until that line says `strangler-fig`. *Leave it* is a decision like any other and finishes the axis; rewrite is never recommended here, and an ADR that chooses it says why the other two cannot work. The word `Accepted` is the person's: an agent drafts the ADR at `Proposed`, puts the five strategies and this recommendation to them as a question, and changes the Status only after they have said, of that text, that they accept it.
+**Decided: `leave-it`**, by `delivery/docs/adr/0002-change-strategy.md` — the row on the map reads `done`. A different strategy is a new ADR that supersedes it.
 
 ### The programme
 
