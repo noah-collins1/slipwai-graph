@@ -18,7 +18,9 @@ LOST = "specs/f/plan.md"
 
 
 def out(repo: Path, *arguments: str) -> str:
-    return subprocess.run(["git", *arguments], cwd=repo, text=True, capture_output=True, check=True).stdout.strip()
+    identity = ["-c", "user.name=t", "-c", "user.email=t@local"]
+    return subprocess.run(["git", *identity, *arguments], cwd=repo, text=True, capture_output=True,
+                          check=True).stdout.strip()
 
 
 class NoBaseTest(SliceScopeFixtures):
