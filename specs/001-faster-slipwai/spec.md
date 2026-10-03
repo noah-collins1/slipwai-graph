@@ -414,3 +414,56 @@ deployable and `layout.delivery` set, and the check runs on a `slice/<id>` branc
   with its deployables under `apps/`, then a numbered new migration and a removed events line are refused as
   today (D21); and no file the checker reads — `project.json`, `.written`, the registry — ends it on a traceback,
   whatever it holds (D22).
+
+### S21-refresh-keeps-owned-files
+
+**Gaps reviewed** 2026-10-03, cruise iteration 4, host: the two examples in `story-split.md` and the D16 clause
+against the acceptance-criteria checklist — measurability, precondition/trigger/outcome, negative paths,
+completion. Eight gaps, all closed as the criteria below: the two files named are two of four the factory seeds
+and then hands to the project — `.specify/models.json` and `.specify/drive.json` are reset by the same loop
+(D24; AC-S21-1 to AC-S21-3); what a refresh does where one of them is missing was unstated (AC-S21-4); a refresh
+refuses an uncommitted change to a path it writes, and whether it still may for a file it no longer writes was
+unstated (AC-S21-5); `slipwai adopt --confirm` runs the same refresh and was not named (AC-S21-6); "still
+regenerated" had no measurement (AC-S21-7); whether the four leave `.written`, and with it `migrate`'s merge, was
+unstated (AC-S21-8); which rows `strategy.before` is derived from, and for which preconditions, was unstated
+(D25; AC-S21-9, AC-S21-10); and the release level (AC-S21-11). Unless a criterion says otherwise, the repository
+is one `slipwai adopt` wrote into, committed and clean, and *the four* are `.specify/cruise.json`,
+`.specify/product-owner.md`, `.specify/models.json` and `.specify/drive.json`.
+
+- **AC-S21-1** — Given `.specify/cruise.json` committed with `enabled: true` and `max_iterations: 10`, when
+  `slipwai adopt --refresh` runs, then the file's bytes are unchanged, `git status` does not list it, and the
+  report's count of rewritten files does not include it.
+- **AC-S21-2** — Given `.specify/product-owner.md` committed with its sections filled in, when the refresh runs,
+  then the same three things hold for it.
+- **AC-S21-3** — Given `.specify/models.json` or `.specify/drive.json` committed with a value that is not the
+  factory's default, when the refresh runs, then the same three things hold for it (D24).
+- **AC-S21-4** — Given one of the four absent from the tree (its deletion committed), when the refresh runs, then
+  the file is written with the factory's default and counted among the rewritten files: a project is never left
+  without a file `make check-agents` and `/cruise` read.
+- **AC-S21-5** — Given an uncommitted change to one of the four that slipwai did not make — what
+  `/cruise-settings` leaves before a commit — when the refresh runs, then it does not refuse because of that
+  file, and leaves the change as it is; an uncommitted change to any other path the refresh writes is refused as
+  today.
+- **AC-S21-6** — Given the same repository, when `slipwai adopt --confirm` records an answer (it runs the same
+  refresh), then AC-S21-1 to AC-S21-3 hold for it.
+- **AC-S21-7** — Given a convergence row moved by hand in `project.json`, when the refresh runs, then
+  `<delivery>/docs/convergence.md` is rewritten to show the row, and `<delivery>/commands/ground.md` and
+  `<delivery>/survey/structure.md` are rewritten wherever the disk differs from what the record drives — the
+  assertions `tests/` already makes about what a refresh regenerates pass unchanged.
+- **AC-S21-8** — Given the refresh has run, then `<delivery>/.written` still lists the four, so `slipwai migrate`
+  still merges a newer factory's version of each with the project's; and the report prints no `owned:` line for
+  them — that line stays what it is, a file a person took over by deleting its line.
+- **AC-S21-9** — Given the Safety net row recorded `confirmed` at `tests-pass` while the tree alone reads
+  `tests-exist`, when the refresh runs, then `project.json`'s `strategy.before` no longer carries *a green suite
+  in the gate — the safety net is `tests-exist`*, and `<delivery>/docs/change-strategy.md` no longer prints it
+  (D25). Given the row still at `tests-exist` or `none`, then both still carry it.
+- **AC-S21-10** — Given the Path to production row or the Structure row recorded by a person above the rung its
+  precondition names (`unknown`, `manual`, `scripted`; `as-found`), when the refresh runs, then that
+  precondition is gone from `strategy.before` the same way: every entry is derived from the rows the map shows
+  after the refresh, never from the tree's reading alone. What the strategy record recommends, its `because`,
+  `decided`, `finished` and `programme` are derived as today.
+- **AC-S21-11** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
+  whose first line is `PATCH`, labelled experimental (brownfield adoption), saying what changed and what a
+  repository whose refresh already reset one of the four does (restore it from its history); `VERSION` stays
+  `1.5.2.dev0`; nothing under `delivery/` changed but `delivery/survey/pinned.md`; `generate`, `add-service` and
+  `migrate` write what they wrote before; and `make verify` and `make -f delivery/Makefile verify` are green.
