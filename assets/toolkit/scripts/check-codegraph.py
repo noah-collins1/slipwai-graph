@@ -51,8 +51,10 @@ import math
 import os
 import re
 import sqlite3
+import stat
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path, PurePath
@@ -310,16 +312,48 @@ def remember(rows: dict[str, tuple[str, float]], whole: float | None = None,
         record = {"key": key, "commit": head.decode().strip(), "dirty": dirty,
                   "rows": {path: found[0] for path, found in rows.items()}, "database": database_of(),
                   "files": files_of(rows, kept), "whole": time.time() if whole is None else whole}
-        beside = MEMORY.with_name(MEMORY.name + ".tmp")
-        beside.write_text(json.dumps(record))
-        os.replace(beside, MEMORY)
+        write(json.dumps(record))
     except OSError:
         pass
+
+
+LEFTOVER = ".gate-memory-"  # the front of the name of every temporary file this gate creates, `.tmp` its end
+STALE = 600  # seconds after which a temporary file of the gate's own is a run's leftover, not a run in progress
+
+
+def write(text: str) -> None:
+    """Replace the record with `text`, through a file this gate creates itself.
+
+    Never through a name that is already there: the temporary file is made exclusively, under a name of its own, in
+    `.codegraph/`, which git ignores; a link, a FIFO or a tracked file somebody left at any other name is not
+    touched, and the record is replaced only where it is absent or a regular file. Anything else is a record that
+    cannot be kept here. The temporary file does not outlive the run, whichever way it ends."""
+    for old in MEMORY.parent.glob(f"{LEFTOVER}*.tmp"):  # left by a run killed between the write and the rename
+        try:
+            seen = old.lstat()
+            if stat.S_ISREG(seen.st_mode) and time.time() - seen.st_mtime > STALE:
+                old.unlink()
+        except OSError:
+            pass
+    descriptor, name = tempfile.mkstemp(prefix=LEFTOVER, suffix=".tmp", dir=MEMORY.parent)
+    beside = Path(name)
+    try:
+        with os.fdopen(descriptor, "w") as handle:
+            handle.write(text)
+        try:
+            kept = stat.S_ISREG(MEMORY.lstat().st_mode)
+        except FileNotFoundError:
+            kept = True
+        if kept and git_output("check-ignore", "-q", "--", str(beside)) is not None:
+            os.replace(beside, MEMORY)
+    finally:
+        beside.unlink(missing_ok=True)
 
 
 # Why a run on a slice branch compared everything: said once, in one clause, on the pass line.
 NO_RECORD = "no earlier whole comparison is recorded"
 UNKEPT = "the record cannot be kept here: git does not ignore `.codegraph/`"
+NOT_A_FILE = "the record cannot be kept here: what is at its path is not a regular file"
 UNREADABLE = "the record of the last whole comparison could not be read"
 SCRIPTS = "the gate's scripts changed since"
 COMMIT_GONE = "the commit it was taken at is gone"
@@ -349,8 +383,14 @@ def readable(record: dict[str, Any]) -> bool:
 
 def remembered() -> dict[str, Any] | str:
     """The memory of the last whole comparison, or the reason it cannot be used."""
-    if not MEMORY.is_file():
+    try:
+        regular = stat.S_ISREG(MEMORY.lstat().st_mode)
+    except FileNotFoundError:
         return NO_RECORD if ignored() else UNKEPT
+    except OSError:
+        return UNREADABLE
+    if not regular:
+        return NOT_A_FILE
     try:
         record = json.loads(MEMORY.read_text())
     except (OSError, ValueError, RecursionError, MemoryError):
