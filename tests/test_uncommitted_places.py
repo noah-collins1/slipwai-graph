@@ -33,9 +33,23 @@ def placed(parent: Path, at: str) -> tuple[Path, Path]:
     return top, top / at
 
 
+OUTSIDE = "delivery/agents/drive-implement.md"  # a path a run writes and does not change: a confirm lists it
+
+
 class PlacementChecks(FactoryTestCase):
+    def commit_then_edit(self, top: Path, directory: str) -> Path:
+        """A file of the repository's own, outside the project, at the project-relative spelling of a path the run
+        writes (`directory` is where the project is not), committed and then edited."""
+        path = top / directory / OUTSIDE
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("the repository's own\n")
+        git(top, "add", str(path))
+        git(top, "-c", "user.name=t", "-c", "user.email=t@local", "commit", "-q", "-m", "own", "--", str(path))
+        path.write_text("the repository's own, edited\n")
+        return path
+
     def check(self, top: Path, project: Path, candidate: str, prefix: str) -> None:
-        """The three checks, run in `project` (which may be a link to the project's real directory)."""
+        """The checks, run in `project` (which may be a link to the project's real directory): AC-S23-1, -3, -4, -5."""
         page = project / PAGE
         page.write_text(page.read_text() + "\nA note of mine.\n")
         result = slipwai(project, "adopt", "--refresh")
@@ -45,14 +59,26 @@ class PlacementChecks(FactoryTestCase):
         self.assertIn("A note of mine.", page.read_text(), "and nothing was written over it")
         git(top, "checkout", "--", prefix + PAGE)
         (top / "other/note.txt").write_text("mine\n")
+        above = ["", *("/".join(Path(prefix).parts[:n]) for n in range(1, len(Path(prefix).parts)))]
+        outside = [self.commit_then_edit(top, directory) for directory in above]
         result = slipwai(project, "adopt", "--confirm", candidate)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((top / "other/note.txt").read_text(), "mine\n", "an edit under other/ refused nothing")
         keys = json.loads((project / ".delivery-tools/written.json").read_text())
         self.assertIn(PAGE, keys, "the run recorded what it left")
+        self.assertNotIn(OUTSIDE, keys, "and not a file outside the project that spells one of its paths")
+        for path in outside:
+            self.assertEqual(path.read_text(), "the repository's own, edited\n", "and refused and wrote nothing there")
         for key in keys:
             self.assertTrue((project / key).exists(), key)
             self.assertFalse(key.startswith((prefix, "/", "./")), f"{key}: spelled relative to the project")
+        result = slipwai(project, "adopt", "--refresh")  # AC-S23-3: over what the first run left, nothing committed
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        page.write_text(page.read_text() + "\nA note of mine.\n")  # AC-S23-4: and so that "exits 0" can fail
+        result = slipwai(project, "adopt", "--refresh")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn(f"`{PAGE}`", result.stderr)
+        self.assertIn("A note of mine.", page.read_text())
 
     def in_place(self, at: str, candidate: str) -> None:
         with tempfile.TemporaryDirectory() as directory:
