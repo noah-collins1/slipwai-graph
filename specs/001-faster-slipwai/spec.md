@@ -753,7 +753,8 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
 - **AC-S01-21** — For each drift state in AC-S01-13 to AC-S01-18 and AC-S01-23, the narrowed run's verdict equals
   the whole run's on the same tree and index. *Restated by D49:* a narrowed run never reports *current* for a file
   whose bytes differ from its row unless the file's size, modification time, change time and identity all read
-  exactly as they did when the gate last hashed it and found it equal.
+  exactly as they did when the gate last hashed it and found it equal. *Added by D50 (converge T021):* a tracked file
+  the index holds no row for is judged on a narrowed run by the whole run's own test, whatever git reports.
 - **AC-S01-22** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
   whose first line is `PATCH`, naming the five directories, the `pom.xml` test and the one kind of finding that
   can disappear (one inside a pruned directory), the count on the two pass lines, and where `check-codegraph`

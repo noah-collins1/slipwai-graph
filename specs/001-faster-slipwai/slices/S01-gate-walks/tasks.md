@@ -468,6 +468,53 @@ No screen in this slice
 
 ## Convergence
 
+**Converged on pass 2, the loop's bound** (2026-10-03, cruise iteration 7, `drive-converge`, host model, fresh
+context each pass) at `e531ca0`, over `ed91b20..e531ca0`: no `CRITICAL` or `HIGH` open. Pass 1 (at `4262f24`) was
+not converged — three `HIGH` (T015, T016, T017), two `MEDIUM` (T018, T019), one `LOW` (T020), all implemented
+(`607c0f2`, `3012d4c`, `da107bf`, `44629fe`, `b0ee8e8`, `9057a93`) with decisions D48 and D49. Pass 2 confirmed each
+closed its class but T018 (one hostile content left: T022) and appended T021 `MEDIUM`, T022 `LOW`, T023 `LOW` as
+Phase 4 tasks, none of which re-opens the loop (D50 says what each becomes). Pass 2 ran inside its budget. No
+`.codegraph/` in this tree: callers were found by text search.
+
+**Levels.** *Domain* — the candidate set (`assets/toolkit/scripts/check-codegraph.py:345–376`), the stat record
+taken by `os.fstat` on the handle opened for hashing before any read (`:141–149`, `:263–267`), `under()`
+(`assets/toolkit/scripts/check-imports.py:70–78`), the pruning test (`:46–49`; `check-migrations.py:74–77`). Left
+open at this level by pass 2: how a narrowed run judges a tracked file with no row (T021). *Use case* —
+`narrowed()` (`check-codegraph.py:392–420`), `whole()` (`:451–492`), `conclude()` (`:423–448`), the only caller of
+`remember()` and only on the pass branch; `behind()` in `agents/code_index.py` still calls `drift()` with no
+argument and gets today's answer. *Delivery adapter* — the pass lines (`check-codegraph.py:438`,
+`check-imports.py:351`), exit codes, and the trunk line byte for byte `ed91b20`'s; the read of the memory outside
+the guard at `:503` is T022. *Screen* — none. *Published contract* — `changelog.d/gate-walks.md` (first line
+`PATCH`), every sentence followed in the state it describes (the 79 confirmed on a generated skeleton; deleting
+the memory gives a whole run; two imprecisions corrected by the host after the pass: the two-second condition,
+and that a trunk run now writes the memory); `VERSION` `1.5.2.dev0`; no file added under `assets/`; nothing
+`delivery/.written` lists changed; the memory's shape (`SHAPE`, `:302`).
+
+**Constitution.** *I* — `narrowable()` (`check-codegraph.py:234–240`) keeps the trunk, every non-slice branch, a
+detached `HEAD` and CI whole (dropping the CI test is killed by a test); pruning removes no check on the
+project's code (`check-imports.py:46–49`: `target` only beside a `pom.xml`); the fragment rode in the first
+user-visible commit (`8494a73`); *every starter passes its own gate* is the full verify, run by T014. *III* — one
+memory file, no setting. *V* — every acceptance enters through the script's command line; each of T015–T018 is
+code and test in one commit. *VIII* — PATCH; the memory is read tolerantly (`:302`, `:331–335`): unknown fields
+ignored, a record without `files` is the whole run, the key retires a record across script versions. *XIV* — the
+same gates as any change; AC-S01-18's rewording (D48) and AC-S01-23 to -25 (D49) are the run's amendments to
+criteria and wait on a person's review, as every entry of this run does (the cruise report lists them).
+
+**Sweeps.** Pass 1: bytes or a row changing without becoming a candidate (found T016, T017; row rewritten in
+place caught; staged-only, newly tracked, rename, deletion, gitlink, a quoted path, another slice branch, a
+rebased `HEAD`, a linked worktree — by reading, no hole); the memory written per exit path (only on a pass);
+walks filtered against a listing at another top (found T015). Pass 2: T015's class by 14 differential scenarios
+against the `ed91b20` script, exit code and stderr byte for byte — a link above the directory, a recorded path
+through a pruned name, a nested deployable, an absolute path, rule 5 as well as rule 4 — all identical; T016's
+class — rename-replace with times copied, bytes restored on a new inode, hashed-unequal-then-synced, CRLF after a
+synced narrowed pass, the two-second rule over three immediate runs — each equal to the whole run; 24 contents
+of the memory file (found T022); 25 mutations of the production code in scratch copies — killed for R2, R3, R5,
+R6, R9, R10, T015, T016, AC-S01-25; survived: each of git's report, `dirty` and the flagged paths removed alone
+(the stat record covers the same files — two mechanisms, one behaviour; T021 e2 holds git's report), size and
+modification time compared alone (the two-second rule covers change time and identity on Linux), the catch-all
+re-raising (T022). No test passes vacuously for `settle()`: every narrowed claim asserts its `hashed N of`.
+Not reached by either pass: Windows and network filesystems (D49 says so); R4 and R11 by mutation.
+
 Converge pass 1 (cruise iteration 7), against `ed91b20..4262f24`. Each was reproduced in a scratch project generated
 under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the new one; `CI=1` for the whole run).
 
@@ -560,3 +607,60 @@ under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the
 
   **Files:** `tests/test_codegraph_narrowed.py` (and its fixture helper).
 
+
+Converge pass 2 (cruise iteration 7), against `ed91b20..e531ca0` — the confirming pass. T015–T020 re-run and their
+classes attacked in scratch projects under `/tmp`; nothing `CRITICAL` or `HIGH` was found. What is still owed:
+
+- [x] T021 [US2] **MEDIUM** — a narrowed run judges a tracked file *the index holds no row for* only where git
+  reports it changed, so its verdict differs from the whole run's where such a file's modification time moves
+  without git reporting anything; and no test holds git's report as a source of candidates at all.
+
+  **RED** — in `tests/test_codegraph_memory.py`:
+  - e1 a tracked `.py` file with no row, older than the index's last `indexed_at` (a file CodeGraph declined), whole
+    pass on `main`, `slice/S1`, then `touch` it (or rewrite it with CRLF, which git does not report) → the whole run
+    (`CI=1`, `NO_SYNC`) exits 1 naming it under *the index has never seen*; the narrowed run today prints
+    `hashed 0 of 36` and exits 0. Reproduced: `indexed_at` set five seconds ahead, `declined.py` committed, whole
+    pass, six seconds, `os.utime`.
+  - e2 (a hold with no test today) a file newly tracked after the memory — committed, staged, and `git add -N` —
+    with no row → the narrowed run fails naming it as the whole run does. It does today (observed: both exit 1
+    naming `brand_new.py`), but with `*changed` removed from `candidates_of` all 38 tests of
+    `test_codegraph_narrowed`, `test_codegraph_memory` and `test_codegraph_bytes` still pass: the stat record
+    covers every file that has a row, and nothing else covers one that has none.
+
+  **GREEN** — closes the class *a tracked file with no row*: narrowing narrows the hashing, never the never-seen
+  judgement — every tracked file of an indexed suffix with no row is judged by the whole run's own test (its
+  modification time against the last `indexed_at`) on a narrowed run too, whatever git reports. If the host
+  instead decides the narrowed run's leniency is the answer (the whole run's verdict here is the one the script's
+  own comment calls CodeGraph's decision), that is a decision entry and AC-S01-21 names the state; e2 is owed
+  either way.
+
+  **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`. PATCH, `VERSION` not raised.
+
+- [x] T022 [US2] **LOW** — T018's class *any content of the memory file* is not closed: `remembered()` runs outside
+  the `try` in `main()` and catches only `OSError` and `ValueError` from `json.loads`, so a memory file of deeply
+  nested JSON ends the run with a traceback and exit 1 (AC-S01-17).
+
+  **RED** — `gate-memory.json` holding `"[" * 200000`, and a valid record whose `dirty` is nested 100000 deep → today
+  `RecursionError: Stack overflow … while decoding a JSON array`, exit 1; each must be today's line plus *the
+  record of the last whole comparison could not be read*. Every other content tried (22 shapes: non-UTF-8, empty,
+  `null`, `whole` as a 400-digit integer, `NaN`, `-Infinity`, a boolean; each `files` record field as a huge integer,
+  a string, a float, a boolean, a dict, a short list; `rows` values not strings; `database` of three or of
+  strings; a `commit` of `--help`; a lone surrogate or an option-shaped string in `dirty`; the file a directory)
+  answered whole or narrowed with exit 0.
+
+  **GREEN** — closes the class *any failure of reading the memory, not only of using it*: the read sits inside the
+  same guard as the use (`RecursionError`, `MemoryError` included), and nothing between `narrowable()` and
+  `whole()` can raise past it.
+
+  **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`. PATCH.
+
+- [x] T023 [US2] **LOW** — *closed by D50: the waits stand; no seam, no setting.* `Project.settle()` waits on the wall clock, up to 2.1 seconds, in about 36 places across
+  `test_codegraph_narrowed`, `test_codegraph_memory` and `test_codegraph_bytes` (38 tests; the nine of
+  `test_codegraph_bytes` with five others took 33 seconds), because a change time cannot be set back and the gate has no seam for its two-second rule.
+  Constitution XIII, when in force, forbids wall-clock sleeps in the deterministic suite; it is a target today,
+  and this feature is the one that climbs to it. No test passes vacuously for it (see the pass-2 verdict). A
+  question for the host before any code: a seam costs a setting the fragment says is not added. **GREEN** closes
+  the class *a test that waits for the gate's own rule to expire*: either the wait is paid once per module rather
+  than once per project, or the decision that it stands is recorded against XIII.
+
+  **Files:** `tests/test_codegraph_narrowed.py` (and whatever the decision names).

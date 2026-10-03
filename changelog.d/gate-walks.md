@@ -20,11 +20,12 @@ pass line says how many files it hashed, of how many, and since when. It remembe
 a file that was uncommitted then, a row the index rewrote since, a file git was told not to report, a changed gate
 script or another database each mean that file, or everything, is compared again. A file it does not hash is one
 git reports unchanged and whose size, modification time, change time and identity all read as they did when the
-gate last hashed it. What that leaves: a file whose bytes were changed while all four read as before — a clock
+gate last hashed it — and a file written within two seconds of that run is hashed again regardless. What that leaves: a file whose bytes were changed while all four read as before — a clock
 set back, a filesystem that keeps no such times, or, on a platform with no change time, a tool that restores the
 modification time on a same-size rewrite — is not seen by a narrowed run; the next whole run sees it: the trunk,
 any branch not named `slice/<id>`, or any run after `.codegraph/gate-memory.json` is deleted. On the trunk, on any
-other branch and in CI the check does exactly what it did — every file, and the integrity check.
+other branch and in CI the check compares exactly as it did — every file, and the integrity check — and outside CI
+a passing run leaves the record a slice branch then starts from.
 
 `slipwai migrate` carries the three scripts; nothing is asked of a repository already generated. No setting, flag
 or generated file is added.
