@@ -459,8 +459,13 @@ def prompt_for(harness: dict[str, Any] | None, argument: str | None) -> str:
     return f"Run the /cruise command: read {relative(COMMAND)} and follow it exactly as written{tail}."
 
 
+# The same record for the files under specs/, resting on as many of the four facts as the platform reports (D57).
+SPECS_RECORD = bookkeeping.Record(strict=False)
+
+
 def fingerprint() -> str:
-    """What the tree looks like to the ladder: the commit, the working tree's state, and every file under specs/."""
+    """What the tree looks like to the ladder: the commit, the working tree's state, and every file under specs/ by
+    its path and the SHA-256 of its bytes — each file read once while the record of what it reported stands (D57)."""
     digest = hashlib.sha256()
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True)
     digest.update(head.stdout.encode())
@@ -472,10 +477,13 @@ def fingerprint() -> str:
                 for path in (LOG, CHECKPOINT, PID, RUN_LOG, STREAM, WATCH_CURSOR, LAST_RESPONSE, INBOX, TOLD))
     digest.update("\n".join(line for line in status.stdout.splitlines() if not line.endswith(own)).encode())
     specs = ROOT / "specs"
+    seen: set[str] = set()
     for path in sorted(specs.rglob("*")) if specs.is_dir() else []:
         if path.is_file() and path not in (LOG, CHECKPOINT):
             digest.update(str(path.relative_to(ROOT)).encode())
-            digest.update(path.read_bytes())
+            digest.update(SPECS_RECORD.digest(path).encode())
+            seen.add(str(path))
+    SPECS_RECORD.retain(seen)
     return digest.hexdigest()[:16]
 
 
