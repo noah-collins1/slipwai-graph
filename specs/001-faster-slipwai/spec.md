@@ -671,3 +671,86 @@ with the adoption committed, a sibling directory `other/` beside it, and every c
 - **AC-S23-11** — *Added by D43 (gaps G2).* Given any refusal, at the top of a repository or below it, then the
   message says the paths it names are spelled from the project's directory, so a person typing a git command
   elsewhere in the repository knows where they are names from.
+
+### S01-gate-walks
+
+**Gaps reviewed** 2026-10-03, cruise iteration 7, host with `drive-skipper` for D45, D46 and D47: the three
+examples in `story-split.md` against `source_files()` and rules 4 and 5 in `assets/toolkit/scripts/check-imports.py`,
+`migrations()` in `assets/toolkit/scripts/check-migrations.py`, and `drift()` and `main()` in
+`assets/toolkit/scripts/check-codegraph.py`, and against a scratch Python skeleton with a React frontend (79
+entries under `apps/` and `packages/` with nothing installed; today's run lists 256). Found and written back: what
+an *entry* is, on which tree the 100 is measured and where the count is said were unstated (D47; AC-S01-1,
+AC-S01-2, AC-S01-6, AC-S01-7); pruning `target` by name would stop the gate reading a source directory of that
+name, against SC-007 and constitution I (D45; AC-S01-3 to AC-S01-5); *read `project.json` once* had no
+measurement, and `check-migrations` reads it not at all today (AC-S01-8); a tree with neither `apps/` nor
+`packages/`, and a symbolic link to a directory, were unstated (AC-S01-9); for `check-codegraph`, *on a branch*,
+*since the last sync* and *in CI only* each had no definition, read to the letter the integrity check would run
+nowhere, and nothing said what the gate does when it cannot tell (D46; AC-S01-10 to AC-S01-21); and the release
+level (AC-S01-22). The reference skeleton is `slipwai generate` with the `event-modelling` profile, the Python
+backend, the `react-vite` frontend and target `none`, freshly generated, nothing installed.
+
+- **AC-S01-1** — Given the reference skeleton, when `make check-imports` runs, then it exits 0 and its one stdout
+  line is `check-imports: inward dependency rule holds (N directory entries read)`, where N is at most 100 and
+  equals an independent enumeration of `apps/` and `packages/` with the pruned directories' contents left out. An
+  entry is one name a directory listing returns, summed over the run: a directory read twice counts twice (D47).
+- **AC-S01-2** — Given the same skeleton, when `make check-migrations` runs, then its pass line is today's words
+  unbroken, closed by the same parenthetical count. It carries no bound.
+- **AC-S01-3** — Given a populated `.venv`, `node_modules`, `__pycache__` and `.git` planted under an app — holding
+  a `domain/` file that imports an adapter and a contracting migration under `migrations/` — when either script
+  runs, then its findings equal those of the tree without them, its count is higher by exactly the number of
+  directories planted, and nothing inside them is listed, at any depth, in any walk the script makes (D45).
+- **AC-S01-4** — Given a Java service after a build — `target/` beside its `pom.xml`, holding a copy of a
+  contracting migration under `target/classes/db/migration/` and `.java` files under `target/generated-sources/` —
+  then findings equal those with `target/` deleted and it is not descended into (D45).
+- **AC-S01-5** — Given a directory called `target` with no `pom.xml` beside it, then it is read as today: in a
+  Python service recording the contexts `orders` and `target`, a domain file under `src/target/domain/` that
+  imports an adapter still fails, an import from `target` into the insides of `orders` still fails, and a
+  contracting migration under `src/target/migrations/` still fails `check-migrations`; and a Java package directory
+  `src/main/java/…/target/` is still read (D45).
+- **AC-S01-6** — Given a tree with violations outside any pruned directory, when either script runs, then its
+  stderr and exit code are byte for byte what they were before this slice — the same findings in the same order,
+  and no count (D47; SC-007).
+- **AC-S01-7** — Given a project whose walk lists more than 100 entries, then the gate passes with its count
+  printed and no other word: 100 is a measurement on the skeleton, never a limit on a project (D47).
+- **AC-S01-8** — Given any run, then `check-imports` opens `project.json` at most once and `check-migrations` at
+  most once (it does not read it today and need not start); a tree with no `project.json` is answered as today.
+- **AC-S01-9** — Given a tree with neither `apps/` nor `packages/`, then both scripts pass as today, reporting 0
+  entries; given a symbolic link to a directory under an app, then it is one entry and is not descended into, as
+  the Python the skeleton pins (3.13) does today.
+- **AC-S01-10** — Given a checkout on a `slice/<id>` branch with no CI marker set (`CI`, `GITHUB_ACTIONS`,
+  `GITLAB_CI`), an index the gate's last whole comparison found current, and one tracked source file changed
+  since, when `check-codegraph` runs with the index current for that file, then it hashes exactly that one file and
+  its pass line says, in one line, how many files it hashed of how many the index holds, that it compared only
+  what changed since its last whole comparison and when that was, and that the integrity check was not run here
+  and runs in the full gate. With nothing changed it reports 0 hashed (D46).
+- **AC-S01-11** — Given the trunk, a branch not shaped `slice/<id>`, a detached `HEAD`, or any CI marker set, then
+  the run is today's — every tracked file hashed, the integrity check run, today's pass line byte for byte — with
+  the memory present and neither read nor, in CI, written (D46).
+- **AC-S01-12** — Given a corrupt database on the trunk or with a CI marker set, then it fails or is rebuilt
+  exactly as today.
+- **AC-S01-13** — Given a file that was dirty when the memory was written and is reverted afterwards, with the
+  index still holding the dirty content, then a narrowed run reports it changed.
+- **AC-S01-14** — Given an index row rewritten, added or removed after the memory was written, with `indexed_at`
+  unmoved, then a narrowed run re-hashes that file and reports what a whole run would; a different or rebuilt
+  database is a whole run.
+- **AC-S01-15** — Given a tracked file marked `assume-unchanged` or `skip-worktree` and edited on disk, then a
+  narrowed run still catches it.
+- **AC-S01-16** — Given `check-codegraph.py` or `agents/code_index.py` edited since the memory was written, then
+  the memory is not used and the run is whole.
+- **AC-S01-17** — Given a memory the run cannot use — none, unreadable, its commit gone, git unable to list what
+  changed — on a slice branch, then the run is today's whole check, its pass line today's plus one clause saying
+  why; it never fails for that reason alone and never passes narrower.
+- **AC-S01-18** — Given a corrupt database, or any SQLite error reading the index, on a narrowed run, then the
+  result is never a pass and never *skipped*: the run goes whole and answers as AC-S01-12.
+- **AC-S01-19** — Given a run that fails or skips, then no memory is written or renewed; a narrowed run that finds
+  drift syncs as today, compares again, and renews the memory only on a pass.
+- **AC-S01-20** — Given any run, then `git status` reports nothing the gate left, and where `.codegraph/` is
+  removed the memory goes with it; a `.codegraph/` copied from another checkout never yields a narrower pass than
+  the whole run would give.
+- **AC-S01-21** — For each drift state in AC-S01-13 to AC-S01-18, the narrowed run's verdict equals the whole
+  run's on the same tree and index.
+- **AC-S01-22** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
+  whose first line is `PATCH`, naming the five directories, the `pom.xml` test and the one kind of finding that
+  can disappear (one inside a pruned directory), the count on the two pass lines, and where `check-codegraph`
+  compares only what changed; it asks nothing of a generated repository; `VERSION` stays `1.5.2.dev0`; and no
+  file under this repository's own `delivery/` changes (D9).
