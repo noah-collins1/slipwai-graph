@@ -438,7 +438,7 @@ Needs US1 and US2 done: T012 edits `cruise.py` and `code_index.py`; T013 names w
 
 ### T012 — [US5] An iteration's `index_use` is read from the byte its marker was written at (R11 · AC-S02-30, -31)
 
-- [ ] **Rule R11.** `delegate_use()` in `code_index.py` reads from an offset; `iterate()`/`drive()` in `cruise.py` hold the
+- [x] *(dc7b9c2)* **Rule R11.** `delegate_use()` in `code_index.py` reads from an offset; `iterate()`/`drive()` in `cruise.py` hold the
   byte offset and the exact marker line written for the iteration (the stream's marker, data-model); the marker found
   at the offset is the check; otherwise today's whole read (D58). Needs T004 and T008. Test module
   `tests/test_runner_stream.py` (new).
@@ -463,7 +463,7 @@ any mismatch the whole read; `stream_bytes` absent where no stream is kept.
 
 ### T013 — [US5] The release says what it is (R12 · AC-S02-46, -69)
 
-- [ ] **Rule R12.** Completes `changelog.d/runner-bookkeeping.md` and corrects the pages. Needs T012 and T011 (all
+- [x] *(918a04e — e46's RED was reconstructed against the pages at HEAD, the pages having been edited before the test; `docs/verification.md` joined the pages; AC-S01-24's row for e36 is 1b4b7b5, tests only)* **Rule R12.** Completes `changelog.d/runner-bookkeeping.md` and corrects the pages. Needs T012 and T011 (all
   stories done).
 
 **RED** — e46: a test (in `tests/test_runner_stream.py`'s sibling is not allowed to grow; add it to
