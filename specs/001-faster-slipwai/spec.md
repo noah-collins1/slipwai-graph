@@ -740,19 +740,34 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
 - **AC-S01-17** — Given a memory the run cannot use — none, unreadable, its commit gone, git unable to list what
   changed — on a slice branch, then the run is today's whole check, its pass line today's plus one clause saying
   why; it never fails for that reason alone and never passes narrower.
-- **AC-S01-18** — Given a database whose rows a narrowed run cannot read — damage the read meets, or any other
-  SQLite error — then the result is never a pass and never *skipped*: the run goes whole and answers as
-  AC-S01-12. Damage the read of its rows does not meet is what the integrity check finds, in the full gate (D46).
+- **AC-S01-18** — *Reworded by D48.* Given a database whose rows a narrowed run cannot read — damage the read
+  meets, or any other SQLite error — then the result is never a narrowed pass: the run goes whole, integrity check
+  included, and answers as the whole run does — a damaged database fails or is rebuilt (AC-S01-12), never
+  *skipped*; a sound one whose `files` table cannot be read is skipped in today's words. Damage the read of its
+  rows does not meet is what the integrity check finds, in the full gate (D46).
 - **AC-S01-19** — Given a run that fails or skips, then no memory is written or renewed; a narrowed run that finds
   drift syncs as today, compares again, and renews the memory only on a pass.
 - **AC-S01-20** — Given any run, then `git status` reports nothing the gate left, and where `.codegraph/` is
   removed the memory goes with it; a `.codegraph/` copied from another checkout never yields a narrower pass than
   the whole run would give.
-- **AC-S01-21** — For each drift state in AC-S01-13 to AC-S01-18, the narrowed run's verdict equals the whole
-  run's on the same tree and index.
+- **AC-S01-21** — For each drift state in AC-S01-13 to AC-S01-18 and AC-S01-23, the narrowed run's verdict equals
+  the whole run's on the same tree and index. *Restated by D49:* a narrowed run never reports *current* for a file
+  whose bytes differ from its row unless the file's size, modification time, change time and identity all read
+  exactly as they did when the gate last hashed it and found it equal.
 - **AC-S01-22** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
   whose first line is `PATCH`, naming the five directories, the `pom.xml` test and the one kind of finding that
   can disappear (one inside a pruned directory), the count on the two pass lines, and where `check-codegraph`
   compares only what changed; it asks nothing of a generated repository; `VERSION` stays `1.5.2.dev0`; and no
   file `delivery/.written` lists changes in this repository (D9; the Pin stage's rows in
   `delivery/survey/pinned.md` are the method's record, not the factory's files).
+- **AC-S01-23** — *Added by D49 (converge T016).* Given a tracked file whose bytes change in a way git's comparison
+  normalises away — rewritten with CRLF line endings under `* text=auto eol=lf`, before or after `git add`, or the
+  mirror — or a same-size rewrite in place with its modification time restored, then a narrowed run hashes it and
+  answers as the whole run does: the memory records each indexed tracked file's size, modification time, change
+  time and identity, as many as the platform reports, and a file whose record is missing or differs is hashed.
+- **AC-S01-24** — *Added by D49.* Given a file whose modification or change time is not safely older than the start
+  of the run that vouched for it (two seconds where the gate cannot know the filesystem's granularity), then it is
+  hashed on every narrowed run until a later passing run vouches for it again.
+- **AC-S01-25** — *Added by D49.* Given a `touch`, a checkout or a rebase that moves a file's times without changing
+  a byte, then a narrowed run hashes that file once, passes, renews its record, and does not hash it again on the
+  next run. A memory without these records means the whole run with the one clause (AC-S01-17).

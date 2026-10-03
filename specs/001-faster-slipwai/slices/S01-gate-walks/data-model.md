@@ -11,3 +11,4 @@ tracked, removed with the index.
 | `rows` | `path → content_hash` for every row of `files` then | A row rewritten, added or removed since is seen by content (rules 5, 6) |
 | `database` | `st_dev`, `st_ino` of `codegraph.db` then | Another or a rebuilt database is never narrowed |
 | `whole` | The moment of the last whole comparison, epoch seconds | Said on the narrowed pass line; kept across renewals |
+| `files` | For every tracked file the index holds a row for: size, modification time and change time in nanoseconds, identity (inode) — as many as the platform reports — taken as the file was opened for hashing | A file whose bytes changed in a way git's comparison normalises away is still seen (D49); a file not safely older than the run that vouched for it is hashed again |

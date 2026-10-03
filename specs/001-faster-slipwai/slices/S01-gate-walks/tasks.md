@@ -468,3 +468,95 @@ No screen in this slice
 
 ## Convergence
 
+Converge pass 1 (cruise iteration 7), against `ed91b20..4262f24`. Each was reproduced in a scratch project generated
+under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the new one; `CI=1` for the whole run).
+
+- [ ] T015 [US1] **HIGH** — `check-imports.py` `under()` answers from a listing taken at another top by comparing
+  path *spellings*, so a recorded deployable whose spelling is not the one that listing produced is read as empty
+  and rules 4 and 5 pass where the pre-slice gate failed (AC-S01-6, SC-007, constitution I, D45's *no finding
+  outside a pruned directory changes*).
+
+  **RED** — in `tests/test_gate_walks.py`, with a `.ts` file under the web app importing
+  `../../service/src/domain/thing`, and separately a rule-5 violation in a context-holding service:
+  - e1 the web app recorded as `apps/service/../web` → today exit 0 `(80 directory entries read)`; the pre-slice
+    script exits 1 naming `apps/service/../web/src/bad.ts:1`.
+  - e2 the web app recorded as `apps/weblink`, a symbolic link to `apps/web` → today exit 0; pre-slice exit 1 naming
+    `apps/weblink/src/bad.ts:1` (skipped where the platform cannot make a link).
+  - e3 `apps/web` itself a symbolic link to a directory outside `apps/` → today exit 0; pre-slice exit 1.
+  - holds: recorded as `apps/web`, `apps/web/`, `./apps/web`, `frontends/web` and `.` — all five fail today as before.
+
+  **GREEN** — closes the class *a walk filtered against a listing taken at another top*: `under()` reuses an earlier
+  listing only where that provably yields the files the directory's own listing would, and otherwise lists the
+  directory itself (pruned, counted); findings and their path spellings equal the pre-slice script's for every
+  recorded path it could read. Not the three spellings above.
+
+  **Files:** `assets/toolkit/scripts/check-imports.py`, `tests/test_gate_walks.py`. PATCH, `VERSION` not raised.
+
+- [ ] T016 [US2] **HIGH** — a narrowed `check-codegraph` run reports *current* for a file whose bytes differ from
+  its row when git's diff does not report the change: under the generated `.gitattributes` (`* text=auto eol=lf`) a
+  file rewritten with CRLF is ` M` in `git status` and absent from `git diff --name-only <commit>`, so it is no
+  candidate (D46's must-never; AC-S01-21).
+
+  **RED** — in `tests/test_codegraph_memory.py`: whole pass on `main`, `slice/S1`, one indexed file's line endings
+  rewritten to CRLF, no sync → the narrowed run must fail naming it as the whole run does; today it prints
+  `hashed 0 of 55` and exits 0 while `CI=1` exits 1. The mirror: CRLF on disk when the memory was written, LF after.
+
+  **GREEN** — closes the class *working-tree bytes git's comparison normalises away* (line-ending and `text`
+  attributes, `core.autocrlf`, clean filters, `ident`), at the write of `dirty` and at the read of the candidates
+  alike, as D49 decides it (read the entry; AC-S01-23 to AC-S01-25): the memory records, for every tracked file the
+  index holds a row for, its size, modification time and change time in nanoseconds and its identity, taken from the
+  file as it was opened for hashing; a narrowed run stats each and hashes any whose record is missing or differs,
+  and any whose times are not safely older (two seconds) than the start of the run that vouched for it; a narrowed
+  pass renews the record of each file it hashed and found equal; a memory without these records is the whole run
+  with the one clause. Owed beside the CRLF pair (before `git add`, after `git add`, and the mirror): a same-size
+  rewrite in place with its modification time restored (`os.utime`) → the narrowed run fails as the whole run
+  does; a `touch` → hashed once, pass, then `hashed 0`.
+
+  **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`. PATCH.
+
+- [ ] T017 [US2] **HIGH** — a file git was told not to report *when the memory was written* is not recorded in
+  `dirty` (`remember()` takes `git diff HEAD`, which the flag silences), so after the flag is cleared and the file
+  reverted it is no candidate and the narrowed run passes on a row holding the old content (D46 rules 2 and 4;
+  AC-S01-13, -15, -21).
+
+  **RED** — `--assume-unchanged` (and `--skip-worktree`) on a file, edit it, index follows, a passing run writes the
+  memory (`dirty: []` today); clear the flag, `git checkout -- <file>`, no sync → narrowed must report it changed;
+  today `hashed 0`, exit 0, while the whole run exits 1 naming it. Both after a whole pass and after a narrowed pass.
+
+  **GREEN** — closes the class *what git was not reporting at the moment the memory vouched*: every path flagged at
+  the write is remembered as dirty (or the memory is not written while any exists), on both writers of the memory.
+
+  **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`. PATCH.
+
+- [ ] T018 [US2] **MEDIUM** — a memory that is well-formed JSON of the right outer shape but unusable inside ends
+  the run with a traceback and exit 1, where AC-S01-17 says the run is whole and *never fails for that reason alone*.
+
+  **RED** — `"dirty": [["a"]]` → `TypeError` in `candidates_of`; `"whole": 1e300` (or `Infinity`) → `OverflowError`
+  in `moment`; each must be today's line plus *the record of the last whole comparison could not be read*.
+
+  **GREEN** — closes the class *any content of the memory file*: every field is validated to the depth it is used
+  before the narrowed path starts, or any exception reading or using the record means the whole run with the one clause.
+
+  **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`. PATCH.
+
+- [ ] T019 [US2] **MEDIUM** — *answered by D48: the whole run's skip is today's answer and stands; AC-S01-18 is
+  reworded; what is owed is one hold test — on `slice/S1` with a usable memory, the `files` table renamed → the
+  run goes whole and prints today's `schema may have moved on — skipped`, exit 0 — and no production change.* As
+  raised: a question for the host before any code: on a slice branch with a usable memory, a
+  database that passes the integrity check but whose `files` table cannot be read (renamed here) goes whole and
+  prints today's `… schema may have moved on — skipped`, exit 0, with no clause. AC-S01-18 says both *never
+  skipped* and *answers as AC-S01-12* (today's whole run, which skips here); plan R9 e5 covers only garbage bytes.
+  Decide which reading stands, then: either a test holding the skip as today's answer and the criterion's wording
+  narrowed to *damage*, or the skip refused on a slice branch. **GREEN** closes the class *every exit of `whole()`
+  reached from a narrowed attempt* — each either carries the clause or is recorded as deliberately today's words.
+
+  **Files:** `specs/001-faster-slipwai/spec.md` or `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`.
+
+- [ ] T020 [US2] **LOW** — the tests' stand-in `sync` replaces the database file, so no test runs the gate's own
+  sync-then-compare-again on a narrowed run against a database written in place (same inode), which is what SQLite
+  does. Observed correct by hand (in-place stand-in: `synced 1 file(s) first; … hashed 1 of 55`, memory renewed,
+  inode unchanged; a failing sync leaves the memory byte-identical). **GREEN** closes the class *the stand-in CLI
+  differs from CodeGraph in how it writes*: one narrowed-sync test with an in-place stand-in.
+
+  **Files:** `tests/test_codegraph_narrowed.py` (and its fixture helper).
+
