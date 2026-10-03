@@ -140,6 +140,11 @@ def extra(project: Project) -> None:
     os.utime(target, (0, 0))
 
 
+# Rides on the AC-S01-23 row above it: the rewrite moves the change time, which makes the file a candidate with or
+# without the two-second rule, so removing that rule turns no assertion of this row red. Nothing here can isolate
+# the rule: a file whose every fact stood would have to be rewritten with its change time put back.
+RECENT_ROW = "AC-S01-24 a file not safely older than the run that vouched for it (rides on AC-S01-23's row)"
+
 # (name, what happens before the whole comparison that writes the memory, what happens after it)
 Before = Callable[[Project], Step | None]
 STATES: list[tuple[str, Before, Step]] = [
@@ -159,11 +164,10 @@ STATES: list[tuple[str, Before, Step]] = [
     ("AC-S01-23 CRLF written over LF", lambda p: None, crlf),
     ("AC-S01-23 a same-size rewrite with its time restored", lambda p: None, same_size_with_its_time_restored),
     ("AC-S01-21 a tracked file with no row, touched", declined, touched_declined_file),
-    ("AC-S01-24 a file not safely older than the run that vouched for it, rewritten", recent_then_rewritten,
-     same_size_with_its_time_restored),
+    (RECENT_ROW, recent_then_rewritten, same_size_with_its_time_restored),
 ]
 # The states whose whole comparison runs at once, without waiting for the files to age: that is the state.
-RECENT = {"AC-S01-24 a file not safely older than the run that vouched for it, rewritten"}
+RECENT = {RECENT_ROW}
 
 
 class EveryStateAnswersAsTheWholeComparisonDoesTest(FactoryTestCase):
