@@ -27,6 +27,14 @@ an unwritten row is a pass that has to be run again, and until now nothing notic
   slice in it counts for the feature its `spec` or `gwt` path is under, or, naming none, the one holding
   `slices/<id>/`; an implemented slice no feature holds is noted, not charged to every feature.
 
+`python3 scripts/check-decisions.py --scope <slice-id> [--feature <name>]` prints, verbatim and in number order, the
+standing decisions a slice's later decisions must agree with: the entries whose `- **Scope:**` line names the slice
+(two ids meet when equal or when one is the other's bare prefix, so `S02` meets `S02-runner-bookkeeping` and `S1` does
+not meet `S12-…`), the ones that say `global`, and the ones with no line or no readable one, which are carried as
+global because a filter that could hide a binding decision is the wrong one. It ends with one line of counts, names
+each overridden entry with what overrode it, writes nothing, and needs `--feature` only when `specs/` holds more
+than one `decisions.md`.
+
 `python3 scripts/check-decisions.py --adversary-baseline` is for a project that migrated across that last rule: it
 writes, once, a `## <id> · predates the adversary gate · <date>` row for every done slice without one, which the gate accepts
 and which says the slice was never attacked. A second baseline is refused.
@@ -68,6 +76,9 @@ DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decisi
 STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
 FIELD = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 PLACEHOLDER = re.compile(r"<[^>]*>")
+# A slice id as `done_slices()` reads it: the released head, then a slug after `-` or `.` that ends on a letter or digit.
+SLICE_ID = re.compile(r"[A-Za-z]+\d+(?![A-Za-z0-9_])(?:[.-][A-Za-z0-9._-]*[A-Za-z0-9])?")
+BARE_PREFIX = re.compile(r"[A-Za-z]+\d+")
 
 
 Entry = tuple[int, "re.Match[str] | None", dict[str, str]]
@@ -104,6 +115,38 @@ def path_findings(where: str, label: str, value: str, base: Path) -> list[str]:
     return findings
 
 
+def scope_tokens(value: str) -> list[str] | None:
+    """The slice ids a `Scope:` value lists (backticks tolerated), `["global"]` for the word alone, or None where
+    the value is empty or is neither."""
+    tokens = [part.strip().strip("`").strip() for part in value.split(",")]
+    if tokens == ["global"]:
+        return tokens
+    if value.strip() and all(SLICE_ID.fullmatch(token) for token in tokens):
+        return tokens
+    return None
+
+
+def scope_finding(where: str, number: int, value: str) -> list[str]:
+    if scope_tokens(value) is not None:
+        return []
+    return [f"{where}: D{number} `Scope` is {value!r}; it is `global` alone or slice ids separated by commas"]
+
+
+def scope_notes(path: Path) -> list[str]:
+    """One note per entry with no `Scope:` line after an entry that has one: it is carried as global."""
+    relative = path.relative_to(ROOT).as_posix()
+    notes, seen = [], False
+    for line, heading, fields in entries(path.read_text(encoding="utf-8"), DECISION_HEADING):
+        if heading is None:
+            continue
+        if "Scope" in fields:
+            seen = True
+        elif seen:
+            notes.append(f"check-decisions: note: {relative}:{line}: D{heading.group(1)} has no `Scope:` line after "
+                         "an entry that has one; it is carried as global")
+    return notes
+
+
 def check_decisions(path: Path) -> list[str]:
     relative = path.relative_to(ROOT).as_posix()
     findings: list[str] = []
@@ -131,6 +174,8 @@ def check_decisions(path: Path) -> list[str]:
         if not STATUS.match(fields["Status"]):
             findings.append(f"{where}: D{number} `Status` is {fields['Status']!r}; it is standing, overridden by "
                             "D<m> or overridden by human <date>")
+        if "Scope" in fields:
+            findings += scope_finding(where, number, fields["Scope"])
         findings += path_findings(where, f"D{number} `Written to`", fields["Written to"], ROOT)
     return findings
 
@@ -260,9 +305,70 @@ def baseline() -> int:
     return 0
 
 
+def meets(wanted: str, named: str) -> bool:
+    """Two slice ids meet when equal or when one is the other's bare prefix (`S02` and `S02-runner-bookkeeping`)."""
+    def head(ident: str) -> str | None:
+        found = BARE_PREFIX.match(ident)
+        return found.group(0) if found else None
+
+    return wanted == named or (wanted == head(named) or named == head(wanted))
+
+
+def placed(wanted: str, fields: dict[str, str]) -> str:
+    """How the filter places one entry: `scope`, `global`, `unlined` (no line, carried as global), or `out`.
+    A value it cannot read is global; it never drops what it cannot place."""
+    if "Scope" not in fields:
+        return "unlined"
+    tokens = scope_tokens(fields["Scope"])
+    if tokens is None or tokens == ["global"]:
+        return "global"
+    return "scope" if any(meets(wanted, token) for token in tokens) else "out"
+
+
+def scope_verb(wanted: str, feature: str | None) -> int:
+    logs = sorted(SPECS.glob(f"*/{DECISIONS}")) if SPECS.is_dir() else []
+    if feature is not None:
+        logs = [log for log in logs if log.parent.name == feature]
+    elif len(logs) > 1:
+        names = ", ".join(log.parent.name for log in logs)
+        print(f"check-decisions: specs/ holds several decisions.md; choose one with --feature <name>: {names}",
+              file=sys.stderr)
+        return 1
+    if not logs:
+        print("check-decisions: no decisions.md under specs/" + (f" for feature {feature}" if feature else ""),
+              file=sys.stderr)
+        return 1
+    lines = logs[0].read_text(encoding="utf-8").splitlines()
+    found = [item for item in entries("\n".join(lines), DECISION_HEADING) if item[1] is not None]
+    count = {"scope": 0, "global": 0, "unlined": 0, "out": 0}
+    overridden: list[str] = []
+    for index, (line, heading, fields) in enumerate(found):
+        status = STATUS.match(fields.get("Status", "standing"))
+        if status and status.group(0).startswith("overridden"):
+            overridden.append(f"D{heading.group(1)} ({status.group(0)})")  # type: ignore[union-attr]
+            continue
+        where = placed(wanted, fields)
+        count[where] += 1
+        if where != "out":
+            end = found[index + 1][0] - 1 if index + 1 < len(found) else len(lines)
+            print("\n".join(lines[line - 1:end]).rstrip() + "\n")
+    carried = count["scope"] + count["global"] + count["unlined"]
+    print(f"check-decisions: carried {carried} of {len(found)} entries for {wanted}: {count['scope']} in scope, "
+          f"{count['global']} global, {count['unlined']} carried as global for want of a line; "
+          f"{count['out']} left out as out of scope; overridden and left out: {', '.join(overridden) or 'none'}")
+    return 0
+
+
 def main() -> int:
-    if sys.argv[1:] == ["--adversary-baseline"]:
+    arguments = sys.argv[1:]
+    if arguments == ["--adversary-baseline"]:
         return baseline()
+    if arguments and arguments[0] in ("--scope", "--feature"):
+        options = dict(zip(arguments[0::2], arguments[1::2]))
+        if len(arguments) % 2 or set(options) - {"--scope", "--feature"} or "--scope" not in options:
+            print("usage: check-decisions.py --scope <slice-id> [--feature <name>]", file=sys.stderr)
+            return 2
+        return scope_verb(options["--scope"], options.get("--feature"))
     for ident in unowned():
         print(f"check-decisions: note: {ident} is implemented in docs/event-model/model.yaml but names no feature "
               "and has no specs/*/slices/ folder, so no adversary log is asked for it")
@@ -273,6 +379,8 @@ def main() -> int:
         print("check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet")
         return 0
     for path in decisions:
+        for note in scope_notes(path):
+            print(note)
         findings += check_decisions(path)
     for path in logs:
         findings += check_demo_log(path)
