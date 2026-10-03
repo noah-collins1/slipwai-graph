@@ -1,0 +1,55 @@
+gates at 345ddedceafb35d1c099aa82eba87aad2b446b03 · CRUISE_RUNNER=1 CRUISE_ITERATION=4 · started 2026-10-03T07:53:38Z
+== make verify
+test_the_count_keeps_rising_when_the_number_is_raised_mid_cycle (test_versions.SnapshotVersionTest.test_the_count_keeps_rising_when_the_number_is_raised_mid_cycle)
+Counted from the tag rather than from the commit that opened the number, so raising `1.2.4.dev0` ... ok
+test_the_number_counts_the_commits_since_the_last_release (test_versions.SnapshotVersionTest.test_the_number_counts_the_commits_since_the_last_release) ... ok
+test_write_puts_the_number_in_version_for_one_build_and_commits_nothing (test_versions.SnapshotVersionTest.test_write_puts_the_number_in_version_for_one_build_and_commits_nothing) ... ok
+test_a_snapshot_is_its_release_not_yet_there (test_versions.VersionsTest.test_a_snapshot_is_its_release_not_yet_there) ... ok
+test_the_next_snapshot_after_a_release_is_the_next_patch (test_versions.VersionsTest.test_the_next_snapshot_after_a_release_is_the_next_patch)
+The smallest claim: the first change that lands raises it to whatever it needs. ... ok
+test_versions_sort_the_way_an_installer_sorts_them (test_versions.VersionsTest.test_versions_sort_the_way_an_installer_sorts_them)
+Numerically, and with every pre-release of a number below the number itself. ... ok
+test_whats_next_names_one_slice_one_stage_one_command_from_the_boards_artifacts (test_whats_next.WhatsNextTest.test_whats_next_names_one_slice_one_stage_one_command_from_the_boards_artifacts) ... created: /tmp/tmp_ca8gfta/next-standard
+created: /tmp/tmp_ca8gfta/next-event-modelling
+ok
+test_an_ant_build_has_no_wrapper_so_the_runner_installs_ant_until_the_build_moves (test_wrappers.AntTest.test_an_ant_build_has_no_wrapper_so_the_runner_installs_ant_until_the_build_moves) ... ok
+test_a_command_that_changes_directory_first_needs_the_build_tool_and_not_cd (test_wrappers.RecordedToolTest.test_a_command_that_changes_directory_first_needs_the_build_tool_and_not_cd) ... ok
+test_the_tools_a_recorded_command_runs_are_every_segment_past_the_shell_words (test_wrappers.RecordedToolTest.test_the_tools_a_recorded_command_runs_are_every_segment_past_the_shell_words) ... ok
+test_a_gradle_build_below_the_root_gets_the_wrapper_beside_its_build_file (test_wrappers.WrapperTest.test_a_gradle_build_below_the_root_gets_the_wrapper_beside_its_build_file) ... ok
+test_a_maven_repository_without_mvnw_gets_the_wrapper_as_its_own (test_wrappers.WrapperTest.test_a_maven_repository_without_mvnw_gets_the_wrapper_as_its_own) ... ok
+test_a_wrapper_that_is_there_or_a_command_that_does_not_run_one_writes_nothing (test_wrappers.WrapperTest.test_a_wrapper_that_is_there_or_a_command_that_does_not_run_one_writes_nothing) ... ok
+
+----------------------------------------------------------------------
+Ran 928 tests in 1107.127s
+
+OK (skipped=9)
+
+verify: all gates passed
+== make -f delivery/Makefile verify
+test_whats_next_names_one_slice_one_stage_one_command_from_the_boards_artifacts (test_whats_next.WhatsNextTest.test_whats_next_names_one_slice_one_stage_one_command_from_the_boards_artifacts) ... ok
+test_an_ant_build_has_no_wrapper_so_the_runner_installs_ant_until_the_build_moves (test_wrappers.AntTest.test_an_ant_build_has_no_wrapper_so_the_runner_installs_ant_until_the_build_moves) ... ok
+test_a_command_that_changes_directory_first_needs_the_build_tool_and_not_cd (test_wrappers.RecordedToolTest.test_a_command_that_changes_directory_first_needs_the_build_tool_and_not_cd) ... ok
+test_the_tools_a_recorded_command_runs_are_every_segment_past_the_shell_words (test_wrappers.RecordedToolTest.test_the_tools_a_recorded_command_runs_are_every_segment_past_the_shell_words) ... ok
+test_a_gradle_build_below_the_root_gets_the_wrapper_beside_its_build_file (test_wrappers.WrapperTest.test_a_gradle_build_below_the_root_gets_the_wrapper_beside_its_build_file) ... ok
+test_a_maven_repository_without_mvnw_gets_the_wrapper_as_its_own (test_wrappers.WrapperTest.test_a_maven_repository_without_mvnw_gets_the_wrapper_as_its_own) ... ok
+test_a_wrapper_that_is_there_or_a_command_that_does_not_run_one_writes_nothing (test_wrappers.WrapperTest.test_a_wrapper_that_is_there_or_a_command_that_does_not_run_one_writes_nothing) ... ok
+
+----------------------------------------------------------------------
+Ran 928 tests in 1104.190s
+
+OK (skipped=9)
+python3 delivery/scripts/check-convergence.py
+  path-to-production: `scripted` — below `pipeline-decides`
+  integration: `unknown` — unrecorded: nothing has established it; /drive asks before the first slice
+  safety-net: `tests-pass` — below `mutation-measured`
+  structure: `named` — below `typed`
+  platform: `supported` — below `audited`
+  constitution: `template` — below `in-full`
+  data: `settled` — at target
+  infrastructure: `settled` — at target
+  strategy: `done` — at target
+check-convergence: 3 of 9 axes at target; the map is delivery/docs/convergence.md
+
+verify: all gates passed
+ended 2026-10-03T08:30:31Z
+done verify=0 delivery=0

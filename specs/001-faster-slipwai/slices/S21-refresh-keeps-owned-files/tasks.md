@@ -166,7 +166,7 @@ green, then `make lint typecheck check-structure`. Commit.
 
 ### T005 — Both full gates (host task)
 
-- [ ] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T004;
+- [x] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T004;
   both green (AC-S21-11). Confirm the diff touches under `delivery/` only `delivery/survey/pinned.md`, `VERSION` is
   `1.5.2.dev0`, and `generate`, `add-service` and `migrate` write what they wrote (their existing tests are in
   `make verify`). Then the demo from [quickstart.md](quickstart.md).
@@ -319,3 +319,18 @@ each new assertion seen failing under its mutation in a disposable clone (G1, G2
 **T010 done** (`3561b99`): `follows_record()` in `convergence.py`, called from `reconciled()`; RED seen as stated, on
 the example and on all nine rung pairs of the sweep; the three holds green before and after; `reconciled` has one
 caller (`with_reconciled()`). **T011 done** with the commit that ticks it.
+
+## Phase 4 record (2026-10-03, cruise iteration 4)
+
+**T005 done.** Both gates green at `345dded` with `CRUISE_RUNNER=1` and `CRUISE_ITERATION=4` set: `make verify` —
+928 tests, `OK (skipped=9)`, *verify: all gates passed*; `make -f delivery/Makefile verify` — *verify: all gates
+passed*, `check-convergence` 3 of 9 axes at target. Evidence: `demo/gates-345dded.txt` (an earlier run at `9950bd2`
+was stopped by the host when the adversary pass found F1; `demo/gates-9950bd2.txt` says so). `VERSION` is
+`1.5.2.dev0`; under `delivery/` only `survey/pinned.md` changed. Demo 1 was accepted by `drive-hand` at `9950bd2`
+over AC-S21-1 to -11; AC-S21-12 (added by D28 after the demo) is held by T010's tests and the gates, and was not
+shown to the hand. Adversary: two seams, six findings — F1 fixed (`3561b99`), A1 open as `S23-refusal-in-subdirectory`,
+F2–F5 in the Parking Lot (D29). Mutation: not run — this repository records no mutation command (`story-split.md`,
+Parking Lot; as S00 and S20). The map: no rung reached by this slice. From this slice on, a `/survey` in this
+repository no longer resets `.specify/cruise.json` or the owner brief (the fix is in `src/slipwai/`, which this
+checkout runs), so D15's revert is no longer needed; the stale `strategy.before` sentence (D16) goes at the next
+`/survey` a person or a later slice runs.

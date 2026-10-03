@@ -1,16 +1,17 @@
 # Benchmark — 001-faster-slipwai
 
-Drawn 2026-10-03T06:48:43Z at `b0dde0c` from 3 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
+Drawn 2026-10-03T08:30:53Z at `345dded` from 4 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
 
 ## Slices
 
-2 slice(s) recorded, 3h43m+ in all.
+3 slice(s) recorded, 4h44m+ in all.
 
 | slice | delegate/cycle | wall | in | out | models | sessions | converge | +tasks | gaps | mutation | adversary | demo | verify✗ | rework | tasks | files | ±lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | (feature) | — | 49m23s | 4.2M | 54.5k | claude-fable-5-1 | 1 | 0 | 0 | 0/0 | — | 0 | — | 0 | 0 | — | — | — |
 | S00-run-path | rule/rule | 1h44m+ | 20.1M (+1 unread) | 157k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 1 | 7/5 | — | 0 | accepted | 1 | 0 | 9 | 44 | +3151/-203 |
 | S20-slice-scope-root | rule/rule, task/example, task/rule | 1h09m+ | 22.8M (+3 unread) | 113.4k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 8 | 8/6 | — | 9 | accepted | 1 | 0 | 34 | 44 | +3998/-36 |
+| S21-refresh-keeps-owned-files | rule/rule, task/rule | 1h01m | 19.4M | 81.3k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 1 | 3 | 8/8 | — | 6 | accepted | 0 | 0 | 11 | 42 | +3092/-24 |
 
 delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes wall a floor because an unbracketed stage is missing; tokens are not prices.
 
@@ -65,9 +66,27 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | adversary | 2026-10-03 06:05 | 4m42s | 2M | 8.3k | claude-fable-5-1 | drive-adversary | yes | findings=9, seams=2, driver=cruise |
 | implement | 2026-10-03 06:09 | 3m23s | 1.8M | 14.6k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
 
+### S21-refresh-keeps-owned-files — 1h01m
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-03 06:49 | 1m44s | 602.9k | 4.4k | claude-fable-5-1 | — | no | gaps=8, driver=cruise |
+| plan | 2026-10-03 06:51 | 1m19s | 601.8k | 8.5k | claude-fable-5-1 | — | no | driver=cruise |
+| tasks | 2026-10-03 06:53 | 1m44s | 414.2k | 3.1k | claude-fable-5-1, claude-sonnet-5-5 | drive-tasks | yes | driver=cruise |
+| implement | 2026-10-03 06:54 | 11m52s | 3.7M | 12.4k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=rule, cycle=rule, split=0, driver=cruise |
+| converge | 2026-10-03 07:06 | 9m31s | 3.1M | 5.3k | claude-fable-5-1 | drive-converge | yes | driver=cruise |
+| implement | 2026-10-03 07:16 | 5m21s | 1.2M | 10.2k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+| gaps | 2026-10-03 07:21 | 6m46s | 1.2M | 2.2k | claude-fable-5-1 | drive-gaps | yes | gaps=8, driver=cruise |
+| implement | 2026-10-03 07:28 | 4m18s | 1M | 9.2k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+| demo | 2026-10-03 07:33 | 5m59s | 2.5M | 7k | claude-fable-5-1 | drive-hand | yes | outcome=accepted, driver=cruise |
+| adversary | 2026-10-03 07:39 | 6m10s | 2.7M | 9.1k | claude-fable-5-1 | drive-adversary | yes | findings=6, seams=2, driver=cruise |
+| skipper | 2026-10-03 07:45 | 2m51s | 1.1M | 5.5k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-03 07:49 | 3m39s | 1.2M | 4.4k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+
 ## Notes
 
 - S20-slice-scope-root: implemented as rule/rule and task/example and task/rule — its wall compares with neither
+- S21-refresh-keeps-owned-files: implemented as rule/rule and task/rule — its wall compares with neither
 - (feature) ground: cut off — a new `bosun` entry started while it was open; its wall is real, its signals were never reported
 - S00-run-path mutation: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S20-slice-scope-root gaps: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
