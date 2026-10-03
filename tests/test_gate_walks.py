@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from gate_audit import Audited
 from support import FactoryTestCase
 
 from slipwai.assets import TOOLKIT_ROOT
@@ -20,6 +21,7 @@ MIGRATIONS_LINE = (
     "check-migrations: every migration is additive, or a marked contraction of an earlier one; "
     "Go migrate images embed their .sql files"
 )
+PRUNED = (".venv", "node_modules", "__pycache__", ".git")
 GATES = {"scripts/check-imports.py": IMPORTS_LINE, "scripts/check-migrations.py": MIGRATIONS_LINE}
 
 
@@ -28,11 +30,13 @@ def run_gate(repo: Path, script: str) -> subprocess.CompletedProcess[str]:
 
 
 def entries(repo: Path) -> int:
-    """The test's own enumeration of `apps/` and `packages/`: every name every directory in them holds."""
+    """The test's own enumeration of `apps/` and `packages/`: every name every directory in them holds, the
+    four directories nobody reads counted as names and not entered."""
     total = 0
     for top in ("apps", "packages"):
         for _, directories, files in os.walk(repo / top):
             total += len(directories) + len(files)
+            directories[:] = [name for name in directories if name not in PRUNED]
     return total
 
 
@@ -105,3 +109,52 @@ class GateWalkListingTest(FactoryTestCase):
             for script, line in GATES.items():
                 with self.subTest(script=script):
                     self.assertEqual(reported(run_gate(repo, script), line), before[script] + 1)
+
+
+class GateWalkPrunedTest(FactoryTestCase):
+    """R2: `.venv`, `node_modules`, `__pycache__` and `.git` are never descended, at any depth, in any walk."""
+
+    def plant(self, repo: Path, under: str) -> None:
+        base = repo / under
+        (base / ".venv/lib/pkg/domain").mkdir(parents=True)
+        (base / ".venv/lib/pkg/domain/bad.py").write_text("from ..adapters.store import save\n")
+        (base / "node_modules/pkg/migrations").mkdir(parents=True)
+        (base / "node_modules/pkg/migrations/0001_drop.sql").write_text("DROP TABLE events;\n")
+        (base / "__pycache__").mkdir()
+        (base / "__pycache__/x.py").write_text("x = 1\n")
+        (base / ".git/hooks").mkdir(parents=True)
+        (base / ".git/hooks/x").write_text("")
+
+    def test_the_four_names_are_not_read_where_they_are_planted(self) -> None:
+        """R2e1 and R2e2: beside the source and two directories deeper, both gates pass, the count follows."""
+        for under in ("apps/service", "apps/service/src/a/b"):
+            with self.subTest(under=under), tempfile.TemporaryDirectory() as directory:
+                repo = self.generate(directory, "pruned", "event-modelling", "python")
+                skeleton = entries(repo)
+                self.plant(repo, under)
+                for script, line in GATES.items():
+                    count = reported(run_gate(repo, script), line)
+                    self.assertEqual(count, entries(repo))
+                    self.assertGreaterEqual(count, skeleton + 4)
+
+    def test_a_pruned_directory_in_a_web_app_hides_nothing_from_rule_4(self) -> None:
+        """R2e3."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "pruned-web", "event-modelling", "python", frontend="react-vite")
+            vendored = repo / "apps/web/node_modules/pkg/src"
+            vendored.mkdir(parents=True)
+            (vendored / "x.ts").write_text("import { y } from '../../../../service/src/domain/thing';\n")
+            reported(run_gate(repo, "scripts/check-imports.py"), IMPORTS_LINE)
+
+    def test_no_pruned_directory_is_listed(self) -> None:
+        """R2e4: under the audit hook, no listing of any path inside one of the four."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "pruned-audit", "event-modelling", "python")
+            self.plant(repo, "apps/service/src/a/b")
+            for script in GATES:
+                with self.subTest(script=script):
+                    audited = Audited(repo, script)
+                    self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
+                    self.assertTrue(any(path.startswith("apps/service/src/a/b") for path in audited.listed))
+                    inside = [path for path in audited.listed if set(path.split("/")) & set(PRUNED)]
+                    self.assertEqual(inside, [])

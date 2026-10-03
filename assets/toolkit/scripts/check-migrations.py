@@ -102,7 +102,6 @@ def migrations() -> list[Path]:
                 and path.suffix in SUFFIXES
                 and MIGRATION_NAME.match(path.name)
                 and path.parent.name in MIGRATION_DIRECTORIES
-                and "node_modules" not in path.parts
             ):
                 found.append(path)
     return found
