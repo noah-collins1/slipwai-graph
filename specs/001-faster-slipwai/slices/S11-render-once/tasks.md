@@ -425,6 +425,22 @@ new module; the fragment if a sentence of it changes (`Level PATCH; VERSION alre
 **Files:** `assets/toolkit/scripts/event-model/render-plan.ts`, `tests/test_render_files_report.py`,
 `tests/test_render_files.py`, the skip decorators of `tests/test_render_*.py`.
 
+#### T013 — `MEDIUM` — The installed puppeteer version joins the renderer key (D70; AC-S11-6)
+
+- [ ] Pass 1's lead, decided as D70: the key gains one part — the `version` in
+  `scripts/event-model/.mermaid-cli/node_modules/puppeteer/package.json`, length-prefixed like the others, after the
+  mermaid version and before the script bytes; a missing or unreadable manifest fails as the mermaid-cli one does.
+
+**RED:** in e6's sweep, the stand-in's `puppeteer` version changed → every diagram redrawn on the next run (today:
+none). **GREEN (the class):** every package the session loads from the prefix (`entryOf` and its callers) has its
+installed version in the key; the comment on `rendererKey` lists the closed set as D70 gives it. The README's
+sentence on forcing a redraw gains the clause on a browser upgraded behind an `executablePath`; the fragment's line on
+what the key covers names Puppeteer; `tests/test_render_docs.py` follows both.
+
+**Files:** `assets/toolkit/scripts/event-model/render-session.ts`, `assets/toolkit/docs/event-model/README.md`,
+`changelog.d/render-once.md`, `tests/test_render_current.py`, `tests/test_render_docs.py`, `tests/render_fixture.py`
+(additions only).
+
 ## Convergence
 
 *(the verdict, written by `drive-converge`)*

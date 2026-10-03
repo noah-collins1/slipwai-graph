@@ -14,7 +14,7 @@ stage, after tasks.
 one on every run after deleting `slices/` and `segments/` wholesale. After this slice the renderer opens at most
 one browser session per run, on the first diagram it has to draw, and draws only the diagrams whose SVG cannot be
 shown to be current: the hash of the source the model produces now, the key of the renderer that drew it, and a
-closing `</svg>` (D68). An SVG reaches its name only by a rename of a finished file; what the model no longer
+closing `</svg>` (D68; the key's closed set is D68's rule 2 with the installed puppeteer version added by D70). An SVG reaches its name only by a rename of a finished file; what the model no longer
 produces is removed by name; text files are written only when they differ; the closing line says how many
 diagrams were drawn and how many were left (D69). Nothing is skipped under a CI marker. A PATCH: no setting, no
 flag, no new generated file a project is asked about; `VERSION` stays `1.6.0.dev0`, one fragment.

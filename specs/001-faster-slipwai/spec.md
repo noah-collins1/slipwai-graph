@@ -1201,10 +1201,12 @@ saving and the single browser is the saving everywhere.
   key; the file ends with `</svg>` once trailing whitespace is trimmed; and no CI marker is set (`CI`,
   `GITHUB_ACTIONS` or `GITLAB_CI` non-empty). (D68)
 - **AC-S11-6** — Given the renderer key, then it is one SHA-256 over the installed mermaid-cli version and the
-  installed mermaid version, each read from its `package.json` under `scripts/event-model/.mermaid-cli/`; the bytes
+  installed mermaid version and the installed puppeteer version (D70), each read from its `package.json` under
+  `scripts/event-model/.mermaid-cli/`; the bytes
   of `render.ts`, of `patch-mermaid-swimlanes.ts` and of any other script the drawing runs through (the plan names
   the closed set); and the bytes of the file `MERMAID_PUPPETEER_CONFIG` names, or a fixed word where it is unset.
-  A change to any one of them redraws every diagram on the next run. (D68)
+  A change to any one of them redraws every diagram on the next run. A browser upgraded behind an `executablePath`
+  the config names is not noticed, and the page says so beside the sentence on forcing a redraw. (D68, D70)
 - **AC-S11-7** — Given an SVG with no renderer line (one an earlier factory drew), then it is redrawn, once. Given
   the second line, then `extractHash` reads the source stamp exactly as before, and the page carries both comments
   where it inlines the picture. (D68)
