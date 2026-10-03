@@ -101,7 +101,7 @@ same scripts; T005 and T006 add tests beside them. Needs T001 and T002.
 
 ### T003 — [P] [US1] Each directory is listed once, and the pass line says how many entries (R1 · AC-S01-1, -2, -7, -9)
 
-- [ ] **Rule R1.** `listing(top)`, the memoised per-top listing in `check-imports`, `check-migrations` using the same
+- [x] **Rule R1.** `listing(top)`, the memoised per-top listing in `check-imports`, `check-migrations` using the same
   listing, and the count on the pass line. Test module `tests/test_gate_walks.py` (new).
 
 **RED** (each seen failing for its stated reason before the scripts are touched):
@@ -136,7 +136,7 @@ typecheck check-structure`. Commit, level line (PATCH, `VERSION` not raised).
 
 ### T004 — [P] [US1] Four names are never descended (R2 · AC-S01-3)
 
-- [ ] **Rule R2.** `.venv`, `node_modules`, `__pycache__`, `.git`, at any depth, in every walk. Needs T003 (the helper
+- [x] **Rule R2.** `.venv`, `node_modules`, `__pycache__`, `.git`, at any depth, in every walk. Needs T003 (the helper
   and `tests/test_gate_walks.py`). Uses `tests/gate_audit.py` (T002).
 
 **RED** (in `tests/test_gate_walks.py`):
@@ -167,7 +167,7 @@ T002's helper is found wanting).
 
 ### T005 — [P] [US1] `target` is build output only beside a `pom.xml` (R3 · AC-S01-4, -5)
 
-- [ ] **Rule R3.** Maven's directory is skipped; a source directory of that name is read. Needs T004 (helper in both
+- [x] **Rule R3.** Maven's directory is skipped; a source directory of that name is read. Needs T004 (helper in both
   scripts). Test module `tests/test_gate_walks_target.py` (new).
 
 **RED:**
@@ -195,7 +195,7 @@ check-structure`. Commit, level line (PATCH, `VERSION` not raised).
 
 ### T006 — [P] [US1] `project.json` is opened at most once (R5 · AC-S01-8)
 
-- [ ] **Rule R5.** One read per run. Needs T005 (same script). Plan numbers this R5; the rule R4 sits between, see T007.
+- [x] **Rule R5.** One read per run. Needs T005 (same script). Plan numbers this R5; the rule R4 sits between, see T007.
   Uses `tests/gate_audit.py`.
 
 **RED** (in `tests/test_gate_walks.py`):
@@ -217,7 +217,7 @@ typecheck check-structure`. Commit, level line (PATCH, `VERSION` not raised).
 
 ### T007 — [P] [US1] Findings and failure output are today's (R4 · AC-S01-6)
 
-- [ ] **Rule R4 — a hold, checked last in the story.** Same findings, same order, same bytes on stderr, no count.
+- [x] **Rule R4 — a hold, checked last in the story.** Same findings, same order, same bytes on stderr, no count.
   e1 and e2 are the pinned tests written at T001, **already green and unchanged**; e3 is five existing modules run
   with no edit. The task writes no new test: a test written now would pass the moment it was written (the rule
   produces no behaviour of its own; the walk change of T003–T006 is what it guards). It sits here, after the walk is
@@ -253,7 +253,7 @@ run of the gate on `main` that passed. `NARROW` is: checked out on `slice/S1`, n
 
 ### T008 — [P] [US2] Off a slice branch, and in CI, the run is today's (R6 · AC-S01-11, -12)
 
-- [ ] **Rule R6 — every example is a hold: green today, written as holds, saying so, observed passing.** The task pins
+- [x] **Rule R6 — every example is a hold: green today, written as holds, saying so, observed passing.** The task pins
   what R7 must not break, and is committed before any production change in this story. Test module
   `tests/test_codegraph_narrowed.py` (new). Uses `tests/gate_audit.py`.
 
@@ -279,7 +279,7 @@ test_cruise_index"`, then `make lint typecheck check-structure`. Commit (tests o
 
 ### T009 — [P] [US2] On a slice branch the gate hashes what changed (R7 · AC-S01-10)
 
-- [ ] **Rule R7.** One changed file, one hash, and the line says so. Needs T008 (same test file, holds in place).
+- [x] **Rule R7.** One changed file, one hash, and the line says so. Needs T008 (same test file, holds in place).
   Uses `tests/gate_audit.py` and the fake `codegraph` CLI.
 
 **RED** (in `tests/test_codegraph_narrowed.py`; each fails today because every run hashes every file and prints
@@ -314,7 +314,7 @@ typecheck check-structure`. Commit, level line (PATCH, `VERSION` not raised).
 
 ### T010 — [P] [US2] What the memory cannot vouch for is hashed (R8 · AC-S01-13, -14, -15, -21)
 
-- [ ] **Rule R8.** Dirty-then-reverted, a rewritten row, a file git was told not to report. Needs T009. Test module
+- [x] **Rule R8.** Dirty-then-reverted, a rewritten row, a file git was told not to report. Needs T009. Test module
   `tests/test_codegraph_memory.py` (new).
 
 **RED** (each fails today for the reason given; each is **narrowed to miss it** until the candidates are widened, and
@@ -346,7 +346,7 @@ typecheck check-structure`. Commit, level line (PATCH, `VERSION` not raised).
 
 ### T011 — [P] [US2] A memory that cannot be used means the whole run, said in one clause (R9 · AC-S01-16, -17, -18)
 
-- [ ] **Rule R9.** Never a failure for that alone, never a narrower pass. Needs T010 (same test file).
+- [x] **Rule R9.** Never a failure for that alone, never a narrower pass. Needs T010 (same test file).
 
 **RED** (in `tests/test_codegraph_memory.py`; each fails at T010 because the unusable memory either yields a
 narrower pass without the clause or an error):
@@ -374,7 +374,7 @@ typecheck check-structure`. Commit, level line (PATCH, `VERSION` not raised).
 
 ### T012 — [P] [US2] The memory is written only by a pass, and git never sees it (R10 · AC-S01-19, -20)
 
-- [ ] **Rule R10.** No renewal after a failure or a skip; nothing in `git status`; it lives and dies with
+- [x] **Rule R10.** No renewal after a failure or a skip; nothing in `git status`; it lives and dies with
   `.codegraph/`. Needs T011 (same test file).
 
 **RED / hold, per example** (in `tests/test_codegraph_memory.py`). Each is observed at T011's tree before the
@@ -409,7 +409,7 @@ test_code_index test_cruise_index"`, then `make lint typecheck check-structure`.
 
 ### T013 — [US3] The release says what it is (R11 · AC-S01-22)
 
-- [ ] **Rule R11.** One `PATCH` fragment; `VERSION` unchanged; nothing changed under `delivery/` beyond T001's one
+- [x] **Rule R11.** One `PATCH` fragment; `VERSION` unchanged; nothing changed under `delivery/` beyond T001's one
   file. Needs T007 and T012 (both stories done; the fragment names what both did).
 
 **RED:** none — `tests/test_changelog.py` is already in the suite. Both examples are holds on a tree the fragment
