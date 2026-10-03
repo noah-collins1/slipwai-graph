@@ -19,7 +19,8 @@ D=$(mktemp -d) && ./slipwai generate shop --profile event-modelling --backend py
    migration → `make check-migrations` passes.
 5. **The code index on a slice branch.** With `codegraph` on `PATH`: `./init --extension codegraph`, commit,
    `make check-codegraph` on `main` (today's line), `git checkout -b slice/S1`, `make check-codegraph` → `hashed 0
-   of N`; edit one source file, `scripts/codegraph sync`, run again → `hashed 1 of N`; `CI=true make
+   of N … the integrity check was not run here: it runs on the trunk, on any other branch and in CI` (a first
+   run within two seconds of the checkout hashes every file once); edit one source file, `scripts/codegraph sync`, run again → `hashed 1 of N`; `CI=true make
    check-codegraph` → today's line. Without the CLI, the stand-in the tests use (`FAKE_CODEGRAPH` in
    `tests/test_code_index_health.py`, put on `PATH` as `codegraph`) builds a real SQLite index the gate reads.
 

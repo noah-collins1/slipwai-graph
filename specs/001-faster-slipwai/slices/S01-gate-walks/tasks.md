@@ -670,7 +670,7 @@ classes attacked in scratch projects under `/tmp`; nothing `CRITICAL` or `HIGH` 
 Two `drive-gaps` delegates (host model, fresh context), one per seam, at `26e3d2c`: no `CRITICAL` or `HIGH`; four
 `MEDIUM`, nine `LOW`. D51 says what each becomes. The ones new with the slice:
 
-- [ ] T024 [US1] **MEDIUM** (walking gates G1, G4) — tests only. No test compares a count on a tree where `under()`
+- [x] T024 [US1] **MEDIUM** (walking gates G1, G4) — tests only. No test compares a count on a tree where `under()`
   is called: `GateWalkListingTest.skeleton()` generates with no frontend, though the reference skeleton is Python
   with `react-vite`; with the reuse loop of `under()` deleted the gate prints 98, still under 100, and no test
   fails. And AC-S01-3's *findings equal those of the tree without them* is observed only on a passing tree.
@@ -680,7 +680,7 @@ Two `drive-gaps` delegates (host model, fresh context), one per seam, at `26e3d2
   (`plant_import_violations`, `plant_migration_violations` in `tests/test_gate_walks_pinned.py`) → stderr byte for
   byte the pinned findings. **GREEN** closes the class *a count or a finding asserted only on a tree that does not
   reach the code*. **Files:** `tests/test_gate_walks.py`, `tests/test_gate_walks_recorded.py`.
-- [ ] T025 [US1] **MEDIUM** (G2) — `check-migrations` lists directories outside `listing()`: `go_migrate_embeds()`
+- [x] T025 [US1] **MEDIUM** (G2) — `check-migrations` lists directories outside `listing()`: `go_migrate_embeds()`
   lists `apps/` and each `migrations/` again, and `check()` lists a marked contraction's directory once more, so
   its count (79 on the reference skeleton) is not the sum D47 defines (86 listed) and *each directory is now
   listed once* is untrue of it. **RED** — under `tests/gate_audit.py`: on the reference skeleton, on one with a
@@ -689,14 +689,14 @@ Two `drive-gaps` delegates (host model, fresh context), one per seam, at `26e3d2
   both walking scripts goes through `listing()` or is counted by it; findings and failure output unchanged (the
   pinned tests, `tests/test_gates.py`, `tests/test_go_migrate_embed.py`). **Files:**
   `assets/toolkit/scripts/check-migrations.py`, `tests/test_gate_walks.py`. PATCH.
-- [ ] T026 [US1] **LOW** (G3, G6) — sentences that ship and are now untrue: the `deployables()` docstring in
+- [x] T026 [US1] **LOW** (G3, G6) — sentences that ship and are now untrue: the `deployables()` docstring in
   `check-imports.py` (*inside every directory under `apps/` and `packages/` whatever it is called*), the module
   docstring of `check-migrations.py` (*every migration file under every `apps/*/` and `packages/*/`*),
   `src/slipwai/project/guidance.py` (the sentence that ships in a project's `docs/architecture.md`), and
   `docs/services.md`. Each names the five directories not descended, in a clause. **GREEN** closes the class *a
   shipped sentence about what these two gates walk* — search `assets/`, `src/slipwai/project/` and `docs/` for
   both scripts' names and correct every one. **Files:** those four, and any test that holds the sentence. PATCH.
-- [ ] T027 [US2] **MEDIUM** (code-index G1, G3, G5) — what a developer is told about the narrowed run. The gate's
+- [x] T027 [US2] **MEDIUM** (code-index G1, G3, G5) — what a developer is told about the narrowed run. The gate's
   module docstring, the block `assets/toolkit/scripts/extensions/codegraph/init.py` writes into `AGENTS.md`, the
   docstring of `agents/code_index.py` and `src/slipwai/project/docs.py` say the gate always integrity-checks and
   rebuilds, and nothing that ships names `.codegraph/gate-memory.json`. The narrowed pass line says the integrity
@@ -710,12 +710,12 @@ Two `drive-gaps` delegates (host model, fresh context), one per seam, at `26e3d2
   that deleting that file makes the next run whole. **Files:** `assets/toolkit/scripts/check-codegraph.py`,
   `assets/toolkit/scripts/agents/code_index.py` (docstring only), `assets/toolkit/scripts/extensions/codegraph/init.py`,
   `src/slipwai/project/docs.py`, the three `tests/test_codegraph_*.py`, and any test that holds those texts. PATCH.
-- [ ] T028 [US2] **MEDIUM** (G2) — tests only. AC-S01-17's *git unable to list what changed* has no test; three
+- [x] T028 [US2] **MEDIUM** (G2) — tests only. AC-S01-17's *git unable to list what changed* has no test; three
   routes return it. **Hold with teeth** — after a whole run on `main`, on `slice/S1`, the loose tree object of the
   memory's commit moved away (`cat-file -e` passes, `git diff <commit>` fails) → today's line plus `(compared
   everything: git could not say what changed)`, exit 0; shown failing with the route returning an empty set.
   **Files:** `tests/test_codegraph_memory.py` or `tests/test_codegraph_bytes.py`.
-- [ ] T029 [US2] **LOW** (G6) — `files_of` keys its records with the platform's separator while the index and git
+- [x] T029 [US2] **LOW** (G6) — `files_of` keys its records with the platform's separator while the index and git
   use `/`; on Windows every file in a subdirectory would never be vouched for (safe, no saving). **GREEN** closes
   the class *a path compared across git, the index and the filesystem*: one spelling, POSIX, everywhere a path is a
   key. **Files:** `assets/toolkit/scripts/check-codegraph.py`, a test where one can be written on this platform.
