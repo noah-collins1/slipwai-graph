@@ -5,6 +5,8 @@ Each test drives `check-slice-scope` through its command line in a temporary rep
 """
 from __future__ import annotations
 
+import re
+import shlex
 import subprocess
 import tempfile
 from pathlib import Path
@@ -13,7 +15,8 @@ from typing import Any, cast
 import test_slice_scope_base as base_tests
 from test_slice_scope_root import SliceScopeFixtures, git
 
-FETCH_MAIN = "git fetch origin main"
+FETCH = "git fetch origin {0}:refs/remotes/origin/{0}"
+FETCH_MAIN = FETCH.format("main")
 LOST = "specs/f/plan.md"
 
 
@@ -76,6 +79,48 @@ class NoBaseTest(SliceScopeFixtures):
     def origin_of(self, clone: Path) -> Path:
         return Path(out(clone, "remote", "get-url", "origin").removeprefix("file://"))
 
+    def printed_command(self, clone: Path, prefix: str, env: dict[str, str] | None = None) -> list[str]:
+        """The command the gate prints between backticks — run in `clone` — as its argument list."""
+        result = self.run_gate(clone, env)
+        text = result.stdout + result.stderr
+        found = re.search(r"`(" + re.escape(prefix) + r"[^`]*)`", text)
+        self.assertIsNotNone(found, text)
+        command = shlex.split(found.group(1) if found else "")
+        subprocess.run(command, cwd=clone, check=True, capture_output=True)
+        return command
+
+    def test_the_printed_fetch_writes_the_ref_it_says_is_missing(self) -> None:
+        """G1: in a single-branch clone the command the gate prints is run, and the gate has moved on."""
+        clone = self.clone(self.origin(), "--single-branch", "--branch", "slice/S1")
+        self.fails_with(clone, "`main`")
+        self.printed_command(clone, "git fetch origin")
+        self.assertIn("compared with `main`", self.run_gate(clone).stdout)
+
+    def test_the_printed_fetch_then_unshallow_reach_a_verdict(self) -> None:
+        """G1: a depth-1 single-branch clone: the fetch, then the `--unshallow` line, each run, end in a verdict."""
+        clone = self.clone(self.origin(), "--depth", "1", "--single-branch", "--branch", "slice/S1")
+        self.fails_with(clone, "`main`")
+        self.printed_command(clone, "git fetch origin")
+        self.fails_with(clone, "shares no history with `main` at this depth")
+        self.printed_command(clone, "git fetch --unshallow origin")
+        result = self.run_gate(clone)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("compared with `main`", result.stdout)
+
+    def test_the_passed_over_notes_fetch_writes_the_branch_it_names(self) -> None:
+        """G1: `ci.branch` names `develop`, which the origin has and this clone's ref list does not."""
+        origin = self.repo(self.root(), ci={"branch": "develop"})
+        git(origin, "branch", "develop", "main")
+        self.commit(origin, "specs/f/slices/S1/a.md")
+        clone = self.clone(origin, "--no-single-branch", "--branch", "slice/S1")
+        git(clone, "update-ref", "-d", "refs/remotes/origin/develop")
+        self.assertIn("`ci.branch` names `develop`, which has no branch here", self.run_gate(clone).stdout)
+        self.printed_command(clone, "git fetch origin develop")
+        after = self.run_gate(clone)
+        self.assertEqual(after.returncode, 0, after.stderr)
+        self.assertIn("compared with `develop`", after.stdout)
+        self.assertNotIn("has no branch here", after.stdout)
+
     def test_an_unrelated_trunk_is_not_a_slice_branchs_trunk(self) -> None:
         """e4: a full repository whose `main` is an unrelated root."""
         repo = self.origin()
@@ -125,10 +170,10 @@ class NoBaseTest(SliceScopeFixtures):
     def test_the_fetch_named_is_the_targets_then_the_recorded_trunk_then_main(self) -> None:
         """D30: the name the line tells a person to fetch."""
         repo = self.no_trunk_ref()
-        self.fails_with(repo, "git fetch origin release", env={"GITHUB_BASE_REF": "release"})
+        self.fails_with(repo, FETCH.format("release"), env={"GITHUB_BASE_REF": "release"})
         recorded = self.repo(self.root(), ci={"branch": "trunk"})
         git(recorded, "branch", "-D", "main")
-        self.fails_with(recorded, "git fetch origin trunk")
+        self.fails_with(recorded, FETCH.format("trunk"))
 
     def forge(self, variable: str) -> subprocess.CompletedProcess:
         """A detached depth-1 checkout of the slice, as a forge makes it, with the named variable set."""

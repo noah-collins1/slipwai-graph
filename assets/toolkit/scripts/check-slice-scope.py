@@ -319,6 +319,12 @@ def usable(value: object) -> str | None:
     return name
 
 
+def fetch_command(name: str) -> str:
+    """The fetch that writes the remote-tracking ref this script looks for: a bare `git fetch origin <name>` in a
+    single-branch clone fetches the commit into `FETCH_HEAD` and no ref, so the gate would say the same again."""
+    return f"git fetch origin {name}:refs/remotes/origin/{name}"
+
+
 def merge_base() -> Base:
     """Where the branch left the trunk: the name `ci.branch` of the working tree's `project.json` records where it
     is usable and has a ref, else `main` where it has one, else `master` — so `master` counts only as the recorded
@@ -336,7 +342,7 @@ def merge_base() -> Base:
             passed_over = f"`ci.branch` names `{value.strip()}`, which is not a branch name"
         elif not bases_of(recorded)[0]:
             passed_over = (f"`ci.branch` names `{recorded}`, which has no branch here — "
-                           f"`git fetch origin {recorded}` would bring it")
+                           f"`{fetch_command(recorded)}` would bring it")
     for name in names:
         exists, base = bases_of(name)
         if exists:
@@ -691,7 +697,7 @@ def check(branch: str | None) -> tuple[list[str], str, str, str]:
             return violations, "", note, not_checked(slice_id, found_base.trunk)
         trunk = found_base.trunk
         if not found_base.has_ref:
-            line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held — run `git fetch origin {trunk}`"
+            line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held — run `{fetch_command(trunk)}`"
         elif (git("rev-parse", "--is-shallow-repository") or "").strip() == "true":
             line = f"slice/{slice_id} shares no history with `{trunk}` at this depth — run `git fetch --unshallow origin`"
         else:

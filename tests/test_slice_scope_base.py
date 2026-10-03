@@ -126,7 +126,7 @@ class RecordedNameTest(SliceScopeBaseTest):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("project.json", result.stderr)
         self.assertIn("`ci.branch` names `nowhere`, which has no branch here", result.stderr)
-        self.assertIn("git fetch origin nowhere", result.stderr)
+        self.assertIn("git fetch origin nowhere:refs/remotes/origin/nowhere", result.stderr)
 
     def test_the_bases_own_record_naming_an_absent_trunk_is_said_on_the_pass_line(self) -> None:
         """e7: the base records `develop`, which has no ref here; the slice's own file is green against `main`."""
@@ -136,7 +136,7 @@ class RecordedNameTest(SliceScopeBaseTest):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("touches only what one slice may", result.stdout)
         self.assertIn("`ci.branch` names `develop`, which has no branch here", result.stdout)
-        self.assertIn("`git fetch origin develop`", result.stdout)
+        self.assertIn("`git fetch origin develop:refs/remotes/origin/develop`", result.stdout)
 
     def test_a_full_ref_name_reads_as_the_branch(self) -> None:
         """e6: `refs/heads/trunk` is `trunk`; a `main` minted at HEAD does not replace it."""
