@@ -590,4 +590,24 @@ with a host-surface change committed, no forge variable set, and a full clone.
   branch name; given a `ci.branch` that is not a string, then the output says the record was passed over; given a
   developer's no-base failure, then it is one line of its own on stderr, exit 1, and the header *reaches outside
   what one slice may touch* appears only where a path was refused or a record is about to be lost.
+- **AC-S22-29** — *Added by D35 (adversary B1, A1).* Given a slice that commits `ci.branch: zz` and an unrelated-root
+  `origin/zz`, a full clone with `origin/main`, and a host-surface change, when the check runs — attached, detached
+  with a branch variable, with and without a CI marker — then `zz` is passed over and said so, the base is
+  `main`'s and the change is refused. Given a usable pull-request target with a ref that shares no history with
+  the branch, whatever the record names, then there is no base: a developer's checkout exits 1 saying the branch
+  shares no history with the target, a forge's says NOT checked, and the pass line is never printed.
+- **AC-S22-30** — *Added by D35 (adversary A2, A3, B4).* Given a `ci.branch` holding a NUL or a lone surrogate, then
+  the check ends in a verdict against `main` with no traceback. Given `project.json` or the model committed as a
+  symlink to a device, a pipe or a file larger than the cap, then the check ends in a verdict within seconds, with
+  no traceback and without reading it. Given a checkout git cannot read at all, then the exit is 0 as before the
+  slice and stderr says git could not read the checkout, with git's own first line, and nothing about history.
+- **AC-S22-31** — *Added by D35 (adversary B2).* Given a base and a `git diff` (or `git ls-files`) that fails, then
+  the pass line is not printed: a developer's checkout exits 1 with one line naming the base and git's own first
+  line; under a CI marker the slice is NOT checked, exit 0, with that reason.
+- **AC-S22-32** — *Added by D35 (adversary B3, A5, B5, A4; the hand's notes 2, 3).* Given a recorded name with a
+  character outside `[A-Za-z0-9._/-]`, or no remote named `origin`, then no `git fetch` command is printed and the
+  line says which branch is missing. Given a recorded value that is not a usable name, then it is printed with
+  its control characters dropped and cut to 80 characters, so no line of the output is the slice's own. Given a
+  pull-request target whose base won over the recorded trunk's, then the line names the target and says the pull
+  request targets it. Given a recorded trunk with no ref and no other base, then the fetch is printed once.
 

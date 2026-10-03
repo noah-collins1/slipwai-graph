@@ -1,6 +1,7 @@
 # Quickstart — S22-slice-scope-base
 
-What proves the slice, run from this checkout. No seed data, no service, no port.
+What proves the slice, run from this checkout. No seed data, no service, no port. `make` reports the gate's exit 1
+as its own exit 2; *exit non-zero* below covers both.
 
 ## Setup: a repository adopted at its root, on a slice branch with a host-surface change committed
 
@@ -84,6 +85,7 @@ a branch name. (`tests/test_slice_scope_report.py` `MasterBesideMainTest` shows 
 
 ```sh
 cd "$T/repo" && git reset -q --hard main && echo "# a slice's test" >> tests/test_scope_demo.py
+git add tests/test_scope_demo.py && git -c user.name=t -c user.email=t@local commit -q -m "a slice's test"
 make -f delivery/Makefile check-slice-scope
 ```
 

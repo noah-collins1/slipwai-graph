@@ -509,3 +509,53 @@ delegate as its own RED-GREEN commit.
 
 **Files:** `changelog.d/slice-scope-base.md`, `assets/toolkit/scripts/check-slice-scope.py` (docstring only).
 
+## Phase 4: Adversary findings (2026-10-03; two seams at `bc919d6`; `adversary-log.md` `## S22`; triaged as D35)
+
+One task per commit, in order; all edit the script. New tests go in new files (`tests/test_slice_scope_base.py`,
+`tests/test_slice_scope_no_base.py` are full; `tests/test_slice_scope_report.py` is at 278 of 350 lines).
+
+### T024 — A name that cannot be compared with is not a base and not the end of the search (`HIGH` B1 · `MEDIUM` A1 · AC-S22-29)
+
+- [ ] **RED:** B1's and A1's reproductions from the log, through the command line, each failing today. **GREEN names
+  the class:** every candidate name — recorded, `main`, `master`, the target — in the state *has a ref, shares no
+  history*: a trunk candidate is passed over for the next and said so; a target is no base at all. The existing
+  no-base examples (an unrelated `main` and nothing else) keep their answers.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_hostile_base.py` (new).
+
+### T025 — The gate ends in a verdict whatever it is given (`MEDIUM` A2, A3, B4 · AC-S22-30)
+
+- [ ] **RED:** a NUL and a lone surrogate in `ci.branch`; `project.json` and `model.yaml` as symlinks to `/dev/zero`
+  and to a FIFO (the test bounds each run with a timeout); `GIT_DIR` pointing nowhere. **GREEN names the class:**
+  every `git()` call survives any `ValueError`; every working-tree read goes through one guard (regular file, size
+  cap); where `git rev-parse --git-dir` fails the gate says so with git's first line and exits 0, as before the slice.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_hostile_base.py`.
+
+### T026 — A comparison that could not run is *could not compare* (`HIGH` B2 · AC-S22-31)
+
+- [ ] **RED:** a base, and a `git diff` that fails (B2's treeless clone with its remote gone, or the smallest
+  honest stand-in the test can build offline): today the pass line. **GREEN names the class:** every git call
+  between the base and the verdict whose failure would read as *no changes* (`diff --name-status`, `ls-files
+  --others`, `diff --numstat`, `show <base>:…` where a failure is not *absent*): developer exit 1, one line;
+  forge NOT checked.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_hostile_base.py`.
+
+### T027 — What the gate prints is safe to paste and true (`MEDIUM` B3 · `LOW` A5, B5, A4 · the hand's notes 2, 3 · AC-S22-32)
+
+- [ ] **RED:** one test per clause of AC-S22-32, B3's with the printed text handed to `sh -c` in a scratch
+  directory and a sentinel file asserted absent. **GREEN names the class:** every place the script prints a name it
+  did not choose or a command — `fetch_command()`, the passed-over words, the no-base lines, the NOT-checked line,
+  the report line.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_printed.py` (new).
+
+### T028 — The fragment and the docstring follow (AC-S22-21) — last
+
+- [ ] `changelog.d/slice-scope-base.md` and the module docstring say what T024–T027 changed for a reader: when a
+  fetch command is and is not printed; that a comparison that could not run fails locally and is NOT checked in
+  CI; that a recorded trunk sharing no history is passed over for `main`.
+
+**Files:** `changelog.d/slice-scope-base.md`, `assets/toolkit/scripts/check-slice-scope.py` (docstring only).
+

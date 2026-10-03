@@ -198,6 +198,11 @@ that cannot delegate takes the earliest ready slice in split order and names the
   branch is a slice branch fails. `current_branch()` asks `rev-parse --abbrev-ref HEAD`; `symbolic-ref --short HEAD`
   would answer. With the other `current_branch()` line above, for the completion audit.
 
+- **Left outside S22 by its adversary pass** (D35): a rebase in progress reads as a detached checkout with *nothing
+  to hold* (`rebase-merge/head-name` would answer) — with the other `current_branch()` lines; a gate that cannot
+  ask git at all still exits 0, now saying so — whether it should fail is, in CI, a person's, beside `S24`; and a
+  refused path is still told *Land it on `main`* where the trunk has another name (the script's older messages).
+
 ## Next Step
 
 Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,
