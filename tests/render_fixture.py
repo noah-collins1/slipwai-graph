@@ -1,0 +1,171 @@
+"""Shared by the render tests: a generated event-modelling project whose renderer is a stand-in.
+
+The stand-in sits where `make model` installs mermaid-cli (`scripts/event-model/.mermaid-cli/node_modules/`)
+and carries both shapes the renderer can be reached by: `.bin/mmdc`, one process per diagram, and the module
+packages `@mermaid-js/mermaid-cli` (`renderMermaid`) and `puppeteer` (`launch`). Every call appends one JSON
+line to the file named by `STAND_IN_LOG`, so a test counts sessions and draws from that log and never from
+what the run printed. It is a fake written in the test tree, validated against the real renderer by the demo.
+"""
+from __future__ import annotations
+
+import json
+import os
+import stat
+import subprocess
+from collections.abc import Mapping
+from dataclasses import dataclass
+from pathlib import Path
+
+LOG_VARIABLE = "STAND_IN_LOG"
+FAIL_MARKER = "STAND-IN-DRAW-FAILS"
+"""Put this in a slice's name and the draw of every diagram whose source carries it throws."""
+
+EVENT_MODEL = Path("scripts/event-model")
+MODEL_DIR = Path("docs/event-model")
+IS_WINDOWS = os.name == "nt"
+
+# The text `applySwimlaneFix` reads as "already fixed", so the patcher leaves the stand-in alone.
+_ALREADY_FIXED = "function findSwimlaneByNamespace(swimlanes, namespace, boundaryMin, boundaryMax) {}\n"
+
+_LOG_AND_DRAW = f"""
+const fs = require('node:fs');
+const crypto = require('node:crypto');
+const FAIL = {FAIL_MARKER!r};
+function log(entry) {{
+  const path = process.env.{LOG_VARIABLE};
+  if (path) fs.appendFileSync(path, JSON.stringify(entry) + '\\n');
+}}
+function sha(text) {{ return crypto.createHash('sha256').update(text).digest('hex'); }}
+function draw(definition, format) {{
+  if (definition.includes(FAIL)) throw new Error('stand-in: draw refused (' + FAIL + ')');
+  if (format === 'png') return Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+  return Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><desc>' + sha(definition)
+    + '</desc></svg>');
+}}
+"""
+
+MMDC = "#!/usr/bin/env node\n" + _LOG_AND_DRAW + """
+const argv = process.argv.slice(2);
+const value = (flag) => { const at = argv.indexOf(flag); return at < 0 ? undefined : argv[at + 1]; };
+const input = value('--input');
+const output = value('--output');
+const config = value('--puppeteerConfigFile');
+// One process is one browser session and one draw: that is what this shape means today.
+log({ event: 'session', via: 'mmdc', options: config ? JSON.parse(fs.readFileSync(config, 'utf8')) : {} });
+const definition = fs.readFileSync(input, 'utf8');
+log({ event: 'draw', via: 'mmdc', input, output, source_sha256: sha(definition) });
+try {
+  fs.writeFileSync(output, draw(definition, output.endsWith('.png') ? 'png' : 'svg'));
+} catch (error) {
+  console.error(String(error.message));
+  process.exit(1);
+}
+log({ event: 'close', via: 'mmdc' });
+"""
+
+_MODULE_EXPORTS = {"type": "module", "exports": {".": {"default": "./src/index.js", "import": "./src/index.js"}}}
+
+MERMAID_CLI_MODULE = """import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+""" + _LOG_AND_DRAW + """
+export async function renderMermaid(browser, definition, outputFormat, opts = {}) {
+  log({ event: 'draw', via: 'module', format: outputFormat, source_sha256: sha(definition) });
+  return { data: new Uint8Array(draw(definition, outputFormat)), title: null, desc: null };
+}
+export async function run() { throw new Error('stand-in: run is not provided'); }
+export async function cli() { throw new Error('stand-in: cli is not provided'); }
+export function error() { throw new Error('stand-in: error is not provided'); }
+"""
+
+PUPPETEER_MODULE = """import fs from 'node:fs';
+function log(entry) {
+  const path = process.env.__LOG__;
+  if (path) fs.appendFileSync(path, JSON.stringify(entry) + '\\n');
+}
+export default {
+  async launch(options = {}) {
+    log({ event: 'session', via: 'module', options });
+    return { async close() { log({ event: 'close', via: 'module' }); } };
+  },
+};
+""".replace("__LOG__", LOG_VARIABLE)
+
+
+def install_stand_in(project: Path) -> None:
+    """Write the stand-in renderer where `render.ts` looks for an installed one."""
+    prefix = project / EVENT_MODEL / ".mermaid-cli"
+    modules = prefix / "node_modules"
+    prefix.mkdir(parents=True, exist_ok=True)
+    (prefix / "package.json").write_text('{"name":"event-model-mermaid-cli","private":true}\n')
+
+    def package(name: str, files: dict[str, str], manifest: Mapping[str, object]) -> None:
+        root = modules / name
+        for relative, text in files.items():
+            (root / relative).parent.mkdir(parents=True, exist_ok=True)
+            (root / relative).write_text(text)
+        (root / "package.json").write_text(json.dumps({"name": name, "version": "0.0.0-stand-in", **manifest}))
+
+    package("@mermaid-js/mermaid-cli", {"src/index.js": MERMAID_CLI_MODULE}, _MODULE_EXPORTS)
+    package("puppeteer", {"src/index.js": PUPPETEER_MODULE}, _MODULE_EXPORTS)
+    package("mermaid", {"dist/chunks/mermaid.esm/chunk-stand-in.mjs": _ALREADY_FIXED}, {})
+    bin_dir = modules / ".bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    mmdc = bin_dir / "mmdc"
+    mmdc.write_text(MMDC)
+    mmdc.chmod(mmdc.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def slice_yaml(index: int, name: str | None = None) -> str:
+    """One state-change slice of three frames that reads no other slice."""
+    return (
+        f"  - id: S{index}\n    name: {name or f'Do thing {index}'}\n    pattern: state-change\n"
+        f"    status: modelled\n    actor: Guest\n    stream: thing-{{thingId}}\n"
+        f"    frames:\n      - {{type: ui, name: Screen{index}}}\n"
+        f"      - {{type: cmd, name: Do{index}}}\n      - {{type: evt, name: Done{index}}}\n"
+    )
+
+
+def write_model(project: Path, slices: int | list[str]) -> None:
+    """Rewrite `model.yaml` keeping its header. `slices` is a count, or the names of the slices wanted."""
+    model = project / MODEL_DIR / "model.yaml"
+    header = model.read_text().split("\nslices:")[0]
+    names = [None] * slices if isinstance(slices, int) else slices
+    body = "".join(slice_yaml(i + 1, name) for i, name in enumerate(names)) if names else " []\n"
+    model.write_text(header + "\nslices:" + ("\n" + body if names else body))
+
+
+@dataclass(frozen=True)
+class RendererLog:
+    """What the stand-in recorded: one entry per call, in order."""
+
+    entries: list[dict[str, object]]
+
+    @property
+    def sessions(self) -> int:
+        return sum(1 for entry in self.entries if entry["event"] == "session")
+
+    @property
+    def draws(self) -> int:
+        return sum(1 for entry in self.entries if entry["event"] == "draw")
+
+    @property
+    def launch_options(self) -> list[object]:
+        return [entry["options"] for entry in self.entries if entry["event"] == "session"]
+
+
+def read_log(path: Path) -> RendererLog:
+    if not path.exists():
+        return RendererLog([])
+    return RendererLog([json.loads(line) for line in path.read_text().splitlines() if line.strip()])
+
+
+def make_model(
+    project: Path, log: Path | None = None, **env: str
+) -> subprocess.CompletedProcess[str]:
+    """`make model` through the project's own recipe (its npm install is the one network call)."""
+    if log is not None:
+        log.unlink(missing_ok=True)
+        env[LOG_VARIABLE] = str(log)
+    return subprocess.run(
+        ["make", "model"], cwd=project, text=True, capture_output=True, env={**os.environ, **env}
+    )
