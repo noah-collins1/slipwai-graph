@@ -35,10 +35,14 @@ What a slice's change may contain — everything since the branch left `main`, c
   delivery directory less `survey/pinned.md` and `survey/running.md` (where the delivery directory is the root,
   `.written`, `baseline.json` and the other survey pages), and every path in `<delivery>/.written`.
   Git hooks and `.gitignore` are the repository's own. A path is recorded as `x`, `x/` or `./x` alike;
-- **the context's events module additively**: a line may be added, none removed. It is the contract;
+- **the context's events module additively**: a line may be added, none removed. It is the contract. At the
+  root deployable of an adopted repository the rule applies only where its record says `"layout": "hexagonal"`,
+  as `check-imports` does: `domain/events.py` there may be anything;
 - **new migration files only**, timestamped so two slices never mint the same name: `YYYYMMDDHHMM_<name>`,
   or `V<YYYYMMDDHHMM>__<name>` under Flyway. The shipped numbered ones keep working — the order is lexical
-  either way, and every stamp sorts after every number;
+  either way, and every stamp sorts after every number. Under the root deployable of an adopted repository a
+  new migration carries whatever name the repository's own tool wrote (`0002_add_field.py`, a 14-digit stamp);
+  an existing one is still never edited or deleted, there as everywhere;
 - **the composition root** — one line per use case, the one code file every slice touches, resolved in
   split order at merge and allowed here for that reason.
 
@@ -378,8 +382,22 @@ class Scope:
                 )
         return violations
 
+    def root_owned(self, path: str) -> bool:
+        """Whether the path is the root deployable's own code: its owner is recorded at `.` and it is not the
+        host's. Where it is, the repository's own tools name migrations and its own layout is not the factory's."""
+        app = self.owning_app(path)
+        return app is not None and self.service_path(app) == "." and not self.host_surface(path)
+
     def migration_violation(self, path: str, status: str) -> str | None:
         name = Path(path).name
+        if self.root_owned(path):
+            if status == "A":
+                return None  # whatever name the repository's own tool wrote
+            return (
+                f"{path}: an existing migration was {'deleted' if status == 'D' else 'edited'}. A slice adds "
+                f"migrations and never changes one that shipped — the release running against the database "
+                f"already applied it. Add a new migration with the repository's own tool instead."
+            )
         if status != "A":
             return (
                 f"{path}: an existing migration was {'deleted' if status == 'D' else 'edited'}. A slice adds "
@@ -421,7 +439,10 @@ class Scope:
                         f"(`context: {self.context}`). One context per slice; a change there is another slice's."
                     )
         stem = Path(path).stem
-        if "domain" in parts and stem.lower().endswith("events") and status != "A" and deletions(self.base, path):
+        # An adopted application's `domain/events.py` may be anything: at the root the events rule is opt-in, as
+        # `check-imports` makes its layer rules, by the record's `"layout": "hexagonal"`.
+        generic = self.service_path(app) == "." and record.get("layout") != "hexagonal"
+        if not generic and "domain" in parts and stem.lower().endswith("events") and status != "A" and deletions(self.base, path):
             return (
                 f"{path}: the events module is the contract and grows additively — a line was removed. Add the new "
                 f"shape beside the old; retiring one is the host's, once nothing folds it."

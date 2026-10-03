@@ -53,11 +53,14 @@ def git(repo: Path, *arguments: str) -> None:
                    cwd=repo, capture_output=True, check=True)
 
 
-class SliceScopeRootTest(unittest.TestCase):
+class SliceScopeFixtures(unittest.TestCase):
+    """The temporary repository and the gate's verdict on one path; no tests of its own."""
+
     script = "delivery/scripts/check-slice-scope.py"
 
     def repo(self, deployables: dict, model: bool = False, written: str | None = None,
-             registry: bool | str = False, delivery: str = "delivery", **project: object) -> Path:
+             registry: bool | str = False, delivery: str = "delivery", existing: dict[str, str] | None = None,
+             **project: object) -> Path:
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         repo = Path(directory.name)
@@ -76,6 +79,9 @@ class SliceScopeRootTest(unittest.TestCase):
         elif isinstance(registry, str):
             (home / "scripts/agents").mkdir()
             (home / "scripts/agents/registry.json").write_text(registry)
+        for name, text in (existing or {}).items():
+            (repo / name).parent.mkdir(parents=True, exist_ok=True)
+            (repo / name).write_text(text)
         if model:
             (home / "docs/event-model").mkdir(parents=True)
             (home / "docs/event-model/model.yaml").write_text(MODEL)
@@ -115,6 +121,8 @@ class SliceScopeRootTest(unittest.TestCase):
     def root(self, path: str = ".") -> dict:
         return {"shop": {"kind": "service", "path": path}}
 
+
+class SliceScopeRootTest(SliceScopeFixtures):
     def test_the_root_deployable_owns_what_nobody_else_claims(self) -> None:
         """R1 e1-e3: the application's own tests, a sibling directory, root tooling and manifests are the slice's."""
         repo = self.repo(self.root())
