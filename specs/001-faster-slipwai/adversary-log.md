@@ -235,3 +235,19 @@ Findings: eighteen, none `CRITICAL` (no actor's data reaches another and no acto
 | C10 | C | LOW | Blank lines at an entry's end are not printed; no content is lost | confirmed; new | declined (D63) |
 
 Also closed with these: the hand's note 2 at the demo (two `Scope:` lines, T022) and the convergence pass's T020 and T021. Mutation: no command recorded for `slipwai-graph` (as every slice of this feature so far).
+
+## S11 · dde4317 · 2026-10-03
+
+Slice `S11-render-once` (cruise iteration 10), diff `7226c2e^..dde4317`: `assets/toolkit/scripts/event-model/render.ts`
+(the entry point, now thin), `assets/toolkit/scripts/event-model/render-plan.ts` (new: which diagrams are current,
+removal by name, the finished-file write, the report), `assets/toolkit/scripts/event-model/render-session.ts` (new:
+the one browser session, the renderer key, the failure lines), the two pages, eight test modules, one fragment.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | `make model` (`assets/toolkit/scripts/event-model/render.ts`): what it draws now depends on files already on disk and on the environment (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `MERMAID_PUPPETEER_CONFIG`, `PNG`), it prints a new closing line and new failure lines. No earlier row covers the event-model scripts |
+| driven adapter or the provider types behind one | widened | The renderer: one browser launched through the installed `puppeteer` and driven through mermaid-cli's exported function in place of one `mmdc` process per diagram (`assets/toolkit/scripts/event-model/render-session.ts`); the filesystem under `docs/event-model/`: removal by name, a temporary then a rename (`assets/toolkit/scripts/event-model/render-plan.ts`) |
+| authorisation decision (who can reach one that already exists) | not present | The diff decides nothing about who may do what; the scripts run as the developer in their own tree |
+| concurrency, idempotency, ordering, retention, or time | widened | A re-run is claimed idempotent (a diagram shown current is left; text written only when different); up to four draws in flight in one session; a failure leaves the earlier file; two runs in one tree; a record kept in each SVG and trusted by the next run |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
