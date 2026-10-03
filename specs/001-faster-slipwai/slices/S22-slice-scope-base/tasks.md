@@ -418,7 +418,7 @@ without regard to case.
 
 ### T017 — Teeth for *within one name the newer base wins* when the newer one is `origin`'s (LOW · R1, AC-S22-11 · Phase 4, does not re-open the loop)
 
-- [ ] **LOW.** In `bases_of()` (`assets/toolkit/scripts/check-slice-scope.py` lines 267–271) the loop that picks the
+- [x] (53acc69, with T022) **LOW.** In `bases_of()` (`assets/toolkit/scripts/check-slice-scope.py` lines 267–271) the loop that picks the
   newer of the local and the `origin` base can be replaced by *keep the first found* (the local one) and both suites
   stay green (pass 2, mutant 16 of 16; the other 15 die). The suites pin the direction where local `main` is ahead
   of `origin/main`; nothing pins the inverse — `origin/main` fetched ahead of a local `main` that was not pulled,
@@ -475,7 +475,7 @@ not the recorded name — so a record naming a valid branch with no ref here (`d
 records no trunk*, which is false there. D33 says *where `ci.branch` records nothing usable*. Closed with T022's
 delegate as its own RED-GREEN commit.
 
-- [ ] The clause appears only where `ci.branch` records nothing usable (absent, `null`, blank, not a string, not a
+- [x] (78a22ea) The clause appears only where `ci.branch` records nothing usable (absent, `null`, blank, not a string, not a
   branch name, a slice's name); a usable recorded name with no ref keeps its own passed-over sentence and no clause.
 
 ### T021 — What the gate prints is true where it is printed (`LOW` G5, G6, G7, G8 · AC-S22-28, D34)
@@ -492,7 +492,7 @@ delegate as its own RED-GREEN commit.
 
 ### T022 — Every clause of AC-S22-1, -2, -11, -19 and D32's *non-empty* is held (`LOW` T017, G10, G11 · tests only)
 
-- [ ] No production change expected; each assertion shown to have teeth by a one-line mutation restored with
+- [x] (53acc69; six mutants, all die) No production change expected; each assertion shown to have teeth by a one-line mutation restored with
   `git checkout --`. T017: `origin/main` ahead of a local `main` and merged into the slice. G10: the header names
   `main` in AC-S22-1's three examples; the pass line names `trunk` where `trunk` and `main` are different commits;
   a lost record in the unrelated-trunk state, attached and under a marker. G11: `CI=false` is a marker.
@@ -501,7 +501,7 @@ delegate as its own RED-GREEN commit.
 
 ### T023 — The fragment and the docstring say all of it (`MEDIUM` G3 · AC-S22-21, D33, D34) — last
 
-- [ ] `changelog.d/slice-scope-base.md`: the catch-up gains (1) a trunk named neither `main` nor `master`, recorded
+- [x] (420909e) `changelog.d/slice-scope-base.md`: the catch-up gains (1) a trunk named neither `main` nor `master`, recorded
   in `ci.branch`, is compared with for the first time — slice branches in flight there are now held; (2) D33's
   sentence for an unrecorded `master` trunk beside a stale `main`; (3) the fetch as T018 made it. The module
   docstring's last paragraphs follow T018–T021 (the fetch form; `HEAD`; the clause; the one-line failure; *the pass
