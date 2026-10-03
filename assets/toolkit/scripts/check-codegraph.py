@@ -177,14 +177,17 @@ def listing(label: str, paths: list[str]) -> list[str]:
     return lines
 
 
-def drift(only: set[str] | None = None) -> tuple[dict[str, tuple[str, float]], list[str], list[str]] | None:
+def drift(only: set[str] | None = None, rows: dict[str, tuple[str, float]] | None = None,
+          ) -> tuple[dict[str, tuple[str, float]], list[str], list[str]] | None:
     """What the index holds, and the tracked files it has never seen or read before they changed; None where
     there is no index, no `files` table to read, or no checkout to compare it with. `only` narrows the judgement to
     those paths to be *hashed*; a tracked file the index holds no row for is judged either way. With none, every
-    tracked file is hashed, which is what `behind()` asks."""
+    tracked file is hashed, which is what `behind()` asks. `rows` is a read the caller already made and built its
+    `only` from: it is the one read this comparison judges and returns, never a second one."""
     if not INDEX.is_file():
         return None
-    rows = indexed()
+    if rows is None:
+        rows = indexed()
     paths = tracked()
     if rows is None or paths is None:
         return None
@@ -413,31 +416,46 @@ def moment_of(seconds: float) -> str:
     return moment(seconds * 1000)
 
 
-def narrowed(tooling: Any, record: dict[str, Any]) -> int | str:
-    """The comparison of a `slice/<id>` branch: only the candidates are hashed. A reason where it cannot be made."""
-    rows = indexed()
-    if rows is None:
-        return INDEX_UNREADABLE
-    candidates = candidates_of(record, rows)
-    if candidates is None:
-        return GIT_SILENT
-    repairing = os.environ.get("CODEGRAPH_GATE_NO_SYNC") != "1" and tooling.route() is not None
-    HASHED[0] = 0
-    found = drift(candidates)
-    assert found is not None
-    synced = ""
-    if (found[1] or found[2]) and repairing:
-        done, said = tooling.cli("sync", ".")
-        synced = (f"synced {len(found[1]) + len(found[2])} file(s) first; " if done
-                  else f"`codegraph sync` did not take ({said}); ")
+MOVING = "the index changed while it was being read"
+
+
+def read_once(record: dict[str, Any]) -> tuple[dict[str, tuple[str, float]], set[str]] | str:
+    """One read of the index's rows and the candidates built from that read, or the reason there is none. The rows
+    are read again after the candidates are: a read that differs is one something wrote to while git was asked, so it
+    is made again, and an index that will not hold still is not narrowed."""
+    for _ in range(3):
         rows = indexed()
         if rows is None:
             return INDEX_UNREADABLE
         candidates = candidates_of(record, rows)
         if candidates is None:
             return GIT_SILENT
+        if indexed() == rows:
+            return rows, candidates
+    return MOVING
+
+
+def narrowed(tooling: Any, record: dict[str, Any]) -> int | str:
+    """The comparison of a `slice/<id>` branch: only the candidates are hashed. A reason where it cannot be made."""
+    read = read_once(record)
+    if isinstance(read, str):
+        return read
+    rows, candidates = read
+    repairing = os.environ.get("CODEGRAPH_GATE_NO_SYNC") != "1" and tooling.route() is not None
+    HASHED[0] = 0
+    found = drift(candidates, rows)
+    assert found is not None
+    synced = ""
+    if (found[1] or found[2]) and repairing:
+        done, said = tooling.cli("sync", ".")
+        synced = (f"synced {len(found[1]) + len(found[2])} file(s) first; " if done
+                  else f"`codegraph sync` did not take ({said}); ")
+        read = read_once(record)
+        if isinstance(read, str):
+            return read
+        rows, candidates = read
         HASHED[0] = 0
-        found = drift(candidates)
+        found = drift(candidates, rows)
         assert found is not None
     return conclude(found, synced, f"hashed {HASHED[0]} of {len(found[0])} file(s), only what changed since the "
                     f"last whole comparison ({moment_of(float(record['whole']))}); the integrity check was not "
