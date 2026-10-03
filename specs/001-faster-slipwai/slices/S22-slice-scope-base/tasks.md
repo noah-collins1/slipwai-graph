@@ -200,7 +200,7 @@ green, then `make lint typecheck check-structure`. Commit.
 
 ### T007 — A forge's detached checkout with no base says NOT checked (R6 · AC-S22-16, -18, -19)
 
-- [ ] **Rule R6** — exit 0, stderr, never *nothing to hold*. Needs T006.
+- [x] **Rule R6** (ef43c7f; the line says *no trunk history* without naming the trunk — D31's wording names it, restored in T009) — exit 0, stderr, never *nothing to hold*. Needs T006.
 
 **RED** (in `tests/test_slice_scope_no_base.py`):
 - e1 detached depth-1 checkout, `GITHUB_HEAD_REF=slice/S1`, no trunk ref → exit 0, stdout empty, stderr has
@@ -223,7 +223,7 @@ green, then `make lint typecheck check-structure`. Commit.
 
 ### T008 — Nothing else moves (R7 · AC-S22-12, -20) — a held check, no edit
 
-- [ ] **Rule R7** — no RED and no GREEN: a proof over behaviour T002 to T007 leave alone, so no test is written.
+- [x] **Rule R7** (host, at ef43c7f: `git diff 7859512..HEAD` touches only `assets/toolkit/scripts/check-slice-scope.py`, the two new test files and the fragment; `check-migrations.py`, `tests/test_parallel_slices.py` and the three older scope suites are unedited; 102 tests green across the six suites) — no RED and no GREEN: a proof over behaviour T002 to T007 leave alone, so no test is written.
   Run `git diff --stat` over the slice's commits and confirm neither `assets/toolkit/scripts/check-migrations.py` nor
   `tests/test_parallel_slices.py` appears (e1); run
   `make test TESTS="test_parallel_slices test_slice_scope_root test_slice_scope_hostile_branch test_slice_scope_adopted_rules"`
