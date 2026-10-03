@@ -1046,6 +1046,72 @@ skipper seeing a neighbour's decisions through the Slice graph (`S14-result-cont
   the fingerprint's one-off change of value and what it cannot see (D57), what the controls' record cannot see
   (D56) and AC-S02-46's sentences; and no file `delivery/.written` lists changes in this repository (D9). (D60)
 
+*Added after acceptance by the adversary pass (D63, D64).* D56's sentence *the after-signature of one iteration never
+serves as the before of the next* stands, with D64's clause: *it is compared with it, so no control changes between
+two iterations silently.*
+
+- **AC-S02-70** — Given an iteration that leaves a process outside its process group, and that process changes a
+  gate after the iteration's log entry is written, when the next iteration would start, then the run parks before
+  it starts, naming that file `(modified)` and saying the change came between the two iterations. (D64, adversary
+  A2)
+- **AC-S02-71** — Given the same change under `--no-park`, when the next iteration would start, then the run exits
+  3 with that park line as its last line, and the log holds no entry for an iteration that did not run. (D64,
+  adversary A2)
+- **AC-S02-72** — Given a run parked on a between-iterations change, when a person keeps the change and resumes,
+  then the next iteration runs, its entry carries `controls_changed_between` naming that file and no
+  `controls_changed` for it, and the feed carries one line naming it. (D64, adversary A2)
+- **AC-S02-73** — Given a run parked on a between-iterations change, when a person reverts the change and resumes,
+  then the next iteration runs and its entry carries neither field. (D64, adversary A2)
+- **AC-S02-74** — Given a run parked for any other reason, when a control is changed during the park and the run
+  resumes, then the run does not park for it, the next entry carries `controls_changed_between` naming the file,
+  and a later iteration that changes the same file still parks naming it in `controls_changed`. (D64, adversary
+  A2)
+- **AC-S02-75** — Given an iteration that changed a gate and was parked for it, when a person keeps the change and
+  resumes with a message, then the next entry carries no `controls_changed_between`. (D64, adversary A2)
+- **AC-S02-76** — Given a file added under `tools/` between two iterations, when the next iteration starts, then
+  the run does not park and no field is written; and a file modified or deleted under `tools/` between two
+  iterations parks the run naming it. (D64, adversary A2)
+- **AC-S02-77** — Given no control changed between two iterations, when the next iteration starts, then no line is
+  printed, no field is written, and no control file's content is read that the record vouches for. (D64, adversary
+  A2)
+- **AC-S02-78** — Given a runner process's first iteration, when it starts, then nothing is compared with an
+  earlier process's controls, and its entry carries no `controls_changed_between`. (D64, adversary A2)
+- **AC-S02-79** — Given an iteration ended by `tell --now` and a control changed before the next starts, when the
+  next iteration would start, then the run parks as between any two iterations, and the person's message is given
+  to the iteration that runs after the park. (D64, adversary A2)
+- **AC-S02-80** — Given a path the runner reads or appends to as its own — the raw stream, the log — holding
+  something that is not a regular file (a FIFO, a directory, a device), when an iteration ends, then the runner
+  never blocks on it: a stream that is not a regular file gives no `index_use`, as before the slice, in the runner
+  and in `status`; a log that is not one ends the run with one line naming it; and in both cases a control the
+  iteration changed is compared and named first, so the run parks or ends saying so (A1, B1, A3). (D63)
+- **AC-S02-81** — Given a standing entry whose `Scope:` names the slice by its head in another spelling —
+  `S02-runner` or `S2` or `s02-runner-bookkeeping` for `S02-runner-bookkeeping` — when `--scope` runs for that
+  slice, then the entry is printed: ids meet when their letters, case set aside, and their number, read as a
+  number, are equal, whatever the slug; `S1` still does not meet `S12` (C1; amends AC-S02-49). (D63)
+- **AC-S02-82** — Given a `Scope:` token holding more than one id-shaped head — a range `S01-S03`, two ids joined
+  by a full stop — or any digit that is not ASCII, when `check-decisions` runs, then it exits 1 naming the entry,
+  and the verb carries the entry as global (C2, C3). (D63)
+- **AC-S02-83** — Given an entry with more than one `Scope:` line, or more than one `Status:` line, at the start
+  of a line, when `check-decisions` runs, then it exits 1 naming the entry and which field is said twice, and the
+  verb carries the entry whatever either line says; lines are divided at line feeds only, so a form feed or U+2028
+  inside a field does not make a second field (T022, C7, C8). (D63)
+- **AC-S02-84** — Given `--scope` with a value that is not id-shaped — empty, lower case, a path, a trailing
+  space, another flag — or any argument the script does not know (`--scope=S02`, `-scope`), when it runs, then it
+  prints the usage line on stderr and exits 2, and never runs the gate in its place; `--help` prints the usage and
+  exits 0; with no argument, and with `--adversary-baseline`, the script does what it did (C4, C5). (D63)
+- **AC-S02-85** — Given a log holding a block under a `## ` heading the checker cannot read as `## D<n> —
+  <question>`, or a byte-order mark before the first entry, when the verb runs, then that block is printed in its
+  place and counted on the closing line as carried for want of a heading it can read, what was printed and what
+  was counted agree, and the verb exits 1 saying the log does not pass `check-decisions` (C6). (D63)
+- **AC-S02-86** — Given a `decisions.md` that is not UTF-8, when the gate or the verb runs, then it prints one
+  line naming the file and exits 1, with no traceback (C9). (D63)
+- **AC-S02-87** — Given an index whose `files` table holds no row, when `health()` ends `current`, then it writes
+  no record, as no gate run would; given a comparison that gives no answer — not a checkout, no `files` table —
+  then `detail` says that, and never *compared everything* (B2, B3). (D63)
+- **AC-S02-88** — Given the stream's identity check and each `except` arm around the record in `health()`, then
+  each is seen red when removed, by an example with a stand-in written in the test tree, or is gone (T020, T021).
+  (D63)
+
 ### S24-ci-fetches-slice-base
 
 **Gaps review open — blocked on a person's approval (D54)**, 2026-10-03, cruise iteration 8, host with `drive-skipper`

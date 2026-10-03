@@ -656,6 +656,43 @@ below is either.
   the checker cannot read as one statement — a second `Scope:` line among them — is refused by the gate naming it, and
   carried as global by the verb. Taken in Phase 4 with the adversary's findings, through a failing test.
 
+## Phase 4: After acceptance — the adversary's findings (appended by the host; D63, D64; the row `## S02 ·` in `adversary-log.md`)
+
+Each is a failing test first, then the smallest change; each GREEN closes its class. Constraints as at the top.
+
+### T023 — [HIGH] A control changed between two iterations parks the run; across a park it is named (adversary A2 · D64 · AC-S02-70 … -79)
+
+- [ ] `drive()` in `assets/toolkit/scripts/agents/cruise.py` keeps the last after-signature and whether `park()` has
+  returned since, and compares it with the next before-signature through `controls_changed()`: no park between → the
+  run parks before the iteration starts (no entry, the number not consumed, a message already taken rides on); a park
+  between → one `cruise:` line in the feed and `controls_changed_between` on the entry. D64 says what parks, what is
+  named, `--no-park`, `tools/`, and the note for the implementer (the *started* line and `deliver()` come before
+  `controls_before` today; `watch`'s `boundary()` against the new line). The generated command's *Blocked* paragraph
+  says it, at its source under `src/slipwai/project/`; the fragment gains D64's sentences. Reproduction to turn into
+  the first test: `/tmp/s02-adv-A/probes2.sh` with `escaped.py`.
+
+### T024 — [HIGH] The runner never blocks on a path of its own that is not a regular file, and names a changed control first (adversary A1, B1, A3 · D63 · AC-S02-80)
+
+- [ ] `stream_use()` and the log's reader and appender (`cruise.py`, `bookkeeping.py`), `delegate_use_read()`
+  (`code_index.py`). Reproductions: `/tmp/s02-adv-A/probes5.sh` (`gate-and-stream-fifo`, `gate-and-log-fifo`),
+  `/tmp/s02-adv-B/p11.sh`. Every test that could hang runs its child under a timeout, so a failure is an assertion.
+
+### T025 — [LOW] `health()` says what it did and writes what a gate would; guard clauses are seen red or gone (adversary B2, B3; T020, T021 · AC-S02-87, -88)
+
+- [ ] `code_index.py` (`Compared.said()`, `renew()`, the three `except` arms), `cruise.py` (`stream_use()`'s identity
+  clause). Reproductions: `/tmp/s02-adv-B/p14.sh`, `p1.sh` (P3, P6).
+
+### T026 — [HIGH] A `Scope:` the checker cannot read as one statement is refused by the gate and carried by the verb; ids meet on their head (adversary C1, C2, C3, C7, C8; T022 · D63 · AC-S02-81 … -83)
+
+- [ ] `assets/toolkit/scripts/check-decisions.py` (`meets()`, `SLICE_ID`, `scope_tokens`, `scope_finding`, the entry
+  parser's line splitting). Reproduction: `python3 /tmp/s02-adv-C/repro.py`, blocks C1 to C3, C7, C8.
+
+### T027 — [MEDIUM] The verb never answers a call it did not understand with a green run, never drops a block, never ends on a traceback (adversary C4, C5, C6, C9 · D63 · AC-S02-84 … -86)
+
+- [ ] `check-decisions.py` (argument handling, the verb's printing and closing line, the read). Reproduction:
+  `repro.py`, blocks C4 to C6, C9.
+
+*(T022 is closed by T026; T020 and T021 by T025.)*
 
 ## Convergence
 
