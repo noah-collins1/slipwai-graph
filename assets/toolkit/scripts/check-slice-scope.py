@@ -258,6 +258,8 @@ def bases_of(name: str) -> tuple[bool, str | None]:
     for ref in (f"refs/heads/{name}", f"refs/remotes/origin/{name}"):
         if git("rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}") is None:
             continue
+        if git("symbolic-ref", "-q", ref) is not None:
+            continue  # `origin/HEAD` and any alias: where the remote's checkout points, not a trunk
         exists = True
         found = git("merge-base", "HEAD", ref)
         if found and found.strip() not in bases:
@@ -307,12 +309,12 @@ def older_of(first: str, second: str | None) -> str:
 
 def usable(value: object) -> str | None:
     """A branch name a record may name: a string, stripped, `refs/heads/` taken off, one git accepts as a branch,
-    and not a `slice/<id>` in any case — a slice branch is never the trunk. Anything else is None, never an exception."""
+    and neither `HEAD` nor a `slice/<id>` in any case — a slice branch is never the trunk. Anything else is None, never an exception."""
     if not isinstance(value, str):
         return None
     name = value.strip()
     name = name[len("refs/heads/"):] if name.startswith("refs/heads/") else name
-    if not name or name.startswith(("-", "refs/")) or SLICE_NAME.match(name):
+    if not name or name.startswith(("-", "refs/")) or name.upper() == "HEAD" or SLICE_NAME.match(name):
         return None
     if git("check-ref-format", f"refs/heads/{name}") is None:
         return None

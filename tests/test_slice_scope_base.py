@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 from test_slice_scope_root import SliceScopeFixtures, git
@@ -264,3 +265,47 @@ class ReportTest(SliceScopeBaseTest):
         header = self.run_gate(repo).stderr.splitlines()[0]
         self.assertTrue(header.startswith("check-slice-scope: a slice branch reaches outside what one slice may touch"))
         self.assertTrue(header.endswith(f" — compared with `main` at {self.short(repo, 'main')}"), header)
+
+
+class SymbolicHeadTest(SliceScopeBaseTest):
+    """G2: `HEAD` is never a trunk's name, and a ref that is a symbolic ref is never a trunk ref."""
+
+    def committed_host_change(self, branch: object) -> Path:
+        repo = self.repo(self.root())
+        (repo / "project.json").write_text(json.dumps({"deployables": self.root(), "ci": {"branch": branch}}))
+        git(repo, "commit", "-q", "-am", "record")
+        self.commit(repo, "Makefile")
+        return repo
+
+    def plain_clone(self, origin: Path) -> Path:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        target = Path(directory.name) / "clone"
+        subprocess.run(["git", "clone", "-q", str(origin), str(target)], check=True, capture_output=True)
+        return target
+
+    def test_head_recorded_as_the_trunk_is_not_the_remotes_head(self) -> None:
+        """A clone of an origin whose own `HEAD` is the slice: `origin/HEAD` is a symref to `origin/slice/S1`."""
+        clone = self.plain_clone(self.committed_host_change("HEAD"))
+        self.assertEqual(subprocess.run(["git", "symbolic-ref", "refs/remotes/origin/HEAD"], cwd=clone, text=True,
+                                        capture_output=True).stdout.strip(), "refs/remotes/origin/slice/S1")
+        self.rejects(clone, "Makefile")
+
+    def test_head_in_any_case_is_not_a_name_from_any_source(self) -> None:
+        """Plain refs at HEAD named `HEAD`/`Head`, so only the name can refuse them; each source in turn."""
+        repo = self.committed_host_change("Head")
+        for name in ("HEAD", "Head"):
+            git(repo, "update-ref", f"refs/remotes/origin/{name}", "HEAD")
+        self.rejects(repo, "Makefile")
+        for variable in ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"):
+            for name in ("HEAD", "head", "Head"):
+                with self.subTest(variable=variable, name=name):
+                    git(repo, "update-ref", f"refs/remotes/origin/{name}", "HEAD")
+                    self.rejects(repo, "Makefile", {variable: name})
+
+    def test_a_symbolic_ref_is_not_a_trunk_ref(self) -> None:
+        """`origin/trunk` is a symref to the slice's own branch; the name is fine, the ref is not."""
+        repo = self.committed_host_change("trunk")
+        git(repo, "update-ref", "refs/remotes/origin/slice/S1", "HEAD")
+        git(repo, "symbolic-ref", "refs/remotes/origin/trunk", "refs/remotes/origin/slice/S1")
+        self.rejects(repo, "Makefile")
