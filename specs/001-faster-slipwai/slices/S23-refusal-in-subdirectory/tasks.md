@@ -472,7 +472,7 @@ Pass 1's verdict stands: converged, nothing `HIGH` or `CRITICAL`, no second pass
 
 ### T016 — What the refusal and the fragment tell a person can be followed (`MEDIUM` G1, `LOW` G2, G3 · AC-S23-9, AC-S23-11)
 
-- [ ] Three findings on one surface — the words a refused person reads.
+- [x] (`f507453`) Three findings on one surface — the words a refused person reads. The message keeps *Commit or stash those first* (true for a person's own edit to the named files) and adds *Each path is spelled from the project's directory.*; the fragment's catch-up says commit, and says why not to stash.
 
 **RED** (in `tests/test_uncommitted_subdirectory.py`):
 - G2 — a refusal's stderr says the paths it names are spelled from the project's directory; asserted in `sub/` and,
