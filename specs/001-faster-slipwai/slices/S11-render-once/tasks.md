@@ -107,7 +107,7 @@ Needs T001's helper.
 
 ### T002 — [US1] At most one browser, opened on the first diagram to draw (R1 · AC-S11-1, -4, -14, -16)
 
-- [ ] **Rule R1.** Introduces `RenderSession` (`draw(source, 'svg'|'png') → bytes`, `close()`) with one real
+- [x] **Rule R1.** *(done at `5af7de2`. RED: 25 sessions where 1 was expected; research item 6: the toolkit copies `scripts/event-model/` whole, the one list is `tests/test_monorepos.py`.)* Introduces `RenderSession` (`draw(source, 'svg'|'png') → bytes`, `close()`) with one real
   implementation in new `render-session.ts` (install, patch, launch, draw, close; research items 1–3 and 5: it imports
   `@mermaid-js/mermaid-cli`'s `renderMermaid` and `puppeteer` from the local prefix, never spawns `mmdc`, draws up to
   four pages at a time in the one browser, writes each file in the model's order). `render.ts` becomes the thin wiring;
@@ -153,7 +153,7 @@ change that has one session draw every diagram: no skipping, no stamp change, no
 
 ### T003 — [US1] A diagram is left only when its SVG is shown current (R2 · AC-S11-2, -3, -5, -6, -7)
 
-- [ ] **Rule R2.** `render-plan.ts` decides current: the first line is the source stamp with the hash of the Mermaid the
+- [x] **Rule R2.** *(done at `d512cd0`. RED: 25 drawn where 3 were expected, and one failure per condition of the skip; removal by name moved here from T005, since a wholesale deletion cannot leave a current SVG.)* `render-plan.ts` decides current: the first line is the source stamp with the hash of the Mermaid the
   model produces now (never the `.mmd` on disk), the second line the renderer line carrying this run's key, the trimmed
   file ends `</svg>`, and none of `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` is non-empty. `render-session.ts` computes the
   renderer key once per run, after the install and the patch and before any comparison: SHA-256 over the installed
@@ -196,7 +196,7 @@ rule, not four concatenations.
 
 ### T004 — [US1] A file reaches its name finished, or not at all (R3 · AC-S11-8, -9)
 
-- [ ] **Rule R3.** `render-plan.ts` writes each drawn SVG to a temporary in `docs/event-model/slices/` (already ignored by
+- [x] **Rule R3.** *(done at `6c7d667`. RED: the failed diagram was not named and a draw in flight was not written; e9 held on arrival after T002, teeth shown.)* `render-plan.ts` writes each drawn SVG to a temporary in `docs/event-model/slices/` (already ignored by
   `src/slipwai/project/gitignore.py`, same directory tree as every output; research item 7), carrying both comment lines,
   then renames it to its name; its name cannot be one the model produces (a leading dot and a suffix the code fixes). A
   failed draw leaves the earlier file's bytes, removes its own temporary, names the diagram on stderr and exits non-zero

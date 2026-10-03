@@ -1188,8 +1188,10 @@ saving and the single browser is the saving everywhere.
   reads, when `make model` runs, then one session is opened, exactly three diagrams are redrawn — the timeline,
   that slice's segment and that slice — and 22 are left as they were, byte for byte. (D67)
 - **AC-S11-3** — Given any edit to the model, then exactly the diagrams whose Mermaid source hash changed are
-  redrawn and no other: an edit that adds or removes a frame also redraws every later slice and segment, because
-  frame numbers are global. (D67, D68)
+  redrawn and no other: an edit that adds a frame to one slice also redraws the whole timeline and every later
+  segment, whose numbering moves, and no later slice's own diagram, whose source does not (read from the code at
+  T003; D68's illustration said every later slice, and the rule, not the illustration, is the criterion).
+  (D67, D68)
 - **AC-S11-4** — Given a first run, a fresh checkout or a CI run on the fixture, then one session is opened, 25
   diagrams are drawn and none is left; no time is claimed for it. Given a one-slice model on a first run, then one
   session draws three diagrams. (D69)
