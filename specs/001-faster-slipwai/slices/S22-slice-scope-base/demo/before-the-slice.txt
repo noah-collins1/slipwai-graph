@@ -1,0 +1,38 @@
+The quickstart's Setup, steps 1, 3 and 4 against the factory as it was before the slice: git archive 3d9a922 in /tmp/s22-demo/before
+adopt exit 0
+== Setup
+$ make -f delivery/Makefile check-slice-scope   [in /tmp/s22-demo/qb/repo]
+check-slice-scope: a slice branch reaches outside what one slice may touch
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+make: *** [delivery/Makefile:58: check-slice-scope] Error 1
+exit 2
+
+== 1
+$ make -f delivery/Makefile check-slice-scope   [in /tmp/s22-demo/qb/repo]
+check-slice-scope: slice/S1 touches only what one slice may
+exit 0
+
+$ make -f delivery/Makefile check-slice-scope   [in /tmp/s22-demo/qb/repo]
+check-slice-scope: slice/S1 touches only what one slice may
+exit 0
+
+$ make -f delivery/Makefile check-slice-scope   [in /tmp/s22-demo/qb/repo]
+check-slice-scope: slice/S1 touches only what one slice may
+exit 0
+
+== 3
+$ make -f delivery/Makefile check-slice-scope   [in /tmp/s22-demo/qb/shallow]
+check-slice-scope: slice/S1 has no `main` to compare with — nothing to hold
+exit 0
+
+== 4
+$ GITHUB_HEAD_REF=slice/S1make -f delivery/Makefile check-slice-scope   [in /tmp/s22-demo/qb/ci]
+check-slice-scope: slice/S1 has no `main` to compare with — nothing to hold
+exit 0
+
+$ CI=truemake -f delivery/Makefile check-slice-scope   [in /tmp/s22-demo/qb/ci]
+check-slice-scope: slice/S1 has no `main` to compare with — nothing to hold
+exit 0
+

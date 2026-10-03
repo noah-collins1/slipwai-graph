@@ -1,0 +1,120 @@
+unset CI GITHUB_ACTIONS GITLAB_CI GITHUB_HEAD_REF GITHUB_BASE_REF CI_COMMIT_REF_NAME CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+R=/tmp/s22-demo
+C() { git -c user.name=t -c user.email=t@local commit -q "$@"; }
+new() { rm -rf "$R/$1"; cp -r "$R/base" "$R/$1"; cd "$R/$1"; }
+setci() { python3 - "$1" <<'PY'
+import json, sys
+d = json.load(open("project.json")); ci = d.setdefault("ci", {})
+if sys.argv[1] == "DEL": ci.pop("branch", None)
+else: ci["branch"] = json.loads(sys.argv[1])
+json.dump(d, open("project.json", "w"), indent=2)
+PY
+}
+# g [VAR=val ...] : run the gate's script directly, stdout and stderr apart, exit echoed
+g() { echo "\$ $* python3 delivery/scripts/check-slice-scope.py   [$(basename "$(pwd)") on $(git branch --show-current 2>/dev/null || true)$(git symbolic-ref -q HEAD >/dev/null || echo '(detached)')]"
+  env "$@" python3 delivery/scripts/check-slice-scope.py >"$R/.o" 2>"$R/.e"; rc=$?
+  echo "exit $rc"; echo "[stdout]"; cat "$R/.o"; echo "[stderr]"; cat "$R/.e"; echo; }
+hostchange() { echo "x:" >> Makefile; C -am "a host change"; }
+ownchange() { echo "# a slice's test" >> tests/test_scope_demo.py; git add tests/test_scope_demo.py; C -m "a slice's own test"; }
+h() { echo; echo "=================== $*"; }
+. /tmp/s22-demo/lib.sh
+h "AC-S22-1 with the record naming NO ci.branch (removed on main), three minted refs"
+new ac1; setci DEL; C -am "no ci.branch"; git checkout -q -b slice/S1; hostchange
+git branch master HEAD; g; git branch -q -D master
+git update-ref refs/remotes/origin/master HEAD; g; git update-ref -d refs/remotes/origin/master
+git tag main HEAD; g; git tag -d main >/dev/null
+h "AC-S22-2 ci.branch: trunk, a trunk branch; own file only -> green naming trunk"
+new ac2; setci '"trunk"'; C -am "record trunk"; git branch -m main trunk; git checkout -q -b slice/S1; ownchange; g
+echo "-- now a host change, and main minted at head"; hostchange; git branch main HEAD; g
+echo "-- master minted at head too"; git branch master HEAD; g
+h "AC-S22-3 record names master; main minted at head"
+new ac3; setci '"master"'; C -am "record master"; git branch -m main master; git checkout -q -b slice/S1; hostchange; g
+echo "-- mint main at head"; git branch main HEAD; g
+h "AC-S22-4 ci.branch set to own name, committed"
+new ac4; git checkout -q -b slice/S1; hostchange; setci '"slice/S1"'; C -am "name myself"; g
+echo "-- another slice name, committed, with that branch existing at head"; setci '"slice/S9"'; C -am "name a sibling"; git branch slice/S9 HEAD; g
+echo "-- another slice name, uncommitted"; setci '"slice/S7"'; g; git checkout -- project.json
+h "AC-S22-5 ci.branch names a branch that is not here, main exists"
+new ac5; git checkout -q -b slice/S1; ownchange; setci '"nowhere"'; C -am "name nothing"; g
+h "AC-S22-6 unusable ci.branch values, set by the slice (uncommitted), host change committed"
+new ac6; git checkout -q -b slice/S1; hostchange
+for v in '7' '["main"]' '""' '"   "' '"-x"' '"refs/tags/main"' '"refs/heads/main"'; do echo "-- ci.branch = $v"; setci "$v"; g; git checkout -- project.json; done
+h "AC-S22-6 the same values recorded on main itself, slice changes only its own file"
+for v in '7' '["main"]' '""' '"   "' '"-x"' '"refs/tags/main"' '"refs/heads/main"'; do echo "-- main records ci.branch = $v"; new ac6b; setci "$v"; C -am "record"; git checkout -q -b slice/S1; ownchange; g; done
+h "AC-S22-7 unchanged record names develop, which has no ref; main has one; own files only"
+new ac7; setci '"develop"'; C -am "record develop"; git checkout -q -b slice/S1; ownchange; g
+echo "-- same, with a host change"; hostchange; g
+h "AC-S22-8 target variable beats a committed ci.branch: evil + origin/evil at head"
+new ac8; git checkout -q -b slice/S1; ownchange; setci '"evil"'; C -am "evil"; git update-ref refs/remotes/origin/evil HEAD
+g GITHUB_BASE_REF=main
+g CI_MERGE_REQUEST_TARGET_BRANCH_NAME=main
+echo "-- for contrast, no target variable"; g
+h "AC-S22-9 master trunk, no record, GITHUB_BASE_REF=master, origin/main minted at head"
+new ac9; setci DEL; C -am "no ci.branch"; git branch -m main master; git checkout -q -b slice/S1; hostchange; git update-ref refs/remotes/origin/main HEAD
+g GITHUB_BASE_REF=master
+echo "-- for contrast, no target variable"; g
+h "AC-S22-10 PR target names another branch ahead of the trunk's base"
+new ac10; git checkout -q -b stack; echo "y:" >> Makefile; C -am "stack's host change"; git checkout -q -b slice/S1; ownchange
+g GITHUB_BASE_REF=stack
+echo "-- no variable"; g
+h "AC-S22-11 main moved locally past origin/main and merged into the slice"
+new ac11; git update-ref refs/remotes/origin/main main; git checkout -q -b slice/S1; ownchange; git checkout -q main; echo "z:" >> Makefile; C -am "main's own host change"; git checkout -q slice/S1; git -c user.name=t -c user.email=t@local merge -q --no-edit main; g
+echo "-- inverse: origin/main ahead of local main, merged"; new ac11b; git checkout -q -b slice/S1; ownchange; git checkout -q -b tmp main; echo "z:" >> Makefile; C -am "upstream host change"; git update-ref refs/remotes/origin/main HEAD; git checkout -q slice/S1; git branch -q -D tmp; git -c user.name=t -c user.email=t@local merge -q --no-edit origin/main; g
+h "AC-S22-12 main trunk with an older master left behind"
+new ac12; git branch master main~1; git checkout -q -b slice/S1; ownchange; echo "-- recorded ci.branch main, own file"; g; hostchange; echo "-- host change"; g
+new ac12b; setci DEL; C -am "no ci.branch"; git branch master main~2; git checkout -q -b slice/S1; ownchange; echo "-- no record, own file"; g; hostchange; echo "-- no record, host change"; g
+. /tmp/s22-demo/lib.sh
+# a source repository on slice/S1 with a host change, to clone from
+new src; git checkout -q -b slice/S1; hostchange
+h "AC-S22-14 developer's shallow clone of slice/S1, no trunk ref"
+rm -rf $R/sh; git clone -q --depth 1 --branch slice/S1 "file://$R/src" $R/sh; cd $R/sh; git for-each-ref --format='%(refname)'; g
+h "AC-S22-14 / AC-S22-26 full single-branch clone, no trunk ref; then the printed command; then again"
+rm -rf $R/full1; git clone -q --single-branch --branch slice/S1 "file://$R/src" $R/full1; cd $R/full1; git for-each-ref --format='%(refname)'; g
+echo "-- for contrast, the bare form the gate used to print: git fetch origin main"; git fetch -q origin main; git for-each-ref --format='%(refname)'; g
+echo "-- the printed command: git fetch origin main:refs/remotes/origin/main"; git fetch -q origin main:refs/remotes/origin/main; echo "fetch exit $?"; g
+h "AC-S22-26 shallow: printed fetch -> unshallow line -> verdict"
+cd $R/sh; git fetch -q origin main:refs/remotes/origin/main; echo "fetch exit $?"; g; git fetch -q --unshallow origin; echo "unshallow exit $?"; g
+h "AC-S22-15 full clone, slice branch shares no history with the trunk"
+new orphan; git checkout -q --orphan slice/S1; C -m "an orphan slice"; g
+h "AC-S22-16 detached depth-1, GITHUB_HEAD_REF / CI_COMMIT_REF_NAME, no trunk ref"
+rm -rf $R/ci1; git clone -q --depth 1 --branch slice/S1 "file://$R/src" $R/ci1; cd $R/ci1; git checkout -q --detach
+g GITHUB_HEAD_REF=slice/S1
+g CI_COMMIT_REF_NAME=slice/S1
+h "AC-S22-17 the variable alone, HEAD attached, no base, no CI marker"
+git checkout -q slice/S1; g GITHUB_HEAD_REF=slice/S1; g CI_COMMIT_REF_NAME=slice/S1
+h "AC-S22-22 attached depth-1 single-branch clone, a CI marker only"
+g GITHUB_ACTIONS=true; g GITLAB_CI=true; g CI=true; g CI=false
+echo "-- marker + trunk ref with no common ancestor at this depth"; git fetch -q origin main:refs/remotes/origin/main; echo "-- (no marker)"; g; g CI=true; g GITHUB_ACTIONS=true
+echo "-- marker + unrelated trunk (full clone)"; cd $R/orphan; g CI=true; g GITLAB_CI=true
+h "AC-S22-18 detached, full history, trunk ref, GITHUB_HEAD_REF, host change"
+rm -rf $R/ci2; git clone -q --branch slice/S1 "file://$R/src" $R/ci2; cd $R/ci2; git checkout -q --detach; git for-each-ref --format='%(refname)'; g GITHUB_HEAD_REF=slice/S1; g CI_COMMIT_REF_NAME=slice/S1 GITLAB_CI=true
+h "AC-S22-23 marker + attached + usable base + host change"
+git checkout -q slice/S1; g CI=true; g GITHUB_ACTIONS=true
+echo "-- marker on a branch that is not slice/<id>"; git checkout -q -b feature/x; g CI=true
+h "AC-S22-19 not a slice branch / detached with no variable, shallow clone"
+rm -rf $R/sh2; git clone -q --depth 1 --branch slice/S1 "file://$R/src" $R/sh2; cd $R/sh2; git checkout -q -b feature/x; g; git checkout -q --detach; g
+echo "-- no base on a slice branch + a regular untracked file at a canonical slot"
+git checkout -q slice/S1; ls specs 2>/dev/null; mkdir -p specs/001-demo; echo "# plan" > specs/001-demo/plan.md; git status --short --ignored | head; g
+h "AC-S22-23 marker + no base + lost record"
+g CI=true
+echo "-- lost record, unrelated trunk, attached"; cd $R/orphan; mkdir -p specs/001-demo; echo "# plan" > specs/001-demo/plan.md; g; g CI=true
+h "AC-S22-25 no record, master trunk ahead of an older main, slice cut from master, own files only"
+new ac25; setci DEL; C -am "no ci.branch"; git branch -m main master; git branch main master; echo "m:" >> Makefile; C -am "master's own host change"; git checkout -q -b slice/S1; ownchange; g
+echo "-- record ci.branch: master on master; merge it into the slice"; git checkout -q master; setci '"master"'; C -am "record master"; git checkout -q slice/S1; git -c user.name=t -c user.email=t@local merge -q --no-edit master; g
+echo "-- delete the stale main instead (fresh copy)"; new ac25b; setci DEL; C -am "no ci.branch"; git branch -m main master; git branch main master; echo "m:" >> Makefile; C -am "master's own host change"; git checkout -q -b slice/S1; ownchange; git branch -q -D main; g
+h "AC-S22-27 ci.branch: HEAD committed, in a clone whose origin/HEAD points at the slice"
+new src27; git checkout -q -b slice/S1; ownchange; setci '"HEAD"'; C -am "HEAD"
+rm -rf $R/c27; git clone -q "file://$R/src27" $R/c27; cd $R/c27; git symbolic-ref refs/remotes/origin/HEAD; git for-each-ref --format='%(refname)'; g
+echo "-- lower case"; setci '"head"'; g; setci '"refs/heads/HEAD"'; echo "-- refs/heads/HEAD"; g; git checkout -- project.json
+echo "-- HEAD in either target variable"; g GITHUB_BASE_REF=HEAD; g CI_MERGE_REQUEST_TARGET_BRANCH_NAME=head
+echo "-- a symbolic ref as the only main: refs/heads/main -> refs/heads/slice/S1, origin/main removed"
+git update-ref -d refs/remotes/origin/main; git symbolic-ref refs/heads/main refs/heads/slice/S1; git for-each-ref --format='%(refname) %(symref)'; g
+h "AC-S22-28 marker, no base, recorded ci.branch with no ref: any git fetch?"
+cd $R/ci1; g CI=true 2>&1 | tee $R/.28; echo "git fetch occurrences: $(grep -c 'git fetch' $R/.28)"
+h "Beyond the criteria: what the local promise leaves (D30's 'a person who moves refs')"
+echo "-- slice commits ci.branch: evil, a host change, and mints refs/remotes/origin/evil at head; no forge variable"
+new res1; git checkout -q -b slice/S1; hostchange; setci '"evil"'; C -am evil; git update-ref refs/remotes/origin/evil HEAD; g
+echo "-- the same with a local branch 'evil' and the record uncommitted"
+new res2; git checkout -q -b slice/S1; hostchange; setci '"evil"'; git branch evil HEAD; g
+echo "-- unrecorded master trunk, origin/main minted at head, no forge variable (AC-S22-9 without the variable)"
+new res3; setci DEL; C -am "no ci.branch"; git branch -m main master; git checkout -q -b slice/S1; hostchange; git update-ref refs/remotes/origin/main HEAD; g

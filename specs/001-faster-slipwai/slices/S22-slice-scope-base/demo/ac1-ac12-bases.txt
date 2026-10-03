@@ -1,0 +1,388 @@
+
+=================== AC-S22-1 with the record naming NO ci.branch (removed on main), three minted refs
+$  python3 delivery/scripts/check-slice-scope.py   [ac1 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at 647c27a; `master` is here too and `project.json` records no trunk — if `master` is the trunk, set `ci.branch` to `master` in `project.json` on it, or delete the stale `main`
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+$  python3 delivery/scripts/check-slice-scope.py   [ac1 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at 647c27a; `master` is here too and `project.json` records no trunk — if `master` is the trunk, set `ci.branch` to `master` in `project.json` on it, or delete the stale `main`
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+$  python3 delivery/scripts/check-slice-scope.py   [ac1 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at 647c27a
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+
+=================== AC-S22-2 ci.branch: trunk, a trunk branch; own file only -> green naming trunk
+$  python3 delivery/scripts/check-slice-scope.py   [ac2 on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `trunk` at aa5a23c)
+[stderr]
+
+-- now a host change, and main minted at head
+$  python3 delivery/scripts/check-slice-scope.py   [ac2 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `trunk` at aa5a23c
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- master minted at head too
+$  python3 delivery/scripts/check-slice-scope.py   [ac2 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `trunk` at aa5a23c
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+
+=================== AC-S22-3 record names master; main minted at head
+$  python3 delivery/scripts/check-slice-scope.py   [ac3 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `master` at c5f6195
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- mint main at head
+$  python3 delivery/scripts/check-slice-scope.py   [ac3 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `master` at c5f6195
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+
+=================== AC-S22-4 ci.branch set to own name, committed
+$  python3 delivery/scripts/check-slice-scope.py   [ac4 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d; `ci.branch` names `slice/S1`, a slice branch, which is never the trunk
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- another slice name, committed, with that branch existing at head
+$  python3 delivery/scripts/check-slice-scope.py   [ac4 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d; `ci.branch` names `slice/S9`, a slice branch, which is never the trunk
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- another slice name, uncommitted
+$  python3 delivery/scripts/check-slice-scope.py   [ac4 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d; `ci.branch` names `slice/S7`, a slice branch, which is never the trunk
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+
+=================== AC-S22-5 ci.branch names a branch that is not here, main exists
+$  python3 delivery/scripts/check-slice-scope.py   [ac5 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d; `ci.branch` names `nowhere`, which has no branch here — `git fetch origin nowhere:refs/remotes/origin/nowhere` would bring it
+
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+
+=================== AC-S22-6 unusable ci.branch values, set by the slice (uncommitted), host change committed
+-- ci.branch = 7
+$  python3 delivery/scripts/check-slice-scope.py   [ac6 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d; `ci.branch` is not a string, so it was passed over
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- ci.branch = ["main"]
+$  python3 delivery/scripts/check-slice-scope.py   [ac6 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d; `ci.branch` is not a string, so it was passed over
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- ci.branch = ""
+$  python3 delivery/scripts/check-slice-scope.py   [ac6 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- ci.branch = "   "
+$  python3 delivery/scripts/check-slice-scope.py   [ac6 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- ci.branch = "-x"
+$  python3 delivery/scripts/check-slice-scope.py   [ac6 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d; `ci.branch` names `-x`, which is not a branch name
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- ci.branch = "refs/tags/main"
+$  python3 delivery/scripts/check-slice-scope.py   [ac6 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d; `ci.branch` names `refs/tags/main`, which is not a branch name
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- ci.branch = "refs/heads/main"
+$  python3 delivery/scripts/check-slice-scope.py   [ac6 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+
+=================== AC-S22-6 the same values recorded on main itself, slice changes only its own file
+-- main records ci.branch = 7
+$  python3 delivery/scripts/check-slice-scope.py   [ac6b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 3d8e62c); `ci.branch` is not a string, so it was passed over
+[stderr]
+
+-- main records ci.branch = ["main"]
+$  python3 delivery/scripts/check-slice-scope.py   [ac6b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at d51e534); `ci.branch` is not a string, so it was passed over
+[stderr]
+
+-- main records ci.branch = ""
+$  python3 delivery/scripts/check-slice-scope.py   [ac6b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 40aeb47)
+[stderr]
+
+-- main records ci.branch = "   "
+$  python3 delivery/scripts/check-slice-scope.py   [ac6b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at aba2ee1)
+[stderr]
+
+-- main records ci.branch = "-x"
+$  python3 delivery/scripts/check-slice-scope.py   [ac6b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 0a8a039); `ci.branch` names `-x`, which is not a branch name
+[stderr]
+
+-- main records ci.branch = "refs/tags/main"
+$  python3 delivery/scripts/check-slice-scope.py   [ac6b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 575a70c); `ci.branch` names `refs/tags/main`, which is not a branch name
+[stderr]
+
+-- main records ci.branch = "refs/heads/main"
+$  python3 delivery/scripts/check-slice-scope.py   [ac6b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 8e775d0)
+[stderr]
+
+
+=================== AC-S22-7 unchanged record names develop, which has no ref; main has one; own files only
+$  python3 delivery/scripts/check-slice-scope.py   [ac7 on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at ae9888d); `ci.branch` names `develop`, which has no branch here — `git fetch origin develop:refs/remotes/origin/develop` would bring it
+[stderr]
+
+-- same, with a host change
+$  python3 delivery/scripts/check-slice-scope.py   [ac7 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at ae9888d; `ci.branch` names `develop`, which has no branch here — `git fetch origin develop:refs/remotes/origin/develop` would bring it
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+
+=================== AC-S22-8 target variable beats a committed ci.branch: evil + origin/evil at head
+$ GITHUB_BASE_REF=main python3 delivery/scripts/check-slice-scope.py   [ac8 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `evil` at f24825d
+
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+$ CI_MERGE_REQUEST_TARGET_BRANCH_NAME=main python3 delivery/scripts/check-slice-scope.py   [ac8 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `evil` at f24825d
+
+  project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- for contrast, no target variable
+$  python3 delivery/scripts/check-slice-scope.py   [ac8 on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `evil` at c7719bc)
+[stderr]
+
+
+=================== AC-S22-9 master trunk, no record, GITHUB_BASE_REF=master, origin/main minted at head
+$ GITHUB_BASE_REF=master python3 delivery/scripts/check-slice-scope.py   [ac9 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at a18c971
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- for contrast, no target variable
+$  python3 delivery/scripts/check-slice-scope.py   [ac9 on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 12c9e21)
+[stderr]
+
+
+=================== AC-S22-10 PR target names another branch ahead of the trunk's base
+$ GITHUB_BASE_REF=stack python3 delivery/scripts/check-slice-scope.py   [ac10 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- no variable
+$  python3 delivery/scripts/check-slice-scope.py   [ac10 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+
+=================== AC-S22-11 main moved locally past origin/main and merged into the slice
+$  python3 delivery/scripts/check-slice-scope.py   [ac11 on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at ca6daab)
+[stderr]
+
+-- inverse: origin/main ahead of local main, merged
+$  python3 delivery/scripts/check-slice-scope.py   [ac11b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at cdcd0dd)
+[stderr]
+
+
+=================== AC-S22-12 main trunk with an older master left behind
+-- recorded ci.branch main, own file
+$  python3 delivery/scripts/check-slice-scope.py   [ac12 on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at f24825d)
+[stderr]
+
+-- host change
+$  python3 delivery/scripts/check-slice-scope.py   [ac12 on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at f24825d
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+
+-- no record, own file
+$  python3 delivery/scripts/check-slice-scope.py   [ac12b on slice/S1]
+exit 0
+[stdout]
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 23d1c45)
+[stderr]
+
+-- no record, host change
+$  python3 delivery/scripts/check-slice-scope.py   [ac12b on slice/S1]
+exit 1
+[stdout]
+[stderr]
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at 23d1c45
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+

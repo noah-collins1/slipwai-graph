@@ -1,0 +1,348 @@
+$ CI=true GITHUB_ACTIONS=true make test TESTS="test_slice_scope_base test_slice_scope_no_base test_slice_scope_report test_slice_scope_root test_slice_scope_hostile_branch test_slice_scope_adopted_rules"   [git archive cd0d224 in /tmp/s22-demo/head]
+PYTHONPATH=src:tests python3 -m unittest -v test_slice_scope_base test_slice_scope_no_base test_slice_scope_report test_slice_scope_root test_slice_scope_hostile_branch test_slice_scope_adopted_rules
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_base.ForgeTargetTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_base.ForgeTargetTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_base.ForgeTargetTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_base.ForgeTargetTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_base.ForgeTargetTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_a_target_ahead_of_main_moves_the_base_back_to_main (test_slice_scope_base.ForgeTargetTest.test_a_target_ahead_of_main_moves_the_base_back_to_main)
+e4: `feature` is cut from `main` and ahead of it; the slice is cut from `feature`. ... ok
+test_a_target_naming_a_slice_in_another_case_is_ignored (test_slice_scope_base.ForgeTargetTest.test_a_target_naming_a_slice_in_another_case_is_ignored)
+Both variables, `Slice/S1` at HEAD and no trunk branch at all: the target alone would be the base. ... ok
+test_a_target_with_no_ref_or_no_name_is_ignored (test_slice_scope_base.ForgeTargetTest.test_a_target_with_no_ref_or_no_name_is_ignored)
+e5, held: the recorded trunk answers; `nowhere` has no ref, `-x` is no name. ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_base.ForgeTargetTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_the_target_outranks_a_main_minted_beside_a_master_trunk (test_slice_scope_base.ForgeTargetTest.test_the_target_outranks_a_main_minted_beside_a_master_trunk)
+e3: `master` is the trunk, `GITHUB_BASE_REF=master`, `refs/remotes/origin/main` minted at HEAD. ... ok
+test_the_target_outranks_a_recorded_name_minted_at_head (test_slice_scope_base.ForgeTargetTest.test_the_target_outranks_a_recorded_name_minted_at_head)
+e1, e2: `ci.branch: evil` with `evil` at HEAD; the target is `main`, so `project.json` is refused. ... ok
+test_two_bases_neither_older_move_the_base_to_where_their_histories_meet (test_slice_scope_base.ForgeTargetTest.test_two_bases_neither_older_move_the_base_to_where_their_histories_meet)
+`main` and the target `feature` each moved on from the same commit; the slice has merged both, so its ... ok
+test_a_full_ref_name_reads_as_the_branch (test_slice_scope_base.RecordedNameTest.test_a_full_ref_name_reads_as_the_branch)
+e6: `refs/heads/trunk` is `trunk`; a `main` minted at HEAD does not replace it. ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_base.RecordedNameTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_base.RecordedNameTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_name_git_refuses_is_said_not_to_be_a_branch_name (test_slice_scope_base.RecordedNameTest.test_a_name_git_refuses_is_said_not_to_be_a_branch_name)
+`a..b` and `a b` are no branch names, so they are never said to be `has no branch here`. ... ok
+test_a_name_with_no_ref_is_passed_over_and_said_so (test_slice_scope_base.RecordedNameTest.test_a_name_with_no_ref_is_passed_over_and_said_so)
+e4: `nowhere` has no branch; `main` answers and the output says `nowhere` was passed over. ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_base.RecordedNameTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_base.RecordedNameTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_slice_name_in_another_case_is_never_the_base (test_slice_scope_base.RecordedNameTest.test_a_slice_name_in_another_case_is_never_the_base)
+A case-insensitive filesystem makes `Slice/S1` the slice's own ref; a distinct ref at HEAD stands in. ... ok
+test_a_slice_name_is_never_the_base (test_slice_scope_base.RecordedNameTest.test_a_slice_name_is_never_the_base)
+e1 committed, e2 uncommitted, e3 with a `slice/S9` branch at HEAD: `project.json` is refused. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_base.RecordedNameTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_base.RecordedNameTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_an_unusable_name_gets_a_verdict_against_main_not_a_traceback (test_slice_scope_base.RecordedNameTest.test_an_unusable_name_gets_a_verdict_against_main_not_a_traceback)
+e5, held: a value of any shape, `main` answers; a string says it is not a branch name. ... ok
+test_the_bases_own_record_naming_an_absent_trunk_is_said_on_the_pass_line (test_slice_scope_base.RecordedNameTest.test_the_bases_own_record_naming_an_absent_trunk_is_said_on_the_pass_line)
+e7: the base records `develop`, which has no ref here; the slice's own file is green against `main`. ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_base.ReportTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_base.ReportTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_base.ReportTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_base.ReportTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_base.ReportTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_base.ReportTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_the_pass_line_names_the_trunk_and_the_base_commit (test_slice_scope_base.ReportTest.test_the_pass_line_names_the_trunk_and_the_base_commit)
+e1: the words before the bracket are unchanged. ... ok
+test_the_refusal_header_ends_with_what_was_compared (test_slice_scope_base.ReportTest.test_the_refusal_header_ends_with_what_was_compared)
+e2: the header names the trunk and the short commit. ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_base.SliceScopeBaseTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_base.SliceScopeBaseTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_base.SliceScopeBaseTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_base.SliceScopeBaseTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_base.SliceScopeBaseTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_base.SliceScopeBaseTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_base.SymbolicHeadTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_base.SymbolicHeadTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_base.SymbolicHeadTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_base.SymbolicHeadTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_symbolic_ref_is_not_a_trunk_ref (test_slice_scope_base.SymbolicHeadTest.test_a_symbolic_ref_is_not_a_trunk_ref)
+`origin/trunk` is a symref to the slice's own branch; the name is fine, the ref is not. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_base.SymbolicHeadTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_base.SymbolicHeadTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_head_in_any_case_is_not_a_name_from_any_source (test_slice_scope_base.SymbolicHeadTest.test_head_in_any_case_is_not_a_name_from_any_source)
+Plain refs at HEAD named `HEAD`/`Head`, so only the name can refuse them; each source in turn. ... ok
+test_head_recorded_as_the_trunk_is_not_the_remotes_head (test_slice_scope_base.SymbolicHeadTest.test_head_recorded_as_the_trunk_is_not_the_remotes_head)
+A clone of an origin whose own `HEAD` is the slice: `origin/HEAD` is a symref to `origin/slice/S1`. ... ok
+test_a_ci_marker_alone_makes_an_attached_checkout_the_forges (test_slice_scope_no_base.NoBaseTest.test_a_ci_marker_alone_makes_an_attached_checkout_the_forges)
+AC-S22-22: depth-1 single-branch, `HEAD` attached, neither branch variable — each marker. ... ok
+test_a_ci_marker_covers_the_other_no_base_states_too (test_slice_scope_no_base.NoBaseTest.test_a_ci_marker_covers_the_other_no_base_states_too)
+AC-S22-22: no common ancestor at this depth, and an unrelated trunk. ... ok
+test_a_ci_marker_on_another_branch_keeps_nothing_to_hold (test_slice_scope_no_base.NoBaseTest.test_a_ci_marker_on_another_branch_keeps_nothing_to_hold)
+AC-S22-23. ... ok
+test_a_ci_marker_with_a_usable_base_still_refuses_a_host_change (test_slice_scope_no_base.NoBaseTest.test_a_ci_marker_with_a_usable_base_still_refuses_a_host_change)
+AC-S22-23: the marker buys nothing where there is something to compare with. ... ok
+test_a_ci_marker_with_no_base_still_fails_a_lost_record (test_slice_scope_no_base.NoBaseTest.test_a_ci_marker_with_no_base_still_fails_a_lost_record)
+AC-S22-23: both lines, exit 1. ... ok
+test_a_detached_checkout_with_history_is_held_as_locally (test_slice_scope_no_base.NoBaseTest.test_a_detached_checkout_with_history_is_held_as_locally)
+e3 (held): full history and `origin/main`; a host change is refused. ... ok
+test_a_forge_line_names_the_trunk_not_a_target_with_no_ref (test_slice_scope_no_base.NoBaseTest.test_a_forge_line_names_the_trunk_not_a_target_with_no_ref) ... ok
+test_a_github_detached_checkout_with_no_base_says_it_was_not_checked (test_slice_scope_no_base.NoBaseTest.test_a_github_detached_checkout_with_no_base_says_it_was_not_checked)
+e1: exit 0, nothing on stdout, the sentence on stderr. ... ok
+test_a_gitlab_detached_checkout_with_no_base_names_git_depth_too (test_slice_scope_no_base.NoBaseTest.test_a_gitlab_detached_checkout_with_no_base_names_git_depth_too)
+e2: the same through `CI_COMMIT_REF_NAME`. ... ok
+test_a_lost_record_is_printed_with_the_missing_base (test_slice_scope_no_base.NoBaseTest.test_a_lost_record_is_printed_with_the_missing_base)
+e6: the untracked regular file at a canonical slot is reported beside the base line. ... ok
+test_a_lost_record_still_decides_the_exit_of_a_forge_checkout (test_slice_scope_no_base.NoBaseTest.test_a_lost_record_still_decides_the_exit_of_a_forge_checkout)
+Findings stay printed and still fail, beside the NOT checked line. ... ok
+test_a_repository_whose_only_branch_is_the_slice_is_told_the_same (test_slice_scope_no_base.NoBaseTest.test_a_repository_whose_only_branch_is_the_slice_is_told_the_same)
+e2: a full repository, `main` deleted. ... ok
+test_a_shallow_clone_with_no_common_ancestor_is_told_to_unshallow (test_slice_scope_no_base.NoBaseTest.test_a_shallow_clone_with_no_common_ancestor_is_told_to_unshallow)
+e3: `origin/main` at depth 1 and the slice's own commit above it: no ancestor in depth. ... ok
+test_a_shallow_line_names_the_trunk_not_a_target_with_no_ref (test_slice_scope_no_base.NoBaseTest.test_a_shallow_line_names_the_trunk_not_a_target_with_no_ref) ... ok
+test_a_single_branch_shallow_clone_is_told_which_ref_to_fetch (test_slice_scope_no_base.NoBaseTest.test_a_single_branch_shallow_clone_is_told_which_ref_to_fetch)
+e1: `--depth 1 --branch slice/S1` fetches no trunk ref at all. ... ok
+test_a_target_with_a_ref_is_the_base_where_the_trunk_has_none (test_slice_scope_no_base.NoBaseTest.test_a_target_with_a_ref_is_the_base_where_the_trunk_has_none)
+D30, *the forge's word*: no trunk ref, a usable target that has one — held against it, not failed. ... ok
+test_a_variable_cannot_buy_the_pass_while_head_is_attached (test_slice_scope_no_base.NoBaseTest.test_a_variable_cannot_buy_the_pass_while_head_is_attached)
+e5: `GITHUB_HEAD_REF` set, `HEAD` on the branch, no base: a developer's checkout. ... ok
+test_an_attached_unrelated_trunk_line_names_the_trunk_not_a_target_with_no_ref (test_slice_scope_no_base.NoBaseTest.test_an_attached_unrelated_trunk_line_names_the_trunk_not_a_target_with_no_ref)
+D30: the target's name is only what to fetch where no candidate has a ref; `main` has one. ... ok
+test_an_empty_marker_is_no_marker (test_slice_scope_no_base.NoBaseTest.test_an_empty_marker_is_no_marker)
+AC-S22-17 and D32's *non-empty*: the variable alone, markers empty, is a developer's exit 1. ... ok
+test_an_unrelated_trunk_is_held_against_a_target_that_has_a_base (test_slice_scope_no_base.NoBaseTest.test_an_unrelated_trunk_is_held_against_a_target_that_has_a_base)
+D30, the in-loop arm: the trunk has a ref and no shared history, the target has both — exit 0, `develop`. ... ok
+test_an_unrelated_trunk_is_not_a_slice_branchs_trunk (test_slice_scope_no_base.NoBaseTest.test_an_unrelated_trunk_is_not_a_slice_branchs_trunk)
+e4: a full repository whose `main` is an unrelated root. ... ok
+test_an_unusable_target_is_not_the_name_to_fetch (test_slice_scope_no_base.NoBaseTest.test_an_unusable_target_is_not_the_name_to_fetch)
+D30: a target that is no branch name falls through to the trunk the record names, else `main`. ... ok
+test_every_missing_base_state_of_a_forge_checkout_says_not_checked (test_slice_scope_no_base.NoBaseTest.test_every_missing_base_state_of_a_forge_checkout_says_not_checked)
+e1, widened to the plan's three states: no trunk ref, no common ancestor, an unrelated trunk. ... ok
+test_other_branches_keep_nothing_to_hold (test_slice_scope_no_base.NoBaseTest.test_other_branches_keep_nothing_to_hold)
+e4 (held): `feature/x` in a shallow clone, and a detached checkout with no variable. ... ok
+test_the_fetch_named_is_the_targets_then_the_recorded_trunk_then_main (test_slice_scope_no_base.NoBaseTest.test_the_fetch_named_is_the_targets_then_the_recorded_trunk_then_main)
+D30: the name the line tells a person to fetch. ... ok
+test_the_not_checked_line_names_the_target_where_the_forge_gives_one (test_slice_scope_no_base.NoBaseTest.test_the_not_checked_line_names_the_target_where_the_forge_gives_one)
+D31 answer 3: `<trunk>` is the name D30 gives to fetch — the pull request's target first. ... ok
+test_the_passed_over_notes_fetch_writes_the_branch_it_names (test_slice_scope_no_base.NoBaseTest.test_the_passed_over_notes_fetch_writes_the_branch_it_names)
+G1: `ci.branch` names `develop`, which the origin has and this clone's ref list does not. ... ok
+test_the_printed_fetch_then_unshallow_reach_a_verdict (test_slice_scope_no_base.NoBaseTest.test_the_printed_fetch_then_unshallow_reach_a_verdict)
+G1: a depth-1 single-branch clone: the fetch, then the `--unshallow` line, each run, end in a verdict. ... ok
+test_the_printed_fetch_writes_the_ref_it_says_is_missing (test_slice_scope_no_base.NoBaseTest.test_the_printed_fetch_writes_the_ref_it_says_is_missing)
+G1: in a single-branch clone the command the gate prints is run, and the gate has moved on. ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_report.MasterBesideMainTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_report.MasterBesideMainTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_master_minted_at_the_head_leaves_the_refusal_and_the_base (test_slice_scope_report.MasterBesideMainTest.test_a_master_minted_at_the_head_leaves_the_refusal_and_the_base)
+AC-S22-1's repository: the clause may appear; the base and the exit are as before. ... ok
+test_a_master_trunk_ahead_of_a_stale_main_is_told_what_to_record (test_slice_scope_report.MasterBesideMainTest.test_a_master_trunk_ahead_of_a_stale_main_is_told_what_to_record)
+Refusal: the header says `master` is here, no trunk is recorded, and the fix; the base stays `main`'s. ... ok
+test_a_master_with_the_same_base_has_no_clause (test_slice_scope_report.MasterBesideMainTest.test_a_master_with_the_same_base_has_no_clause) ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_report.MasterBesideMainTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_report.MasterBesideMainTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_report.MasterBesideMainTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_a_usable_recorded_name_with_no_ref_keeps_its_own_sentence_and_no_clause (test_slice_scope_report.MasterBesideMainTest.test_a_usable_recorded_name_with_no_ref_keeps_its_own_sentence_and_no_clause)
+D33 *where `ci.branch` records nothing usable*: `develop` is usable, so the clause is false there. ... ok
+test_a_usable_recorded_trunk_with_a_ref_has_no_clause (test_slice_scope_report.MasterBesideMainTest.test_a_usable_recorded_trunk_with_a_ref_has_no_clause) ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_report.MasterBesideMainTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_an_older_master_left_behind_has_no_clause (test_slice_scope_report.MasterBesideMainTest.test_an_older_master_left_behind_has_no_clause)
+AC-S22-12's repository: `main` moved on, `master` stayed at the first commit. Teeth: *strictly newer*. ... ok
+test_recording_master_makes_the_slice_green_against_it_without_the_clause (test_slice_scope_report.MasterBesideMainTest.test_recording_master_makes_the_slice_green_against_it_without_the_clause) ... ok
+test_the_clause_joins_the_passed_over_words (test_slice_scope_report.MasterBesideMainTest.test_the_clause_joins_the_passed_over_words) ... ok
+test_the_clause_stays_where_nothing_usable_is_recorded (test_slice_scope_report.MasterBesideMainTest.test_the_clause_stays_where_nothing_usable_is_recorded) ... ok
+test_the_pass_line_carries_the_clause_too (test_slice_scope_report.MasterBesideMainTest.test_the_pass_line_carries_the_clause_too) ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_report.NamedTrunkTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_report.NamedTrunkTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_report.NamedTrunkTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_report.NamedTrunkTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_report.NamedTrunkTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_report.NamedTrunkTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_an_origin_ahead_of_a_local_main_and_merged_is_the_base (test_slice_scope_report.NamedTrunkTest.test_an_origin_ahead_of_a_local_main_and_merged_is_the_base)
+AC-S22-11, the inverse order: `origin/main` fetched past a `main` not pulled; `main`'s files are not ours. ... ok
+test_the_header_names_main_in_each_minted_ref_example (test_slice_scope_report.NamedTrunkTest.test_the_header_names_main_in_each_minted_ref_example)
+AC-S22-1: a `master` branch, an `origin/master`, a tag `main` at the head; the refusal says `main`. ... ok
+test_the_pass_line_names_the_recorded_trunk_where_it_differs_from_main (test_slice_scope_report.NamedTrunkTest.test_the_pass_line_names_the_recorded_trunk_where_it_differs_from_main)
+AC-S22-2: `trunk` one commit past `main`; the line names `trunk` and the commit it is at, not `main`'s. ... ok
+test_a_developers_no_base_failure_is_one_line_of_its_own (test_slice_scope_report.NoBaseReportTest.test_a_developers_no_base_failure_is_one_line_of_its_own) ... ok
+test_a_forges_not_checked_output_carries_no_fetch_command (test_slice_scope_report.NoBaseReportTest.test_a_forges_not_checked_output_carries_no_fetch_command)
+G5: a recorded name with no branch here is passed over, and the note names no `git fetch`. ... ok
+test_a_lost_record_in_the_unrelated_trunk_state_fails_attached_and_under_a_marker (test_slice_scope_report.NoBaseReportTest.test_a_lost_record_in_the_unrelated_trunk_state_fails_attached_and_under_a_marker)
+D32/AC-S22-19: `HEAD` attached, a trunk sharing no history; the findings come first, whoever runs it. ... ok
+test_a_lost_record_keeps_the_header_and_the_no_base_line_follows_it (test_slice_scope_report.NoBaseReportTest.test_a_lost_record_keeps_the_header_and_the_no_base_line_follows_it)
+Order: the findings under their header first, then the no-base line, forge or developer. ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_report.NoBaseReportTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_marker_set_to_false_is_still_a_marker (test_slice_scope_report.NoBaseReportTest.test_a_marker_set_to_false_is_still_a_marker)
+D32 *non-empty*: `CI=false` is how a person says no, and the check reads it as a run that is CI. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_report.NoBaseReportTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_report.NoBaseReportTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_report.NoBaseReportTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_report.NoBaseReportTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_report.NoBaseReportTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_report.RecordShapeTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_report.RecordShapeTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_record_that_is_not_a_string_is_said_to_be_passed_over (test_slice_scope_report.RecordShapeTest.test_a_record_that_is_not_a_string_is_said_to_be_passed_over) ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_report.RecordShapeTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_report.RecordShapeTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_slice_shaped_name_is_a_slice_branch_never_the_trunk (test_slice_scope_report.RecordShapeTest.test_a_slice_shaped_name_is_a_slice_branch_never_the_trunk) ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_report.RecordShapeTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_an_absent_null_or_blank_record_stays_silent (test_slice_scope_report.RecordShapeTest.test_an_absent_null_or_blank_record_stays_silent) ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_report.RecordShapeTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_a_main_minted_in_a_master_repository_does_not_empty_the_diff (test_slice_scope_base.SliceScopeBaseTest.test_a_main_minted_in_a_master_repository_does_not_empty_the_diff)
+e5: `ci.branch: master`, trunk `master`, a `main` minted at HEAD. ... ok
+test_a_master_branch_at_head_does_not_empty_the_diff (test_slice_scope_base.SliceScopeBaseTest.test_a_master_branch_at_head_does_not_empty_the_diff)
+e1: no recorded trunk, a `master` minted at HEAD. ... ok
+test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it (test_slice_scope_base.SliceScopeBaseTest.test_a_recorded_trunk_is_the_base_and_nothing_minted_replaces_it)
+e4: `ci.branch: trunk` — own file green; a `main` or `master` minted at HEAD changes nothing. ... ok
+test_a_remote_master_at_head_does_not_empty_the_diff (test_slice_scope_base.SliceScopeBaseTest.test_a_remote_master_at_head_does_not_empty_the_diff)
+e2: the same with `refs/remotes/origin/master`. ... ok
+test_a_tag_named_main_is_not_a_base (test_slice_scope_base.SliceScopeBaseTest.test_a_tag_named_main_is_not_a_base)
+e3: the same with a tag `main` at HEAD beside the `main` branch, which a short name loses to. ... ok
+test_an_older_master_left_behind_does_not_change_the_answer (test_slice_scope_base.SliceScopeBaseTest.test_an_older_master_left_behind_does_not_change_the_answer)
+e6, held: `main` and an older `master`, nothing minted. ... ok
+test_a_deployable_with_no_path_key_owns_nothing (test_slice_scope_root.SliceScopeRootTest.test_a_deployable_with_no_path_key_owns_nothing)
+T006 (AC-S20-8), held: a record with the key missing, as with `""`, is no fallback owner. ... ok
+test_a_malformed_row_adds_nothing_and_does_not_hide_the_others (test_slice_scope_root.SliceScopeRootTest.test_a_malformed_row_adds_nothing_and_does_not_hide_the_others)
+T008 (AC-S20-14, D20): a row of the wrong shape adds nothing; a well-formed row beside it still does. ... ok
+test_a_path_the_factory_wrote_is_refused (test_slice_scope_root.SliceScopeRootTest.test_a_path_the_factory_wrote_is_refused)
+R2 e5: a line of `.written` is the host's, though no fixed name says so. ... ok
+test_a_real_adoption_at_the_root (test_slice_scope_root.SliceScopeRootTest.test_a_real_adoption_at_the_root)
+AC-S20-1, -2 on a tree `slipwai adopt` made: tests are the slice's, the Makefile and a written path not. ... ok
+test_a_registry_that_is_gone_unreadable_or_malformed_adds_nothing (test_slice_scope_root.SliceScopeRootTest.test_a_registry_that_is_gone_unreadable_or_malformed_adds_nothing)
+T008 (AC-S20-14): D18's names are still refused, the five pass, and there is never a traceback. ... ok
+test_a_subdirectory_service_still_owns_its_own_files (test_slice_scope_root.SliceScopeRootTest.test_a_subdirectory_service_still_owns_its_own_files)
+R3 e1: the fallback does not outrank `apps/api`, and another service's code is not this slice's. ... ok
+test_an_empty_path_owns_nothing (test_slice_scope_root.SliceScopeRootTest.test_an_empty_path_owns_nothing)
+R1 e5: a deployable with `path: ""` is no fallback; its file stays outside every deployable. ... ok
+test_delivery_at_the_root_keeps_its_ledger_baseline_and_survey_the_hosts (test_slice_scope_root.SliceScopeRootTest.test_delivery_at_the_root_keeps_its_ledger_baseline_and_survey_the_hosts)
+T009 (R-3): with the delivery directory the root and a deployable at the root, `.written`, `baseline.json` ... ok
+test_every_fixed_host_name_is_refused_with_no_registry (test_slice_scope_root.SliceScopeRootTest.test_every_fixed_host_name_is_refused_with_no_registry)
+T006 (AC-S20-2, D20), held: every name the checker fixes, one at a time, listed here and not read from ... ok
+test_every_path_a_harness_row_names_is_the_hosts (test_slice_scope_root.SliceScopeRootTest.test_every_path_a_harness_row_names_is_the_hosts)
+T008 (AC-S20-14): the registry beside the checker names the harness files; each is refused. ... ok
+test_every_spelling_of_a_recorded_path_answers_alike (test_slice_scope_root.SliceScopeRootTest.test_every_spelling_of_a_recorded_path_answers_alike)
+T007 (AC-S20-7, -8): `./apps/api` is `apps/api`; `ci.gate` spelled `./ci/gate.yml` is `ci/gate.yml`. ... ok
+test_git_hooks_and_the_ignore_file_are_the_repositorys_own (test_slice_scope_root.SliceScopeRootTest.test_git_hooks_and_the_ignore_file_are_the_repositorys_own)
+T008 (AC-S20-16), held: green on arrival, and still green once the registry and CI names are read. ... ok
+test_no_written_file_leaves_the_fixed_list (test_slice_scope_root.SliceScopeRootTest.test_no_written_file_leaves_the_fixed_list)
+R2 e7, held: with no `.written` the fixed list refuses and the rest is the slice's. ... ok
+test_taking_a_file_over_does_not_open_the_gate_workflow (test_slice_scope_root.SliceScopeRootTest.test_taking_a_file_over_does_not_open_the_gate_workflow)
+R2 e6: `.written` with the gate's line deleted still refuses the gate workflow. ... ok
+test_the_checker_names_every_ci_system_adopt_recognises (test_slice_scope_root.SliceScopeRootTest.test_the_checker_names_every_ci_system_adopt_recognises)
+T008 (AC-S20-15): a forge `adopt` learns later and the checker does not is a red test, not a hole. ... ok
+test_the_delivery_directory_is_refused (test_slice_scope_root.SliceScopeRootTest.test_the_delivery_directory_is_refused)
+R2 e2: the gate, the skills, the commands and the baseline sit in the delivery directory. ... ok
+test_the_docs_keep_their_own_answer (test_slice_scope_root.SliceScopeRootTest.test_the_docs_keep_their_own_answer)
+R2 e3, held: the docs are refused as they were, by the docs clause. ... ok
+test_the_host_surface_at_the_root_is_refused (test_slice_scope_root.SliceScopeRootTest.test_the_host_surface_at_the_root_is_refused)
+R2 e1: the root Makefile, the manifest, the run's settings, CI and the harness guidance are the host's. ... ok
+test_the_host_surface_is_refused_under_the_slash_spelling_too (test_slice_scope_root.SliceScopeRootTest.test_the_host_surface_is_refused_under_the_slash_spelling_too)
+T006 (AC-S20-2, -8), held: with the root recorded `./`, the host's names are as refused as at `.`. ... ok
+test_the_other_ci_systems_and_makefile_spellings_are_the_hosts (test_slice_scope_root.SliceScopeRootTest.test_the_other_ci_systems_and_makefile_spellings_are_the_hosts)
+T008 (AC-S20-15): what `adopt` recognises as CI, and `GNUmakefile` / `makefile`, are refused. ... ok
+test_the_recorded_gate_is_the_hosts_wherever_it_sits (test_slice_scope_root.SliceScopeRootTest.test_the_recorded_gate_is_the_hosts_wherever_it_sits)
+R2 e8: `ci.gate` naming a file outside the fixed CI names is refused. ... ok
+test_the_registry_is_read_once_not_per_path (test_slice_scope_root.SliceScopeRootTest.test_the_registry_is_read_once_not_per_path)
+T008: the harness names are read once for the run; replacing the file mid-run changes nothing. ... ok
+test_the_root_deployable_owns_what_nobody_else_claims (test_slice_scope_root.SliceScopeRootTest.test_the_root_deployable_owns_what_nobody_else_claims)
+R1 e1-e3: the application's own tests, a sibling directory, root tooling and manifests are the slice's. ... ok
+test_the_root_may_be_written_with_a_trailing_slash (test_slice_scope_root.SliceScopeRootTest.test_the_root_may_be_written_with_a_trailing_slash)
+R1 e4: `./` answers as `.` does. ... ok
+test_the_root_service_still_owns_the_rest_beside_a_subdirectory_one (test_slice_scope_root.SliceScopeRootTest.test_the_root_service_still_owns_the_rest_beside_a_subdirectory_one)
+R3 e2: the same branch, a file the root service owns, is green. ... ok
+test_the_slice_writes_two_survey_pages_and_no_other (test_slice_scope_root.SliceScopeRootTest.test_the_slice_writes_two_survey_pages_and_no_other)
+R2 e4: `pinned.md` and `running.md` are the ladder's to write; `survey.md` stays the host's. ... ok
+test_a_base_with_no_record_owns_nothing (test_slice_scope_hostile_branch.HostileBranchTest.test_a_base_with_no_record_owns_nothing)
+T017: no `project.json` on the base, one planted on the branch: nothing is owned. ... ok
+test_a_path_git_quotes_is_held_like_any_other (test_slice_scope_hostile_branch.HostileBranchTest.test_a_path_git_quotes_is_held_like_any_other)
+T016: non-ASCII, tab and quote names under host paths are refused, committed or not. ... ok
+test_a_planted_ci_gate_is_not_the_bases (test_slice_scope_hostile_branch.HostileBranchTest.test_a_planted_ci_gate_is_not_the_bases)
+T017: `ci.gate` read from the branch's record would name a path; the base's does not. ... ok
+test_a_planted_project_json_below_the_root_does_not_move_it (test_slice_scope_hostile_branch.HostileBranchTest.test_a_planted_project_json_below_the_root_does_not_move_it)
+T018: a committed `delivery/project.json` leaves the delivery rule and untracked files intact. ... ok
+test_a_project_json_beside_the_script_is_no_traceback (test_slice_scope_hostile_branch.HostileBranchTest.test_a_project_json_beside_the_script_is_no_traceback)
+T018: the script's own directory holding a `project.json` ends in a verdict, not a traceback. ... ok
+test_an_existing_migration_with_a_non_ascii_name_is_not_editable (test_slice_scope_hostile_branch.HostileBranchTest.test_an_existing_migration_with_a_non_ascii_name_is_not_editable)
+T016: the edit of a shipped `0002_añadir.py` is refused. ... ok
+test_an_unchanged_record_answers_as_before (test_slice_scope_hostile_branch.HostileBranchTest.test_an_unchanged_record_answers_as_before)
+T017, held: with `project.json` as on the base the root deployable owns what it did. ... ok
+test_ascii_answers_as_before_and_a_service_file_under_apps_is_the_slices (test_slice_scope_hostile_branch.HostileBranchTest.test_ascii_answers_as_before_and_a_service_file_under_apps_is_the_slices)
+T016, held: an ASCII path is as it was; a non-ASCII file in the slice's own service is green. ... ok
+test_ownership_is_read_from_the_base_record (test_slice_scope_hostile_branch.HostileBranchTest.test_ownership_is_read_from_the_base_record)
+T017: planted deployables over the host's paths own nothing; every path is refused. ... ok
+test_a_deployable_in_a_subdirectory_still_outranks_both_roots (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_deployable_in_a_subdirectory_still_outranks_both_roots)
+T015 (D22, G3), held: `apps/api` owns its files whichever root service the block names. ... ok
+test_a_deployable_under_a_subdirectory_keeps_both_rules (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_deployable_under_a_subdirectory_keeps_both_rules)
+T013 (AC-S20-19, D21), held: recorded `generated: false` or generated under `apps/`, beside a root one. ... ok
+test_a_migration_shaped_path_on_the_host_surface_is_still_refused (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_migration_shaped_path_on_the_host_surface_is_still_refused)
+T013 (AC-S20-19, D21), held: the host's paths are not opened by the migration answer. ... ok
+test_a_model_that_is_not_utf8_is_no_model (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_model_that_is_not_utf8_is_no_model)
+T014 (D22): an undecodable `model.yaml` names no slice, and the gate still answers. ... ok
+test_a_new_migration_at_the_root_carries_the_repositorys_own_name (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_new_migration_at_the_root_carries_the_repositorys_own_name)
+T013 (AC-S20-17, D21): Django's numbering and a 14-digit stamp are green under the root deployable. ... ok
+test_a_project_record_nested_past_the_recursion_limit_owns_nothing (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_project_record_nested_past_the_recursion_limit_owns_nothing)
+T014 (D22): `project.json` that cannot be parsed has no deployables, so nothing is the slice's. ... ok
+test_a_registry_nested_past_the_recursion_limit_adds_nothing (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_registry_nested_past_the_recursion_limit_adds_nothing)
+T014 (D22, AC-S20-19): the registry is read tolerantly, and a pathological one is no harness row. ... ok
+test_a_written_ledger_that_is_not_utf8_adds_nothing (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_written_ledger_that_is_not_utf8_adds_nothing)
+T014 (D22, AC-S20-19): the host surface reads `.written` tolerantly; the fixed names still answer. ... ok
+test_a_written_line_with_trailing_whitespace_names_its_path (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_a_written_line_with_trailing_whitespace_names_its_path)
+T014 (D22, G5): `lib/generated.py  ` and a CRLF line are the paths they name. ... ok
+test_an_existing_migration_at_the_root_is_still_refused_without_a_stamp_in_the_message (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_an_existing_migration_at_the_root_is_still_refused_without_a_stamp_in_the_message)
+T013 (AC-S20-17, D21): an edit is refused and says to add a new one with the repository's own tool. ... ok
+test_the_events_rule_holds_at_the_root_only_where_the_record_says_hexagonal (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_the_events_rule_holds_at_the_root_only_where_the_record_says_hexagonal)
+T013 (AC-S20-18, D21): a removed events line is green with no `layout`, refused with `hexagonal`. ... ok
+test_the_first_listed_root_owns_it_where_the_slice_names_neither (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_the_first_listed_root_owns_it_where_the_slice_names_neither)
+T015 (D22, G3), held: a service the manifest does not record falls to the first listed, as before. ... ok
+test_the_slices_own_service_owns_the_root_where_it_is_one_of_two (test_slice_scope_adopted_rules.SliceScopeAdoptedRulesTest.test_the_slices_own_service_owns_the_root_where_it_is_one_of_two)
+T015 (D22, G3): `web` and `worker` at `.`, the block says `worker`: the slice's tests are green. ... ok
+
+----------------------------------------------------------------------
+Ran 176 tests in 23.318s
+
+OK
+exit 0
