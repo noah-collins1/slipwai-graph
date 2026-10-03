@@ -4,7 +4,11 @@ One row per finished slice, in the shape `delivery/commands/adversary.md` gives:
 was spawned or why nothing was, then the findings. A skip is a reported decision, never silence, and
 `make -f delivery/Makefile check-decisions` holds every done slice to a row here.
 
-## S00-run-path · 2108b81 · 2026-10-03
+## S00 · 2108b81 · 2026-10-03
+
+Slice `S00-run-path`. The heading carries the id the checker reads — `check-decisions.py` and `benchmark.py` take a
+slice's id as the `[A-Za-z]+\d+` prefix of the register row's first cell, so a slug after the number is not part of
+it (D17; the factory fix rides in `S20`). Every later row here is headed the same way.
 
 | Trigger | Status | Evidence |
 |---|---|---|
