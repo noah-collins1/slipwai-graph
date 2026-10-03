@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import FAIL_MARKER, IS_WINDOWS, MODEL_DIR, RenderCase, write_model
+from render_fixture import FAIL_MARKER, IS_WINDOWS, MODEL_DIR, RenderCase, sha256_of, write_model
 
 NAMES = [f"Do thing {i}" for i in range(1, 17)]
 
@@ -77,6 +77,45 @@ class FinishedFilesTest(RenderCase):
             log = self.model_log(repo)
             self.assertEqual((log.sessions, log.png_draws), (0, 0))
             self.assertEqual(png.read_bytes(), b"made by a person")
+
+    def test_e11_what_the_model_no_longer_produces_is_removed_by_name_and_nothing_it_still_does_is_touched(
+        self,
+    ) -> None:
+        # Held on arrival: removal by name landed with T003, since a wholesale deletion cannot leave a current SVG.
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, NAMES[:3])
+            self.model_log(repo)
+            root = repo / MODEL_DIR
+            names = ("slices/S1.svg", "slices/S2.svg")
+            kept = {name: (root / name).read_bytes() for name in names}
+            marks = {name: (root / name).stat().st_mtime_ns for name in names}
+            (root / "slices/gone").mkdir()
+            (root / "slices/gone/inner.svg").write_text("x")
+            (root / "segments/stray-dir").mkdir()
+            (root / "slices/.tmp-slice-S9.svg").write_text("<svg")
+            (root / "segments/model-9.svg").write_text("old")
+            (root / "slices/S9.mmd").write_text("old")
+            write_model(repo, NAMES[:2])  # S3 is no longer produced: its SVG and source must go
+            log = self.model_log(repo)
+            self.assertEqual(sorted(p.name for p in (root / "slices").iterdir()),
+                             ["S1.mmd", "S1.svg", "S2.mmd", "S2.svg"])
+            self.assertEqual(sorted(p.name for p in (root / "segments").iterdir()), ["model-1.mmd", "model-1.svg"])
+            self.assertEqual({n: (root / n).read_bytes() for n in names}, kept)
+            self.assertEqual({n: (root / n).stat().st_mtime_ns for n in names}, marks)
+            for name in ("slices/S1.mmd", "slices/S2.mmd"):
+                self.assertNotIn(sha256_of(root / name), log.drawn_sources, "a current slice is not drawn again")
+
+    def test_e11_an_empty_model_after_a_run_that_left_files_removes_every_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 2)
+            self.model_log(repo, PNG="1")
+            (repo / MODEL_DIR / "slices/.tmp-slice-S9.svg").write_text("<svg")
+            write_model(repo, [])
+            log = self.model_log(repo)
+            self.assertEqual(log.sessions, 0)
+            root = repo / MODEL_DIR
+            for name in ("model.mmd", "model.svg", "model.png", "model.html", "slices", "segments"):
+                self.assertFalse((root / name).exists(), name)
 
 
 if __name__ == "__main__":
