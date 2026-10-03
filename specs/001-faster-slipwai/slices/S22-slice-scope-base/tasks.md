@@ -282,6 +282,34 @@ No screen in this slice
 
 ## Convergence
 
+**Converged on pass 2, the bound** (2026-10-03, cruise iteration 5, `drive-converge`, host model, fresh context each
+pass) at `a46b2f1`: no `CRITICAL` or `HIGH` open. Pass 1 at `eaa6161` found one `HIGH` (T011), three `MEDIUM`
+(T012–T014; T013 a product question, decided as D32) and two `LOW` (T015, T016); all six are closed above, each as
+its class — pass 2 re-ran every reproduction and 16 mutants in a disposable clone, 15 killed, the survivor appended
+as T017 (`LOW`, Phase 4, tests only). Levels accounted for: the functions (`usable`, `bases_of`, `is_ancestor`,
+`target_base`, `target_name`, `older_of`, `merge_base`, `forge_checkout`, `not_checked`, `check`, `main`); their
+callers (`merge_base()` ← `check()` ← `main()`; the script is run only from `src/slipwai/project/makefile.py`;
+nothing in `assets/` or `src/slipwai/` imports it or parses its output — by text search: this tree has no
+`.codegraph/`); the command line (D31's four answers and D32's marker arm, every no-base state, both streams, with
+and without a marker — a marker never turns a refusal with a usable base into a pass); the generated project's gate
+(a branch that is not `slice/<id>`, `main` itself and a detached checkout with no variable keep *nothing to hold*);
+the published contract (fragment `PATCH`, the trunk defined once, the two promises separate, the catch-up true;
+docstring matches the code; `VERSION` `1.5.2.dev0` untouched). No screen. The sweep: every name source that reaches
+a ref lookup goes through `usable()`; every no-base state × target present, absent, without a ref; every route by
+which a checkout is the forge's; the factory's own suites under `CI=true GITHUB_ACTIONS=true` and under hostile
+forge variables — green. Constitution (line numbers at `a46b2f1`): **I** — a non-slice branch still exits 0
+(`assets/toolkit/scripts/check-slice-scope.py:682–684`), CI's exit stays 0 where there is no base (`:690–691`), the
+suites carry their own git identity (`tests/test_slice_scope_no_base.py:20–23`); **III** — no setting, flag or
+file; D32 is one function (`check-slice-scope.py:660–667`); **V** — every criterion through the command line
+(`tests/test_slice_scope_base.py`, `tests/test_slice_scope_no_base.py`), one capability, the workflow change left to
+`S24`; **VIII** — `changelog.d/slice-scope-base.md:1` `PATCH`, catch-up at `:22–29`, `VERSION` unchanged; **X**
+(not yet in force; its interim bullet) — the base comes only from full ref names (`:258–259`), the older base wins
+across names (`:297–305`), a no-base CI run is said on stderr and never as a pass (`:714–715`); **XIV** — a
+developer's no-base checkout is exit 1 with the command to run (`:692–699`), a slice name is never the trunk in any
+case (`:315`), a lost record fails on every path. The slice touches no application start-up path. The map: no rung
+reached by this slice; `make -f delivery/Makefile check-convergence` green. Not run by either pass: the full gates
+(T010, the host's, on the final tip). Four findings outside the slice's diff went to the split's Parking Lot.
+
 ### Pass 1 (at eaa6161)
 
 ### T011 — The new suites carry their own git identity (HIGH · constitution I, X, XIV: the factory's own gate)
@@ -385,3 +413,24 @@ without regard to case.
   with what is true: `migrate` carries the script, and a checkout with no trunk to compare with now fails locally.
 
 **Files:** `changelog.d/slice-scope-base.md`.
+
+### Pass 2 (at a46b2f1)
+
+### T017 — Teeth for *within one name the newer base wins* when the newer one is `origin`'s (LOW · R1, AC-S22-11 · Phase 4, does not re-open the loop)
+
+- [ ] **LOW.** In `bases_of()` (`assets/toolkit/scripts/check-slice-scope.py` lines 267–271) the loop that picks the
+  newer of the local and the `origin` base can be replaced by *keep the first found* (the local one) and both suites
+  stay green (pass 2, mutant 16 of 16; the other 15 die). The suites pin the direction where local `main` is ahead
+  of `origin/main`; nothing pins the inverse — `origin/main` fetched ahead of a local `main` that was not pulled,
+  and merged into the slice. The code is right there today (read, and the order of `bases` is local then origin);
+  broken, the slice would be charged with `main`'s own files — a false refusal, never a false pass, which is why
+  this is LOW.
+
+**RED:** one command-line test in `tests/test_slice_scope_base.py`: `refs/remotes/origin/main` one commit (a host
+file, `Makefile`) ahead of `refs/heads/main`, that commit merged into `slice/S1` → exit 0 and the pass line reads
+`compared with `main` at <origin/main's short commit>`. It must fail under the mutant above.
+
+**GREEN names the class:** both orders of the two refs of one name — local ahead, `origin` ahead — each with a test
+that dies when the choice is removed. No production change expected.
+
+**Files:** `tests/test_slice_scope_base.py`.

@@ -186,6 +186,13 @@ that cannot delegate takes the earliest ready slice in split order and names the
   target, only the local promise holds. Reading `CI_DEFAULT_BRANCH` or the event payload is another anchor and another
   capability.
 
+- **Left outside S22 by its converge passes** (older than the slice or outside its row): `current_branch()` in
+  `check-slice-scope.py` trusts `GITHUB_HEAD_REF` over git even where `HEAD` is attached to another branch;
+  `bases_of()` uses plain `git merge-base`, which takes one of several best ancestors on a criss-cross history;
+  whether the *checked* branch is a slice is still read case-sensitively (a branch checked out as `Slice/S1` has
+  *nothing to hold* — S22 closed the trunk-name side only); and under a CI marker a full clone whose trunk is
+  unrelated is told `fetch-depth: 0`, which would not help it (AC-S22-22 decides the line). For the completion audit.
+
 ## Next Step
 
 Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,
