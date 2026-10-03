@@ -105,7 +105,7 @@ user-visible change (Principle VIII, AC-S21-11).
 
 ### T003 — An uncommitted change to a seeded file refuses nothing (R3 · AC-S21-5)
 
-- [ ] **Rule R3** — the refusal protects what a run writes, and the refresh no longer writes these four where they
+- [x] **Rule R3** — the refusal protects what a run writes, and the refresh no longer writes these four where they
   exist. Needs T002 (the *kept* function).
 
 **RED** (in `tests/test_refresh_owned.py`):
