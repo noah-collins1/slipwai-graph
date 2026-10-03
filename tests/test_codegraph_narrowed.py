@@ -15,6 +15,7 @@ import sqlite3
 import subprocess
 import tempfile
 import time
+from pathlib import Path
 
 from gate_audit import Audited
 from support import FactoryTestCase, commit_all
@@ -29,6 +30,28 @@ CURRENT = re.compile(r"^check-codegraph: index current — (\d+) file\(s\), inde
 HASHED = (r"^check-codegraph: {synced}index current — hashed {hashed} of (\d+) file\(s\), only what changed since the "
           r"last whole comparison \(\d{{4}}-\d\d-\d\d \d\d:\d\d:\d\d\); the integrity check was not run here and runs "
           r"in the full gate\n$")
+
+
+# The fake CLI of `test_code_index_health` replaces the database file on `sync`. CodeGraph's own writes are SQLite's,
+# in place, to the same file: this stand-in rewrites the rows and leaves the inode, and can be made to fail.
+IN_PLACE = """#!/usr/bin/env python3
+import hashlib, os, sqlite3, subprocess, sys
+from pathlib import Path
+with open(os.environ["FAKE_CODEGRAPH_LOG"], "a") as log:
+    log.write(" ".join(sys.argv[1:]) + "\\n")
+if sys.argv[1] == "sync":
+    if os.environ.get("FAKE_SYNC_FAILS"):
+        sys.exit("Error: the watcher could not start")
+    connection = sqlite3.connect(".codegraph/codegraph.db")
+    connection.execute("DELETE FROM files")
+    for path in subprocess.run(["git", "ls-files"], capture_output=True, text=True).stdout.split():
+        if path.endswith(".py") and Path(path).is_file():
+            digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+            connection.execute("INSERT INTO files VALUES (?, ?, 2.0)", (path, digest))
+    connection.commit()
+    connection.close()
+    print("Done")
+"""
 
 
 def narrowed_line(hashed: int, synced: str = "") -> str:
@@ -59,6 +82,12 @@ class Project:
     def git(self, *arguments: str) -> str:
         done = subprocess.run(["git", *arguments], cwd=self.repo, text=True, capture_output=True, check=True)
         return done.stdout
+
+    def in_place(self) -> None:
+        """The CLI on the PATH is the stand-in that writes the database in place."""
+        cli = Path(self.tools["PATH"].split(":")[0]) / "codegraph"
+        cli.write_text(IN_PLACE)
+        cli.chmod(0o755)
 
     def settle(self) -> None:
         """Wait until every file in the tree is safely older (the gate's two seconds) than now, so that a run starting
@@ -215,3 +244,39 @@ class NarrowedRunTest(FactoryTestCase):
             self.assertIn("check-codegraph: the code index no longer describes this working tree", failed.stderr)
             self.assertIn("1 tracked file(s) changed since they were indexed:", failed.stderr)
             self.assertIn(f"- {edited}", failed.stderr)
+
+
+class ASyncThatWritesInPlaceTest(FactoryTestCase):
+    """The gate's own sync-then-compare-again, against a database written the way SQLite writes it: the same inode."""
+
+    def test_a_sync_in_place_is_followed_by_the_second_comparison_and_renews_the_memory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.in_place()
+            project.whole()
+            project.slice()
+            before = project.remembered()
+            inode = project.database.stat().st_ino
+            project.edit()
+            project.commit()
+            project.settle()
+            synced = project.run()
+            self.assertEqual(synced.returncode, 0, synced.stderr)
+            self.assertRegex(synced.stdout, narrowed_line(1, "synced 1 file(s) first; "))
+            self.assertEqual(project.database.stat().st_ino, inode, "written in place")
+            self.assertNotEqual(project.remembered(), before, "the pass renewed the memory")
+            self.assertRegex(project.run().stdout, narrowed_line(0))
+
+    def test_a_sync_that_does_not_take_fails_and_leaves_the_memory_as_it_was(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            project.in_place()
+            project.whole()
+            project.slice()
+            before = project.remembered()
+            edited = project.edit()
+            failed = project.run(FAKE_SYNC_FAILS="1")
+            self.assertEqual(failed.returncode, 1)
+            self.assertIn("`codegraph sync` did not take", failed.stderr)
+            self.assertIn(f"- {edited}", failed.stderr)
+            self.assertEqual(project.remembered(), before)
