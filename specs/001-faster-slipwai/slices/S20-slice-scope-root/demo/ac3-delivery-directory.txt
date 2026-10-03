@@ -1,0 +1,36 @@
+## repo=/tmp/tmp.uL0uzHPmor/repo branch=slice/S1
+--- delivery/scripts/ratchet.py (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/scripts/ratchet.py: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/scripts/new-tool.py (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/scripts/new-tool.py: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/skills/tdd/SKILL.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/skills/tdd/SKILL.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/skills/new/SKILL.md (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/skills/new/SKILL.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/commands/drive.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/commands/drive.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/baseline.json (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/baseline.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/docs/architecture.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/docs/architecture.md: the docs are the host's; a slice writes its record under `specs/` and the model.
+--- delivery/docs/new-page.md (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/docs/new-page.md: the docs are the host's; a slice writes its record under `specs/` and the model.
+--- delivery/docs/adr/0099-a-decision.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- delivery/docs/event-model/model.yaml (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- delivery/docs/event-model/model.drawio (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- delivery/docs/event-model/mockups/screen.html (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may

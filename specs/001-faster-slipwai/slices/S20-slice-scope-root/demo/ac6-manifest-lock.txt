@@ -1,0 +1,13 @@
+## repo=/tmp/tmp.uL0uzHPmor/repo branch=slice/S1
+--- requirements.txt (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- pyproject.toml (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- uv.lock (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- poetry.lock (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- package.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- package-lock.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may

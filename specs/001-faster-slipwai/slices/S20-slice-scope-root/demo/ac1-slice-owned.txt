@@ -1,0 +1,15 @@
+## repo=/tmp/tmp.uL0uzHPmor/repo branch=slice/S1
+--- tests/test_scope_demo.py (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- tests/test_worker.py (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- src/thing.py (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- scripts/tool.sh (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- docs/notes.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- worker/extra.py (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- README.md (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may

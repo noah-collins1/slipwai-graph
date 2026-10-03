@@ -1,0 +1,41 @@
+### HEAD 9ae2fe7 on adopt-method, 2026-10-03T05:56:25Z
+$ python3 -m unittest tests.test_parallel_slices.SliceScopeGateTest     # quickstart step 2, as written
+E
+======================================================================
+ERROR: test_parallel_slices (unittest.loader._FailedTest.test_parallel_slices)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_parallel_slices
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/noahc/math/slipwai-graph/tests/test_parallel_slices.py", line 17, in <module>
+    from support import NO_MAINTENANCE, FactoryTestCase, commit_all
+ModuleNotFoundError: No module named 'support'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)
+exit=1
+
+$ make test TESTS="test_parallel_slices.SliceScopeGateTest"     # the form the Makefile runs a module in (PYTHONPATH=src:tests)
+PYTHONPATH=src:tests python3 -m unittest -v test_parallel_slices.SliceScopeGateTest
+test_a_second_context_is_another_slices_code (test_parallel_slices.SliceScopeGateTest.test_a_second_context_is_another_slices_code)
+Where the owning service holds several bounded contexts, a slice writes under its own only. ... created: /tmp/tmpjs3rhs3v/contexts
+ok
+test_the_base_is_the_newest_main_the_checkout_knows (test_parallel_slices.SliceScopeGateTest.test_the_base_is_the_newest_main_the_checkout_knows)
+`origin/main` goes stale the moment `main` moves locally and is not pushed — a migration, say. A slice ... created: /tmp/tmp9a8lrl2p/base
+ok
+test_the_gate_holds_a_slice_branch_to_what_one_slice_may_touch (test_parallel_slices.SliceScopeGateTest.test_the_gate_holds_a_slice_branch_to_what_one_slice_may_touch)
+Off a slice branch there is nothing to hold — except a regular file where a canonical link should ... created: /tmp/tmpozkfaslh/scope
+ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 4.665s
+
+OK
+exit=0
+
+$ git diff --stat eafc156..HEAD -- tests/test_parallel_slices.py ; git status --short tests/test_parallel_slices.py
+(nothing printed above: the test file is unchanged since eafc156, the commit before the slice's first)

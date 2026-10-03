@@ -7,8 +7,7 @@ What proves the slice, run from this checkout (`FACTORY=$(pwd)`). No seed data, 
 ```sh
 FACTORY=$(pwd); T=$(mktemp -d); cp -r tests/fixtures/adopt/python-worker "$T/repo"; cd "$T/repo"
 git init -q -b main && git add -A && git -c user.name=t -c user.email=t@local commit -q -m theirs
-"$FACTORY/slipwai" adopt --yes
-git add -A && git -c user.name=t -c user.email=t@local commit -q -m adopted
+"$FACTORY/slipwai" adopt --yes          # makes its own commit on main
 git checkout -q -b slice/S1
 echo "# a slice's test" >> tests/test_scope_demo.py
 make -f delivery/Makefile check-slice-scope
@@ -26,7 +25,7 @@ for `project.json`, `delivery/scripts/ratchet.py`, `.specify/drive.json`; `deliv
 
 ## 2. A project with deployables under `apps/`
 
-`python3 -m unittest tests.test_parallel_slices.SliceScopeGateTest` — green, with the test file unchanged.
+`make test TESTS="test_parallel_slices.SliceScopeGateTest"` from this checkout — green, with the test file unchanged.
 
 ## 3. A register id with a slug
 

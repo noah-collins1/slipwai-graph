@@ -1,0 +1,15 @@
+### The board's 'not working yet' (Phase 4, D21/D22; AC-S20-17..19, outside this demo) — observed, not judged
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/vknown branch=slice/S1
+--- shop/migrations/0002_add_field.py (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      shop/migrations/0002_add_field.py: a new migration on a slice branch is timestamped — `202609151030_add_field.py` (`V202609151030__…` under Flyway), `date -u +%Y%m%d%H%M` for the stamp — so two slices never mint the same name. A number is what the sibling branch is also about to take.
+--- db/migrations/20261003120000_add.js (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      db/migrations/20261003120000_add.js: a new migration on a slice branch is timestamped — `202609151030_add.js` (`V202609151030__…` under Flyway), `date -u +%Y%m%d%H%M` for the stamp — so two slices never mint the same name. A number is what the sibling branch is also about to take.
+--- shop/migrations/0001_initial.py (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      shop/migrations/0001_initial.py: an existing migration was edited. A slice adds migrations and never changes one that shipped — the release running against the database already applied it. Add a new, timestamped migration instead.
+--- worker/domain/events.py (a line removed)
+check-slice-scope: a slice branch reaches outside what one slice may touch
+  worker/domain/events.py: the events module is the contract and grows additively — a line was removed. Add the new shape beside the old; retiring one is the host's, once nothing folds it.

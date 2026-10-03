@@ -1,0 +1,7 @@
+## repo=/tmp/tmp.uL0uzHPmor/repo branch=slice/S1
+--- .gitignore (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .githooks/pre-commit (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .pre-commit-config.yaml (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may

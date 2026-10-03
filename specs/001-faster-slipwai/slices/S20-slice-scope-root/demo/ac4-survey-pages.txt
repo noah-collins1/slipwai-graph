@@ -1,0 +1,11 @@
+## repo=/tmp/tmp.uL0uzHPmor/repo branch=slice/S1
+--- delivery/survey/pinned.md (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- delivery/survey/running.md (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- delivery/survey/survey.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/survey/survey.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/survey/new-page.md (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/survey/new-page.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.

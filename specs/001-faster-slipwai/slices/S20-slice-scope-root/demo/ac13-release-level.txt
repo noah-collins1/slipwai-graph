@@ -1,0 +1,64 @@
+### HEAD 9ae2fe7; slice's first commit 9d1bcbe, the commit before it eafc156
+$ cat VERSION
+1.5.2.dev0
+$ git diff --stat eafc156..HEAD -- VERSION delivery/scripts ; git status --short VERSION delivery/scripts
+(nothing printed: neither moved)
+$ git diff --stat eafc156..HEAD -- changelog.d
+ changelog.d/slice-scope-root-deployable.md | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+$ git status --short changelog.d
+ M changelog.d/slice-scope-root-deployable.md
+$ ls changelog.d
+README.md
+slice-scope-root-deployable.md
+$ cat changelog.d/slice-scope-root-deployable.md   (working tree)
+PATCH
+
+**`check-slice-scope` no longer refuses a slice's own code in a repository adopted at its root (`adopt`,
+experimental), and a slice id with a slug is read whole.** A repository adopted with its one application at
+the root records that deployable at `.`, and the gate read `.` as owning no path, so a slice's tests and its
+code were all refused as *outside every deployable*. A deployable at `.` now owns every path no deployable in a
+subdirectory claims, except what stays the host's there: `project.json`, the root `Makefile` in any spelling
+make reads, `.specify/`, CI configuration for every system `adopt` recognises, every agent's guidance, skills,
+hooks and settings as `scripts/agents/registry.json` names them, every path in `<delivery>/.written`, and the
+delivery directory apart from `survey/pinned.md` and `survey/running.md`, which the ladder has a slice write.
+Git hooks and `.gitignore` are the repository's own. A new migration under a deployable at `.` keeps
+whatever name the repository's own tool gave it — the 12-digit stamp is asked only of code the factory lays out —
+while an existing migration is still never edited; and the events-module rule holds there only where the record
+says `"layout": "hexagonal"`. A service
+under `apps/` still owns its own files, an empty `path` still owns nothing, and a project with no deployable at
+`.` gets the answers it had.
+
+`check-decisions` and `check-benchmark` cut a register id such as `S00-run-path` to `S00`, so an adversary-log
+row headed with the full id was reported missing and the slice's `benchmark.json` was looked for under
+`slices/S00/`. Both now read the id whole, and still accept a row or a record written under the bare prefix.
+
+This asks nothing of a repository already generated: `slipwai migrate` carries the corrected scripts.
+
+$ git diff -- changelog.d/slice-scope-root-deployable.md   (uncommitted part)
+diff --git a/changelog.d/slice-scope-root-deployable.md b/changelog.d/slice-scope-root-deployable.md
+index d74d329..2b7eed6 100644
+--- a/changelog.d/slice-scope-root-deployable.md
++++ b/changelog.d/slice-scope-root-deployable.md
+@@ -8,7 +8,10 @@ subdirectory claims, except what stays the host's there: `project.json`, the roo
+ make reads, `.specify/`, CI configuration for every system `adopt` recognises, every agent's guidance, skills,
+ hooks and settings as `scripts/agents/registry.json` names them, every path in `<delivery>/.written`, and the
+ delivery directory apart from `survey/pinned.md` and `survey/running.md`, which the ladder has a slice write.
+-Git hooks and `.gitignore` are the repository's own. A service
++Git hooks and `.gitignore` are the repository's own. A new migration under a deployable at `.` keeps
++whatever name the repository's own tool gave it — the 12-digit stamp is asked only of code the factory lays out —
++while an existing migration is still never edited; and the events-module rule holds there only where the record
++says `"layout": "hexagonal"`. A service
+ under `apps/` still owns its own files, an empty `path` still owns nothing, and a project with no deployable at
+ `.` gets the answers it had.
+ 
+$ git diff --stat eafc156..HEAD -- assets src catalog.json
+ assets/toolkit/scripts/agents/benchmark.py  |  12 ++-
+ assets/toolkit/scripts/check-decisions.py   |  20 +++--
+ assets/toolkit/scripts/check-slice-scope.py | 126 ++++++++++++++++++++++++++--
+ 3 files changed, 142 insertions(+), 16 deletions(-)
+$ PYTHONPATH=src:tests python3 -m unittest test_changelog
+----------------------------------------------------------------------
+Ran 13 tests in 0.340s
+
+OK (skipped=1)

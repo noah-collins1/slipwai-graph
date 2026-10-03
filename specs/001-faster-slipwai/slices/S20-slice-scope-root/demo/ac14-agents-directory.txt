@@ -1,0 +1,10 @@
+## .agents/skills/ is in the adopted .gitignore (line 24), so a file there is not a change; .agents/other/file.md and .agents/top.md are not ignored
+.gitignore:24:.agents/skills/	.agents/skills/x/SKILL.md
+python3 delivery/scripts/check-slice-scope.py
+check-slice-scope: a slice branch reaches outside what one slice may touch
+
+  .agents/other/file.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+  .agents/top.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+make: *** [delivery/Makefile:58: check-slice-scope] Error 1
+exit=2

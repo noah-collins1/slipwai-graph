@@ -1,0 +1,49 @@
+## repo=/tmp/tmp.uL0uzHPmor/repo branch=slice/S1
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- project.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .specify/drive.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .specify/drive.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .specify/new.json (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .specify/new.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .github/workflows/ci.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .github/workflows/ci.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- AGENTS.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      AGENTS.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- CLAUDE.md (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      CLAUDE.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .claude/settings.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .claude/settings.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .codex/x.toml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .codex/x.toml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .cursor/rules/x.md (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .cursor/rules/x.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .gemini/x.md (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .gemini/x.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .opencode/x.md (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .opencode/x.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .gitea/workflows/ci.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .gitea/workflows/ci.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .forgejo/workflows/ci.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .forgejo/workflows/ci.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .gitlab/ci/x.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .gitlab/ci/x.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .gitlab-ci.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .gitlab-ci.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.

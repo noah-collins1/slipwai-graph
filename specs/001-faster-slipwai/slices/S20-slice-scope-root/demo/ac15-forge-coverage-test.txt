@@ -1,0 +1,58 @@
+$ make test TESTS="test_slice_scope_root"
+PYTHONPATH=src:tests python3 -m unittest -v test_slice_scope_root
+test_a_deployable_with_no_path_key_owns_nothing (test_slice_scope_root.SliceScopeRootTest.test_a_deployable_with_no_path_key_owns_nothing)
+T006 (AC-S20-8), held: a record with the key missing, as with `""`, is no fallback owner. ... ok
+test_a_malformed_row_adds_nothing_and_does_not_hide_the_others (test_slice_scope_root.SliceScopeRootTest.test_a_malformed_row_adds_nothing_and_does_not_hide_the_others)
+T008 (AC-S20-14, D20): a row of the wrong shape adds nothing; a well-formed row beside it still does. ... ok
+test_a_path_the_factory_wrote_is_refused (test_slice_scope_root.SliceScopeRootTest.test_a_path_the_factory_wrote_is_refused)
+R2 e5: a line of `.written` is the host's, though no fixed name says so. ... ok
+test_a_real_adoption_at_the_root (test_slice_scope_root.SliceScopeRootTest.test_a_real_adoption_at_the_root)
+AC-S20-1, -2 on a tree `slipwai adopt` made: tests are the slice's, the Makefile and a written path not. ... ok
+test_a_registry_that_is_gone_unreadable_or_malformed_adds_nothing (test_slice_scope_root.SliceScopeRootTest.test_a_registry_that_is_gone_unreadable_or_malformed_adds_nothing)
+T008 (AC-S20-14): D18's names are still refused, the five pass, and there is never a traceback. ... ok
+test_a_subdirectory_service_still_owns_its_own_files (test_slice_scope_root.SliceScopeRootTest.test_a_subdirectory_service_still_owns_its_own_files)
+R3 e1: the fallback does not outrank `apps/api`, and another service's code is not this slice's. ... ok
+test_an_empty_path_owns_nothing (test_slice_scope_root.SliceScopeRootTest.test_an_empty_path_owns_nothing)
+R1 e5: a deployable with `path: ""` is no fallback; its file stays outside every deployable. ... ok
+test_delivery_at_the_root_keeps_its_ledger_baseline_and_survey_the_hosts (test_slice_scope_root.SliceScopeRootTest.test_delivery_at_the_root_keeps_its_ledger_baseline_and_survey_the_hosts)
+T009 (R-3): with the delivery directory the root and a deployable at the root, `.written`, `baseline.json` ... ok
+test_every_fixed_host_name_is_refused_with_no_registry (test_slice_scope_root.SliceScopeRootTest.test_every_fixed_host_name_is_refused_with_no_registry)
+T006 (AC-S20-2, D20), held: every name the checker fixes, one at a time, listed here and not read from ... ok
+test_every_path_a_harness_row_names_is_the_hosts (test_slice_scope_root.SliceScopeRootTest.test_every_path_a_harness_row_names_is_the_hosts)
+T008 (AC-S20-14): the registry beside the checker names the harness files; each is refused. ... ok
+test_every_spelling_of_a_recorded_path_answers_alike (test_slice_scope_root.SliceScopeRootTest.test_every_spelling_of_a_recorded_path_answers_alike)
+T007 (AC-S20-7, -8): `./apps/api` is `apps/api`; `ci.gate` spelled `./ci/gate.yml` is `ci/gate.yml`. ... ok
+test_git_hooks_and_the_ignore_file_are_the_repositorys_own (test_slice_scope_root.SliceScopeRootTest.test_git_hooks_and_the_ignore_file_are_the_repositorys_own)
+T008 (AC-S20-16), held: green on arrival, and still green once the registry and CI names are read. ... ok
+test_no_written_file_leaves_the_fixed_list (test_slice_scope_root.SliceScopeRootTest.test_no_written_file_leaves_the_fixed_list)
+R2 e7, held: with no `.written` the fixed list refuses and the rest is the slice's. ... ok
+test_taking_a_file_over_does_not_open_the_gate_workflow (test_slice_scope_root.SliceScopeRootTest.test_taking_a_file_over_does_not_open_the_gate_workflow)
+R2 e6: `.written` with the gate's line deleted still refuses the gate workflow. ... ok
+test_the_checker_names_every_ci_system_adopt_recognises (test_slice_scope_root.SliceScopeRootTest.test_the_checker_names_every_ci_system_adopt_recognises)
+T008 (AC-S20-15): a forge `adopt` learns later and the checker does not is a red test, not a hole. ... ok
+test_the_delivery_directory_is_refused (test_slice_scope_root.SliceScopeRootTest.test_the_delivery_directory_is_refused)
+R2 e2: the gate, the skills, the commands and the baseline sit in the delivery directory. ... ok
+test_the_docs_keep_their_own_answer (test_slice_scope_root.SliceScopeRootTest.test_the_docs_keep_their_own_answer)
+R2 e3, held: the docs are refused as they were, by the docs clause. ... ok
+test_the_host_surface_at_the_root_is_refused (test_slice_scope_root.SliceScopeRootTest.test_the_host_surface_at_the_root_is_refused)
+R2 e1: the root Makefile, the manifest, the run's settings, CI and the harness guidance are the host's. ... ok
+test_the_host_surface_is_refused_under_the_slash_spelling_too (test_slice_scope_root.SliceScopeRootTest.test_the_host_surface_is_refused_under_the_slash_spelling_too)
+T006 (AC-S20-2, -8), held: with the root recorded `./`, the host's names are as refused as at `.`. ... ok
+test_the_other_ci_systems_and_makefile_spellings_are_the_hosts (test_slice_scope_root.SliceScopeRootTest.test_the_other_ci_systems_and_makefile_spellings_are_the_hosts)
+T008 (AC-S20-15): what `adopt` recognises as CI, and `GNUmakefile` / `makefile`, are refused. ... ok
+test_the_recorded_gate_is_the_hosts_wherever_it_sits (test_slice_scope_root.SliceScopeRootTest.test_the_recorded_gate_is_the_hosts_wherever_it_sits)
+R2 e8: `ci.gate` naming a file outside the fixed CI names is refused. ... ok
+test_the_registry_is_read_once_not_per_path (test_slice_scope_root.SliceScopeRootTest.test_the_registry_is_read_once_not_per_path)
+T008: the harness names are read once for the run; replacing the file mid-run changes nothing. ... ok
+test_the_root_deployable_owns_what_nobody_else_claims (test_slice_scope_root.SliceScopeRootTest.test_the_root_deployable_owns_what_nobody_else_claims)
+R1 e1-e3: the application's own tests, a sibling directory, root tooling and manifests are the slice's. ... ok
+test_the_root_may_be_written_with_a_trailing_slash (test_slice_scope_root.SliceScopeRootTest.test_the_root_may_be_written_with_a_trailing_slash)
+R1 e4: `./` answers as `.` does. ... ok
+test_the_root_service_still_owns_the_rest_beside_a_subdirectory_one (test_slice_scope_root.SliceScopeRootTest.test_the_root_service_still_owns_the_rest_beside_a_subdirectory_one)
+R3 e2: the same branch, a file the root service owns, is green. ... ok
+test_the_slice_writes_two_survey_pages_and_no_other (test_slice_scope_root.SliceScopeRootTest.test_the_slice_writes_two_survey_pages_and_no_other)
+R2 e4: `pinned.md` and `running.md` are the ladder's to write; `survey.md` stays the host's. ... ok
+----------------------------------------------------------------------
+Ran 26 tests in 7.509s
+OK
+exit=0

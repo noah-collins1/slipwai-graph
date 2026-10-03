@@ -1,0 +1,69 @@
+## on main in /tmp/tmp.uL0uzHPmor/v3
+### 0: before any register
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+    -> make check-decisions exit=0
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+    -> make check-benchmark exit=0
+
+### register row:
+| `S00-run-path` | 2026-10-03 | demo |
+
+### 1: no adversary log at all
+check-decisions: the record is not in the shape commands/cruise.md shows
+  specs/f/adversary-log.md: no row for S00-run-path, which is done — `/adversary` runs after every acceptance and records the attack or the skip; an unwritten row is a pass that has to be run again
+make: *** [delivery/Makefile:45: check-decisions] Error 1
+    -> make check-decisions exit=2
+
+### 2: log headed with another slice only (## S01-other · abc · 2026-10-03)
+check-decisions: the record is not in the shape commands/cruise.md shows
+  specs/f/adversary-log.md: no row for S00-run-path, which is done — `/adversary` runs after every acceptance and records the attack or the skip; an unwritten row is a pass that has to be run again
+make: *** [delivery/Makefile:45: check-decisions] Error 1
+    -> make check-decisions exit=2
+
+### 3: log headed ## S00-run-path · abc · 2026-10-03
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+    -> make check-decisions exit=0
+
+### 4: log headed ## S00 · abc · 2026-10-03 (the bare prefix)
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+    -> make check-decisions exit=0
+
+### 5: benchmark — no record under either name
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: warning: specs/f/slices/S00-run-path is done but has no benchmark.json: no stage of it was bracketed (commands/drive.md, *What each stage costs*)
+check-benchmark: 1 warning(s) above — what was not measured stays unmeasured; not failing verify
+    -> make check-benchmark exit=0
+
+### 6: benchmark — record at slices/S00-run-path/benchmark.json
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: 2 record(s), nothing open, every done slice recorded and closed
+    -> make check-benchmark exit=0
+
+### 7: benchmark — record only at slices/S00/benchmark.json
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: 2 record(s), nothing open, every done slice recorded and closed
+    -> make check-benchmark exit=0
+
+### 8: an id with no slug (S05): no record, then a record at slices/S05/
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: warning: specs/f/slices/S05 is done but has no benchmark.json: no stage of it was bracketed (commands/drive.md, *What each stage costs*)
+check-benchmark: 1 warning(s) above — what was not measured stays unmeasured; not failing verify
+    -> make check-benchmark exit=0
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: 2 record(s), nothing open, every done slice recorded and closed
+    -> make check-benchmark exit=0
+    decisions for S05 with log headed ## S00 (should fail naming S05), then ## S05:
+check-decisions: the record is not in the shape commands/cruise.md shows
+  specs/f/adversary-log.md: no row for S05, which is done — `/adversary` runs after every acceptance and records the attack or the skip; an unwritten row is a pass that has to be run again
+make: *** [delivery/Makefile:45: check-decisions] Error 1
+    -> make check-decisions exit=2
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+    -> make check-decisions exit=0
+
+### 9: a register with header and separator rows only
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+    -> make check-decisions exit=0
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: 1 record(s), nothing open, every done slice recorded and closed
+    -> make check-benchmark exit=0

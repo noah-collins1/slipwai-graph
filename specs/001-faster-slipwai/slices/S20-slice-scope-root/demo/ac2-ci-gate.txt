@@ -1,0 +1,8 @@
+### project.json's ci.gate recorded as ./ci/gate.sh on main
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v2gate branch=slice/S1
+--- ci/gate.sh (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      ci/gate.sh: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- ci/other.sh (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may

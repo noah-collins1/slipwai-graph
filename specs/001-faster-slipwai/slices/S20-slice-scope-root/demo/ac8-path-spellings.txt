@@ -1,0 +1,68 @@
+### path recorded as ./
+21:      "path": "./",
+71:    "path": "unknown",
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v8a branch=slice/S1
+--- tests/test_worker.py (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- src/thing.py (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- project.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/scripts/ratchet.py (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/scripts/ratchet.py: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .specify/drive.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .specify/drive.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/survey/pinned.md (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- delivery/survey/survey.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/survey/survey.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- requirements.txt (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .mcp.json (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .mcp.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- Jenkinsfile (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Jenkinsfile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .gitignore (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- delivery/docs/architecture.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/docs/architecture.md: the docs are the host's; a slice writes its record under `specs/` and the model.
+
+### path recorded as the empty string
+21:      "path": "",
+71:    "path": "unknown",
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v8b branch=slice/S1
+--- tests/test_worker.py (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      tests/test_worker.py: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- worker/extra.py (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      worker/extra.py: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+### no path recorded
+1
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v8c branch=slice/S1
+--- tests/test_worker.py (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      tests/test_worker.py: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- worker/extra.py (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      worker/extra.py: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.

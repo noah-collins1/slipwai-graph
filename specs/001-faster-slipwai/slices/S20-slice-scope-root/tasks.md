@@ -62,8 +62,7 @@ what changed and that it asks nothing of a repository already generated.
 
 **REFACTOR:** only if the root test duplicates `SliceScopeGateTest`'s helper; keep its own copy small.
 
-**Verify:** `python3 -m unittest tests.test_slice_scope_root tests.test_parallel_slices.SliceScopeGateTest
-tests.test_changelog` green with `tests/test_parallel_slices.py` untouched (R4 / AC-S20-9, including a root
+**Verify:** `make test TESTS="test_slice_scope_root test_parallel_slices.SliceScopeGateTest test_changelog"` green with `tests/test_parallel_slices.py` untouched (R4 / AC-S20-9, including a root
 `Makefile` refused under `apps/`). Commit.
 
 **Known window:** after T001 and before T002 the root `Makefile`, `project.json` and the rest of the host surface are

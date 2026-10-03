@@ -1,0 +1,54 @@
+### a: a path the ledger lists, outside every fixed name — tools/factory-owned.txt added to delivery/.written on main
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v5a branch=slice/S1
+--- tools/factory-owned.txt (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      tools/factory-owned.txt: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- tools/mine.txt (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+
+### b: fixed-list paths whose lines were deleted from delivery/.written on main
+2:.specify/drive.json
+11:delivery/Makefile
+289:project.json
+286 delivery/.written
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v5b branch=slice/S1
+--- project.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .specify/drive.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .specify/drive.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- tests/test_worker.py (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+
+### c: no delivery/.written at all
+slice/S1
+ls: cannot access 'delivery/.written': No such file or directory
+## repo=/tmp/tmp.uL0uzHPmor/v5c branch=slice/S1
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- project.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      project.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- delivery/scripts/ratchet.py (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/scripts/ratchet.py: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .specify/drive.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .specify/drive.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- tests/test_worker.py (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- delivery/survey/pinned.md (existing) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+
+### d: the ledger itself changed on the slice branch (base repository)
+## repo=/tmp/tmp.uL0uzHPmor/repo branch=slice/S1
+--- delivery/.written (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      delivery/.written: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.

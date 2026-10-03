@@ -1,0 +1,104 @@
+
+### registry removed
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v14removed branch=slice/S1
+--- .mcp.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- opencode.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- GEMINI.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .agents/other/x.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .kiro/steering/x.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- AGENTS.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      AGENTS.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .claude/settings.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .claude/settings.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .github/workflows/ci.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .github/workflows/ci.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+### registry notjson
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v14notjson branch=slice/S1
+--- .mcp.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- opencode.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- GEMINI.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .agents/other/x.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .kiro/steering/x.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- AGENTS.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      AGENTS.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .claude/settings.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .claude/settings.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .github/workflows/ci.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .github/workflows/ci.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+### registry wrongshape
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v14wrongshape branch=slice/S1
+--- .mcp.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- opencode.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- GEMINI.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .agents/other/x.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .kiro/steering/x.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- AGENTS.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      AGENTS.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .claude/settings.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .claude/settings.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .github/workflows/ci.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .github/workflows/ci.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+### registry unreadable
+slice/S1
+## repo=/tmp/tmp.uL0uzHPmor/v14unreadable branch=slice/S1
+--- .mcp.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- opencode.json (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- GEMINI.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .agents/other/x.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- .kiro/steering/x.md (new) -> make exit=0
+    check-slice-scope: slice/S1 touches only what one slice may
+--- Makefile (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- AGENTS.md (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      AGENTS.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .claude/settings.json (existing) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .claude/settings.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+--- .github/workflows/ci.yml (new) -> make exit=2
+    check-slice-scope: a slice branch reaches outside what one slice may touch
+      .github/workflows/ci.yml: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
