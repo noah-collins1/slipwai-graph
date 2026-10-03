@@ -27,7 +27,10 @@ What a slice's change may contain — everything since the branch left `main`, c
   model names none — and, where the block names a `context`, nothing under another context's directory in
   `domain/` or `application/`. A browser app is open to every slice: a white box is one screen. A deployable recorded at `.` — an adopted
   repository's one application — owns every path no other deployable claims, its tests and sibling
-  directories included;
+  directories included, except the host's surface: `project.json`, the root `Makefile`, `.specify/`, CI
+  configuration (`.github/` and its forge siblings, and `ci.gate`), harness guidance (`AGENTS.md`, `CLAUDE.md`,
+  `.claude/` and the other agents' directories), the delivery directory less `survey/pinned.md` and
+  `survey/running.md`, and every path in `<delivery>/.written`;
 - **the context's events module additively**: a line may be added, none removed. It is the contract;
 - **new migration files only**, timestamped so two slices never mint the same name: `YYYYMMDDHHMM_<name>`,
   or `V<YYYYMMDDHHMM>__<name>` under Flyway. The shipped numbered ones keep working — the order is lexical
@@ -85,6 +88,13 @@ MIGRATION_NAME = re.compile(r"^(?:\d+_|V\d+__)")
 MIGRATION_SUFFIXES = {".sql", ".js", ".ts", ".py"}
 STAMPED_MIGRATION = re.compile(r"^(?:\d{12}_|V\d{12}__)")
 LAYERS_BY_CONTEXT = ("domain", "application")
+# The host's surface in a repository whose application is the root: what a slice never writes though the root
+# deployable would otherwise own it. A floor — `<delivery>/.written` only ever adds to it. The two survey pages
+# the ladder has a slice write are the one part of the delivery directory that is not the host's.
+HOST_FILES = ("project.json", "Makefile", "AGENTS.md", "CLAUDE.md", ".gitlab-ci.yml")
+HOST_DIRECTORIES = (".specify", ".github", ".gitea", ".forgejo", ".gitlab", ".claude", ".codex", ".cursor",
+                    ".gemini", ".opencode")
+SLICE_SURVEY_PAGES = ("survey/pinned.md", "survey/running.md")
 
 
 def git(*arguments: str) -> str | None:
@@ -150,12 +160,16 @@ def deletions(base: str, path: str) -> int:
     return 0
 
 
-def deployables() -> dict[str, dict]:
+def project_document() -> dict:
     try:
         document = json.loads((ROOT / "project.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
-    listed = document.get("deployables") if isinstance(document, dict) else None
+    return document if isinstance(document, dict) else {}
+
+
+def deployables() -> dict[str, dict]:
+    listed = project_document().get("deployables")
     return {name: record for name, record in listed.items() if isinstance(record, dict)} if isinstance(listed, dict) else {}
 
 
@@ -224,6 +238,22 @@ class Scope:
             elif app_path and (path == app_path or path.startswith(app_path + "/")):
                 return name
         return root
+
+    def host_surface(self, path: str) -> bool:
+        """Whether a path is the host's where the root deployable would own it: the fixed names, the delivery
+        directory (unless it is the root) less the slice's two survey pages, the recorded CI gate, and every path
+        the factory wrote under `<delivery>/.written`."""
+        if path in HOST_FILES or path.split("/")[0] in HOST_DIRECTORIES:
+            return True
+        if DELIVERY != Path("."):
+            inside = Path(path).is_relative_to(DELIVERY)
+            if inside and path not in [(DELIVERY / page).as_posix() for page in SLICE_SURVEY_PAGES]:
+                return True
+        gate = (project_document().get("ci") or {}).get("gate")
+        if isinstance(gate, str) and path == gate.strip("/"):
+            return True
+        written = ROOT / DELIVERY / ".written"
+        return written.is_file() and path in written.read_text(encoding="utf-8").splitlines()
 
     def spec_violation(self, path: str) -> str | None:
         parts = path.split("/")
@@ -296,6 +326,8 @@ class Scope:
 
     def code_violation(self, path: str, status: str) -> str | None:
         app = self.owning_app(path)
+        if app is not None and self.service_path(app) == "." and self.host_surface(path):
+            app = None
         if app is None:
             return (
                 f"{path}: outside every deployable and not a slice's to write — shared configuration, tooling and "
