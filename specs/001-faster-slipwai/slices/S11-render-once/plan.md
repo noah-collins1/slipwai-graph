@@ -43,6 +43,11 @@ with no browser and no network beyond the `npm install` the event-model tests al
 | **R5** text files are written only when they differ, and the run says what it did | AC-S11-12, -13 | One `wrote` line per file written; the closing line's counts, and *no browser started* | e12 (second run on an unchanged tree: no `wrote` line, no mtime moved) · e13 (the two closing lines, verbatim) |
 | **R6** the page, the fragment and the docs say it | AC-S11-10, -17 | One sentence on forcing a redraw; the fragment's two catch-up sentences, PATCH | e10 · e17 (each sentence followed as written) |
 
+When a draw fails, no further draw is started; draws already in flight finish, and each that succeeded is written
+and reported as any other (it is a finished, current file); the run then names the diagram that failed on stderr
+and exits non-zero. The temporary's name is `.tmp-<kind>-<file name>` with kind `global`, `segment` or `slice`, in
+`docs/event-model/slices/`.
+
 AC-S11-15 is the demo's: the hand measures it on the reference fixture with a real browser
 ([quickstart.md](quickstart.md)).
 
