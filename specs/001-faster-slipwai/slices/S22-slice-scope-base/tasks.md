@@ -286,7 +286,7 @@ No screen in this slice
 
 ### T011 — The new suites carry their own git identity (HIGH · constitution I, X, XIV: the factory's own gate)
 
-- [ ] **HIGH.** `tests/test_slice_scope_no_base.py` `out()` runs `git commit-tree` with the machine's identity, so
+- [x] **HIGH.** (fc929ba) `tests/test_slice_scope_no_base.py` `out()` runs `git commit-tree` with the machine's identity, so
   `test_an_unrelated_trunk_is_not_a_slice_branchs_trunk` and
   `test_every_missing_base_state_of_a_forge_checkout_says_not_checked` ERROR (exit 128) wherever git has no global
   `user.name`/`user.email` — a CI runner; `.github/workflows/verify.yml` configures none, and no other test under
@@ -305,7 +305,7 @@ No production change.
 
 ### T012 — A no-base line never names a branch the state is not about (MEDIUM · R4, R5, R6 · D30 *Depends on D31 only for this*)
 
-- [ ] **MEDIUM.** In `merge_base()`'s in-loop no-base return (`Base(None, target_name() or name, True, …)`) the
+- [x] (0012825) **MEDIUM.** In `merge_base()`'s in-loop no-base return (`Base(None, target_name() or name, True, …)`) the
   trunk HAS a ref and shares no history, yet the name handed to `check()` is the forge target's even where that
   target has no ref here. With `main` an unrelated root and `GITHUB_BASE_REF=release` (no `release` ref), a
   developer's checkout prints *slice/S1 shares no history with `release` — a slice branch is cut from `release`*,
@@ -328,7 +328,7 @@ appears only in a line that tells a person what to fetch.
 
 ### T013 — A push pipeline on a slice branch: decide and say it (MEDIUM · a question for the host, not a code task yet · D31, plan *Constraints* "CI's exit code unchanged in every project")
 
-- [ ] **MEDIUM — hand-back.** D31 defines the forge checkout as *name from a variable and `HEAD` detached*, and the
+- [x] (b2c0968, as D32 decided) **MEDIUM — hand-back.** D31 defines the forge checkout as *name from a variable and `HEAD` detached*, and the
   code does exactly that. A GitHub/Gitea **push** run on a `slice/<id>` branch is neither: `actions/checkout`
   leaves `HEAD` attached, depth 1, single branch, and `GITHUB_HEAD_REF` is empty. Reproduced:
   `git clone --depth 1 --branch slice/S1 file://…`, then `GITHUB_ACTIONS=true CI=true python3
