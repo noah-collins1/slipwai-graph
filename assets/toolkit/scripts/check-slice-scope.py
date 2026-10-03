@@ -127,6 +127,8 @@ MODEL = DELIVERY / "docs/event-model/model.yaml"
 CANVAS = DELIVERY / "docs/event-model/model.drawio"
 ADRS = (DELIVERY / "docs/adr").as_posix() + "/"
 SLICE_BRANCH = re.compile(r"^slice/(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*)$")
+# A name is held to be a slice's without regard to case: where the filesystem folds case, `Slice/S1` is the ref.
+SLICE_NAME = re.compile(SLICE_BRANCH.pattern, re.IGNORECASE)
 CANONICAL_SLOTS = ("plan.md", "research.md", "data-model.md", "quickstart.md", "tasks.md")
 FEATURE_SHARED = ("spec.md", "story-split.md", "adversary-log.md", "decisions.md")
 FEATURE_SHARED_DIRECTORIES = ("contracts", "checklists")
@@ -305,12 +307,12 @@ def older_of(first: str, second: str | None) -> str:
 
 def usable(value: object) -> str | None:
     """A branch name a record may name: a string, stripped, `refs/heads/` taken off, one git accepts as a branch,
-    and not a `slice/<id>` — a slice branch is never the trunk. Anything else is None, never an exception."""
+    and not a `slice/<id>` in any case — a slice branch is never the trunk. Anything else is None, never an exception."""
     if not isinstance(value, str):
         return None
     name = value.strip()
     name = name[len("refs/heads/"):] if name.startswith("refs/heads/") else name
-    if not name or name.startswith(("-", "refs/")) or SLICE_BRANCH.match(name):
+    if not name or name.startswith(("-", "refs/")) or SLICE_NAME.match(name):
         return None
     if git("check-ref-format", f"refs/heads/{name}") is None:
         return None

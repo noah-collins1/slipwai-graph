@@ -105,6 +105,15 @@ class RecordedNameTest(SliceScopeBaseTest):
                     git(repo, "branch", "slice/S9", "HEAD")
                 self.rejects(repo, "project.json")
 
+    def test_a_slice_name_in_another_case_is_never_the_base(self) -> None:
+        """A case-insensitive filesystem makes `Slice/S1` the slice's own ref; a distinct ref at HEAD stands in."""
+        for name in ("Slice/S1", "SLICE/s1"):
+            with self.subTest(name=name):
+                repo = self.repo(self.root())
+                self.record(repo, name)
+                git(repo, "branch", name, "HEAD")
+                self.rejects(repo, "project.json")
+
     def test_a_name_with_no_ref_is_passed_over_and_said_so(self) -> None:
         """e4: `nowhere` has no branch; `main` answers and the output says `nowhere` was passed over."""
         repo = self.repo(self.root())
@@ -191,6 +200,18 @@ class ForgeTargetTest(SliceScopeBaseTest):
                 self.passes(repo)
                 self.commit(repo, "Makefile")
                 self.rejects(repo, "Makefile", {"GITHUB_BASE_REF": target})
+
+    def test_a_target_naming_a_slice_in_another_case_is_ignored(self) -> None:
+        """Both variables, `Slice/S1` at HEAD and no trunk branch at all: the target alone would be the base."""
+        for variable in self.TARGETS:
+            with self.subTest(variable=variable):
+                repo = self.repo(self.root())
+                self.commit(repo, "Makefile")
+                git(repo, "branch", "Slice/S1", "HEAD")
+                git(repo, "branch", "-D", "main")
+                result = self.run_gate(repo, {variable: "Slice/S1"})
+                self.assertNotEqual(result.returncode, 0, "the slice's own ref was taken as the base")
+                self.assertIn("has no `main` to compare with", result.stderr)
 
 
 class ReportTest(SliceScopeBaseTest):
