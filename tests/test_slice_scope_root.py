@@ -41,6 +41,7 @@ slices:
 def load_checker(path: Path, name: str):
     """The checker as a module, from whichever copy `path` names, with no `__pycache__` left beside it."""
     spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None, path
     module = importlib.util.module_from_spec(spec)
     sys.dont_write_bytecode = True
     spec.loader.exec_module(module)

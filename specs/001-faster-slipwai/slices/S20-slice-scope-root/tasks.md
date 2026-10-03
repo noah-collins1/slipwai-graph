@@ -303,3 +303,92 @@ green on arrival.
   slice's unless `.written` lists them, and the checker reads `.written` from the slice's own tree. research.md R-3
   assumes no project is laid out so; nothing checks the assumption. Not reproduced — read from
   `check-slice-scope.py:248–256`.
+
+### Converge pass 2 — 2026-10-03, on `4f16fd5` — **CONVERGED** (three LOW appended; nothing CRITICAL or HIGH)
+
+Quick suite (`make test TESTS="test_slice_scope_root test_register_ids"`): 38 tests, OK. No tracked file was
+changed; every probe ran in a temporary directory against a copy of `assets/toolkit/scripts/check-slice-scope.py`
+and the shipped `agents/registry.json`. `make verify` and `make -f delivery/Makefile verify` were not run by this
+pass (they were running in the checkout); AC-S20-13's last clause rests on them.
+
+**Pass 1's tasks, each as its class.**
+- **T005 — closed.** Every derivation of the bare prefix is guarded: `agents/benchmark.py:671–674` (`head and …`),
+  `check-decisions.py:197–201` (`headed()`, which `baseline()` goes through). No other unguarded `.group(` on a
+  register id in either file. Examples: `tests/test_register_ids.py:130–163` (`IdWithoutAPrefixTest`, three).
+- **T006 — closed.** `tests/test_slice_scope_root.py:271–285`: 24 names written out in the test, equal in number to
+  `HOST_FILES` (13) plus `HOST_DIRECTORIES` (11) at `check-slice-scope.py:98–102`; a missing/None/non-string `path`
+  (`:287`), a refusal under `./` (`:293`), the baseline beside a bare row (`test_register_ids.py:165`).
+- **T007 — closed.** One function, `recorded_path()` (`check-slice-scope.py:106–113`), read by `service_path()`
+  (`:277`) and by `ci.gate` (`:322`); `x`, `x/`, `./x`, `./x/`, `.//x`, `.`, `./`, `./.` held at `:192–210`.
+  Probed besides: `apps/api/.` beside a root spelled `./` gives the other-service answer's owner; `apps/apix/` is
+  not taken for `apps/api`.
+- **T008 — closed as D20 decided.** Clause by clause: the six fields and no other (`:143–144`); every row, no
+  installed filter (`:129`); `~` and `/` skipped (`:133`); more than one segment makes the first segment a
+  directory, one segment a file (`:134`); absent, unreadable, not JSON, not an object, `harnesses` not a list, a row
+  not an object or with a wrong-typed field add nothing (`:123–126`, `:129`, `:140`, `:149–150`, `:153`) while
+  well-formed rows beside it count; CI names and Makefile spellings by name (`:98–101`), held to `CI_FORGES` by
+  `tests/test_slice_scope_root.py:259`; `ci.evidence` not read (no occurrence); hooks and `.gitignore` green
+  (`:266`); all of it only where the root deployable would own the path (`:400`), read once per run (`:316`), so a
+  project with no deployable at `.` never opens the registry. On the shipped registry every in-repository path is a
+  root file or sits under a dot-directory, so no single-segment directory is misread as a file. Two edges are T011
+  and T012.
+- **T009 — closed as its instance, by decision; the rest of its class is T010.** `check-slice-scope.py:307–310`
+  with the example at `tests/test_slice_scope_root.py:298`.
+
+**Constitution, by principle the diff touches.**
+- **I. A generated project owns its files and passes its own gate** — met. Nothing under `delivery/scripts/`, `src/`
+  or `VERSION` differs from `f151b80`; a project with its deployables under `apps/` reaches none of the new code
+  (`check-slice-scope.py:400`); the id readers no longer exit on a traceback (`benchmark.py:671`,
+  `check-decisions.py:198`). The scoped gate only refuses more than D18's (`:304`), never less: additive.
+- **III. Simplicity** — met: one normalising function (`:106`), one registry reader in two small functions
+  (`:116`, `:138`), one cache (`:316`); no setting, no new file in a project, no shared module.
+- **V. Acceptance-driven** — met: each of AC-S20-1 to -16 has a named example; T006's table is written in the test,
+  not read from the checker; RED recorded per task, held examples said to be held.
+- **VIII. Versioning** — met: `changelog.d/slice-scope-root-deployable.md:1` `PATCH`, `adopt` labelled experimental
+  (`:3–4`), `VERSION` `1.5.2.dev0`. The fragment is true of what ships: any spelling make reads (`:98`), every
+  system `adopt` recognises (test `:259`), the registry's names (`:116`), `.written` and the delivery directory less
+  the two survey pages (`:304–311`), hooks and `.gitignore` the repository's own, the whole id with the bare prefix
+  still accepted. *Asks nothing of a repository already generated* now holds (T005).
+- **XIV. Agent-generated change meets the same bar** — met: one commit per task, each naming PATCH.
+
+**By level.**
+1. *Checker logic.* As above; `recorded_path()` and the registry reading answer as D20 and AC-S20-7, -8, -14 to -16
+   say, on the shipped registry and on malformed ones.
+2. *Command line.* Exit codes and messages are today's on every path probed; two tracebacks remain on inputs no
+   criterion names (T011).
+3. *What ships beside the scripts.* The checker's docstring (`:28–37`) says the registry, the spellings and the
+   root-delivery case. No other page was re-swept this pass; pass 1's sweep found none owed and nothing since
+   changed a page.
+4. *Published contract.* One fragment, PATCH, wording true. Not proven here: the two full gates.
+5. *Tests.* No hole found against the criteria. The delivery-at-root example asserts `scripts/x.py` green, which is
+   T010's question, not an oversight.
+
+### T010 — **LOW** — Delivery at the root with a deployable at the root: `scripts/`, `skills/`, `commands/`, `agents/`, `init` are the slice's
+
+- [ ] T009 closed `.written`, `baseline.json` and the survey pages; the other delivery roots
+  (`DELIVERY_ROOTS` in `src/slipwai/layout.py:34`) are the slice's there unless `.written` lists them, and
+  `tests/test_slice_scope_root.py:303` holds `scripts/x.py` green. **Reproduction** (temporary repository,
+  `delivery="."`, root deployable, shipped registry): `skills/x/SKILL.md` and `commands/drive.md` exit 0; `.written`,
+  `baseline.json`, `Makefile`, `docs/x.md` exit 1. No factory path makes this layout (generated projects keep
+  deployables under `apps/`; `adopt` defaults `--delivery delivery`, and `adopt --delivery .` would list the
+  scripts in `.written`), so it is a decision for the host — name the delivery roots there, or say in D18 that the
+  layout is unsupported — not a defect in what ships.
+
+### T011 — **LOW** — Two inputs still end the checker on a traceback: an undecodable `.written`, and a registry nested past the recursion limit
+
+- [ ] `host_names()` reads `.written` with no guard (`check-slice-scope.py:325`; the same read stood at pass 1), and
+  `harness_paths()` catches `OSError, ValueError, AttributeError` but not `RecursionError` (`:125`).
+  **Reproduction** (temporary repository, root deployable): `.written` holding `b"\xff\xfe\n"`, `tests/t.py` changed
+  → `UnicodeDecodeError`, exit 1; `registry.json` holding 100 000 `[` → `RecursionError`, exit 1. Both files are the
+  factory's and the host's, neither input is one AC-S20-5 or AC-S20-14 names (absent, unreadable, not JSON — an
+  invalid-UTF-8 registry is handled), and the exit is still non-zero, so nothing is let through. One tolerant
+  reader for both would close the class.
+
+### T012 — **LOW** — What the registry says only in prose is not the host's, and a future row could take a source directory
+
+- [ ] D20 reads six fields. The shipped registry's prose names `opencode.jsonc` (`projectMcp.how`) and
+  `.amp/plugins/` (`hooks.why`); both exit 0 on a slice branch, as does `.vscode/mcp.json`, which no row names.
+  `opencode.jsonc` is to `opencode.json` what `GNUmakefile` is to `Makefile`. In the other direction, a row naming
+  `src/mcp.json` makes all of `src/` the host's (probed: `src/app.py` refused) — D20's first-segment rule working as
+  written, harmless today because every first segment in the registry is a dot-directory, and held by no test.
+  Either is a registry or D20 question for the host; neither is a criterion unmet.
