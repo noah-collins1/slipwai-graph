@@ -154,7 +154,7 @@ the two (research R-6); where even that is nothing, the trunk's.
 
 ### T005 — The line says what was compared (R4 · AC-S22-13)
 
-- [ ] **Rule R4** — the pass line and the refusal header name the trunk and the base's short commit. Needs T004.
+- [x] **Rule R4** (3f79e4f) — the pass line and the refusal header name the trunk and the base's short commit. Needs T004.
 
 **RED** (in `tests/test_slice_scope_base.py` or the file T004 chose, within 350 lines):
 - e1 pass: `check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at <7+ hex>)` — the
