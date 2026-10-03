@@ -4,7 +4,9 @@ Date: 2026-10-03
 
 ## Status
 
-Proposed
+Accepted
+
+Accepted by the repository's owner on 2026-10-02 (Noah Collins), reviewing the cruise run's D5.
 
 Drafted by `drive-bosun` during `/cruise` iteration 1 of `001-faster-slipwai` (decision D5 in
 `specs/001-faster-slipwai/decisions.md`). Accepting a strategy is a person's act — `.specify/product-owner.md`
