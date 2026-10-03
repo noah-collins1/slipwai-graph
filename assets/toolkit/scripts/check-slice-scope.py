@@ -7,7 +7,7 @@ slices concurrently*). That works only because the files two slices could fight 
 This is the list, and the gate on it. On a branch that is not `slice/<id>` there is nothing to hold, and the
 script says so and exits 0 — which is why `make verify` runs it everywhere.
 
-What a slice's change may contain — everything since the branch left `main`, committed or not:
+What a slice's change may contain — everything since the branch left the trunk, committed or not:
 
 - **its own record**, `specs/<feature>/slices/<id>/**`, and the feature's cumulative artifacts — `spec.md`,
   `story-split.md`, `contracts/`, `checklists/`, `adversary-log.md`, `decisions.md`, `slices/README.md` — which
@@ -61,10 +61,28 @@ root too, is a layout neither `generate` nor `adopt` produces: the fixed names a
 nothing more is promised. The harness registry's own fields are the source of the host's paths: a name it carries
 only in prose is not read.
 
-The base the branch is compared with is where it left `main`, or last merged it in. Every `main` the checkout
-knows is tried — `main`, `origin/main`, their `master` spellings — and the newest base wins: `origin/main` alone
-goes stale the moment `main` moves locally and is not yet pushed (a migration run there, then merged into the
-slice), and a stale base charges the slice with `main`'s own files.
+The base the branch is compared with is where it left the trunk, or last merged it in, and the trunk is found
+by its full ref name: only `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>` answer, so a tag, or a
+`master` branch made at the slice's head, cannot stand in for it. The trunk is `ci.branch` in `project.json`
+where that is a branch name, not a `slice/<id>`, and has a ref in this checkout; else `main`; else `master`. Where
+CI names the pull request's target (`GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`) and it has a ref, it
+is a second candidate, and where the two bases differ the older one wins, so the target can only move the base
+back. Within one name the newer of its local and `origin` base wins: `origin/main` alone goes stale the moment
+`main` moves locally and is not yet pushed, and a stale base charges the slice with `main`'s own files. What was
+compared is said: the pass line and the refusal header end `compared with `<trunk>` at <commit>`.
+
+What is promised differs by where it runs. On a developer's machine nothing the slice commits, and no stray
+`master`, `origin/master` or tag named `main`, moves the base forward; a person who moves refs in their own
+checkout can defeat it, as they can by moving `main` itself. In CI on a pull request against the trunk, nothing the
+branch commits or pushes moves the base forward — given a base to compare with at all. A push pipeline with no
+pull-request target has only the local promise, and a pull request aimed at another branch is held only as far as
+`project.json` reaches.
+
+With no base to compare with, a developer's checkout fails with the command to run: `git fetch origin <trunk>`
+where there is no trunk ref, `git fetch --unshallow origin` where a shallow clone is too short to reach the
+branch point. A forge's pull-request checkout (the branch name in `GITHUB_HEAD_REF` or `CI_COMMIT_REF_NAME`, `HEAD`
+detached) exits 0 and says on stderr that the slice was NOT checked, because that checkout is depth 1; the verify
+job's checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`) for the check to hold there.
 """
 
 from __future__ import annotations
@@ -641,9 +659,9 @@ def forge_checkout() -> bool:
     return named and git("symbolic-ref", "-q", "HEAD") is None
 
 
-def not_checked(slice_id: str) -> str:
+def not_checked(slice_id: str, trunk: str) -> str:
     """The forge's answer where there is no base: not a pass, not a failure, and said on stderr (D31)."""
-    return (f"check-slice-scope: slice/{slice_id} was NOT checked — this CI checkout has no trunk history to "
+    return (f"check-slice-scope: slice/{slice_id} was NOT checked — this CI checkout has no `{trunk}` history to "
             "compare with. The check holds on a developer's machine; for it to hold here the verify job's "
             "checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: \"0\"`).")
 
@@ -662,7 +680,7 @@ def check(branch: str | None) -> tuple[list[str], str, str, str]:
     note = f"; {found_base.passed_over}" if found_base.passed_over else ""
     if base is None:
         if forge_checkout():
-            return violations, "", note, not_checked(slice_id)
+            return violations, "", note, not_checked(slice_id, found_base.trunk)
         trunk = found_base.trunk
         if not found_base.has_ref:
             line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held — run `git fetch origin {trunk}`"

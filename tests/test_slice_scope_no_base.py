@@ -140,7 +140,16 @@ class NoBaseTest(SliceScopeFixtures):
         self.assertNotIn("nothing to hold", result.stderr)
         self.assertIn("slice/S1 was NOT checked", result.stderr)
         self.assertIn("fetch-depth: 0", result.stderr)
+        self.assertIn("no `main` history to compare with", result.stderr)
         return result.stderr
+
+    def test_the_not_checked_line_names_the_target_where_the_forge_gives_one(self) -> None:
+        """D31 answer 3: `<trunk>` is the name D30 gives to fetch — the pull request's target first."""
+        clone = self.clone(self.origin(), "--depth", "1", "--branch", "slice/S1")
+        git(clone, "checkout", "-q", "--detach")
+        result = self.run_gate(clone, {"GITHUB_HEAD_REF": "slice/S1", "GITHUB_BASE_REF": "release"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("no `release` history to compare with", result.stderr)
 
     def test_a_github_detached_checkout_with_no_base_says_it_was_not_checked(self) -> None:
         """e1: exit 0, nothing on stdout, the sentence on stderr."""
