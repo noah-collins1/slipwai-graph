@@ -478,3 +478,79 @@ is one `slipwai adopt` wrote into, committed and clean, and *the four* are `.spe
   `scripted`, and for any recorded rung above the one the record names. Given instead a person's row at or below
   the rung `release.path` names, a row at `one-path` or `pipeline-decides` over `release.path: pipeline`, or a
   `release` record whose provenance is `detected` or `unrecorded`, then the row stands as recorded (D25, D28).
+
+### S22-slice-scope-base
+
+**Gaps reviewed** 2026-10-03, cruise iteration 5, host with `drive-skipper` for D30 and D31: the three examples in
+`story-split.md` against `merge_base()`, `current_branch()` and `check()` in
+`assets/toolkit/scripts/check-slice-scope.py`, and against how generated and adopted CI checks a pull request out
+(`src/slipwai/project/ci_workflows.py`, `src/slipwai/project/adopted_ci.py`). Found and written back: which commit's
+`project.json` names the trunk was unstated, and the working tree's taken as is lets a branch name itself the trunk
+(D30; AC-S22-4, AC-S22-5); the `master` rule had a mirror — a `main` minted beside a `master` trunk (AC-S22-3,
+AC-S22-9); a `ci.branch` that is not a usable name, or has no ref here, had no answer (AC-S22-6, AC-S22-7); the
+forge's pull-request target was unused (AC-S22-8 to AC-S22-10); what the gate prints had no trunk in it
+(AC-S22-13); "a shallow clone fails" taken literally turns every slice pull request's CI red, because every such
+checkout is depth 1 with no trunk ref, and the CI half of the gate has never held (D31; AC-S22-16 to AC-S22-18,
+and slice `S24-ci-fetches-slice-base`, which waits on a person); a full clone with no trunk, and a trunk with no
+common ancestor, were unplaced (AC-S22-14, AC-S22-15); branches that are not slices were unstated (AC-S22-19); the
+same base selection in `check-migrations.py` is left alone and held so (AC-S22-20, Parking Lot). AC-S22-21 states
+the release level. Unless a criterion says otherwise, the project is on a `slice/<id>` branch cut from `main`,
+with a host-surface change committed, no forge variable set, and a full clone.
+
+- **AC-S22-1** — Given a project whose record names no `ci.branch`, when a `master` branch, an `origin/master` ref
+  or a tag named `main` is placed at the branch's head, then `make check-slice-scope` still refuses the change and
+  its header names `main` (D30).
+- **AC-S22-2** — Given a record naming `ci.branch: trunk` and a `trunk` branch, when the slice changes only a file
+  of its own, then the check is green and its line says it compared with `trunk`; given the same project and a
+  `main` or `master` minted at the branch's head, then a host-surface change is still refused.
+- **AC-S22-3** — Given a record naming `master` and a `main` minted at the branch's head, then the change is still
+  refused.
+- **AC-S22-4** — Given a slice that sets `ci.branch` to its own branch name or to any `slice/<id>` name, committed
+  or not, then that name is not taken as a trunk, the base is the fallback's, and `project.json` is among the
+  refusals.
+- **AC-S22-5** — Given a slice that sets `ci.branch` to a name with no branch in the checkout while `main` exists,
+  then the base is `main`'s, `project.json` is refused, and the output says the recorded name was passed over.
+- **AC-S22-6** — Given a `ci.branch` that is a number, a list, an empty string, whitespace, `-x` or
+  `refs/tags/main`, then the check ends in a verdict with no traceback and compares with `main`; given
+  `refs/heads/main`, then it reads as `main`.
+- **AC-S22-7** — Given an unchanged record naming a trunk with no ref in the checkout and a `main` that has one,
+  when the slice changes only its own files, then the verdict is today's against `main`, and its line names the
+  recorded trunk and the fetch that would bring it.
+- **AC-S22-8** — Given `GITHUB_BASE_REF=main` (and, separately, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME=main`), a
+  slice that committed `ci.branch: evil` and an `origin/evil` ref at its head, then the base is `main`'s and
+  `project.json` is refused.
+- **AC-S22-9** — Given a `master` trunk with no record, `GITHUB_BASE_REF=master` and an `origin/main` ref at the
+  branch's head, then the base is `master`'s and the change is refused.
+- **AC-S22-10** — Given a pull-request target naming another branch that sits ahead of the trunk's base, then the
+  base is still the trunk's: across two names the oldest base wins.
+- **AC-S22-11** — Given `main` moved locally past `origin/main` and merged into the slice, then the base is the
+  newer of the two, as today, and `main`'s own files are not charged to the slice.
+- **AC-S22-12** — Given a repository with a `main` trunk and an older `master` branch left behind, no minted ref
+  and no pull-request target, then every verdict is today's.
+- **AC-S22-13** — Given a passing slice branch, then the one line printed names the trunk compared with and the
+  base's short commit; a refusal's header names them too.
+- **AC-S22-14** — Given a developer's shallow clone of a `slice/<id>` branch with no trunk ref, or a full clone
+  with none under `refs/heads/` or `refs/remotes/origin/`, when the check runs, then it exits 1 and its one line
+  names the trunk and `git fetch origin <trunk>` (D31).
+- **AC-S22-15** — Given a shallow clone that has the trunk ref but no common ancestor within its depth, then the
+  check exits 1 and the line names `git fetch --unshallow origin`; given a full clone whose slice branch shares
+  no history with the trunk, then it exits 1 saying a slice branch is cut from the trunk, and names no fetch.
+- **AC-S22-16** — Given a detached depth-1 checkout with `GITHUB_HEAD_REF=slice/<id>` (and, separately,
+  `CI_COMMIT_REF_NAME`) and no trunk ref, when the check runs, then it exits 0, prints nothing on stdout that
+  reads as a pass, and its stderr line says the slice was NOT checked and names `fetch-depth: 0`. The words
+  *nothing to hold* do not appear.
+- **AC-S22-17** — Given `GITHUB_HEAD_REF=slice/<id>` set in a checkout whose `HEAD` is attached to a branch and
+  has no usable base, then the check exits 1: the variable alone does not buy the exit 0.
+- **AC-S22-18** — Given a detached pull-request checkout with full history and the trunk ref, with
+  `GITHUB_HEAD_REF=slice/<id>` and a host-surface change in the diff, then the change is refused exactly as
+  locally.
+- **AC-S22-19** — Given a branch that is not `slice/<id>`, or a detached checkout with no forge variable, in a
+  shallow clone, then the answer is today's (*not a `slice/<id>` branch — nothing to hold*, exit 0); and given
+  any no-base case on a slice branch, a regular file at a canonical slot is still reported and still fails.
+- **AC-S22-20** — Given `check-migrations.py` in a shallow checkout, then its output is what it was before the
+  slice: its base selection is left alone (D31; Parking Lot).
+- **AC-S22-21** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
+  claiming PATCH, `VERSION` unchanged, that states the local promise and the pull-request promise separately and
+  says what the change asks of a repository already generated: after `migrate`, a slice branch in a checkout
+  with no trunk to compare with fails locally with the fetch to run, and CI on a default checkout says the slice
+  was not checked.
