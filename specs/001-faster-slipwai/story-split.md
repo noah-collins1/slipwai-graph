@@ -121,6 +121,15 @@ that cannot delegate takes the earliest ready slice in split order and names the
   stage makes a slice add its row to `<delivery>/survey/pinned.md`, and `check-slice-scope` refuses that file as
   *outside every deployable* in a repository whose deployables are not at `.` — today and after `S20`, which is
   held to the root case. A candidate PATCH slice for the completion audit to place; not planned yet.
+- **The migration and events rules at an adopted deployable under a subdirectory** (D21): `S20` lifts the
+  12-digit stamp and the events rule only at a deployable recorded at `.`. One recorded `"generated": false`
+  under `apps/` or elsewhere keeps both, as every released version has it; lifting them there removes a refusal
+  that exists today and is a person's call (owner brief, *Always ask a person*).
+- **`specs/cruise-log.jsonl` on a slice branch** (found by S20's gaps pass, D22): the runner writes its log
+  beside the feature directories, nothing ignores it, and `check-slice-scope` refuses any path directly under
+  `specs/` on a `slice/<id>` branch — so the first slice branch a `/cruise` run works on is red for the runner's
+  own file. Older than `S20` and hidden until it; a candidate PATCH slice (ignore the log, or let the checker
+  pass it) for the completion audit to place.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 

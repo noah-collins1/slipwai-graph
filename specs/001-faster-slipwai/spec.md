@@ -403,3 +403,14 @@ deployable and `layout.delivery` set, and the check runs on a `slice/<id>` branc
   `src/slipwai/delivery_facts.py`, held by a test, so a forge `adopt` learns later is not forgotten here.
 - **AC-S20-16** — Given a changed `.gitignore`, `.githooks/pre-commit` or `.pre-commit-config.yaml`, then the
   check is green: git hooks and the ignore file are the repository's own (D20).
+- **AC-S20-17** — Given a new `shop/migrations/0002_add_field.py` or a new `db/migrations/20261003120000_add.js`
+  under the root deployable, when the check runs, then it is green: a new migration there carries whatever name
+  the repository's own tool wrote (D21). Given an edited or deleted existing migration there, then it is refused,
+  and the message says to add a new migration with the repository's own tool, with no mention of a timestamp.
+- **AC-S20-18** — Given a removed line in a pre-existing `domain/events.py` under the root deployable whose record
+  has no `layout`, then the check is green; given the record says `"layout": "hexagonal"`, then it is refused
+  with today's *the events module is the contract* message (D21).
+- **AC-S20-19** — Given a deployable recorded `"generated": false` under a subdirectory, or a generated project
+  with its deployables under `apps/`, then a numbered new migration and a removed events line are refused as
+  today (D21); and no file the checker reads — `project.json`, `.written`, the registry — ends it on a traceback,
+  whatever it holds (D22).

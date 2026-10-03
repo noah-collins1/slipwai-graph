@@ -392,3 +392,35 @@ pass (they were running in the checkout); AC-S20-13's last clause rests on them.
   `src/mcp.json` makes all of `src/` the host's (probed: `src/app.py` refused) — D20's first-segment rule working as
   written, harmless today because every first segment in the registry is a dot-directory, and held by no test.
   Either is a registry or D20 question for the host; neither is a criterion unmet.
+
+## Phase 4 — after the demo (D21, D22)
+
+T010 and T012 are answered by D22 as stated readings, with no code: tick them when the docstring says them (T015).
+T011 is folded into T014.
+
+### T013 — **MEDIUM** — The repository's own migration names and files at a root deployable (gaps G1 · D21 · AC-S20-17, -18, -19)
+
+- [ ] RED (in `tests/test_slice_scope_root.py`): a new `shop/migrations/0002_add_field.py` and a new
+  `db/migrations/20261003120000_add.js` under the root deployable refused today → green; a removed line in a
+  pre-existing `domain/events.py` with no `layout` on the record refused today → green. Held, green on arrival: an
+  edited existing migration refused (RED only for its message, which must not say *timestamped*); the events
+  removal refused where the record says `"layout": "hexagonal"`; a `"generated": false` deployable under a
+  subdirectory keeps both refusals; a migration-shaped path on the host surface is still refused. GREEN in
+  `assets/toolkit/scripts/check-slice-scope.py`, only where the owner is the deployable at `.` and the path is not
+  on the host surface; docstring's migration and events bullets say it. `tests/test_parallel_slices.py` untouched.
+
+### T014 — **LOW** — No input ends the checker on a traceback (T011, gaps G5 · D22 · AC-S20-19, AC-S20-5)
+
+- [ ] RED: a `.written` holding bytes that are not UTF-8 → today a `UnicodeDecodeError`; a registry nested past the
+  recursion limit → today a `RecursionError`; a `.written` line with trailing whitespace → today let through. GREEN:
+  one tolerant read for every file the host surface comes from (undecodable, unreadable or malformed adds nothing;
+  lines stripped). Sweep: every `read_text`/`json.loads` in the script, said in the report.
+
+### T015 — **LOW** — Two deployables at `.`, and the docstring says the rule it keeps (gaps G3, G4; T010, T012 · D22)
+
+- [ ] RED: `web` and `worker` both at `.`, model block `service: worker`, `tests/t.py` changed → today *service
+  `web` is not slice …'s*; GREEN: the slice's own `service` owns the path where it is one of the root deployables,
+  else the first listed. Docstring: the *Refused* paragraph says *outside every deployable* for manifests and
+  `scripts/`; one sentence each for the delivery-at-the-root layout (T010) and for the registry's fields being the
+  source (T012).
+
