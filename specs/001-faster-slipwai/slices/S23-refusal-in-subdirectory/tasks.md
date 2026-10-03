@@ -500,7 +500,7 @@ test_changelog"`, then `make lint typecheck check-structure`. Commit, level line
 
 ### T017 — The catch-up can be followed when the message cuts its list (`LOW` · the hand's notes 2, 3 · AC-S23-9)
 
-- [ ] After one `--confirm` the catch-up refusal names eight files *and 57 more*; the fragment says *Commit the files
+- [x] (`bfce56b`, and the host's one-word correction after it: *and N more*, not the 57 of one run) After one `--confirm` the catch-up refusal names eight files *and 57 more*; the fragment says *Commit the files
   it names*. What clears it is committing the project's uncommitted regeneration as a whole.
 
 **GREEN:** the fragment's catch-up says, in one clause, the command that does it where the list is cut short —
