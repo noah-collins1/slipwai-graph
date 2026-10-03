@@ -124,7 +124,8 @@ def skipped(directory: Path, name: str) -> bool:
 
 
 def listing(top: Path) -> list[Path]:
-    """Every path under `top`, files and directories, in `Path` order — listed once, links not followed.
+    """Every path under `top`, files and directories, in `Path` order — listed once, links not followed. A directory
+    nobody reads is still an entry of its parent, so it is listed; only what is inside it is not.
 
     The count of names every listing returned is what the pass line reports: a measurement, not a limit.
     """
@@ -134,8 +135,8 @@ def listing(top: Path) -> list[Path]:
         for current, directories, files in os.walk(top):
             entries_read += len(directories) + len(files)
             directory = Path(current)
-            directories[:] = [name for name in directories if not skipped(directory, name)]
             found.extend(directory / name for name in directories + files)
+            directories[:] = [name for name in directories if not skipped(directory, name)]
         listings[top] = sorted(found)
         members[top] = frozenset(found)
     return listings[top]

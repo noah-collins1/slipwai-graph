@@ -159,3 +159,24 @@ class RecordedJavaTargetHoldTest(Project):
                     plant(repo / "apps/service", java=True)
                     for script, line in GATES.items():
                         self.assertEqual(reported(run_gate(repo, script), line), before[script] + 1)
+
+
+class PrunedEntryStillAnEntryTest(Project):
+    """T031, A2: a directory the walk does not descend is still an entry of its parent."""
+
+    def test_a_contract_marker_naming_a_pruned_directory_is_answered_as_before_the_slice(self) -> None:
+        """`.venv` and `.git` sort before the migration, so the marker was satisfied; `node_modules` and
+        `__pycache__` sort after it, so it was *does not come before it*, never *is not a migration beside it*."""
+        for name, expected in ((".venv", None), (".git", None),
+                               ("node_modules", "does not come before it"), ("__pycache__", "does not come before it")):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                repo = self.generate(directory, "entry", "event-modelling", "python")
+                migrations = repo / "apps/service/migrations"
+                (migrations / name).mkdir(parents=True)
+                (migrations / "202610031200_drop.sql").write_text(f"-- contract: {name}\n{DROP}")
+                result = run_gate(repo, MIGRATIONS)
+                if expected is None:
+                    self.assertEqual((result.returncode, result.stderr), (0, ""))
+                else:
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn(f"names `{name}`, which {expected}.", result.stderr)
