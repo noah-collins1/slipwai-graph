@@ -782,3 +782,34 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
 - **AC-S01-26** — *Added by D52 (adversary A4).* Given a deployable recorded at, or beneath, a directory carrying
   a pruned name, then that directory is descended in every walk of both scripts: all five rules of `check-imports`
   and `check-migrations` read the deployable, as rules 4 and 5 always did.
+
+### S24-ci-fetches-slice-base
+
+**Gaps review open — blocked on a person's approval (D54)**, 2026-10-03, cruise iteration 8, host with `drive-skipper`
+for D54: the three examples in `story-split.md` against `workflow()` in `src/slipwai/project/ci_workflows.py`,
+`delivery_workflow()` and `gitlab_job()` in `src/slipwai/project/adopted_ci.py`, and `forge_checkout()`,
+`not_checked()` and `check()` in `assets/toolkit/scripts/check-slice-scope.py`. No criterion is written yet, and this
+note is not a *Gaps reviewed* mark: the stage is re-entered here when a person answers D54. What the review found,
+for whoever resumes it:
+
+- **Needs the person (D54).** `check-migrations` and `check-flags` run in the same `verify` job and choose a base
+  from the same refs. With history fetched they hold their *new in this change* rules on every pull request — a
+  contract whose expand is new in the same pull request, and a new flag seeded other than `off`, are refused in CI
+  as they already are on a developer's machine. The slice's third example (*every answer is today's*) is untrue
+  under any fetch, and the owner's approval (D39) was given on a description that said the opposite.
+- **Answered by standing decisions once D54 is, to be written as criteria then.** Which jobs fetch: the generated
+  `verify` job, the adopted `verify` job and the adopted GitLab `verify-delivery` job; never the smoke jobs, the
+  container jobs (`CONTAINER_CHECKOUT`), the event-model, deploy or `ux-gates` workflows, none of which runs the
+  check (the split's *Defers*). Which answers become exit 1 in a forge's checkout: no base (D31 answer 3, D32's
+  arm) and *could not compare* (D35, T026, which took its exit from those two); *git could not read this checkout*
+  keeps exit 0 (D35: a person's, in CI). What the failing line says where the CI is neither GitHub nor GitLab
+  (D20's other forges): the same line, with words for *a full clone with the trunk's branch fetched*. The catch-up
+  note: a workflow the project took over, and a pipeline of the project's own with a CI marker set and a shallow
+  clone, are not rewritten by `migrate` and turn red on a slice branch until the job fetches history.
+- **For the plan's research, each with its citation or marked assumed.** What `actions/checkout@v6` leaves under
+  `refs/remotes/origin/` at `fetch-depth: 0` on a `pull_request` run; that a GitLab runner with `GIT_DEPTH: "0"`
+  fetches every branch; that Gitea's and Forgejo's runners do the same with the action.
+- **The slice's own leftovers.** The unreleased fragment `changelog.d/slice-scope-base.md` says a CI run with
+  nothing to compare with keeps exit 0; released together with this slice's fragment the entry would say both, so
+  the plan amends that sentence. The suites that assert *NOT checked*, exit 0, under a CI marker change with the
+  checker (`tests/test_slice_scope_no_base.py`, `tests/test_slice_scope_hostile_base.py`).
