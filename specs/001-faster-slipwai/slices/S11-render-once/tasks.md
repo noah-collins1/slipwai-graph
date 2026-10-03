@@ -441,6 +441,81 @@ what the key covers names Puppeteer; `tests/test_render_docs.py` follows both.
 `changelog.d/render-once.md`, `tests/test_render_current.py`, `tests/test_render_docs.py`, `tests/render_fixture.py`
 (additions only).
 
+### Pass 2 (2026-10-03, at `107f008`)
+
+No `CRITICAL` or `HIGH`. T009–T013 re-checked as classes: the direct-write mutation of `writeFinished` now fails two
+examples of `tests/test_render_files.py` (it failed none at pass 1); a launch that throws, a PNG that throws and a
+config naming a missing file each give one `render:` line (stand-in, and the first and third on the real renderer).
+Real run on the 16-slice project: `25 of 25 … drawn, 0 unchanged`, then `0 of 25 … 25 unchanged; no browser started`,
+then `3 of 25 … 22 unchanged` after one frame's edit; all 25 SVGs below the two comment lines byte-identical to the
+pre-slice renderer's. Two leads from reading T010's diff, neither reproduced through `main()`, neither re-opening
+the loop.
+
+#### T014 — `LOW` — A browser that will not close does not replace the failure the run already had (AC-S11-8)
+
+- [ ] Lead, from the code and not reproduced: `render.ts` 96–101 closes the session in a `finally`, and since T010
+  `close` throws `render: could not close the browser: …` (`render-session.ts` 203–209). A throw in a `finally`
+  replaces the error in flight, so a run whose draw failed *and* whose browser then fails to close prints only the
+  close line: the `could not draw <svg>` lines are lost. Exit is still non-zero. Reproduction: give the stand-in a
+  `close` that throws beside `STAND_IN_PNG_FAILS` (a new variable in `tests/render_fixture.py`) and read stderr.
+
+**RED:** a draw that fails and a close that fails → both lines on stderr, the draw's first, exit non-zero; a close
+that fails after every draw succeeded → its one line, exit non-zero, every SVG already at its name.
+**GREEN (the class):** every `finally` and `catch` in the three scripts that can itself throw (`render.ts` 99–101,
+`writeFinished`'s `rmSync` in its catch, `lazySession.close`) keeps the first failure and adds the second.
+
+**Files:** `assets/toolkit/scripts/event-model/render.ts`, `tests/render_fixture.py`, `tests/test_render_failures.py`;
+the fragment only if a sentence of it changes (`Level PATCH; VERSION already 1.6.0.dev0`).
+
+#### T015 — `LOW` — The root line and "could not start the browser" are said only of the browser's launch (AC-S11-16)
+
+- [ ] Lead, from the code and not reproduced: T010 moved the root explanation from around `puppeteer.launch` to
+  `lazySession`'s `open().catch` (`render-session.ts` 221–223), so `browserFailure` now also wraps `entryOf` and the
+  two `import()`s of `launch` (190–195). A prefix whose mermaid-cli or Puppeteer entry cannot be imported is reported
+  as `render: could not start the browser: Cannot find module …`, and as root with no config it is preceded by the
+  advice to pass `--no-sandbox`, which would not fix it. Reproduction: the stand-in's `puppeteer` entry file deleted
+  after the install (its `package.json` kept, so `rendererKey` passes), then `make model`; and the probe of
+  `test_e16` with an `open` that throws a module-not-found error.
+
+**RED:** an entry that cannot be imported → one `render:` line naming the package and the prefix, no root line even
+as root. **GREEN (the class):** each step of `launch` (resolve, import, read config, start) fails under its own
+name; the root line is printed only when the step that failed is the start.
+
+**Files:** `assets/toolkit/scripts/event-model/render-session.ts`, `tests/test_render_failures.py`,
+`tests/render_fixture.py` (additions only).
+
 ## Convergence
 
-*(the verdict, written by `drive-converge`)*
+**Converged at `107f008`, at the loop's bound: two passes** (`drive-converge`, host model, fresh context each). Pass 1
+at `273129c` found one `HIGH` (T009), two `MEDIUM` (T010, and the lead D70 decided, T013) and two `LOW` (T011,
+T012); all five are done. Pass 2 at `107f008` found nothing `CRITICAL` or `HIGH`, re-ran pass 1's reproductions
+(the direct-write mutation now fails two tests; a launch that throws, a PNG that throws and a config that names a
+missing file each give one `render:` line) and left two `LOW` leads, T014 and T015, which are Phase 4's and do not
+re-open the loop. The tree was clean after each pass (`git status`: only this file and the run's own records).
+
+**Sweeps performed.** Every write under `docs/event-model/` the three scripts make: SVG and PNG through the
+temporary-then-rename, `.mmd`, page and README block through write-if-different, none bypassing either (T009).
+Every `throw` and rejected promise that can leave `main()`: each gives one `render:` line naming the diagram, the
+file or the browser (T010). Every reader of the two comment lines: `isCurrent` reads lines 1 and 2 exactly,
+`extractHash` the first match, `check.ts` through it, `page.ts` neither (T011). Every package the session loads
+from the prefix has its installed version in the key (T013).
+
+**With a real browser** (pass 2, a copy of the 16-slice project): first run 25 of 25 drawn; unchanged run 0 of 25,
+no browser started; a one-frame edit 3 of 25 (`model.svg`, its segment, its slice); all 25 SVGs byte-identical below
+the two comment lines to what the renderer before the slice drew.
+
+**Constitution principles the diff touches.** I — `check.ts`, `check.py` and the recipe are not in the diff; the
+fragment's first line is `PATCH` (`changelog.d/render-once.md`), `VERSION` reads `1.6.0.dev0`; nothing is skipped
+under a CI marker (`isCurrent`, `render-plan.ts` 74–84); removal is by name, never of what the model still produces
+(`render-plan.ts` 87–105). II, for a re-run — temporary then rename (`render-plan.ts` 113–124), write-if-different
+(180–191). III — the record is two comment lines; no manifest, no setting. V — every criterion AC-S11-1 to -17
+but -15 has an example that fails without the behaviour (pass 1's table, with T009–T013's additions); -15 is the
+demo's. VII — a failure is reported as itself, once (`render-session.ts` 53–62, 169–187; `render-plan.ts` 137–138,
+156–165), short of T014 and T015. VIII — the renderer line is additive and an SVG without it is redrawn once.
+XIII — no wall-clock assertion; the stand-in is validated by the real runs above and by the demo. XIV — fakes in
+the test tree, no mocking framework (`tests/render_fixture.py`, `tests/test_render_failures.py`).
+
+**Not claimed.** The slice does not touch how an application starts, so no `smoke` run is owed; no row of the
+convergence map moves (`make -f delivery/Makefile check-convergence` run at this commit). The `.ts` files are run
+under `tsx` by the tests and are not type-checked by a compiler: the event-model tooling carries none. The render
+tests skip on Windows, saying why.
