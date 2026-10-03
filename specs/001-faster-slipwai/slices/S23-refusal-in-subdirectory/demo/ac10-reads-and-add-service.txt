@@ -1,0 +1,24 @@
+##### AC-S23-10 (a read, and add-service run on both factories; the gates are the host's)
+VERSION: 1.5.2.dev0
+git diff --stat 13ec3c1..HEAD -- VERSION changelog.d CHANGELOG.md src assets catalog.json:
+ changelog.d/refusal-in-subdirectory.md |  7 +++++++
+ src/slipwai/confirm.py                 |  3 ++-
+ src/slipwai/uncommitted.py             | 25 +++++++++++++++++++------
+ 3 files changed, 28 insertions(+), 7 deletions(-)
+fragment line 1: PATCH
+says "experimental: brownfield adoption": 1
+Commit the files it names and run it again; nothing else is asked.
+Do not stash them: a stash takes the answers you have settled in `project.
+
+##### AC-S23-10: slipwai add-service's own refusal, the factory before the slice and this one (a generated project, an uncommitted change in it)
+factory /tmp/s23-demo/before/slipwai: generate exit 0 (created: /tmp/s23-demo/gen-before/proj)
+ M README.md
+[exit 2]
+                           name
+slipwai add-service: error: this project has uncommitted changes; commit or stash them first, so that `git checkout .` and `git clean -fd` undo exactly what add-service wrote and nothing else
+factory /home/noahc/math/slipwai-graph/slipwai: generate exit 0 (created: /tmp/s23-demo/gen-slipwai-graph/proj)
+ M README.md
+[exit 2]
+                           name
+slipwai add-service: error: this project has uncommitted changes; commit or stash them first, so that `git checkout .` and `git clean -fd` undo exactly what add-service wrote and nothing else
+(add-service's refusal: the same words from both factories)

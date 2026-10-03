@@ -1,0 +1,109 @@
+##### AC-S23-9: a repository adopted in sub/ where the factory before the slice (13ec3c1) left a refresh's files uncommitted
+adopted sub with slipwai 1.5.2.dev0 — experimental: this path is new, its shape may change in a MINOR, and what surprised you belongs on the public issue tracker
+[adopt exit 0]
+project.json: the safety-net row is now "provenance": "confirmed"
+--- the earlier factory's refresh:
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+ M delivery/commands/ground.md
+ M delivery/docs/convergence.md
+ M project.json
+written.json: 0 path(s) — {}
+  paths that do not resolve from the project's directory: none
+
+### (i) the fragment's catch-up, as written: the first refresh after the change; commit the files it names; run it again
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/commands/ground.md`, `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+$ git commit -m "what the last refresh regenerated" delivery/commands/ground.md delivery/docs/convergence.md
+[git exit 0]
+ M project.json
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+project.json safety-net row: confirmed
+written.json: 1 path(s): project.json
+  paths that do not resolve from the project's directory: none
+--- and again, and a --refresh after one more hand-settled row:
+[exit 0]
+project.json: the data row is now "provenance": "confirmed"
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+[exit 0]
+written.json: 3 path(s): delivery/commands/ground.md, delivery/docs/convergence.md, project.json
+  paths that do not resolve from the project's directory: none
+
+### (ii) the refusal's own words, 'Commit or stash those first', taking the stash
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/commands/ground.md`, `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writi
+$ git stash
+[git exit 0]
+project.json safety-net row: detected
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+$ git stash pop
+	modified:   project.json
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (bc4ca78c3b8faab3e33b6793eda3201c7e510471)
+[git exit 0]
+ M delivery/commands/ground.md
+ M delivery/docs/convergence.md
+ M project.json
+project.json safety-net row: confirmed
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/commands/ground.md`, `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+
+### (iii) the names typed at the repository's top, where the refusal says they are not spelled from (AC-S23-11)
+$ (at the top) git add delivery/commands/ground.md delivery/docs/convergence.md
+fatal: pathspec 'delivery/commands/ground.md' did not match any files
+[git exit 128]
+$ (at the top) git add sub/delivery/commands/ground.md sub/delivery/docs/convergence.md && git commit
+[git exit 0]
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+
+### (iv) what a person may do instead of naming files: git add -A . && git commit, in the project
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+
+##### AC-S23-9 with --confirm: the earlier factory's --confirm themes left 66 files; this factory's next --confirm, --decline and --refresh
+(66 changed paths; the first three:)
+ M .specify/extensions.yml
+ M delivery/.written
+ M delivery/Makefile
+written.json: 0 path(s) — {}
+  paths that do not resolve from the project's directory: none
+[exit 2]
+slipwai adopt: error: `slipwai adopt --refresh` writes `.specify/extensions.yml`, `delivery/.written`, `delivery/Makefile`, `delivery/commands/add-frontend.md`, `delivery/commands/add-service.md`, `delivery/commands/catch-up.md`, `delivery/commands/characterise.md`, `delivery/commands/drive.md` and 57 more, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Com
+  ... (the message is 15 lines, 1575 characters, and names 8 paths)
+  its last 330 characters: ...e, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+Then: make verify, and commit the result as one change.
+[exit 0]
+
+##### AC-S23-9 through --confirm and --decline: the earlier factory's '--confirm themes' left its files; this factory's next answer
+Then: make verify, and commit the result as one change.
+[exit 0]
+(66 changed paths; the first three:)
+ M .specify/extensions.yml
+ M delivery/.written
+ M delivery/Makefile
+written.json: 0 path(s) — {}
+  paths that do not resolve from the project's directory: none
+slipwai adopt: error: `slipwai adopt --confirm` writes `.specify/extensions.yml`, `delivery/.written`, `delivery/Makefile`, `delivery/commands/add-frontend.md`, `delivery/commands/add-service.md`, `delivery/commands/catch-up.md`, `delivery/commands/characterise.md`, `delivery/commands/drive.md` and 57 more, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+slipwai adopt: error: `slipwai adopt --decline` writes `.specify/extensions.yml`, `delivery/.written`, `delivery/Makefile`, `delivery/commands/add-frontend.md`, `delivery/commands/add-service.md`, `delivery/commands/catch-up.md`, `delivery/commands/characterise.md`, `delivery/commands/drive.md` and 57 more, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+project.json before e46a0aad12d8face after e46a0aad12d8face
+$ git add -A . && git commit   (in the project)
+Then: make verify, and commit the result as one change.
+[exit 0]
+Then: make verify, and commit the result as one change.
+[exit 0]
+Then: make verify, and commit the result as one change.
+[exit 0]
+written.json: 12 path(s): .specify/extensions.yml, delivery/Makefile, delivery/commands/characterise.md, delivery/commands/drive.md, ...
+

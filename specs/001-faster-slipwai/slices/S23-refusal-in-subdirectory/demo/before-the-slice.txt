@@ -1,0 +1,294 @@
+# The same setup and steps against the factory before the slice: git clone of the checkout at 13ec3c1 in /tmp/s23-demo/before.
+
+adopted sub with slipwai 1.5.2.dev0 — experimental: this path is new, its shape may change in a MINOR, and what surprised you belongs on the public issue tracker
+[adopt exit 0]
+pwd: /tmp/s23-demo/b/sub
+--- git status after adopt:
+d4860b2 Adopt the delivery method for sub with slipwai 1.5.2.dev0
+7ef93ca start
+
+### step 1: echo 'A note of mine.' >> delivery/docs/convergence.md; adopt --refresh
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+1 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- tail -1 delivery/docs/convergence.md:
+5. `done` — the programme is finished: every retirement-ledger row reads *removed*, or the decision was to leave it ← a generated project sits here
+--- git status --short:
+
+### step 2: settle the safety-net row; adopt --refresh
+project.json: the safety-net row is now "provenance": "confirmed"
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- git status --short:
+ M delivery/commands/ground.md
+ M delivery/docs/convergence.md
+ M project.json
+--- git log --oneline | head -1:
+d4860b2 Adopt the delivery method for sub with slipwai 1.5.2.dev0
+--- cat .delivery-tools/written.json:
+written.json: 0 path(s) — {}
+  paths that do not resolve from the project's directory: none
+--- git status --short --ignored | grep delivery-tools:
+!! .delivery-tools/
+--- second refresh:
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+
+### step 3: a line of mine on a file written.json names; adopt --refresh
+editing: delivery/docs/convergence.md
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+1 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- tail -1 delivery/docs/convergence.md:
+5. `done` — the programme is finished: every retirement-ledger row reads *removed*, or the decision was to leave it ← a generated project sits here
+--- the line taken off; refresh:
+[exit 0]
+
+### step 4: echo more >> other/note.txt (the neighbour); adopt --refresh
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- cat other/note.txt:
+a neighbour
+more
+--- git status --short (from the repository's top):
+ M other/note.txt
+ M sub/delivery/commands/ground.md
+ M sub/delivery/docs/convergence.md
+ M sub/project.json
+--- written.json:
+written.json: 0 path(s) — {}
+  paths that do not resolve from the project's directory: none
+
+# And AC-S23-1..5 in the candidates repository, the same script as ac1-ac5-candidates.txt:
+
+##### factory: /tmp/s23-demo/before/slipwai (13ec3c1); project in 'sub'
+[exit 0; Enter pressed 1 times]
+6ea8b0d Adopt the delivery method for sub with slipwai 1.5.2.dev0
+92250a1 start
+candidates: ['sub', 'tests-ui', 'themes'] deployables: []
+
+### AC-S23-1 in this repository: an edit, adopt --refresh
+pwd: /tmp/s23-demo/before-a1/sub
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+  not wrapped: `.` builds (node, javascript, from `package.json`) and has no record
+  not wrapped: `tests-ui` builds (node, javascript, from `tests-ui/package.json`) and has no record
+  not wrapped: `themes` builds (node, javascript, from `themes/package.json`) and has no record
+
+1 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+tail -1: 5. `done` — the programme is finished: every retirement-ledger row reads *removed*, or the decision was to leave it ← a generated project sits here
+1d0
+<  M delivery/docs/convergence.md
+
+### AC-S23-2a: the same edit, adopt --confirm themes
+confirmed (experimental): what the record now says is an application here
+  confirmed: `themes` is an application; its build joins the gate
+    install      cd themes && npm install
+    typecheck    (none recorded — a written no)
+    lint         cd themes && npm run lint
+    test         (none recorded — a written no)
+    integration  (none recorded — a written no)
+    adversarial  (none recorded — a written no)
+    audit        cd themes && npm audit --audit-level=critical
+    mutation     (none recorded — a written no)
+  outstanding: 2 candidate(s) nobody has answered for — sub, tests-ui. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  66 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+tail -1: 5. `done` — the programme is finished: every retirement-ledger row reads *removed*, or the decision was to leave it ← a generated project sits here
+project.json before c127a1074b5c4038 after e46a0aad12d8face
+git status CHANGED by the run
+### AC-S23-2b: the same edit, adopt --decline themes
+confirmed (experimental): what the record now says is an application here
+  declined: `themes` is not an application, and nothing is recorded in its place — a later /survey reports the directory as one that builds and has no record, which is what it is
+  outstanding: 2 candidate(s) nobody has answered for — sub, tests-ui. Nothing is confirmed as an application yet, so the gate still refuses: confirming one is what gives it a subject. /ground asks about each
+  2 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+tail -1: 5. `done` — the programme is finished: every retirement-ledger row reads *removed*, or the decision was to leave it ← a generated project sits here
+project.json before c127a1074b5c4038 after eb2ab7ab7822383e
+git status CHANGED by the run
+### AC-S23-2b': the same edit, adopt --confirm themes --decline tests-ui
+confirmed (experimental): what the record now says is an application here
+  confirmed: `themes` is an application; its build joins the gate
+    install      cd themes && npm install
+    typecheck    (none recorded — a written no)
+    lint         cd themes && npm run lint
+    test         (none recorded — a written no)
+    integration  (none recorded — a written no)
+    adversarial  (none recorded — a written no)
+    audit        cd themes && npm audit --audit-level=critical
+    mutation     (none recorded — a written no)
+  declined: `tests-ui` is not an application, and nothing is recorded in its place — a later /survey reports the directory as one that builds and has no record, which is what it is
+  outstanding: 1 candidate(s) nobody has answered for — sub. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  66 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+project.json before c127a1074b5c4038 after 7fb059557cb03aa6
+### AC-S23-2c: rm delivery/docs/convergence.md (not committed); --refresh, --confirm themes, --decline themes
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+  not wrapped: `.` builds (node, javascript, from `package.json`) and has no record
+  not wrapped: `tests-ui` builds (node, javascript, from `tests-ui/package.json`) and has no record
+  not wrapped: `themes` builds (node, javascript, from `themes/package.json`) and has no record
+
+1 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+confirmed (experimental): what the record now says is an application here
+  confirmed: `themes` is an application; its build joins the gate
+    install      cd themes && npm install
+    typecheck    (none recorded — a written no)
+    lint         cd themes && npm run lint
+    test         (none recorded — a written no)
+    integration  (none recorded — a written no)
+    adversarial  (none recorded — a written no)
+    audit        cd themes && npm audit --audit-level=critical
+    mutation     (none recorded — a written no)
+  outstanding: 2 candidate(s) nobody has answered for — sub, tests-ui. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  66 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+slipwai adopt: error: no candidate is named `themes`; this repository's outstanding candidates are: sub, tests-ui. `slipwai adopt --next` lists them with what the survey found.
+[exit 2]
+delivery/docs/convergence.md
+project.json before c127a1074b5c4038 after e46a0aad12d8face
+(66 changed paths; the first three:)
+ M .specify/extensions.yml
+ M delivery/.written
+ M delivery/Makefile
+### AC-S23-2d: delivery/docs/convergence.md present and untracked (git rm --cached, committed); --refresh, --confirm themes, --decline themes
+?? delivery/docs/convergence.md
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+  not wrapped: `.` builds (node, javascript, from `package.json`) and has no record
+  not wrapped: `tests-ui` builds (node, javascript, from `tests-ui/package.json`) and has no record
+  not wrapped: `themes` builds (node, javascript, from `themes/package.json`) and has no record
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+confirmed (experimental): what the record now says is an application here
+  confirmed: `themes` is an application; its build joins the gate
+    install      cd themes && npm install
+    typecheck    (none recorded — a written no)
+    lint         cd themes && npm run lint
+    test         (none recorded — a written no)
+    integration  (none recorded — a written no)
+    adversarial  (none recorded — a written no)
+    audit        cd themes && npm audit --audit-level=critical
+    mutation     (none recorded — a written no)
+  outstanding: 2 candidate(s) nobody has answered for — sub, tests-ui. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  66 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+slipwai adopt: error: no candidate is named `themes`; this repository's outstanding candidates are: sub, tests-ui. `slipwai adopt --next` lists them with what the survey found.
+[exit 2]
+project.json before c127a1074b5c4038 after e46a0aad12d8face
+(66 changed paths; the first three:)
+ M .specify/extensions.yml
+ M delivery/.written
+ M delivery/Makefile
+
+### AC-S23-3: --confirm themes; settle a row by hand; --confirm tests-ui; --refresh; --decline the last; nothing committed between
+  outstanding: 2 candidate(s) nobody has answered for — sub, tests-ui. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  66 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- written.json after the first run:
+written.json: 0 path(s) — {}
+  paths that do not resolve from the project's directory: none
+project.json: the data row is now "provenance": "confirmed"
+  outstanding: 1 candidate(s) nobody has answered for — sub. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  12 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+  outstanding: none; every buildable directory the survey found has been answered for
+  1 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- HEAD still 6ea8b0d? 6ea8b0d
+--- .delivery-tools/written.json:
+written.json: 0 path(s) — {}
+  paths that do not resolve from the project's directory: none
+--- git status --short (in the project):
+(66 changed paths; the first three:)
+ M .specify/extensions.yml
+ M delivery/.written
+ M delivery/Makefile
+    recorded and not changed: none | changed and not recorded: ['.specify/extensions.yml', 'delivery/.written', 'delivery/Makefile', 'delivery/commands/add-frontend.md', 'delivery/commands/add-service.md', 'delivery/commands/catch-up.md', 'delivery/commands/characterise.md', 'delivery/commands/drive.md', 'delivery/commands/ground.md', 'delivery/docs/adoption.md', 'delivery/docs/change-strategy.md', 'delivery/docs/convergence.md', 'delivery/scripts/check-convergence.py', 'delivery/scripts/ratchet.py', 'delivery/skills/api-design/SKILL.md', 'delivery/skills/api-design/resources/api-evolution.md', 'delivery/skills/api-design/resources/api-security.md', 'delivery/skills/api-design/resources/auth-security.md', 'delivery/skills/api-design/resources/problem-details.md', 'delivery/skills/characterisation-tests/SKILL.md', 'delivery/skills/characterisation-tests/resources/modern-tooling.md', 'deli
+--- git status --short --ignored | grep delivery-tools:
+!! .delivery-tools/
+--- git check-ignore -v .delivery-tools/written.json:
+sub/.gitignore:8:.delivery-tools/	.delivery-tools/written.json
+candidates: [] deployables: ['themes', 'tests-ui']
+
+### AC-S23-4: a person's line on top of what those runs left; --refresh
+editing: delivery/docs/convergence.md
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+  not wrapped: `.` builds (node, javascript, from `package.json`) and has no record
+
+1 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+tail -1: 5. `done` — the programme is finished: every retirement-ledger row reads *removed*, or the decision was to leave it ← a generated project sits here
+project.json before cdd339d61f1ff138 after cdd339d61f1ff138
+--- the line off again, and a second row settled by hand in project.json: not refused
+project.json: the infrastructure row is now "provenance": "confirmed"
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+
+### AC-S23-5: other/note.txt edited, and delivery/docs/convergence.md at the repository's top (untracked; then committed and edited); --refresh, then --confirm themes
+ M other/note.txt
+?? delivery/
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+--- other/note.txt: a neighbour|more|
+--- the top's delivery/docs/convergence.md: the top has a page of its own
+written.json: absent
+ M delivery/docs/convergence.md
+ M other/note.txt
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+slipwai adopt: error: `slipwai adopt --confirm` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+--- other/note.txt: a neighbour|more|
+--- the top's delivery/docs/convergence.md: the top has a page of its own|and an edit to it|
+written.json: absent
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+    import json;d=json.load(open('.delivery-tools/written.json'));print('  any recorded path that names the neighbour or climbs out:',[k for k in d if 'other' in k or '..' in k] or 'none')
+                            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '.delivery-tools/written.json'
+ M delivery/docs/convergence.md
+ M other/note.txt

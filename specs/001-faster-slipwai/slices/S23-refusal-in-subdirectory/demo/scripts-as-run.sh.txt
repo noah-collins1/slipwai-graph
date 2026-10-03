@@ -1,0 +1,291 @@
+################ /tmp/s23-demo/setup.sh
+# usage: setup.sh <slipwai> <T> [projdir=sub]   -- the quickstart's setup block, T fixed
+SLIPWAI="$1"; T="$2"; P="${3:-sub}"
+rm -rf "$T"; mkdir -p "$T"; cd "$T"; git init -q -b main .
+mkdir -p "$P/shop" "$P/tests" other
+printf '[project]\nname = "shop"\nversion = "0.1.0"\nrequires-python = ">=3.11"\n' > "$P/pyproject.toml"
+echo 'x = 1' > "$P/shop/__init__.py"
+printf 'import unittest\nclass T(unittest.TestCase):\n    def test_x(self):\n        self.assertTrue(True)\n' > "$P/tests/test_x.py"
+echo 'a neighbour' > other/note.txt
+git add -A; git -c user.name=a -c user.email=a@b commit -qm start
+cd "$P"; "$SLIPWAI" adopt --yes --no-init ${NAME:+--name $NAME}; echo "[adopt exit $?]"
+
+################ /tmp/s23-demo/steps.sh
+# usage: steps.sh <slipwai> <T> [projdir=sub] [enter=projdir]   -- quickstart steps 1-4 after setup.sh
+set -u
+SLIPWAI="$1"; T="$2"; P="${3:-sub}"; E="${4:-$P}"
+run() { "$SLIPWAI" adopt "$@" 2>&1 | grep -v -e '^usage:' -e '^   *\[' ; echo "[exit ${PIPESTATUS[0]}]"; }
+bash /tmp/s23-demo/setup.sh "$SLIPWAI" "$T" "$P" 2>&1 | grep -e '^adopted' -e 'exit'
+cd "$T/$E"; echo "pwd: $PWD"
+echo "--- git status after adopt:"; git status --short; git log --oneline | head -5
+echo; echo "### step 1: echo 'A note of mine.' >> delivery/docs/convergence.md; adopt --refresh"
+echo 'A note of mine.' >> delivery/docs/convergence.md
+git diff --stat > /tmp/s23-demo/.before; run --refresh
+echo "--- tail -1 delivery/docs/convergence.md:"; tail -1 delivery/docs/convergence.md
+echo "--- git status --short:"; git status --short
+git checkout -- delivery/docs/convergence.md
+echo; echo "### step 2: settle the safety-net row; adopt --refresh"
+python3 /tmp/s23-demo/settle.py safety-net
+run --refresh
+echo "--- git status --short:"; git status --short
+echo "--- git log --oneline | head -1:"; git log --oneline | head -1
+echo "--- cat .delivery-tools/written.json:"; python3 /tmp/s23-demo/wj.py
+echo "--- git status --short --ignored | grep delivery-tools:"; git status --short --ignored | grep delivery-tools
+echo "--- second refresh:"; run --refresh
+echo; echo "### step 3: a line of mine on a file written.json names; adopt --refresh"
+F=$(python3 -c "import json;print(sorted(json.load(open('.delivery-tools/written.json')))[0])" 2>/dev/null || echo delivery/docs/convergence.md)
+echo "editing: $F"; echo 'A line of mine.' >> "$F"
+run --refresh
+echo "--- tail -1 $F:"; tail -1 "$F"
+sed -i '$ d' "$F"; echo "--- the line taken off; refresh:"; run --refresh | tail -1
+echo; echo "### step 4: echo more >> other/note.txt (the neighbour); adopt --refresh"
+echo more >> "$T/other/note.txt"
+run --refresh
+echo "--- cat other/note.txt:"; cat "$T/other/note.txt"
+echo "--- git status --short (from the repository's top):"; bash /tmp/s23-demo/gs.sh -C "$T"
+echo "--- written.json:"; python3 /tmp/s23-demo/wj.py
+
+################ /tmp/s23-demo/settle.py
+# what a person does by hand in project.json: set one convergence row's "provenance" to "confirmed"
+import re, sys
+axis = sys.argv[1]; t = open('project.json').read()
+n = re.sub(r'("axis": "%s",(?:\n[^}]*?)"provenance": )"[a-z]+"' % axis, r'\1"confirmed"', t, count=1)
+assert n != t, 'row not found or already confirmed'; open('project.json', 'w').write(n)
+print('project.json: the %s row is now "provenance": "confirmed"' % axis)
+
+################ /tmp/s23-demo/wj.py
+# written.json, compactly: how many paths, the first few, and whether any is spelled from above the project
+import json, os, sys
+p = '.delivery-tools/written.json'
+if not os.path.exists(p): print('written.json: absent'); sys.exit()
+d = json.load(open(p)); k = sorted(d)
+bad = [x for x in k if x.startswith(('/', '..')) or not os.path.lexists(x)]
+print(f"written.json: {len(k)} path(s){': ' + ', '.join(k[:4]) + (', ...' if len(k) > 4 else '') if k else ' — {}'}")
+print(f"  paths that do not resolve from the project's directory: {bad or 'none'}")
+for a in sys.argv[1:]: print(f"  holds {a!r}: {a in d}")
+
+################ /tmp/s23-demo/gs.sh
+# git status --short, compactly: the lines if few, else a count and the first three
+n=$(git "$@" status --short | wc -l)
+if [ "$n" -le 8 ]; then git "$@" status --short; else echo "($n changed paths; the first three:)"; git "$@" status --short | head -3; fi
+
+################ /tmp/s23-demo/at-terminal.py
+# a person at a terminal pressing Enter at every question: usage at-terminal.py <cwd> <slipwai> args...
+import os, pty, select, subprocess, sys, time
+cwd, argv = sys.argv[1], sys.argv[2:]
+a, b = pty.openpty()
+p = subprocess.Popen(argv, cwd=cwd, stdin=b, stdout=b, stderr=b); os.close(b)
+out = bytearray(); sent = 0; end = time.monotonic() + 180
+while time.monotonic() < end:
+    r, _, _ = select.select([a], [], [], 1.0)
+    if r:
+        try: c = os.read(a, 4096)
+        except OSError: break
+        if not c: break
+        out += c
+    elif p.poll() is not None: break
+    elif sent < 40: os.write(a, b"\r"); sent += 1
+p.wait(); sys.stdout.write(out.decode(errors='replace')); print(f"\n[exit {p.returncode}; Enter pressed {sent} times]")
+
+################ /tmp/s23-demo/mono.sh
+# usage: mono.sh <slipwai> <T> [projdir=sub]  -- a repository whose project (in <projdir>) has candidates
+SLIPWAI="$1"; T="$2"; P="${3:-sub}"
+rm -rf "$T"; mkdir -p "$T"; cd "$T"; git init -q -b main .
+mkdir -p "$P/themes" "$P/tests-ui" other
+echo '{"name": "shop", "scripts": {"lint": "eslint .", "test": "jest"}}' > "$P/package.json"
+echo '{"name": "themes", "scripts": {"lint": "eslint ."}}' > "$P/themes/package.json"
+echo '{"name": "ui", "scripts": {"lint": "eslint ."}}' > "$P/tests-ui/package.json"
+echo 'a neighbour' > other/note.txt
+git add -A; git -c user.name=a -c user.email=a@b commit -qm start
+python3 /tmp/s23-demo/at-terminal.py "$T/$P" "$SLIPWAI" adopt --no-init ${NAME:+--name $NAME} | tr -d '\r' | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g' | grep -e '^adopted' -e 'exit' -e 'directories that build' -e 'candidate'
+cd "$T/$P"; git status --short; git log --oneline | head -3
+python3 -c "import json;r=json.load(open('project.json'));print('candidates:',[c['name'] for c in r.get('candidates',[])],'deployables:',list(r['deployables']))"
+
+################ /tmp/s23-demo/ac2-5.sh
+# usage: ac2-5.sh <slipwai> <tag> [projdir=sub] [link]  -- AC-S23-1..5 in copies of a candidates repository
+# adopted in <projdir>; with a 4th argument the project is entered through a symbolic link to its directory
+set -u
+SLIPWAI="$1"; TAG="$2"; P="${3:-sub}"; LINK="${4:-}"; M=/tmp/s23-demo/$TAG-m0
+run() { "$SLIPWAI" adopt "$@" 2>&1 | grep -v -e '^usage:' -e '^   *\[' ; echo "[exit ${PIPESTATUS[0]}]"; }
+fresh() { rm -rf "/tmp/s23-demo/$TAG-$1"; cp -a "$M" "/tmp/s23-demo/$TAG-$1"; TOP="/tmp/s23-demo/$TAG-$1"
+  if [ -n "$LINK" ]; then rm -f "/tmp/s23-demo/$TAG-$1-link"; ln -s "$TOP/$P" "/tmp/s23-demo/$TAG-$1-link"; cd "/tmp/s23-demo/$TAG-$1-link"; else cd "$TOP/$P"; fi; }
+sum() { sha256sum project.json | cut -c1-16; }
+PAGE=delivery/docs/convergence.md
+echo "##### factory: $SLIPWAI ($(git -C "$(dirname "$SLIPWAI")" rev-parse --short HEAD)); project in '$P'${LINK:+, entered through a symbolic link}"
+bash /tmp/s23-demo/mono.sh "$SLIPWAI" "$M" "$P" | tail -4
+
+echo; echo "### AC-S23-1 in this repository: an edit, adopt --refresh"
+fresh a1; echo "pwd: $PWD"; echo 'A note of mine.' >> $PAGE; git status --short > /tmp/s23-demo/.s0
+run --refresh; echo "tail -1: $(tail -1 $PAGE)"; git status --short | diff /tmp/s23-demo/.s0 - && echo "git status unchanged by the run: no other file written"
+
+echo; echo "### AC-S23-2a: the same edit, adopt --confirm themes"
+fresh a2a; echo 'A note of mine.' >> $PAGE; B=$(sum); git status --short > /tmp/s23-demo/.s0
+run --confirm themes; echo "tail -1: $(tail -1 $PAGE)"; echo "project.json before $B after $(sum)"; git status --short | diff /tmp/s23-demo/.s0 - > /dev/null && echo "git status unchanged by the run" || echo "git status CHANGED by the run"
+echo "### AC-S23-2b: the same edit, adopt --decline themes"
+fresh a2b; echo 'A note of mine.' >> $PAGE; B=$(sum); git status --short > /tmp/s23-demo/.s0
+run --decline themes; echo "tail -1: $(tail -1 $PAGE)"; echo "project.json before $B after $(sum)"; git status --short | diff /tmp/s23-demo/.s0 - > /dev/null && echo "git status unchanged by the run" || echo "git status CHANGED by the run"
+echo "### AC-S23-2b': the same edit, adopt --confirm themes --decline tests-ui"
+fresh a2bb; echo 'A note of mine.' >> $PAGE; B=$(sum)
+run --confirm themes --decline tests-ui; echo "project.json before $B after $(sum)"
+echo "### AC-S23-2c: rm $PAGE (not committed); --refresh, --confirm themes, --decline themes"
+fresh a2c; rm $PAGE; B=$(sum)
+run --refresh; run --confirm themes; run --decline themes; ls $PAGE 2>&1; echo "project.json before $B after $(sum)"; bash /tmp/s23-demo/gs.sh
+echo "### AC-S23-2d: $PAGE present and untracked (git rm --cached, committed); --refresh, --confirm themes, --decline themes"
+fresh a2d; git rm -q --cached $PAGE; git -c user.name=a -c user.email=a@b commit -qm untrack; bash /tmp/s23-demo/gs.sh; B=$(sum)
+run --refresh; run --confirm themes; run --decline themes; echo "project.json before $B after $(sum)"; bash /tmp/s23-demo/gs.sh
+
+echo; echo "### AC-S23-3: --confirm themes; settle a row by hand; --confirm tests-ui; --refresh; --decline the last; nothing committed between"
+fresh a3; H=$(git rev-parse --short HEAD)
+run --confirm themes | tail -4
+echo "--- written.json after the first run:"; python3 /tmp/s23-demo/wj.py
+python3 /tmp/s23-demo/settle.py data
+run --confirm tests-ui | tail -4
+run --refresh | tail -4
+LAST=$(python3 -c "import json;print(json.load(open('project.json'))['candidates'][0]['name'])")
+run --decline "$LAST" | tail -4
+echo "--- HEAD still $H? $(git rev-parse --short HEAD)"
+echo "--- .delivery-tools/written.json:"; python3 /tmp/s23-demo/wj.py
+echo "--- git status --short (in the project):"; bash /tmp/s23-demo/gs.sh
+python3 - <<'PY'
+import json,subprocess
+w=set(json.load(open('.delivery-tools/written.json')))
+s=set(l[3:].strip('"') for l in subprocess.run(['git','-c','core.quotepath=off','status','--short','-uall','.'],capture_output=True,text=True).stdout.splitlines())
+import os
+pre=subprocess.run(['git','rev-parse','--show-prefix'],capture_output=True,text=True).stdout.strip()
+print('    recorded and not changed:',sorted(w-s) or 'none','| changed and not recorded:',sorted(s-w) or 'none', '| (git status run in the project spells paths from the cwd; prefix from the top is %r)'%pre)
+PY
+echo "--- git status --short --ignored | grep delivery-tools:"; git status --short --ignored | grep delivery-tools
+echo "--- git check-ignore -v .delivery-tools/written.json:"; git check-ignore -v .delivery-tools/written.json
+python3 -c "import json;r=json.load(open('project.json'));print('candidates:',[c['name'] for c in r.get('candidates',[])],'deployables:',list(r['deployables']))"
+
+echo; echo "### AC-S23-4: a person's line on top of what those runs left; --refresh"
+F=$(python3 -c "import json;print([k for k in sorted(json.load(open('.delivery-tools/written.json'))) if k.endswith('.md')][0])" 2>/dev/null || echo $PAGE)
+echo "editing: $F"; echo 'A line of mine.' >> "$F"; B=$(sum)
+run --refresh; echo "tail -1: $(tail -1 "$F")"; echo "project.json before $B after $(sum)"
+echo "--- the line off again, and a second row settled by hand in project.json: not refused"
+sed -i '$ d' "$F"; python3 /tmp/s23-demo/settle.py infrastructure; run --refresh | tail -3
+
+echo; echo "### AC-S23-5: other/note.txt edited, and $PAGE at the repository's top (untracked; then committed and edited); --refresh, then --confirm themes"
+fresh a5
+echo more >> "$TOP/other/note.txt"; mkdir -p "$TOP/delivery/docs"; echo 'the top has a page of its own' > "$TOP/$PAGE"
+bash /tmp/s23-demo/gs.sh -C "$TOP"
+run --refresh | tail -4
+echo "--- other/note.txt: $(tr '\n' '|' < "$TOP/other/note.txt")"; echo "--- the top's $PAGE: $(cat "$TOP/$PAGE")"
+python3 /tmp/s23-demo/wj.py
+git -C "$TOP" add delivery; git -C "$TOP" -c user.name=a -c user.email=a@b commit -qm 'a page at the top'; echo 'and an edit to it' >> "$TOP/$PAGE"
+bash /tmp/s23-demo/gs.sh -C "$TOP"
+run --refresh | tail -4; run --confirm themes | tail -3
+echo "--- other/note.txt: $(tr '\n' '|' < "$TOP/other/note.txt")"; echo "--- the top's $PAGE: $(tr '\n' '|' < "$TOP/$PAGE")"
+python3 /tmp/s23-demo/wj.py other/note.txt delivery/../../other/note.txt
+python3 -c "
+import json;d=json.load(open('.delivery-tools/written.json'));print('  any recorded path that names the neighbour or climbs out:',[k for k in d if 'other' in k or '..' in k] or 'none')"
+bash /tmp/s23-demo/gs.sh -C "$TOP"
+
+################ /tmp/s23-demo/ac7-11.sh
+set -u
+A=/home/noahc/math/slipwai-graph/slipwai; B=/tmp/s23-demo/before/slipwai
+run() { local S="$1"; shift; "$S" adopt "$@" 2>&1 | grep -v -e '^usage:' -e '^   *\[' ; echo "[exit ${PIPESTATUS[0]}]"; }
+PAGE=delivery/docs/convergence.md
+norm() { sed -E 's/\b[0-9a-f]{7}\b/<commit>/g; s#/tmp/s23-demo/top-(after|before)#<T>#g'; }
+
+echo "##### AC-S23-7 / AC-S23-11: the project at the top of its repository — the quickstart's steps, this factory and the one before the slice"
+bash /tmp/s23-demo/steps.sh $A /tmp/s23-demo/top-after . > /tmp/s23-demo/top-after.out 2>&1
+bash /tmp/s23-demo/steps.sh $B /tmp/s23-demo/top-before . > /tmp/s23-demo/top-before.out 2>&1
+echo "--- this factory (44fde15), whole run:"; cat /tmp/s23-demo/top-after.out
+echo; echo "--- diff of the two runs (before the slice '<', this factory '>'), commit ids and scratch path normalised:"
+diff <(norm < /tmp/s23-demo/top-before.out) <(norm < /tmp/s23-demo/top-after.out) && echo "(no difference)"
+echo "--- written.json keys, before the slice vs this factory:"
+diff <(cd /tmp/s23-demo/top-before && python3 -c "import json;print('\n'.join(sorted(json.load(open('.delivery-tools/written.json')))))") <(cd /tmp/s23-demo/top-after && python3 -c "import json;print('\n'.join(sorted(json.load(open('.delivery-tools/written.json')))))") && echo "(the same paths, spelled the same)"
+
+echo; echo "##### AC-S23-8a: a project directory in no git repository (the quickstart's adopted sub/, copied out without .git)"
+for S in $A $B; do
+  D=/tmp/s23-demo/nogit-$(basename $(dirname $S)); rm -rf $D; cp -a /tmp/s23-demo/q/sub $D; rm -rf $D/.delivery-tools; cd $D
+  git -C $D checkout -q -- . 2>/dev/null; echo "factory $S; git rev-parse here: $(git rev-parse --show-toplevel 2>&1 | head -1)"
+  echo 'A note of mine.' >> $PAGE; run $S --refresh | tail -4; echo "tail -1: $(tail -1 $PAGE | cut -c1-60)"; python3 /tmp/s23-demo/wj.py
+done
+echo; echo "##### AC-S23-8b: a repository git cannot read (.git/HEAD overwritten with rubbish)"
+for S in $A $B; do
+  D=/tmp/s23-demo/unreadable-$(basename $(dirname $S)); rm -rf $D; cp -a /tmp/s23-demo/q $D; cd $D/sub; git checkout -q -- . ; rm -rf .delivery-tools
+  echo rubbish > ../.git/HEAD; echo "factory $S; git status here: $(git status --short 2>&1 | head -1)"
+  echo 'A note of mine.' >> $PAGE; run $S --refresh | tail -4; echo "tail -1: $(tail -1 $PAGE | cut -c1-60)"; python3 /tmp/s23-demo/wj.py
+  python3 /tmp/s23-demo/settle.py data; run $S --refresh | tail -3; python3 /tmp/s23-demo/wj.py
+done
+echo "(a traceback anywhere above would show as 'Traceback'; grep of this section is the host's to repeat)"
+
+################ /tmp/s23-demo/ac9.sh
+set -u
+A=/home/noahc/math/slipwai-graph/slipwai; B=/tmp/s23-demo/before/slipwai
+run() { local S="$1"; shift; "$S" adopt "$@" 2>&1 | grep -v -e '^usage:' -e '^   *\[' | cut -c1-1500; echo "[exit ${PIPESTATUS[0]}]"; }
+ci() { git -c user.name=a -c user.email=a@b "$@"; }
+row() { python3 -c "import json;print('project.json safety-net row:',[r['provenance'] for r in json.load(open('project.json'))['convergence'] if r['axis']=='safety-net'][0])"; }
+echo "##### AC-S23-9: a repository adopted in sub/ where the factory before the slice (13ec3c1) left a refresh's files uncommitted"
+bash /tmp/s23-demo/setup.sh $B /tmp/s23-demo/c9 2>&1 | grep -e '^adopted' -e exit
+cd /tmp/s23-demo/c9/sub; python3 /tmp/s23-demo/settle.py safety-net
+echo "--- the earlier factory's refresh:"; run $B --refresh | tail -3; bash /tmp/s23-demo/gs.sh; python3 /tmp/s23-demo/wj.py
+for c in commit stash top add-all; do rm -rf /tmp/s23-demo/c9-$c; cp -a /tmp/s23-demo/c9 /tmp/s23-demo/c9-$c; done
+
+echo; echo "### (i) the fragment's catch-up, as written: the first refresh after the change; commit the files it names; run it again"
+cd /tmp/s23-demo/c9-commit/sub
+run $A --refresh
+echo '$ git commit -m "what the last refresh regenerated" delivery/commands/ground.md delivery/docs/convergence.md'
+ci commit -q -m "what the last refresh regenerated" delivery/commands/ground.md delivery/docs/convergence.md; echo "[git exit $?]"; bash /tmp/s23-demo/gs.sh
+run $A --refresh | tail -3; row; python3 /tmp/s23-demo/wj.py
+echo "--- and again, and a --refresh after one more hand-settled row:"; run $A --refresh | tail -1; python3 /tmp/s23-demo/settle.py data; run $A --refresh | tail -3; run $A --refresh | tail -1; python3 /tmp/s23-demo/wj.py
+
+echo; echo "### (ii) the refusal's own words, 'Commit or stash those first', taking the stash"
+cd /tmp/s23-demo/c9-stash/sub
+run $A --refresh | head -1 | cut -c1-200
+echo '$ git stash'; git stash -q; echo "[git exit $?]"; bash /tmp/s23-demo/gs.sh; row
+run $A --refresh | tail -3
+echo '$ git stash pop'; git stash pop 2>&1 | tail -4; echo "[git exit $?]"; bash /tmp/s23-demo/gs.sh; row
+run $A --refresh
+
+echo; echo "### (iii) the names typed at the repository's top, where the refusal says they are not spelled from (AC-S23-11)"
+cd /tmp/s23-demo/c9-top
+echo '$ (at the top) git add delivery/commands/ground.md delivery/docs/convergence.md'; git add delivery/commands/ground.md delivery/docs/convergence.md; echo "[git exit $?]"
+echo '$ (at the top) git add sub/delivery/commands/ground.md sub/delivery/docs/convergence.md && git commit'; git add sub/delivery/commands/ground.md sub/delivery/docs/convergence.md && ci commit -q -m regenerated; echo "[git exit $?]"
+cd sub; run $A --refresh | tail -3
+
+echo; echo "### (iv) what a person may do instead of naming files: git add -A . && git commit, in the project"
+cd /tmp/s23-demo/c9-add-all/sub; git add -A . && ci commit -q -m "the answer and what it regenerated"; bash /tmp/s23-demo/gs.sh; run $A --refresh | tail -3
+
+echo; echo "##### AC-S23-9 with --confirm: the earlier factory's --confirm themes left 66 files; this factory's next --confirm, --decline and --refresh"
+cd /tmp/s23-demo/before-a3/sub 2>/dev/null && { bash /tmp/s23-demo/gs.sh; python3 /tmp/s23-demo/wj.py; rm -rf /tmp/s23-demo/c9-confirm; cp -a /tmp/s23-demo/before-a3 /tmp/s23-demo/c9-confirm; cd /tmp/s23-demo/c9-confirm/sub
+  "$A" adopt --refresh > /tmp/s23-demo/.long 2>&1; echo "[exit $?]"; grep -v -e '^usage:' -e '^   *\[' /tmp/s23-demo/.long | cut -c1-420; echo "  ... (the message is $(grep -c . /tmp/s23-demo/.long) lines, $(wc -c < /tmp/s23-demo/.long) characters, and names $(grep -o '`[^`]*`' /tmp/s23-demo/.long | grep -c '/') paths)"
+  echo "  its last 330 characters: ...$(tail -c 330 /tmp/s23-demo/.long)"
+  git add -A . && ci commit -q -m "what the earlier runs left"; run $A --refresh | tail -2; }
+
+################ /tmp/s23-demo/ac9b-10.sh
+set -u
+A=/home/noahc/math/slipwai-graph/slipwai; B=/tmp/s23-demo/before/slipwai; F=/home/noahc/math/slipwai-graph
+run() { local S="$1"; shift; "$S" adopt "$@" 2>&1 | grep -v -e '^usage:' -e '^   *\[' | cut -c1-700; echo "[exit ${PIPESTATUS[0]}]"; }
+ci() { git -c user.name=a -c user.email=a@b "$@"; }
+echo "##### AC-S23-9 through --confirm and --decline: the earlier factory's '--confirm themes' left its files; this factory's next answer"
+rm -rf /tmp/s23-demo/c9b; cp -a /tmp/s23-demo/before-m0 /tmp/s23-demo/c9b; cd /tmp/s23-demo/c9b/sub
+run $B --confirm themes | tail -2; bash /tmp/s23-demo/gs.sh; python3 /tmp/s23-demo/wj.py; S0=$(sha256sum project.json | cut -c1-16)
+run $A --confirm tests-ui; run $A --decline tests-ui; echo "project.json before $S0 after $(sha256sum project.json | cut -c1-16)"
+echo '$ git add -A . && git commit   (in the project)'; git add -A . && ci commit -q -m "themes confirmed, and what that regenerated"
+run $A --confirm tests-ui | tail -2; run $A --decline sub | tail -2; run $A --refresh | tail -2; python3 /tmp/s23-demo/wj.py | head -1
+
+echo; echo "##### AC-S23-10 (a read, and add-service run on both factories; the gates are the host's)"
+cd $F; echo "VERSION: $(cat VERSION)"; echo "git diff --stat 13ec3c1..HEAD -- VERSION changelog.d CHANGELOG.md src assets catalog.json:"; git diff --stat 13ec3c1..HEAD -- VERSION changelog.d CHANGELOG.md src assets catalog.json
+echo "fragment line 1: $(head -1 changelog.d/refusal-in-subdirectory.md)"; grep -c "experimental: brownfield adoption" changelog.d/refusal-in-subdirectory.md | sed 's/^/says "experimental: brownfield adoption": /'; grep -o "Commit the files it names and run it again[^.]*\.\|Do not stash them[^.]*\." changelog.d/refusal-in-subdirectory.md
+echo "--- slipwai add-service in a generated project with a neighbour's uncommitted change, both factories:"
+for S in $B $A; do
+  D=/tmp/s23-demo/gen-$(basename $(dirname $S)); rm -rf $D; mkdir -p $D; cd $D; git init -q -b main .; mkdir other; echo n > other/note.txt
+  "$S" generate --help > /dev/null 2>&1 || { echo "no generate verb"; continue; }
+  ( "$S" generate proj --yes --backend python > $D.gen.log 2>&1 || "$S" generate proj --backend python > $D.gen.log 2>&1 ); echo "factory $S: generate exit $? ($(tail -1 $D.gen.log | cut -c1-160))"
+done
+
+################ /tmp/s23-demo/ac10.sh
+set -u
+A=/home/noahc/math/slipwai-graph/slipwai; B=/tmp/s23-demo/before/slipwai
+echo "##### AC-S23-10: slipwai add-service's own refusal, the factory before the slice and this one (a generated project, an uncommitted change in it)"
+for S in $B $A; do
+  O=/tmp/s23-demo/gen-$(basename $(dirname $S)); rm -rf $O; mkdir -p $O
+  "$S" generate proj --backend python --output $O --no-init --no-install > $O.log 2>&1; echo "factory $S: generate exit $? ($(tail -1 $O.log | cut -c1-120))"
+  cd $O/proj; echo 'a note' >> README.md; git status --short
+  "$S" add-service billing 2>&1 | grep -v -e '^usage:' -e '^   *\[' | sed "s#$O#<O>#g" > $O.refusal; echo "[exit ${PIPESTATUS[0]}]"; cat $O.refusal
+done
+diff /tmp/s23-demo/gen-before.refusal /tmp/s23-demo/gen-slipwai-graph.refusal && echo "(add-service's refusal: the same words from both factories)"
+

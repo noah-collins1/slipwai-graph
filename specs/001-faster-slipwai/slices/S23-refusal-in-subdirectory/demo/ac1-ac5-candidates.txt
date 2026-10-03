@@ -1,0 +1,132 @@
+# AC-S23-1..5 in copies of a repository whose project (sub/) has candidates: adopted at a pseudo-terminal with Enter pressed, factory 44fde15.
+
+##### factory: /home/noahc/math/slipwai-graph/slipwai (44fde15); project in 'sub'
+[exit 0; Enter pressed 1 times]
+09e19eb Adopt the delivery method for sub with slipwai 1.5.2.dev0
+d52c4c7 start
+candidates: ['sub', 'tests-ui', 'themes'] deployables: []
+
+### AC-S23-1 in this repository: an edit, adopt --refresh
+pwd: /tmp/s23-demo/after-a1/sub
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+tail -1: A note of mine.
+git status unchanged by the run: no other file written
+
+### AC-S23-2a: the same edit, adopt --confirm themes
+slipwai adopt: error: `slipwai adopt --confirm` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+tail -1: A note of mine.
+project.json before c127a1074b5c4038 after c127a1074b5c4038
+git status unchanged by the run
+### AC-S23-2b: the same edit, adopt --decline themes
+slipwai adopt: error: `slipwai adopt --decline` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+tail -1: A note of mine.
+project.json before c127a1074b5c4038 after c127a1074b5c4038
+git status unchanged by the run
+### AC-S23-2b': the same edit, adopt --confirm themes --decline tests-ui
+slipwai adopt: error: `slipwai adopt --confirm --decline` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+project.json before c127a1074b5c4038 after c127a1074b5c4038
+### AC-S23-2c: rm delivery/docs/convergence.md (not committed); --refresh, --confirm themes, --decline themes
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+slipwai adopt: error: `slipwai adopt --confirm` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+slipwai adopt: error: `slipwai adopt --decline` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+ls: cannot access 'delivery/docs/convergence.md': No such file or directory
+project.json before c127a1074b5c4038 after c127a1074b5c4038
+ D delivery/docs/convergence.md
+### AC-S23-2d: delivery/docs/convergence.md present and untracked (git rm --cached, committed); --refresh, --confirm themes, --decline themes
+?? delivery/docs/convergence.md
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+slipwai adopt: error: `slipwai adopt --confirm` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+slipwai adopt: error: `slipwai adopt --decline` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+project.json before c127a1074b5c4038 after c127a1074b5c4038
+?? delivery/docs/convergence.md
+
+### AC-S23-3: --confirm themes; settle a row by hand; --confirm tests-ui; --refresh; --decline the last; nothing committed between
+  outstanding: 2 candidate(s) nobody has answered for — sub, tests-ui. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  66 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- written.json after the first run:
+written.json: 66 path(s): .specify/extensions.yml, delivery/.written, delivery/Makefile, delivery/commands/add-frontend.md, ...
+  paths that do not resolve from the project's directory: none
+project.json: the data row is now "provenance": "confirmed"
+  outstanding: 1 candidate(s) nobody has answered for — sub. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  12 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+  outstanding: none; every buildable directory the survey found has been answered for
+  1 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- HEAD still 09e19eb? 09e19eb
+--- .delivery-tools/written.json:
+written.json: 66 path(s): .specify/extensions.yml, delivery/.written, delivery/Makefile, delivery/commands/add-frontend.md, ...
+  paths that do not resolve from the project's directory: none
+--- git status --short (in the project):
+(66 changed paths; the first three:)
+ M .specify/extensions.yml
+ M delivery/.written
+ M delivery/Makefile
+    recorded and not changed: none | changed and not recorded: none | (git status run in the project spells paths from the cwd; prefix from the top is 'sub/')
+--- git status --short --ignored | grep delivery-tools:
+!! .delivery-tools/
+--- git check-ignore -v .delivery-tools/written.json:
+sub/.gitignore:8:.delivery-tools/	.delivery-tools/written.json
+candidates: [] deployables: ['themes', 'tests-ui']
+
+### AC-S23-4: a person's line on top of what those runs left; --refresh
+editing: delivery/commands/add-frontend.md
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/commands/add-frontend.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+tail -1: A line of mine.
+project.json before cdd339d61f1ff138 after cdd339d61f1ff138
+--- the line off again, and a second row settled by hand in project.json: not refused
+project.json: the infrastructure row is now "provenance": "confirmed"
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+
+### AC-S23-5: other/note.txt edited, and delivery/docs/convergence.md at the repository's top (untracked; then committed and edited); --refresh, then --confirm themes
+ M other/note.txt
+?? delivery/
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- other/note.txt: a neighbour|more|
+--- the top's delivery/docs/convergence.md: the top has a page of its own
+written.json: 0 path(s) — {}
+  paths that do not resolve from the project's directory: none
+ M delivery/docs/convergence.md
+ M other/note.txt
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+A directory that builds and has no record is added only on purpose: a `"generated": false` record in project.json's deployables, then this command again.
+Then: make verify, and commit the result as one change.
+[exit 0]
+  66 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- other/note.txt: a neighbour|more|
+--- the top's delivery/docs/convergence.md: the top has a page of its own|and an edit to it|
+written.json: 66 path(s): .specify/extensions.yml, delivery/.written, delivery/Makefile, delivery/commands/add-frontend.md, ...
+  paths that do not resolve from the project's directory: none
+  holds 'other/note.txt': False
+  holds 'delivery/../../other/note.txt': False
+  any recorded path that names the neighbour or climbs out: none
+(68 changed paths; the first three:)
+ M delivery/docs/convergence.md
+ M other/note.txt
+ M sub/.specify/extensions.yml

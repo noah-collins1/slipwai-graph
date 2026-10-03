@@ -1,0 +1,138 @@
+##### AC-S23-7 / AC-S23-11: the project at the top of its repository — the quickstart's steps, this factory and the one before the slice
+--- this factory (44fde15), whole run:
+adopted top-after with slipwai 1.5.2.dev0 — experimental: this path is new, its shape may change in a MINOR, and what surprised you belongs on the public issue tracker
+[adopt exit 0]
+pwd: /tmp/s23-demo/top-after
+--- git status after adopt:
+8ff9114 Adopt the delivery method for top-after with slipwai 1.5.2.dev0
+5124de8 start
+
+### step 1: echo 'A note of mine.' >> delivery/docs/convergence.md; adopt --refresh
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+--- tail -1 delivery/docs/convergence.md:
+A note of mine.
+--- git status --short:
+ M delivery/docs/convergence.md
+
+### step 2: settle the safety-net row; adopt --refresh
+project.json: the safety-net row is now "provenance": "confirmed"
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- git status --short:
+ M delivery/commands/ground.md
+ M delivery/docs/convergence.md
+ M project.json
+--- git log --oneline | head -1:
+8ff9114 Adopt the delivery method for top-after with slipwai 1.5.2.dev0
+--- cat .delivery-tools/written.json:
+written.json: 3 path(s): delivery/commands/ground.md, delivery/docs/convergence.md, project.json
+  paths that do not resolve from the project's directory: none
+--- git status --short --ignored | grep delivery-tools:
+!! .delivery-tools/
+--- second refresh:
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+
+### step 3: a line of mine on a file written.json names; adopt --refresh
+editing: delivery/commands/ground.md
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/commands/ground.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+[exit 2]
+--- tail -1 delivery/commands/ground.md:
+A line of mine.
+--- the line taken off; refresh:
+[exit 0]
+
+### step 4: echo more >> other/note.txt (the neighbour); adopt --refresh
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+--- cat other/note.txt:
+a neighbour
+more
+--- git status --short (from the repository's top):
+ M delivery/commands/ground.md
+ M delivery/docs/convergence.md
+ M other/note.txt
+ M project.json
+--- written.json:
+written.json: 3 path(s): delivery/commands/ground.md, delivery/docs/convergence.md, project.json
+  paths that do not resolve from the project's directory: none
+
+--- diff of the two runs (before the slice '<', this factory '>'), commit ids and scratch path normalised:
+1c1
+< adopted top-before with slipwai 1.5.2.dev0 — experimental: this path is new, its shape may change in a MINOR, and what surprised you belongs on the public issue tracker
+---
+> adopted top-after with slipwai 1.5.2.dev0 — experimental: this path is new, its shape may change in a MINOR, and what surprised you belongs on the public issue tracker
+5c5
+< <commit> Adopt the delivery method for top-before with slipwai 1.5.2.dev0
+---
+> <commit> Adopt the delivery method for top-after with slipwai 1.5.2.dev0
+9c9
+< slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+---
+> slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+29c29
+< <commit> Adopt the delivery method for top-before with slipwai 1.5.2.dev0
+---
+> <commit> Adopt the delivery method for top-after with slipwai 1.5.2.dev0
+45c45
+< slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/commands/ground.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+---
+> slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/commands/ground.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Each path is spelled from the project's directory. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+--- written.json keys, before the slice vs this factory:
+(the same paths, spelled the same)
+
+##### AC-S23-8a: a project directory in no git repository (the quickstart's adopted sub/, copied out without .git)
+factory /home/noahc/math/slipwai-graph/slipwai; git rev-parse here: fatal: not a git repository (or any parent up to mount point /)
+
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+tail -1: 5. `done` — the programme is finished: every retirement-le
+written.json: absent
+factory /tmp/s23-demo/before/slipwai; git rev-parse here: fatal: not a git repository (or any parent up to mount point /)
+
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+tail -1: 5. `done` — the programme is finished: every retirement-le
+written.json: absent
+
+##### AC-S23-8b: a repository git cannot read (.git/HEAD overwritten with rubbish)
+factory /home/noahc/math/slipwai-graph/slipwai; git status here: fatal: not a git repository (or any parent up to mount point /)
+
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+tail -1: 5. `done` — the programme is finished: every retirement-le
+written.json: absent
+project.json: the data row is now "provenance": "confirmed"
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+written.json: absent
+factory /tmp/s23-demo/before/slipwai; git status here: fatal: not a git repository (or any parent up to mount point /)
+
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+tail -1: 5. `done` — the programme is finished: every retirement-le
+written.json: absent
+project.json: the data row is now "provenance": "confirmed"
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+[exit 0]
+written.json: absent
+(a traceback anywhere above would show as 'Traceback'; grep of this section is the host's to repeat)
