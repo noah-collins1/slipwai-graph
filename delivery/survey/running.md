@@ -22,5 +22,5 @@ Proven 2026-10-03 by cruise iteration 2 of `001-faster-slipwai` (slice `S00-run-
 - **Port, seed, backing service:** none. The command listens on nothing and reads nothing but the tree.
 - **Cannot run on:** not tested. No runtime it fails on is known; none is recorded until one is seen.
 - **What this proves and does not:** that the factory starts and answers from this checkout. Generating or
-  adopting a project (`./slipwai generate`, `./slipwai adopt`) is exercised by the test suite (`make test`,
-  829 tests), not by this smoke command.
+  adopting a project (`./slipwai generate`, `./slipwai adopt`) is exercised by the test suite (`make test`),
+  not by this smoke command.

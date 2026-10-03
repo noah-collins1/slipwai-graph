@@ -99,87 +99,84 @@ When in force, this principle reads:
 
 ### V. Acceptance-Driven Development from Given-When-Then
 
-<!-- journey: acceptance-driven-testing at tests-exist -->
-**A target, not yet in force.** On the *safety net* ladder this repository stands at `tests-exist`
-(`delivery/docs/convergence.md`). This principle comes into force at `tests-pass`; a generated project sits at
-`mutation-measured`. Until it does, what holds here is written below, and the map's *planned* column names the slice
-that climbs.
+**In force since 2026-10-03** (`001-faster-slipwai`, slice `S00-run-path`, cruise iteration 2): the *safety net* row
+reached `tests-pass` — `make verify` and `make -f delivery/Makefile verify` green at `030ad00` with 830 unittest tests
+and nothing quarantined (`delivery/docs/convergence.md`). Until then this principle was a target at `tests-exist`:
+829 unittest tests ran under `make test`, written with the change they hold; acceptance scenarios in
+Given-When-Then existed for generated projects' specs and, from Faster Slipwai on, for the factory's own
+`specs/001-faster-slipwai/spec.md`; the Faster Slipwai slices are the first held to acceptance scenarios written
+and failing before their implementation, and `check-benchmark` records whether they were.
 
-- 829 unittest tests run under `make test`, written with the change they hold; acceptance scenarios in Given-When-Then exist for generated projects' specs, and from this feature on for the factory's own `specs/001-faster-slipwai/spec.md`.
-- The next rung needs every slice's acceptance scenarios written and failing before its implementation; the Faster Slipwai slices are the first held to it, and `check-benchmark` records whether they were.
+- **Level.** Every slice MUST have at least one GWT scenario whose **When** enters through the
+  application's own driving port — **the use case** — and whose **Then** is observable there. A scenario
+  satisfiable by calling an internal function is a unit specification, NOT a slice acceptance criterion.
+- **Why the use case and not the delivery adapter.** The use case is the whole path a slice has to get
+  right: authorise, load, decide, persist, report the outcome. Binding acceptance scenarios to an adapter
+  couples every one of them to the thing IV exists to make replaceable, and a project built with no HTTP
+  adapter has no such boundary to bind to at all.
+- **The outside surface still has to be tested, and it has its own level.** A delivery adapter — HTTP
+  route, CLI command, queue consumer — MUST carry a test covering parse, delegate, and the mapping of
+  every outcome to a response. It lives in `tests/edge/` and MUST NOT be the level at which a business
+  rule is proved.
+- **Adversarial testing enters from outside, and this principle does not constrain it.** An attacker
+  stands at the external surface, so that is where the red-team pass reproduces (this principle's evidence
+  gate, and the `adversarial-testing` skill). Where the rule was right and the *route* got past it, the
+  regression test belongs at the edge: a use-case test proves the rule holds and proves nothing about
+  whether the surface can be made to skip it.
+- **What is NOT a GWT scenario**: format and structure validation. That belongs in the type system,
+  which MUST make invalid states unrepresentable. If the compiler can reject it, do not write a scenario.
+- **Cycle**: RED-GREEN-REFACTOR. Tests written after the code they cover MUST be sent back.
+- **One increment at a time (NON-NEGOTIABLE).** The unit of an increment is **one rule** —
+  one numbered rule of the slice's example map, or one acceptance criterion where there is no map,
+  with the examples that belong to it — taken RED-GREEN-REFACTOR: its examples
+  failing, the smallest code that passes them, refactor on green. Within a rule the examples MAY be written
+  together and implemented against, or taken one at a time, as the implementer judges; an increment MUST
+  NOT span rules, and the next rule's examples MUST NOT be written until the current rule is green and
+  refactored. **Writing a slice's scenarios up front as a batch and then implementing against them is
+  prohibited**, however carefully those scenarios were specified — it is a planning artifact executed as
+  code, not a test-driven cycle. A task that produces no behaviour — a proof over what an earlier increment
+  already built — is a rule cut too small, and belongs inside the increment that produces the behaviour it
+  guards.
+- At most **one rule's** examples may be failing at a time. Each cycle MUST leave the quickest relevant
+  tests in its file or area green. Commit each completed cycle locally; do not push those commits until the
+  actor has accepted the demo. The whole suite MUST be green immediately before that first implementation push,
+  which is what may land on trunk. A row of pending tests is not RED; it is an unintegrated batch of
+  the kind IX exists to prevent.
+- **RED is a failing assertion, not a failing build.** Whatever an example names — function, method, type,
+  field — MUST exist far enough to compile against before that example is written, as a no-op or a default
+  return; that fixes the shape while saying nothing about the behaviour. A red build is not a red test, and
+  "it does not compile yet" is never the stated reason a test fails.
+- Every example MUST be observed failing, **and failing for its own stated reason, distinct from its
+  siblings'**, before the code that satisfies it is written. Examples that all fail for one shared cause
+  have been observed once rather than once each, and every one beyond the first is unproven. A test that
+  passes the moment it is written is evidence of nothing until it has been observed failing: where the
+  behaviour already exists, that observation is the behaviour changed and restored, and the report says so.
+- REFACTOR is a step, not an option. It happens on green, before the next test, and it MUST NOT change
+  observable behaviour.
 
-When in force, this principle reads:
+Rationale for the increment rule: writing every scenario first looks like rigour and removes the thing
+that makes TDD work. Each test is supposed to be a design experiment whose result changes what you write
+next; a batch fixes the design before the first result arrives. It also destroys the attribution that
+makes a failure cheap — with one rule red you know exactly which change broke it, and with nine rules you
+are debugging. The rules discovered during specification are the *list* of increments to drive, their examples
+the tests inside each — not a body of code to author in one sitting. The rule is the unit because it is the
+smallest thing the example map agrees on: cut finer, the offcuts are tasks that prove what an earlier task
+built and produce nothing, and each is a red test that cannot be made red.
 
-> - **Level.** Every slice MUST have at least one GWT scenario whose **When** enters through the
->   application's own driving port — **the use case** — and whose **Then** is observable there. A scenario
->   satisfiable by calling an internal function is a unit specification, NOT a slice acceptance criterion.
-> - **Why the use case and not the delivery adapter.** The use case is the whole path a slice has to get
->   right: authorise, load, decide, persist, report the outcome. Binding acceptance scenarios to an adapter
->   couples every one of them to the thing IV exists to make replaceable, and a project built with no HTTP
->   adapter has no such boundary to bind to at all.
-> - **The outside surface still has to be tested, and it has its own level.** A delivery adapter — HTTP
->   route, CLI command, queue consumer — MUST carry a test covering parse, delegate, and the mapping of
->   every outcome to a response. It lives in `tests/edge/` and MUST NOT be the level at which a business
->   rule is proved.
-> - **Adversarial testing enters from outside, and this principle does not constrain it.** An attacker
->   stands at the external surface, so that is where the red-team pass reproduces (this principle's evidence
->   gate, and the `adversarial-testing` skill). Where the rule was right and the *route* got past it, the
->   regression test belongs at the edge: a use-case test proves the rule holds and proves nothing about
->   whether the surface can be made to skip it.
-> - **What is NOT a GWT scenario**: format and structure validation. That belongs in the type system,
->   which MUST make invalid states unrepresentable. If the compiler can reject it, do not write a scenario.
-> - **Cycle**: RED-GREEN-REFACTOR. Tests written after the code they cover MUST be sent back.
-> - **One increment at a time (NON-NEGOTIABLE).** The unit of an increment is **one rule** —
->   one numbered rule of the slice's example map, or one acceptance criterion where there is no map,
->   with the examples that belong to it — taken RED-GREEN-REFACTOR: its examples
->   failing, the smallest code that passes them, refactor on green. Within a rule the examples MAY be written
->   together and implemented against, or taken one at a time, as the implementer judges; an increment MUST
->   NOT span rules, and the next rule's examples MUST NOT be written until the current rule is green and
->   refactored. **Writing a slice's scenarios up front as a batch and then implementing against them is
->   prohibited**, however carefully those scenarios were specified — it is a planning artifact executed as
->   code, not a test-driven cycle. A task that produces no behaviour — a proof over what an earlier increment
->   already built — is a rule cut too small, and belongs inside the increment that produces the behaviour it
->   guards.
-> - At most **one rule's** examples may be failing at a time. Each cycle MUST leave the quickest relevant
->   tests in its file or area green. Commit each completed cycle locally; do not push those commits until the
->   actor has accepted the demo. The whole suite MUST be green immediately before that first implementation push,
->   which is what may land on trunk. A row of pending tests is not RED; it is an unintegrated batch of
->   the kind IX exists to prevent.
-> - **RED is a failing assertion, not a failing build.** Whatever an example names — function, method, type,
->   field — MUST exist far enough to compile against before that example is written, as a no-op or a default
->   return; that fixes the shape while saying nothing about the behaviour. A red build is not a red test, and
->   "it does not compile yet" is never the stated reason a test fails.
-> - Every example MUST be observed failing, **and failing for its own stated reason, distinct from its
->   siblings'**, before the code that satisfies it is written. Examples that all fail for one shared cause
->   have been observed once rather than once each, and every one beyond the first is unproven. A test that
->   passes the moment it is written is evidence of nothing until it has been observed failing: where the
->   behaviour already exists, that observation is the behaviour changed and restored, and the report says so.
-> - REFACTOR is a step, not an option. It happens on green, before the next test, and it MUST NOT change
->   observable behaviour.
->
-> Rationale for the increment rule: writing every scenario first looks like rigour and removes the thing
-> that makes TDD work. Each test is supposed to be a design experiment whose result changes what you write
-> next; a batch fixes the design before the first result arrives. It also destroys the attribution that
-> makes a failure cheap — with one rule red you know exactly which change broke it, and with nine rules you
-> are debugging. The rules discovered during specification are the *list* of increments to drive, their examples
-> the tests inside each — not a body of code to author in one sitting. The rule is the unit because it is the
-> smallest thing the example map agrees on: cut finer, the offcuts are tasks that prove what an earlier task
-> built and produce nothing, and each is a red test that cannot be made red.
->
-> - **Behaviour, not structure.** Tests MUST NOT assert private functions, internal call ordering, or mock
->   invocation counts where an observable outcome exists. Renaming an internal function MUST NOT break a
->   test.
-> - **One capability per slice, one observable outcome per criterion.** A slice or criterion joining two
->   capabilities — with "and", a comma between verbs, or "plus" — MUST be split before it is planned. The
->   word "and" in a deliverable's title is a split signal, not a description. Acceptance scenarios MUST be
->   checked for capability clusters: more than one cluster means the title under-reports what the slice
->   contains. A walking skeleton MAY span layers but MUST NOT span capabilities unless each additional one
->   introduces a **new architectural shape**.
-> - **Evidence gate.** At the end-of-phase point, test effectiveness MUST be evidenced by mutation testing
->   where meaningful, otherwise by recorded reachability, contract, or operational evidence with mutation
->   marked N/A. A failing test MUST NOT be manufactured to make a behaviour-preserving change look RED.
-> - Bug fixes MUST begin with a boundary-level scenario reproducing the reported behaviour.
-> - Coverage percentage is not a gate.
+- **Behaviour, not structure.** Tests MUST NOT assert private functions, internal call ordering, or mock
+  invocation counts where an observable outcome exists. Renaming an internal function MUST NOT break a
+  test.
+- **One capability per slice, one observable outcome per criterion.** A slice or criterion joining two
+  capabilities — with "and", a comma between verbs, or "plus" — MUST be split before it is planned. The
+  word "and" in a deliverable's title is a split signal, not a description. Acceptance scenarios MUST be
+  checked for capability clusters: more than one cluster means the title under-reports what the slice
+  contains. A walking skeleton MAY span layers but MUST NOT span capabilities unless each additional one
+  introduces a **new architectural shape**.
+- **Evidence gate.** At the end-of-phase point, test effectiveness MUST be evidenced by mutation testing
+  where meaningful, otherwise by recorded reachability, contract, or operational evidence with mutation
+  marked N/A. A failing test MUST NOT be manufactured to make a behaviour-preserving change look RED.
+- Bug fixes MUST begin with a boundary-level scenario reproducing the reported behaviour.
+- Coverage percentage is not a gate.
 
 ### VI. Contract-Bounded Integrations
 
@@ -367,8 +364,8 @@ When in force, this principle reads:
 
 ### XIII. Fast Feedback, or It Is Not Feedback
 
-<!-- journey: fast-feedback at tests-exist -->
-**A target, not yet in force.** On the *safety net* ladder this repository stands at `tests-exist`
+<!-- journey: fast-feedback at tests-pass -->
+**A target, not yet in force.** On the *safety net* ladder this repository stands at `tests-pass`
 (`delivery/docs/convergence.md`). This principle comes into force at `fast`; a generated project sits at
 `mutation-measured`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.

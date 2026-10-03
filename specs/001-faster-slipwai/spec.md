@@ -293,3 +293,44 @@ report appears in verify output and under `specs/<feature>/benchmark`.
   so this cruise run speeds up as it goes.
 - Owner decisions 1–7 in the PRD's Risks section are taken by the skipper under `decide: recommended-first`
   except where the owner brief says to ask a person.
+
+## Slice acceptance criteria
+
+One subsection per slice, written by the slice-gaps stage before the slice is planned. The input is the slice's
+*Acceptance Examples* column in `story-split.md`; the output is criteria in precondition → trigger → observable
+outcome form, one outcome each, and a `Gaps reviewed` note saying what was checked and which decisions in
+`decisions.md` the answers rest on.
+
+### S00-run-path (method slice)
+
+**Gaps reviewed** 2026-10-03, cruise iteration 2, host: the two examples in `story-split.md` against the
+acceptance-criteria checklist — measurability, precondition/trigger/outcome, negative paths, completion. Seven
+gaps, all closed as the criteria below: the version string was a moving target (AC-S00-1), two gates were named
+in the slice but one in the example (AC-S00-5), "run the way the cruise runner runs it" named no environment
+(AC-S00-3), the refusal the fix must not lose had no criterion (AC-S00-4), "no quarantined test" had no
+measurement (AC-S00-5), what `running.md` must record was unstated (AC-S00-2), and who flips the Safety net row
+and with what provenance was decided as D11 (AC-S00-6). AC-S00-7 states what the slice must not do.
+
+- **AC-S00-1** — Given this checkout, when `./slipwai --version` runs, then it exits 0 and prints `slipwai `
+  followed by the contents of `VERSION` — the one place the number is written (`1.5.2.dev0` today).
+- **AC-S00-2** — Given `delivery/survey/running.md`, when the slice is done, then its `## . (python)` section
+  no longer contains *Not yet proven* and records the command, the exact line it printed, the interpreter it
+  ran on (`python3 --version`), that no port, seed or backing service is needed, who proved it and the date.
+- **AC-S00-3** — Given `CRUISE_RUNNER=1` and `CRUISE_ITERATION=<n>` in the environment, as every cruise
+  iteration has, when `make test` runs, then every test passes: each test that spawns
+  `scripts/agents/cruise.py` runs the child with both variables cleared from its environment.
+- **AC-S00-4** — Given the same environment, when the test that proves `start` refuses inside an iteration
+  runs, then it still passes by setting the two variables itself in the child's environment, so the refusal
+  stays proven after the fix.
+- **AC-S00-5** — Given this checkout at the slice's final commit with the two variables set, when `make verify`
+  and `make -f delivery/Makefile verify` run, then both exit 0, the ratchet reports the test suite green and not
+  quarantined (`delivery/baseline.json` records no `test` quarantine), and the unittest summary's `skipped=`
+  count is no higher than the run recorded before the slice.
+- **AC-S00-6** — Given both gates green, when the Convergence stage runs, then `project.json`'s `safety-net`
+  row reads rung `tests-pass`, provenance `confirmed`, `planned` null, and its `evidence` names the two
+  commands, the commit they were green on, and that cruise iteration 2 established it with no person having
+  read the gate (D11); `/survey` regenerates `delivery/docs/convergence.md` and
+  `make -f delivery/Makefile check-convergence` passes.
+- **AC-S00-7** — Given the slice's diff, when it is reviewed, then nothing under `assets/`, `src/slipwai/`,
+  `catalog.json` or the CLI changed: the slice is not user-visible, adds no `changelog.d/` fragment and leaves
+  `VERSION` at `1.5.2.dev0`.
