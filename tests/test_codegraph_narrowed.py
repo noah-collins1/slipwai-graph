@@ -14,6 +14,7 @@ import re
 import sqlite3
 import subprocess
 import tempfile
+import time
 
 from gate_audit import Audited
 from support import FactoryTestCase, commit_all
@@ -59,9 +60,18 @@ class Project:
         done = subprocess.run(["git", *arguments], cwd=self.repo, text=True, capture_output=True, check=True)
         return done.stdout
 
-    def whole(self) -> subprocess.CompletedProcess[str]:
+    def settle(self) -> None:
+        """Wait until every file in the tree is safely older (the gate's two seconds) than now, so that a run starting
+        now can vouch for it; a file written a moment ago is, by the gate's own rule, hashed again."""
+        newest = max(max(stat.st_mtime, stat.st_ctime) for stat in
+                     (path.lstat() for path in self.repo.rglob("*") if ".git" not in path.parts))
+        time.sleep(max(0.0, newest + 2.1 - time.time()))
+
+    def whole(self, settled: bool = True) -> subprocess.CompletedProcess[str]:
         """A whole comparison: the gate on `main`, passing."""
         self.git("checkout", "-q", "main")
+        if settled:
+            self.settle()
         done = self.run()
         self.case.assertEqual(done.returncode, 0, done.stderr)
         return done
@@ -179,6 +189,7 @@ class NarrowedRunTest(FactoryTestCase):
             project.edit()
             project.resync()
             project.commit()
+            project.settle()  # a file written within two seconds of the run is hashed by the next one too
             self.assertRegex(project.run().stdout, narrowed_line(1))
             self.assertRegex(project.run().stdout, narrowed_line(0))
 

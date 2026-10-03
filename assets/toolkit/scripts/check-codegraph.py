@@ -129,12 +129,20 @@ def indexed() -> dict[str, tuple[str, float]] | None:
 
 
 HASHED = [0]  # how many files this run read to compare, said on a narrowed pass line
+START = time.time()  # the moment this run began: what a file's times are measured against, were it to vouch for it
+# What each file looked like as it was opened to be hashed: size, modification time and change time in nanoseconds,
+# and its inode. The memory keeps these, because git's own comparison normalises some changes away (D49).
+STATS: dict[str, list[int]] = {}
+SAFELY = 2.0  # seconds a file's times must be older than the run that vouched for it, where the filesystem's own
+# timestamp granularity is not known
 
 
 def digest(path: Path) -> str:
     HASHED[0] += 1
     sha = hashlib.sha256()
     with path.open("rb") as handle:
+        seen = os.fstat(handle.fileno())  # the file as opened, before its bytes are read
+        STATS[str(path)] = [seen.st_size, seen.st_mtime_ns, seen.st_ctime_ns, seen.st_ino]
         for block in iter(lambda: handle.read(1 << 20), b""):
             sha.update(block)
     return sha.hexdigest()
@@ -165,6 +173,7 @@ def drift(only: set[str] | None = None) -> tuple[dict[str, tuple[str, float]], l
     paths = tracked()
     if rows is None or paths is None:
         return None
+    STATS.clear()
     # Which files belong in the index is CodeGraph's decision, not this script's: it parses the
     # languages it supports and ignores the rest. Taking the set of suffixes it has actually
     # indexed here as the answer keeps this check from inventing a language table of its own — and
@@ -250,7 +259,15 @@ def unreported() -> set[str] | None:
             if entry[:1] and (entry[0].islower() or entry[0] in "Ss")}
 
 
-def remember(rows: dict[str, tuple[str, float]], whole: float | None = None) -> None:
+def files_of(rows: dict[str, tuple[str, float]], kept: dict[str, Any] | None) -> dict[str, list[float]]:
+    """What the memory records of each file: the stat taken as it was hashed this run and the moment this run began;
+    for a file this run did not hash, what the memory recorded of it before (a narrowed run, which stat-checked it)."""
+    found = {str(Path(path).relative_to(ROOT)): [*seen, START] for path, seen in STATS.items()}
+    return {path: record for path, record in {**(kept or {}), **found}.items() if path in rows}
+
+
+def remember(rows: dict[str, tuple[str, float]], whole: float | None = None,
+             kept: dict[str, Any] | None = None) -> None:
     """Record what this passing run vouched for. Never fatal: a gate that cannot take notes is merely slower."""
     # Written only where git ignores it: a record `git status` reported would be a change nobody made.
     if any(os.environ.get(marker) for marker in CI_MARKERS) or git_output("check-ignore", "-q", "--",
@@ -265,7 +282,7 @@ def remember(rows: dict[str, tuple[str, float]], whole: float | None = None) -> 
     try:
         record = {"key": key, "commit": head.decode().strip(), "dirty": dirty,
                   "rows": {path: found[0] for path, found in rows.items()}, "database": database_of(),
-                  "whole": time.time() if whole is None else whole}
+                  "files": files_of(rows, kept), "whole": time.time() if whole is None else whole}
         beside = MEMORY.with_name(MEMORY.name + ".tmp")
         beside.write_text(json.dumps(record))
         os.replace(beside, MEMORY)
@@ -281,7 +298,7 @@ COMMIT_GONE = "the commit it was taken at is gone"
 OTHER_DATABASE = "the index database is not the one it was compared against"
 INDEX_UNREADABLE = "the index could not be read"
 GIT_SILENT = "git could not say what changed"
-SHAPE = {"key": str, "commit": str, "dirty": list, "rows": dict, "database": list, "whole": (int, float)}
+SHAPE = {"key": str, "commit": str, "dirty": list, "rows": dict, "database": list, "files": dict, "whole": (int, float)}
 
 
 def remembered() -> dict[str, Any] | str:
@@ -317,7 +334,25 @@ def candidates_of(record: dict[str, Any], rows: dict[str, tuple[str, float]]) ->
         return None
     vouched = record["rows"]
     moved = {path for path in rows.keys() | vouched.keys() if (rows[path][0] if path in rows else None) != vouched.get(path)}
-    return {*changed, *record["dirty"], *silenced, *moved}
+    return {*changed, *record["dirty"], *silenced, *moved, *unvouched(record["files"], rows)}
+
+
+def unvouched(files: dict[str, Any], rows: dict[str, tuple[str, float]]) -> set[str]:
+    """The indexed paths whose bytes the memory cannot vouch for from the file itself: no record of how it looked when
+    it was last hashed and found equal, a file that does not look so now, or one whose times are not safely older
+    than the run that vouched for it (written while that run went on, and so possibly after it read it)."""
+    answer = set()
+    for path in rows:
+        recorded = files.get(path)
+        try:
+            now = (ROOT / path).stat()
+        except OSError:
+            now = None
+        if (recorded is None or now is None
+                or recorded[:4] != [now.st_size, now.st_mtime_ns, now.st_ctime_ns, now.st_ino]
+                or max(now.st_mtime_ns, now.st_ctime_ns) + SAFELY * 1e9 > recorded[4] * 1e9):
+            answer.add(path)
+    return answer
 
 
 def database_of() -> list[int] | None:
@@ -361,11 +396,11 @@ def narrowed(tooling: Any, record: dict[str, Any]) -> int | str:
         assert found is not None
     return conclude(found, synced, f"hashed {HASHED[0]} of {len(found[0])} file(s), only what changed since the "
                     f"last whole comparison ({moment_of(float(record['whole']))}); the integrity check was not "
-                    "run here and runs in the full gate", float(record["whole"]))
+                    "run here and runs in the full gate", float(record["whole"]), kept=record["files"])
 
 
 def conclude(found: tuple[dict[str, tuple[str, float]], list[str], list[str]], synced: str, said: str,
-             whole: float | None = None, clause: str = "") -> int:
+             whole: float | None = None, clause: str = "", kept: dict[str, Any] | None = None) -> int:
     """The verdict on a comparison, and the memory a pass leaves behind."""
     rows, missing, changed = found
     paths = tracked() or []
@@ -380,7 +415,7 @@ def conclude(found: tuple[dict[str, tuple[str, float]], list[str], list[str]], s
         return 1
     if not missing and not changed:
         print(f"check-codegraph: {synced}index current — {said or f'{len(rows)} file(s), indexed {moment(last)}'}{clause}")
-        remember(rows, whole)
+        remember(rows, whole, kept)
         return 0
     report = [f"check-codegraph: {synced}the code index no longer describes this working tree",
               f"  last indexed: {moment(last)}"]

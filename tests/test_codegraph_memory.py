@@ -198,6 +198,7 @@ class TheMemoryIsWrittenOnlyByAPassTest(FactoryTestCase):
             project.slice()
             project.edit()
             project.commit()
+            project.settle()  # a file written within two seconds of the run is hashed by the next one too
             first = project.run()
             self.assertIn("synced 1 file(s) first; index current — hashed 1 of", first.stdout)
             second = project.run()
