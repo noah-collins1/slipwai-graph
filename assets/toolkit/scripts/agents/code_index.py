@@ -219,9 +219,11 @@ class Compared:
 
     def said(self) -> str:
         """In one line, how much of the index was hashed and why that was enough, where the comparison was narrowed."""
+        if self.found is None:  # the gate could not say: not a checkout, no `files` table; nothing was compared
+            return "compared nothing: the index and the tree could not be compared here"
         if self.why is not None:  # the gate's own words for why the memory could not be used
             return f"compared everything: {self.why}"
-        if self.record is None or self.found is None:
+        if self.record is None:
             return ""
         return (f"hashed {self.hashed} of {len(self.found[0])} file(s), only what changed since the last whole "
                 f"comparison ({self.moment(float(self.record['whole']))})")
@@ -264,7 +266,8 @@ def renew(tooling: Any, compared: Compared) -> None:
     """Record what this comparison vouched for, through the gate's own writer and under its own rules: outside CI, only
     where git ignores the record, and as a passing gate run records it. Never fatal: an index that cannot take notes
     is merely compared again."""
-    if compared.found is None or any(os.environ.get(marker) for marker in tooling.CI_MARKERS):
+    # An index holding no row is one the gate refuses and records nothing for ("holds no files at all"); so does this.
+    if compared.found is None or not compared.found[0] or any(os.environ.get(marker) for marker in tooling.CI_MARKERS):
         return
     try:
         if compared.record is None:
