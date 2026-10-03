@@ -73,7 +73,10 @@ back. Within one name the newer of its local and `origin` base wins: `origin/mai
 `main` moves locally and is not yet pushed, and a stale base charges the slice with `main`'s own files. Where
 there is a base, what was compared is said: the pass line and the refusal header each carry
 `compared with `<trunk>` at <commit>`, with nothing after it but words about a recorded name that was passed over
-or the `master` clause below. Where there is none, the no-base line below says so instead.
+or the `master` clause below. Where there is none, the no-base line below says so instead. A recorded name that has
+a ref and shares no history with the branch is passed over for the next name, and said so; a pull-request target
+that does is no base at all. Where the target's base won over the trunk's, the line names the target and says the
+pull request targets it.
 
 Where `project.json` records no usable trunk, `main` and `master` both have refs, and `master`'s base is strictly
 newer than `main`'s, the same line and header add that `master` is here too and `project.json` records no trunk,
@@ -100,6 +103,14 @@ on stderr that the slice was NOT checked, because that checkout is depth 1; the 
 variables set gets the same NOT-checked line, and one set to `false` still counts: any non-empty value does.
 That line carries no `git fetch`, since nobody can run one on a runner. With a usable base a CI run is held
 as locally, and a lost record still fails it.
+
+A fetch command is printed only for a plain branch name (`[A-Za-z0-9._/-]`) and where a remote named `origin`
+exists, because it is pasted into a shell; otherwise the line says which branch to create or fetch. A recorded value
+that is no usable name is printed with its control characters dropped and cut to 80 characters. Where a base was
+found and a git call after it fails — the diff, `ls-files`, a `show` of a path that is not merely absent — that is
+*could not compare*, never *no changes*: a developer's checkout exits 1 with one line naming the trunk, the base and
+git's own first line, and a forge's says NOT checked with that reason and exits 0. Where git cannot read the checkout
+at all the check says so on stderr and exits 0.
 """
 
 from __future__ import annotations

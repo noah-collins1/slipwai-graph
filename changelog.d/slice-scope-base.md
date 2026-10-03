@@ -10,7 +10,9 @@ else `master`; a `slice/<id>` name is never one, in any case. Where CI names the
 (`GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`) and it has a ref, it is a second candidate, and when the
 two bases differ the older one wins, so the target can only move the base back. The line the check prints now says
 what it compared with — `compared with `main` at 3f2a9c1` — and, where `ci.branch` names a branch this checkout
-does not have, which one and the `git fetch` that would bring it.
+does not have, which one — and the `git fetch` that would bring it, printed only for a plain branch name and where
+a remote named `origin` exists; otherwise the line says which branch is missing. A recorded trunk that shares no
+history with the branch is passed over for `main`, and said so.
 
 **What is promised, locally and on a pull request.** On a developer's machine nothing the slice commits, and no
 stray `master`, `origin/master` or tag named `main`, moves the base forward; someone who moves refs in their own
@@ -36,4 +38,6 @@ repository are now held to the files one slice may touch, and may be refused whe
 `project.json` records no trunk, `main` and `master` both exist and `master` is the newer, the check still
 compares with `main` and says so, on its pass line and where it fails: that `master` is here too, and that the fix
 is to set `ci.branch` to `master` in `project.json` on the trunk, or to delete the stale `main`.
-No setting, flag or file is added.
+A comparison that could not run — git's diff failing, as in a partial clone whose remote is gone — used to pass; it
+now fails on a developer's machine with git's own first line, and in CI is NOT checked. Where git cannot read the
+checkout at all, the check says so and exits 0, as it always did. No setting, flag or file is added.
