@@ -110,3 +110,66 @@ class RecordLookupTest(FactoryTestCase):
             self.assertEqual(record_for(repo, "S1", "S1"), [])
             (repo / "specs/f/slices/S1/benchmark.json").unlink()
             self.assertIn("specs/f/slices/S1 is done but has no benchmark.json", record_for(repo, "S1", None)[0])
+
+
+MODEL = "slices:\n  - id: place-order\n    status: implemented\n    spec: specs/f/spec.md\n"
+
+
+def model_slice(repo: Path, head: str | None) -> None:
+    """A slice the model alone names, `place-order`: no letters-then-digits head, so no bare prefix to fall back on."""
+    (repo / "docs/event-model").mkdir(parents=True, exist_ok=True)
+    (repo / "docs/event-model/model.yaml").write_text(MODEL)
+    (repo / "specs/f/slices/place-order").mkdir(parents=True, exist_ok=True)
+    (repo / "specs/f/slices/README.md").unlink(missing_ok=True)
+    log = repo / "specs/f/adversary-log.md"
+    log.unlink(missing_ok=True)
+    if head is not None:
+        log.write_text(LOG.format(head=head))
+
+
+class IdWithoutAPrefixTest(FactoryTestCase):
+    """An id from the model with no letters-then-digits head has no prefix and is looked up whole (D19)."""
+
+    def test_check_benchmark_warns_of_the_missing_record_and_exits_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "noprefixb", "standard", "python")
+            model_slice(repo, None)
+            found = warnings(repo)
+            self.assertIn("specs/f/slices/place-order is done but has no benchmark.json", "\n".join(found))
+            (repo / "specs/f/slices/place-order/benchmark.json").write_text(
+                json.dumps({"slice": "place-order", "stages": [], "shape": {}}))
+            self.assertEqual([line for line in warnings(repo) if "place-order" in line], [])
+
+    def test_check_decisions_names_the_whole_id_without_a_row_and_passes_with_it(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "noprefixd", "standard", "python")
+            model_slice(repo, None)
+            refused = gate(repo)
+            self.assertEqual(refused.returncode, 1, refused.stderr)
+            self.assertIn("no row for place-order, which is done", refused.stderr)
+            self.assertNotIn("Traceback", refused.stderr)
+            model_slice(repo, "place-order")
+            self.assertEqual(gate(repo).returncode, 0, gate(repo).stderr)
+
+    def test_the_baseline_writes_a_row_headed_with_the_whole_id(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "noprefixbase", "standard", "python")
+            model_slice(repo, None)
+            result = subprocess.run(["python3", "scripts/check-decisions.py", "--adversary-baseline"], cwd=repo,
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("## place-order · predates the adversary gate",
+                          (repo / "specs/f/adversary-log.md").read_text())
+
+
+class BaselineBesideABareRowTest(FactoryTestCase):
+    def test_the_baseline_writes_no_row_for_a_slice_already_recorded_under_its_bare_prefix(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "baserow", "standard", "python")
+            self.assertEqual(register(repo, "S00-run-path", "S00").returncode, 0)
+            before = (repo / "specs/f/adversary-log.md").read_text()
+            result = subprocess.run(["python3", "scripts/check-decisions.py", "--adversary-baseline"], cwd=repo,
+                                    text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("nothing to baseline", result.stdout)
+            self.assertEqual((repo / "specs/f/adversary-log.md").read_text(), before)

@@ -667,10 +667,11 @@ def check() -> list[str]:
         for ident in sorted(done):
             # The record is at `slices/<whole id>/`, or at `slices/<prefix>/` where it was opened before the id was
             # read whole; with neither, the finding names the whole id's path.
-            prefix = re.match(r"[A-Za-z]+\d+", ident).group(0)
+            # An id with no letters-then-digits head has no prefix and is looked up whole.
+            head = re.match(r"[A-Za-z]+\d+", ident)
             record_path = feature / "slices" / ident / RECORD
-            if not record_path.is_file() and (feature / "slices" / prefix / RECORD).is_file():
-                record_path = feature / "slices" / prefix / RECORD
+            if head and not record_path.is_file() and (feature / "slices" / head.group(0) / RECORD).is_file():
+                record_path = feature / "slices" / head.group(0) / RECORD
             where = f"specs/{feature.name}/slices/{record_path.parent.name if record_path.is_file() else ident}"
             if not record_path.is_file():
                 findings.append(f"{where} is done but has no {RECORD}: no stage of it was bracketed "

@@ -194,8 +194,11 @@ def lacking_rows(done: set[str], log_text: str) -> list[str]:
     """The done slices the adversary log has no row for: a row is headed with the slice's whole id or with its bare
     prefix (`S00` for `S00-run-path`), which rows written before the id was read whole still use."""
     rows = set(re.findall(r"^## (\S+) · ", log_text, re.M))
-    return sorted(ident for ident in done
-                  if ident not in rows and re.match(r"[A-Za-z]+\d+", ident).group(0) not in rows)
+    def headed(ident: str) -> bool:
+        prefix = re.match(r"[A-Za-z]+\d+", ident)  # an id with no such head has no prefix: looked up whole only
+        return ident in rows or (prefix is not None and prefix.group(0) in rows)
+
+    return sorted(ident for ident in done if not headed(ident))
 
 
 def unowned() -> list[str]:
