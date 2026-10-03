@@ -281,3 +281,99 @@ itself plus the docstring, so this task has no new failing test — it is the wo
 No screen in this slice
 
 ## Convergence
+
+### Pass 1 (at eaa6161)
+
+### T011 — The new suites carry their own git identity (HIGH · constitution I, X, XIV: the factory's own gate)
+
+- [ ] **HIGH.** `tests/test_slice_scope_no_base.py` `out()` runs `git commit-tree` with the machine's identity, so
+  `test_an_unrelated_trunk_is_not_a_slice_branchs_trunk` and
+  `test_every_missing_base_state_of_a_forge_checkout_says_not_checked` ERROR (exit 128) wherever git has no global
+  `user.name`/`user.email` — a CI runner; `.github/workflows/verify.yml` configures none, and no other test under
+  `tests/` writes a commit outside the fixture's `git()` helper, which passes `-c user.name=t -c user.email=t@local`.
+
+**RED (observed, pass 1):**
+`env -i PYTHONPATH=src:tests PATH=/usr/bin:/bin HOME=/tmp python3 -m unittest test_slice_scope_no_base` →
+`FAILED (errors=2)`, both at `commit-tree`.
+
+**GREEN names the class:** every git call in `tests/test_slice_scope_base.py` and `tests/test_slice_scope_no_base.py`
+that writes an object or a ref carries the identity itself (the fixture's helper, or `-c user.name -c user.email`
+in `out()`), and both suites are green under the `env -i … HOME=<a directory with no .gitconfig>` command above.
+No production change.
+
+**Files:** `tests/test_slice_scope_no_base.py` (and `tests/test_slice_scope_base.py` only if the sweep finds one).
+
+### T012 — A no-base line never names a branch the state is not about (MEDIUM · R4, R5, R6 · D30 *Depends on D31 only for this*)
+
+- [ ] **MEDIUM.** In `merge_base()`'s in-loop no-base return (`Base(None, target_name() or name, True, …)`) the
+  trunk HAS a ref and shares no history, yet the name handed to `check()` is the forge target's even where that
+  target has no ref here. With `main` an unrelated root and `GITHUB_BASE_REF=release` (no `release` ref), a
+  developer's checkout prints *slice/S1 shares no history with `release` — a slice branch is cut from `release`*,
+  a shallow one *shares no history with `release` at this depth*, and the forge's line says *no `release` history*:
+  each sentence is about `main`. D30 gives the target's name only as **the name to fetch** where no candidate has a
+  ref. The same in-loop block's other arm (`if base is None and target and target[1]`: trunk ref with no shared
+  history, target with a base → held against the target) has no test: mutants replacing either line survive both
+  suites.
+
+**RED:** through the command line, in `tests/test_slice_scope_no_base.py`: (1) unrelated `main`, target `release`
+with no ref, attached → the line names `main`, not `release`; (2) the same in a `--depth 1 --no-single-branch`
+clone → *shares no history with `main` at this depth*; (3) unrelated `main`, target `develop` with a ref and a
+shared base → exit 0 `compared with `develop``, and a host change refused.
+
+**GREEN names the class:** every state of the plan's *No usable base* table × {no target, target with a ref,
+target without one}: a *shares no history with* line names the ref that was actually compared; the target's name
+appears only in a line that tells a person what to fetch.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_no_base.py`.
+
+### T013 — A push pipeline on a slice branch: decide and say it (MEDIUM · a question for the host, not a code task yet · D31, plan *Constraints* "CI's exit code unchanged in every project")
+
+- [ ] **MEDIUM — hand-back.** D31 defines the forge checkout as *name from a variable and `HEAD` detached*, and the
+  code does exactly that. A GitHub/Gitea **push** run on a `slice/<id>` branch is neither: `actions/checkout`
+  leaves `HEAD` attached, depth 1, single branch, and `GITHUB_HEAD_REF` is empty. Reproduced:
+  `git clone --depth 1 --branch slice/S1 file://…`, then `GITHUB_ACTIONS=true CI=true python3
+  delivery/scripts/check-slice-scope.py` → exit 1, *run `git fetch origin main`* — a command nobody can run on a
+  runner. The generated and adopted workflows trigger `push` only on the trunk, so no project as generated meets
+  it; a project that widened its own triggers does, and the plan's constraint and the fragment's *it still exits 0*
+  (said of the pull-request checkout only) do not cover it. Before `S22`, that run printed *nothing to hold*, exit 0.
+  The host decides (a D-entry): (a) leave the exit, and the fragment and docstring say a push pipeline on a slice
+  branch is a developer's checkout and fails, with `fetch-depth: 0` as the fix there too; or (b) the forge answer
+  also covers a CI checkout with no pull-request variable. Then a test pins whichever it is.
+
+**Files (after the decision):** `changelog.d/slice-scope-base.md`, the docstring, and for (b)
+`assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_no_base.py`.
+
+### T014 — A slice name in another case is still a slice name (MEDIUM · R2, AC-S22-4 · not reproducible on this platform)
+
+- [ ] **MEDIUM.** `usable()` refuses a `slice/<id>` name by `SLICE_BRANCH`, which is case-sensitive; on a
+  case-insensitive filesystem (macOS, Windows) with loose refs, `refs/heads/Slice/S1` resolves to the slice's own
+  branch, so a committed `ci.branch: Slice/S1` would make the base HEAD and the `project.json` edit unseen — the
+  door D30 closes. On Linux the name has no ref and `main` answers (run in pass 1: refused, *`Slice/S1` … has no
+  branch here*), so this is read from the code, not observed.
+
+**RED:** a command-line test that records `Slice/S1` (and `SLICE/s1`) and, so that it bites on every platform,
+creates the loose ref file `refs/heads/Slice/S1` at HEAD on Linux: `project.json` is refused.
+
+**GREEN names the class:** every name source that reaches a ref lookup — `ci.branch`, `GITHUB_BASE_REF`,
+`CI_MERGE_REQUEST_TARGET_BRANCH_NAME` — refuses a name that is the checked branch, or any `slice/<id>`, compared
+without regard to case.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_base.py`.
+
+### T015 — Teeth for the two unpinned arms of name and base selection (LOW)
+
+- [ ] **LOW.** Mutants that survive both suites (pass 1, 21 run): `usable()` without `git check-ref-format`
+  (`a..b`, `a b` then read *has no branch here* rather than *is not a branch name* — same verdict, wrong sentence);
+  `older_of()` without its `git merge-base first second` fallback (two bases neither an ancestor of the other —
+  the plan's *Design* states it, the map has no example). One command-line test each; no production change expected.
+
+**Files:** `tests/test_slice_scope_base.py`.
+
+### T016 — The fragment's first paragraph does not contradict its catch-up (LOW · R8, AC-S22-21)
+
+- [ ] **LOW.** `changelog.d/slice-scope-base.md` paragraph 1 ends *This asks nothing of a repository already
+  generated*, and the **Catch-up** paragraph then names two things a project will see, one of them a new local
+  failure; paragraphs 1 and 2 also each define the trunk. Say once what the trunk is, and replace *asks nothing*
+  with what is true: `migrate` carries the script, and a checkout with no trunk to compare with now fails locally.
+
+**Files:** `changelog.d/slice-scope-base.md`.
