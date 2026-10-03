@@ -175,13 +175,14 @@ class GateWalkManifestTest(FactoryTestCase):
             self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
             self.assertEqual(audited.opened.count("project.json"), 1)
 
-    def test_hold_the_migration_gate_does_not_read_the_manifest_more_than_once(self) -> None:
-        """R5e2, a hold: it reads none today, and must not gain a read per call."""
+    def test_the_migration_gate_opens_the_manifest_once(self) -> None:
+        """R5e2, moved by D52 (AC-S01-8): it reads none before the slice, and now reads once, for which deployables
+        are Java."""
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "once", "event-modelling", "python")
             audited = Audited(repo, "scripts/check-migrations.py")
             self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
-            self.assertLessEqual(audited.opened.count("project.json"), 1)
+            self.assertEqual(audited.opened.count("project.json"), 1)
 
     def test_hold_without_a_manifest_both_gates_still_pass(self) -> None:
         """R5e3, a hold: the rules that need the manifest find no applications."""

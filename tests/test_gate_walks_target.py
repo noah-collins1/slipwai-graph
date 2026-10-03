@@ -1,4 +1,4 @@
-"""`target` is Maven's build output only beside a `pom.xml` (S01-gate-walks, rule R3).
+"""`target` is Maven's build output only at a recorded Java root, beside its `pom.xml` (S01-gate-walks, R3, D52).
 
 A Java service's `target/` holds compiled copies of its own sources, which the gates must not read twice. A
 directory called `target` anywhere else is somebody's source: a bounded context, a package, a folder of migrations.

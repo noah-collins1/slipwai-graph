@@ -79,7 +79,8 @@ and framework that starts with a health capability only. Every service owes the 
   `make smoke` wait on;
 - the hexagonal layout — domain and application code free of adapters — which `make check-imports` enforces
   inside every directory under `apps/` and `packages/` (but not `.venv`, `node_modules`, `__pycache__`, `.git`
-  or a Maven `target` beside its `pom.xml`, which it never enters), along with the seam between bounded
+  or the `target` at the root of a Java deployable `project.json` records, beside its `pom.xml`, which it never
+  enters; a deployable recorded at one of those names is read), along with the seam between bounded
   contexts inside a service that holds more than one (*Bounded contexts*, below);
 - schema change by expand then contract, in separate deployments, which `make check-migrations` holds every
   migration file in your own code to (the same five directories are not read): a drop, rename, type change or

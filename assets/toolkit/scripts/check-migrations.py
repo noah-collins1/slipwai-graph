@@ -14,13 +14,15 @@ them. The constitution's rule is expand, then contract, in separate deployments.
 
 Comments are stripped before anything is matched, and only the `up` half of a JavaScript migration is read.
 Every migration file under every `apps/*/` and `packages/*/` is checked, except inside the five directories
-nobody reads — `.venv`, `node_modules`, `__pycache__`, `.git` and a Maven `target` beside its `pom.xml`, none of
-which is descended: `migrations/<n>_*.{sql,js,ts}` where `<n>` is the shipped ones' zero-padded number or a new
+nobody reads — `.venv`, `node_modules`, `__pycache__`, `.git` and the `target` at the root of a Java deployable
+`project.json` records, beside its `pom.xml`, none of which is descended (a directory that is a recorded
+deployable's path, or on the way to one, always is): `migrations/<n>_*.{sql,js,ts}` where `<n>` is the shipped ones' zero-padded number or a new
 one's `YYYYMMDDHHMM` stamp, Flyway's `db/migration/V<n>__*.sql`. Nothing else in this repository is a migration.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -71,12 +73,54 @@ PRUNED = {".venv", "node_modules", "__pycache__", ".git"}
 listings: dict[Path, list[Path]] = {}
 members: dict[Path, frozenset[Path]] = {}
 entries_read = 0
+_recorded: tuple[set[str], set[str]] | None = None
+
+
+def relative(path: Path) -> str | None:
+    """`path` below the root, as POSIX, or None where it is not below it."""
+    try:
+        return Path(os.path.normpath(path)).relative_to(os.path.normpath(ROOT)).as_posix()
+    except ValueError:
+        return None
+
+
+def recorded() -> tuple[set[str], set[str]]:
+    """What `project.json` says about where deployables are: every recorded `path`, and the paths recorded as Java
+    (`language` the string `java`), each as `x` whether recorded as `x`, `x/` or `./x`. A record that is not there,
+    is unreadable, is not an object, or whose `path` or `language` is not a string says nothing."""
+    global _recorded
+    if _recorded is None:
+        paths: set[str] = set()
+        java: set[str] = set()
+        try:
+            record = json.loads((ROOT / "project.json").read_text(encoding="utf-8"))
+            records = record.get("deployables", {}) if isinstance(record, dict) else {}
+        except (OSError, ValueError):
+            records = {}
+        for record in records.values() if isinstance(records, dict) else []:
+            if isinstance(record, dict) and isinstance(record.get("path"), str):
+                path = os.path.normpath(record["path"])
+                if path != ".":
+                    paths.add(Path(path).as_posix())
+                if record.get("language") == "java":
+                    java.add(Path(path).as_posix())
+        _recorded = (paths, java)
+    return _recorded
 
 
 def skipped(directory: Path, name: str) -> bool:
     """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own, or
-    Maven's `target` beside the `pom.xml` that makes it build output. Elsewhere `target` is a source directory."""
-    return name in PRUNED or (name == "target" and (directory / "pom.xml").is_file())
+    Maven's `target` at the root of a Java deployable `project.json` records, beside that deployable's `pom.xml`.
+    The record decides, never a file the tree holds: elsewhere `target` is a source directory. A directory that is a
+    recorded deployable's path, or on the way to one, is read whatever it is called."""
+    parent = relative(directory)
+    if parent is None:
+        return name in PRUNED
+    here = name if parent == "." else f"{parent}/{name}"
+    paths, java = recorded()
+    if any(path == here or path.startswith(f"{here}/") for path in paths):
+        return False
+    return name in PRUNED or (name == "target" and parent in java and (directory / "pom.xml").is_file())
 
 
 def listing(top: Path) -> list[Path]:
