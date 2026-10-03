@@ -128,7 +128,7 @@ refuse on them. Net zero lines in `resurvey.py` or fewer.
 
 ### T004 — `strategy.before` follows the map as the refresh leaves it (R5, and the fragment extended · AC-S21-9, -10, -11)
 
-- [ ] **Rule R5** — each row-derived precondition is read from the rows after reconciliation, never from the tree's
+- [x] **Rule R5** — each row-derived precondition is read from the rows after reconciliation, never from the tree's
   reading alone. Independent of T002/T003 in logic; sequenced after them only because it edits `resurvey.py`.
 
 **RED** (new `tests/test_refresh_strategy.py`; read `project.json` `strategy.before` and
