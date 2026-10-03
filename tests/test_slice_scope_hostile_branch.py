@@ -5,6 +5,7 @@ leaves one, on a `slice/S1` branch, with the fixtures of `test_slice_scope_root`
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -59,4 +60,43 @@ class HostileBranchTest(SliceScopeFixtures):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.write(repo, "Makefile")
         self.refuses(repo, "Makefile")
+
+    # T017 (A2)
+    def test_ownership_is_read_from_the_base_record(self) -> None:
+        """T017: planted deployables over the host's paths own nothing; every path is refused."""
+        repo = self.repo(self.root())
+        planted = {f"p{index}": {"kind": "service", "path": path}
+                   for index, path in enumerate(("project.json", ".github", "delivery", "Makefile", ".claude",
+                                                 "AGENTS.md"))}
+        planted["shop"] = {"kind": "service", "path": "."}
+        self.write(repo, "project.json", json.dumps({"deployables": planted}))
+        for path in HOST_PATHS[1:]:
+            self.write(repo, path)
+        result = self.run_gate(repo)
+        self.assertNotEqual(result.returncode, 0)
+        for path in HOST_PATHS:
+            self.assertIn(path, result.stderr)
+
+    def test_a_planted_ci_gate_is_not_the_bases(self) -> None:
+        """T017: `ci.gate` read from the branch's record would name a path; the base's does not."""
+        repo = self.repo(self.root(), ci={"gate": "ci/gate.yml"})
+        self.write(repo, "project.json", json.dumps({"deployables": self.root(), "ci": {"gate": "other.yml"}}))
+        self.write(repo, "ci/gate.yml")
+        self.refuses(repo, "ci/gate.yml")
+
+    def test_a_base_with_no_record_owns_nothing(self) -> None:
+        """T017: no `project.json` on the base, one planted on the branch: nothing is owned."""
+        repo = self.repo(self.root())
+        git(repo, "checkout", "-q", "main")
+        git(repo, "rm", "-q", "project.json")
+        git(repo, "commit", "-q", "-m", "drop")
+        git(repo, "checkout", "-q", "slice/S1")
+        git(repo, "merge", "-q", "main")
+        self.write(repo, "project.json", json.dumps({"deployables": self.root()}))
+        self.write(repo, "lib/own.py")
+        self.refuses(repo, "lib/own.py")
+
+    def test_an_unchanged_record_answers_as_before(self) -> None:
+        """T017, held: with `project.json` as on the base the root deployable owns what it did."""
+        self.green(self.repo(self.root()), "tests/test_x.py")
 

@@ -185,7 +185,7 @@ def row_paths(row: object) -> list[str]:
 
 def git(*arguments: str) -> str | None:
     try:
-        completed = subprocess.run(["git", *arguments], cwd=ROOT, text=True, capture_output=True, check=True)
+        completed = subprocess.run(["git", *arguments], cwd=ROOT, text=True, errors="surrogateescape", capture_output=True, check=True)
     except (OSError, subprocess.CalledProcessError):
         return None
     return completed.stdout
@@ -247,13 +247,19 @@ def deletions(base: str, path: str) -> int:
     return 0
 
 
-def project_document() -> dict:
-    document = read_json(ROOT / "project.json")
+def project_document(base: str) -> dict:
+    """`project.json` as the base commit has it — never the branch's own, which a slice could rewrite to hand itself
+    ownership of the host's paths. A base with no `project.json` (or an unreadable one) records nothing."""
+    text = git("show", f"{base}:./project.json")
+    try:
+        document = json.loads(text) if text is not None else None
+    except (ValueError, RecursionError):
+        return {}
     return document if isinstance(document, dict) else {}
 
 
-def deployables() -> dict[str, dict]:
-    listed = project_document().get("deployables")
+def deployables(base: str) -> dict[str, dict]:
+    listed = project_document(base).get("deployables")
     return {name: record for name, record in listed.items() if isinstance(record, dict)} if isinstance(listed, dict) else {}
 
 
@@ -291,7 +297,7 @@ class Scope:
     def __init__(self, slice_id: str, base: str) -> None:
         self.slice_id = slice_id
         self.base = base
-        self.apps = deployables()
+        self.apps = deployables(base)
         self.host: tuple[set[str], set[str], set[str]] | None = None
         model_text = read_text(ROOT / MODEL)
         self.model = load_model(model_text) if model_text is not None else None
@@ -347,7 +353,7 @@ class Scope:
             files, directories = harness_paths(ROOT / DELIVERY / "scripts/agents/registry.json")
             files |= set(HOST_FILES)
             directories |= set(HOST_DIRECTORIES)
-            ci = project_document().get("ci")
+            ci = project_document(self.base).get("ci")
             gate = ci.get("gate") if isinstance(ci, dict) else None
             exact = {recorded_path(gate)} if isinstance(gate, str) else set()
             ledger = read_text(ROOT / DELIVERY / ".written")
