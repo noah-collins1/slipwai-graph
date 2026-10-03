@@ -240,6 +240,16 @@ def gate_key() -> str | None:
     return "-".join(hashlib.sha256(part).hexdigest() for part in parts)
 
 
+def unreported() -> set[str] | None:
+    """The paths git has been told not to report (`assume-unchanged`, `skip-worktree`), or None where it cannot say."""
+    listed = git_output("ls-files", "-v", "-z")
+    if listed is None:
+        return None
+    # `-v` tags a path `h` (assume-unchanged) or `S`/`s` (skip-worktree) in front of its name.
+    return {entry[2:] for entry in listed.decode("utf-8", "replace").split("\0")
+            if entry[:1] and (entry[0].islower() or entry[0] in "Ss")}
+
+
 def remember(rows: dict[str, tuple[str, float]], whole: float | None = None) -> None:
     """Record what this passing run vouched for. Never fatal: a gate that cannot take notes is merely slower."""
     # Written only where git ignores it: a record `git status` reported would be a change nobody made.
@@ -248,8 +258,10 @@ def remember(rows: dict[str, tuple[str, float]], whole: float | None = None) -> 
         return
     key, head = gate_key(), git_output("rev-parse", "HEAD")
     dirty = paths_of(git_output("diff", "--name-only", "--no-renames", "-z", "--relative", "HEAD", "--"))
-    if key is None or head is None or dirty is None:
+    silenced = unreported()
+    if key is None or head is None or dirty is None or silenced is None:
         return
+    dirty = sorted({*dirty, *silenced})  # what the flag keeps out of `git diff` is dirty all the same
     try:
         record = {"key": key, "commit": head.decode().strip(), "dirty": dirty,
                   "rows": {path: found[0] for path, found in rows.items()}, "database": database_of(),
@@ -300,15 +312,12 @@ def candidates_of(record: dict[str, Any], rows: dict[str, tuple[str, float]]) ->
     whatever git was told not to report; and every path whose row is not what was vouched for, by content."""
     changed = paths_of(git_output("diff", "--name-only", "--no-renames", "-z", "--relative", str(record["commit"]),
                                   "--"))
-    listed = git_output("ls-files", "-v", "-z")
-    if changed is None or listed is None:
+    silenced = unreported()
+    if changed is None or silenced is None:
         return None
-    # `-v` tags a path `h` (assume-unchanged) or `S`/`s` (skip-worktree) in front of its name.
-    unreported = {entry[2:] for entry in listed.decode("utf-8", "replace").split("\0")
-                  if entry[:1] and (entry[0].islower() or entry[0] in "Ss")}
     vouched = record["rows"]
     moved = {path for path in rows.keys() | vouched.keys() if (rows[path][0] if path in rows else None) != vouched.get(path)}
-    return {*changed, *record["dirty"], *unreported, *moved}
+    return {*changed, *record["dirty"], *silenced, *moved}
 
 
 def database_of() -> list[int] | None:
