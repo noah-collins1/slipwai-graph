@@ -338,7 +338,7 @@ def write(text: str) -> None:
     descriptor, name = tempfile.mkstemp(prefix=LEFTOVER, suffix=".tmp", dir=MEMORY.parent)
     beside = Path(name)
     try:
-        with os.fdopen(descriptor, "w") as handle:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             handle.write(text)
         try:
             kept = stat.S_ISREG(MEMORY.lstat().st_mode)
@@ -392,7 +392,7 @@ def remembered() -> dict[str, Any] | str:
     if not regular:
         return NOT_A_FILE
     try:
-        record = json.loads(MEMORY.read_text())
+        record = json.loads(MEMORY.read_text(encoding="utf-8"))
     except (OSError, ValueError, RecursionError, MemoryError):
         return UNREADABLE
     if not isinstance(record, dict) or any(not isinstance(record.get(name), kind) for name, kind in SHAPE.items()):

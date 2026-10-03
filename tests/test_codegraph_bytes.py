@@ -9,6 +9,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path, PureWindowsPath
 from typing import Any
@@ -232,6 +233,11 @@ class APathKeyedInTheMemoryIsSpelledAsGitSpellsItTest(FactoryTestCase):
             "check_codegraph_keyed", Path(__file__).resolve().parents[1] / "assets/toolkit/scripts/check-codegraph.py")
         assert specification is not None and specification.loader is not None
         gate: Any = importlib.util.module_from_spec(specification)
-        specification.loader.exec_module(gate)
+        # No `__pycache__/` beside the script: the toolkit is copied into projects as it stands, and held to that.
+        written, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+        try:
+            specification.loader.exec_module(gate)
+        finally:
+            sys.dont_write_bytecode = written
         gate.ROOT = PureWindowsPath("C:/project")
         self.assertEqual(gate.key(PureWindowsPath("C:/project/apps/service/app.py")), "apps/service/app.py")
