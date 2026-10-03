@@ -76,6 +76,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 
 def project_root(script: Path, depth: int) -> Path:
@@ -214,23 +215,53 @@ def current_branch() -> str | None:
     return None if name == "HEAD" else name
 
 
-def merge_base() -> str | None:
-    """Where the branch left `main`, or last merged it in: the newest base among every `main` the checkout has.
-    Trying `origin/main` alone is wrong on a machine where `main` has moved and not been pushed — the base is then
-    older than the merge the slice took, and `main`'s own files land in the slice's diff."""
+class Base(NamedTuple):
+    """What the trunk answered: the commit the branch is compared with (None where there is none), the trunk's
+    name, and whether any ref of that name exists in this checkout."""
+
+    commit: str | None
+    trunk: str
+    has_ref: bool
+
+
+def bases_of(name: str) -> tuple[bool, str | None]:
+    """Whether `refs/heads/<name>` or `refs/remotes/origin/<name>` exists, and the newest base the branch shares
+    with either. Only the full ref names answer — a short name resolves to a tag first, and a tag, like a stray
+    branch, is not a trunk. A local `main` moved past `origin/main` and merged into the slice is the newer base:
+    trying `origin/main` alone would put `main`'s own files in the slice's diff."""
+    exists = False
     bases: list[str] = []
-    for name in ("main", "origin/main", "master", "origin/master"):
-        found = git("merge-base", "HEAD", name)
+    for ref in (f"refs/heads/{name}", f"refs/remotes/origin/{name}"):
+        if git("rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}") is None:
+            continue
+        exists = True
+        found = git("merge-base", "HEAD", ref)
         if found and found.strip() not in bases:
             bases.append(found.strip())
     if not bases:
-        return None
+        return exists, None
     newest = bases[0]
     for candidate in bases[1:]:
         # `--is-ancestor` exits 0, with nothing printed, when the first commit is an ancestor of the second.
         if git("merge-base", "--is-ancestor", newest, candidate) is not None:
             newest = candidate
-    return newest
+    return exists, newest
+
+
+def merge_base() -> Base:
+    """Where the branch left the trunk: the name `ci.branch` of the working tree's `project.json` records where it
+    has a ref, else `main` where it has one, else `master` — so `master` counts only as the recorded name or
+    where no `main` exists, and a minted `master` cannot move the base."""
+    record = read_json(ROOT / "project.json")
+    ci = record.get("ci") if isinstance(record, dict) else None
+    recorded = ci.get("branch") if isinstance(ci, dict) else None
+    names = [recorded] if isinstance(recorded, str) and recorded else []
+    names += [name for name in ("main", "master") if name not in names]
+    for name in names:
+        exists, base = bases_of(name)
+        if exists:
+            return Base(base, name, True)
+    return Base(None, names[0], False)
 
 
 def changed_files(base: str) -> dict[str, str]:
@@ -546,7 +577,7 @@ def check(branch: str | None) -> tuple[list[str], str]:
         where = f"on `{branch}`" if branch else "on a detached checkout"
         return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold"
     slice_id = match.group("id")
-    base = merge_base()
+    base = merge_base().commit
     if base is None:
         return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold"
     scope = Scope(slice_id, base)
