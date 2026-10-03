@@ -57,12 +57,12 @@ Not read: not indexed: `./init --extension codegraph` builds the index, then `/s
 
 ## What this means for the map
 
-The Structure row of `delivery/docs/convergence.md` stands at `as-found`
-(detected; slipwai-graph: application; role not established for slipwai-graph). The ladder, and what
+The Structure row of `delivery/docs/convergence.md` stands at `named`
+(detected; slipwai-graph: tool; not under apps/: .). The ladder, and what
 each rung asks of this repository:
 
-- **`as-found`** — here: to move on, record what each application is — the entry points above say it: a `start` script, a main package or a web SDK is a service, a `bin` a tool, a test directory a suite — as `kind` on its record in `project.json` with provenance `confirmed`, then `/survey`; the row moves to `named`
-- `named`: to move on, move each application under `apps/<name>/`, the layout a generated project has, as a slice of its own — the wrappers and recorded commands follow the path in `project.json`; the row moves to `laid-out`
+- `as-found`: to move on, record what each application is — the entry points above say it: a `start` script, a main package or a web SDK is a service, a `bin` a tool, a test directory a suite — as `kind` on its record in `project.json` with provenance `confirmed`, then `/survey`; the row moves to `named`
+- **`named`** — here: to move on, move each application under `apps/<name>/`, the layout a generated project has, as a slice of its own — the wrappers and recorded commands follow the path in `project.json`; the row moves to `laid-out`
 - `laid-out`: to move on, give each application the hexagonal layers a generated service has — `domain/`, `ports/`, `adapters/` — and declare `"layout": "hexagonal"` on its record, which puts it under `make check-imports`; the row moves to `hexagonal`
 - `hexagonal`: to move on, record a `typecheck` command for every application and make it green through the ratchet; the row moves to `typed`
 - `typed`: nothing: this is where a generated project sits

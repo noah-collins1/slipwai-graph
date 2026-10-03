@@ -45,7 +45,7 @@ dependency: that is the `tests-exist` rung, and it is one row in the ledger.
 Write the characterisation tests in the application's own test tool, where its tests already are, so that the
 recorded `test` command reaches them:
 
-- `slipwai-graph` (`.`, python): `python3 -m pytest`
+- `slipwai-graph` (`.`, python): `make test`
 
 Approval-style where the output is large. Record actual behaviour, never desired: a test that fails because
 the code is wrong is written to pass, with a comment saying the behaviour is wrong and a question for the

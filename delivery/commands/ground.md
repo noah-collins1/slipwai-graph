@@ -85,7 +85,7 @@ direction, at any point.
 | Path to production | `scripted` | `overridden` | pipeline: .github/workflows/package.yml; pipeline: .github/workflows/publish-package.yml; pipeline: .github/workflows/release.yml; pipeline: .github/workflows/verify.yml; scripted: assets/targets/aws/scripts/deploy.py; scripted: assets/targets/azure/scripts/deploy.py; scripted: tests/fixtures/adopt/converging/deploy.sh; scripted: tests/fixtures/adopt/javascript-gitlab/deploy.sh; scripted: Makefile |
 | Integration | `unknown` | `unrecorded` | CI on github, gate .github/workflows/verify-delivery.yml |
 | Safety net | `tests-exist` | `detected` | test recorded for slipwai-graph |
-| Structure | `as-found` | `detected` | slipwai-graph: application; role not established for slipwai-graph |
+| Structure | `named` | `detected` | slipwai-graph: tool; not under apps/: . |
 | Platform | `supported` | `detected` | in support on 2026-10-02: Python 3.11; no audit command recorded for slipwai-graph |
 | Constitution | `template` | `detected` | .specify/memory/constitution.md |
 | Data | `settled` | `overridden` | schema: none |
@@ -151,7 +151,7 @@ direction, at any point.
 
    The applications that were here:
 
-   - `slipwai-graph` at `.`: recorded as an application whose role nobody has established (`application`, `unrecorded`)
+   - `slipwai-graph` at `.`: recorded as `tool` (confirmed)
 
 **Write:** `kind` on the application's record in `deployables`, with `provenance.kind` `confirmed`; the row moves when `/survey` re-reads the record.
 
@@ -227,7 +227,7 @@ way since the method arrived, and did it start?
 
    The applications that were here:
 
-   - `slipwai-graph` at `.`: no `smoke` recorded — nobody has proved how it starts, and `/drive` refuses to change it until somebody has
+   - `slipwai-graph` at `.`: `smoke` recorded as `./slipwai --version` (confirmed)
 
 **Write:** what was proven, with the date, in `delivery/survey/running.md` — the repository's own file,
 which the `run-the-app` skill points to — including the run that failed and why. Then the one command that starts

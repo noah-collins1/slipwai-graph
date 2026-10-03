@@ -1,86 +1,63 @@
-# [PROJECT_NAME] — the product owner's brief
+# slipwai-graph — the product owner's brief
 
 `/cruise` runs `/drive` with nobody at the wheel, and this page is the owner it decides for. The `drive-skipper`
 delegate reads it before every product decision, after the specification and the constitution and before the
-standing entries in `specs/<feature>/decisions.md`. Edit it at any time: the next decision reads the new text, and no run has
-to stop for that. Leave a section as its placeholder and the skipper decides that ground from the
-specification, the constitution and the decisions already taken — and says so in the entry.
+standing entries in `specs/<feature>/decisions.md`. Edit it at any time: the next decision reads the new text.
 
 This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` never rewrites it.
 
+The full PRD this brief summarises: https://claude.ai/code/artifact/3b81e4c3-9a65-4f5b-882c-5b8ab4745d67
+The analysis behind it: https://claude.ai/code/artifact/dec16150-cc8a-4487-a1ea-60f8c2895e03
+
 ## Who the actor is
 
-[ONE_PARAGRAPH: who uses this product, in their own words for what they do — "a campaign organiser
-recording a night's battles", not "the user". Where there are several, name each and say which one a slice
-serves by default when the specification does not.]
+A developer who ran `slipwai generate` or `slipwai adopt` and now drives or cruises a product repository with
+coding agents. They never see the factory's internals; they see how long a slice takes to reach `main` and
+whether the gate is still trustworthy. A second actor is the factory maintainer, who needs every change to
+land as a release with its level named in `changelog.d/`. When the specification does not say, a slice serves
+the first actor.
 
 ## What the product is for
 
-[ONE_PARAGRAPH: the outcome the actor gets that they could not get before, and the one thing that would
-make this product pointless if it were wrong. The specification says what to build; this says why, which is
-what a decision between two readings of it turns on.]
+Slipwai gives a developer a repository whose delivery loop produces good code without them at the wheel. The
+loop is slow because it pays its gates serially, about three times per slice, over the whole repository, and
+merges and finishes slices one at a time on `main` in split order. The outcome this work buys is a loop whose
+time per feature grows like S·log S rather than S², with every gate still run on every change before it reaches
+`main`. The one thing that would make it pointless: a faster loop that lets through what today's gate catches.
 
 ## Priorities and tie-breakers
 
-[Ordered, most important first. These decide between options the specification leaves open:
-
-1. [e.g. the simpler journey over the richer one]
-2. [e.g. an actor sees their own data before anyone sees a report over everyone's]
-3. [e.g. correctness of money paths over throughput — and `cycle=example` for those]]
+1. The merge root and CI run the full gate on every change; a scoped gate is additive, never a replacement.
+2. Fewer runs of the same check on the same content over cleverer checks: memoise and scope before optimising.
+3. The generated project's loop over the factory's own convenience: a change lands under `assets/` and
+   `src/slipwai/project/` first, and reaches this repository through `slipwai migrate`.
+4. Smaller slices in the order the PRD gives (walks and logs, then stamps, then `-j`, then the scoped gate,
+   then the merge tree); the merge tree comes after the gate it relies on is proven.
+5. Deterministic over fast: a stamp or cache that could cache a false green is wrong; include tool versions
+   and script hashes in its key, and never trust it in CI.
+6. Measurement before behaviour: result contracts and difficulty scores are recorded in this release; model
+   routing by difficulty is logged, not switched on.
 
 ## Taste
 
-[What "good" looks like here that no criterion states: tone of the copy, density of a screen, what an
-error message says, whether a list defaults to newest first. A decision that cannot cite this section or the
-specification is a guess, and the entry says which.]
+Plain words in prose and in error messages, the way `AGENTS.md` and `docs/` already read. A gate says what it
+checked and why it failed in one line a person can act on. A new setting has a documented default and one
+sentence on when to change it. No new dependency where a stdlib or an existing script will do. Scripts stay
+within `make check-structure`'s budgets: split along the structure rather than growing one file.
 
 ## Out of scope
 
-[What this product deliberately does not do, so the completion audit does not open a slice for it: an
-integration deferred, an actor not served yet, a report nobody asked for. Each line is a decision already
-taken; the skipper cites it rather than re-taking it.]
+- Changing what the gate, the adversary or mutation testing check at the merge root and in CI.
+- Replacing the harness, Spec Kit, or the ladder's stages; the organisational parts of the coordination-tax
+  paper (decision tiers, the PM model, the inventory-size rule).
+- Switching model routing on. Logging the tier it would choose is in scope; choosing is not.
+- Making this repository's own unittest suite fast beyond what the general changes give it.
+- Any MAJOR change: no axis, option, CLI flag or `schemaVersion` is removed or renamed.
 
 ## Always ask a person
 
-[Questions that park a run however clearly the specification seems to answer them — a price, a legal
-wording, anything that reaches a real customer, a release with no flag holding it back. The skipper records
-these as `unavailable` and the run parks with the exact question; `.specify/cruise.stop` and `.specify/cruise.json` say how a run
-stops and what it may decide.]
-
-## What the record looks like
-
-Every decision a run takes is appended to `specs/<feature>/decisions.md`, one entry in this shape, and the artifact the stage
-owns is written in the same step. The session running `/cruise` allocates the number before a delegate
-decides, so two decided at once never share one:
-
-```markdown
-## D<n> — <the question, in one line>
-- **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
-- **Question:** <as the stage raised it>
-- **Options:** <each, marking the one the stage recommended>
-- **Decision:** <one>
-- **Why:** <in the actor's terms>
-- **Decided by:** host (stage recommendation) | host (standing decision D<m>) | drive-skipper (<model>) | drive-bosun | human
-- **Confidence:** high | medium | low · **Would reverse if:** <the one condition>
-- **Written to:** <the artifact paths the answer went into>
-- **Status:** standing | overridden by D<m> | overridden by human <date>
-```
-
-Every demo the `drive-hand` delegate runs is appended to `specs/<feature>/slices/<id>/demo-log.md`, one entry in this shape, with its
-evidence beside it:
-
-```markdown
-## <ISO instant> — <accepted | behaviour | implementation> · iteration <n> · drive-hand (<model>)
-- **Started with:** <the literal command or URL> · **Seeded:** <what, or none>
-- **Driven through:** agent-browser | <harness browser tool> | HTTP | CLI — <why, where not the first>
-- **Examples:** <one line each — R1 e1: passed · R2 e1: failed, expected X, saw Y · R3 e2: unreachable, why>
-- **Evidence:** <paths under demo/>
-- **Feedback:** <what re-entered the ladder and at which stage, or the note for the next slice>
-```
-
-`make check-decisions` holds both files to those shapes — and every finished slice to a row in
-`adversary-log.md` — and refuses an entry whose `Written to` or
-`Evidence` path is not in the tree. Overrule a decision by changing its `Status` and writing the answer you
-want into the artifact it names; the next iteration re-enters the ladder from that artifact. A decision that
-would cost a migration to reverse is also written as an ADR at `Proposed` under `delivery/docs/adr/`, named in the
-entry's `Written to`; accepting it is yours, and the run never does it.
+- Anything that changes what the merge root or CI checks, or removes a check anywhere.
+- Deleting or renaming a generated file an existing project may rely on, without a `migrate` catch-up note.
+- Raising `VERSION` to a MAJOR.
+- Accepting the strategy ADR under `delivery/docs/adr/`.
+- Splitting `model.yaml` into per-slice files (decision 3 in the PRD) rather than adding a sidecar index.

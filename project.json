@@ -16,29 +16,32 @@
   ],
   "deployables": {
     "slipwai-graph": {
-      "kind": "application",
+      "kind": "tool",
       "generated": false,
       "path": ".",
       "language": "python",
       "commands": {
-        "install": "python3 -m pip install -e .",
-        "typecheck": "python3 -m mypy .",
-        "lint": "python3 -m ruff check .",
-        "test": "python3 -m pytest",
+        "install": "make install",
+        "typecheck": "make typecheck",
+        "lint": "make lint",
+        "test": "make test",
         "integration": null,
         "adversarial": null,
         "audit": null,
-        "mutation": null
+        "mutation": null,
+        "smoke": "./slipwai --version"
       },
       "toolchain": {
         "kind": "python",
         "version": "3.11",
         "ecosystem": "python"
       },
+      "purpose": "The slipwai factory itself: the CLI that generates and adopts product repositories, the assets it copies into them, and the delivery method (/drive, /cruise, the gate) those repositories run",
       "provenance": {
         "language": "detected",
-        "commands": "detected",
-        "kind": "unrecorded"
+        "commands": "confirmed",
+        "kind": "confirmed",
+        "purpose": "confirmed"
       },
       "eventSourced": false,
       "capabilities": []
@@ -115,8 +118,7 @@
     ],
     "before": [
       "a pipeline that deploys on a passing `verify` \u2014 the path to production is `scripted`",
-      "a green suite in the gate \u2014 the safety net is `tests-exist`",
-      "every application's role recorded \u2014 the structure is `as-found`"
+      "a green suite in the gate \u2014 the safety net is `tests-exist`"
     ],
     "stop": "now, as far as the architecture goes",
     "decided": null,
@@ -190,12 +192,6 @@
         "evidence": "tests/fixtures/adopt/javascript-service/package.json"
       },
       {
-        "kind": "run",
-        "step": "`slipwai-graph`: how it starts is not proven \u2014 run it once the way the README, container file or CI config says, write what was proven (the command, the port, the seed, the runtime it needs and the ones it cannot run on) in `survey/running.md`, and record the one command that starts it and proves it answers as `commands.smoke` in `project.json` (`null` is a written no, with the reason there); `make smoke` and the gate's smoke job run it from then on",
-        "pacing": "next, after the build and before any slice changes code that was here, whatever the strategy: a change to an application nothing has started is a change nobody has seen run, and a suite that never builds the context cannot tell a constructor the container can call from one it cannot",
-        "evidence": "commands.smoke: unrecorded for ."
-      },
-      {
         "kind": "tooling",
         "step": "`slipwai-graph`: no `audit` command is recorded; the ecosystem has pip-audit",
         "pacing": "over time, whatever the strategy: one tool, one slice, green through the ratchet before it is recorded as a command \u2014 the method never adds one uninvited",
@@ -231,9 +227,9 @@
     },
     {
       "axis": "structure",
-      "rung": "as-found",
+      "rung": "named",
       "target": "typed",
-      "evidence": "slipwai-graph: application; role not established for slipwai-graph",
+      "evidence": "slipwai-graph: tool; not under apps/: .",
       "provenance": "detected",
       "planned": null
     },

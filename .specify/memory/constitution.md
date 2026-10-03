@@ -1,8 +1,9 @@
-# [PROJECT_NAME] Constitution
+# slipwai Constitution
 
-[ONE_PARAGRAPH: what this system does, who it serves, and what breaks if it is wrong. Be concrete —
-"moves other people's money", "controls physical access", "records clinical decisions". The rest of this
-document exists to protect whatever you write here.]
+slipwai is a factory: a command that generates or adopts a product repository and installs a delivery method
+around it (a gate, `/drive`, `/cruise`, Spec Kit). It serves developers who then let coding agents work in that
+repository. If it is wrong, every project it generated inherits the fault: a gate that passes what it should
+catch, a file the factory silently overwrites, or a release whose number lies about what changed.
 
 The numbering below is for reference, not priority.
 
@@ -20,22 +21,20 @@ obligation, not for this wording — but a principle deleted here is a gate that
 
 ## Core Principles
 
-### I. [DOMAIN_CORRECTNESS_PRINCIPLE] (NON-NEGOTIABLE)
+### I. A Generated Project Owns Its Files and Passes Its Own Gate (NON-NEGOTIABLE)
 
-[Replace with the one invariant your domain cannot violate, expressed as testable rules. Examples by
-domain: no unit of finite inventory held twice; no clinical record attributed to the wrong patient; no
-message delivered twice to a payment processor.]
+- The factory MUST NOT overwrite, rename or delete a file in a repository it generated or adopted except
+  through a command the project's maintainer ran, and `slipwai migrate` MUST leave a catch-up note for every
+  change it cannot complete.
+- Every starter combination `make starters` materialises MUST pass its own generated gate (`make verify`) in
+  the matrix tests before a change lands; a gate the factory writes but does not hold itself to is a defect.
+- `VERSION` is the only place the factory's version is written, is raised only by the commit that needs it and
+  never lowered, and every user-visible change carries a `changelog.d/` fragment naming its level.
+- A scoped or memoised gate MUST be additive: the merge root and CI run the full gate on every change, and no
+  check is removed anywhere to make the loop faster.
 
-Where the domain involves money:
-
-- Monetary amounts MUST be integer minor units with an explicit currency code. Floating-point types
-  MUST NOT appear in any price, fee, tax, or balance.
-- A balance MUST be derived from the recorded transactions rather than maintained as a mutable total
-  that anything else is allowed to write.
-- Corrections MUST be issued as new compensating records. A recorded financial fact MUST NOT be edited
-  in place or deleted.
-
-Rationale: [why this specific failure is unrecoverable rather than merely embarrassing].
+Rationale: the factory's output is other people's repositories. A fault here is multiplied by every project
+generated and cannot be recalled; a loosened gate is invisible until the defect it would have caught ships.
 
 ### II. Idempotency and Retry Safety (NON-NEGOTIABLE)
 
@@ -72,14 +71,14 @@ still a choice.
 
 ### IV. Hexagonal Architecture — Domain Isolated from Infrastructure
 
-<!-- journey: hexagonal-boundary at as-found -->
-**A target, not yet in force.** On the *structure* ladder this repository stands at `as-found`
+<!-- journey: hexagonal-boundary at named -->
+**A target, not yet in force.** On the *structure* ladder this repository stands at `named`
 (`delivery/docs/convergence.md`). This principle comes into force at `hexagonal`; a generated project sits at
 `typed`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
 
-- [What holds here today for this principle, in a sentence or two: the practice as it is, not as it should be.]
-- [The next rung, and what has to be true for it: name the slice planned to reach it, or say none is planned yet.]
+- `make check-structure` holds `src/slipwai` to a declared import direction, no cycles and per-module budgets; there is no ports-and-adapters split, and `assets/` is data the generator copies.
+- `hexagonal` would need an explicit boundary between the generator's domain (catalog, pruning, versioning) and its adapters (filesystem, git, forges); no slice is planned for it in Faster Slipwai.
 
 When in force, this principle reads:
 
@@ -106,8 +105,8 @@ When in force, this principle reads:
 `mutation-measured`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
 
-- [What holds here today for this principle, in a sentence or two: the practice as it is, not as it should be.]
-- [The next rung, and what has to be true for it: name the slice planned to reach it, or say none is planned yet.]
+- 829 unittest tests run under `make test`, written with the change they hold; acceptance scenarios in Given-When-Then exist for generated projects' specs, and from this feature on for the factory's own `specs/001-faster-slipwai/spec.md`.
+- The next rung needs every slice's acceptance scenarios written and failing before its implementation; the Faster Slipwai slices are the first held to it, and `check-benchmark` records whether they were.
 
 When in force, this principle reads:
 
@@ -211,7 +210,7 @@ When in force, this principle reads:
   and background job.
 - Every recorded fact MUST carry the actor that caused it plus causation and correlation identifiers,
   both of them UUIDs, and audit records MUST be queryable without restoring a backup.
-- Audit records MUST be retained for [RETENTION_PERIOD].
+- Audit records MUST be retained for the life of the repository: they live in git history, the changelog and the published release notes.
 - **A read model is not detection.** An endpoint is where someone looks once told; an alert is what tells
   them. Where a criterion promises a problem is surfaced within a time bound, the alert satisfies it.
 - Background jobs MUST emit a heartbeat, and a missing heartbeat MUST itself be alertable — a silent job
@@ -222,7 +221,7 @@ When in force, this principle reads:
 
 - Published artifacts and APIs MUST be versioned MAJOR.MINOR.PATCH.
 - A breaking API change MUST ship as a new version and keep the prior version serving for
-  [DEPRECATION_WINDOW] after announcement.
+  one MINOR release after announcement.
 - **A persisted schema is a contract with every future version of this system.** Changes MUST be
   additive; readers MUST tolerate unknown fields. Removing or retyping a stored field requires a new
   schema version plus a translation that maps old records forward on read.
@@ -233,8 +232,8 @@ When in force, this principle reads:
 
 ### IX. Security, Privacy, and Compliance
 
-- [Sensitive data class, e.g. card numbers, credentials, clinical identifiers] MUST NOT enter, transit,
-  or be logged by this system. Capture MUST be delegated so that [COMPLIANCE_SCOPE] stays minimal.
+- Credentials and forge or registry tokens (`PYPI_TOKEN`, `GITEA_TOKEN`, cloud credentials) MUST NOT enter, transit,
+  or be logged by this system. Capture MUST be delegated so that secret handling stays minimal.
 - **Personal data MUST be erasable**, and where a store is append-only or a record is otherwise
   immutable, that mechanism MUST be designed — by reference-not-embed, or crypto-shredding behind a
   per-subject key — **before the first record carrying personal data is persisted**. Immutability and the
@@ -254,8 +253,8 @@ When in force, this principle reads:
 `continuous`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
 
-- [What holds here today for this principle, in a sentence or two: the practice as it is, not as it should be.]
-- [The next rung, and what has to be true for it: name the slice planned to reach it, or say none is planned yet.]
+- `main` carries the release it works towards as a `.dev` snapshot; work lands through short pull requests merged to `main`, CI runs `make verify` on every push, and `make release` tags from `main`.
+- `trunk` needs branch lifetime under a day measured and held; this feature's `slice/<id>` branches are merged within a day through the merge tree, and the convergence map records the rung once measured.
 
 When in force, this principle reads:
 
@@ -300,8 +299,8 @@ When in force, this principle reads:
 `pipeline-decides`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
 
-- [What holds here today for this principle, in a sentence or two: the practice as it is, not as it should be.]
-- [The next rung, and what has to be true for it: name the slice planned to reach it, or say none is planned yet.]
+- Every green push to `main` publishes the snapshot wheel and executable through `.github/workflows/verify.yml` and `package.yml`; a `v*` tag runs the same gate and its `release` job publishes once every gate job is green.
+- `one-path` needs the scripted `make release` step to be the pipeline's own; no slice is planned for it in Faster Slipwai.
 
 When in force, this principle reads:
 
@@ -338,8 +337,8 @@ When in force, this principle reads:
 `pipeline-decides`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
 
-- [What holds here today for this principle, in a sentence or two: the practice as it is, not as it should be.]
-- [The next rung, and what has to be true for it: name the slice planned to reach it, or say none is planned yet.]
+- The wheel and the executable are built once per tag by CI and attached to that release; the snapshot is rebuilt and replaced on every green push.
+- The next rung needs the artifact built once and promoted rather than rebuilt per environment; no slice is planned for it in Faster Slipwai.
 
 When in force, this principle reads:
 
@@ -352,10 +351,9 @@ When in force, this principle reads:
 > - **Deployment and release are separate decisions.** Incomplete work reaches production dark, behind a
 >   flag. Holding a deployment back is not a release control; it is an integration debt accruing interest.
 > - Every release flag MUST be created with an owner and a removal date, MUST have both paths covered by
->   tests, and MUST be removed once the rollout completes. A release flag older than [FLAG_MAX_LIFETIME,
->   e.g. 90 days] is a defect. Permanent operational switches (kill switches, circuit breakers) are a
+>   tests, and MUST be removed once the rollout completes. A release flag older than 90 days is a defect. Permanent operational switches (kill switches, circuit breakers) are a
 >   different thing and MUST be named and governed as such.
-> - **Rollback MUST be a single automated action completing within [ROLLBACK_TARGET, e.g. 5 minutes]**,
+> - **Rollback MUST be a single automated action completing within 5 minutes**,
 >   executable by anyone on the team without approval, and exercised on a routine schedule. A rollback path
 >   first attempted during an incident is a hypothesis, not a capability.
 > - Schema change MUST follow expand/contract across separate deployments: add, then write, then read, then
@@ -375,8 +373,8 @@ When in force, this principle reads:
 `mutation-measured`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
 
-- [What holds here today for this principle, in a sentence or two: the practice as it is, not as it should be.]
-- [The next rung, and what has to be true for it: name the slice planned to reach it, or say none is planned yet.]
+- `make verify` takes about ten minutes here, dominated by the matrix tests that generate and gate every starter; CI shards the suite with `TESTS=`; there is no memoisation, no `-j`, and no scoped run.
+- `fast-feedback` is what Faster Slipwai's E1 and E2 deliver (verify stamp by tree hash, concurrent checks, scoped branch gate); the slices for R1.1, R1.2 and R2.1 climb this rung.
 
 When in force, this principle reads:
 
@@ -397,7 +395,7 @@ When in force, this principle reads:
 > - Pre-production environments MUST be created from version control and destroyed after use. A long-lived,
 >   hand-tuned environment MUST NOT be the reference for "it works" — it is the one machine nothing else
 >   resembles.
-> - A production problem MUST be detected by alerting within [DETECTION_TARGET, e.g. 5 minutes], not by a
+> - A production problem MUST be detected by alerting within one CI run, not by a
 >   customer. See VII: an endpoint is where someone looks once told; an alert is what tells them.
 >
 > *Practice: `testing` and `tdd` for the suite itself, `test-design-reviewer` when tests assert the wrong
@@ -427,7 +425,7 @@ When in force, this principle reads:
 - Review of agent-written code MUST examine intent alignment, architectural conformance, and complexity.
   "The tests pass" is the pipeline's finding, not the reviewer's.
 - An automated reviewer MUST NOT replace a human check until it has run alongside that check for at least
-  [PARALLEL_REVIEW_CYCLES, e.g. 20] changes at an agreed accuracy. Removing the human first produces
+  20 changes at an agreed accuracy. Removing the human first produces
   confidence without evidence.
 
 Rationale: an agent cannot silently route around a vague specification, an unreliable suite, or a coupled
@@ -441,14 +439,14 @@ that agrees a name.*
 
 ### XV. Ubiquitous Language and Domain Types
 
-<!-- journey: ubiquitous-language-and-domain-types at as-found -->
-**A target, not yet in force.** On the *structure* ladder this repository stands at `as-found`
+<!-- journey: ubiquitous-language-and-domain-types at named -->
+**A target, not yet in force.** On the *structure* ladder this repository stands at `named`
 (`delivery/docs/convergence.md`). This principle comes into force at `typed`; a generated project sits at
 `typed`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
 
-- [What holds here today for this principle, in a sentence or two: the practice as it is, not as it should be.]
-- [The next rung, and what has to be true for it: name the slice planned to reach it, or say none is planned yet.]
+- Names follow the vocabulary `AGENTS.md` and `docs/` fix (factory, starter, slice, gate, snapshot, release); types are plain Python with mypy's `check_untyped_defs`; identifiers are strings.
+- `typed` needs branded identifier types and schema-validated reads of `project.json` and `catalog.json`; no slice is planned for it in Faster Slipwai.
 
 When in force, this principle reads:
 
@@ -489,17 +487,17 @@ When in force, this principle reads:
 
 ### Technology Stack
 
-- [LANGUAGE_AND_RUNTIME], pinned in the repository and identical across local, CI, and production. A pin
+- Python 3.11 or newer (3.14 on the maintainer machine), with ruff and mypy pinned in `requirements-dev.txt`; Node, Go and a JDK are present only to exercise the generated starters, pinned in the repository and identical across local, CI, and production. A pin
   nobody can satisfy is worse than no pin — pin what the environments actually run, and change it by
   upgrading environments rather than editing the pin.
-<!-- journey: strict-typing at as-found -->
-**A target, not yet in force.** On the *structure* ladder this repository stands at `as-found`
+<!-- journey: strict-typing at named -->
+**A target, not yet in force.** On the *structure* ladder this repository stands at `named`
 (`delivery/docs/convergence.md`). This principle comes into force at `typed`; a generated project sits at
 `typed`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
 
-- [What holds here today for this principle, in a sentence or two: the practice as it is, not as it should be.]
-- [The next rung, and what has to be true for it: name the slice planned to reach it, or say none is planned yet.]
+- mypy runs over `src`, `scripts` and `tests` from `pyproject.toml`'s `[tool.mypy]` with `check_untyped_defs`; the toolchain is pinned in `requirements-dev.txt` and installed by `make install`.
+- `typed` needs `strict = true` and runtime schemas at the boundaries that read JSON and YAML; no slice is planned for it in Faster Slipwai.
 
 When in force, this principle reads:
 
@@ -525,13 +523,12 @@ When in force, this principle reads:
   linting, dependency vulnerability scan, the domain→infrastructure import check, and review by an
   engineer who did not write the change.
 - A pull request MUST NOT be merged while the pipeline is red, and MUST NOT be merged by disabling a gate.
-- **Review is a flow constraint, not a queue.** A change MUST be reviewed within [REVIEW_SLA, e.g. two
-  working hours]; a pull request waiting longer than a working day MUST be escalated rather than
+- **Review is a flow constraint, not a queue.** A change MUST be reviewed within two working hours; a pull request waiting longer than a working day MUST be escalated rather than
   tolerated. Pair or ensemble programming satisfies the review obligation without a separate step.
 - A pull request SHOULD change fewer than 200 lines. Beyond roughly that size reviewer defect detection
   falls off sharply, so a large diff does not buy more scrutiny — it buys less, more slowly.
 - Formatting and style MUST be enforced by tooling. A review comment about style is a missing lint rule.
-- Any change touching [HIGH_RISK_AREAS, e.g. money, inventory, authentication, tenancy] MUST be
+- Any change touching versioning (`VERSION`, `changelog.d/`, `make release`), the pruner, `catalog.json`'s schema, the gate the factory generates, or anything that writes into a user's repository MUST be
   reviewed by a second engineer.
 - Deviations from a principle MUST be recorded in the pull request under a "Complexity / Deviation"
   heading, naming the principle and the reason. Silent deviation is a defect.
@@ -568,7 +565,7 @@ clarification changing no obligation.
 Maintainers MUST review this constitution against actual practice at least quarterly; a principle
 routinely ignored MUST be enforced or amended away, never left as decoration.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
+**Version**: 1.0.0 | **Ratified**: 2026-10-02 (drafted for the Faster Slipwai run; pending human review) | **Last Amended**: 2026-10-02
 
 <!-- This template was adapted by slipwai adopt to where this repository stands (delivery/docs/convergence.md):
      a principle marked `journey:` is a target, not yet in force, and check-constitution holds it to the

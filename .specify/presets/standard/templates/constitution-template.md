@@ -72,8 +72,8 @@ still a choice.
 
 ### IV. Hexagonal Architecture — Domain Isolated from Infrastructure
 
-<!-- journey: hexagonal-boundary at as-found -->
-**A target, not yet in force.** On the *structure* ladder this repository stands at `as-found`
+<!-- journey: hexagonal-boundary at named -->
+**A target, not yet in force.** On the *structure* ladder this repository stands at `named`
 (`delivery/docs/convergence.md`). This principle comes into force at `hexagonal`; a generated project sits at
 `typed`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
@@ -441,8 +441,8 @@ that agrees a name.*
 
 ### XV. Ubiquitous Language and Domain Types
 
-<!-- journey: ubiquitous-language-and-domain-types at as-found -->
-**A target, not yet in force.** On the *structure* ladder this repository stands at `as-found`
+<!-- journey: ubiquitous-language-and-domain-types at named -->
+**A target, not yet in force.** On the *structure* ladder this repository stands at `named`
 (`delivery/docs/convergence.md`). This principle comes into force at `typed`; a generated project sits at
 `typed`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
@@ -492,8 +492,8 @@ When in force, this principle reads:
 - [LANGUAGE_AND_RUNTIME], pinned in the repository and identical across local, CI, and production. A pin
   nobody can satisfy is worse than no pin — pin what the environments actually run, and change it by
   upgrading environments rather than editing the pin.
-<!-- journey: strict-typing at as-found -->
-**A target, not yet in force.** On the *structure* ladder this repository stands at `as-found`
+<!-- journey: strict-typing at named -->
+**A target, not yet in force.** On the *structure* ladder this repository stands at `named`
 (`delivery/docs/convergence.md`). This principle comes into force at `typed`; a generated project sits at
 `typed`. Until it does, what holds here is written below, and the map's *planned* column names the slice
 that climbs.
