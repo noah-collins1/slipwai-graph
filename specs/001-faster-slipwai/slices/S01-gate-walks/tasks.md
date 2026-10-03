@@ -471,7 +471,7 @@ No screen in this slice
 Converge pass 1 (cruise iteration 7), against `ed91b20..4262f24`. Each was reproduced in a scratch project generated
 under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the new one; `CI=1` for the whole run).
 
-- [ ] T015 [US1] **HIGH** — `check-imports.py` `under()` answers from a listing taken at another top by comparing
+- [x] T015 [US1] **HIGH** — `check-imports.py` `under()` answers from a listing taken at another top by comparing
   path *spellings*, so a recorded deployable whose spelling is not the one that listing produced is read as empty
   and rules 4 and 5 pass where the pre-slice gate failed (AC-S01-6, SC-007, constitution I, D45's *no finding
   outside a pruned directory changes*).
@@ -492,7 +492,7 @@ under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the
 
   **Files:** `assets/toolkit/scripts/check-imports.py`, `tests/test_gate_walks.py`. PATCH, `VERSION` not raised.
 
-- [ ] T016 [US2] **HIGH** — a narrowed `check-codegraph` run reports *current* for a file whose bytes differ from
+- [x] T016 [US2] **HIGH** — a narrowed `check-codegraph` run reports *current* for a file whose bytes differ from
   its row when git's diff does not report the change: under the generated `.gitattributes` (`* text=auto eol=lf`) a
   file rewritten with CRLF is ` M` in `git status` and absent from `git diff --name-only <commit>`, so it is no
   candidate (D46's must-never; AC-S01-21).
@@ -514,7 +514,7 @@ under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the
 
   **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`. PATCH.
 
-- [ ] T017 [US2] **HIGH** — a file git was told not to report *when the memory was written* is not recorded in
+- [x] T017 [US2] **HIGH** — a file git was told not to report *when the memory was written* is not recorded in
   `dirty` (`remember()` takes `git diff HEAD`, which the flag silences), so after the flag is cleared and the file
   reverted it is no candidate and the narrowed run passes on a row holding the old content (D46 rules 2 and 4;
   AC-S01-13, -15, -21).
@@ -528,7 +528,7 @@ under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the
 
   **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`. PATCH.
 
-- [ ] T018 [US2] **MEDIUM** — a memory that is well-formed JSON of the right outer shape but unusable inside ends
+- [x] T018 [US2] **MEDIUM** — a memory that is well-formed JSON of the right outer shape but unusable inside ends
   the run with a traceback and exit 1, where AC-S01-17 says the run is whole and *never fails for that reason alone*.
 
   **RED** — `"dirty": [["a"]]` → `TypeError` in `candidates_of`; `"whole": 1e300` (or `Infinity`) → `OverflowError`
@@ -539,7 +539,7 @@ under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the
 
   **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`. PATCH.
 
-- [ ] T019 [US2] **MEDIUM** — *answered by D48: the whole run's skip is today's answer and stands; AC-S01-18 is
+- [x] T019 [US2] **MEDIUM** — *answered by D48: the whole run's skip is today's answer and stands; AC-S01-18 is
   reworded; what is owed is one hold test — on `slice/S1` with a usable memory, the `files` table renamed → the
   run goes whole and prints today's `schema may have moved on — skipped`, exit 0 — and no production change.* As
   raised: a question for the host before any code: on a slice branch with a usable memory, a
@@ -552,7 +552,7 @@ under `/tmp` (reference skeleton; the pre-slice script from `ed91b20` beside the
 
   **Files:** `specs/001-faster-slipwai/spec.md` or `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_memory.py`.
 
-- [ ] T020 [US2] **LOW** — the tests' stand-in `sync` replaces the database file, so no test runs the gate's own
+- [x] T020 [US2] **LOW** — the tests' stand-in `sync` replaces the database file, so no test runs the gate's own
   sync-then-compare-again on a narrowed run against a database written in place (same inode), which is what SQLite
   does. Observed correct by hand (in-place stand-in: `synced 1 file(s) first; … hashed 1 of 55`, memory renewed,
   inode unchanged; a failing sync leaves the memory byte-identical). **GREEN** closes the class *the stand-in CLI
