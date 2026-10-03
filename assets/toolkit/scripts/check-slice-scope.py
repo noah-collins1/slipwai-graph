@@ -364,7 +364,7 @@ def merge_base() -> Base:
     for name in names:
         exists, base = bases_of(name)
         if exists:
-            if name == "main" != recorded and base and newer_master(base):
+            if recorded is None and name == "main" and base and newer_master(base):
                 passed_over = "; ".join(filter(None, (passed_over, MASTER_CLAUSE)))
                 bare = "; ".join(filter(None, (bare, MASTER_CLAUSE)))
             target = target_base(name)

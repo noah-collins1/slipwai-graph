@@ -19,7 +19,7 @@ FIX = "set `ci.branch` to `master` in `project.json` on it, or delete the stale 
 class MasterBesideMainTest(SliceScopeBaseTest):
     """AC-S22-25: the words, never the base or the exit."""
 
-    def master_ahead(self, own_only: bool = False, ci: dict[str, str] | None = None) -> Path:
+    def master_ahead(self, own_only: bool = False, ci: dict[str, object] | None = None) -> Path:
         """`master` one commit past `main`, holding its own host file; the slice is cut from `master`."""
         repo = self.repo(self.root(), ci=ci) if ci else self.repo(self.root())
         self.commit(repo, OWN if own_only else "Makefile")
@@ -91,11 +91,30 @@ class MasterBesideMainTest(SliceScopeBaseTest):
 
     def test_the_clause_joins_the_passed_over_words(self) -> None:
         repo = self.master_ahead(own_only=True)
-        (repo / "project.json").write_text(json.dumps({"deployables": self.root(), "ci": {"branch": "nowhere"}}))
+        (repo / "project.json").write_text(json.dumps({"deployables": self.root(), "ci": {"branch": "a..b"}}))
         git(repo, "commit", "-q", "-am", "record")
         out = self.run_gate(repo).stderr  # `project.json` itself is refused, so the header carries the words
-        self.assertIn("`ci.branch` names `nowhere`", out)
+        self.assertIn("`ci.branch` names `a..b`, which is not a branch name; ", out)
         self.assertIn(CLAUSE, out)
+
+    def said_with(self, value: object) -> str:
+        """`master` ahead of a stale `main`, `ci.branch` recorded as `value`; everything the gate printed."""
+        repo = self.master_ahead(own_only=True, ci={"branch": value})
+        result = self.run_gate(repo)
+        return result.stdout + result.stderr
+
+    def test_a_usable_recorded_name_with_no_ref_keeps_its_own_sentence_and_no_clause(self) -> None:
+        """D33 *where `ci.branch` records nothing usable*: `develop` is usable, so the clause is false there."""
+        said = self.said_with("develop")
+        self.assertIn("`ci.branch` names `develop`, which has no branch here", said)
+        self.assertNotIn("records no trunk", said)
+
+    def test_the_clause_stays_where_nothing_usable_is_recorded(self) -> None:
+        for value in (None, 7, "slice/S9"):
+            with self.subTest(value=value):
+                self.assertIn("records no trunk", self.said_with(value))
+        repo = self.master_ahead(own_only=True)  # absent
+        self.assertIn("records no trunk", self.run_gate(repo).stdout)
 
 
 class NoBaseReportTest(SliceScopeBaseTest):
