@@ -19,6 +19,7 @@ from render_fixture import (
     MODEL_DIR,
     WINDOWS_SKIP,
     RenderCase,
+    render_env,
     sha256_of,
     write_model,
     wrote,
@@ -131,7 +132,7 @@ class FinishedFilesTest(RenderCase):
             script.write_text(PROBE_NAME)
             done = subprocess.run(
                 ["node", str(repo / EVENT_MODEL / "node_modules/tsx/dist/cli.mjs"), str(script)],
-                cwd=repo, text=True, capture_output=True, env=os.environ.copy())
+                cwd=repo, text=True, capture_output=True, env=render_env())
             self.assertEqual(done.returncode, 0, done.stderr)
             path, pid = json.loads(done.stdout)
             self.assertEqual(Path(path).name, f".tmp-slice-{pid}-S1.svg")

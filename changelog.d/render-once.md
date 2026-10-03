@@ -14,7 +14,7 @@ saying what it did, for example `model: 16 slices, 3 of 25 diagrams drawn, 22 un
 changed, `model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started.` The drawn SVGs are the
 same bytes as before, below one added comment line. To force a redraw, delete a diagram, or `docs/event-model/model.svg`, `segments/` and `slices/`: there is no setting and no flag.
 
-**Catch-up.** Nothing is asked of a repository already generated. After `slipwai migrate` its first
+**Catch-up.** Nothing is asked of a repository that left `render.ts` as generated. After `slipwai migrate` its first
 `make model` redraws every diagram once, and since the output is ignored nothing committed changes; a repository that
 removed the ignore lines and commits its diagrams sees the second comment line in each SVG, once.
 A repository that edited `render.ts` may meet a conflict there when `slipwai migrate` carries it forward, because the

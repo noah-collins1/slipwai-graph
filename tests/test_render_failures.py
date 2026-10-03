@@ -7,7 +7,6 @@ a fake in the test tree standing where Chromium would refuse to start.
 """
 from __future__ import annotations
 
-import os
 import subprocess
 import tempfile
 import unittest
@@ -23,6 +22,7 @@ from render_fixture import (
     PNG_FAILS_VARIABLE,
     WINDOWS_SKIP,
     RenderCase,
+    render_env,
 )
 
 ROOT_LINE = "render: running as root, and Chromium will not start without --no-sandbox."
@@ -150,7 +150,7 @@ class FailuresTest(RenderCase):
         script.write_text(source)
         return subprocess.run(
             ["node", str(repo / EVENT_MODEL / "node_modules/tsx/dist/cli.mjs"), str(script)],
-            cwd=repo, text=True, capture_output=True, env={**os.environ, **env},
+            cwd=repo, text=True, capture_output=True, env=render_env(**env),
         )
 
     def test_e16_run_as_root_with_no_config_the_launch_failure_says_which_variable_fixes_it_once(self) -> None:

@@ -30,6 +30,9 @@ CLOSE_FAILS_VARIABLE = "STAND_IN_CLOSE_FAILS"
 FAIL_MARKER = "STAND-IN-DRAW-FAILS"
 """Put this in a slice's name and the draw of every diagram whose source carries it throws."""
 
+CI_MARKERS = ("CI", "GITHUB_ACTIONS", "GITLAB_CI")
+"""The variables under which `render.ts` draws every diagram (AC-S11-5)."""
+
 EVENT_MODEL = Path("scripts/event-model")
 MODEL_DIR = Path("docs/event-model")
 IS_WINDOWS = os.name == "nt"
@@ -215,6 +218,14 @@ def read_log(path: Path) -> RendererLog:
     return RendererLog([json.loads(line) for line in path.read_text().splitlines() if line.strip()])
 
 
+def render_env(**env: str) -> dict[str, str]:
+    """The environment a render test's subprocess gets: the suite's own, without the CI markers it may run under.
+
+    A marker the test names in `env` is kept, so a test that wants one sets it and no other leaks in."""
+    base = {key: value for key, value in os.environ.items() if key not in CI_MARKERS}
+    return {**base, **env}
+
+
 def make_model(
     project: Path, log: Path | None = None, **env: str
 ) -> subprocess.CompletedProcess[str]:
@@ -223,7 +234,7 @@ def make_model(
         log.unlink(missing_ok=True)
         env[LOG_VARIABLE] = str(log)
     return subprocess.run(
-        ["make", "model"], cwd=project, text=True, capture_output=True, env={**os.environ, **env}
+        ["make", "model"], cwd=project, text=True, capture_output=True, env=render_env(**env)
     )
 
 

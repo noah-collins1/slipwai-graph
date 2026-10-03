@@ -4,7 +4,6 @@ A sentence is tested by following it, on the fixture, with the stand-in renderer
 """
 from __future__ import annotations
 
-import os
 import re
 import shutil
 import subprocess
@@ -13,7 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import IS_WINDOWS, MODEL_DIR, WINDOWS_SKIP, RenderCase
+from render_fixture import IS_WINDOWS, MODEL_DIR, WINDOWS_SKIP, RenderCase, render_env
 
 from slipwai.assets import ROOT, VERSION
 
@@ -58,7 +57,7 @@ class SaysItTest(unittest.TestCase):
         prose = flat(FRAGMENT)
         self.assertIn("the installed mermaid-cli, Mermaid and Puppeteer versions", prose)
         self.assertIn(f"delete a diagram, or {REMEDY}", prose)
-        self.assertIn("Nothing is asked of a repository already generated.", prose)
+        self.assertIn("Nothing is asked of a repository that left `render.ts` as generated.", prose)
         self.assertIn("A repository that edited `render.ts` may meet a conflict there when `slipwai migrate` carries "
                       "it forward, because the renderer's pin, width and browser handling moved to "
                       "`render-session.ts`.",
@@ -72,8 +71,8 @@ class SaysItTest(unittest.TestCase):
         # a hold: VERSION is `1.6.0.dev0` and the fragments' highest level is what it carries
         self.assertEqual(VERSION, "1.6.0.dev0")
         done = subprocess.run([sys.executable, "-m", "unittest", "test_changelog"], cwd=ROOT, text=True,
-                              capture_output=True, env={**os.environ, "PYTHONPATH": f"{ROOT / 'src'}:{ROOT / 'tests'}",
-                                                        "PYTHONDONTWRITEBYTECODE": "1"})
+                              capture_output=True, env=render_env(PYTHONPATH=f"{ROOT / 'src'}:{ROOT / 'tests'}",
+                                                  PYTHONDONTWRITEBYTECODE="1"))
         self.assertEqual(done.returncode, 0, done.stderr)
 
 

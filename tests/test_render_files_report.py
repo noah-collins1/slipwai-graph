@@ -22,6 +22,7 @@ from render_fixture import (
     mtimes,
     read_log,
     rename_frame,
+    render_env,
     write_model,
     wrote,
 )
@@ -98,7 +99,7 @@ class ReportTest(RenderCase):
                 ["node", str(repo / EVENT_MODEL / "node_modules/tsx/dist/cli.mjs"),
                  str(repo / EVENT_MODEL / "render.ts"), "--png"],
                 cwd=repo, text=True, capture_output=True,
-                env={**os.environ, LOG_VARIABLE: str(repo.parent / "flag.log")},
+                env=render_env(**{LOG_VARIABLE: str(repo.parent / "flag.log")}),
             )
             self.assertEqual(done.returncode, 0, done.stderr)
             self.assertTrue(png.read_bytes().startswith(b"\x89PNG"))
