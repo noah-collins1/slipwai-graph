@@ -29,9 +29,12 @@ an unwritten row is a pass that has to be run again, and until now nothing notic
 
 `python3 scripts/check-decisions.py --scope <slice-id> [--feature <name>]` prints, verbatim and in number order, the
 standing decisions a slice's later decisions must agree with: the entries whose `- **Scope:**` line names the slice
-(two ids meet when equal or when one is the other's bare prefix, so `S02` meets `S02-runner-bookkeeping` and `S1` does
-not meet `S12-…`), the ones that say `global`, and the ones with no line or no readable one, which are carried as
-global because a filter that could hide a binding decision is the wrong one. It ends with one line of counts, names
+(two ids meet when their heads are equal — the letters, case set aside, and the number, read as a number — whatever
+the slug, so `S02`, `S2` and `s02-runner` meet `S02-runner-bookkeeping` and `S1` does not meet `S12-…`), the ones that
+say `global`, and the ones with no line or no readable one, which are carried as global because a filter that could
+hide a binding decision is the wrong one. A value is unreadable when it is not `global` alone or a list of single
+ASCII ids (`S01-S03` is two ids, not one), and an entry that says its `Scope:` or its `Status:` on more than one line
+is unreadable whole: the gate refuses each, naming the entry, and the verb carries them as global. It ends with one line of counts, names
 each overridden entry with what overrode it, writes nothing, and needs `--feature` only when `specs/` holds more
 than one `decisions.md`.
 
@@ -77,23 +80,40 @@ STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
 FIELD = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 PLACEHOLDER = re.compile(r"<[^>]*>")
 # A slice id as `done_slices()` reads it: the released head, then a slug after `-` or `.` that ends on a letter or digit.
-SLICE_ID = re.compile(r"[A-Za-z]+\d+(?![A-Za-z0-9_])(?:[.-][A-Za-z0-9._-]*[A-Za-z0-9])?")
-BARE_PREFIX = re.compile(r"[A-Za-z]+\d+")
+# ASCII only: a digit that is not 0-9 is not a number the filter can compare.
+SLICE_ID = re.compile(r"[A-Za-z]+[0-9]+(?![A-Za-z0-9_])(?:[.-][A-Za-z0-9._-]*[A-Za-z0-9])?")
+HEAD = re.compile(r"([A-Za-z]+)([0-9]+)")
 
 
-Entry = tuple[int, "re.Match[str] | None", dict[str, str]]
+class Fields(dict[str, str]):
+    """One entry's fields as first label → the rest of the line, and `twice`: the labels a later line said again."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.twice: set[str] = set()
+
+
+Entry = tuple[int, "re.Match[str] | None", Fields]
+
+
+def lines_of(text: str) -> list[str]:
+    """Lines divided at line feeds only (`read_text` has already made a carriage return one): a form feed or U+2028
+    inside a field does not start another one."""
+    return text.split("\n")
 
 
 def entries(text: str, heading: re.Pattern[str]) -> list[Entry]:
-    """Each entry as (line number, its heading match or None for a heading in the wrong shape, its fields as
-    first label → the rest of the line)."""
+    """Each entry as (line number, its heading match or None for a heading in the wrong shape, its fields)."""
     found: list[Entry] = []
-    for number, line in enumerate(text.splitlines(), start=1):
+    for number, line in enumerate(lines_of(text), start=1):
         if line.startswith("## "):
-            found.append((number, heading.match(line), {}))
+            found.append((number, heading.match(line), Fields()))
         elif found and (field := FIELD.match(line)):
             label = field.group(1).split(":")[0].strip()
-            found[-1][2].setdefault(label, field.group(2).strip())
+            if label in found[-1][2]:
+                found[-1][2].twice.add(label)
+            else:
+                found[-1][2][label] = field.group(2).strip()
     return found
 
 
@@ -121,9 +141,21 @@ def scope_tokens(value: str) -> list[str] | None:
     tokens = [part.strip().strip("`").strip() for part in value.split(",")]
     if tokens == ["global"]:
         return tokens
-    if value.strip() and all(SLICE_ID.fullmatch(token) for token in tokens):
+    if value.strip() and all(SLICE_ID.fullmatch(token) and one_id(token) for token in tokens):
         return tokens
     return None
+
+
+def one_id(token: str) -> bool:
+    """False for a token that carries a second id head after its first (`S01-S03`, `S05-x.S02-y`): letters of the
+    first head's and a number, standing alone as a piece of the slug. A slug such as `oauth2` is not one."""
+    first = HEAD.match(token)
+    assert first is not None
+    for piece in re.split(r"[.-]", token)[1:]:
+        later = HEAD.fullmatch(piece)
+        if later and later.group(1).lower() == first.group(1).lower():
+            return False
+    return True
 
 
 def scope_finding(where: str, number: int, value: str) -> list[str]:
@@ -174,6 +206,10 @@ def check_decisions(path: Path) -> list[str]:
         if not STATUS.match(fields["Status"]):
             findings.append(f"{where}: D{number} `Status` is {fields['Status']!r}; it is standing, overridden by "
                             "D<m> or overridden by human <date>")
+        for label in ("Scope", "Status"):
+            if label in fields.twice:
+                findings.append(f"{where}: D{number} has more than one `{label}:` line; an entry says its "
+                                f"{label.lower()} once")
         if "Scope" in fields:
             findings += scope_finding(where, number, fields["Scope"])
         findings += path_findings(where, f"D{number} `Written to`", fields["Written to"], ROOT)
@@ -306,17 +342,22 @@ def baseline() -> int:
 
 
 def meets(wanted: str, named: str) -> bool:
-    """Two slice ids meet when equal or when one is the other's bare prefix (`S02` and `S02-runner-bookkeeping`)."""
-    def head(ident: str) -> str | None:
-        found = BARE_PREFIX.match(ident)
-        return found.group(0) if found else None
+    """Two slice ids meet when their heads are equal: the letters, case set aside, and the number, read as a number
+    (compared as digits without their leading zeros, so no length is too long), whatever the slug. `S02`, `S2` and
+    `s02-runner` meet `S02-runner-bookkeeping`; `S1` does not meet `S12`."""
+    def head(ident: str) -> tuple[str, str] | None:
+        found = HEAD.match(ident)
+        return (found.group(1).lower(), found.group(2).lstrip("0") or "0") if found else None
 
-    return wanted == named or (wanted == head(named) or named == head(wanted))
+    return wanted == named or (head(wanted) is not None and head(wanted) == head(named))
 
 
-def placed(wanted: str, fields: dict[str, str]) -> str:
+def placed(wanted: str, fields: Fields) -> str:
     """How the filter places one entry: `scope`, `global`, `unlined` (no line, carried as global), or `out`.
-    A value it cannot read is global; it never drops what it cannot place."""
+    A value it cannot read, and an entry that says its scope or its status twice, is global; it never drops what
+    it cannot place."""
+    if fields.twice & {"Scope", "Status"}:
+        return "global"
     if "Scope" not in fields:
         return "unlined"
     tokens = scope_tokens(fields["Scope"])
@@ -338,13 +379,14 @@ def scope_verb(wanted: str, feature: str | None) -> int:
         print("check-decisions: no decisions.md under specs/" + (f" for feature {feature}" if feature else ""),
               file=sys.stderr)
         return 1
-    lines = logs[0].read_text(encoding="utf-8").splitlines()
-    found = [item for item in entries("\n".join(lines), DECISION_HEADING) if item[1] is not None]
+    text = logs[0].read_text(encoding="utf-8")
+    lines = lines_of(text)
+    found = [item for item in entries(text, DECISION_HEADING) if item[1] is not None]
     count = {"scope": 0, "global": 0, "unlined": 0, "out": 0}
     overridden: list[str] = []
     for index, (line, heading, fields) in enumerate(found):
         status = STATUS.match(fields.get("Status", "standing"))
-        if status and status.group(0).startswith("overridden"):
+        if status and status.group(0).startswith("overridden") and "Status" not in fields.twice:
             overridden.append(f"D{heading.group(1)} ({status.group(0)})")  # type: ignore[union-attr]
             continue
         where = placed(wanted, fields)

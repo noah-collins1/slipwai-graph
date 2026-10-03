@@ -75,7 +75,7 @@ class DecisionsScopeTest(unittest.TestCase):
         self.assertEqual(0, other.returncode)
         self.assertEqual([], printed(other))
 
-    def test_e49_a_bare_prefix_meets_a_slugged_id_and_s1_does_not_meet_s12(self) -> None:
+    def test_e49_a_bare_id_meets_a_slugged_one_on_its_head_and_s1_does_not_meet_s12(self) -> None:  # -81 amends -49
         log = entry(1, "S02") + "\n" + entry(2, "S12-model-sidecar")
         self.assertEqual(["D1"], printed(self.verb(log, SLICE)))
         self.assertEqual([], printed(self.verb(log, "S1")))
