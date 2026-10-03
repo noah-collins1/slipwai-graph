@@ -162,6 +162,21 @@ class AMemoryThatCannotBeUsedTest(FactoryTestCase):
                         self.assertRegex(run.stdout,
                                          whole_line("the record of the last whole comparison could not be read"))
 
+    def test_hold_a_sound_database_whose_files_table_cannot_be_read_is_skipped_as_today(self) -> None:
+        """D48: AC-S01-18's *never skipped* is about damage. The narrowed attempt goes whole, the integrity check
+        passes, and what is left is CodeGraph's schema having moved on, in today's words, with no clause added."""
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.prepared(directory)
+            with sqlite3.connect(project.database) as connection:
+                connection.execute("ALTER TABLE files RENAME TO files_moved_on")
+            self.assertEqual(project.database.stat().st_ino, json.loads(project.memory.read_text())["database"][1])
+            run = project.run()
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertEqual(run.stdout, "check-codegraph: .codegraph/codegraph.db does not carry the `files` table "
+                             "this check reads; CodeGraph's schema may have moved on — skipped\n")
+            project.git("checkout", "-q", "main")
+            self.assertEqual(project.run().stdout, run.stdout, "the whole run says the same")
+
     def test_a_commit_the_repository_no_longer_has(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             project = self.prepared(directory)
