@@ -462,7 +462,7 @@ Eleven findings: one `HIGH`, three `MEDIUM`, seven `LOW`; the quickstart's steps
 
 ### T020 — An unrecorded `master` trunk beside a stale `main` is told what to record (`MEDIUM` G4 · AC-S22-25, D33)
 
-- [ ] **RED:** one test per clause of AC-S22-25. **GREEN:** the clause joins the existing passed-over words in
+- [x] (937239b; follow-up below) **RED:** one test per clause of AC-S22-25. **GREEN:** the clause joins the existing passed-over words in
   `merge_base()` where nothing usable is recorded, the trunk chosen is `main`, `master` has a ref and `master`'s
   base is strictly newer than `main`'s; no base and no exit changes. Teeth: without *strictly newer*, AC-S22-12's
   output changes.
@@ -470,9 +470,17 @@ Eleven findings: one `HIGH`, three `MEDIUM`, seven `LOW`; the quickstart's steps
 **Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_base.py` (or a new
 `tests/test_slice_scope_report.py` importing its helpers, if the file would pass 350 lines).
 
+**Follow-up (host, reading 937239b's report):** the clause is printed where the chosen trunk is `main` and `main` is
+not the recorded name — so a record naming a valid branch with no ref here (`develop`) also gets *`project.json`
+records no trunk*, which is false there. D33 says *where `ci.branch` records nothing usable*. Closed with T022's
+delegate as its own RED-GREEN commit.
+
+- [ ] The clause appears only where `ci.branch` records nothing usable (absent, `null`, blank, not a string, not a
+  branch name, a slice's name); a usable recorded name with no ref keeps its own passed-over sentence and no clause.
+
 ### T021 — What the gate prints is true where it is printed (`LOW` G5, G6, G7, G8 · AC-S22-28, D34)
 
-- [ ] **RED:** one test per clause of AC-S22-28. **GREEN names the class:** every sentence on the report line, the
+- [x] (4f5cf6c; RED not observed before the fix — the script was edited first; teeth shown afterwards by four mutants on the committed script) **RED:** one test per clause of AC-S22-28. **GREEN names the class:** every sentence on the report line, the
   refusal header and the no-base lines, in every state they are printed in — the forge's output carries no fetch;
   a slice-shaped record has its own sentence; a non-string record is said to be passed over; a developer's no-base
   failure prints as its own one line (`check-slice-scope: slice/<id> has no …`), exit 1, stderr, with the
