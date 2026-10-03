@@ -206,47 +206,54 @@ class Compared:
     """One comparison of the index with the tree: what `drift()` found (None where it could not say), how many files
     were hashed to find it, and the memory it was narrowed by (None where it compared everything)."""
 
-    def __init__(self, found: Any, hashed: int, record: dict[str, Any] | None, moment: Any = None) -> None:
-        self.found, self.hashed, self.record, self.moment = found, hashed, record, moment
+    def __init__(self, found: Any, hashed: int, record: dict[str, Any] | None, moment: Any = None,
+                 why: str | None = None) -> None:
+        self.found, self.hashed, self.record, self.moment, self.why = found, hashed, record, moment, why
 
     def behind(self) -> int | None:
         return None if self.found is None else len(self.found[1]) + len(self.found[2])
 
     def said(self) -> str:
         """In one line, how much of the index was hashed and why that was enough, where the comparison was narrowed."""
+        if self.why is not None:  # the gate's own words for why the memory could not be used
+            return f"compared everything: {self.why}"
         if self.record is None or self.found is None:
             return ""
         return (f"hashed {self.hashed} of {len(self.found[0])} file(s), only what changed since the last whole "
                 f"comparison ({self.moment(float(self.record['whole']))})")
 
 
-def compare(tooling: Any, record: dict[str, Any] | None) -> Compared:
+def compare(tooling: Any, memory: dict[str, Any] | str | None) -> Compared:
     """The index against the tree, through the gate's own candidates and memory: only what the memory cannot vouch
-    for is hashed. With no usable memory, or where reading or using it goes wrong, every tracked file is."""
-    if record is not None:
+    for is hashed. `memory` is what the gate's `remembered()` gave, or None where none may be read (CI). With no usable
+    memory, or where reading or using it goes wrong, every tracked file is hashed, and the gate's own words say why."""
+    why = memory if isinstance(memory, str) else None
+    if isinstance(memory, dict):
         try:
-            read = tooling.read_once(record)
-            if not isinstance(read, str):
+            read = tooling.read_once(memory)
+            if isinstance(read, str):
+                why = read
+            else:
                 rows, candidates = read
                 tooling.HASHED[0] = 0
                 found = tooling.drift(candidates, rows)
                 if found is not None:
-                    return Compared(found, tooling.HASHED[0], record, tooling.moment_of)
+                    return Compared(found, tooling.HASHED[0], memory, tooling.moment_of)
         except Exception:  # noqa: BLE001 — whatever the memory held, reading it or using it, it is the whole run
-            pass
+            why = tooling.UNREADABLE
     tooling.HASHED[0] = 0
-    return Compared(tooling.drift(), tooling.HASHED[0], None)
+    return Compared(tooling.drift(), tooling.HASHED[0], None, why=why)
 
 
-def memory_of(tooling: Any) -> dict[str, Any] | None:
-    """The gate's memory of its last whole comparison where this run may use it: outside CI, and usable."""
+def memory_of(tooling: Any) -> dict[str, Any] | str | None:
+    """The gate's memory of its last whole comparison, or the reason it cannot be used; None in CI, where it is
+    neither read nor written."""
     if any(os.environ.get(marker) for marker in tooling.CI_MARKERS):
         return None
     try:
-        record = tooling.remembered()
+        return tooling.remembered()
     except Exception:  # noqa: BLE001
-        return None
-    return record if isinstance(record, dict) else None
+        return tooling.UNREADABLE
 
 
 def set_aside() -> str:
@@ -313,7 +320,7 @@ def health() -> dict[str, Any]:
     if result["state"] in ("built", "rebuilt", "synced"):
         problem, stale = (checked() if DATABASE.is_file() else "no database was written"), None
         if problem is None and result["state"] == "synced" and tooling is not None and compared is not None:
-            compared = compare(tooling, compared.record)  # the comparison after the sync is made the same way
+            compared = compare(tooling, compared.record or compared.why)  # the same way, after the one sync
             stale = compared.behind()
             if not stale and compared.said():
                 result["detail"] += f"; {compared.said()}"
