@@ -33,7 +33,7 @@ the three pinned behaviours in `delivery/survey/pinned.md` and is not a task her
 
 ### T001 — A deployable at `.` is the fallback owner of every path nobody else claims (R1, R3, R4, R7 · AC-S20-1, -6, -7, -8, -9, -13)
 
-- [ ] **Open**
+- [x] **Done** — `c281272` (drive-implement · model: sonnet · delegated, fresh context · rule/rule · split=0). RED seen as assertion failures (*outside every deployable*) for R1 e1–e4 and R3 e2; R1 e5 and R3 e1 green on arrival, as held. The fixture is a hand-built repository in the adopted layout (script under `delivery/scripts/`), not a real `slipwai adopt`; R1 e2's root `docs/x.md` is green only where the delivery directory is not the root, which is the adopted layout.
 
 **Rule R1** — on a `slice/<id>` branch in a repository whose one deployable is at `.`, a file that is the
 application's own is the slice's. **R3** (a subdirectory deployable owns its own), **R4** (nothing moves under
@@ -110,7 +110,7 @@ the second file untouched (R4 holds again). Commit.
 
 ### T003 [P] — `check-decisions` reads the register id whole (R5 · AC-S20-10, -11)
 
-- [ ] **Open**
+- [x] **Done** — `5cb9d83` (drive-implement · model: sonnet · delegated, fresh context · rule/rule · split=0). RED seen: e1 exit 1 with *no row for S00*, e3 naming `S00` instead of `S00-run-path`; e2 and e4 green on arrival. `lacking_rows()` is the one id-matching function; `baseline()` uses it too, so a baselined row is not written for a slice already recorded under its prefix.
 
 **Rule R5** — a done slice is found in the adversary log under its whole id or its bare prefix. Disjoint from T001
 and T002 (different script, different test file).
