@@ -172,10 +172,21 @@ def recorded_path(value: object) -> str | None:
     return "/".join(part for part in value.split("/") if part not in ("", ".")) or "."
 
 
+# The most the gate reads of any one file in the working tree: a real `project.json`, model, registry or `.written`
+# is kilobytes. A file a slice committed as a link to a device, a pipe or something enormous reads as absent.
+MAX_READ = 8 * 1024 * 1024
+
+
 def read_text(path: Path) -> str | None:
-    """A file the gate reads, or None: one that is absent, unreadable or not UTF-8 adds nothing and ends nothing."""
+    """A file the gate reads, or None: one that is absent, unreadable, not UTF-8, not a regular file (a link to a
+    device or a pipe would never end) or larger than `MAX_READ` adds nothing and ends nothing. Every read of the
+    working tree goes through here."""
     try:
-        return path.read_text(encoding="utf-8")
+        if not path.is_file():
+            return None
+        with path.open("rb") as handle:
+            data = handle.read(MAX_READ + 1)
+        return None if len(data) > MAX_READ else data.decode("utf-8")
     except (OSError, ValueError):  # UnicodeDecodeError is a ValueError
         return None
 
@@ -234,9 +245,22 @@ def row_paths(row: object) -> list[str]:
 def git(*arguments: str) -> str | None:
     try:
         completed = subprocess.run(["git", *arguments], cwd=ROOT, text=True, errors="surrogateescape", capture_output=True, check=True)
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, ValueError, subprocess.CalledProcessError):  # a NUL or a lone surrogate in an argument is a ValueError
         return None
     return completed.stdout
+
+
+def checkout_problem() -> str | None:
+    """Why git cannot read this checkout at all — its own first line — or None where `git rev-parse --git-dir` works."""
+    try:
+        completed = subprocess.run(["git", "rev-parse", "--git-dir"], cwd=ROOT, text=True, errors="surrogateescape",
+                                   capture_output=True)
+    except (OSError, ValueError) as error:
+        return str(error)
+    if completed.returncode == 0:
+        return None
+    lines = completed.stderr.strip().splitlines()
+    return lines[0] if lines else f"git exited with status {completed.returncode}"
 
 
 def current_branch() -> str | None:
@@ -730,9 +754,14 @@ def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
     for stderr that is neither — printed after any findings — and whether that line is a developer's failure."""
     violations = lost_records()
     match = SLICE_BRANCH.match(branch or "")
+    problem = checkout_problem()
+    unreadable = f"check-slice-scope: git could not read this checkout — {problem}" if problem else ""
     if match is None:
         where = f"on `{branch}`" if branch else "on a detached checkout"
-        return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold", "", "", False
+        return (violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold", "", unreadable,
+                False)
+    if problem:
+        return violations, "", "", unreadable, False  # exit 0 as before the slice: there is nothing to compare with
     slice_id = match.group("id")
     found_base = merge_base()
     base = found_base.commit
@@ -761,6 +790,8 @@ def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
 
 
 def main() -> int:
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(errors="backslashreplace")  # a recorded name with a lone surrogate must not end the run
     violations, report, note, notice, failed = check(current_branch())
     if violations:
         print(f"check-slice-scope: a slice branch reaches outside what one slice may touch{note}\n", file=sys.stderr)

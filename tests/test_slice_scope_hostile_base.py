@@ -5,6 +5,8 @@ Each test drives `check-slice-scope` through its command line in a temporary rep
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 from pathlib import Path
 from typing import Any, cast
 
@@ -77,3 +79,67 @@ class HostileBaseTest(SliceScopeFixtures):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("touches only what one slice may", result.stdout)
         self.assertIn("NOT checked", result.stderr)
+
+
+class HostileInputTest(SliceScopeFixtures):
+    """T025: whatever the gate is given, it ends in a verdict, within seconds, and never on a traceback."""
+
+    def gate(self, repo: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+        quiet = dict.fromkeys(("GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME", "GITHUB_BASE_REF",
+                               "CI_MERGE_REQUEST_TARGET_BRANCH_NAME", "CI", "GITHUB_ACTIONS", "GITLAB_CI"), "")
+        try:
+            result = subprocess.run(["python3", self.script], cwd=repo, text=True, capture_output=True, timeout=30,
+                                    stdin=subprocess.DEVNULL, env={**os.environ, **quiet, **(env or {})})
+        except subprocess.TimeoutExpired:
+            self.fail("the gate did not end: it was reading something that never ends")
+        self.assertNotIn("Traceback", result.stderr)
+        return result
+
+    def verdict_against_main(self, repo: Path, env: dict[str, str] | None = None) -> None:
+        result = self.gate(repo, env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("compared with `main`", result.stdout)
+
+    def test_a_nul_or_a_lone_surrogate_in_the_recorded_name_is_a_verdict_against_main(self) -> None:
+        """A2: the name reaches `git` as an argument, and Python refuses to hand it over."""
+        for value in ("a\u0000b", "a\ud800b"):
+            with self.subTest(value=ascii(value)):
+                repo = self.repo(self.root(), ci={"branch": value})
+                self.verdict_against_main(repo)
+
+    def test_a_pipe_or_a_device_is_not_read_as_the_record_or_the_model(self) -> None:
+        """A3: `project.json` and `model.yaml` as a symlink to `/dev/zero` and to a FIFO."""
+        if not Path("/dev/zero").exists():
+            self.skipTest("no /dev/zero here")
+        for name in ("project.json", "delivery/docs/event-model/model.yaml"):
+            for kind in ("device", "fifo"):
+                with self.subTest(name=name, kind=kind):
+                    repo = self.repo(self.root(), model=True)
+                    (repo / name).unlink()
+                    if kind == "device":
+                        (repo / name).symlink_to("/dev/zero")
+                    else:
+                        os.mkfifo(repo / name)
+                    self.assertIn(self.gate(repo).returncode, (0, 1))
+
+    def test_a_file_over_the_cap_is_not_read(self) -> None:
+        """A3: a `project.json` naming `develop`, padded past the cap, reads as nothing: `main` is the base."""
+        repo = self.repo(self.root())
+        git(repo, "branch", "develop", "main")
+        (repo / "project.json").write_text(json.dumps({"ci": {"branch": "develop"}}) + " " * (8 * 1024 * 1024 + 1))
+        result = self.gate(repo)
+        self.assertIn("compared with `main`", result.stdout + result.stderr)
+
+    def test_a_checkout_git_cannot_read_exits_0_and_says_so_without_a_word_about_history(self) -> None:
+        """B4: `GIT_DIR` pointing nowhere, on any branch name, with and without a marker."""
+        for env in ({}, {"CI": "true"}, {"CI_COMMIT_REF_NAME": "slice/S1"}, {"CI_COMMIT_REF_NAME": "feature/x"},
+                    {"GITHUB_HEAD_REF": "slice/S1", "GITHUB_ACTIONS": "true"}):
+            with self.subTest(env=env):
+                repo = self.repo(self.root())
+                result = self.gate(repo, {**env, "GIT_DIR": str(repo / "nowhere")})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(len(result.stderr.splitlines()), 1, result.stderr)
+                self.assertIn("git could not read this checkout", result.stderr)
+                self.assertIn("fatal:", result.stderr)
+                for word in ("branch", "history", "fetch-depth", "NOT checked"):
+                    self.assertNotIn(word, result.stderr)
