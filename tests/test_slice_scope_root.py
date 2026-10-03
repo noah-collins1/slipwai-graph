@@ -264,6 +264,33 @@ class SliceScopeRootTest(unittest.TestCase):
         self.green(self.repo(self.root(), registry=True), ".gitignore", ".githooks/pre-commit",
                    ".pre-commit-config.yaml", ".husky/pre-commit")
 
+    FIXED_HOST_NAMES = (
+        "project.json", "Makefile", "GNUmakefile", "makefile", "AGENTS.md", "CLAUDE.md", ".gitlab-ci.yml",
+        "Jenkinsfile", "azure-pipelines.yml", "bitbucket-pipelines.yml", ".woodpecker.yml", ".drone.yml",
+        ".travis.yml", ".specify/x.json", ".github/workflows/x.yml", ".gitea/workflows/x.yml",
+        ".forgejo/workflows/x.yml", ".gitlab/x.yml", ".circleci/config.yml", ".claude/settings.json",
+        ".codex/config.toml", ".cursor/rules/x.mdc", ".gemini/settings.json", ".opencode/x.json",
+    )
+
+    def test_every_fixed_host_name_is_refused_with_no_registry(self) -> None:
+        """T006 (AC-S20-2, D20), held: every name the checker fixes, one at a time, listed here and not read from
+        the checker, so deleting one from its constants turns this red. There is no registry beside the checker."""
+        repo = self.repo(self.root())
+        for path in self.FIXED_HOST_NAMES:
+            with self.subTest(path=path):
+                self.refused(repo, path)
+
+    def test_a_deployable_with_no_path_key_owns_nothing(self) -> None:
+        """T006 (AC-S20-8), held: a record with the key missing, as with `""`, is no fallback owner."""
+        for record in ({"kind": "service"}, {"kind": "service", "path": None}, {"kind": "service", "path": 7}):
+            with self.subTest(record=record):
+                self.refused(self.repo({"shop": record}), "tests/test_x.py")
+
+    def test_the_host_surface_is_refused_under_the_slash_spelling_too(self) -> None:
+        """T006 (AC-S20-2, -8), held: with the root recorded `./`, the host's names are as refused as at `.`."""
+        self.refused(self.repo(self.root("./")), "Makefile", "project.json", ".specify/x.json", "AGENTS.md",
+                     ".github/workflows/x.yml", "delivery/scripts/x.py")
+
     def test_a_real_adoption_at_the_root(self) -> None:
         """AC-S20-1, -2 on a tree `slipwai adopt` made: tests are the slice's, the Makefile and a written path not."""
         with tempfile.TemporaryDirectory() as directory:
