@@ -13,9 +13,10 @@ them. The constitution's rule is expand, then contract, in separate deployments.
   history is available, "new" is anything not yet in the base branch (`main`), or uncommitted when on it.
 
 Comments are stripped before anything is matched, and only the `up` half of a JavaScript migration is read.
-Every migration file under every `apps/*/` and `packages/*/` is checked: `migrations/<n>_*.{sql,js,ts}` where
-`<n>` is the shipped ones' zero-padded number or a new one's `YYYYMMDDHHMM` stamp, Flyway's
-`db/migration/V<n>__*.sql`. Nothing else in this repository is a migration.
+Every migration file under every `apps/*/` and `packages/*/` is checked, except inside the five directories
+nobody reads — `.venv`, `node_modules`, `__pycache__`, `.git` and a Maven `target` beside its `pom.xml`, none of
+which is descended: `migrations/<n>_*.{sql,js,ts}` where `<n>` is the shipped ones' zero-padded number or a new
+one's `YYYYMMDDHHMM` stamp, Flyway's `db/migration/V<n>__*.sql`. Nothing else in this repository is a migration.
 """
 
 from __future__ import annotations

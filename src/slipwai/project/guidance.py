@@ -78,11 +78,13 @@ and framework that starts with a health capability only. Every service owes the 
   service whose store is unreachable stops being sent traffic, and it is what Compose, the load balancer and
   `make smoke` wait on;
 - the hexagonal layout — domain and application code free of adapters — which `make check-imports` enforces
-  inside every directory under `apps/` and `packages/`, along with the seam between bounded contexts inside a
-  service that holds more than one (*Bounded contexts*, below);
+  inside every directory under `apps/` and `packages/` (but not `.venv`, `node_modules`, `__pycache__`, `.git`
+  or a Maven `target` beside its `pom.xml`, which it never enters), along with the seam between bounded
+  contexts inside a service that holds more than one (*Bounded contexts*, below);
 - schema change by expand then contract, in separate deployments, which `make check-migrations` holds every
-  migration file to: a drop, rename, type change or new NOT NULL column names the earlier additive migration
-  it completes, and may not land in the same change as it;
+  migration file in your own code to (the same five directories are not read): a drop, rename, type change or
+  new NOT NULL column names the earlier additive migration it completes, and may not land in the same change
+  as it;
 - one slice's reach, which `make check-slice-scope` holds every `slice/<id>` branch to — its own record and
   model block, its service and context, the events module additively, new timestamped migrations only.
 
