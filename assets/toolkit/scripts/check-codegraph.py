@@ -249,9 +249,8 @@ def remember(rows: dict[str, tuple[str, float]], whole: float | None = None) -> 
     if key is None or head is None or dirty is None:
         return
     try:
-        stat = INDEX.stat()
         record = {"key": key, "commit": head.decode().strip(), "dirty": dirty,
-                  "rows": {path: found[0] for path, found in rows.items()}, "database": [stat.st_dev, stat.st_ino],
+                  "rows": {path: found[0] for path, found in rows.items()}, "database": database_of(),
                   "whole": time.time() if whole is None else whole}
         beside = MEMORY.with_name(MEMORY.name + ".tmp")
         beside.write_text(json.dumps(record))
@@ -268,13 +267,32 @@ def remembered() -> dict[str, Any] | None:
     return record if isinstance(record, dict) else None
 
 
-def candidates_of(record: dict[str, Any]) -> set[str] | None:
-    """The tracked paths a narrowed run must hash, or None where git cannot say what changed."""
+def candidates_of(record: dict[str, Any], rows: dict[str, tuple[str, float]]) -> set[str] | None:
+    """The tracked paths a narrowed run must hash, or None where git cannot say what changed.
+
+    What the memory cannot vouch for: whatever git reports against the commit it was taken at (committed, staged,
+    unstaged, new, renamed); whatever was dirty when it was taken, since a revert is not in a diff against a commit;
+    whatever git was told not to report; and every path whose row is not what was vouched for, by content."""
     changed = paths_of(git_output("diff", "--name-only", "--no-renames", "-z", "--relative", str(record["commit"]),
                                   "--"))
-    if changed is None:
+    listed = git_output("ls-files", "-v", "-z")
+    if changed is None or listed is None:
         return None
-    return set(changed)
+    # `-v` tags a path `h` (assume-unchanged) or `S`/`s` (skip-worktree) in front of its name.
+    unreported = {entry[2:] for entry in listed.decode("utf-8", "replace").split("\0")
+                  if entry[:1] and (entry[0].islower() or entry[0] in "Ss")}
+    vouched = record["rows"]
+    moved = {path for path in rows.keys() | vouched.keys() if (rows[path][0] if path in rows else None) != vouched.get(path)}
+    return {*changed, *record["dirty"], *unreported, *moved}
+
+
+def database_of() -> list[int] | None:
+    """Which file the index is: another one, or a rebuilt one, is never one the memory vouched for."""
+    try:
+        stat = INDEX.stat()
+    except OSError:
+        return None
+    return [stat.st_dev, stat.st_ino]
 
 
 def moment_of(seconds: float) -> str:
@@ -284,8 +302,8 @@ def moment_of(seconds: float) -> str:
 def narrowed(tooling: Any, record: dict[str, Any]) -> int | None:
     """The comparison of a `slice/<id>` branch: only the candidates are hashed. None where it cannot be made."""
     rows = indexed()
-    candidates = candidates_of(record)
-    if rows is None or candidates is None:
+    candidates = None if rows is None else candidates_of(record, rows)
+    if rows is None or candidates is None or database_of() != record["database"]:
         return None
     repairing = os.environ.get("CODEGRAPH_GATE_NO_SYNC") != "1" and tooling.route() is not None
     HASHED[0] = 0
@@ -297,7 +315,7 @@ def narrowed(tooling: Any, record: dict[str, Any]) -> int | None:
         synced = (f"synced {len(found[1]) + len(found[2])} file(s) first; " if done
                   else f"`codegraph sync` did not take ({said}); ")
         rows = indexed()
-        candidates = candidates_of(record)
+        candidates = None if rows is None else candidates_of(record, rows)
         if rows is None or candidates is None:
             return None
         HASHED[0] = 0
