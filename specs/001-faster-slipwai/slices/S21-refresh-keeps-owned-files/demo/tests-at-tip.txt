@@ -1,0 +1,11 @@
+A hold: the other fields are derived as today, and the record is still between surveys. ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 51.960s
+
+OK
+--- tests/ files changed by the slice (existing assertions unchanged):
+A	tests/test_refresh_owned.py
+A	tests/test_refresh_strategy.py
+--- existing refresh suites at the tip:
+test_adopt.py test_adopt_facts.py test_adopt_next.py test_adopted_manifest.py test_drive_adoption.py test_refresh_owned.py test_refresh_strategy.py test_slice_scope_adopted_rules.py 

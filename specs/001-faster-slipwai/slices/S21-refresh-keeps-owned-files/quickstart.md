@@ -8,7 +8,7 @@ printf '[project]\nname = "shop"\nversion = "0.1.0"\nrequires-python = ">=3.11"\
 mkdir -p shop tests; echo 'x = 1' > shop/__init__.py
 printf 'import unittest\nclass T(unittest.TestCase):\n    def test_x(self):\n        self.assertTrue(True)\n' > tests/test_x.py
 git add -A; git -c user.name=a -c user.email=a@b commit -qm start
-"$SLIPWAI" adopt --yes; git add -A; git -c user.name=a -c user.email=a@b commit -qm adopt
+"$SLIPWAI" adopt --yes   # commits what it wrote itself
 ```
 
 1. **The four stay.** Set `"enabled": true` and `"max_iterations": 10` in `.specify/cruise.json`, write a real

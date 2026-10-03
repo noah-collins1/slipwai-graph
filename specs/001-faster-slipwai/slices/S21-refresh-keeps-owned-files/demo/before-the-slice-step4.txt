@@ -1,0 +1,40 @@
+=== slipwai: /tmp/s21-before/slipwai
+=== STEP 4 (AC-7, AC-9): safety-net recorded tests-pass / confirmed
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    a green suite in the gate — the safety net is `tests-exist`
+    every application's role recorded — the structure is `as-found`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    - a green suite in the gate — the safety net is `tests-exist`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 1
+-- delivery/docs/convergence.md rows:
+| Path to production | `unknown` | `pipeline-decides` | release.path in project.json | *not yet* | `unrecorded` |
+| Safety net | `tests-exist` | `mutation-measured` | test recorded for before | *not yet* | `detected` |
+| Structure | `as-found` | `typed` | before: application; role not established for before | *not yet* | `detected` |
+ M project.json
+$ slipwai adopt --refresh
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+4 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+exit=0
+ M .specify/presets/standard/templates/constitution-template.md
+ M delivery/commands/ground.md
+ M delivery/docs/convergence.md
+ M project.json
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    a green suite in the gate — the safety net is `tests-exist`
+    every application's role recorded — the structure is `as-found`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    - a green suite in the gate — the safety net is `tests-exist`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 1
+-- delivery/docs/convergence.md rows:
+| Path to production | `unknown` | `pipeline-decides` | release.path in project.json | *not yet* | `unrecorded` |
+| Safety net | `tests-pass` | `mutation-measured` | test recorded for before | *not yet* | `confirmed` |
+| Structure | `as-found` | `typed` | before: application; role not established for before | *not yet* | `detected` |

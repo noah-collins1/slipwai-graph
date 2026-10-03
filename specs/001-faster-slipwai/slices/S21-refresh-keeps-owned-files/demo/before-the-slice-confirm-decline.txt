@@ -1,0 +1,66 @@
+$ slipwai adopt   (in a pseudo-terminal, Enter at the forge question)
+
+
+
+Adopt the delivery method here (experimental). The survey read the tree; what it
+found is below. Nothing here is recorded as an application yet: which of these the gate should hold,
+what each is called and what it owns are questions the code answers, and the agent asks them with the
+code in front of it. This asks the one thing the tree cannot settle on its own.
+
+3 directories that build:
+  .              python  from pyproject.toml  (2 of 8 targets have a command)
+  tools/mailer   python  from tools/mailer/pyproject.toml  (1 of 8 targets have a command)
+  tools/reports  python  from tools/reports/pyproject.toml  (1 of 8 targets have a command)
+candidates: ['.', 'tools/mailer', 'tools/reports'] 
+deployables: []
+candidate names: shop mailer reports
+$ slipwai adopt --confirm shop --kind shop=service --purpose shop="sends the order mails"
+confirmed (experimental): what the record now says is an application here
+  confirmed: `shop` is an application; its build joins the gate
+  outstanding: 2 candidate(s) nobody has answered for — mailer, reports. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  72 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+exit=0
+ M .specify/cruise.json
+ M .specify/drive.json
+ M .specify/extensions.yml
+ M .specify/models.json
+ M .specify/presets/standard/templates/constitution-template.md
+ M .specify/product-owner.md
+ M delivery/.written
+ M delivery/Makefile
+ M delivery/docs/adoption.md
+ M delivery/docs/change-strategy.md
+ M delivery/docs/convergence.md
+ M delivery/survey/structure.md
+ M delivery/survey/survey.md
+ M project.json
+?? delivery/scripts/check-convergence.py
+?? delivery/scripts/ratchet.py
+.specify/cruise.json: FAILED
+.specify/product-owner.md: FAILED
+.specify/models.json: FAILED
+.specify/drive.json: FAILED
+sha256sum: WARNING: 4 computed checksums did NOT match
+candidates: ['tools/mailer', 'tools/reports'] 
+deployables: ['shop']
+$ slipwai adopt --decline mailer
+confirmed (experimental): what the record now says is an application here
+  declined: `mailer` is not an application, and nothing is recorded in its place — a later /survey reports the directory as one that builds and has no record, which is what it is
+  outstanding: 1 candidate(s) nobody has answered for — reports. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  1 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+exit=0
+ M project.json
+.specify/cruise.json: FAILED
+.specify/product-owner.md: FAILED
+.specify/models.json: FAILED
+.specify/drive.json: FAILED
+sha256sum: WARNING: 4 computed checksums did NOT match
+candidates: ['tools/reports'] 
+deployables: ['shop']
+--- and with an uncommitted settings edit: --decline reports
+slipwai adopt: error: `slipwai adopt --confirm` writes `.specify/cruise.json`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+exit=2
+ M .specify/cruise.json
+  "poll_minutes": 4,

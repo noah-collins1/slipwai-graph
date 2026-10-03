@@ -1,0 +1,102 @@
+adopted shop with slipwai 1.5.2.dev0 — experimental: this path is new, its shape may change in a MINOR, and what surprised you belongs on the public issue tracker
+295 files written under ops/method/ and beside it; nothing of the repository's own was written over. One commit by the factory; `git reset --hard HEAD^` undoes all of it.
+adopt exit=0
+commit exit=1
+AGENTS.md
+Makefile
+ops
+project.json
+pyproject.toml
+shop
+tests
+.
+..
+cruise.json
+drive.json
+extensions.yml
+models.json
+presets
+product-owner.md
+1:.specify/cruise.json
+2:.specify/drive.json
+4:.specify/models.json
+8:.specify/product-owner.md
+/home/noahc/math/slipwai-graph/slipwai (slipwai 1.5.2.dev0)
+=== slipwai: /home/noahc/math/slipwai-graph/slipwai (slipwai 1.5.2.dev0)
+=== STEP 1: the four stay
+$ slipwai adopt --refresh
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+1 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+exit=0
+$ git status --short
+ M ops/method/survey/structure.md
+$ sha256sum -c
+.specify/cruise.json: OK
+.specify/product-owner.md: OK
+.specify/models.json: OK
+.specify/drive.json: OK
+  "enabled": true,
+  "max_iterations": 10,
+13:A shopkeeper who sells hand-bound notebooks online and packs every order hers
+      "fast": "haiku",
+  "delegate": "rule",
+=== STEP 1b: refresh twice
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+exit=0
+ M ops/method/survey/structure.md
+.specify/cruise.json: OK
+.specify/product-owner.md: OK
+.specify/models.json: OK
+.specify/drive.json: OK
+=== STEP 2: a missing one comes back
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+2 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+exit=0
+$ git status --short
+ M ops/method/survey/structure.md
+?? .specify/cruise.json
+  "enabled": false,
+.specify/cruise.json: FAILED
+.specify/product-owner.md: OK
+.specify/models.json: OK
+.specify/drive.json: OK
+sha256sum: WARNING: 1 computed checksum did NOT match
+=== STEP 3: an uncommitted edit is not a refusal
+ M .specify/cruise.json
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+exit=0
+$ git status --short
+ M .specify/cruise.json
+  "poll_minutes": 3,
+  refreshed: nothing; every detected fact stands
+
+5 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+ M .specify/cruise.json
+ M .specify/presets/standard/templates/constitution-template.md
+ M ops/method/commands/ground.md
+ M ops/method/docs/change-strategy.md
+ M ops/method/docs/convergence.md
+ M project.json
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    every application's role recorded — the structure is `as-found`
+-- ops/method/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 0
+-- ops/method/docs/convergence.md rows:
+| Path to production | `unknown` | `pipeline-decides` | release.path in project.json | *not yet* | `unrecorded` |
+| Safety net | `tests-pass` | `mutation-measured` | test recorded for shop | *not yet* | `confirmed` |
+| Structure | `as-found` | `typed` | shop: application; role not established for shop | *not yet* | `detected` |

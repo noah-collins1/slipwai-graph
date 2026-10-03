@@ -58,3 +58,33 @@ Findings: nine, none `CRITICAL` (no actor's data reaches another and no actor ga
 | B3 | B | LOW | A trailing `.` or `-` in the cell is taken into the id, so the finding names an id nobody wrote | confirmed — same pattern as B1 | fixed `0243e01` |
 
 Recorded as the same at `f151b80` and not this slice's: decorated register cells (links, bold) are never ids; a non-UTF-8 register or log ends `check-decisions` on a traceback; a `benchmark.json` holding `5` ends `check-benchmark` on one. Not probed: submodules, `.gitattributes`, case-insensitive filesystems.
+
+## S21 · 9950bd2 · 2026-10-03
+
+Slice `S21-refresh-keeps-owned-files` (heading as D17 says). Diff: `git diff c72571d 9950bd2 -- src tests changelog.d docs`.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | `slipwai adopt --refresh`, `--confirm` and `--decline` change what they write and what they refuse on: `src/slipwai/resurvey.py` (`writes()`, the rewrite loop, the final `stamp`), `src/slipwai/project/seeded.py`; and what they derive: `src/slipwai/strategy.py` (`with_reconciled()`, `before_of()`) |
+| driven adapter or the provider types behind one | not present | no adapter; the refresh reads and writes files and runs `git status` as before |
+| authorisation decision (who can reach one that already exists) | widened | `refuse_foreign` is the decision about whose uncommitted work a run may write over; the diff takes four paths out of what it protects, on the ground that the run no longer writes them (`resurvey.py` `writes()` less `kept()`; `src/slipwai/confirm.py:124` shares it) |
+| concurrency, idempotency, ordering, retention, or time | widened | two claims: a second refresh straight after is a no-op with a person's row in place, and a later run does not take a project's edit for slipwai's own (`.delivery-tools/written.json`, the stamp less the kept files) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`; no prior row
+covers the refresh (S00 skipped, S20 attacked the generated checkers).
+
+Spawned: seam A — what a refresh, `--confirm` and `--decline` write, leave and refuse on for the four seeded files, and what slipwai records as its own · `drive-adversary` · claude-fable-5-1 (host model) · delegated, fresh context · manifest: `src/slipwai/resurvey.py`, `src/slipwai/project/seeded.py`, `src/slipwai/uncommitted.py`, `src/slipwai/confirm.py`, `src/slipwai/cli_adopt.py`, `tests/test_refresh_owned.py`, `tests/test_uncommitted.py`, `tests/test_adopt.py`
+Spawned: seam B — how a refresh derives `strategy.before` from rows reconciled with a hand-edited `project.json` · `drive-adversary` · claude-fable-5-1 (host model) · delegated, fresh context · manifest: `src/slipwai/strategy.py`, `src/slipwai/convergence.py`, `src/slipwai/resurvey.py`, `src/slipwai/project/strangle_command.py`, `tests/test_refresh_strategy.py`, `tests/test_strategy.py`, `tests/test_adopt.py`
+Omitted: `slipwai migrate` over the four — the diff does not change it (D26; a Parking Lot line asks for its example)
+Findings: six, none `CRITICAL` (no actor's data reaches another and no actor gains a role). Every reproduction ran in a temporary repository through the CLI, against the slice's tip and against the factory at `c72571d`.
+
+| # | Seam | Severity | Finding | Triage | State |
+|---|---|---|---|---|---|
+| A1 | A | MEDIUM | Where the adopted project is a subdirectory of its git repository, `changed()` (`src/slipwai/uncommitted.py`) reads `git status` paths relative to the repository's top and never matches a path the run writes: `adopt --refresh` wrote over uncommitted edits to `.specify/extensions.yml` and `delivery/commands/ground.md` with exit 0, and `.delivery-tools/written.json` stayed `{}`. The same before the slice (which also reset the four there) | confirmed; older than S21 | `open` — slice `S23-refusal-in-subdirectory` (D29) |
+| F1 | B | MEDIUM | A regression: adopted `--release pipeline`, later `release.path: manual` — the person's row stays `pipeline`, and `strategy.before` and the page, which followed the record before the slice, now drop *a pipeline that deploys on a passing `verify`* | confirmed | fixed in T010 (D28) — see the task for the commit |
+| F2 | B | MEDIUM | `strategy.before` and the page's heading follow the recommended strategy where an Accepted ADR decides another; byte-identical before the slice | question; older | Parking Lot (D29) |
+| F3 | B | LOW | A convergence row with no `provenance` ends a refresh on `KeyError`, tree left clean; same before | confirmed; older | Parking Lot (D29) |
+| F4 | B | LOW | A row for an axis the factory does not know ends a refresh on `KeyError: 'target'`, tree left clean; same before | confirmed; older | Parking Lot (D29) |
+| F5 | B | LOW | A Strategy row confirmed at `decided` with no ADR: the map reads `decided`, the page *Nothing is decided yet*; same before | confirmed; older | Parking Lot (D29) |
+
+Held under attack (seam A): uncommitted and staged edits to all four across `--refresh`, `--confirm`, `--decline` and repeated runs; delete → refresh → edit → refresh; a staged rename; a symlink; mode 000; CRLF; `.specify/` removed whole; a relocated delivery directory; no git; a git worktree; a repository a pre-slice refresh had already stamped. The write set is a strict subset of the pre-slice one. (Seam B): every provenance and rung spelling, duplicated, missing and reordered rows, a `strategy` record absent or hand-edited, each `--why` trigger; a second refresh was a no-op in every case that ran, and every refusal or traceback left the tree clean.

@@ -1,0 +1,130 @@
+$ slipwai adopt   (in a pseudo-terminal, Enter at the forge question)
+
+
+
+Adopt the delivery method here (experimental). The survey read the tree; what it
+found is below. Nothing here is recorded as an application yet: which of these the gate should hold,
+what each is called and what it owns are questions the code answers, and the agent asks them with the
+code in front of it. This asks the one thing the tree cannot settle on its own.
+
+3 directories that build:
+  .              python  from pyproject.toml  (2 of 8 targets have a command)
+  tools/mailer   python  from tools/mailer/pyproject.toml  (1 of 8 targets have a command)
+  tools/reports  python  from tools/reports/pyproject.toml  (1 of 8 targets have a command)
+candidates: ['.', 'tools/mailer', 'tools/reports'] 
+deployables: []
+candidate names: shop mailer reports
+$ slipwai adopt --confirm shop --kind shop=service --purpose shop="sends the order mails"
+confirmed (experimental): what the record now says is an application here
+  confirmed: `shop` is an application; its build joins the gate
+    install      python3 -m pip install -e .
+    typecheck    (none recorded — a written no)
+    lint         (none recorded — a written no)
+    test         python3 -m pytest
+    integration  (none recorded — a written no)
+    adversarial  (none recorded — a written no)
+    audit        (none recorded — a written no)
+    mutation     (none recorded — a written no)
+  outstanding: 2 candidate(s) nobody has answered for — mailer, reports. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  68 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+exit=0
+ M .specify/extensions.yml
+ M .specify/presets/standard/templates/constitution-template.md
+ M delivery/.written
+ M delivery/Makefile
+ M delivery/commands/add-frontend.md
+ M delivery/commands/add-service.md
+ M delivery/commands/catch-up.md
+ M delivery/commands/characterise.md
+ M delivery/commands/drive.md
+ M delivery/commands/ground.md
+ M delivery/commands/strangle.md
+ M delivery/docs/adoption.md
+ M delivery/docs/change-strategy.md
+ M delivery/docs/convergence.md
+ M delivery/skills/api-design/SKILL.md
+ M delivery/skills/api-design/resources/api-evolution.md
+ M delivery/skills/api-design/resources/api-security.md
+ M delivery/skills/api-design/resources/auth-security.md
+ M delivery/skills/api-design/resources/problem-details.md
+ M delivery/skills/characterisation-tests/SKILL.md
+ M delivery/skills/characterisation-tests/resources/modern-tooling.md
+ M delivery/skills/characterisation-tests/resources/writing-process.md
+ M delivery/skills/cli-design/SKILL.md
+ M delivery/skills/cli-design/resources/output-architecture.md
+ M delivery/skills/cli-design/resources/stream-contracts.md
+ M delivery/skills/cli-design/resources/testing-cli.md
+ M delivery/skills/domain-driven-design/SKILL.md
+ M delivery/skills/domain-driven-design/resources/aggregate-design.md
+ M delivery/skills/domain-driven-design/resources/bounded-contexts.md
+ M delivery/skills/domain-driven-design/resources/domain-events.md
+ M delivery/skills/domain-driven-design/resources/domain-services.md
+ M delivery/skills/domain-driven-design/resources/error-modeling.md
+ M delivery/skills/domain-driven-design/resources/testing-by-layer.md
+ M delivery/skills/event-sourcing/SKILL.md
+ M delivery/skills/event-sourcing/resources/decider-and-rehydration.md
+ M delivery/skills/event-sourcing/resources/event-store.md
+ M delivery/skills/event-sourcing/resources/event-versioning.md
+ M delivery/skills/event-sourcing/resources/projections-and-read-models.md
+ M delivery/skills/event-sourcing/resources/testing-event-sourced-systems.md
+ M delivery/skills/finding-seams/SKILL.md
+ M delivery/skills/finding-seams/resources/creating-seams.md
+ M delivery/skills/finding-seams/resources/oop-patterns.md
+ M delivery/skills/finding-seams/resources/seam-types.md
+ M delivery/skills/functional/SKILL.md
+ M delivery/skills/functional/resources/composition-patterns.md
+ M delivery/skills/functional/resources/immutability-catalog.md
+ M delivery/skills/hexagonal-architecture/SKILL.md
+ M delivery/skills/hexagonal-architecture/resources/cqrs-lite.md
+ M delivery/skills/hexagonal-architecture/resources/cross-cutting-concerns.md
+ M delivery/skills/hexagonal-architecture/resources/greenfield-sequence.md
+ M delivery/skills/hexagonal-architecture/resources/incremental-adoption.md
+ M delivery/skills/hexagonal-architecture/resources/testing-hex-arch.md
+ M delivery/skills/hexagonal-architecture/resources/worked-example.md
+ M delivery/skills/mutation-testing/SKILL.md
+ M delivery/skills/mutation-testing/resources/mutator-rules.md
+ M delivery/skills/observability/SKILL.md
+ M delivery/skills/observability/resources/node-patterns.md
+ M delivery/skills/observability/resources/testing-telemetry.md
+ M delivery/skills/refactoring/SKILL.md
+ M delivery/skills/run-the-app/SKILL.md
+ M delivery/skills/testing/SKILL.md
+ M delivery/skills/twelve-factor/SKILL.md
+ M delivery/skills/twelve-factor/resources/node-patterns.md
+ M delivery/survey/structure.md
+ M delivery/survey/survey.md
+ M project.json
+?? delivery/scripts/check-convergence.py
+?? delivery/scripts/ratchet.py
+.specify/cruise.json: OK
+.specify/product-owner.md: OK
+.specify/models.json: OK
+.specify/drive.json: OK
+candidates: ['tools/mailer', 'tools/reports'] 
+deployables: ['shop']
+$ slipwai adopt --decline mailer
+confirmed (experimental): what the record now says is an application here
+  declined: `mailer` is not an application, and nothing is recorded in its place — a later /survey reports the directory as one that builds and has no record, which is what it is
+  outstanding: 1 candidate(s) nobody has answered for — reports. The gate runs now that something is confirmed; it refuses only while nothing is, so these are a question still open and not a stop. /ground asks about each
+  1 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+exit=0
+ M delivery/commands/ground.md
+ M project.json
+.specify/cruise.json: OK
+.specify/product-owner.md: OK
+.specify/models.json: OK
+.specify/drive.json: OK
+candidates: ['tools/reports'] 
+deployables: ['shop']
+--- and with an uncommitted settings edit: --decline reports
+  declined: `reports` is not an application, and nothing is recorded in its place — a later /survey reports the directory as one that builds and has no record, which is what it is
+  outstanding: none; every buildable directory the survey found has been answered for
+  1 file(s) rewritten from the record; nothing committed.
+Then: make verify, and commit the result as one change.
+exit=0
+ M .specify/cruise.json
+ M delivery/commands/ground.md
+ M project.json
+  "poll_minutes": 4,

@@ -1,0 +1,44 @@
+ changelog.d/refresh-keeps-owned-files.md           |  20 +
+ delivery/survey/pinned.md                          |   2 +
+ docs/adopting.md                                   |   2 +-
+ specs/001-faster-slipwai/decisions.md              |  22 +
+ .../S21-refresh-keeps-owned-files/benchmark.json   | 469 +++++++++++++++++++++
+ .../S21-refresh-keeps-owned-files/data-model.md    |  11 +
+ .../slices/S21-refresh-keeps-owned-files/plan.md   | 123 ++++++
+ .../S21-refresh-keeps-owned-files/quickstart.md    |  26 ++
+ .../S21-refresh-keeps-owned-files/research.md      |  20 +
+ .../slices/S21-refresh-keeps-owned-files/tasks.md  | 292 +++++++++++++
+ specs/001-faster-slipwai/story-split.md            |  17 +
+ src/slipwai/project/seeded.py                      |  22 +
+ src/slipwai/resurvey.py                            |  28 +-
+ src/slipwai/strategy.py                            |  29 +-
+ tests/test_refresh_owned.py                        | 219 ++++++++++
+ tests/test_refresh_strategy.py                     | 178 ++++++++
+ 16 files changed, 1457 insertions(+), 23 deletions(-)
+--- VERSION: 1.5.2.dev0; diff of VERSION across the slice: 0 lines
+--- delivery/ paths changed:
+M	delivery/survey/pinned.md
+--- changelog.d fragments added:
+A	changelog.d/refresh-keeps-owned-files.md
+== changelog.d/refresh-keeps-owned-files.md
+PATCH
+
+**`adopt --refresh` (experimental: brownfield adoption) no longer rewrites the four files a project owns.**
+`.specify/cruise.json`, `.specify/product-owner.md`, `.specify/models.json` and `.specify/drive.json` are seeded by
+the factory and then changed by the project — a run's settings, a filled-in owner brief, which model runs each
+stage — and a refresh, `adopt --confirm` included, wrote each back to the factory's default wherever the disk
+differed. A refresh now writes one only where it is absent, so a project is never left without a file
+`make check-agents` and `/cruise` read; an uncommitted change to one no longer refuses the refresh; and a later run
+does not take the project's edit for slipwai's own. `<delivery>/.written` still lists all four, so `slipwai migrate`
+still merges a newer factory's version of each with yours, and the pages the record drives follow it as before.
+
+Separately, the strategy page no longer names a prerequisite the map shows as met. `adopt --refresh` read
+`strategy.before` from the tree before a person's recorded rows were applied, so a Safety net recorded at
+`tests-pass` still produced *a green suite in the gate*; the entries for the safety net, the path to production
+and the structure are now read from the rows as the map shows them after the refresh, in `project.json` and in
+`<delivery>/docs/change-strategy.md` alike. What is recommended, and why, is derived as before.
+
+A repository whose refresh already reset one of the four restores it from its history: `git checkout <commit> --
+.specify/cruise.json` (and likewise the others) from the commit before that refresh. Nothing else is asked of a
+repository already adopted.
+--- working tree vs 9950bd2 in src/ assets/ changelog.d VERSION:

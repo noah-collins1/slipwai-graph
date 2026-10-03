@@ -1,0 +1,5 @@
+--- pre-slice factory, same relocated adopt, first refresh:
+  refreshed: nothing; every detected fact stands
+
+1 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+ M ops/method/survey/structure.md

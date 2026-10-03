@@ -1,0 +1,52 @@
+--- AC-8: .written still lists the four
+1:.specify/cruise.json
+2:.specify/drive.json
+4:.specify/models.json
+8:.specify/product-owner.md
+--- uncommitted edits to all four at once, plus nothing else
+ M .specify/cruise.json
+ M .specify/drive.json
+ M .specify/models.json
+ M .specify/product-owner.md
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+exit=0
+ M .specify/cruise.json
+ M .specify/drive.json
+ M .specify/models.json
+ M .specify/product-owner.md
+.specify/cruise.json: OK
+.specify/product-owner.md: OK
+.specify/models.json: OK
+.specify/drive.json: OK
+--- owned: lines in that report: 0
+--- AC-5 second half: an uncommitted edit to another path the refresh writes (delivery/docs/convergence.md)
+ M .specify/cruise.json
+ M .specify/drive.json
+ M .specify/models.json
+ M .specify/product-owner.md
+ M delivery/docs/convergence.md
+slipwai adopt: error: `slipwai adopt --refresh` writes `delivery/docs/convergence.md`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+exit=2
+ M .specify/cruise.json
+ M .specify/drive.json
+ M .specify/models.json
+ M .specify/product-owner.md
+ M delivery/docs/convergence.md
+my note
+.specify/cruise.json: OK
+.specify/product-owner.md: OK
+.specify/models.json: OK
+.specify/drive.json: OK
+--- the owned: line stays what it is: delete delivery/docs/glossary-like line from .written
+line 50
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+  owned: `delivery/docs/change-strategy.md` — not in .written, so it is yours and was left alone; a newer factory's change to it meets yours in slipwai migrate's three-way merge
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+exit=0

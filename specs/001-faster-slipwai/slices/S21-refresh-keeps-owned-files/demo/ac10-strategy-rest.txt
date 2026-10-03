@@ -1,0 +1,10 @@
+  refreshed: nothing; every detected fact stands
+
+5 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+--- strategy without 'before': pre-slice factory vs this one, same three rows recorded
+before=['a pipeline that deploys on a passing `verify` — the path to production is `unknown`', 'a green suite in the gate — the safety net is `tests-exist`', "every application's role recorded — the structure is `as-found`"]
+before=[]
+identical: recommended, because, decided, finished, programme, stop, trigger, adr, provenance
+ "decided": null,
+ "finished": false,
+ "recommended": "leave-it",

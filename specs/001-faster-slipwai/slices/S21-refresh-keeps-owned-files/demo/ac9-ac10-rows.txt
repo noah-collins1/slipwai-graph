@@ -1,0 +1,134 @@
+##### case path-pipeline: path-to-production=pipeline=confirmed (factory /home/noahc/math/slipwai-graph/slipwai)
+  refreshed: nothing; every detected fact stands
+
+5 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+exit=0
+ M .specify/presets/standard/templates/constitution-template.md; M delivery/commands/ground.md; M delivery/docs/change-strategy.md; M delivery/docs/convergence.md; M project.json;
+-- project.json strategy.before:
+    a green suite in the gate — the safety net is `tests-exist`
+    every application's role recorded — the structure is `as-found`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a green suite in the gate — the safety net is `tests-exist`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 1
+| Path to production | `pipeline` | `pipeline-decides` | release.path in project.json | *not yet* | `confirmed` |
+| Safety net | `tests-exist` | `mutation-measured` | test recorded for after | *not yet* | `detected` |
+| Structure | `as-found` | `typed` | after: application; role not established for after | *not yet* | `detected` |
+##### case path-scripted: path-to-production=scripted=confirmed (factory /home/noahc/math/slipwai-graph/slipwai)
+  refreshed: nothing; every detected fact stands
+
+5 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+exit=0
+ M .specify/presets/standard/templates/constitution-template.md; M delivery/commands/ground.md; M delivery/docs/change-strategy.md; M delivery/docs/convergence.md; M project.json;
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `scripted`
+    a green suite in the gate — the safety net is `tests-exist`
+    every application's role recorded — the structure is `as-found`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `scripted`
+    - a green suite in the gate — the safety net is `tests-exist`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 1
+| Path to production | `scripted` | `pipeline-decides` | release.path in project.json | *not yet* | `confirmed` |
+| Safety net | `tests-exist` | `mutation-measured` | test recorded for after | *not yet* | `detected` |
+| Structure | `as-found` | `typed` | after: application; role not established for after | *not yet* | `detected` |
+##### case path-manual: path-to-production=manual=overridden (factory /home/noahc/math/slipwai-graph/slipwai)
+  refreshed: nothing; every detected fact stands
+
+5 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+exit=0
+ M .specify/presets/standard/templates/constitution-template.md; M delivery/commands/ground.md; M delivery/docs/change-strategy.md; M delivery/docs/convergence.md; M project.json;
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `manual`
+    a green suite in the gate — the safety net is `tests-exist`
+    every application's role recorded — the structure is `as-found`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `manual`
+    - a green suite in the gate — the safety net is `tests-exist`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 1
+| Path to production | `manual` | `pipeline-decides` | release.path in project.json | *not yet* | `overridden` |
+| Safety net | `tests-exist` | `mutation-measured` | test recorded for after | *not yet* | `detected` |
+| Structure | `as-found` | `typed` | after: application; role not established for after | *not yet* | `detected` |
+##### case structure-named: structure=named=confirmed (factory /home/noahc/math/slipwai-graph/slipwai)
+  refreshed: nothing; every detected fact stands
+
+6 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+exit=0
+ M .specify/presets/standard/templates/constitution-template.md; M delivery/commands/ground.md; M delivery/docs/change-strategy.md; M delivery/docs/convergence.md; M delivery/survey/structure.md; M project.json;
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    a green suite in the gate — the safety net is `tests-exist`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    - a green suite in the gate — the safety net is `tests-exist`
+   lines saying "a green suite in the gate — the safety net": 1
+| Path to production | `unknown` | `pipeline-decides` | release.path in project.json | *not yet* | `unrecorded` |
+| Safety net | `tests-exist` | `mutation-measured` | test recorded for after | *not yet* | `detected` |
+| Structure | `named` | `typed` | after: application; role not established for after | *not yet* | `confirmed` |
+##### case all-three: path-to-production=one-path=confirmed structure=named=confirmed safety-net=tests-pass=confirmed (factory /home/noahc/math/slipwai-graph/slipwai)
+  refreshed: nothing; every detected fact stands
+
+6 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+exit=0
+ M .specify/presets/standard/templates/constitution-template.md; M delivery/commands/ground.md; M delivery/docs/change-strategy.md; M delivery/docs/convergence.md; M delivery/survey/structure.md; M project.json;
+-- project.json strategy.before:
+    (empty)
+-- delivery/docs/change-strategy.md, the Before list:
+    - nothing the map can see
+   lines saying "a green suite in the gate — the safety net": 0
+| Path to production | `one-path` | `pipeline-decides` | release.path in project.json | *not yet* | `confirmed` |
+| Safety net | `tests-pass` | `mutation-measured` | test recorded for after | *not yet* | `confirmed` |
+| Structure | `named` | `typed` | after: application; role not established for after | *not yet* | `confirmed` |
+##### case safety-none: safety-net=none=confirmed (factory /home/noahc/math/slipwai-graph/slipwai)
+  refreshed: nothing; every detected fact stands
+
+5 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+exit=0
+ M .specify/presets/standard/templates/constitution-template.md; M delivery/commands/ground.md; M delivery/docs/change-strategy.md; M delivery/docs/convergence.md; M project.json;
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    a green suite in the gate — the safety net is `none`
+    every application's role recorded — the structure is `as-found`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    - a green suite in the gate — the safety net is `none`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 1
+| Path to production | `unknown` | `pipeline-decides` | release.path in project.json | *not yet* | `unrecorded` |
+| Safety net | `none` | `mutation-measured` | test recorded for after | *not yet* | `confirmed` |
+| Structure | `as-found` | `typed` | after: application; role not established for after | *not yet* | `detected` |
+##### case safety-fast-overridden: safety-net=fast=overridden (factory /home/noahc/math/slipwai-graph/slipwai)
+  refreshed: nothing; every detected fact stands
+
+5 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+exit=0
+ M .specify/presets/standard/templates/constitution-template.md; M delivery/commands/ground.md; M delivery/docs/change-strategy.md; M delivery/docs/convergence.md; M project.json;
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    every application's role recorded — the structure is `as-found`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 0
+| Path to production | `unknown` | `pipeline-decides` | release.path in project.json | *not yet* | `unrecorded` |
+| Safety net | `fast` | `mutation-measured` | test recorded for after | *not yet* | `overridden` |
+| Structure | `as-found` | `typed` | after: application; role not established for after | *not yet* | `detected` |
+##### case safety-detected-handedit: safety-net=tests-pass=detected (factory /home/noahc/math/slipwai-graph/slipwai)
+  refreshed: convergence: safety-net refreshed from `tests-pass` to `tests-exist`
+
+1 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+exit=0
+ M project.json;
+-- project.json strategy.before:
+    a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    a green suite in the gate — the safety net is `tests-exist`
+    every application's role recorded — the structure is `as-found`
+-- delivery/docs/change-strategy.md, the Before list:
+    - a pipeline that deploys on a passing `verify` — the path to production is `unknown`
+    - a green suite in the gate — the safety net is `tests-exist`
+    - every application's role recorded — the structure is `as-found`
+   lines saying "a green suite in the gate — the safety net": 1
+| Path to production | `unknown` | `pipeline-decides` | release.path in project.json | *not yet* | `unrecorded` |
+| Safety net | `tests-exist` | `mutation-measured` | test recorded for after | *not yet* | `detected` |
+| Structure | `as-found` | `typed` | after: application; role not established for after | *not yet* | `detected` |

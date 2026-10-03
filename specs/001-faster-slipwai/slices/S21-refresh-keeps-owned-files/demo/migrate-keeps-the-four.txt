@@ -1,0 +1,10 @@
+--- what migrate changed (c-all-three: three rows confirmed, then migrate at the tip):
+-- project.json strategy.before:
+    (empty)
+-- delivery/docs/change-strategy.md, the Before list:
+    - nothing the map can see
+   lines saying "a green suite in the gate — the safety net": 0
+-- delivery/docs/convergence.md rows:
+| Path to production | `one-path` | `pipeline-decides` | release.path in project.json | *not yet* | `confirmed` |
+| Safety net | `tests-pass` | `mutation-measured` | test recorded for after | *not yet* | `confirmed` |
+| Structure | `named` | `typed` | after: application; role not established for after | *not yet* | `confirmed` |

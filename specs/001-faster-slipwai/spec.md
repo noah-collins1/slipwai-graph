@@ -440,10 +440,11 @@ is one `slipwai adopt` wrote into, committed and clean, and *the four* are `.spe
 - **AC-S21-4** — Given one of the four absent from the tree (its deletion committed), when the refresh runs, then
   the file is written with the factory's default and counted among the rewritten files: a project is never left
   without a file `make check-agents` and `/cruise` read.
-- **AC-S21-5** — Given an uncommitted change to one of the four that slipwai did not make — what
+- **AC-S21-5** — Given an uncommitted edit to one of the four that slipwai did not make — what
   `/cruise-settings` leaves before a commit — when the refresh runs, then it does not refuse because of that
-  file, and leaves the change as it is; an uncommitted change to any other path the refresh writes is refused as
-  today.
+  file, and leaves the edit as it is; an uncommitted change to any other path the refresh writes is refused as
+  today. *Amended after the demo (D29):* an uncommitted **deletion** of one of the four is still refused by name,
+  as today — the refresh would write the default there, and that is a path it writes.
 - **AC-S21-6** — Given the same repository, when `slipwai adopt --confirm` records an answer (it runs the same
   refresh), then AC-S21-1 to AC-S21-3 hold for it.
 - **AC-S21-7** — Given a convergence row moved by hand in `project.json`, when the refresh runs, then
@@ -467,3 +468,13 @@ is one `slipwai adopt` wrote into, committed and clean, and *the four* are `.spe
   repository whose refresh already reset one of the four does (restore it from its history); `VERSION` stays
   `1.5.2.dev0`; nothing under `delivery/` changed but `delivery/survey/pinned.md`; `generate`, `add-service` and
   `migrate` write what they wrote before; and `make verify` and `make -f delivery/Makefile verify` are green.
+- **AC-S21-12** — *Added by D28 (adversary F1).* Given a repository adopted with `--release pipeline` (the Path
+  to production row `pipeline`, `overridden`) whose `release.path` a person then changed to `manual` and
+  committed, when `slipwai adopt --refresh` runs, then the row reads `manual` with the `release` record's
+  provenance and its `planned` kept; the report says *convergence: path-to-production refreshed from `pipeline`
+  to `manual`* and names `release.path`; `project.json`'s `strategy.before` and
+  `<delivery>/docs/change-strategy.md` carry *a pipeline that deploys on a passing `verify` — the path to
+  production is `manual`*; and `<delivery>/docs/convergence.md` shows `manual`. The same holds for `unknown` and
+  `scripted`, and for any recorded rung above the one the record names. Given instead a person's row at or below
+  the rung `release.path` names, a row at `one-path` or `pipeline-decides` over `release.path: pipeline`, or a
+  `release` record whose provenance is `detected` or `unrecorded`, then the row stands as recorded (D25, D28).

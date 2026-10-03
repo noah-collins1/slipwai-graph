@@ -1,0 +1,23 @@
+generate (pre) exit=0; files: 376
+generate (post) exit=0; files: 376
+generate: trees identical across the slice
+add-service (pre) exit=2
+add-service (post) exit=2
+                           [--purpose TEXT] [--context NAME]
+                           name
+slipwai add-service: error: there is no project.json in /tmp/s21-demo/gen-post/shopgen, so this is not the root of a project this factory generated — run add-service from that directory
+add-service: trees identical across the slice
+--- migrate, in the adopted repository whose four are the project's (c-all-three, committed)
+migrated after to slipwai 1.5.2.dev0: 5 files changed, 120 insertions(+), 148 deletions(-)
+One merge commit. The files this project had changed itself were kept; the rest are what the factory now generates for its answers.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+migrate exit=0
+.specify/cruise.json: OK
+.specify/product-owner.md: OK
+.specify/models.json: OK
+.specify/drive.json: OK
+add-service (pre) exit=0
+add-service (post) exit=0
+generate + add-service: trees identical across the slice

@@ -1,0 +1,76 @@
+=== slipwai: /tmp/s21-before/slipwai (slipwai 1.5.2.dev0)
+=== STEP 1: the four stay
+$ slipwai adopt --refresh
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+4 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+exit=0
+$ git status --short
+ M .specify/cruise.json
+ M .specify/drive.json
+ M .specify/models.json
+ M .specify/product-owner.md
+$ sha256sum -c
+.specify/cruise.json: FAILED
+.specify/product-owner.md: FAILED
+.specify/models.json: FAILED
+.specify/drive.json: FAILED
+sha256sum: WARNING: 4 computed checksums did NOT match
+  "enabled": false,
+  "max_iterations": null,
+  "delegate": "story",
+=== STEP 1b: refresh twice
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+exit=0
+ M .specify/cruise.json
+ M .specify/drive.json
+ M .specify/models.json
+ M .specify/product-owner.md
+.specify/cruise.json: FAILED
+.specify/product-owner.md: FAILED
+.specify/models.json: FAILED
+.specify/drive.json: FAILED
+sha256sum: WARNING: 4 computed checksums did NOT match
+=== STEP 2: a missing one comes back
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+4 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+Then: make verify, and commit the result as one change.
+exit=0
+$ git status --short
+ M .specify/drive.json
+ M .specify/models.json
+ M .specify/product-owner.md
+?? .specify/cruise.json
+  "enabled": false,
+.specify/cruise.json: FAILED
+.specify/product-owner.md: FAILED
+.specify/models.json: FAILED
+.specify/drive.json: FAILED
+sha256sum: WARNING: 4 computed checksums did NOT match
+=== STEP 3: an uncommitted edit is not a refusal
+ M .specify/cruise.json
+usage: slipwai adopt [-h] [--yes] [--refresh] [--next] [--confirm NAME]
+                     [--decline NAME] [--as NAME=NEW] [--integration AGENT]
+                     [--init | --no-init] [--install | --no-install]
+                     [--name NAME] [--profile {standard,event-modelling}]
+                     [--target {existing,none}] [--delivery DIR] [--why TEXT]
+                     [--skip NAME] [--language NAME=LANGUAGE]
+                     [--purpose NAME=TEXT] [--kind NAME=KIND]
+                     [--command NAME:TARGET=COMMAND] [--hexagonal NAME]
+                     [--database {here,elsewhere,unmanaged,none}]
+                     [--database-repository URL]
+                     [--infrastructure {here,elsewhere,unmanaged,none}]
+                     [--infrastructure-repository URL]
+                     [--forge {github,gitea,gitlab,other,none}]
+                     [--release {pipeline,scripted,manual,unknown}]
+slipwai adopt: error: `slipwai adopt --refresh` writes `.specify/cruise.json`, and each holds an uncommitted change that is not what slipwai left there — writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone.
+exit=2
+$ git status --short
+ M .specify/cruise.json
+  "poll_minutes": 3,

@@ -290,3 +290,29 @@ Two findings outside the slice's diff went to the split's Parking Lot.
 
 **T009 done** (`99c7d2e`, tests only): every example green against the code as it stood — no production edit — and
 each new assertion seen failing under its mutation in a disposable clone (G1, G2, G3, G5, G6 a–c).
+
+## Phase 4: Adversary pass (2026-10-03; two seams; triaged as D28, D29)
+
+### T010 — A person's lower `release.path` moves the Path to production row at a refresh (`MEDIUM` F1, a regression · AC-S21-12 · D28)
+
+- [ ] **RED** (`tests/test_refresh_strategy.py`): `node_repository`, `slipwai adopt --yes --no-init --release
+  pipeline`; the row is (`pipeline`, `overridden`) and no pipeline entry leads; set `release.path` to `manual`,
+  commit, `adopt --refresh` → expect the row at `manual` / `overridden`, stdout carrying *convergence:
+  path-to-production refreshed from `pipeline` to `manual`* and `release.path`, and the entry *the path to
+  production is `manual`* in `strategy.before` and on the page. Fails today: the row is still `pipeline` and the
+  entry is absent from both. **Holds, green before the change:** adopted `--release manual`, later `release.path:
+  pipeline` → the row stays `manual`, the entry stays; adopted `--release pipeline`, row hand-set to `one-path` /
+  `confirmed` → the row stands, no entry; a `release` record that is `detected` → a person's row stands
+  (`test_a_path_to_production_recorded_above_scripted_is_not_named_a_prerequisite`, unchanged).
+  **GREEN names the sweep:** in `reconciled()` (`src/slipwai/convergence.py`) the one rule D28 states, for every
+  rung the record can name below the row (`unknown`, `manual`, `scripted`) and every recorded rung above it —
+  `planned` kept, the report line in the standing shape — not the one pair in the example. Extend the fragment
+  with one sentence (still `PATCH`, still experimental).
+
+**Files:** `src/slipwai/convergence.py`, `tests/test_refresh_strategy.py`, `changelog.d/refresh-keeps-owned-files.md`.
+
+### T011 — The fragment and the quickstart say what the demo found (host task · D29)
+
+- [ ] The fragment says an uncommitted *edit* to one of the four no longer refuses and that a deletion still does;
+  the quickstart's setup block no longer ends on a commit with nothing to commit (done with this entry).
+

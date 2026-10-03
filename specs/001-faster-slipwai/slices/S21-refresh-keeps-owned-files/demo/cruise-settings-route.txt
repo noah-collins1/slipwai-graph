@@ -1,0 +1,28 @@
+$ python3 delivery/scripts/agents/cruise.py --set enabled=true max_iterations=10   (what /cruise-settings runs)
+enabled = true
+max_iterations = 10
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+exit=0
+ M .specify/cruise.json
+$ slipwai adopt --refresh
+  refreshed: nothing; every detected fact stands
+
+0 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+ M .specify/cruise.json
+  "enabled": true,
+  "max_iterations": 10,
+$ rm .specify/drive.json .specify/models.json .specify/product-owner.md; commit; refresh
+  refreshed: nothing; every detected fact stands
+
+3 file(s) rewritten; nothing committed. `git diff` shows the record and what it drives.
+?? .specify/drive.json
+?? .specify/models.json
+?? .specify/product-owner.md
+  "enabled": true,
+  "delegate": "story",
+# [PROJECT_NAME] — the product owner's brief
+$ make -f delivery/Makefile check-agents
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is enabled
+exit=0
