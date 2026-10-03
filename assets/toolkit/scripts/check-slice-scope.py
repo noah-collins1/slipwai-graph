@@ -302,11 +302,12 @@ class Scope:
         files, directories, written = self.host_names()
         if path in files or path.split("/")[0] in directories or path in written:
             return True
-        if DELIVERY != Path("."):
-            inside = Path(path).is_relative_to(DELIVERY)
-            if inside and path not in [(DELIVERY / page).as_posix() for page in SLICE_SURVEY_PAGES]:
-                return True
-        return False
+        slice_pages = [(DELIVERY / page).as_posix() for page in SLICE_SURVEY_PAGES]
+        if DELIVERY == Path("."):
+            # The repository is the delivery directory, so the code is the slice's; only the delivery's own
+            # ledger and survey stay the host's.
+            return path in (".written", "baseline.json") or (path.startswith("survey/") and path not in slice_pages)
+        return Path(path).is_relative_to(DELIVERY) and path not in slice_pages
 
     def host_names(self) -> tuple[set[str], set[str], set[str]]:
         """The host's files, directories and exact paths, read once for the run: the fixed names, the harness

@@ -53,27 +53,31 @@ def git(repo: Path, *arguments: str) -> None:
 
 
 class SliceScopeRootTest(unittest.TestCase):
+    script = "delivery/scripts/check-slice-scope.py"
+
     def repo(self, deployables: dict, model: bool = False, written: str | None = None,
-             registry: bool | str = False, **project: object) -> Path:
+             registry: bool | str = False, delivery: str = "delivery", **project: object) -> Path:
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         repo = Path(directory.name)
         git(repo, "init", "-q", "-b", "main")
         (repo / "project.json").write_text(json.dumps({"deployables": deployables, **project}))
-        (repo / "delivery/scripts/event-model").mkdir(parents=True)
-        shutil.copy(SCRIPTS / "check-slice-scope.py", repo / "delivery/scripts")
-        shutil.copy(SCRIPTS / "event-model/check.py", repo / "delivery/scripts/event-model")
+        home = repo / delivery
+        self.script = f"{delivery}/scripts/check-slice-scope.py"
+        (home / "scripts/event-model").mkdir(parents=True, exist_ok=True)
+        shutil.copy(SCRIPTS / "check-slice-scope.py", home / "scripts")
+        shutil.copy(SCRIPTS / "event-model/check.py", home / "scripts/event-model")
         if written is not None:
-            (repo / "delivery/.written").write_text(written)
+            (home / ".written").write_text(written)
         if registry is True:
-            (repo / "delivery/scripts/agents").mkdir()
-            shutil.copy(SCRIPTS / "agents/registry.json", repo / "delivery/scripts/agents")
+            (home / "scripts/agents").mkdir()
+            shutil.copy(SCRIPTS / "agents/registry.json", home / "scripts/agents")
         elif isinstance(registry, str):
-            (repo / "delivery/scripts/agents").mkdir()
-            (repo / "delivery/scripts/agents/registry.json").write_text(registry)
+            (home / "scripts/agents").mkdir()
+            (home / "scripts/agents/registry.json").write_text(registry)
         if model:
-            (repo / "delivery/docs/event-model").mkdir(parents=True)
-            (repo / "delivery/docs/event-model/model.yaml").write_text(MODEL)
+            (home / "docs/event-model").mkdir(parents=True)
+            (home / "docs/event-model/model.yaml").write_text(MODEL)
         commit_all(repo, "base")
         git(repo, "checkout", "-q", "-b", "slice/S1")
         return repo
@@ -85,7 +89,7 @@ class SliceScopeRootTest(unittest.TestCase):
         target.write_text("x\n")
         try:
             return subprocess.run(
-                ["python3", "delivery/scripts/check-slice-scope.py"], cwd=repo, text=True, capture_output=True,
+                ["python3", self.script], cwd=repo, text=True, capture_output=True,
                 env={**os.environ, "GITHUB_HEAD_REF": "", "CI_COMMIT_REF_NAME": ""},
             )
         finally:
@@ -290,6 +294,13 @@ class SliceScopeRootTest(unittest.TestCase):
         """T006 (AC-S20-2, -8), held: with the root recorded `./`, the host's names are as refused as at `.`."""
         self.refused(self.repo(self.root("./")), "Makefile", "project.json", ".specify/x.json", "AGENTS.md",
                      ".github/workflows/x.yml", "delivery/scripts/x.py")
+
+    def test_delivery_at_the_root_keeps_its_ledger_baseline_and_survey_the_hosts(self) -> None:
+        """T009 (R-3): with the delivery directory the root and a deployable at the root, `.written`, `baseline.json`
+        and the survey pages the slice does not write are the host's; the two it writes, and the code, are not."""
+        repo = self.repo(self.root(), delivery=".", written="lib/generated.py\n")
+        self.refused(repo, ".written", "baseline.json", "survey/survey.md", "survey/other.md", "lib/generated.py")
+        self.green(repo, "survey/pinned.md", "survey/running.md", "tests/test_x.py", "scripts/x.py", "lib/own.py")
 
     def test_a_real_adoption_at_the_root(self) -> None:
         """AC-S20-1, -2 on a tree `slipwai adopt` made: tests are the slice's, the Makefile and a written path not."""
