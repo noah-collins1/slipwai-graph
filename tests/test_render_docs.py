@@ -31,6 +31,9 @@ class SaysItTest(unittest.TestCase):
     def test_e10_the_shipped_readme_says_how_to_force_a_redraw_and_that_there_is_no_setting_or_flag(self) -> None:
         text = flat(README)
         self.assertIn("there is no setting and no flag: delete a diagram, or `segments/` and `slices/`", text)
+        self.assertIn("the installed mermaid-cli, Mermaid and Puppeteer versions", text)
+        self.assertIn("a browser upgraded behind an `executablePath` that config names is not noticed, and deleting "
+                      "`segments/` and `slices/` is the remedy", text)
 
     def test_e10_the_event_model_page_no_longer_says_a_browser_per_diagram(self) -> None:
         text = flat(PAGE)
@@ -42,6 +45,7 @@ class SaysItTest(unittest.TestCase):
         text = FRAGMENT.read_text()
         self.assertEqual(text.splitlines()[0], "PATCH")
         prose = flat(FRAGMENT)
+        self.assertIn("the installed mermaid-cli, Mermaid and Puppeteer versions", prose)
         self.assertIn("Nothing is asked of a repository already generated.", prose)
         self.assertIn("its first `make model` redraws every diagram once, and since the output is ignored nothing "
                       "committed changes", prose)

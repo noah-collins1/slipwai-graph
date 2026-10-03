@@ -135,6 +135,7 @@ class CurrentTest(RenderCase):
             changes = {
                 "mermaid-cli's version": lambda: edit_version("@mermaid-js/mermaid-cli"),
                 "mermaid's version": lambda: edit_version("mermaid"),
+                "puppeteer's version": lambda: edit_version("puppeteer"),
                 "render.ts": edit_script("render.ts"),
                 "render-plan.ts": edit_script("render-plan.ts"),
                 "render-session.ts": edit_script("render-session.ts"),

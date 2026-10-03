@@ -109,16 +109,20 @@ function versionOf(manifest: string): string {
 const DRAWING_SCRIPTS = ['render.ts', 'render-plan.ts', 'render-session.ts', 'patch-mermaid-swimlanes.ts'];
 
 /**
- * Names the renderer that drew a diagram: SHA-256 over the installed mermaid-cli and mermaid versions, the
- * drawing scripts' bytes, and the Puppeteer config's bytes (a fixed word when none is set). Computed once per
- * run, after the install and the patch and before any comparison. Every part is length-prefixed, so two
- * inputs cannot run together into a third that reads the same.
+ * Names the renderer that drew a diagram: SHA-256 over the installed mermaid-cli, mermaid and Puppeteer versions
+ * (in that order), the drawing scripts' bytes, and the Puppeteer config's bytes (a fixed word when none is set).
+ * That is the closed set, and it is every package `launch` loads from the prefix (`entryOf`: mermaid-cli and
+ * Puppeteer) and the mermaid beneath them. A browser a config names by `executablePath` is covered only as far as
+ * the config's bytes: an upgrade behind that path is not noticed. Computed once per run, after the install and the
+ * patch and before any comparison. Every part is length-prefixed, so two inputs cannot run together into a third
+ * that reads the same.
  */
 export function rendererKey(): string {
   const configPath = puppeteerConfigPath();
   const parts: (Buffer | string)[] = [
     versionOf(join(CLI_PREFIX, 'node_modules', '@mermaid-js', 'mermaid-cli', 'package.json')),
     mermaidManifests().map(versionOf).join(','),
+    versionOf(join(CLI_PREFIX, 'node_modules', 'puppeteer', 'package.json')),
     ...DRAWING_SCRIPTS.map((name) => readFileSync(join(SCRIPT_DIR, name))),
     configPath === undefined ? 'no-puppeteer-config' : readConfig(configPath),
   ];

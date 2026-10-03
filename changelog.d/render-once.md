@@ -5,7 +5,8 @@ a browser per diagram and redrew every one on every run — twenty-five browsers
 about sixteen seconds. It now opens one browser session per run, on the first diagram it has to draw, draws up
 to four at a time in it, and closes it on every path, success or failure; a run with nothing to draw opens none.
 A diagram is left when its SVG carries the stamp of the Mermaid the model produces now and the renderer that
-draws it, and ends `</svg>`; under a CI marker (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`) every diagram is drawn,
+draws it (the installed mermaid-cli, Mermaid and Puppeteer versions, the drawing scripts and the Puppeteer config's
+bytes), and ends `</svg>`; under a CI marker (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`) every diagram is drawn,
 as before. A file reaches its name finished or not at all: a failed draw leaves the earlier file, names the
 diagram and exits non-zero. What the model no longer produces is removed by name, and the Mermaid sources, the
 page and the README block are written only where their bytes differ, one `wrote` line each. The run closes by
