@@ -1,7 +1,7 @@
 # Data model: S01-gate-walks
 
 One record, owned by `check-codegraph.py`, at `.codegraph/gate-memory.json` in a project. Not generated, not
-tracked, removed with the index.
+tracked; it goes when `.codegraph/` is removed, and a rebuilt database (another file) is never the one it vouched for.
 
 | Field | What it holds | Why |
 |---|---|---|
@@ -11,4 +11,4 @@ tracked, removed with the index.
 | `rows` | `path → content_hash` for every row of `files` then | A row rewritten, added or removed since is seen by content (rules 5, 6) |
 | `database` | `st_dev`, `st_ino` of `codegraph.db` then | Another or a rebuilt database is never narrowed |
 | `whole` | The moment of the last whole comparison, epoch seconds | Said on the narrowed pass line; kept across renewals |
-| `files` | For every tracked file the index holds a row for: size, modification time and change time in nanoseconds, identity (inode) — four integers, which `os.fstat` gives on every platform, whatever each means there — taken as the file was opened for hashing, and a fifth value, the start of the run that vouched for it | A file whose bytes changed in a way git's comparison normalises away is still seen (D49); a file not safely older than the run that vouched for it is hashed again |
+| `files` | For every tracked file the gate hashed and found equal to its row (a row with no hash, or a file absent from disk, gets no record and is a candidate each run): size, modification time and change time in nanoseconds, identity (inode) — four integers, which `os.fstat` gives on every platform, whatever each means there — taken as the file was opened for hashing, and a fifth value, the start of the run that vouched for it | A file whose bytes changed in a way git's comparison normalises away is still seen (D49); a file not safely older than the run that vouched for it is hashed again |

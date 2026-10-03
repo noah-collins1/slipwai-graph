@@ -253,6 +253,12 @@ that cannot delegate takes the earliest ready slice in split order and names the
   `.ruff_cache`, `.mypy_cache`, `.terraform`, wait for a measurement that shows a walk needs them; `dist` and
   `build` can be source names, as `target` can, and would each need a test of their own. For the completion audit.
 
+- **An adopted application outside `apps/` and `packages/` is read by neither walking gate (D51; S01's gaps pass,
+  walking G5).** `source_files()` in `check-imports.py` and `migrations()` in `check-migrations.py` walk only
+  those two directories; a deployable recorded at `services/legacy` with `layout: hexagonal` passes both with a
+  `domain/` file importing an adapter. Older than S01, which only made it visible (`0 directory entries read`).
+  `LOW`; for the completion audit to place behind the PRD's slices (D39) or rule out.
+
 ## Next Step
 
 Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,

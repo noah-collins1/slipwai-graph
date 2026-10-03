@@ -160,10 +160,12 @@ one self-contained file:
   (another `st_ino`) is not narrowed at all.
 - **Not narrowed → the whole run, with one clause** on the pass line, ` (compared everything: <why>)`, on a slice
   branch only. A failure prints today's report.
-- **Stated readings.** A `touch` that changes no byte is not a change. A tracked file the index has no row for is
-  judged, in a narrowed run, only when it is a candidate; the whole run's rule for such a file reads its
-  modification time, which a `touch` moves — the one place the two can differ, and the whole run is what the
-  merge root and CI run. Damage the read of the rows does not meet waits for the integrity check in the full gate.
+- **Stated readings, as they stand after convergence.** The memory also records, per hashed file, its size, times
+  and identity and the start of the run that vouched for it, and `dirty` also holds every path git was told not to
+  report (D49, T016, T017; [data-model.md](data-model.md) is the record's shape). A `touch` that changes no byte is
+  hashed once and is not a finding (AC-S01-25). A tracked file the index has no row for is judged on a narrowed run
+  by the whole run's own test, whatever git reports (D50, T021). Damage the read of the rows does not meet waits
+  for the integrity check, which runs on the trunk, on any other branch and in CI.
 
 ## Pin
 
