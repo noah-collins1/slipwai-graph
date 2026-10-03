@@ -724,7 +724,7 @@ Two `drive-gaps` delegates (host model, fresh context), one per seam, at `26e3d2
 
 Seven findings under `## S01 · 4357da0` in `specs/001-faster-slipwai/adversary-log.md`, none `CRITICAL`.
 
-- [ ] T030 [US1] **HIGH** (A1, A4; D52 — read the entry: it is the contract) — a slice can commit a `pom.xml`
+- [x] T030 [US1] **HIGH** (A1, A4; D52 — read the entry: it is the contract) — a slice can commit a `pom.xml`
   beside its own `target/` directory and both walking gates stop reading it. **RED** — in
   `tests/test_gate_walks_pom.py` (new): the adversary's reproduction on a Python project (an empty
   `apps/service/src/shop/pom.xml` beside `target/domain/evil.py` importing an adapter and
@@ -744,14 +744,14 @@ Seven findings under `## S01 · 4357da0` in `specs/001-faster-slipwai/adversary-
   `assets/toolkit/scripts/check-imports.py`, `assets/toolkit/scripts/check-migrations.py`,
   `tests/test_gate_walks_pom.py` (new), `tests/test_gate_walks_target.py`, `tests/test_gate_walks.py`,
   `tests/test_gate_walks_counts.py`, `src/slipwai/project/guidance.py`, `docs/services.md`. PATCH.
-- [ ] T031 [US1] **LOW** (A2) — `children()` in `check-migrations.py` leaves a pruned directory out of its
+- [x] T031 [US1] **LOW** (A2) — `children()` in `check-migrations.py` leaves a pruned directory out of its
   parent's entries, so a `contract:` marker naming one (`.venv`, `.git` → a failure where the `ed91b20` script
   passed; `node_modules`, `__pycache__` → *is not a migration beside it* where it said *does not come before it*)
   changes the answer on the project's own file. **RED** — both markers, compared with the `ed91b20` script's exit
   and stderr. **GREEN** closes the class *an entry that is pruned is still an entry*: every reader of a
   directory's entries sees the pruned names; only descent stops. **Files:**
   `assets/toolkit/scripts/check-migrations.py`, `tests/test_gate_walks_pom.py`. PATCH.
-- [ ] T032 [US2] **MEDIUM** (F1) — `narrowed()` reads the index's rows and `drift()` reads them again; a row that
+- [x] T032 [US2] **MEDIUM** (F1) — `narrowed()` reads the index's rows and `drift()` reads them again; a row that
   changes between the two reads is no candidate, is never hashed, and is recorded as vouched for, so every later
   narrowed run passes where the whole run fails. **RED** — in `tests/test_codegraph_races.py` (new): a `git`
   wrapper first on `PATH` that rewrites one row's `content_hash` when the gate calls `git diff`, on `slice/S1`,
@@ -759,7 +759,7 @@ Seven findings under `## S01 · 4357da0` in `specs/001-faster-slipwai/adversary-
   hold the rewritten hash. **GREEN** closes the class *two reads of one provider inside one verdict*: each
   comparison judges, and the record keeps, one read of the rows — including the comparison after a sync.
   **Files:** `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_races.py`. PATCH.
-- [ ] T033 [US2] **MEDIUM** (F2, F3) — `remember()` writes through the fixed name `.codegraph/gate-memory.json.tmp`:
+- [x] T033 [US2] **MEDIUM** (F2, F3) — `remember()` writes through the fixed name `.codegraph/gate-memory.json.tmp`:
   a symbolic link committed there (`git add -f`) has its target overwritten with the record on the first passing
   run — on the trunk too — and `git status` shows a deletion; a FIFO there hangs the run. **RED** — the link
   (its target's bytes unchanged afterwards, `git status` unchanged by the run, on `slice/S1` and on `main`); a
