@@ -470,6 +470,97 @@
         "split": 0,
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "gaps",
+      "started": "2026-10-03T11:50:22Z",
+      "planned": "gaps: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 1,
+          "done": 14
+        },
+        "end": {
+          "open": 1,
+          "done": 14
+        }
+      },
+      "ended": "2026-10-03T11:54:39Z",
+      "seconds": 257,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b.jsonl": 1500932,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a052e3822d27ec585.jsonl": 282567,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a0850c3d64c2bf9d1.jsonl": 247035,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a13ea7196b0b433db.jsonl": 208779,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a50d7dbdfe95b51f3.jsonl": 290465,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a66920cd29d360b0a.jsonl": 234557,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a8e1e3ff30cea4feb.jsonl": 472591,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a93efaa62c8602732.jsonl": 283287,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a97b18686016d8c72.jsonl": 322194,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a9aabff84762dc088.jsonl": 232229,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a9fb69f62f4a8a60b.jsonl": 270522,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-aa31e2fc32a516b2a.jsonl": 307456,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-aa33268a35236a3e3.jsonl": 277169,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-aab8dd52e487cc944.jsonl": 266432,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-ac84f7549d97a12b2.jsonl": 270609,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-afd129d6592ea14a3.jsonl": 243601
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b.jsonl": 1537745,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a052e3822d27ec585.jsonl": 282567,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a0850c3d64c2bf9d1.jsonl": 247035,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a13ea7196b0b433db.jsonl": 208779,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a50d7dbdfe95b51f3.jsonl": 290465,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a66920cd29d360b0a.jsonl": 234557,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a8e1e3ff30cea4feb.jsonl": 472591,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a93efaa62c8602732.jsonl": 283287,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a97b18686016d8c72.jsonl": 322194,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a9aabff84762dc088.jsonl": 232229,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-a9fb69f62f4a8a60b.jsonl": 270522,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-aa31e2fc32a516b2a.jsonl": 307456,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-aa33268a35236a3e3.jsonl": 277169,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-aab8dd52e487cc944.jsonl": 266432,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-ac84f7549d97a12b2.jsonl": 270609,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-ae652a109c3c2a264.jsonl": 427615,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/c1b709e2-1677-4e9f-935e-0acf76c27c0b/subagents/agent-afd129d6592ea14a3.jsonl": 243601
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "c1b709e2-1677-4e9f-935e-0acf76c27c0b",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-fable-5-1": {
+            "input": 2,
+            "output": 1522,
+            "cache_read": 235305,
+            "cache_creation": 2576
+          }
+        },
+        "subagents": {
+          "claude-fable-5-1": {
+            "input": 46,
+            "output": 4278,
+            "cache_read": 1367318,
+            "cache_creation": 82493
+          }
+        },
+        "agents": [
+          "drive-gaps"
+        ]
+      },
+      "ran": [
+        "claude-fable-5-1"
+      ],
+      "agents": [
+        "drive-gaps"
+      ],
+      "delegated": true,
+      "signals": {
+        "gaps": 6,
+        "driver": "cruise"
+      }
     }
   ]
 }

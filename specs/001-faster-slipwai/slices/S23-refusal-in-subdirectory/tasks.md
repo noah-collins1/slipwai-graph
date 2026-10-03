@@ -467,3 +467,31 @@ not be made with a real repository, so that half of the test is held through `st
 repeats the second run, the edit on top and the file outside the project; the second-run and edit-on-top
 assertions were not seen failing on their own (every mutation tried fails the first refusal first).
 Pass 1's verdict stands: converged, nothing `HIGH` or `CRITICAL`, no second pass.
+
+## Phase 4: Gaps after converge (appended 2026-10-03; host, from the `drive-gaps` pass at `60d0284`; D43)
+
+### T016 — What the refusal and the fragment tell a person can be followed (`MEDIUM` G1, `LOW` G2, G3 · AC-S23-9, AC-S23-11)
+
+- [ ] Three findings on one surface — the words a refused person reads.
+
+**RED** (in `tests/test_uncommitted_subdirectory.py`):
+- G2 — a refusal's stderr says the paths it names are spelled from the project's directory; asserted in `sub/` and,
+  in a new example beside (not in) `tests/test_uncommitted.py`, at the top of a repository. Fails today: the message
+  has no such clause.
+- G3 — `test_an_earlier_factorys_uncommitted_leftovers_are_refused_once_naming_them` asserts the names the message
+  prints: the first eight leftovers in sorted order, each backticked, and *and N more* with N the rest. Tightening
+  a test that passes: seen failing by cutting the message's list to seven in the working tree, then restored.
+
+**GREEN names the sweep:** every sentence of advice the refusal and the fragment give — `refuse_foreign()`'s message
+gains one clause after the names, in plain words, the same at the top and below it, keeping every word
+`tests/test_uncommitted.py` asserts; the fragment's catch-up says to commit the named files and run again, with *or
+stash them* taken out (G1: a stash takes the uncommitted answer in `project.json` with it and the refusal returns
+after `git stash pop`), and gains a clause that the message now says where its names are spelled from. Each sentence
+is read against a run in the state it describes: follow the catch-up as written in a scratch repository under `/tmp`
+(the gaps pass's reproduction: a row settled, a refresh, `written.json` emptied to `{}`, the refusal, then what the
+fragment says to do) and see the next run exit 0.
+
+**Verify:** `make test TESTS="test_uncommitted test_uncommitted_subdirectory test_uncommitted_places test_refresh_owned
+test_changelog"`, then `make lint typecheck check-structure`. Commit, level line (PATCH, `VERSION` not raised).
+
+**Files:** `src/slipwai/uncommitted.py`, `tests/test_uncommitted_subdirectory.py`, `changelog.d/refusal-in-subdirectory.md`.

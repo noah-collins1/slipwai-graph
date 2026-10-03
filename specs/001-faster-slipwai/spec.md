@@ -661,9 +661,13 @@ with the adoption committed, a sibling directory `other/` beside it, and every c
   run ends as it did before, writing nothing.
 - **AC-S23-9** — Given a repository adopted in a subdirectory where an earlier factory's `--confirm` or `--refresh`
   left regenerated files uncommitted (it recorded nothing there), when the first run after this change meets them,
-  then it refuses naming them, as it does a person's edit — it cannot tell the two apart — and committing or
-  stashing once is what clears it (D37). The fragment says so.
+  then it refuses naming them, as it does a person's edit — it cannot tell the two apart — and committing them
+  once is what clears it (D37; *or stashing* taken out by D43: a stash takes the uncommitted answers with it).
+  The fragment says so.
 - **AC-S23-10** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
   whose first line is `PATCH`, which says *experimental: brownfield adoption*, what was lost before, and what
   AC-S23-9 asks of a repository already adopted; `VERSION` stays `1.5.2.dev0`; and `slipwai add-service`'s own
   refusal — any uncommitted change anywhere in the repository — is not changed by this slice.
+- **AC-S23-11** — *Added by D43 (gaps G2).* Given any refusal, at the top of a repository or below it, then the
+  message says the paths it names are spelled from the project's directory, so a person typing a git command
+  elsewhere in the repository knows where they are names from.

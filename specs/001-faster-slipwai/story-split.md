@@ -225,6 +225,13 @@ that cannot delegate takes the earliest ready slice in split order and names the
   needs git, exit 2 — never *as not a repository*, which would let a run write over an edit it could not see — swept
   over every `git` call an adopted project's commands reach (`uncommitted.py`, `structure.py`, `quick_wins.py`,
   `add_service.py`'s `refuse_uncommitted`). `LOW`; behind the PRD's slices (D39).
+- **Older findings of S23's after-converge gaps pass (D43), behind the PRD's slices (D39).** *O1, `MEDIUM`:* the
+  `/survey` page adoption ships (`src/slipwai/project/pin_commands.py`, *`git status --porcelain` prints nothing. The
+  command refuses an unclean tree …*) and `src/slipwai/resurvey.py`'s docstring describe the refusal as it was before
+  `uncommitted.py`; an agent following step 1 in a subdirectory project stops on a neighbour's work, and the undo it
+  promises would discard uncommitted answers. A shipped page: a PATCH with a fragment. *O2, `LOW`:* `adopt` ends on a
+  `CalledProcessError` traceback from `git add`, with its files written and partly staged, where a global excludes
+  file names a path it writes. *O3, `LOW`:* the refusal prints *each holds* for a single path.
 
 ## Next Step
 
