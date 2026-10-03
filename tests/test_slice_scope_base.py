@@ -35,6 +35,10 @@ class SliceScopeBaseTest(SliceScopeFixtures):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("touches only what one slice may", result.stdout)
 
+    def short(self, repo: Path, ref: str) -> str:
+        return subprocess.run(["git", "rev-parse", "--short", ref], cwd=repo, text=True, capture_output=True,
+                              check=True).stdout.strip()
+
     def host_change_at_head(self) -> Path:
         repo = self.repo(self.root())
         self.commit(repo, "Makefile")
@@ -157,6 +161,16 @@ class RecordedNameTest(SliceScopeBaseTest):
         self.record(repo, "-x")
         self.assertIn("`ci.branch` names `-x`, which is not a branch name", self.run_gate(repo).stderr)
 
+    def test_a_name_git_refuses_is_said_not_to_be_a_branch_name(self) -> None:
+        """`a..b` and `a b` are no branch names, so they are never said to be `has no branch here`."""
+        for value in ("a..b", "a b"):
+            with self.subTest(value=value):
+                repo = self.repo(self.root())
+                self.record(repo, value)
+                stderr = self.run_gate(repo).stderr
+                self.assertIn(f"`ci.branch` names `{value}`, which is not a branch name", stderr)
+                self.assertNotIn("has no branch here", stderr)
+
 
 class ForgeTargetTest(SliceScopeBaseTest):
     """R3: the forge's target is a second candidate, and across two names the older base wins."""
@@ -213,13 +227,26 @@ class ForgeTargetTest(SliceScopeBaseTest):
                 self.assertNotEqual(result.returncode, 0, "the slice's own ref was taken as the base")
                 self.assertIn("has no `main` to compare with", result.stderr)
 
+    def test_two_bases_neither_older_move_the_base_to_where_their_histories_meet(self) -> None:
+        """`main` and the target `feature` each moved on from the same commit; the slice has merged both, so its
+        base against each is a different commit and neither is an ancestor of the other: the base is the commit
+        they both came from."""
+        repo = self.repo(self.root())
+        fork = self.short(repo, "HEAD")
+        git(repo, "checkout", "-q", "-b", "feature")
+        self.commit(repo, "specs/f/slices/S1/feature.md")
+        git(repo, "checkout", "-q", "main")
+        self.commit(repo, "specs/f/slices/S1/main.md")
+        git(repo, "checkout", "-q", "slice/S1")
+        git(repo, "merge", "-q", "--no-edit", "main")
+        git(repo, "merge", "-q", "--no-edit", "--no-ff", "feature")
+        result = self.run_gate(repo, {"GITHUB_BASE_REF": "feature"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"at {fork})", result.stdout)
+
 
 class ReportTest(SliceScopeBaseTest):
     """R4: the line says which trunk and which commit were compared."""
-
-    def short(self, repo: Path, ref: str) -> str:
-        return subprocess.run(["git", "rev-parse", "--short", ref], cwd=repo, text=True, capture_output=True,
-                              check=True).stdout.strip()
 
     def test_the_pass_line_names_the_trunk_and_the_base_commit(self) -> None:
         """e1: the words before the bracket are unchanged."""
