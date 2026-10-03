@@ -490,7 +490,15 @@ Generated artifacts:
 Everything `make model` writes is generated on demand and not committed: it takes a headless browser to
 draw, so nothing that runs on every commit could prove a committed copy current, and a picture that can
 quietly stop matching the model is worse than none. The pages workflow redraws it all on every model
-change. **GitHub's Markdown renderer runs a Mermaid older than 11.15**, so a fenced `eventmodeling`
+change.
+
+`make model` opens one browser per run, on the first diagram it has to draw, and draws only the diagrams
+whose source or renderer changed since the SVG on disk was drawn; a run with nothing to draw opens none, and
+under a CI marker (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`) every diagram is drawn. To force a redraw there is no
+setting and no flag: delete a diagram, or `segments/` and `slices/`, and the next `make model` draws what is
+missing.
+
+**GitHub's Markdown renderer runs a Mermaid older than 11.15**, so a fenced `eventmodeling`
 block will not draw there — check what it runs today by putting a fenced `info` diagram in a comment, which
 renders as the version string. Where the README needs a picture, `make model` embeds the segment SVGs
 inside its markers, or links the published page once `render.page` is set.

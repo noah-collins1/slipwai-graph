@@ -111,6 +111,12 @@ because it pulls a headless browser — making every `npm install` pay for that 
 a diagram is a poor trade. The prefix also lets `make model` apply mermaid-js/mermaid#7986 until mermaid-cli
 ships it, so grouped swimlanes work in the committed SVG.
 
+A run draws through one browser, opened on the first diagram it has to draw, and draws only the diagrams whose
+source or renderer changed; each SVG carries a second comment line naming the renderer it was drawn by, and a
+run with nothing to draw opens no browser. Under a CI marker every diagram is drawn. A file reaches its name
+finished or not at all, and what the model no longer produces is removed by name. There is no setting to force
+a redraw: delete a diagram, or `segments/` and `slices/`.
+
 `render.lanes` chooses what each band's swimlanes group by, independently, because Mermaid resolves a
 namespace within a band rather than across the diagram. The defaults are the notation's own picture:
 `ui: actor` puts a lane per actor across the top, `events: stream` a lane per stream across the bottom, and
