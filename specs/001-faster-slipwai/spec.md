@@ -1104,7 +1104,8 @@ two iterations silently.*
   `## D<n> — <question>`, when the verb runs, then that block is printed in its place and counted on the closing
   line as carried for want of a heading it can read, what was printed and what was counted agree, and the verb
   exits 1 saying the log does not pass `check-decisions`. A byte-order mark at the start of the file is read past
-  by the gate and the verb alike. And given any log with no `Scope:` line that is UTF-8, then the gate's exit code
+  by the verb, which prints and counts the first entry as an entry; the gate reads such a log as the earlier checker
+  did. And given any log with no `Scope:` line that is UTF-8, then the gate's exit code
   and findings are the earlier checker's (C6). (D63, D65)
 - **AC-S02-86** — Given a `decisions.md` that is not UTF-8, when the gate or the verb runs, then it prints one
   line naming the file and exits 1, with no traceback (C9). (D63)

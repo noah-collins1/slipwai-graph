@@ -112,6 +112,15 @@ that cannot delegate takes the earliest ready slice in split order and names the
   (`S09`, `S10`), each a MINOR; the PRD's E9 is their source. No finished slice is re-opened for them: the entries
   D1 to D62 gain no `Reversibility:` line by hand, and `S02`'s `Scope:` line stands as shipped. `S28` waits on
   `S14-result-contract` for FR-032, wherever the order puts it.
+- **What S02's adversary pass and demo left (D63, D64), behind the PRD's slices (D39), for the completion audit.**
+  *`LOW`, older:* a line of harness output shaped like the stream's marker, or bytes that are not UTF-8, ends the
+  runner with the iteration unrecorded (A4); a file name under `specs/` that is not UTF-8 ends the run (A5). *From
+  D64:* containing what an iteration leaves behind (a cgroup or a subreaper, Linux only); comparing controls across
+  two runner processes; the runner saying a process outside the iteration's group was left. *The hand's notes:* a
+  tracked file with an uncommitted change is hashed on every `health()` until committed; under a CI marker
+  `health()`'s line has no clause saying it compared everything; an entry written under `CRUISE_HARNESS_COMMAND`
+  names an initialised harness, not `override`. *A person's:* whether the gate should refuse a second `Status:`
+  line in an entry (D65 — it notes it today).
 - **From S02's gaps review (D58, D60), for the completion audit to place.** A line of `specs/cruise-log.jsonl` that
   does not parse ends the run on a traceback, before the slice and after — a one-line message in its place is an
   older defect (D39's order). `status` reads the raw stream three times in one invocation; it is on demand and not

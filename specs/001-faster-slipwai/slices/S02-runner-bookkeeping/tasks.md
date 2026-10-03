@@ -694,7 +694,7 @@ Each is a failing test first, then the smallest change; each GREEN closes its cl
 
 ### T028 — [MEDIUM] The gate refuses nothing a log written before this release can contain (D65 · AC-S02-57, -83, -85)
 
-- [ ] `check-decisions.py`: a second `Status:` line is a `note:`, not a finding; a byte-order mark at the start of the
+- [x] *(2bd37b8; the gate reads a byte-order mark as the earlier checker did, only the verb reads past it — D65 as settled)* `check-decisions.py`: a second `Status:` line is a `note:`, not a finding; a byte-order mark at the start of the
   file is read past by the gate and the verb; a differential example holds the gate's exit code and findings to the
   checker at `596740f` over a set of logs with no `Scope:` line. The fragment gains the sentences T026 and T027 handed
   back, as D65 leaves them.
