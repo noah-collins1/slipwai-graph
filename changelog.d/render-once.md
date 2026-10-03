@@ -17,3 +17,5 @@ same bytes as before, below one added comment line. To force a redraw, delete a 
 **Catch-up.** Nothing is asked of a repository already generated. After `slipwai migrate` its first
 `make model` redraws every diagram once, and since the output is ignored nothing committed changes; a repository that
 removed the ignore lines and commits its diagrams sees the second comment line in each SVG, once.
+A repository that edited `render.ts` may meet a conflict there when `slipwai migrate` carries it forward, because the
+renderer's pin, width and browser handling moved to `render-session.ts`.

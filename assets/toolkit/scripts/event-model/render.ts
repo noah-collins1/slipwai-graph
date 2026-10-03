@@ -20,6 +20,7 @@ import {
   planDiagrams,
   readSvg,
   removeOrphans,
+  underCiMarker,
   writeIfDifferent,
   type Diagram,
 } from './render-plan.ts';
@@ -131,6 +132,7 @@ async function main(): Promise<void> {
     drawn: stale.length,
     unchanged: diagrams.length - stale.length,
     sessionOpened: session.opened,
+    underCi: underCiMarker(),
   };
   console.log(closingLine(report, MODEL_HTML.replaceAll('\\', '/')));
 }

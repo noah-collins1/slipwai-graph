@@ -5,15 +5,31 @@ carries it makes every diagram whose source names that slice refuse to draw.
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import FAIL_MARKER, IS_WINDOWS, MODEL_DIR, WINDOWS_SKIP, RenderCase, sha256_of, write_model, wrote
+from render_fixture import (
+    EVENT_MODEL,
+    FAIL_MARKER,
+    IS_WINDOWS,
+    MODEL_DIR,
+    WINDOWS_SKIP,
+    RenderCase,
+    sha256_of,
+    write_model,
+    wrote,
+)
 
 NAMES = [f"Do thing {i}" for i in range(1, 17)]
+
+
+PROBE_NAME = """import { temporaryPath } from './render-plan.ts';
+console.log(JSON.stringify([temporaryPath('slice', 'docs/event-model/slices/S1.svg'), process.pid]));
+"""
 
 
 @unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
@@ -105,6 +121,33 @@ class FinishedFilesTest(RenderCase):
             self.assertEqual({n: (root / n).stat().st_mtime_ns for n in names}, marks)
             for name in ("slices/S1.mmd", "slices/S2.mmd"):
                 self.assertNotIn(sha256_of(root / name), log.drawn_sources, "a current slice is not drawn again")
+
+    def test_e18_a_temporary_is_named_for_the_process_that_writes_it_so_two_runs_never_share_one(self) -> None:
+        # The name is read through a probe importing the naming `writeFinished` uses: a draw cannot be held mid-write.
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 1)
+            self.model_log(repo)  # the project's own run, which installs the TypeScript runner the probe needs
+            script = repo / EVENT_MODEL / "probe-name.mts"
+            script.write_text(PROBE_NAME)
+            done = subprocess.run(
+                ["node", str(repo / EVENT_MODEL / "node_modules/tsx/dist/cli.mjs"), str(script)],
+                cwd=repo, text=True, capture_output=True, env=os.environ.copy())
+            self.assertEqual(done.returncode, 0, done.stderr)
+            path, pid = json.loads(done.stdout)
+            self.assertEqual(Path(path).name, f".tmp-slice-{pid}-S1.svg")
+            self.assertEqual(Path(path).parent.name, "slices")
+
+    def test_e18_hold_a_leftover_temporary_of_any_process_is_removed_before_drawing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 2)
+            self.model_log(repo)
+            root = repo / MODEL_DIR
+            leftovers = [root / "slices/.tmp-slice-4242-S1.svg", root / "slices/.tmp-global-1-model.png",
+                         root / "slices/.tmp-slice-S9.svg"]
+            for leftover in leftovers:
+                leftover.write_text("<svg")
+            self.model_log(repo)
+            self.assertEqual(self.leftovers(repo), [])
 
     def test_e11_an_empty_model_after_a_run_that_left_files_removes_every_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

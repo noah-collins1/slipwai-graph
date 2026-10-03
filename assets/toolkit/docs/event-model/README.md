@@ -499,6 +499,8 @@ setting and no flag: delete a diagram, or `docs/event-model/model.svg`, `segment
 missing. What counts as a change of renderer is the installed mermaid-cli, Mermaid and Puppeteer versions, the
 drawing scripts and your Puppeteer config's bytes; a browser upgraded behind an `executablePath` that config names
 is not noticed, and deleting `docs/event-model/model.svg`, `segments/` and `slices/` is the remedy.
+Run `make model` once per tree at a time: a second run in the same tree may remove the first's temporary file as a
+leftover, and that run then fails naming the file; the next run draws it.
 
 **GitHub's Markdown renderer runs a Mermaid older than 11.15**, so a fenced `eventmodeling`
 block will not draw there — check what it runs today by putting a fenced `info` diagram in a comment, which

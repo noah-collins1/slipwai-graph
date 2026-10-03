@@ -40,6 +40,12 @@ class SaysItTest(unittest.TestCase):
                       f"{REMEDY} is the remedy", text)
         self.assertNotIn("or `segments/` and `slices/`", text)
 
+    def test_e18_the_shipped_readme_says_one_run_per_tree_at_a_time_and_what_a_second_run_meets(self) -> None:
+        text = flat(README)
+        self.assertIn("Run `make model` once per tree at a time: a second run in the same tree may remove the first's "
+                      "temporary file as a leftover, and that run then fails naming the file; the next run draws it.",
+                      text)
+
     def test_e10_the_event_model_page_no_longer_says_a_browser_per_diagram(self) -> None:
         text = flat(PAGE)
         self.assertNotRegex(text, r"(?i)browser (per|for each|for every) diagram")
@@ -53,6 +59,10 @@ class SaysItTest(unittest.TestCase):
         self.assertIn("the installed mermaid-cli, Mermaid and Puppeteer versions", prose)
         self.assertIn(f"delete a diagram, or {REMEDY}", prose)
         self.assertIn("Nothing is asked of a repository already generated.", prose)
+        self.assertIn("A repository that edited `render.ts` may meet a conflict there when `slipwai migrate` carries "
+                      "it forward, because the renderer's pin, width and browser handling moved to "
+                      "`render-session.ts`.",
+                      prose)
         self.assertIn("its first `make model` redraws every diagram once, and since the output is ignored nothing "
                       "committed changes", prose)
         self.assertIn("removed the ignore lines and commits its diagrams sees the second comment line in each SVG",

@@ -66,6 +66,20 @@ class ReportTest(RenderCase):
             png = f"model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged. {OPEN}"
             self.assertEqual(self.closing(repo, PNG="1"), png)
 
+    def test_e19_under_a_ci_marker_the_closing_line_says_one_clause_why_everything_was_drawn(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 1)
+            self.closing(repo)
+            for marker in ("CI", "GITHUB_ACTIONS", "GITLAB_CI"):
+                with self.subTest(marker=marker):
+                    self.assertEqual(
+                        self.closing(repo, **{marker: "true"}),
+                        f"model: 1 slice, 3 of 3 diagrams drawn, 0 unchanged; everything was drawn because a CI "
+                        f"marker is set. {OPEN}")
+            self.assertEqual(self.closing(repo, CI=""),
+                             f"model: 1 slice, 0 of 3 diagrams drawn, 3 unchanged; no browser started. {OPEN}",
+                             "a marker that is empty is none")
+
     def test_e13_a_one_slice_model_agrees_its_nouns_with_their_counts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.project(directory, 1)

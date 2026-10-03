@@ -56,6 +56,9 @@ const IN_FLIGHT = 4;
 /** The environment markers of a CI run; under any of them nothing is left, so the gate's picture is drawn fresh. */
 const CI_MARKERS = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI'];
 
+/** Whether a CI marker is set, to a value; under one every diagram is drawn, and the closing line says so. */
+export const underCiMarker = (): boolean => CI_MARKERS.some((name) => (process.env[name] ?? '') !== '');
+
 const sourceStamp = (diagram: Diagram): string => {
   const hash = extractHash(diagram.source);
   if (hash === undefined) {
@@ -72,7 +75,7 @@ const rendererStamp = (key: string): string => `<!-- em-renderer-sha256: ${key} 
  * is not a CI run. Anything else, an absent or torn file included, is drawn.
  */
 export function isCurrent(diagram: Diagram, key: string): boolean {
-  if (CI_MARKERS.some((name) => (process.env[name] ?? '') !== '')) return false;
+  if (underCiMarker()) return false;
   let text: string;
   try {
     text = readFileSync(join(ROOT, diagram.svg), 'utf8');
@@ -105,13 +108,21 @@ export function removeOrphans(diagrams: readonly Diagram[]): void {
 }
 
 /**
+ * Where a file is written before it is renamed: the name carries this process's id, so two runs in one tree never
+ * write the same temporary. `removeOrphans` takes any `.tmp-` entry, whichever process left it.
+ */
+export function temporaryPath(kind: Diagram['kind'], path: string): string {
+  return join(ROOT, SLICE_DIR, `.tmp-${kind}-${String(process.pid)}-${basename(path)}`);
+}
+
+/**
  * A file reaches its name finished, or not at all: written whole beside it and renamed over it, so nothing that
  * reads the output (the gate, a browser, `git`) ever sees half of one. The temporary sits in `slices/`, which
- * is already ignored and on the same filesystem as every output; its name — a leading dot, a kind, the file's
- * own name — is one the model never produces, so `removeOrphans` takes one a killed run left behind.
+ * is already ignored and on the same filesystem as every output; its name — a leading dot, a kind, the process id, the
+ * file's own name — is one the model never produces, so `removeOrphans` takes one a killed run left behind.
  */
 function writeFinished(kind: Diagram['kind'], path: string, bytes: string | Uint8Array): void {
-  const temporary = join(ROOT, SLICE_DIR, `.tmp-${kind}-${basename(path)}`);
+  const temporary = temporaryPath(kind, path);
   try {
     mkdirSync(dirname(temporary), { recursive: true });
     writeFileSync(temporary, bytes);
@@ -201,11 +212,14 @@ export interface Report {
   drawn: number;
   unchanged: number;
   sessionOpened: boolean;
+  /** A CI marker is set: everything was drawn for that reason, and the line says so. */
+  underCi?: boolean;
 }
 
 export function closingLine(report: Report, pagePath: string): string {
   const noun = (count: number, word: string): string => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
   const counts = `${noun(report.slices, 'slice')}, ${String(report.drawn)} of ${noun(report.diagrams, 'diagram')} drawn, ${String(report.unchanged)} unchanged`;
   const browser = report.sessionOpened ? '' : '; no browser started';
-  return `model: ${counts}${browser}. Open ${pagePath} to browse it.`;
+  const ci = report.underCi === true ? '; everything was drawn because a CI marker is set' : '';
+  return `model: ${counts}${browser}${ci}. Open ${pagePath} to browse it.`;
 }
