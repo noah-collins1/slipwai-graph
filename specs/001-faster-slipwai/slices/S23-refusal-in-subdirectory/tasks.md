@@ -495,3 +495,21 @@ fragment says to do) and see the next run exit 0.
 test_changelog"`, then `make lint typecheck check-structure`. Commit, level line (PATCH, `VERSION` not raised).
 
 **Files:** `src/slipwai/uncommitted.py`, `tests/test_uncommitted_subdirectory.py`, `changelog.d/refusal-in-subdirectory.md`.
+
+## Phase 4: After acceptance (appended 2026-10-03; host, from the hand's notes on demo 1; D44)
+
+### T017 — The catch-up can be followed when the message cuts its list (`LOW` · the hand's notes 2, 3 · AC-S23-9)
+
+- [ ] After one `--confirm` the catch-up refusal names eight files *and 57 more*; the fragment says *Commit the files
+  it names*. What clears it is committing the project's uncommitted regeneration as a whole.
+
+**GREEN:** the fragment's catch-up says, in one clause, the command that does it where the list is cut short —
+`git add -A . && git commit` typed in the project's directory — and that this commits everything uncommitted under
+the project, which is the one change `/ground` ends in anyway. Read against a run: the state from the hand's
+evidence (`demo/ac9-catch-up-as-written.txt`), the command as the fragment prints it, the next run exit 0, the
+settled answer still in `project.json`. `quickstart.md` step 2 gives the command that settles the row (the host
+writes that file). No test changes: `tests/test_changelog.py` holds the fragment's shape.
+
+**Verify:** `make test TESTS="test_changelog"`, `make lint`. Commit, level line (PATCH, `VERSION` not raised).
+
+**Files:** `changelog.d/refusal-in-subdirectory.md`.
