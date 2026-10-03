@@ -38,6 +38,12 @@ is unreadable whole: the gate refuses each, naming the entry, and the verb carri
 each overridden entry with what overrode it, writes nothing, and needs `--feature` only when `specs/` holds more
 than one `decisions.md`.
 
+A call it does not understand is usage and exit 2, never a run of something else: `--scope` wants an id of upper-case
+letters and a number, `--feature` a name, each once, and `--help` prints the usage and exits 0. A block under a `##`
+heading it cannot read as `## D<n> — <question>` (or a byte-order mark before the first entry) is printed in its place
+and counted as carried for want of a heading it can read, and the verb then exits 1 saying the log does not pass. A
+log that is not UTF-8 is one line naming the file and exit 1, for the gate and for the verb alike.
+
 `python3 scripts/check-decisions.py --adversary-baseline` is for a project that migrated across that last rule: it
 writes, once, a `## <id> · predates the adversary gate · <date>` row for every done slice without one, which the gate accepts
 and which says the slice was never attacked. A second baseline is refused.
@@ -82,7 +88,22 @@ PLACEHOLDER = re.compile(r"<[^>]*>")
 # A slice id as `done_slices()` reads it: the released head, then a slug after `-` or `.` that ends on a letter or digit.
 # ASCII only: a digit that is not 0-9 is not a number the filter can compare.
 SLICE_ID = re.compile(r"[A-Za-z]+[0-9]+(?![A-Za-z0-9_])(?:[.-][A-Za-z0-9._-]*[A-Za-z0-9])?")
+# What `--scope` accepts: the same shape, its letters upper case.
+WANTED_ID = re.compile(r"[A-Z]+[0-9]+(?![A-Za-z0-9_])(?:[.-][A-Za-z0-9._-]*[A-Za-z0-9])?")
 HEAD = re.compile(r"([A-Za-z]+)([0-9]+)")
+USAGE = "usage: check-decisions.py [--scope <slice-id> [--feature <name>] | --adversary-baseline | --help]"
+
+
+class NotUtf8(Exception):
+    """A log the gate reads as text and cannot: said in one line naming the file, never as a traceback."""
+
+
+def read(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as error:
+        raise NotUtf8(f"{path.relative_to(ROOT).as_posix()}: not UTF-8 ({error.reason} at byte {error.start}); "
+                      "the gate reads every log as UTF-8 text") from error
 
 
 class Fields(dict[str, str]):
@@ -106,7 +127,7 @@ def entries(text: str, heading: re.Pattern[str]) -> list[Entry]:
     """Each entry as (line number, its heading match or None for a heading in the wrong shape, its fields)."""
     found: list[Entry] = []
     for number, line in enumerate(lines_of(text), start=1):
-        if line.startswith("## "):
+        if line.startswith("## ") or (number == 1 and line.startswith("\ufeff## ")):  # a mark before the first entry
             found.append((number, heading.match(line), Fields()))
         elif found and (field := FIELD.match(line)):
             label = field.group(1).split(":")[0].strip()
@@ -168,7 +189,7 @@ def scope_notes(path: Path) -> list[str]:
     """One note per entry with no `Scope:` line after an entry that has one: it is carried as global."""
     relative = path.relative_to(ROOT).as_posix()
     notes, seen = [], False
-    for line, heading, fields in entries(path.read_text(encoding="utf-8"), DECISION_HEADING):
+    for line, heading, fields in entries(read(path), DECISION_HEADING):
         if heading is None:
             continue
         if "Scope" in fields:
@@ -183,7 +204,7 @@ def check_decisions(path: Path) -> list[str]:
     relative = path.relative_to(ROOT).as_posix()
     findings: list[str] = []
     expected = 1
-    for line, heading, fields in entries(path.read_text(encoding="utf-8"), DECISION_HEADING):
+    for line, heading, fields in entries(read(path), DECISION_HEADING):
         where = f"{relative}:{line}"
         if heading is None:
             findings.append(f"{where}: a heading that is not `## D<n> — <question>`")
@@ -219,7 +240,7 @@ def check_decisions(path: Path) -> list[str]:
 def check_demo_log(path: Path) -> list[str]:
     relative = path.relative_to(ROOT).as_posix()
     findings: list[str] = []
-    for line, heading, fields in entries(path.read_text(encoding="utf-8"), DEMO_HEADING):
+    for line, heading, fields in entries(read(path), DEMO_HEADING):
         where = f"{relative}:{line}"
         if heading is None:
             findings.append(f"{where}: a heading that is not `## <instant> — <verdict> · iteration <n> · drive-hand (<model>)`")
@@ -244,7 +265,7 @@ def implemented() -> list[tuple[str, str | None]]:
     model = ROOT / "docs/event-model/model.yaml"
     found: list[tuple[str, str | None]] = []
     if model.is_file():
-        for block in re.split(r"^\s*- id:\s*", model.read_text(encoding="utf-8"), flags=re.M)[1:]:
+        for block in re.split(r"^\s*- id:\s*", read(model), flags=re.M)[1:]:
             ident = block.split("\n", 1)[0].strip().strip("'\"")
             if ident and re.search(r"^\s*status:\s*implemented\s*$", block, re.M):
                 named = re.search(r"^\s*(?:spec|gwt):\s*['\"]?specs/([^/\s'\"]+)/", block, re.M)
@@ -259,7 +280,7 @@ def done_slices(feature: Path) -> set[str]:
     done: set[str] = set()
     register = feature / "slices/README.md"
     if register.is_file():
-        for line in register.read_text(encoding="utf-8").splitlines():
+        for line in read(register).splitlines():
             if line.strip().startswith("|"):
                 first = line.strip().strip("|").split("|")[0].strip().strip("`")
                 # the released head (letters, digits, a word boundary), then a slug after `-` or `.` that ends on a letter or digit
@@ -299,7 +320,7 @@ def check_adversary_rows() -> list[str]:
         if not done:
             continue
         log = feature / ADVERSARY_LOG
-        for ident in lacking_rows(done, log.read_text(encoding="utf-8") if log.is_file() else ""):
+        for ident in lacking_rows(done, read(log) if log.is_file() else ""):
             findings.append(f"{log.relative_to(ROOT).as_posix()}: no row for {ident}, which is done — `/adversary` runs "
                             "after every acceptance and records the attack or the skip; an unwritten row is a pass "
                             "that has to be run again")
@@ -315,7 +336,7 @@ def baseline() -> int:
     migrated across the gate, whose history cannot be attacked honestly after the fact; refused where any log
     already carries a baseline row, so it is the done set at one moment and not a way past the gate afterwards."""
     logs = sorted(SPECS.glob(f"*/{ADVERSARY_LOG}")) if SPECS.is_dir() else []
-    taken = [log for log in logs if f"· {PREDATES}" in log.read_text(encoding="utf-8")]
+    taken = [log for log in logs if f"· {PREDATES}" in read(log)]
     if taken:
         print(f"check-decisions: a baseline was already taken ({taken[0].relative_to(ROOT).as_posix()}); a slice "
               "finished since is held to a row `/adversary` writes", file=sys.stderr)
@@ -326,7 +347,7 @@ def baseline() -> int:
         if not (feature / "slices").is_dir():
             continue
         log = feature / ADVERSARY_LOG
-        text = log.read_text(encoding="utf-8") if log.is_file() else f"# Adversary log — {feature.name}\n"
+        text = read(log) if log.is_file() else f"# Adversary log — {feature.name}\n"
         missing = lacking_rows(done_slices(feature), text)
         if not missing:
             continue
@@ -379,38 +400,49 @@ def scope_verb(wanted: str, feature: str | None) -> int:
         print("check-decisions: no decisions.md under specs/" + (f" for feature {feature}" if feature else ""),
               file=sys.stderr)
         return 1
-    text = logs[0].read_text(encoding="utf-8")
+    text = read(logs[0])
     lines = lines_of(text)
-    found = [item for item in entries(text, DECISION_HEADING) if item[1] is not None]
-    count = {"scope": 0, "global": 0, "unlined": 0, "out": 0}
+    found = entries(text, DECISION_HEADING)
+    count = {"scope": 0, "global": 0, "unlined": 0, "unread": 0, "out": 0}
     overridden: list[str] = []
     for index, (line, heading, fields) in enumerate(found):
-        status = STATUS.match(fields.get("Status", "standing"))
-        if status and status.group(0).startswith("overridden") and "Status" not in fields.twice:
-            overridden.append(f"D{heading.group(1)} ({status.group(0)})")  # type: ignore[union-attr]
-            continue
-        where = placed(wanted, fields)
+        if heading is None:  # a block under a heading it cannot read: carried, never placed, never dropped
+            where = "unread"
+        else:
+            status = STATUS.match(fields.get("Status", "standing"))
+            if status and status.group(0).startswith("overridden") and "Status" not in fields.twice:
+                overridden.append(f"D{heading.group(1)} ({status.group(0)})")
+                continue
+            where = placed(wanted, fields)
         count[where] += 1
         if where != "out":
             end = found[index + 1][0] - 1 if index + 1 < len(found) else len(lines)
             print("\n".join(lines[line - 1:end]).rstrip() + "\n")
-    carried = count["scope"] + count["global"] + count["unlined"]
+    carried = count["scope"] + count["global"] + count["unlined"] + count["unread"]
+    unread = f", {count['unread']} carried for want of a heading it can read" if count["unread"] else ""
     print(f"check-decisions: carried {carried} of {len(found)} entries for {wanted}: {count['scope']} in scope, "
-          f"{count['global']} global, {count['unlined']} carried as global for want of a line; "
+          f"{count['global']} global, {count['unlined']} carried as global for want of a line{unread}; "
           f"{count['out']} left out as out of scope; overridden and left out: {', '.join(overridden) or 'none'}")
+    if count["unread"]:
+        print(f"check-decisions: {logs[0].relative_to(ROOT).as_posix()} does not pass check-decisions: "
+              f"{count['unread']} block(s) under a heading that is not `## D<n> — <question>`", file=sys.stderr)
+        return 1
     return 0
 
 
-def main() -> int:
-    arguments = sys.argv[1:]
-    if arguments == ["--adversary-baseline"]:
-        return baseline()
-    if arguments and arguments[0] in ("--scope", "--feature"):
-        options = dict(zip(arguments[0::2], arguments[1::2]))
-        if len(arguments) % 2 or set(options) - {"--scope", "--feature"} or "--scope" not in options:
-            print("usage: check-decisions.py --scope <slice-id> [--feature <name>]", file=sys.stderr)
-            return 2
-        return scope_verb(options["--scope"], options.get("--feature"))
+def verb_options(arguments: list[str]) -> dict[str, str] | None:
+    """`--scope <slice-id>` and `--feature <name>`, once each, in either order; None for anything else."""
+    options: dict[str, str] = {}
+    for flag, value in zip(arguments[0::2], arguments[1::2], strict=False):
+        if flag not in ("--scope", "--feature") or flag in options or not value or value.startswith("-"):
+            return None
+        options[flag] = value
+    if len(arguments) % 2 or not WANTED_ID.fullmatch(options.get("--scope", "")):
+        return None
+    return options
+
+
+def gate() -> int:
     for ident in unowned():
         print(f"check-decisions: note: {ident} is implemented in docs/event-model/model.yaml but names no feature "
               "and has no specs/*/slices/ folder, so no adversary log is asked for it")
@@ -432,16 +464,35 @@ def main() -> int:
             print(f"  {finding}", file=sys.stderr)
         print(file=sys.stderr)
         return 1
-    counted = sum(len(entries(p.read_text(encoding="utf-8"), DECISION_HEADING)) for p in decisions)
-    demos = sum(len(entries(p.read_text(encoding="utf-8"), DEMO_HEADING)) for p in logs)
+    counted = sum(len(entries(read(p), DECISION_HEADING)) for p in decisions)
+    demos = sum(len(entries(read(p), DEMO_HEADING)) for p in logs)
     print(f"check-decisions: {counted} decision(s) in {len(decisions)} file(s), {demos} demo(s) in {len(logs)} log(s), "
           "every field present and every path in the tree, every done slice in the adversary log")
     return 0
 
 
+def main() -> int:
+    arguments = sys.argv[1:]
+    if not arguments:
+        return gate()
+    if arguments == ["--help"]:
+        print(USAGE)
+        return 0
+    if arguments == ["--adversary-baseline"]:
+        return baseline()
+    options = verb_options(arguments)
+    if options is None:
+        print(USAGE, file=sys.stderr)
+        return 2
+    return scope_verb(options["--scope"], options.get("--feature"))
+
+
 if __name__ == "__main__":
     try:
         sys.exit(main())
+    except NotUtf8 as error:
+        print(f"check-decisions: {error}", file=sys.stderr)
+        sys.exit(1)
     except OSError as error:
         print(f"check-decisions failed: {error}", file=sys.stderr)
         sys.exit(1)
