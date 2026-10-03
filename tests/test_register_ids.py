@@ -8,6 +8,7 @@ then at `slices/<prefix>/`. A row headed with the whole id or with the bare pref
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -66,6 +67,55 @@ class RegisterIdsTest(FactoryTestCase):
             self.assertIn("no row for S1, which is done", refused.stderr)
             self.assertNotIn("Slice", refused.stderr)
             self.assertNotIn("---", refused.stderr)
+
+
+# first cell -> the id it names; None where it names none. The `f151b80` reading beside each: the id was
+# `([A-Za-z]+\d+)\b` of the cell, so a slug was dropped (S00) and a letter after the digits was no id.
+CELLS = [
+    ("S00-run-path", "S00-run-path"),    # f151b80: S00
+    ("`S00-run-path`", "S00-run-path"),  # S00
+    ("S1", "S1"),                        # S1
+    ("S1.2", "S1.2"),                    # S1
+    ("S1 \u2014 name", "S1"),             # S1
+    ("S00-run-path.", "S00-run-path"),   # S00
+    ("S2.", "S2"),                       # S2
+    ("S03a", None),                      # none
+    ("e2e", None),                       # none
+    ("k8s", None),                       # none
+    ("sha256sum", None),                 # none
+    ("S01_run_path", None),              # none
+    ("Slice", None),                     # none
+    ("---", None),                       # none
+]
+
+
+def cell_register(repo: Path, cell: str) -> None:
+    slices = repo / "specs/f/slices"
+    slices.mkdir(parents=True, exist_ok=True)
+    (slices / "README.md").write_text(f"| Slice | Accepted |\n|---|---|\n| {cell} | 2026-09-22 |\n")
+    (repo / "specs/f/adversary-log.md").unlink(missing_ok=True)
+
+
+class FirstCellShapesTest(FactoryTestCase):
+    def test_each_first_cell_names_the_id_it_did_or_none_and_check_decisions_agrees(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "cells", "standard", "python")
+            for cell, ident in CELLS:
+                with self.subTest(cell=cell):
+                    cell_register(repo, cell)
+                    result = gate(repo)
+                    found = re.findall(r"no row for (\S+), which is done", result.stderr)
+                    self.assertEqual(found, [ident] if ident else [], result.stderr)
+                    self.assertEqual(result.returncode, 1 if ident else 0, result.stderr)
+
+    def test_each_first_cell_names_the_same_id_to_check_benchmark(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "cellsb", "standard", "python")
+            for cell, ident in CELLS:
+                with self.subTest(cell=cell):
+                    cell_register(repo, cell)
+                    found = [m.group(1) for line in warnings(repo) if (m := re.search(r"slices/(\S+) is done", line))]
+                    self.assertEqual(found, [ident] if ident else [])
 
 
 def warnings(repo: Path) -> list[str]:

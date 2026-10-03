@@ -181,7 +181,8 @@ def done_slices(feature: Path) -> set[str]:
         for line in register.read_text(encoding="utf-8").splitlines():
             if line.strip().startswith("|"):
                 first = line.strip().strip("|").split("|")[0].strip().strip("`")
-                found = re.match(r"[A-Za-z]+\d+[A-Za-z0-9._-]*", first)
+                # the released head (letters, digits, a word boundary), then a slug after `-` or `.` that ends on a letter or digit
+                found = re.match(r"[A-Za-z]+\d+(?![A-Za-z0-9_])(?:[.-][A-Za-z0-9._-]*[A-Za-z0-9])?", first)
                 if found:
                     done.add(found.group(0))
     for ident, named in implemented():
