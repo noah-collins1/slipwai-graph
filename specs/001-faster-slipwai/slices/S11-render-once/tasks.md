@@ -358,7 +358,7 @@ No screen in this slice
 
 #### T009 — `HIGH` — The finished-file write has no example that fails when the rename is removed (AC-S11-8, AC-S11-9)
 
-- [ ] **Hold with teeth, tests only unless the sweep finds a write that bypasses it.** Evidence: `writeFinished`
+- [x] *(done at `765cad5`: holds on arrival; teeth: a direct write fails five tests, a kept temporary fails one.)* **Hold with teeth, tests only unless the sweep finds a write that bypasses it.** Evidence: `writeFinished`
   (`render-plan.ts` 109–120) changed in the working tree to `writeFileSync(join(ROOT, path), bytes)` — no temporary, no
   rename — and `make test TESTS="test_render_files test_render_files_report test_render_pinned"` ran 15 tests, OK; the
   file was restored with `git checkout --`. "Reaches its final name only by a rename of a complete file" and the PNG's
@@ -380,7 +380,7 @@ rename (SVG, PNG) or write-if-different (`.mmd`, page, README block); any withou
 
 #### T010 — `MEDIUM` — A failure that is not one diagram's draw is reported as itself, once, and held (AC-S11-8, AC-S11-16)
 
-- [ ] Evidence, each reproduced on a scratch project with the stand-in (`/tmp/s11-converge/fx2`): (a) the stand-in's
+- [x] *(done at `0b3409d`: RED: seven assertions against the pre-fix scripts; the root line held through a probe with a stand-in `open`.)* Evidence, each reproduced on a scratch project with the stand-in (`/tmp/s11-converge/fx2`): (a) the stand-in's
   `launch` throwing → stderr is `render: could not draw <svg>: Failed to launch the browser process` once per diagram
   of the first window (three lines for a one-slice model, four on the fixture): the browser's failure is reported as
   three or four diagrams'; (b) a PNG draw throwing → stderr is the bare reason (`png refused`), no `render:` and no
@@ -404,7 +404,7 @@ new module; the fragment if a sentence of it changes (`Level PATCH; VERSION alre
 
 #### T011 — `LOW` — The skip rule's positions have examples (AC-S11-5)
 
-- [ ] Reproduced as *held by the code, not by a test*: a renderer line on line 3 (a blank line 2), the two lines
+- [x] *(done at `bf86868`: five examples, held on arrival; teeth: `includes` in place of the line comparison fails four.)* Reproduced as *held by the code, not by a test*: a renderer line on line 3 (a blank line 2), the two lines
   swapped, both stamps on one line, and CRLF line ends each redraw that diagram once and then leave it; a second,
   wrong source stamp on line 3 is left, and `check.py` agrees (it reads the first match). Add the four redraw
   examples and the one left example to `tests/test_render_current.py`; teeth by changing `isCurrent`'s
@@ -415,7 +415,7 @@ new module; the fragment if a sentence of it changes (`Level PATCH; VERSION alre
 
 #### T012 — `LOW` — `1 slices`, `--png`, and a skip reason that stopped being true
 
-- [ ] (a) A one-slice model closes `model: 1 slices, 3 of 3 diagrams drawn, 0 unchanged.` (reproduced; the pre-slice
+- [x] *(done at `e39f2fc`: `1 slice`; `--png` has an example; the Windows skip says its true reason and is not lifted.)* (a) A one-slice model closes `model: 1 slices, 3 of 3 diagrams drawn, 0 unchanged.` (reproduced; the pre-slice
   line said `1 slices rendered` too, so nothing regressed) — the closing-line builder agrees its nouns with their
   counts, the two verbatim lines of AC-S11-13 unchanged; sweep every count the three scripts print. (b) `--png` is
   read at `render.ts` 69 and no test passes it; one example beside `PNG=1`. (c) every render test is skipped on
@@ -427,7 +427,7 @@ new module; the fragment if a sentence of it changes (`Level PATCH; VERSION alre
 
 #### T013 — `MEDIUM` — The installed puppeteer version joins the renderer key (D70; AC-S11-6)
 
-- [ ] Pass 1's lead, decided as D70: the key gains one part — the `version` in
+- [x] *(done at `107f008`: RED: a changed puppeteer version redrew 0 where 3 were expected.)* Pass 1's lead, decided as D70: the key gains one part — the `version` in
   `scripts/event-model/.mermaid-cli/node_modules/puppeteer/package.json`, length-prefixed like the others, after the
   mermaid version and before the script bytes; a missing or unreadable manifest fails as the mermaid-cli one does.
 
