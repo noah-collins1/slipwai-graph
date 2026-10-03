@@ -225,22 +225,23 @@ def merge_base() -> str | None:
 
 def changed_files(base: str) -> dict[str, str]:
     """Every path that differs from the base, with its status: `A` added, `M` modified, `D` deleted. The working
-    tree is compared, not the last commit, so an uncommitted edit is held the same as a committed one."""
+    tree is compared, not the last commit, so an uncommitted edit is held the same as a committed one. Paths are
+    read NUL-separated (`-z`): git quotes a name with a non-ASCII byte, a tab or a quote otherwise, and a quoted
+    path matches no rule."""
     changes: dict[str, str] = {}
-    for line in (git("diff", "--name-status", "--no-renames", base) or "").splitlines():
-        status, _, path = line.partition("\t")
+    fields = (git("diff", "--name-status", "-z", "--no-renames", base) or "").split("\0")
+    for status, path in zip(fields[0::2], fields[1::2]):
         if path:
             changes[path] = status[:1]
-    for path in (git("ls-files", "--others", "--exclude-standard") or "").splitlines():
+    for path in (git("ls-files", "-z", "--others", "--exclude-standard") or "").split("\0"):
         if path:
             changes[path] = "A"
     return changes
 
 
 def deletions(base: str, path: str) -> int:
-    numstat = git("diff", "--numstat", base, "--", path) or ""
-    for line in numstat.splitlines():
-        parts = line.split("\t")
+    for record in (git("diff", "--numstat", "-z", base, "--", path) or "").split("\0"):
+        parts = record.split("\t")
         if len(parts) >= 2 and parts[1].isdigit():
             return int(parts[1])
     return 0
@@ -508,7 +509,7 @@ def lost_records() -> list[str]:
     specs = ROOT / "specs"
     if not specs.is_dir():
         return findings
-    tracked = set((git("ls-files", "specs") or "").splitlines())
+    tracked = set((git("ls-files", "-z", "specs") or "").split("\0"))
     for feature in sorted(specs.iterdir()):
         for slot in CANONICAL_SLOTS:
             candidate = feature / slot
