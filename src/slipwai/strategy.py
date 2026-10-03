@@ -19,7 +19,7 @@ import dataclasses
 import re
 from pathlib import Path
 
-from .convergence import detected
+from .convergence import detected, reconciled
 from .layout import Layout
 from .origin import STRATEGIES, Adoption, current
 from .programme import option, phrase, programme
@@ -115,6 +115,12 @@ def platform_before(products: list[dict]) -> list[str]:
     ]
 
 
+def before_of(rows: list[dict], strategy: str, products: list[dict]) -> list[str]:
+    """Everything that has to hold before the strategy is worth starting: what the tree says about the platform,
+    then what the rows say. One place, so the recommendation and a refresh that reconciled the rows cannot drift."""
+    return [*platform_before(products), *preconditions(rows, strategy)]
+
+
 def recommend(why: str | None, rows: list[dict], products: list[dict] = ()) -> dict:  # type: ignore[assignment]
     """The strategy the trigger and the map recommend, with the reasons, what has to hold first, and when it stops.
     `products` is the platform record's list: a product out of support is a platform problem the tree names, which
@@ -127,12 +133,12 @@ def recommend(why: str | None, rows: list[dict], products: list[dict] = ()) -> d
             return {"recommended": "in-place", "trigger": "platform",
                     "because": ["no business trigger is recorded, and the tree itself names a platform problem, for "
                                 "which `docs/change-strategy.md` says change it in place", *tree_says],
-                    "before": [*behind, *preconditions(rows, "in-place")], "stop": platform_stop}
+                    "before": before_of(rows, "in-place", list(products)), "stop": platform_stop}
         return {
             "recommended": "leave-it", "trigger": None,
             "because": ["no business trigger is recorded, so nothing is asking for the architecture to change; the "
                         "delivery rungs below pay off whatever the trigger turns out to be"],
-            "before": preconditions(rows, "leave-it"),
+            "before": before_of(rows, "leave-it", list(products)),
             "stop": "now, as far as the architecture goes; record `why` in `project.json` when there is one",
         }
     named = [(kind, strategy, stop) for kind, pattern, strategy, stop in TRIGGERS if re.search(pattern, why, re.I)]
@@ -142,13 +148,13 @@ def recommend(why: str | None, rows: list[dict], products: list[dict] = ()) -> d
                     "because": [f"the trigger — {why!r} — names no problem this factory reads, but the tree names a "
                                 "platform problem, for which `docs/change-strategy.md` says change it in place",
                                 *tree_says],
-                    "before": [*behind, *preconditions(rows, "in-place")], "stop": platform_stop}
+                    "before": before_of(rows, "in-place", list(products)), "stop": platform_stop}
         return {
             "recommended": "leave-it", "trigger": None,
             "because": [f"the trigger — {why!r} — names neither a platform, a delivery problem, a change problem, a "
                         "capability nor a host, so no strategy follows from it; leave the architecture where it is "
                         "until it does, and take the delivery rungs below, which pay off regardless"],
-            "before": preconditions(rows, "leave-it"),
+            "before": before_of(rows, "leave-it", list(products)),
             "stop": "now, as far as the architecture goes",
         }
     kind, strategy, stop = named[0]
@@ -160,7 +166,7 @@ def recommend(why: str | None, rows: list[dict], products: list[dict] = ()) -> d
         because.append("the architecture rung is last on the ladder: every rung below it is cheaper with a green gate "
                        "and pinned seams, and none of them needs an architectural decision")
     return {"recommended": strategy, "trigger": kind, "because": because,
-            "before": [*behind, *preconditions(rows, strategy)], "stop": stop}
+            "before": before_of(rows, strategy, list(products)), "stop": stop}
 
 
 def decision_of(root: Path, layout: Layout) -> dict:
@@ -205,3 +211,14 @@ def with_recommendation(root: Path, layout: Layout, adoption: Adoption, apps: li
     }
     adoption = dataclasses.replace(adoption, strategy=record)
     return dataclasses.replace(adoption, convergence=detected(apps, adoption))
+
+
+def with_reconciled(root: Path, layout: Layout, adoption: Adoption, apps: list[App], recorded: list[dict],
+                    refreshed: list[str]) -> Adoption:
+    """`with_recommendation`, then the map reconciled with what `recorded` holds, then `strategy.before` read
+    from those rows: a rung a person placed stands over the tree's reading there too."""
+    adoption = with_recommendation(root, layout, adoption, apps)
+    rows = reconciled(recorded, adoption.convergence, refreshed)
+    record = adoption.strategy or {}
+    before = before_of(rows, record.get("recommended", "leave-it"), (adoption.platform or {}).get("products") or [])
+    return dataclasses.replace(adoption, convergence=rows, strategy={**record, "before": before})

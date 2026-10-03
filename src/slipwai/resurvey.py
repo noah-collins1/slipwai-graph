@@ -21,7 +21,6 @@ from pathlib import Path
 
 from .adopt import STRUCTURE_PAGE, SURVEY_PAGE, facts
 from .adopt_report import survey_page
-from .convergence import reconciled
 from .errors import GenerationError
 from .layout import Layout, layout_of
 from .manifest import apps_from_manifest, read_manifest, wrote_here
@@ -33,7 +32,7 @@ from .project.seeded import kept
 from .project.structure_page import structure_page
 from .scaffold import FACTORY_IDENTITY, project_files
 from .services import App, wrapped_of
-from .strategy import with_recommendation
+from .strategy import with_reconciled
 from .structure import structure
 from .survey import Survey, survey
 from .toolkit import executable_paths
@@ -239,10 +238,7 @@ def refresh(root: Path, clean_checked: bool = False) -> Refreshed:
                 f"platform: {move}, and the Platform row planned nothing — a platform move is a slice of its own on "
                 "that row, never inside another; name it in the row's `planned` or an ADR, or put it back"
             )
-    after_adoption = with_recommendation(root, layout, after_adoption, updated)
-    after_adoption = dataclasses.replace(
-        after_adoption, convergence=reconciled(adoption.convergence, after_adoption.convergence, done.refreshed)
-    )
+    after_adoption = with_reconciled(root, layout, after_adoption, updated, adoption.convergence, done.refreshed)
 
     arguments = (document["name"], document["profile"], document["target"])
     before = project_files(*arguments, apps, layout, adoption)
