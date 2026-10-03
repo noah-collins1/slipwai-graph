@@ -339,7 +339,7 @@ def merge_base() -> Base:
             if base is None and target and target[1]:
                 return Base(target[1], target[0], True, passed_over)
             if base is None:
-                return Base(None, target_name() or name, True, passed_over)
+                return Base(None, name, True, passed_over)
             return Base(older_of(base, target[1] if target else None), name, True, passed_over)
     target = target_base(names[0])
     if target:

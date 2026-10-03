@@ -203,3 +203,44 @@ class NoBaseTest(SliceScopeFixtures):
             result = self.run_gate(repo)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("not a `slice/<id>` branch — nothing to hold", result.stdout)
+
+    def unrelated_main(self, repo: Path) -> None:
+        root = out(repo, "commit-tree", out(repo, "hash-object", "-t", "tree", "/dev/null"), "-m", "unrelated")
+        git(repo, "update-ref", "refs/heads/main", root)
+
+    RELEASE = {"GITHUB_BASE_REF": "release"}
+
+    def test_an_attached_unrelated_trunk_line_names_the_trunk_not_a_target_with_no_ref(self) -> None:
+        """D30: the target's name is only what to fetch where no candidate has a ref; `main` has one."""
+        repo = self.origin()
+        self.unrelated_main(repo)
+        stderr = self.fails_with(repo, "a slice branch is cut from `main`", env=self.RELEASE)
+        self.assertNotIn("release", stderr)
+
+    def test_a_shallow_line_names_the_trunk_not_a_target_with_no_ref(self) -> None:
+        stderr = self.fails_with(self.no_ancestor(), "shares no history with `main` at this depth", env=self.RELEASE)
+        self.assertNotIn("release", stderr)
+
+    def test_a_forge_line_names_the_trunk_not_a_target_with_no_ref(self) -> None:
+        repo = self.origin()
+        self.unrelated_main(repo)
+        git(repo, "checkout", "-q", "--detach")
+        stderr = self.not_checked(self.run_gate(repo, {**self.RELEASE, "GITHUB_HEAD_REF": "slice/S1"}))
+        self.assertNotIn("release", stderr)
+
+    def test_an_unrelated_trunk_is_held_against_a_target_that_has_a_base(self) -> None:
+        """D30, the in-loop arm: the trunk has a ref and no shared history, the target has both — exit 0, `develop`."""
+        repo = self.origin()
+        git(repo, "branch", "develop", "main")
+        self.unrelated_main(repo)
+        env = {"GITHUB_BASE_REF": "develop"}
+        result = self.run_gate(repo, env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("compared with `develop`", result.stdout)
+        self.commit(repo, "Makefile")
+        self.base_rejects(repo, "Makefile", env)
+
+    def test_an_unusable_target_is_not_the_name_to_fetch(self) -> None:
+        """D30: a target that is no branch name falls through to the trunk the record names, else `main`."""
+        repo = self.no_trunk_ref()
+        self.fails_with(repo, FETCH_MAIN, env={"GITHUB_BASE_REF": "-bad"})
