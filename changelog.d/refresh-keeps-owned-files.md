@@ -5,8 +5,9 @@ PATCH
 the factory and then changed by the project — a run's settings, a filled-in owner brief, which model runs each
 stage — and a refresh, `adopt --confirm` included, wrote each back to the factory's default wherever the disk
 differed. A refresh now writes one only where it is absent, so a project is never left without a file
-`make check-agents` and `/cruise` read; an uncommitted change to one no longer refuses the refresh; and a later run
-does not take the project's edit for slipwai's own. `<delivery>/.written` still lists all four, so `slipwai migrate`
+`make check-agents` and `/cruise` read; an uncommitted edit to one no longer refuses the refresh (an uncommitted
+deletion still does, since the refresh would write there); and a later run does not take the project's edit for
+slipwai's own. `<delivery>/.written` still lists all four, so `slipwai migrate`
 still merges a newer factory's version of each with yours, and the pages the record drives follow it as before.
 
 Separately, the strategy page no longer names a prerequisite the map shows as met. `adopt --refresh` read

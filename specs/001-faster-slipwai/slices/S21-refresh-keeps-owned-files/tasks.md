@@ -295,7 +295,7 @@ each new assertion seen failing under its mutation in a disposable clone (G1, G2
 
 ### T010 — A person's lower `release.path` moves the Path to production row at a refresh (`MEDIUM` F1, a regression · AC-S21-12 · D28)
 
-- [ ] **RED** (`tests/test_refresh_strategy.py`): `node_repository`, `slipwai adopt --yes --no-init --release
+- [x] **RED** (`tests/test_refresh_strategy.py`): `node_repository`, `slipwai adopt --yes --no-init --release
   pipeline`; the row is (`pipeline`, `overridden`) and no pipeline entry leads; set `release.path` to `manual`,
   commit, `adopt --refresh` → expect the row at `manual` / `overridden`, stdout carrying *convergence:
   path-to-production refreshed from `pipeline` to `manual`* and `release.path`, and the entry *the path to
@@ -313,6 +313,9 @@ each new assertion seen failing under its mutation in a disposable clone (G1, G2
 
 ### T011 — The fragment and the quickstart say what the demo found (host task · D29)
 
-- [ ] The fragment says an uncommitted *edit* to one of the four no longer refuses and that a deletion still does;
+- [x] The fragment says an uncommitted *edit* to one of the four no longer refuses and that a deletion still does;
   the quickstart's setup block no longer ends on a commit with nothing to commit (done with this entry).
 
+**T010 done** (`3561b99`): `follows_record()` in `convergence.py`, called from `reconciled()`; RED seen as stated, on
+the example and on all nine rung pairs of the sweep; the three holds green before and after; `reconciled` has one
+caller (`with_reconciled()`). **T011 done** with the commit that ticks it.
