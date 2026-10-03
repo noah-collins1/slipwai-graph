@@ -314,6 +314,31 @@ and both gates at the resulting commit.
 - **Not run here, by the brief:** `make verify`, `make -f delivery/Makefile verify` (green at `030ad00`, table
   below). T004–T006 are the Convergence stage's and the final check's, not gaps.
 
+## Converge pass 2 — appended tasks
+
+Verdict: **converged** at `dcd9d53` (the confirming pass). T007–T010 closed as their done-notes claim; the four quick
+checks green at HEAD; no `CRITICAL` or `HIGH`; one `LOW` below, carried, not re-opening anything.
+
+### T011 — The strategy's `before` list still says the safety net is `tests-exist` · **LOW**
+
+`project.json:121` (`strategy.before[1]`: *a green suite in the gate — the safety net is `tests-exist`*) and the
+page generated from it, `delivery/docs/change-strategy.md:22`, were written at adoption from the rows as they
+stood then; T004 moved the row to `tests-pass` and `./slipwai adopt --refresh` (T005) did not re-derive the
+sentence — `src/slipwai/strategy.py` computes `before` once, and `change-strategy.md` was not among the seven
+files the refresh rewrote. Nothing reads the sentence as a gate (`check-convergence` green; the strategy is
+`finished: true`, `decided: leave-it`), so the map and the row are not in disagreement — but a reader of the
+strategy page is told the prerequisite is unmet when the map says it is met. `delivery/docs/adr/0002-change-strategy.md:27`
+carries the same words correctly, as an ADR's record of its date; leave it. Two routes, and which is the host's or
+the owner's to choose, not this pass's: (a) edit `project.json`'s `strategy.before` deliberately (AGENTS.md permits
+it) and regenerate `change-strategy.md`; (b) a factory PATCH slice beside `S21` so the refresh re-derives
+`strategy.before` from the rows — then every adopted repository gets it through `slipwai migrate`.
+
+**Files:** `project.json`, `delivery/docs/change-strategy.md` (route a); or `story-split.md` (route b).
+
+- [x] **Carried** — route (b), D16: `S21-refresh-keeps-owned-files` also re-derives `strategy.before` from the
+  rows; `project.json:121` and `delivery/docs/change-strategy.md:22` are left as adoption wrote them until the
+  factory's fix reaches this repository through `slipwai migrate`.
+
 ## Convergence
 
 ### Gate evidence (T003, implementation stage)
@@ -391,3 +416,12 @@ AC-S00-7 the empty diff. Five findings, traced (`gaps=5`), all paper and closed 
    the converge pass's static sweep, not by a test that would go red on regression, because `cruise.py run` does
    not refuse under the marks. No structural test opened; recorded.
 5. `plan.md` *Scale/Scope* said 4 test files; five. Corrected.
+
+### Converge verdict — pass 2 of 2 (confirming), 2026-10-03T04:45Z, commit `dcd9d53`
+
+`drive-converge · model: host (claude-fable-5-1) · delegated, fresh context` · budget 8 min, within it.
+**Converged.** T007–T010 closed as their done-notes claim; `check-decisions`, `check-constitution`,
+`check-convergence` and `check-speckit` green at HEAD; principle V in force as the journey rules say and XIII a
+target at `tests-pass`; `project.json`'s row and `delivery/docs/convergence.md` agree; no CRITICAL or HIGH. One
+LOW appended, **T011** (the strategy page's `before` sentence still says `tests-exist`), carried to the split as
+D16 and not re-opening anything. The loop stopped at its bound of two passes with nothing open above LOW.

@@ -174,3 +174,14 @@
 - **Confidence:** high · **Would reverse if:** a person says the refresh is meant to re-template those files (then the two would be restored from their own copies instead, and the slice would document it).
 - **Written to:** `specs/001-faster-slipwai/story-split.md` (Split Candidates, Slice graph); `specs/001-faster-slipwai/slices/S00-run-path/tasks.md` (T005 record)
 - **Status:** standing
+
+## D16 — Does S00 edit the strategy's stale `before` sentence by hand, or leave it to the factory?
+- **Stage:** converge (pass 2) · **Slice:** S00-run-path · **When:** 2026-10-03T04:46:00Z · **Iteration:** 2
+- **Question:** `project.json` `strategy.before[1]` and `delivery/docs/change-strategy.md:22` say *the safety net is `tests-exist`*, written at adoption; T004 moved the row and the refresh (T005) did not re-derive the sentence (`src/slipwai/strategy.py` computes `before` once; `change-strategy.md` was not among the files the refresh rewrote). Nothing reads it as a gate. The converge pass offered two routes.
+- **Options:** (a) edit `project.json`'s `strategy.before` deliberately and regenerate `change-strategy.md` — a hand edit to a derived sentence that the next refresh may or may not keep, in a slice whose criteria are about the gate, not the strategy page; (b) a factory PATCH so the refresh re-derives `strategy.before` from the rows, folded into `S21-refresh-keeps-owned-files` (the refresh's one job is to make the generated pages follow the record) — recommended by the stage's framing (*every adopted repository gets it through `slipwai migrate`*) and by owner brief priority 3.
+- **Decision:** (b). `S21`'s *Includes* grows one clause; `project.json` and the strategy page stay as adoption wrote them; the cruise report lists the stale sentence under what a person sees until `migrate`.
+- **Why:** owner brief priority 3 (land under the factory first); constitution V's one-capability rule keeps S00 to its gate; the sentence is informational (`check-convergence` green, strategy `finished`), so a reader's confusion for one migrate cycle costs less than a hand edit the factory would later fight.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person wants the page right now — then route (a), as a deliberate `project.json` edit with `/survey` after it.
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (S21's Includes); `specs/001-faster-slipwai/slices/S00-run-path/tasks.md` (T011)
+- **Status:** standing
