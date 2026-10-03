@@ -70,7 +70,7 @@ Constraints that hold for every task, stated once:
 
 ### T001 — The shared fixture and the stand-in renderer; what `make model` leaves on disk, pinned (host's `/characterise` step)
 
-- [ ] **Pin, no rule, no production change.** The host runs this as the ladder's `/characterise` step before the
+- [x] **Pin, no rule, no production change.** *(done at `7226c2e`: three holds, teeth shown on the stamp, the two deletions and the empty-model branch; 13 s.)* The host runs this as the ladder's `/characterise` step before the
   implement stage; the implement stage does **not** repeat it — it starts at T002 with the helper and the pin green.
   Written by `/characterise`; nothing under `assets/` or `src/` changes.
 
