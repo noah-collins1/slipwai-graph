@@ -375,21 +375,29 @@ def merge_base() -> Base:
             passed_over = f"{bare} — `{fetch_command(recorded)}` would bring it"
     elif value is not None and not isinstance(value, str):
         passed_over = bare = "`ci.branch` is not a string, so it was passed over"
+    skipped: list[str] = []  # names with a ref and no history in common with this branch: passed over, not the end
     for name in names:
         exists, base = bases_of(name)
+        if exists and base is None:
+            skipped.append(name)
+            continue
         if exists:
+            if skipped:
+                said = "; ".join(f"`{other}` has a ref here but shares no history with this branch" for other in skipped)
+                passed_over = "; ".join(filter(None, (passed_over, said)))
+                bare = "; ".join(filter(None, (bare, said)))
             if recorded is None and name == "main" and base and newer_master(base):
                 passed_over = "; ".join(filter(None, (passed_over, MASTER_CLAUSE)))
                 bare = "; ".join(filter(None, (bare, MASTER_CLAUSE)))
             target = target_base(name)
-            if base is None and target and target[1]:
-                return Base(target[1], target[0], True, passed_over, bare)
-            if base is None:
-                return Base(None, name, True, passed_over, bare)
+            if target and target[1] is None:
+                return Base(None, target[0], True, passed_over, bare)  # a target with no history in common is no base
             return Base(older_of(base, target[1] if target else None), name, True, passed_over, bare)
     target = target_base(names[0])
     if target:
         return Base(target[1], target[0], True, passed_over, bare)
+    if skipped:
+        return Base(None, skipped[0], True, passed_over, bare)
     return Base(None, target_name() or names[0], False, passed_over, bare)
 
 
