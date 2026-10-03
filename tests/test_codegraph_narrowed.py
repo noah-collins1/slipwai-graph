@@ -28,8 +28,8 @@ CI_MARKERS = ("CI", "GITHUB_ACTIONS", "GITLAB_CI")
 OWN = {"scripts/check-codegraph.py", "scripts/agents/code_index.py"}
 CURRENT = re.compile(r"^check-codegraph: index current — (\d+) file\(s\), indexed \d{4}-\d\d-\d\d \d\d:\d\d:\d\d\n$")
 HASHED = (r"^check-codegraph: {synced}index current — hashed {hashed} of (\d+) file\(s\), only what changed since the "
-          r"last whole comparison \(\d{{4}}-\d\d-\d\d \d\d:\d\d:\d\d\); the integrity check was not run here and runs "
-          r"in the full gate\n$")
+          r"last whole comparison \(\d{{4}}-\d\d-\d\d \d\d:\d\d:\d\d\); the integrity check was not run here: it "
+          r"runs on the trunk, on any other branch and in CI\n$")
 
 
 # The fake CLI of `test_code_index_health` replaces the database file on `sync`. CodeGraph's own writes are SQLite's,

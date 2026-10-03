@@ -16,7 +16,11 @@ So this script holds the index at the points the harness and the runner already 
     python3 scripts/agents/code_index.py guard    # Claude Code's PreToolUse hook: a symbol search before the index
 
 `health` is what `scripts/agents/cruise.py` runs before every iteration, what `make check-codegraph` runs on a corrupt
-database before it judges one, and what a person runs to repair an index by hand. `session` is the same step at the
+database before it judges one, and what a person runs to repair an index by hand. That gate runs it on the whole run
+only: on a `slice/<id>` branch in a developer's checkout, outside CI, it compares only what changed since its last
+whole comparison and leaves the integrity check to the trunk and CI; it keeps that record in
+`.codegraph/gate-memory.json` (ignored by Git), and deleting that file makes the next run whole.
+`session` is the same step at the
 start of a Claude Code session — a person's `/drive` has no runner in front of it — and prints only what it did or
 could not do, since a hook's output lands in the session's context. The database is ignored by Git and derived from the source, so a corrupt one loses nothing by being moved
 aside (to `.codegraph/corrupt/`, the latest only) and rebuilt. `sync` keeps the index current while an iteration is

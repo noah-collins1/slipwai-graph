@@ -281,7 +281,8 @@ class TheMemoryIsWrittenOnlyByAPassTest(FactoryTestCase):
             project.slice()
             run = project.run()
             self.assertEqual(run.returncode, 0, run.stderr)
-            self.assertRegex(run.stdout, whole_line("no earlier whole comparison is recorded"))
+            self.assertRegex(run.stdout, whole_line("the record cannot be kept here: git does not "
+                                                      "ignore `.codegraph/`"))
             self.assertFalse(project.memory.exists())
 
     def test_hold_a_memory_copied_into_a_clone_at_another_commit_is_not_trusted(self) -> None:

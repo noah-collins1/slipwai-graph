@@ -30,6 +30,14 @@ ignored by Git — so the gate fails only where the index cannot be made sound a
 tooling absent, or the rebuild or sync not taking, which is the state it exists to report.
 `CODEGRAPH_GATE_NO_SYNC=1` compares without repairing anything.
 
+All of that is the whole run, and it is what the trunk, every other branch, a detached `HEAD` and CI do. On a
+`slice/<id>` branch in a developer's checkout, outside CI, the gate compares only what changed since its last whole
+comparison and leaves the integrity check to the trunk and CI: a developer waits on this gate three times a slice,
+and what a passing whole run vouched for has not moved. It keeps that record in `.codegraph/gate-memory.json`,
+written only by a pass and only where Git ignores `.codegraph/`, and deleting that file makes the next run whole.
+Wherever the record cannot be used or cannot be kept, the run is the whole run and the pass line says why, in one
+clause. Which files moved is never taken from Git alone: the record holds how each looked when it was hashed.
+
 No `.codegraph/` is not a failure: the code index is an optional extension (`./init --extension
 codegraph`), and a project that never adopted one has nothing to keep fresh. Standard library
 only, like every gate script here.
@@ -277,12 +285,17 @@ def files_of(rows: dict[str, tuple[str, float]], kept: dict[str, Any] | None) ->
     return {path: record for path, record in {**(kept or {}), **found}.items() if path in rows}
 
 
+def ignored() -> bool:
+    """Whether git ignores the memory file: only then may it be written, since a record `git status` reported would
+    be a change nobody made."""
+    return git_output("check-ignore", "-q", "--", str(MEMORY)) is not None
+
+
 def remember(rows: dict[str, tuple[str, float]], whole: float | None = None,
              kept: dict[str, Any] | None = None) -> None:
     """Record what this passing run vouched for. Never fatal: a gate that cannot take notes is merely slower."""
     # Written only where git ignores it: a record `git status` reported would be a change nobody made.
-    if any(os.environ.get(marker) for marker in CI_MARKERS) or git_output("check-ignore", "-q", "--",
-                                                                         str(MEMORY)) is None:
+    if any(os.environ.get(marker) for marker in CI_MARKERS) or not ignored():
         return
     key, head = gate_key(), git_output("rev-parse", "HEAD")
     dirty = paths_of(git_output("diff", "--name-only", "--no-renames", "-z", "--relative", "HEAD", "--"))
@@ -303,6 +316,7 @@ def remember(rows: dict[str, tuple[str, float]], whole: float | None = None,
 
 # Why a run on a slice branch compared everything: said once, in one clause, on the pass line.
 NO_RECORD = "no earlier whole comparison is recorded"
+UNKEPT = "the record cannot be kept here: git does not ignore `.codegraph/`"
 UNREADABLE = "the record of the last whole comparison could not be read"
 SCRIPTS = "the gate's scripts changed since"
 COMMIT_GONE = "the commit it was taken at is gone"
@@ -333,7 +347,7 @@ def readable(record: dict[str, Any]) -> bool:
 def remembered() -> dict[str, Any] | str:
     """The memory of the last whole comparison, or the reason it cannot be used."""
     if not MEMORY.is_file():
-        return NO_RECORD
+        return NO_RECORD if ignored() else UNKEPT
     try:
         record = json.loads(MEMORY.read_text())
     except (OSError, ValueError, RecursionError, MemoryError):
@@ -427,7 +441,7 @@ def narrowed(tooling: Any, record: dict[str, Any]) -> int | str:
         assert found is not None
     return conclude(found, synced, f"hashed {HASHED[0]} of {len(found[0])} file(s), only what changed since the "
                     f"last whole comparison ({moment_of(float(record['whole']))}); the integrity check was not "
-                    "run here and runs in the full gate", float(record["whole"]), kept=record["files"])
+                    "run here: it runs on the trunk, on any other branch and in CI", float(record["whole"]), kept=record["files"])
 
 
 def conclude(found: tuple[dict[str, tuple[str, float]], list[str], list[str]], synced: str, said: str,
