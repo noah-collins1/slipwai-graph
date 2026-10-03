@@ -190,3 +190,62 @@ green, then `make lint typecheck check-structure`. Commit.
 ## Design review
 
 No screen in this slice
+
+
+---
+
+## Phase 4: Convergence pass 1 (appended 2026-10-03; converge delegate)
+
+**Verdict: converged.** No `CRITICAL` or `HIGH` finding; AC-S21-1 … AC-S21-10 hold at HEAD (`7be3773`) by reading
+and by running, and AC-S21-11 holds as far as this pass may check it (both full gates are T005's). The three tasks
+below are what the slice still owes, none of which re-opens the loop. Evidence for each is in the pass's return.
+
+### T006 — A refresh's `before` is held whole at the CLI, not only its three row entries (`MEDIUM` · AC-S21-10 · Principle V)
+
+- [ ] `with_reconciled()` (`src/slipwai/strategy.py`) is a second place `before` is assembled, and two of its three
+  inputs have no test through a refresh. Reproduced in a disposable clone, each restored afterwards: replacing
+  `record.get("recommended", "leave-it")` with the literal `"leave-it"`, and replacing the platform products with
+  `[]`, each left `make test TESTS="test_refresh_owned test_refresh_strategy test_strategy test_adopt_facts
+  test_platform test_programme"` green — while the first would drop *a seam requests enter through* and
+  *`/characterise` pinning each seam* from a `strangler-fig` page, and the second every *the platform in support*
+  line. The behaviour at HEAD is right (run by hand: a Maven repository with Spring 3.2.8, `--why "split it so teams
+  can move"`, Safety net confirmed at `tests-pass`, then `adopt --refresh` — five platform entries and both
+  strangler-fig entries stand, only the safety-net entry goes); only the test is missing.
+
+**RED** (in `tests/test_refresh_strategy.py`, under 350 lines): a hold that is green on arrival, shown to have teeth
+by the two mutations above, each restored with `git checkout -- src/slipwai/strategy.py`.
+**GREEN names the sweep:** for every argument `with_reconciled()` hands `before_of()` — the rows, the strategy
+name, the products — one example through `slipwai adopt --refresh` whose `strategy.before` and
+`<delivery>/docs/change-strategy.md` would differ if that argument were wrong; not the two instances found here.
+No production edit is expected.
+
+**Files:** `tests/test_refresh_strategy.py`.
+
+### T007 — The stamp's `- left` is observed or removed (`LOW` · AC-S21-5 · Principle III)
+
+- [ ] `resurvey.py`'s last line subtracts the kept files from what `stamp()` records, and nothing observes it:
+  removing `- left` left `test_refresh_owned` and `test_refresh_strategy` green (clone, restored). By reading
+  `uncommitted.py`, `refuse_foreign` consults the stamp only for paths in `writes()`, which already leaves the kept
+  out, so the only observable is `.delivery-tools/written.json` itself. The changelog's *a later run does not take
+  the project's edit for slipwai's own* rests on this line alone.
+
+**GREEN names the sweep:** every clause of rule R1 (*never compares, rewrites, counts or stamps*) has an example
+that fails without its line, or the line it has none for is removed as mechanism with no behaviour — decided for
+the whole rule, not for `stamp` alone.
+
+**Files:** `tests/test_refresh_owned.py`, and `src/slipwai/resurvey.py` only if the line is removed (net negative).
+
+### T008 — Generated text about who writes the four agrees with D24 (`LOW` · AC-S21-8 · Principle I) — verify first
+
+- [ ] `src/slipwai/project/decisions.py` writes into every project's `.specify/product-owner.md`: *`slipwai
+  migrate` never rewrites it*. AC-S21-8, D24 and this slice's fragment say `.written` lists it so that `migrate`
+  merges a newer factory's version with the project's. Found by reading; **not reproduced by running `migrate`** in
+  this pass, so the first step is to see which of the two a migrate over a filled-in brief actually does. The text
+  predates the slice; the slice is what put the other statement beside it.
+
+**GREEN names the sweep:** every sentence the factory generates — pages, commands, the four files' own headers —
+about what `adopt --refresh`, `adopt --confirm` and `migrate` do to any of the four says what D24 says, held by
+one test over the generated text; not this one sentence. If the brief is meant to be exempt from `migrate`'s
+merge, that is a product question for the host, not this task's to choose.
+
+**Files:** to be named by the host once the first step says which statement is true.
