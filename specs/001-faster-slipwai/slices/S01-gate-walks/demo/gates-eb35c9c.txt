@@ -1,0 +1,32 @@
+== make verify at eb35c9c 2026-10-03T16:25:35Z
+done make verify exit=0 2026-10-03T16:48:34Z
+== make -f delivery/Makefile verify 2026-10-03T16:48:34Z
+done delivery verify exit=0 2026-10-03T17:11:30Z
+
+--- make verify (last lines)
+test_a_wrapper_that_is_there_or_a_command_that_does_not_run_one_writes_nothing (test_wrappers.WrapperTest.test_a_wrapper_that_is_there_or_a_command_that_does_not_run_one_writes_nothing) ... ok
+
+----------------------------------------------------------------------
+Ran 1203 tests in 1377.658s
+
+OK (skipped=9)
+
+verify: all gates passed
+
+--- make -f delivery/Makefile verify (last lines)
+OK (skipped=9)
+python3 delivery/scripts/check-convergence.py
+  path-to-production: `scripted` — below `pipeline-decides`
+  integration: `unknown` — unrecorded: nothing has established it; /drive asks before the first slice
+  safety-net: `tests-pass` — below `mutation-measured`
+  structure: `named` — below `typed`
+  platform: `supported` — below `audited`
+  constitution: `template` — below `in-full`
+  data: `settled` — at target
+  infrastructure: `settled` — at target
+  strategy: `done` — at target
+check-convergence: 3 of 9 axes at target; the map is delivery/docs/convergence.md
+
+verify: all gates passed
+
+--- the first run, at 3dea6a0: make verify red (verify_failures=1) — test_utf8_io named an unencoded read at check-codegraph.py:395 and test_toolkit read a __pycache__ file a test had written under assets/toolkit/scripts; fixed at eb35c9c

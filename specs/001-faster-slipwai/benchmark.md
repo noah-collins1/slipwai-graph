@@ -1,15 +1,16 @@
 # Benchmark — 001-faster-slipwai
 
-Drawn 2026-10-03T13:14:08Z at `fee89b8` from 6 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
+Drawn 2026-10-03T17:11:59Z at `eb35c9c` from 7 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
 
 ## Slices
 
-5 slice(s) recorded, 7h42m+ in all.
+6 slice(s) recorded, 10h12m+ in all.
 
 | slice | delegate/cycle | wall | in | out | models | sessions | converge | +tasks | gaps | mutation | adversary | demo | verify✗ | rework | tasks | files | ±lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | (feature) | — | 49m23s | 4.2M | 54.5k | claude-fable-5-1 | 1 | 0 | 0 | 0/0 | — | 0 | — | 0 | 0 | — | — | — |
 | S00-run-path | rule/rule | 1h44m+ | 20.1M (+1 unread) | 157k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 1 | 7/5 | — | 0 | accepted | 1 | 0 | 9 | 44 | +3151/-203 |
+| S01-gate-walks | story/rule, task/example, task/rule | 2h29m+ | 47.1M (+2 unread) | 165.7k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 9 | 22/13 | — | 7 | accepted | 1 | 0 | 33 | 45 | +6623/-59 |
 | S20-slice-scope-root | rule/rule, task/example, task/rule | 1h09m+ | 22.8M (+3 unread) | 113.4k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 8 | 8/6 | — | 9 | accepted | 1 | 0 | 34 | 44 | +3998/-36 |
 | S21-refresh-keeps-owned-files | rule/rule, task/rule | 1h01m | 19.4M | 81.3k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 1 | 3 | 8/8 | — | 6 | accepted | 0 | 0 | 11 | 42 | +3092/-24 |
 | S22-slice-scope-base | rule/rule, task/rule | 1h41m | 32M | 200.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 7 | 21/11 | — | 11 | accepted | 0 | 0 | 29 | 29 | +5634/-42 |
@@ -45,6 +46,29 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | demo | 2026-10-03 04:50 | 5m12s | 1.3M | 6.6k | claude-fable-5-1 | drive-hand | yes | outcome=accepted, driver=cruise |
 | adversary | 2026-10-03 04:56 | 37s | 405.3k | 1.2k | claude-fable-5-1 | — | no | findings=0, seams=0, driver=cruise |
 | mutation | 2026-10-03 04:56 | unbracketed | unknown | unknown | — | — | no | driver=cruise |
+
+### S01-gate-walks — 2h29m+
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-03 13:15 | 1m47s | 722.9k | 7.4k | claude-fable-5-1 | — | no | driver=cruise |
+| skipper | 2026-10-03 13:16 | 4m39s | 2M | 18.1k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
+| gaps | 2026-10-03 13:21 | unbracketed | unknown | unknown | — | — | no | gaps=22, driver=cruise |
+| plan | 2026-10-03 13:25 | unbracketed | unknown | unknown | — | — | no | driver=cruise |
+| tasks | 2026-10-03 13:25 | 2m12s | 512.1k | 3.7k | claude-fable-5-1, claude-sonnet-5-5 | drive-tasks | yes | driver=cruise |
+| implement | 2026-10-03 13:28 | 11m18s | 7.8M | 15.8k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | delegate=story, cycle=rule, split=0, verify_failures=0, driver=cruise |
+| converge | 2026-10-03 13:39 | 6m02s | 1.8M | 7.8k | claude-fable-5-1 | drive-converge | yes | driver=cruise |
+| skipper | 2026-10-03 13:45 | 3m20s | 960.1k | 9k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-03 13:49 | 18m50s | 3.7M | 10.2k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | delegate=task, cycle=rule, split=0, verify_failures=0, driver=cruise |
+| converge | 2026-10-03 14:08 | 14m22s | 3.4M | 8.2k | claude-fable-5-1 | drive-converge | yes | driver=cruise |
+| implement | 2026-10-03 14:22 | 11m27s | 3.1M | 11.4k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | delegate=task, cycle=rule, split=0, verify_failures=0, driver=cruise |
+| gaps | 2026-10-03 14:34 | 5m26s | 1.9M | 7.1k | claude-fable-5-1 | drive-gaps | yes | gaps=13, driver=cruise |
+| implement | 2026-10-03 14:40 | 21m09s | 7.8M | 19.1k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | delegate=task, cycle=rule, split=0, verify_failures=0, driver=cruise |
+| demo | 2026-10-03 15:01 | 11m37s | 4M | 7.4k | claude-fable-5-1 | drive-hand | yes | outcome=accepted, driver=cruise |
+| adversary | 2026-10-03 15:13 | 8m17s | 2.8M | 6.9k | claude-fable-5-1 | drive-adversary | yes | findings=7, seams=2, driver=cruise |
+| skipper | 2026-10-03 15:22 | 3m57s | 1.7M | 14.1k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-03 15:26 | 22m30s | 4.6M | 18.7k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | delegate=task, cycle=example, split=0, verify_failures=0, driver=cruise |
+| implement | 2026-10-03 16:12 | 2m42s | 384.9k | 867 | claude-fable-5-1 | — | no | delegate=task, cycle=rule, split=0, verify_failures=1, driver=cruise |
 
 ### S20-slice-scope-root — 1h09m+
 
@@ -125,12 +149,15 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 
 ## Notes
 
+- S01-gate-walks: implemented as story/rule and task/example and task/rule — its wall compares with neither
 - S20-slice-scope-root: implemented as rule/rule and task/example and task/rule — its wall compares with neither
 - S21-refresh-keeps-owned-files: implemented as rule/rule and task/rule — its wall compares with neither
 - S22-slice-scope-base: implemented as rule/rule and task/rule — its wall compares with neither
 - S23-refusal-in-subdirectory: implemented as rule/rule and task/rule — its wall compares with neither
 - (feature) ground: cut off — a new `bosun` entry started while it was open; its wall is real, its signals were never reported
 - S00-run-path mutation: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
+- S01-gate-walks gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
+- S01-gate-walks plan: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S20-slice-scope-root gaps: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
 - S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.

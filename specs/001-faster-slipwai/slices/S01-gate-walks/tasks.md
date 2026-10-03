@@ -436,7 +436,7 @@ slice shows e2. Commit, level line (PATCH, `VERSION` not raised because it alrea
 
 ### T014 — Both full gates on the final tip (host task)
 
-- [ ] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T013;
+- [x] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T013;
   both green (Principle XIV). Confirm the slice's diff touches under `delivery/` only `delivery/survey/pinned.md`,
   `VERSION` is `1.5.2.dev0`, and no test file under 350 lines is over. Then the demo from [quickstart.md](quickstart.md).
 
@@ -769,3 +769,12 @@ Seven findings under `## S01 · 4357da0` in `specs/001-faster-slipwai/adversary-
   `.codegraph/`, then renamed over the record only where the record is absent or a regular file; anything else is
   *cannot be kept here*, never fatal; no stray temporary file survives a run. **Files:**
   `assets/toolkit/scripts/check-codegraph.py`, `tests/test_codegraph_races.py`. PATCH.
+
+## Phase 4 record (cruise iteration 7)
+
+Demo `accepted` by `drive-hand` at `ddca0d8` (`demo-log.md`). Adversary: `## S01 · 4357da0` in
+`specs/001-faster-slipwai/adversary-log.md` — two seams, seven findings, six fixed (T030–T033), one open in the
+Parking Lot (D52, D53). Mutation: N/A — no mutation command is recorded in `project.json`. Both full gates green at
+`eb35c9c` (`demo/gates-eb35c9c.txt`): `make verify` exit 0 (9 skipped), `make -f delivery/Makefile verify` exit 0.
+The first run, at `3dea6a0`, was red on the slice's own tree — an unencoded read of the record, and bytecode a
+test wrote beside the toolkit's scripts — and was fixed at `eb35c9c`.
