@@ -7,7 +7,7 @@ import { basename, dirname, join } from 'node:path';
 
 import { extractHash, renderGlobalMermaid, renderSegmentMermaid, renderSliceMermaid } from './mermaid.ts';
 import { segmentModel, type Model } from './model.ts';
-import type { RenderSession } from './render-session.ts';
+import { BrowserError, reasonOf, type RenderSession } from './render-session.ts';
 import {
   MODEL_MERMAID,
   MODEL_SVG,
@@ -59,7 +59,7 @@ const CI_MARKERS = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI'];
 const sourceStamp = (diagram: Diagram): string => {
   const hash = extractHash(diagram.source);
   if (hash === undefined) {
-    throw new Error(`generated Mermaid for ${diagram.svg} carried no hash — mermaid.ts should always stamp one`);
+    throw new Error(`render: generated Mermaid for ${diagram.svg} carried no hash — mermaid.ts should always stamp one`);
   }
   return `<!-- em-source-sha256: ${hash} -->`;
 };
@@ -87,15 +87,19 @@ export function isCurrent(diagram: Diagram, key: string): boolean {
 export function removeOrphans(diagrams: readonly Diagram[]): void {
   const slashed = (path: string): string => path.replaceAll('\\', '/');
   for (const dir of [SEGMENT_DIR, SLICE_DIR]) {
-    mkdirSync(join(ROOT, dir), { recursive: true });
-    const produced = new Set(
-      diagrams
-        .flatMap((diagram) => [diagram.mmd, diagram.svg])
-        .filter((path) => slashed(dirname(path)) === slashed(dir))
-        .map((path) => basename(path)),
-    );
-    for (const entry of readdirSync(join(ROOT, dir))) {
-      if (!produced.has(entry)) rmSync(join(ROOT, dir, entry), { force: true, recursive: true });
+    try {
+      mkdirSync(join(ROOT, dir), { recursive: true });
+      const produced = new Set(
+        diagrams
+          .flatMap((diagram) => [diagram.mmd, diagram.svg])
+          .filter((path) => slashed(dirname(path)) === slashed(dir))
+          .map((path) => basename(path)),
+      );
+      for (const entry of readdirSync(join(ROOT, dir))) {
+        if (!produced.has(entry)) rmSync(join(ROOT, dir, entry), { force: true, recursive: true });
+      }
+    } catch (error) {
+      throw new Error(`render: could not clear ${dir}: ${reasonOf(error)}`);
     }
   }
 }
@@ -114,7 +118,7 @@ function writeFinished(kind: Diagram['kind'], path: string, bytes: string | Uint
     renameSync(temporary, join(ROOT, path));
   } catch (error) {
     rmSync(temporary, { force: true });
-    throw error;
+    throw new Error(`render: could not write ${path}: ${reasonOf(error)}`);
   }
   console.log(`  wrote ${path}`);
 }
@@ -129,10 +133,13 @@ export async function drawDiagrams(diagrams: readonly Diagram[], session: Render
   for (let start = 0; start < diagrams.length && failed.length === 0; start += IN_FLIGHT) {
     const batch = diagrams.slice(start, start + IN_FLIGHT);
     const settled = await Promise.allSettled(batch.map((diagram) => session.draw(diagram.source, 'svg')));
+    // The browser that would not start is one failure, shared by the window: reported as itself, no diagram blamed.
+    const browser = settled.find((result) => result.status === 'rejected' && result.reason instanceof BrowserError);
+    if (browser !== undefined) throw (browser as PromiseRejectedResult).reason;
     batch.forEach((diagram, index) => {
       const result = settled[index] as PromiseSettledResult<Uint8Array>;
       if (result.status === 'rejected') {
-        const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+        const reason = reasonOf(result.reason);
         failed.push(`${diagram.svg}: ${reason}`);
         return;
       }
@@ -147,11 +154,22 @@ export async function drawDiagrams(diagrams: readonly Diagram[], session: Render
 
 /** The raster copy of the whole timeline, drawn on every run that asks, in the same session, and renamed into place. */
 export async function drawPng(source: string, session: RenderSession, path: string): Promise<void> {
-  writeFinished('global', path, await session.draw(source, 'png'));
+  let bytes: Uint8Array;
+  try {
+    bytes = await session.draw(source, 'png');
+  } catch (error) {
+    if (error instanceof BrowserError) throw error;
+    throw new Error(`render: could not draw ${path}: ${reasonOf(error)}`);
+  }
+  writeFinished('global', path, bytes);
 }
 
 export function readSvg(diagram: Diagram): string {
-  return readFileSync(join(ROOT, diagram.svg), 'utf8');
+  try {
+    return readFileSync(join(ROOT, diagram.svg), 'utf8');
+  } catch (error) {
+    throw new Error(`render: could not read ${diagram.svg}: ${reasonOf(error)}`);
+  }
 }
 
 /**
@@ -161,9 +179,13 @@ export function readSvg(diagram: Diagram): string {
  */
 export function writeIfDifferent(path: string, contents: string, label: string = path): boolean {
   const absolute = join(ROOT, path);
-  if (existsSync(absolute) && readFileSync(absolute, 'utf8') === contents) return false;
-  mkdirSync(dirname(absolute), { recursive: true });
-  writeFileSync(absolute, contents, 'utf8');
+  try {
+    if (existsSync(absolute) && readFileSync(absolute, 'utf8') === contents) return false;
+    mkdirSync(dirname(absolute), { recursive: true });
+    writeFileSync(absolute, contents, 'utf8');
+  } catch (error) {
+    throw new Error(`render: could not write ${label}: ${reasonOf(error)}`);
+  }
   console.log(`  wrote ${label}`);
   return true;
 }

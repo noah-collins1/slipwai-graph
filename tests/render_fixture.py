@@ -21,6 +21,10 @@ from pathlib import Path
 from support import FactoryTestCase
 
 LOG_VARIABLE = "STAND_IN_LOG"
+LAUNCH_FAILS_VARIABLE = "STAND_IN_LAUNCH_FAILS"
+"""Set this and `puppeteer.launch` throws, as a browser that cannot be started does."""
+PNG_FAILS_VARIABLE = "STAND_IN_PNG_FAILS"
+"""Set this and every PNG draw throws `png refused`, whatever the source; an SVG draws as always."""
 FAIL_MARKER = "STAND-IN-DRAW-FAILS"
 """Put this in a slice's name and the draw of every diagram whose source carries it throws."""
 
@@ -41,6 +45,7 @@ function log(entry) {{
 }}
 function sha(text) {{ return crypto.createHash('sha256').update(text).digest('hex'); }}
 function draw(definition, format) {{
+  if (format === 'png' && process.env.{PNG_FAILS_VARIABLE}) throw new Error('png refused');
   if (definition.includes(FAIL)) throw new Error('stand-in: draw refused (' + FAIL + ')');
   if (format === 'png') return Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
   return Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><desc>' + sha(definition)
@@ -100,11 +105,12 @@ function log(entry) {
 }
 export default {
   async launch(options = {}) {
+    if (process.env.__LAUNCH__) throw new Error('Failed to launch the browser process');
     log({ event: 'session', via: 'module', chunk_fixed: chunkFixed(), options });
     return { async close() { log({ event: 'close', via: 'module' }); } };
   },
 };
-""".replace("__LOG__", LOG_VARIABLE)
+""".replace("__LOG__", LOG_VARIABLE).replace("__LAUNCH__", LAUNCH_FAILS_VARIABLE)
 
 
 def broken_swimlane_chunk(project: Path) -> str:

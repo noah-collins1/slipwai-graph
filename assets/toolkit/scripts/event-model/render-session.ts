@@ -41,6 +41,26 @@ export function puppeteerConfigPath(): string | undefined {
   return path === undefined || path === '' ? undefined : path;
 }
 
+/** What went wrong, in the words a person reads: an error's message, or whatever else was thrown, as text. */
+export function reasonOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * The browser could not be started, or its configuration could not be read. It carries the whole line to print and
+ * is the one failure every diagram in flight shares, so it is reported once, as itself, and never as a diagram's.
+ */
+export class BrowserError extends Error {}
+
+/** The Puppeteer config's bytes; a path that cannot be read is named with the variable that gave it. */
+function readConfig(path: string): Buffer {
+  try {
+    return readFileSync(path);
+  } catch (error) {
+    throw new BrowserError(`render: could not read MERMAID_PUPPETEER_CONFIG (${path}): ${reasonOf(error)}`);
+  }
+}
+
 /** The one seam a test substitutes: draws one diagram's source, and lets go of the browser. */
 export interface RenderSession {
   draw(source: string, format: 'svg' | 'png'): Promise<Uint8Array>;
@@ -53,7 +73,8 @@ export interface RenderSession {
  */
 export function installRenderer(): void {
   const bin = join(CLI_PREFIX, 'node_modules', '.bin', 'mmdc');
-  if (!existsSync(bin)) {
+  if (existsSync(bin)) return;
+  try {
     mkdirSync(CLI_PREFIX, { recursive: true });
     const manifest = join(CLI_PREFIX, 'package.json');
     if (!existsSync(manifest)) {
@@ -63,6 +84,8 @@ export function installRenderer(): void {
       cwd: CLI_PREFIX,
       stdio: 'inherit',
     });
+  } catch (error) {
+    throw new Error(`render: could not install ${MERMAID_CLI} into ${CLI_PREFIX}: ${reasonOf(error)}`);
   }
 }
 
@@ -75,7 +98,11 @@ function mermaidManifests(): string[] {
 }
 
 function versionOf(manifest: string): string {
-  return (JSON.parse(readFileSync(manifest, 'utf8')) as { version?: string }).version ?? '';
+  try {
+    return (JSON.parse(readFileSync(manifest, 'utf8')) as { version?: string }).version ?? '';
+  } catch (error) {
+    throw new Error(`render: could not read the installed version in ${manifest}: ${reasonOf(error)}`);
+  }
 }
 
 /** The scripts whose bytes decide how a diagram is drawn: a change to any of them redraws every diagram. */
@@ -93,7 +120,7 @@ export function rendererKey(): string {
     versionOf(join(CLI_PREFIX, 'node_modules', '@mermaid-js', 'mermaid-cli', 'package.json')),
     mermaidManifests().map(versionOf).join(','),
     ...DRAWING_SCRIPTS.map((name) => readFileSync(join(SCRIPT_DIR, name))),
-    configPath === undefined ? 'no-puppeteer-config' : readFileSync(configPath),
+    configPath === undefined ? 'no-puppeteer-config' : readConfig(configPath),
   ];
   const hash = createHash('sha256');
   for (const part of parts) {
@@ -130,11 +157,12 @@ interface MermaidCli {
 }
 
 /**
- * Chromium refuses to start as root without `--no-sandbox`, which is how every rootless container fails here;
- * when that is the situation and no Puppeteer config was given, say which variable fixes it before rethrowing,
- * rather than leaving Chromium's own message to be searched for.
+ * A failure to open the browser, as one error that says so. Chromium refuses to start as root without
+ * `--no-sandbox`, which is how every rootless container fails here; when that is the situation and no Puppeteer
+ * config was given, one line first says which variable fixes it, rather than leaving Chromium's own message to be
+ * searched for.
  */
-function explainRootLaunch(error: unknown): never {
+function browserFailure(error: unknown): BrowserError {
   if (puppeteerConfigPath() === undefined && typeof process.getuid === 'function' && process.getuid() === 0) {
     process.stderr.write(
       'render: running as root, and Chromium will not start without --no-sandbox. Point MERMAID_PUPPETEER_CONFIG '
@@ -142,7 +170,16 @@ function explainRootLaunch(error: unknown): never {
         + 'CI workflow does exactly this.\n',
     );
   }
-  throw error;
+  return error instanceof BrowserError ? error : new BrowserError(`render: could not start the browser: ${reasonOf(error)}`);
+}
+
+function parseConfig(path: string): object {
+  try {
+    return JSON.parse(readConfig(path).toString('utf8')) as object;
+  } catch (error) {
+    if (error instanceof BrowserError) throw error;
+    throw new BrowserError(`render: MERMAID_PUPPETEER_CONFIG (${path}) is not valid JSON: ${reasonOf(error)}`);
+  }
 }
 
 async function launch(): Promise<RenderSession> {
@@ -153,18 +190,19 @@ async function launch(): Promise<RenderSession> {
   };
   const puppeteer = loaded.default ?? (loaded as { launch(options: object): Promise<Browser> });
   const configPath = puppeteerConfigPath();
-  const config = configPath === undefined ? {} : (JSON.parse(readFileSync(configPath, 'utf8')) as object);
-  let browser: Browser;
-  try {
-    browser = await puppeteer.launch({ headless: 'shell', ...config });
-  } catch (error) {
-    return explainRootLaunch(error);
-  }
+  const config = configPath === undefined ? {} : parseConfig(configPath);
+  const browser = await puppeteer.launch({ headless: 'shell', ...config });
   return {
     async draw(source, format) {
       return (await cli.renderMermaid(browser, source, format, DRAW_OPTIONS)).data;
     },
-    close: () => browser.close(),
+    close: async () => {
+      try {
+        await browser.close();
+      } catch (error) {
+        throw new BrowserError(`render: could not close the browser: ${reasonOf(error)}`);
+      }
+    },
   };
 }
 
@@ -176,7 +214,9 @@ export function lazySession(open: () => Promise<RenderSession> = launch): Render
       return session !== undefined;
     },
     async draw(source, format) {
-      session ??= open();
+      session ??= open().catch((error: unknown) => {
+        throw browserFailure(error);
+      });
       return (await session).draw(source, format);
     },
     async close() {
