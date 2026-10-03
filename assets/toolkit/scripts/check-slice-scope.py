@@ -79,7 +79,17 @@ from pathlib import Path
 
 
 def project_root(script: Path, depth: int) -> Path:
-    for candidate in script.parents:
+    """The repository's root: the git work tree's top where it holds a `project.json` and the script is inside it,
+    else the nearest ancestor above the script's own tree that holds one, else `depth` levels up. A `project.json`
+    a slice plants beside the script or under the delivery directory moves nothing."""
+    try:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=script.parent, text=True,
+                             capture_output=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        top = ""
+    if top and (Path(top).resolve() / "project.json").is_file() and Path(top).resolve() in script.parents:
+        return Path(top).resolve()
+    for candidate in script.parents[1:]:
         if (candidate / "project.json").is_file():
             return candidate
     return script.parents[depth]

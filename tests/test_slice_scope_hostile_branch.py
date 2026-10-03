@@ -100,3 +100,22 @@ class HostileBranchTest(SliceScopeFixtures):
         """T017, held: with `project.json` as on the base the root deployable owns what it did."""
         self.green(self.repo(self.root()), "tests/test_x.py")
 
+    # T018 (A4, A5)
+    def test_a_planted_project_json_below_the_root_does_not_move_it(self) -> None:
+        """T018: a committed `delivery/project.json` leaves the delivery rule and untracked files intact."""
+        repo = self.repo(self.root())
+        self.write(repo, "delivery/project.json", "{}", commit=True)
+        self.write(repo, "delivery/Makefile")
+        self.write(repo, ".github/workflows/new.yml")
+        result = self.run_gate(repo)
+        self.assertNotEqual(result.returncode, 0)
+        for path in ("delivery/Makefile", ".github/workflows/new.yml"):
+            self.assertIn(path, result.stderr)
+
+    def test_a_project_json_beside_the_script_is_no_traceback(self) -> None:
+        """T018: the script's own directory holding a `project.json` ends in a verdict, not a traceback."""
+        repo = self.repo(self.root())
+        self.write(repo, "delivery/scripts/project.json", "{}")
+        result = self.run_gate(repo)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("delivery/scripts/project.json", result.stderr)
