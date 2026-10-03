@@ -222,6 +222,7 @@ class Base(NamedTuple):
     commit: str | None
     trunk: str
     has_ref: bool
+    passed_over: str = ""  # the report words where `ci.branch` named something that was not used; else empty
 
 
 def bases_of(name: str) -> tuple[bool, str | None]:
@@ -248,20 +249,43 @@ def bases_of(name: str) -> tuple[bool, str | None]:
     return exists, newest
 
 
+def usable(value: object) -> str | None:
+    """A branch name a record may name: a string, stripped, `refs/heads/` taken off, one git accepts as a branch,
+    and not a `slice/<id>` — a slice branch is never the trunk. Anything else is None, never an exception."""
+    if not isinstance(value, str):
+        return None
+    name = value.strip()
+    name = name[len("refs/heads/"):] if name.startswith("refs/heads/") else name
+    if not name or name.startswith(("-", "refs/")) or SLICE_BRANCH.match(name):
+        return None
+    if git("check-ref-format", f"refs/heads/{name}") is None:
+        return None
+    return name
+
+
 def merge_base() -> Base:
     """Where the branch left the trunk: the name `ci.branch` of the working tree's `project.json` records where it
-    has a ref, else `main` where it has one, else `master` — so `master` counts only as the recorded name or
-    where no `main` exists, and a minted `master` cannot move the base."""
+    is usable and has a ref, else `main` where it has one, else `master` — so `master` counts only as the recorded
+    name or where no `main` exists, and a minted `master` cannot move the base. A recorded name passed over is
+    said in `passed_over`."""
     record = read_json(ROOT / "project.json")
     ci = record.get("ci") if isinstance(record, dict) else None
-    recorded = ci.get("branch") if isinstance(ci, dict) else None
-    names = [recorded] if isinstance(recorded, str) and recorded else []
+    value = ci.get("branch") if isinstance(ci, dict) else None
+    recorded = usable(value)
+    names = [recorded] if recorded else []
     names += [name for name in ("main", "master") if name not in names]
+    passed_over = ""
+    if isinstance(value, str) and value.strip():
+        if recorded is None:
+            passed_over = f"`ci.branch` names `{value.strip()}`, which is not a branch name"
+        elif not bases_of(recorded)[0]:
+            passed_over = (f"`ci.branch` names `{recorded}`, which has no branch here — "
+                           f"`git fetch origin {recorded}` would bring it")
     for name in names:
         exists, base = bases_of(name)
         if exists:
-            return Base(base, name, True)
-    return Base(None, names[0], False)
+            return Base(base, name, True, passed_over)
+    return Base(None, names[0], False, passed_over)
 
 
 def changed_files(base: str) -> dict[str, str]:
@@ -569,30 +593,32 @@ def lost_records() -> list[str]:
     return findings
 
 
-def check(branch: str | None) -> tuple[list[str], str]:
-    """The violations, and the one line to print when there are none."""
+def check(branch: str | None) -> tuple[list[str], str, str]:
+    """The violations, the one line to print when there are none, and what was passed over (empty if nothing)."""
     violations = lost_records()
     match = SLICE_BRANCH.match(branch or "")
     if match is None:
         where = f"on `{branch}`" if branch else "on a detached checkout"
-        return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold"
+        return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold", ""
     slice_id = match.group("id")
-    base = merge_base().commit
+    found_base = merge_base()
+    base = found_base.commit
+    note = f"; {found_base.passed_over}" if found_base.passed_over else ""
     if base is None:
-        return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold"
+        return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold", note
     scope = Scope(slice_id, base)
     for path, status in sorted(changed_files(base).items()):
         found = scope.violation(path, status)
         if found:
             violations.append(found)
     violations.extend(scope.model_violations())
-    return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may"
+    return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may{note}", note
 
 
 def main() -> int:
-    violations, report = check(current_branch())
+    violations, report, note = check(current_branch())
     if violations:
-        print("check-slice-scope: a slice branch reaches outside what one slice may touch\n", file=sys.stderr)
+        print(f"check-slice-scope: a slice branch reaches outside what one slice may touch{note}\n", file=sys.stderr)
         for violation in violations:
             print(f"  {violation}", file=sys.stderr)
         print(file=sys.stderr)
