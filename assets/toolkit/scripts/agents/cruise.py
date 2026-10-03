@@ -81,6 +81,7 @@ ROOT = project_root(SCRIPT, 2)
 # to start over and the run's fingerprint would read as progress.
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(SCRIPT.parent))
+import bookkeeping  # noqa: E402
 import code_index  # noqa: E402
 # The delivery toolkit this script is part of: `commands/`, `scripts/`, `skills/` beside each other, at the root
 # or under the delivery directory of an adopted repository.
@@ -508,19 +509,30 @@ def child_environment(harness: dict[str, Any] | None) -> dict[str, str]:
     return environment
 
 
+_HOOK_FILES: list[Path] | None = None
+
+
 def control_paths() -> list[Path]:
     """Every gate and control the run is held by, present or not: the fixed ones, and the hook file of every harness
-    whose registry row projects one."""
-    paths = list(CONTROL_PATHS)
-    for row in registry().values():
-        projection = (row.get("hooks") or {}).get("projection") if isinstance(row.get("hooks"), dict) else None
-        if isinstance(projection, dict) and projection.get("where"):
-            paths.append(ROOT / str(projection["where"]))
-    return list(dict.fromkeys(paths))
+    whose registry row projects one. The hook files are read from the registry once per process: the registry is
+    one of the controls, and a signature that opened it to learn the paths would open a control every time."""
+    global _HOOK_FILES
+    if _HOOK_FILES is None:
+        _HOOK_FILES = []
+        for row in registry().values():
+            projection = (row.get("hooks") or {}).get("projection") if isinstance(row.get("hooks"), dict) else None
+            if isinstance(projection, dict) and projection.get("where"):
+                _HOOK_FILES.append(ROOT / str(projection["where"]))
+    return list(dict.fromkeys([*CONTROL_PATHS, *_HOOK_FILES]))
+
+
+# What the runner remembers of a control's bytes while its stat facts stand: all four facts, or the file is hashed.
+CONTROL_RECORD = bookkeeping.Record(strict=True)
 
 
 def controls_signature() -> dict[str, str]:
-    """Every file under the controls by its content, taken before an iteration and compared after it."""
+    """Every file under the controls by its content, taken before an iteration and compared after it. Each file's
+    stat is read afresh every time; its bytes only where the record cannot vouch for them (D56)."""
     signature: dict[str, str] = {}
     for control in control_paths():
         if control.is_file():
@@ -535,9 +547,10 @@ def controls_signature() -> dict[str, str]:
         for path in files:
             try:
                 if path.is_file():
-                    signature[path.relative_to(ROOT).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+                    signature[path.relative_to(ROOT).as_posix()] = CONTROL_RECORD.digest(path)
             except OSError:
                 continue
+    CONTROL_RECORD.retain({str(ROOT / path) for path in signature})
     return signature
 
 
