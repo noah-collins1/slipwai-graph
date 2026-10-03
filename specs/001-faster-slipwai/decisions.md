@@ -251,3 +251,14 @@
 - **Confidence:** high · **Would reverse if:** a person produces the delivery-at-root layout with a root deployable, or two done slices that share a prefix on purpose.
 - **Written to:** `specs/001-faster-slipwai/slices/S20-slice-scope-root/tasks.md` (T010–T012, T014, T015); `specs/001-faster-slipwai/story-split.md` (Parking Lot)
 - **Status:** standing
+
+## D23 — Where does the adversary's finding about the slice-scope gate's base go (A3)?
+- **Stage:** Phase 4 (adversary triage) · **Slice:** S20-slice-scope-root · **When:** 2026-10-03T06:09:49Z · **Iteration:** 3
+- **Question:** The adversary pass showed that `check-slice-scope` compares a slice branch with the newest of `main`, `origin/main`, `master` and `origin/master`, so a `master` branch, a tag named `main` or an `origin/master` ref placed at the branch's head empties the diff, and a shallow clone has no base and holds nothing. It is HIGH, older than S20, and the same in every generated project. Is it fixed inside S20?
+- **Options:** (a) fix it in S20 — a second capability (how the base is chosen) in a slice about a root deployable, and a change to what the checker holds everywhere, which S20's row defers; (b) a slice of its own, a PATCH, placed fourth in split order after `S21`, with the finding left `open` in the adversary log until it lands — recommended by the stage (`delivery/commands/adversary.md`: only an open `CRITICAL` is placed ahead of every slice; D13 and D15 placed the two earlier checker defects the same way); (c) decline it as a local check anyone with the checkout can defeat — not available for the CI half: a pushed `master` is fetched there.
+- **Decision:** (b). `S22-slice-scope-base` is added to `story-split.md`. The adversary's other confirmed findings (A1, A2, A4, A5, B1, B3) are this slice's and are fixed in it through failing tests (T016–T019).
+- **Why:** constitution V's one capability per slice; the owner brief's priority 1 is about the merge root and CI, which this slice does not change, and the fix for the base tightens what a slice branch's own gate sees — worth its own criteria (which refs count, what a shallow clone answers) and its own demo.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person wants it ahead of `S21`, or reads it as CRITICAL — then it is the next slice.
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (Split Candidates, Slice graph); `specs/001-faster-slipwai/adversary-log.md`
+- **Status:** standing

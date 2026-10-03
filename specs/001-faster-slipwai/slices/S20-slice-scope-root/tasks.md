@@ -429,3 +429,44 @@ T011 is folded into T014.
   `scripts/`; one sentence each for the delivery-at-the-root layout (T010) and for the registry's fields being the
   source (T012).
 
+## Phase 4 — adversary findings (`adversary-log.md`, `## S20 · c1f203e`; D23)
+
+Each is a failing test first, through the checker's command line in a temporary repository. A3 is slice
+`S22-slice-scope-base`, not a task here; A6 and B2 are declined in the log.
+
+### T016 — **HIGH** — A path git quotes is held like any other (A1 · AC-S20-2, -3, -14, -15, -17)
+
+- [ ] RED: on a root deployable's slice branch, `.github/workflows/déploy.yml`, `delivery/scripts/é.py`,
+  `.specify/é.sh`, a file with a tab or a quote in its name under `.claude/`, another slice's
+  `specs/f/slices/S2/é.md`, and an edit to an existing `db/migrations/0002_añadir.py` — committed and uncommitted —
+  each pass today. GREEN in `changed_files()` (and `deletions()` if it shares the reading): git's paths are read
+  unquoted (`-z`), so every rule sees the real path. Class: every `git` call in the script whose output carries
+  paths. Held: an ASCII path answers as before; under `apps/` a non-ASCII service file is the slice's.
+
+### T017 — **HIGH** — Ownership comes from the record the branch left, not the one it wrote (A2 · AC-S20-2, -3, -5)
+
+- [ ] RED: a slice edits `project.json` to add deployables whose `path` is `project.json`, `.github`, `delivery`,
+  `Makefile`, `.claude`, `AGENTS.md`, then edits those paths — exit 0 today. GREEN: the deployables record (and
+  `ci.gate`) the checker decides by is the base commit's `project.json` (`git show <base>:project.json`); where the
+  base has none, no deployable owns anything. Held: with `project.json` unchanged on the branch every answer is
+  today's; `tests/test_parallel_slices.py` untouched and green. Sweep: what else the checker reads from the
+  slice's tree to decide the host surface (`.written`, the registry) — each is host surface itself, so say in the
+  report whether, with ownership read from the base, a slice can still change one and pass.
+
+### T018 — **MEDIUM** — The checker's root is the repository's, whatever a slice plants (A4, A5 · AC-S20-3, -19)
+
+- [ ] RED: a committed `delivery/project.json` → `delivery/Makefile`, `delivery/baseline.json`, a new skill and an
+  untracked `.github/workflows/new.yml` pass today; a `project.json` beside the script → a traceback at import.
+  GREEN: the root is the git work tree's top where it holds a `project.json`, else today's walk; neither planted
+  file moves it and neither ends on a traceback. Held: the generated layout (`scripts/` at the root) and the
+  adopted one resolve as before.
+
+### T019 — **MEDIUM** — A register cell is an id only where it was one before, with its slug (B1, B3 · AC-S20-10, -12, D19)
+
+- [ ] RED (in `tests/test_register_ids.py`): a register row `S03a`, and rows starting `e2e`, `k8s`, `S01_run_path`,
+  with no adversary row and no record → `check-decisions` exits 1 and `check-benchmark` warns today; at `f151b80`
+  both were silent. A cell `S00-run-path.` with a `## S00-run-path · …` row → *no row for S00-run-path.* today.
+  GREEN in both scripts' `done_slices()`: the head is today's released rule (letters, digits, then a word
+  boundary), and the slug is what follows a `-` or `.` and ends on a letter or digit. Held: `S00-run-path`, `S1`,
+  `S1.2`, `S1 — name`, the header and separator rows read as they do now.
+
