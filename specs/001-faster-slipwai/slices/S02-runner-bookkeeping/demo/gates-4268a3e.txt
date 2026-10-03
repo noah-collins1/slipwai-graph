@@ -1,0 +1,1250 @@
+Both full gates at 4268a3e on adopt-method, one after the other, after the adversary's fixes (cruise iteration 9). The summary lines of /tmp/s02/gates2.log:
+
+4268a3e
+check-structure: 148 modules, 7 tiers, no upward imports and no cycles
+check-imports: inward dependency rule holds (92 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (92 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (132 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (132 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 2 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (154 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (154 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (128 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (128 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (197 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (197 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (25 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (25 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (43 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (43 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (30 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (30 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (45 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (45 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (46 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (46 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (77 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (77 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (103 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (103 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (92 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (92 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (131 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (131 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (133 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (133 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (60 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (60 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (91 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (91 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (52 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (52 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (60 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (60 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (85 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (94 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (94 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (65 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (65 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (75 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (75 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (102 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (102 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (121 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (104 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (104 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (123 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (123 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (58 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (58 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (90 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (90 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (74 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (74 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (121 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (123 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (123 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (53 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (53 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-agents: 197 projected files match
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+Ran 1344 tests in 1573.643s
+OK (skipped=9)
+verify: all gates passed
+done factory-gate exit=0
+check-imports: inward dependency rule holds
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files
+check-slice-scope: on `adopt-method`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: 234 projected files match
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is enabled
+check-speckit: 2 manifest(s) match, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: 15 required principle(s) covered, 7 of them as targets held to the convergence map
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: warning: specs/001-faster-slipwai/slices/S00 is done but has no benchmark.json: no stage of it was bracketed (commands/drive.md, *What each stage costs*)
+check-benchmark: warning: specs/001-faster-slipwai/slices/S01 is done but has no benchmark.json: no stage of it was bracketed (commands/drive.md, *What each stage costs*)
+check-benchmark: warning: specs/001-faster-slipwai/slices/S20 is done but has no benchmark.json: no stage of it was bracketed (commands/drive.md, *What each stage costs*)
+check-benchmark: warning: specs/001-faster-slipwai/slices/S21 is done but has no benchmark.json: no stage of it was bracketed (commands/drive.md, *What each stage costs*)
+check-benchmark: warning: specs/001-faster-slipwai/slices/S22 is done but has no benchmark.json: no stage of it was bracketed (commands/drive.md, *What each stage costs*)
+check-benchmark: warning: specs/001-faster-slipwai/slices/S23 is done but has no benchmark.json: no stage of it was bracketed (commands/drive.md, *What each stage costs*)
+check-benchmark: 6 warning(s) above — what was not measured stays unmeasured; not failing verify
+check-decisions: 65 decision(s) in 1 file(s), 8 demo(s) in 7 log(s), every field present and every path in the tree, every done slice in the adversary log
+check-imports: inward dependency rule holds (92 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (92 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (132 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (132 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 2 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (154 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (154 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (128 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (128 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (197 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (197 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (25 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (25 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (43 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (43 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (30 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (30 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (45 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (45 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (46 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (46 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+verify: all gates passed
+check-imports: inward dependency rule holds (77 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (77 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (103 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (103 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (92 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (92 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (131 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (131 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (133 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (133 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (60 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (60 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (91 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (91 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-styles: 1 web app(s), no :root custom property has two imported owners
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (52 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (52 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (60 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (60 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (85 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (94 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (94 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (65 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (65 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (75 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (75 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (102 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (102 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (121 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (104 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (104 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (123 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (123 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-imports: inward dependency rule holds (58 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (58 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (90 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (90 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (74 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (74 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (121 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (123 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (123 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+check-deploy-role: 8 IAM resource(s) in infra/service/, each within the deploy role's grants
+verify: all gates passed
+check-imports: inward dependency rule holds (53 directory entries read)
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (53 directory entries read)
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+check-extensions: no extension elected; nothing to project
+check-agents: not initialized; no projections expected yet
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+check-model: valid
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+verify: all gates passed
+check-agents: 197 projected files match
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+Ran 1344 tests in 1563.982s
+OK (skipped=9)
+check-convergence: 3 of 9 axes at target; the map is delivery/docs/convergence.md
+verify: all gates passed
+done delivery-gate exit=0
