@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from test_slice_scope_root import SliceScopeFixtures, git
+from test_slice_scope_root import MODEL, SliceScopeFixtures, git
 
 
 class SliceScopeAdoptedRulesTest(SliceScopeFixtures):
@@ -94,3 +94,26 @@ class SliceScopeAdoptedRulesTest(SliceScopeFixtures):
         repo = self.repo(self.root(), written="lib/generated.py  \nlib/other.py\r\n")
         self.refused(repo, "lib/generated.py", "lib/other.py")
         self.green(repo, "lib/own.py")
+
+    TWO_AT_ROOT = {"web": {"kind": "service", "path": "."}, "worker": {"kind": "service", "path": "."}}
+
+    def two(self, service: str, deployables: dict | None = None) -> Path:
+        model = MODEL.replace("service: shop", f"service: {service}")
+        return self.repo(deployables or self.TWO_AT_ROOT, existing={"delivery/docs/event-model/model.yaml": model})
+
+    def test_the_slices_own_service_owns_the_root_where_it_is_one_of_two(self) -> None:
+        """T015 (D22, G3): `web` and `worker` at `.`, the block says `worker`: the slice's tests are green."""
+        self.green(self.two("worker"), "tests/t.py")
+        self.green(self.two("web"), "tests/t.py")
+
+    def test_the_first_listed_root_owns_it_where_the_slice_names_neither(self) -> None:
+        """T015 (D22, G3), held: a service the manifest does not record falls to the first listed, as before."""
+        result = self.verdict(self.two("other"), "tests/t.py")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("service `web` is not slice `S1`'s", result.stderr)
+
+    def test_a_deployable_in_a_subdirectory_still_outranks_both_roots(self) -> None:
+        """T015 (D22, G3), held: `apps/api` owns its files whichever root service the block names."""
+        records = {**self.TWO_AT_ROOT, "api": {"kind": "service", "path": "apps/api"}}
+        result = self.verdict(self.two("worker", records), "apps/api/x.py")
+        self.assertIn("service `api` is not slice `S1`'s", result.stderr)

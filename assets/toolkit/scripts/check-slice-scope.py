@@ -27,7 +27,8 @@ What a slice's change may contain — everything since the branch left `main`, c
   model names none — and, where the block names a `context`, nothing under another context's directory in
   `domain/` or `application/`. A browser app is open to every slice: a white box is one screen. A deployable
   recorded at `.` — an adopted repository's one application — owns every path no other deployable claims, its
-  tests and sibling directories included, except the host's surface: `project.json`, the root `Makefile`
+  tests and sibling directories included (where several are recorded at `.`, the slice's own `service` if it is
+  one of them, else the first listed), except the host's surface: `project.json`, the root `Makefile`
   (`GNUmakefile` and `makefile` too), `.specify/`, CI configuration (`.github/` and its forge siblings, the other
   CI systems `slipwai adopt` recognises, and `ci.gate`), the harnesses' files and directories as
   `<delivery>/scripts/agents/registry.json` names them (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`,
@@ -49,10 +50,16 @@ What a slice's change may contain — everything since the branch left `main`, c
 Refused, each with what to do instead: the canonical slot at the feature root (`specs/<feature>/plan.md`,
 `research.md`, `data-model.md`, `quickstart.md`, `tasks.md` — links into `slices/<id>/`, never committed;
 a regular file there is a record about to be lost, on every branch), another slice's directory or model
-block, another context's code, an edited or deleted migration, a numbered new migration, and anything else
-in the repository — `Makefile`, `project.json`, package manifests and locks, `scripts/`, `skills/`,
-`commands/`, `agents/`, CI, the docs other than the model and its canvas — which is the host's: landed on `main`
+block, another context's code, an edited or deleted migration, a numbered new migration (outside the root
+deployable), and anything else outside every deployable — `Makefile`, `project.json`, package manifests and
+locks, `scripts/`, `skills/`, `commands/`, `agents/`, CI, the docs other than the model and its canvas — which is
+the host's (under a root deployable, the host's surface above is all of it): landed on `main`
 before the fan-out, or handed back as the question it is. A refusal is a hand-back, not something to work around.
+
+Two readings are stated, not coded. A repository whose delivery directory is the root, with a deployable at the
+root too, is a layout neither `generate` nor `adopt` produces: the fixed names and `.written` hold there and
+nothing more is promised. The harness registry's own fields are the source of the host's paths: a name it carries
+only in prose is not read.
 
 The base the branch is compared with is where it left `main`, or last merged it in. Every `main` the checkout
 knows is tried — `main`, `origin/main`, their `master` spellings — and the newest base wins: `origin/main` alone
@@ -305,15 +312,18 @@ class Scope:
     def owning_app(self, path: str) -> str | None:
         """The deployable a path sits under, by its recorded `path`, or None for a path outside every app.
         A deployable at `.` (or `./`) is the whole repository, so it is asked last: it owns what no deployable
-        in a subdirectory claims."""
-        root = None
+        in a subdirectory claims. Where several are recorded at `.`, the slice's own `service` owns the path if it
+        is one of them, else the first listed."""
+        roots = []
         for name in self.apps:
             app_path = self.service_path(name)
             if app_path == ".":
-                root = root or name
+                roots.append(name)
             elif app_path and (path == app_path or path.startswith(app_path + "/")):
                 return name
-        return root
+        if self.service in roots:
+            return self.service
+        return roots[0] if roots else None
 
     def host_surface(self, path: str) -> bool:
         """Whether a path is the host's where the root deployable would own it: the fixed names, the delivery
