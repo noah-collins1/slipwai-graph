@@ -122,6 +122,7 @@ class RecordedNameTest(SliceScopeBaseTest):
     def test_a_name_with_no_ref_is_passed_over_and_said_so(self) -> None:
         """e4: `nowhere` has no branch; `main` answers and the output says `nowhere` was passed over."""
         repo = self.repo(self.root())
+        git(repo, "remote", "add", "origin", "file:///nowhere")  # a printed fetch needs a remote called `origin`
         self.record(repo, "nowhere")
         result = self.run_gate(repo)
         self.assertNotEqual(result.returncode, 0)
@@ -132,6 +133,7 @@ class RecordedNameTest(SliceScopeBaseTest):
     def test_the_bases_own_record_naming_an_absent_trunk_is_said_on_the_pass_line(self) -> None:
         """e7: the base records `develop`, which has no ref here; the slice's own file is green against `main`."""
         repo = self.repo(self.root(), ci={"branch": "develop"})
+        git(repo, "remote", "add", "origin", "file:///nowhere")
         self.commit(repo, "specs/f/slices/S1/a.md")
         result = self.run_gate(repo)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -243,7 +245,7 @@ class ForgeTargetTest(SliceScopeBaseTest):
         git(repo, "merge", "-q", "--no-edit", "--no-ff", "feature")
         result = self.run_gate(repo, {"GITHUB_BASE_REF": "feature"})
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(f"at {fork})", result.stdout)
+        self.assertIn(f"at {fork}, which the pull request targets)", result.stdout)
 
 
 class ReportTest(SliceScopeBaseTest):

@@ -69,9 +69,7 @@ class NoBaseTest(SliceScopeFixtures):
 
     def test_a_repository_whose_only_branch_is_the_slice_is_told_the_same(self) -> None:
         """e2: a full repository, `main` deleted."""
-        repo = self.origin()
-        git(repo, "branch", "-D", "main")
-        self.fails_with(repo, "`main`", FETCH_MAIN)
+        self.fails_with(self.no_trunk_ref(), "`main`", FETCH_MAIN)
 
     def test_a_shallow_clone_with_no_common_ancestor_is_told_to_unshallow(self) -> None:
         """e3: `origin/main` at depth 1 and the slice's own commit above it: no ancestor in depth."""
@@ -135,9 +133,7 @@ class NoBaseTest(SliceScopeFixtures):
 
     def test_a_variable_cannot_buy_the_pass_while_head_is_attached(self) -> None:
         """e5: `GITHUB_HEAD_REF` set, `HEAD` on the branch, no base: a developer's checkout."""
-        repo = self.origin()
-        git(repo, "branch", "-D", "main")
-        self.fails_with(repo, FETCH_MAIN, env={"GITHUB_HEAD_REF": "slice/S1"})
+        self.fails_with(self.no_trunk_ref(), FETCH_MAIN, env={"GITHUB_HEAD_REF": "slice/S1"})
 
     def test_a_lost_record_is_printed_with_the_missing_base(self) -> None:
         """e6: the untracked regular file at a canonical slot is reported beside the base line."""
@@ -150,6 +146,7 @@ class NoBaseTest(SliceScopeFixtures):
     def no_trunk_ref(self) -> Path:
         repo = self.origin()
         git(repo, "branch", "-D", "main")
+        git(repo, "remote", "add", "origin", "file:///nowhere")  # a printed fetch needs a remote called `origin`
         return repo
 
     def no_ancestor(self) -> Path:
@@ -177,6 +174,7 @@ class NoBaseTest(SliceScopeFixtures):
         self.fails_with(repo, FETCH.format("release"), env={"GITHUB_BASE_REF": "release"})
         recorded = self.repo(self.root(), ci={"branch": "trunk"})
         git(recorded, "branch", "-D", "main")
+        git(recorded, "remote", "add", "origin", "file:///nowhere")
         self.fails_with(recorded, FETCH.format("trunk"))
 
     def forge(self, variable: str) -> subprocess.CompletedProcess:

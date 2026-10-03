@@ -110,6 +110,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from typing import NamedTuple
 
@@ -317,6 +318,7 @@ class Base(NamedTuple):
     has_ref: bool
     passed_over: str = ""  # the report words where `ci.branch` named something that was not used; else empty
     bare: str = ""  # the same words with no `git fetch` command in them: what a forge's output may carry
+    targeted: bool = False  # the pull request's target, not the trunk's own base, is what the branch is compared with
 
 
 def bases_of(name: str) -> tuple[bool, str | None]:
@@ -392,9 +394,27 @@ def usable(value: object) -> str | None:
     return name
 
 
-def fetch_command(name: str) -> str:
+SAFE_NAME = re.compile(r"^[A-Za-z0-9._/-]+$")
+
+
+def printable(value: str) -> str:
+    """A name the gate did not choose, as it may be printed: control and line-separating characters dropped, a
+    backtick made an apostrophe, cut to 80 characters — so it can forge no line and end no span early."""
+    kept = "".join("'" if char == "`" else char for char in value
+                   if unicodedata.category(char)[0] != "C" and unicodedata.category(char) not in ("Zl", "Zp"))
+    return kept[:80]
+
+
+def has_origin() -> bool:
+    return "origin" in (git("remote") or "").split()
+
+
+def fetch_command(name: str) -> str | None:
     """The fetch that writes the remote-tracking ref this script looks for: a bare `git fetch origin <name>` in a
-    single-branch clone fetches the commit into `FETCH_HEAD` and no ref, so the gate would say the same again."""
+    single-branch clone fetches the commit into `FETCH_HEAD` and no ref, so the gate would say the same again.
+    Printed only for a plain branch name and where a remote called `origin` exists: it is pasted into a shell."""
+    if not SAFE_NAME.match(name) or not has_origin():
+        return None
     return f"git fetch origin {name}:refs/remotes/origin/{name}"
 
 
@@ -423,12 +443,13 @@ def merge_base() -> Base:
     if isinstance(value, str) and value.strip():
         stripped = value.strip()
         if recorded is None and SLICE_NAME.match(stripped.removeprefix("refs/heads/")):
-            passed_over = bare = f"`ci.branch` names `{stripped}`, a slice branch, which is never the trunk"
+            passed_over = bare = f"`ci.branch` names `{printable(stripped)}`, a slice branch, which is never the trunk"
         elif recorded is None:
-            passed_over = bare = f"`ci.branch` names `{stripped}`, which is not a branch name"
+            passed_over = bare = f"`ci.branch` names `{printable(stripped)}`, which is not a branch name"
         elif not bases_of(recorded)[0]:
-            bare = f"`ci.branch` names `{recorded}`, which has no branch here"
-            passed_over = f"{bare} — `{fetch_command(recorded)}` would bring it"
+            bare = f"`ci.branch` names `{printable(recorded)}`, which has no branch here"
+            command = fetch_command(recorded)
+            passed_over = f"{bare} — `{command}` would bring it" if command else bare
     elif value is not None and not isinstance(value, str):
         passed_over = bare = "`ci.branch` is not a string, so it was passed over"
     skipped: list[str] = []  # names with a ref and no history in common with this branch: passed over, not the end
@@ -448,10 +469,13 @@ def merge_base() -> Base:
             target = target_base(name)
             if target and target[1] is None:
                 return Base(None, target[0], True, passed_over, bare)  # a target with no history in common is no base
-            return Base(older_of(base, target[1] if target else None), name, True, passed_over, bare)
+            chosen = older_of(base, target[1] if target else None)
+            if target and chosen != base:  # the target's base won: say so, and name the target, not the trunk
+                return Base(chosen, target[0], True, passed_over, bare, True)
+            return Base(chosen, name, True, passed_over, bare)
     target = target_base(names[0])
     if target:
-        return Base(target[1], target[0], True, passed_over, bare)
+        return Base(target[1], target[0], True, passed_over, bare, True)
     if skipped:
         return Base(None, skipped[0], True, passed_over, bare)
     return Base(None, target_name() or names[0], False, passed_over, bare)
@@ -801,16 +825,24 @@ def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
     if base is None:
         if forge_checkout():
             return violations, "", "", not_checked(slice_id, found_base.trunk, found_base.bare), False
-        trunk = found_base.trunk
+        trunk = printable(found_base.trunk)
+        command = fetch_command(found_base.trunk)
         if not found_base.has_ref:
-            line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held — run `{fetch_command(trunk)}`"
+            line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held"
+            if command is None:
+                line += f" — create or fetch a local `{trunk}` branch"
+            elif f"`{command}`" not in found_base.passed_over:  # the note below may have said it already
+                line += f" — run `{command}`"
         elif (git("rev-parse", "--is-shallow-repository") or "").strip() == "true":
-            line = f"slice/{slice_id} shares no history with `{trunk}` at this depth — run `git fetch --unshallow origin`"
+            line = f"slice/{slice_id} shares no history with `{trunk}` at this depth — " + (
+                "run `git fetch --unshallow origin`" if has_origin() else "fetch the missing history")
         else:
             line = f"slice/{slice_id} shares no history with `{trunk}` — a slice branch is cut from `{trunk}`"
         return violations, "", "", f"check-slice-scope: {line}{note}", True
     short = (git("rev-parse", "--short", base) or base).strip()
-    compared = f"compared with `{found_base.trunk}` at {short}"
+    compared = f"compared with `{printable(found_base.trunk)}` at {short}"
+    if found_base.targeted:
+        compared += f", which the pull request targets"
     try:
         scope = Scope(slice_id, base)
         for path, status in sorted(changed_files(base).items()):
