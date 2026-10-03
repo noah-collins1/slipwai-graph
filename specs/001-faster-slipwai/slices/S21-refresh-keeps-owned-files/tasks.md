@@ -277,7 +277,7 @@ Two findings outside the slice's diff went to the split's Parking Lot.
 
 ### T009 — Every clause of AC-S21-1, -4, -5, -6, -9 and -10 is held by an example (`MEDIUM` G1, G2 · `LOW` G3–G6)
 
-- [ ] Tests only; no production edit expected. Each new assertion is shown to have teeth by a mutation in a
+- [x] Tests only; no production edit expected. Each new assertion is shown to have teeth by a mutation in a
   disposable clone. **GREEN names the sweep:** (G1, G2) each of the four, deleted and committed, is written with the
   factory default *and counted* (`1 file(s) rewritten`); (G4) the `cruise.json` example uses `enabled: true` and
   `max_iterations: 10`, as the criterion says; (G5) every adopt flag that reaches the refresh — `--refresh`,
@@ -288,3 +288,5 @@ Two findings outside the slice's diff went to the split's Parking Lot.
 
 **Files:** `tests/test_refresh_owned.py`, `tests/test_refresh_strategy.py` (each ≤ 350 lines).
 
+**T009 done** (`99c7d2e`, tests only): every example green against the code as it stood — no production edit — and
+each new assertion seen failing under its mutation in a disposable clone (G1, G2, G3, G5, G6 a–c).
