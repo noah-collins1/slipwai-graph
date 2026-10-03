@@ -39,6 +39,7 @@ OUTER_LAYER_FROM_APPLICATION = re.compile(
 
 PRUNED = {".venv", "node_modules", "__pycache__", ".git"}
 listings: dict[Path, list[Path]] = {}
+members: dict[Path, frozenset[Path]] = {}
 entries_read = 0
 
 
@@ -62,14 +63,18 @@ def listing(top: Path) -> list[Path]:
             directories[:] = [name for name in directories if not skipped(directory, name)]
             found.extend(directory / name for name in directories + files)
         listings[top] = sorted(found)
+        members[top] = frozenset(found)
     return listings[top]
 
 
 def under(directory: Path) -> list[Path]:
-    """Every path under `directory`: filtered from a listing already taken where it sits inside one, else listed."""
+    """Every path under `directory`: filtered from a listing already taken only where that listing holds the
+    directory as one of its own entries, spelled as it is spelled here, and not a link — then its files are
+    exactly those the directory's own listing would give. Anything else (a `..` or a link in the spelling, a
+    directory that is itself a link, one the listing pruned) is listed on its own, pruned and counted."""
     for top, paths in listings.items():
-        if top in directory.parents or top == directory:
-            return [path for path in paths if directory == top or directory in path.parents]
+        if top in directory.parents and directory in members[top] and not directory.is_symlink():
+            return [path for path in paths if directory in path.parents]
     return listing(directory)
 
 
