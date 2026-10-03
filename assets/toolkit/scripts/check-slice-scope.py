@@ -641,20 +641,28 @@ def forge_checkout() -> bool:
     return named and git("symbolic-ref", "-q", "HEAD") is None
 
 
-def check(branch: str | None) -> tuple[list[str], str, str]:
-    """The violations, the one line to print when there are none, and what the refusal header ends with."""
+def not_checked(slice_id: str) -> str:
+    """The forge's answer where there is no base: not a pass, not a failure, and said on stderr (D31)."""
+    return (f"check-slice-scope: slice/{slice_id} was NOT checked — this CI checkout has no trunk history to "
+            "compare with. The check holds on a developer's machine; for it to hold here the verify job's "
+            "checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: \"0\"`).")
+
+
+def check(branch: str | None) -> tuple[list[str], str, str, str]:
+    """The violations, the one line to print when there are none, what the refusal header ends with, and a
+    notice for stderr that is neither."""
     violations = lost_records()
     match = SLICE_BRANCH.match(branch or "")
     if match is None:
         where = f"on `{branch}`" if branch else "on a detached checkout"
-        return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold", ""
+        return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold", "", ""
     slice_id = match.group("id")
     found_base = merge_base()
     base = found_base.commit
     note = f"; {found_base.passed_over}" if found_base.passed_over else ""
     if base is None:
-        if forge_checkout():  # until the forge's own line lands, this case answers as it always has
-            return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold", note
+        if forge_checkout():
+            return violations, "", note, not_checked(slice_id)
         trunk = found_base.trunk
         if not found_base.has_ref:
             line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held — run `git fetch origin {trunk}`"
@@ -662,7 +670,7 @@ def check(branch: str | None) -> tuple[list[str], str, str]:
             line = f"slice/{slice_id} shares no history with `{trunk}` at this depth — run `git fetch --unshallow origin`"
         else:
             line = f"slice/{slice_id} shares no history with `{trunk}` — a slice branch is cut from `{trunk}`"
-        return [*violations, line], "", note
+        return [*violations, line], "", note, ""
     short = (git("rev-parse", "--short", base) or base).strip()
     compared = f"compared with `{found_base.trunk}` at {short}"
     scope = Scope(slice_id, base)
@@ -672,18 +680,21 @@ def check(branch: str | None) -> tuple[list[str], str, str]:
             violations.append(found)
     violations.extend(scope.model_violations())
     return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may ({compared}){note}", \
-        f" — {compared}{note}"
+        f" — {compared}{note}", ""
 
 
 def main() -> int:
-    violations, report, note = check(current_branch())
+    violations, report, note, notice = check(current_branch())
+    if notice:
+        print(notice, file=sys.stderr)
     if violations:
         print(f"check-slice-scope: a slice branch reaches outside what one slice may touch{note}\n", file=sys.stderr)
         for violation in violations:
             print(f"  {violation}", file=sys.stderr)
         print(file=sys.stderr)
         return 1
-    print(report)
+    if report:
+        print(report)
     return 0
 
 

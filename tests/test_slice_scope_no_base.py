@@ -128,9 +128,67 @@ class NoBaseTest(SliceScopeFixtures):
         git(recorded, "branch", "-D", "main")
         self.fails_with(recorded, "git fetch origin trunk")
 
-    def test_a_forge_detached_checkout_keeps_answering_as_it_did(self) -> None:
-        """Held until the forge's own line lands: detached `HEAD` and the variable, no base, exit 0."""
+    def forge(self, variable: str) -> subprocess.CompletedProcess:
+        """A detached depth-1 checkout of the slice, as a forge makes it, with the named variable set."""
+        clone = self.clone(self.origin(), "--depth", "1", "--branch", "slice/S1")
+        git(clone, "checkout", "-q", "--detach")
+        return self.run_gate(clone, {variable: "slice/S1"})
+
+    def not_checked(self, result: subprocess.CompletedProcess) -> str:
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "")
+        self.assertNotIn("nothing to hold", result.stderr)
+        self.assertIn("slice/S1 was NOT checked", result.stderr)
+        self.assertIn("fetch-depth: 0", result.stderr)
+        return result.stderr
+
+    def test_a_github_detached_checkout_with_no_base_says_it_was_not_checked(self) -> None:
+        """e1: exit 0, nothing on stdout, the sentence on stderr."""
+        self.not_checked(self.forge("GITHUB_HEAD_REF"))
+
+    def test_a_gitlab_detached_checkout_with_no_base_names_git_depth_too(self) -> None:
+        """e2: the same through `CI_COMMIT_REF_NAME`."""
+        self.assertIn("GIT_DEPTH", self.not_checked(self.forge("CI_COMMIT_REF_NAME")))
+
+    def test_every_missing_base_state_of_a_forge_checkout_says_not_checked(self) -> None:
+        """e1, widened to the plan's three states: no trunk ref, no common ancestor, an unrelated trunk."""
+        for build in (self.no_trunk_ref, self.no_ancestor):
+            repo = build()
+            git(repo, "checkout", "-q", "--detach")
+            self.not_checked(self.run_gate(repo, {"GITHUB_HEAD_REF": "slice/S1"}))
+        repo = self.origin()
+        root = out(repo, "commit-tree", out(repo, "hash-object", "-t", "tree", "/dev/null"), "-m", "unrelated")
+        git(repo, "update-ref", "refs/heads/main", root)
+        git(repo, "checkout", "-q", "--detach")
+        self.not_checked(self.run_gate(repo, {"GITHUB_HEAD_REF": "slice/S1"}))
+
+    def test_a_lost_record_still_decides_the_exit_of_a_forge_checkout(self) -> None:
+        """Findings stay printed and still fail, beside the NOT checked line."""
         repo = self.no_trunk_ref()
         git(repo, "checkout", "-q", "--detach")
+        (repo / LOST).parent.mkdir(parents=True, exist_ok=True)
+        (repo / LOST).write_text("x\n")
         result = self.run_gate(repo, {"GITHUB_HEAD_REF": "slice/S1"})
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(LOST, result.stderr)
+        self.assertIn("NOT checked", result.stderr)
+
+    def test_a_detached_checkout_with_history_is_held_as_locally(self) -> None:
+        """e3 (held): full history and `origin/main`; a host change is refused."""
+        repo = self.origin()
+        git(repo, "update-ref", "refs/remotes/origin/main", "main")
+        git(repo, "branch", "-D", "main")
+        self.commit(repo, "Makefile")
+        git(repo, "checkout", "-q", "--detach")
+        self.base_rejects(repo, "Makefile", {"GITHUB_HEAD_REF": "slice/S1"})
+
+    def test_other_branches_keep_nothing_to_hold(self) -> None:
+        """e4 (held): `feature/x` in a shallow clone, and a detached checkout with no variable."""
+        clone = self.clone(self.origin(), "--depth", "1", "--branch", "slice/S1")
+        git(clone, "checkout", "-q", "-b", "feature/x")
+        detached = self.clone(self.origin(), "--depth", "1", "--branch", "slice/S1")
+        git(detached, "checkout", "-q", "--detach")
+        for repo in (clone, detached):
+            result = self.run_gate(repo)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("not a `slice/<id>` branch — nothing to hold", result.stdout)
