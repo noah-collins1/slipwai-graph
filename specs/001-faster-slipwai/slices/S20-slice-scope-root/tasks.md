@@ -364,7 +364,8 @@ pass (they were running in the checkout); AC-S20-13's last clause rests on them.
 
 ### T010 — **LOW** — Delivery at the root with a deployable at the root: `scripts/`, `skills/`, `commands/`, `agents/`, `init` are the slice's
 
-- [ ] T009 closed `.written`, `baseline.json` and the survey pages; the other delivery roots
+- [x] **Answered by D22** as a stated reading, said in the docstring (`fb20807`); no code.
+- [x] T009 closed `.written`, `baseline.json` and the survey pages; the other delivery roots
   (`DELIVERY_ROOTS` in `src/slipwai/layout.py:34`) are the slice's there unless `.written` lists them, and
   `tests/test_slice_scope_root.py:303` holds `scripts/x.py` green. **Reproduction** (temporary repository,
   `delivery="."`, root deployable, shipped registry): `skills/x/SKILL.md` and `commands/drive.md` exit 0; `.written`,
@@ -375,7 +376,8 @@ pass (they were running in the checkout); AC-S20-13's last clause rests on them.
 
 ### T011 — **LOW** — Two inputs still end the checker on a traceback: an undecodable `.written`, and a registry nested past the recursion limit
 
-- [ ] `host_names()` reads `.written` with no guard (`check-slice-scope.py:325`; the same read stood at pass 1), and
+- [x] **Done in T014** (`f0ee4b3`).
+- [x] `host_names()` reads `.written` with no guard (`check-slice-scope.py:325`; the same read stood at pass 1), and
   `harness_paths()` catches `OSError, ValueError, AttributeError` but not `RecursionError` (`:125`).
   **Reproduction** (temporary repository, root deployable): `.written` holding `b"\xff\xfe\n"`, `tests/t.py` changed
   → `UnicodeDecodeError`, exit 1; `registry.json` holding 100 000 `[` → `RecursionError`, exit 1. Both files are the
@@ -385,7 +387,8 @@ pass (they were running in the checkout); AC-S20-13's last clause rests on them.
 
 ### T012 — **LOW** — What the registry says only in prose is not the host's, and a future row could take a source directory
 
-- [ ] D20 reads six fields. The shipped registry's prose names `opencode.jsonc` (`projectMcp.how`) and
+- [x] **Answered by D22** as a stated reading, said in the docstring (`fb20807`); no code.
+- [x] D20 reads six fields. The shipped registry's prose names `opencode.jsonc` (`projectMcp.how`) and
   `.amp/plugins/` (`hooks.why`); both exit 0 on a slice branch, as does `.vscode/mcp.json`, which no row names.
   `opencode.jsonc` is to `opencode.json` what `GNUmakefile` is to `Makefile`. In the other direction, a row naming
   `src/mcp.json` makes all of `src/` the host's (probed: `src/app.py` refused) — D20's first-segment rule working as
@@ -399,7 +402,8 @@ T011 is folded into T014.
 
 ### T013 — **MEDIUM** — The repository's own migration names and files at a root deployable (gaps G1 · D21 · AC-S20-17, -18, -19)
 
-- [ ] RED (in `tests/test_slice_scope_root.py`): a new `shop/migrations/0002_add_field.py` and a new
+- [x] **Done** — `92865ac` (drive-implement · sonnet · fresh context; a first delegate stopped at the 350-line test budget, a second finished in the new `tests/test_slice_scope_adopted_rules.py`). RED seen for both migration names, the message, and the events removal; the hexagonal refusal's teeth shown after GREEN was committed.
+- [x] RED (in `tests/test_slice_scope_root.py`): a new `shop/migrations/0002_add_field.py` and a new
   `db/migrations/20261003120000_add.js` under the root deployable refused today → green; a removed line in a
   pre-existing `domain/events.py` with no `layout` on the record refused today → green. Held, green on arrival: an
   edited existing migration refused (RED only for its message, which must not say *timestamped*); the events
@@ -410,14 +414,16 @@ T011 is folded into T014.
 
 ### T014 — **LOW** — No input ends the checker on a traceback (T011, gaps G5 · D22 · AC-S20-19, AC-S20-5)
 
-- [ ] RED: a `.written` holding bytes that are not UTF-8 → today a `UnicodeDecodeError`; a registry nested past the
+- [x] **Done** — `f0ee4b3`. RED: `UnicodeDecodeError` (`.written`, `model.yaml`), `RecursionError` (registry, `project.json`), a trailing-whitespace line let through. Sweep: four `read_text` sites and three `json.loads`, all now behind `read_text`/`read_json`. Left, and older than the slice: a `model.yaml` that is valid UTF-8 and invalid YAML still ends the checker in `load_model` — the loader is `check-model`'s, outside D22's list.
+- [x] RED: a `.written` holding bytes that are not UTF-8 → today a `UnicodeDecodeError`; a registry nested past the
   recursion limit → today a `RecursionError`; a `.written` line with trailing whitespace → today let through. GREEN:
   one tolerant read for every file the host surface comes from (undecodable, unreadable or malformed adds nothing;
   lines stripped). Sweep: every `read_text`/`json.loads` in the script, said in the report.
 
 ### T015 — **LOW** — Two deployables at `.`, and the docstring says the rule it keeps (gaps G3, G4; T010, T012 · D22)
 
-- [ ] RED: `web` and `worker` both at `.`, model block `service: worker`, `tests/t.py` changed → today *service
+- [x] **Done** — `fb20807`. RED: `worker`'s slice refused as *service `web` is not …*; held: an unrecorded service falls to the first root, a subdirectory deployable outranks both.
+- [x] RED: `web` and `worker` both at `.`, model block `service: worker`, `tests/t.py` changed → today *service
   `web` is not slice …'s*; GREEN: the slice's own `service` owns the path where it is one of the root deployables,
   else the first listed. Docstring: the *Refused* paragraph says *outside every deployable* for manifests and
   `scripts/`; one sentence each for the delivery-at-the-root layout (T010) and for the registry's fields being the

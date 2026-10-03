@@ -8,7 +8,10 @@ subdirectory claims, except what stays the host's there: `project.json`, the roo
 make reads, `.specify/`, CI configuration for every system `adopt` recognises, every agent's guidance, skills,
 hooks and settings as `scripts/agents/registry.json` names them, every path in `<delivery>/.written`, and the
 delivery directory apart from `survey/pinned.md` and `survey/running.md`, which the ladder has a slice write.
-Git hooks and `.gitignore` are the repository's own. A service
+Git hooks and `.gitignore` are the repository's own. A new migration under a deployable at `.` keeps
+whatever name the repository's own tool gave it — the 12-digit stamp is asked only of code the factory lays out —
+while an existing migration is still never edited; and the events-module rule holds there only where the record
+says `"layout": "hexagonal"`. A service
 under `apps/` still owns its own files, an empty `path` still owns nothing, and a project with no deployable at
 `.` gets the answers it had.
 
