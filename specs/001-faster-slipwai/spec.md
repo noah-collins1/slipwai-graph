@@ -133,7 +133,8 @@ and the skipper reads only decisions whose scope intersects the slice's neighbou
 
 1. **Given** a 50-iteration log, **When** the runner starts iteration 51, **Then** its bookkeeping reads only
    the new entries.
-2. **Given** an unchanged `specs/` tree, **When** `fingerprint()` runs, **Then** it reads no file contents.
+2. **Given** an unchanged `specs/` tree a runner process has fingerprinted once, **When** `fingerprint()` runs
+   again, **Then** it reads no file contents (D57).
 3. **Given** 100 standing decisions of which 4 are in scope, **When** the skipper is briefed, **Then** it
    receives those 4 and the ones marked global.
 
@@ -225,9 +226,13 @@ report appears in verify output and under `specs/<feature>/benchmark`.
 - **FR-014**: Per-slice stages MUST be briefed with the slice block and its one-hop neighbours; the model MAY
   be a single file with a sidecar index or split per slice (owner decision 3).
 - **FR-015**: The runner MUST tail its logs from a stored offset, fingerprint by path and mtime, and drift-check
-  only changed files.
+  only changed files. *Amended by D57:* the runner MUST fingerprint `specs/` by each file's path and content,
+  opening a file only where its path is new or its size, modification time, change time or identity differ from
+  what the runner recorded when it last read it. *Read by D58 and D59:* the offset is the runner process's own
+  memory of the log it last appended to; the drift check is `health()` before an iteration.
 - **FR-016**: Decision entries MUST carry a `Scope:` line; the skipper MUST be briefed with in-scope and global
-  decisions only.
+  decisions only. *Read by D60:* every writer adds the line from `S02-runner-bookkeeping` on; an entry without
+  one passes the gate and is carried as global; making absence a finding is a person's to approve.
 - **FR-017**: Every delegate MUST end with a `result-contract` block of the shape in the PRD; `check-decisions`
   MUST hold it; a missing block MUST be a converge finding.
 - **FR-018**: The planner MUST write a difficulty score and reason per task; `make benchmark` MUST join planned
@@ -245,7 +250,9 @@ report appears in verify output and under `specs/<feature>/benchmark`.
 - **FR-023**: `check-agents`, `check-speckit`, `check-extensions` and `check-constitution` MUST run only when
   their inputs changed since the stamp on a branch, and always on `main` and in CI.
 - **FR-024**: The runner MUST compute `controls_signature()` once per iteration from mtimes, and run one
-  codegraph sync per iteration unless a delegate reports changed files.
+  codegraph sync per iteration unless a delegate reports changed files. *Read by D56:* each control file's content
+  is read at most once per iteration unless its size, times or identity changed; what the run parks on stays a
+  comparison of content. *Read by D59:* the *unless a delegate reports* half waits for `S14-result-contract`.
 - **FR-025**: `make benchmark` MUST report K-effective, the Gini coefficient of slice-touch frequency and the
   top-3 share per feature, and flag a node above a configurable share as a decomposition candidate.
 - **FR-026**: Every read beyond a stage's or delegate's one-hop brief MUST be logged as a context-expansion
@@ -782,6 +789,213 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
 - **AC-S01-26** — *Added by D52 (adversary A4).* Given a deployable recorded at, or beneath, a directory carrying
   a pruned name, then that directory is descended in every walk of both scripts: all five rules of `check-imports`
   and `check-migrations` read the deployable, as rules 4 and 5 always did.
+
+### S02-runner-bookkeeping
+
+**Gaps reviewed** 2026-10-03, cruise iteration 9, host with `drive-skipper` for D56 to D60: the four examples in
+`story-split.md` against `fingerprint()`, `entries()`, `controls_signature()`, `iterate()` and the loop in `drive()`
+in `assets/toolkit/scripts/agents/cruise.py`, `health()`, `behind()` and `delegate_use()` in
+`assets/toolkit/scripts/agents/code_index.py`, `check_decisions()` in `assets/toolkit/scripts/check-decisions.py`,
+and where the skipper's brief and the entry's shape are generated (`src/slipwai/project/cruise_agents.py`,
+`src/slipwai/project/cruise_record.py`). Found and written back: a signature *from mtimes* would let an iteration
+edit a gate and put its time back, so the comparison stays one of content and only the reading is saved (D56;
+AC-S02-1 to AC-S02-11); a fingerprint of path and time alone reads a `touch` or a same-bytes rewrite as progress, so
+a spinning run would never park (D57; AC-S02-12 to AC-S02-21, FR-015 and User Story 5's scenario 2 amended); where
+the offset lives, which readers it covers, what an edited, cut, replaced or deleted log answers, and how *only the
+new bytes* is measured without a timing were unstated (D58; AC-S02-22 to AC-S02-33); *drift-check only changed
+files* and *one sync per iteration* named no function and had no example (D59; AC-S02-34 to AC-S02-46); and the
+`Scope:` line had no values, no word for global, no place, no answer for an entry without it and no means of
+reaching the skipper (D60; AC-S02-47 to AC-S02-69). Reconciled by the host between siblings: D57's timing criterion
+is held by D58's rule that no test asserts a wall-clock ratio (AC-S02-21), and the slice carries one fragment,
+`MINOR`, not one per part (AC-S02-46, AC-S02-69). Deferred by name: a sync tied to what a delegate reports, and the
+skipper seeing a neighbour's decisions through the Slice graph (`S14-result-contract`, `S13-one-hop-brief`).
+
+*The controls (FR-024, D56).*
+
+- **AC-S02-1** — Given a run whose controls no one touches, when the second and every later signature of the
+  runner's process is taken, then no control file is opened for content and the signature equals the first. (D56)
+- **AC-S02-2** — Given an iteration that appends a line to a gate script, when the iteration ends, then the run
+  parks naming `<path> (modified)` with `controls_changed` on the log entry, as today. (D56)
+- **AC-S02-3** — Given an iteration that rewrites a gate in place with the same size and sets its modification
+  time back to what it was, when the iteration ends, then the run parks naming that file `(modified)`. (D56)
+- **AC-S02-4** — Given an iteration that replaces a gate by rename with a same-size file carrying the old
+  modification time, when the iteration ends, then the run parks naming that file `(modified)`. (D56)
+- **AC-S02-5** — Given an iteration that only touches a gate, or rewrites it with the same bytes, when the
+  iteration ends, then the run does not park for it, and that file's content is read once and not again while it
+  stays unchanged. (D56)
+- **AC-S02-6** — Given a run parked between iterations, when a person edits a control and the run resumes, then
+  the next iteration's log entry carries no `controls_changed` for that file, and a later iteration that changes
+  the same file still parks naming it. (D56)
+- **AC-S02-7** — Given an iteration that deletes a control and adds a script beside the gates, when it ends, then
+  the run parks naming `(deleted)` and `(added)`; and a file added under `tools/` is still not a change. (D56)
+- **AC-S02-8** — Given a control file that cannot be read after an iteration and was read before it, when the
+  iteration ends, then it is reported `(deleted)` as today and no hash is reused for it. (D56)
+- **AC-S02-9** — Given a control file modified within two seconds of the moment the runner hashed it, when the
+  next signature is taken, then that file's content is read again. (D56)
+- **AC-S02-10** — Given a platform that reports no change time or no file identity, when any signature is taken,
+  then every control file's content is read. (D56)
+- **AC-S02-11** — Given a new runner process over a tree whose controls changed while no runner was alive, when
+  its first iteration starts, then every control file is hashed and nothing from an earlier process is consulted.
+  (D56)
+
+*The fingerprint (FR-015, D57).*
+
+- **AC-S02-12** — Given a `specs/` tree last written more than the granularity window ago and a runner process
+  that has fingerprinted it once, when `fingerprint()` runs again, then it opens no file under `specs/` for
+  content and returns the same value. (D57)
+- **AC-S02-13** — Given a runner process's first `fingerprint()` call, when it runs, then each file under `specs/`
+  but the log and the checkpoint is opened exactly once. (D57)
+- **AC-S02-14** — Given a fingerprinted tree, when one file is touched or rewritten with the same bytes, then the
+  next call opens that file alone and returns the same value, and the call after opens none. (D57)
+- **AC-S02-15** — Given a fingerprinted tree, when one file is rewritten in place with different bytes of the same
+  size, then the next call returns a different value; and the same holds when its modification time is restored on
+  a platform that reports a change time. (D57)
+- **AC-S02-16** — Given a fingerprinted tree, when a file is added, removed, or renamed with its bytes unchanged,
+  then the next call returns a different value, and a removed file's record is no longer held. (D57)
+- **AC-S02-17** — Given a file written within the granularity window of its read, when `fingerprint()` runs again
+  with nothing changed, then that file is read again and the value is the same. (D57)
+- **AC-S02-18** — Given two runner processes over the same tree at the same commit and status, when each
+  fingerprints, then the values are equal (the test at `tests/test_cruise_runner.py` line 196, *no progress since
+  iteration 2* across two runs, still passes). (D57)
+- **AC-S02-19** — Given a new commit, or a change outside `specs/` that alters `git status`, with `specs/`
+  unchanged, when `fingerprint()` runs, then the value differs and no file under `specs/` is opened. (D57)
+- **AC-S02-20** — Given a log whose entries carry fingerprints written by the earlier code, when the runner
+  starts, then it reads them without error and parks as stuck only after `stuck_after` values of its own are
+  equal. (D57)
+- **AC-S02-21** — Given 50 calls over an unchanged tree, when the 50th is timed against the second, then it is
+  within 20 percent. *Read with D58:* held in the suite by the count of files opened, which does not depend on the
+  call's number; a timing is the demo's evidence only. (D57)
+
+*The log and the stream (FR-015, D58).*
+
+- **AC-S02-22** — Given a log of 50 entries and a fake harness, when one runner process runs two iterations, then
+  the entries are numbered 51 and 52, entry 51's `bookkeeping.log_bytes` is the seeded log's size in bytes,
+  counted once, and entry 52's is 0. (D58)
+- **AC-S02-23** — Given the same run over a log of 1 entry, when the second iteration's entry is written, then its
+  `log_bytes` is 0, the same as over 50 entries. (D58)
+- **AC-S02-24** — Given a runner whose iteration cut the log down to its first 3 entries while it ran, when the
+  iteration ends, then its entry is appended as today, the next iteration is numbered from the entries then in the
+  file, and that next entry's `log_bytes` is the size of the file it re-read. (D58)
+- **AC-S02-25** — Given a log deleted during an iteration, when the iteration ends, then the file is recreated
+  holding that one entry and the next iteration is numbered 2. (D58)
+- **AC-S02-26** — Given a log replaced during an iteration by a new file with the same bytes, when the next
+  iteration starts, then its number is what it would have been and its entry's `log_bytes` is the whole file's
+  size. (D58)
+- **AC-S02-27** — Given a log one of whose entries was edited in place to the same length during an iteration,
+  when the next iteration starts, then the log is read whole (`log_bytes` is its size) and the number is the count
+  of entries plus one. (D58)
+- **AC-S02-28** — Given a log to which another hand appended one entry during an iteration, when the next
+  iteration starts, then its number counts that entry and `log_bytes` is the whole file's size. (D58)
+- **AC-S02-29** — Given a log whose last line is not a whole entry, when the runner starts, or next reads it after
+  a change, then the run ends as it does today and nothing is appended to the log. (D58)
+- **AC-S02-30** — Given a stream already holding 50 iterations and an index in use, when iteration 51's entry is
+  written, then its `index_use` equals what `delegate_use(STREAM, 51)` returns over the whole file, and its
+  `bookkeeping.stream_bytes` is no more than the bytes from this iteration's marker to the end of the file. (D58)
+- **AC-S02-31** — Given a stream that was replaced or cut short during the iteration, so that the marker is not at
+  the byte the runner wrote it, when the entry is written, then `index_use` is what today's whole read gives and
+  `stream_bytes` is the size of what was read; a deleted stream gives no `index_use`. (D58)
+- **AC-S02-32** — Given a log of 50 entries, when `status`, `where`, `tell` and `resume` each run, then each
+  prints what it printed before the slice. (D58)
+- **AC-S02-33** — Given a run whose fingerprint has not moved for `stuck_after` iterations, when the log is cut
+  short during a park, then the stuck window is what it was, as today. (D58)
+
+*The code index before an iteration (FR-015, FR-024, D59).*
+
+- **AC-S02-34** — Given an index the last comparison found current, a usable memory and nothing changed since, on
+  the trunk, a `slice/<id>` branch, another branch or a detached `HEAD`, when `health()` runs, then it hashes 0
+  files and reports `current`. Its `detail` says in one line how many files it hashed of how many the index holds,
+  that it compared only what changed since the last whole comparison, and when that was. (D59)
+- **AC-S02-35** — Given the same and one tracked indexed file changed since that the index has not read, when
+  `health()` runs, then it hashes exactly that file, syncs once, compares again and reports `synced`; where the
+  sync does not take it reports `failed`, as today. (D59)
+- **AC-S02-36** — For each state in AC-S01-13 to AC-S01-18, AC-S01-23, AC-S01-24 and the no-row state of
+  AC-S01-21, given that state, when `health()` runs narrowed, then its state equals what `health()` gives with the
+  memory deleted, on the same tree and index. (D59)
+- **AC-S02-37** — Given a memory `health()` cannot use (each reason listed above), when it runs, then every
+  tracked file is hashed as today, the state is what today's `health()` gives, and `detail` carries one clause
+  saying why. (D59)
+- **AC-S02-38** — Given any CI marker set, when `health()` runs, then it compares everything and the memory file's
+  bytes and times are unchanged afterwards. (D59)
+- **AC-S02-39** — Given a corrupt database, when `health()` runs with a usable memory present, then it is moved
+  aside and rebuilt as today, and the comparison that follows hashes every tracked file. (D59)
+- **AC-S02-40** — Given a `health()` that ends `current`, or `synced` with the second comparison clean, when it
+  returns, then the memory holds what a passing gate run on the same tree would have written. Given one that ends
+  `failed` or `unreachable`, cannot open the database, or gets no answer from the comparison, then the memory is
+  as it was. (D59)
+- **AC-S02-41** — Given a `touch`, a checkout or a rebase that moves a file's times without changing a byte, when
+  `health()` runs twice, then the first run hashes that file once and reports `current`, and the second hashes 0.
+  (D59)
+- **AC-S02-42** — Given a tree unchanged across iterations, when the runner readies iteration 50, then `health()`
+  hashes as many files as it did readying iteration 2 (zero), and opens no tracked file for content. (D59)
+- **AC-S02-43** — Given any state of the index, when the runner readies one iteration, then it invokes `codegraph
+  sync` at most once, before the iteration starts, only where the comparison found files behind; a `current` index
+  means no sync, and a built or rebuilt one is made with `codegraph init` and no sync. (D59)
+- **AC-S02-44** — Given the trunk, a branch not shaped `slice/<id>`, a detached `HEAD` or any CI marker, when
+  `make check-codegraph` runs after this slice, then its output and exit code are today's byte for byte, a corrupt
+  database it has `health()` rebuild included, and AC-S01-10 to AC-S01-26 hold unchanged. (D59)
+- **AC-S02-45** — Given any `health()` run, when it ends, then `git status` reports nothing it left and no
+  `__pycache__/` sits beside the toolkit's scripts. (D59)
+- **AC-S02-46** — Given the slice's diff, when it is reviewed, then the slice's one fragment (AC-S02-69) says
+  three things for this part: the runner's check before an iteration compares only what changed since the last
+  whole comparison; D49's sentence on what a narrowed comparison cannot see holds for it too; deleting
+  `.codegraph/gate-memory.json` makes the next comparison whole. The pages that say only the gate narrows say the
+  runner does as well: the docstring of `agents/code_index.py`, `scripts/extensions/codegraph/init.py`,
+  `src/slipwai/project/docs.py`, `docs/cruise.md`. (D59)
+
+*The `Scope:` line (FR-016, D60).*
+
+- **AC-S02-47** — Given a log of 100 standing entries of which 4 carry a `Scope:` naming `S02-runner-bookkeeping`,
+  10 carry `Scope: global` and 86 name other slices, when `check-decisions.py --scope S02-runner-bookkeeping`
+  runs, then it prints those 14 entries verbatim in number order and no other, and exits 0. (D60)
+- **AC-S02-48** — Given an entry with `Scope: S02-runner-bookkeeping, S14-result-contract`, when the verb runs for
+  either id, then the entry is printed; when it runs for `S11-render-once`, then it is not. (D60)
+- **AC-S02-49** — Given an entry with `Scope: S02` and another with `Scope: S12-model-sidecar`, when the verb runs
+  for `S02-runner-bookkeeping`, then the first is printed; when it runs for `S1`, then neither is. (D60)
+- **AC-S02-50** — Given a standing entry with no `Scope:` line, when the verb runs for any slice, then the entry
+  is printed and the closing line counts it as carried as global for want of a line. (D60)
+- **AC-S02-51** — Given a standing entry whose `Scope:` value is empty or unreadable, when the verb runs, then the
+  entry is printed as global. (D60)
+- **AC-S02-52** — Given an in-scope entry whose `Status` is `overridden by D<m>` or `overridden by human <date>`,
+  when the verb runs, then it is not printed and the closing line names it by number with what overrode it. (D60)
+- **AC-S02-53** — Given any run of the verb, then its last line says how many entries it carried of how many,
+  split into in scope, global and carried for want of a line, and how many it left out as out of scope. (D60)
+- **AC-S02-54** — Given a slice id no entry names, when the verb runs, then it prints the global and unscoped
+  standing entries and exits 0. (D60)
+- **AC-S02-55** — Given `specs/` with two features' `decisions.md` and no `--feature`, when the verb runs, then it
+  exits non-zero with one line naming the features to choose from; given one feature, then `--feature` is not
+  needed. (D60)
+- **AC-S02-56** — Given any run of the verb, then no file in the tree is created or changed. (D60)
+- **AC-S02-57** — Given a log in which no entry carries `Scope:` (this repository's own D1–D60 as a fixture), when
+  `check-decisions` runs, then its exit code and output are what they were before the change. (D60)
+- **AC-S02-58** — Given an entry with `Scope: global`, or `Scope:` listing ids bare or in backticks, placed after
+  the Stage line, when `check-decisions` runs, then it passes. (D60)
+- **AC-S02-59** — Given an entry with `- **Scope:**` and no value, when `check-decisions` runs, then it exits 1
+  with one line naming the entry and saying the value is `global` or slice ids. (D60)
+- **AC-S02-60** — Given an entry with `Scope: global, S02-runner-bookkeeping` or `Scope: the runner`, when
+  `check-decisions` runs, then it exits 1 with the same kind of line. (D60)
+- **AC-S02-61** — Given an entry whose `Scope:` names an id no slice in the split has, when `check-decisions`
+  runs, then it passes. (D60)
+- **AC-S02-62** — Given an entry with no `Scope:` after an entry that has one, when `check-decisions` runs, then
+  it exits 0 and prints one `note:` naming the entry and saying it is carried as global. (D60)
+- **AC-S02-63** — Given a log carrying well-formed `Scope:` lines, when the checker as released before this change
+  runs over it, then it passes. (D60)
+- **AC-S02-64** — Given a generated or adopted project, when the cruise command and a newly seeded owner brief are
+  read, then the entry shape shows `- **Scope:** <slice ids, comma-separated> | global` directly after the Stage
+  line, with the rule that a feature-level or doubtful decision is `global`. (D60)
+- **AC-S02-65** — Given the generated `drive-skipper` brief, then it tells the delegate to read the standing
+  entries for the brief's slice through the verb (the whole log where the brief names no slice) and to return its
+  entry with a `Scope:` line. (D60)
+- **AC-S02-66** — Given the generated `drive-bosun` brief, then it says the same of reading, and that every entry
+  it writes carries a `Scope:` line. (D60)
+- **AC-S02-67** — Given the generated cruise command, then its iteration-start and *Deciding* text point at the
+  verb for a slice's question, and keep *every standing entry* for a feature-level one. (D60)
+- **AC-S02-68** — Given a project whose owner brief was seeded by an earlier factory, when `slipwai migrate` runs,
+  then that file is unchanged (D24) and the catch-up note says the line may be added by hand. (D60)
+- **AC-S02-69** — Given the commit that adds the line, then `VERSION` reads `1.6.0.dev0`, a fragment in
+  `changelog.d/` claims `MINOR` with the catch-up paragraph, and `tests/test_changelog.py` passes. One fragment
+  for the slice, the highest level winning: it also names the optional `bookkeeping` object on a log entry (D58),
+  the fingerprint's one-off change of value and what it cannot see (D57), what the controls' record cannot see
+  (D56) and AC-S02-46's sentences; and no file `delivery/.written` lists changes in this repository (D9). (D60)
 
 ### S24-ci-fetches-slice-base
 
