@@ -243,3 +243,22 @@ class RenderCase(FactoryTestCase):
     def model_log_of(self, repo: Path) -> RendererLog:
         """What the stand-in recorded for the last run, whether it succeeded or not."""
         return read_log(repo.parent / "renderer.log")
+
+
+def rename_frame(project: Path, old: str, new: str) -> None:
+    """Rename one frame of the model (`Do7` to `Do7b`): the slice keeps its id and its three frames."""
+    model = project / MODEL_DIR / "model.yaml"
+    text = model.read_text()
+    assert f"name: {old}}}" in text, old
+    model.write_text(text.replace(f"name: {old}}}", f"name: {new}}}"))
+
+
+def mtimes(project: Path) -> dict[str, int]:
+    """Every file under `docs/event-model/` and the README, by path, with its modification time in nanoseconds."""
+    files = [*(project / MODEL_DIR).rglob("*"), project / "README.md"]
+    return {str(path.relative_to(project)): path.stat().st_mtime_ns for path in files if path.is_file()}
+
+
+def wrote(done: subprocess.CompletedProcess[str]) -> list[str]:
+    """The paths of the `wrote <path>` lines a run printed, in order."""
+    return [line.split("wrote ", 1)[1] for line in done.stdout.splitlines() if line.strip().startswith("wrote ")]

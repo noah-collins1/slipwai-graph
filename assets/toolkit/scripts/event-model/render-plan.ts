@@ -2,7 +2,7 @@
  * What `make model` draws, and how it reaches disk: the diagrams the model produces, in order, and the draw of
  * those through a `RenderSession`.
  */
-import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
 import { extractHash, renderGlobalMermaid, renderSegmentMermaid, renderSliceMermaid } from './mermaid.ts';
@@ -152,4 +152,33 @@ export async function drawPng(source: string, session: RenderSession, path: stri
 
 export function readSvg(diagram: Diagram): string {
   return readFileSync(join(ROOT, diagram.svg), 'utf8');
+}
+
+/**
+ * Writes a text output only where its bytes differ from the file on disk, and says so: one `wrote <label>` line for
+ * a file written and none for a file left, so nothing downstream (`git`, a watcher, a browser tab) is disturbed by
+ * a rewrite of what was already right. Returns whether it wrote.
+ */
+export function writeIfDifferent(path: string, contents: string, label: string = path): boolean {
+  const absolute = join(ROOT, path);
+  if (existsSync(absolute) && readFileSync(absolute, 'utf8') === contents) return false;
+  mkdirSync(dirname(absolute), { recursive: true });
+  writeFileSync(absolute, contents, 'utf8');
+  console.log(`  wrote ${label}`);
+  return true;
+}
+
+/** What a run did, from which its closing line is written. */
+export interface Report {
+  slices: number;
+  diagrams: number;
+  drawn: number;
+  unchanged: number;
+  sessionOpened: boolean;
+}
+
+export function closingLine(report: Report, pagePath: string): string {
+  const counts = `${String(report.slices)} slices, ${String(report.drawn)} of ${String(report.diagrams)} diagrams drawn, ${String(report.unchanged)} unchanged`;
+  const browser = report.sessionOpened ? '' : '; no browser started';
+  return `model: ${counts}${browser}. Open ${pagePath} to browse it.`;
 }

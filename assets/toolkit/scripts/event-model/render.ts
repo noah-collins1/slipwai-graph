@@ -9,10 +9,20 @@
  * the one browser a run draws through). `render-plan.ts` owns which diagrams there are and how they reach disk.
  * `make check-model` needs no browser at all, which is why *it* is the gate that runs in CI.
  */
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { drawDiagrams, drawPng, isCurrent, planDiagrams, readSvg, removeOrphans, type Diagram } from './render-plan.ts';
+import {
+  closingLine,
+  drawDiagrams,
+  drawPng,
+  isCurrent,
+  planDiagrams,
+  readSvg,
+  removeOrphans,
+  writeIfDifferent,
+  type Diagram,
+} from './render-plan.ts';
 import { patchInstalledMermaid } from './patch-mermaid-swimlanes.ts';
 import { CLI_PREFIX, installRenderer, lazySession, rendererKey } from './render-session.ts';
 import { renderPage } from './page.ts';
@@ -32,12 +42,6 @@ import {
   SLICE_DIR,
 } from './workspace.ts';
 
-function write(relativePath: string, contents: string): void {
-  const absolute = join(ROOT, relativePath);
-  writeFileSync(absolute, contents, 'utf8');
-  console.log(`  wrote ${relativePath}`);
-}
-
 /**
  * Refreshes the README's event-model block, if it has one.
  *
@@ -55,10 +59,9 @@ function updateReadme(model: Model): void {
   }
 
   const updated = withReadmeSection(current, renderReadmeSection(model));
-  if (updated === undefined || updated === current) return;
+  if (updated === undefined) return;
 
-  writeFileSync(path, updated, 'utf8');
-  console.log(`  wrote ${README} (event-model block)`);
+  writeIfDifferent(README, updated, `${README} (event-model block)`);
 }
 
 async function main(): Promise<void> {
@@ -83,14 +86,15 @@ async function main(): Promise<void> {
 
   const diagrams = planDiagrams(model);
   removeOrphans(diagrams);
-  for (const diagram of diagrams) write(diagram.mmd, diagram.source);
+  for (const diagram of diagrams) writeIfDifferent(diagram.mmd, diagram.source);
 
   installRenderer();
   patchInstalledMermaid(CLI_PREFIX); // before the first draw: the swimlane fix lives in the tree we own
   const key = rendererKey();
+  const stale = diagrams.filter((diagram) => !isCurrent(diagram, key));
   const session = lazySession();
   try {
-    await drawDiagrams(diagrams.filter((diagram) => !isCurrent(diagram, key)), session, key);
+    await drawDiagrams(stale, session, key);
     if (wantPng) await drawPng(diagrams[0]?.source ?? '', session, MODEL_PNG);
   } finally {
     await session.close();
@@ -98,7 +102,7 @@ async function main(): Promise<void> {
 
   const pictures = <K extends number | string>(kind: string): Map<K, string> =>
     new Map(diagrams.filter((d) => d.kind === kind).map((d) => [d.ref as K, readSvg(d)] as const));
-  write(
+  writeIfDifferent(
     MODEL_HTML,
     renderPage({
       model,
@@ -113,7 +117,14 @@ async function main(): Promise<void> {
   updateReadme(model);
 
   console.log('');
-  console.log(`model: ${String(model.slices.length)} slices rendered. Open ${MODEL_HTML} to browse it.`);
+  const report = {
+    slices: model.slices.length,
+    diagrams: diagrams.length,
+    drawn: stale.length,
+    unchanged: diagrams.length - stale.length,
+    sessionOpened: session.opened,
+  };
+  console.log(closingLine(report, MODEL_HTML.replaceAll('\\', '/')));
 }
 
 main().catch((error: unknown) => {
