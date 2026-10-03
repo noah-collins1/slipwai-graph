@@ -11,13 +11,18 @@ import tempfile
 from pathlib import Path
 
 from support import FactoryTestCase
-from test_adopt import node_repository, slipwai
+from test_adopt import OWN, node_repository, repository, slipwai
 from test_candidates import commit, record
+from test_platform import POM
 
 PIPELINE = "a pipeline that deploys on a passing `verify`"
 SUITE = "a green suite in the gate"
 ROLES = "every application's role recorded"
 PAGE = "delivery/docs/change-strategy.md"
+PLATFORM = "the platform in support — "
+SEAM = "a seam requests enter through"
+PINNED = "`/characterise` pinning each seam"
+WHY = "split it so teams can move"
 DERIVED = ("recommended", "because", "decided", "finished", "programme")
 
 
@@ -91,3 +96,51 @@ class RefreshStrategyTest(FactoryTestCase):
             settled = (repo / "project.json").read_text(), (repo / PAGE).read_text()
             refresh(repo)
             self.assertEqual(((repo / "project.json").read_text(), (repo / PAGE).read_text()), settled)
+
+
+def maven(parent: Path, why: str | None) -> Path:
+    """A Maven service on Spring 3.2.8 and JUnit 3, past end of life, adopted (with `why` when there is one): the
+    tree reads Safety net `tests-exist`, so `before` carries the platform, the delivery rungs and, for a trigger
+    that names a capability, the strangler fig's own two entries."""
+    repo = repository(parent, "shop", {**OWN, "pom.xml": POM, "src/main/java/App.java": "class App {}\n"})
+    result = slipwai(repo, "adopt", "--yes", "--no-init", *(["--why", why] if why else []))
+    assert result.returncode == 0, result.stderr
+    return repo
+
+
+class RefreshBeforeIsAssembledWholeTest(FactoryTestCase):
+    """`with_reconciled()` hands `before_of()` the rows, the strategy and the products; each is held through a
+    refresh by an example whose `before` and page would differ were that argument wrong. Holds, green on arrival."""
+
+    def refreshed(self, why: str | None) -> tuple[list[str], list[str], str]:
+        """`before` as adopted, as refreshed after a person recorded the safety net, and the page after that."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = maven(Path(directory), why)
+            first = record(repo)["strategy"]["before"]
+            recorded(repo, "safety-net", "tests-pass")
+            refresh(repo)
+            return first, record(repo)["strategy"]["before"], (repo / PAGE).read_text()
+
+    def test_the_strategy_a_refresh_reads_the_entries_of_is_the_one_the_record_recommends(self) -> None:
+        first, after, page = self.refreshed(WHY)
+        self.assertTrue(any(SEAM in line for line in first) and any(PINNED in line for line in first), first)
+        self.assertEqual(after, [line for line in first if SUITE not in line])
+        for line in after:
+            self.assertIn(line, page)
+        self.assertIn(SEAM, page)
+        self.assertIn(PINNED, page)
+
+    def test_the_platform_a_refresh_names_in_before_is_the_products_the_record_carries(self) -> None:
+        first, after, page = self.refreshed(None)
+        platform = [line for line in first if line.startswith(PLATFORM)]
+        self.assertGreaterEqual(len(platform), 3, first)
+        self.assertEqual([line for line in after if line.startswith(PLATFORM)], platform)
+        self.assertEqual(after, [line for line in first if SUITE not in line])
+        for line in platform:
+            self.assertIn(line, page)
+
+    def test_the_rows_a_refresh_reads_are_the_reconciled_ones_whatever_the_strategy_and_platform(self) -> None:
+        first, after, page = self.refreshed(WHY)
+        self.assertTrue(any(SUITE in line for line in first), "the tree's reading names it before")
+        self.assertFalse(any(SUITE in line for line in after))
+        self.assertNotIn(SUITE, page)

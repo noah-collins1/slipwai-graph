@@ -76,6 +76,33 @@ class RefreshKeepsOwnedTest(FactoryTestCase):
             self.assertIn("\n0 file(s) rewritten", slipwai(repo, "adopt", "--refresh").stdout)
 
 
+class RecordTest(FactoryTestCase):
+    """What slipwai keeps of what it left (`.delivery-tools/written.json`) never carries the four (R1, stamps)."""
+
+    def test_a_refresh_over_an_uncommitted_edit_to_a_seeded_file_records_no_entry_for_it(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            for name in FOUR:
+                path = repo / name
+                path.write_text(path.read_text() + ("\n" if name == OWNER else "") + ("" if name == OWNER else " "))
+            self.assertEqual(slipwai(repo, "adopt", "--refresh").returncode, 0)
+            uncommitted = git(repo, "status", "--porcelain", "--untracked-files=all").stdout
+            kept = json.loads((repo / ".delivery-tools/written.json").read_text())
+            for name in FOUR:
+                self.assertIn(name, uncommitted, f"{name} is still an uncommitted change, so a stamp could carry it")
+                self.assertNotIn(name, kept, f"{name} recorded as slipwai's own")
+
+
+    def test_a_seeded_file_is_not_even_read_by_the_refresh(self) -> None:
+        """R1 says never compares: bytes that are not text would stop a comparison, and are the project's to keep."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            (repo / OWNER).write_bytes(b"# Brief\n\xff\xfe not text\n")
+            result = slipwai(repo, "adopt", "--refresh")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((repo / OWNER).read_bytes(), b"# Brief\n\xff\xfe not text\n")
+
+
 class HeldTest(FactoryTestCase):
     """Today's behaviour, green on arrival and green after: the edit must not skip more than the four present."""
 
