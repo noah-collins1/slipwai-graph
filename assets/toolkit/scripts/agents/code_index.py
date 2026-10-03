@@ -23,7 +23,8 @@ whole comparison and leaves the integrity check to the trunk and CI; it keeps th
 `health` itself compares the same way — through the gate's own functions and memory — on every branch, the trunk
 included, wherever no CI marker is set: it hashes only what changed since the last whole comparison, says how many
 files that was of how many, and always runs the integrity check. With no usable memory, or in CI, it hashes every
-tracked file. `session` is the same step at the
+tracked file. A `health` that ends current, or synced with the comparison after the sync clean, records what it
+vouched for in that memory as a passing gate run does, outside CI and in no other case. `session` is the same step at the
 start of a Claude Code session — a person's `/drive` has no runner in front of it — and prints only what it did or
 could not do, since a hook's output lands in the session's context. The database is ignored by Git and derived from the source, so a corrupt one loses nothing by being moved
 aside (to `.codegraph/corrupt/`, the latest only) and rebuilt. `sync` keeps the index current while an iteration is
@@ -256,6 +257,21 @@ def memory_of(tooling: Any) -> dict[str, Any] | str | None:
         return tooling.UNREADABLE
 
 
+def renew(tooling: Any, compared: Compared) -> None:
+    """Record what this comparison vouched for, through the gate's own writer and under its own rules: outside CI, only
+    where git ignores the record, and as a passing gate run records it. Never fatal: an index that cannot take notes
+    is merely compared again."""
+    if compared.found is None or any(os.environ.get(marker) for marker in tooling.CI_MARKERS):
+        return
+    try:
+        if compared.record is None:
+            tooling.remember(compared.found[0])
+        else:  # a narrowed comparison keeps the moment of the whole one and what it did not hash
+            tooling.remember(compared.found[0], float(compared.record["whole"]), compared.record["files"])
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def set_aside() -> str:
     """Move the database and its journal files under `.codegraph/corrupt/`, keeping only this latest copy."""
     shutil.rmtree(ASIDE, ignore_errors=True)
@@ -329,6 +345,8 @@ def health() -> dict[str, Any]:
         if problem is not None or stale:
             result = {"state": "failed", "detail": f"{result['detail']}, and it is still "
                       + (f"not sound ({problem})" if problem else f"behind on {stale} file(s)")}
+    if result["state"] in ("current", "synced") and tooling is not None and compared is not None:
+        renew(tooling, compared)
     result["seconds"] = round(time.monotonic() - began, 1)
     return result
 

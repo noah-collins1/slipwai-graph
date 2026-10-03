@@ -25,16 +25,19 @@ NARROWED = (r"hashed {hashed} of (\d+) file\(s\), only what changed since the la
             r"\(\d{{4}}-\d\d-\d\d \d\d:\d\d:\d\d\)")
 SAID = re.compile(r"^code-index: (\w+) — (.*)\n$", re.DOTALL)
 
+
 class Health:
     """One run of the runner's check, and what it opened."""
 
-    def __init__(self, project: Project, done: subprocess.CompletedProcess[str] | None = None,
-                 **extra: str | None) -> None:
+    def __init__(self, project: Project, **extra: str | None) -> None:
         self.project = project
-        self.result = done or subprocess.run(["python3", HEALTH, "health"], cwd=project.repo,
-                                             env=project.env(**extra), text=True, capture_output=True)
-        said = SAID.match(self.result.stdout)
-        self.state, self.detail = (said.group(1), said.group(2)) if said else ("", self.result.stdout)
+        self.read(subprocess.run(["python3", HEALTH, "health"], cwd=project.repo, env=project.env(**extra),
+                                 text=True, capture_output=True))
+
+    def read(self, done: subprocess.CompletedProcess[str]) -> None:
+        self.result = done
+        said = SAID.match(done.stdout)
+        self.state, self.detail = (said.group(1), said.group(2)) if said else ("", done.stdout)
 
     @classmethod
     def audited(cls, project: Project, **extra: str | None) -> tuple[Health, list[str]]:
@@ -47,7 +50,10 @@ class Health:
         events = json.loads(record.read_text())
         record.unlink()
         root = project.repo.resolve()
-        return cls(project, done), [Audited.within(root, path) for event, path in events if event == "open"]
+        health = cls.__new__(cls)
+        health.project = project
+        health.read(done)
+        return health, [Audited.within(root, path) for event, path in events if event == "open"]
 
     def syncs(self) -> int:
         return sum(1 for call in self.calls() if call.split()[:1] == ["sync"])

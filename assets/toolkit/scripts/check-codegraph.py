@@ -35,6 +35,8 @@ All of that is the whole run, and it is what the trunk, every other branch, a de
 comparison and leaves the integrity check to the trunk and CI: a developer waits on this gate three times a slice,
 and what a passing whole run vouched for has not moved. It keeps that record in `.codegraph/gate-memory.json`,
 written only by a pass and only where Git ignores `.codegraph/`, and deleting that file makes the next run whole.
+The runner's check before an iteration, `health()` in `scripts/agents/code_index.py`, reads and renews the same
+record through this script's own functions (outside CI, on any branch); this gate's own output is unchanged by it.
 Wherever the record cannot be used or cannot be kept, the run is the whole run and the pass line says why, in one
 clause. Which files moved is never taken from Git alone: the record holds how each looked when it was hashed.
 
