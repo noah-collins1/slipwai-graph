@@ -45,12 +45,12 @@ def facts_of(status: Any, strict: bool) -> Facts | None:
 class Record:
     """Path -> SHA-256 of its bytes, kept while the facts the file reported when it was read still stand."""
 
-    def __init__(self, strict: bool, report: Callable[[Any], Any] | None = None,
-                 clock: Callable[[], int] | None = None) -> None:
+    def __init__(self, strict: bool, report: Callable[[Any], Any] | None = None) -> None:
         self.strict = strict
         # Every stat result passes through `report`, so a test can hand the record a platform that says less.
         self.report = report or (lambda status: status)
-        self.clock = clock or time.time_ns
+        # The moment a file is hashed, as the margin reads it; a test sets this to be past the margin without waiting.
+        self.clock: Callable[[], int] = time.time_ns
         self.held: dict[str, tuple[Facts, str]] = {}
 
     def digest(self, path: Path) -> str:
@@ -88,9 +88,8 @@ class Log:
     the answer always was. Another hand's appended entry is not tailed: a stat cannot show that the earlier bytes
     stand. `read_bytes` is what has been read since it was last taken."""
 
-    def __init__(self, path: Path, report: Callable[[Any], Any] | None = None) -> None:
+    def __init__(self, path: Path) -> None:
         self.path = path
-        self.report = report or (lambda status: status)
         self.items: list[dict[str, Any]] | None = None
         self.facts: Facts | None = None
         self.read_bytes = 0
@@ -102,7 +101,7 @@ class Log:
         if self.facts == ABSENT:
             return not self.path.is_file()
         try:
-            return facts_of(self.report(os.stat(self.path)), False) == self.facts
+            return facts_of(os.stat(self.path), False) == self.facts
         except OSError:
             return False
 
@@ -116,7 +115,7 @@ class Log:
             self.items, self.facts = [], ABSENT
             return self.items
         with open(self.path, "rb") as handle:
-            status = self.report(os.fstat(handle.fileno()))
+            status = os.fstat(handle.fileno())
             data = handle.read()
         self.read_bytes += len(data)
         items = [json.loads(line) for line in data.decode("utf-8").splitlines() if line.strip()]
@@ -133,7 +132,7 @@ class Log:
         with self.path.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
             handle.flush()
-            status = self.report(os.fstat(handle.fileno()))
+            status = os.fstat(handle.fileno())
         if intact and self.items is not None:
             self.items.append(entry)
             self.facts = facts_of(status, False)
