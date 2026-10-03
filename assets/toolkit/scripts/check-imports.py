@@ -43,8 +43,9 @@ entries_read = 0
 
 
 def skipped(directory: Path, name: str) -> bool:
-    """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own."""
-    return name in PRUNED
+    """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own, or
+    Maven's `target` beside the `pom.xml` that makes it build output. Elsewhere `target` is a source directory."""
+    return name in PRUNED or (name == "target" and (directory / "pom.xml").is_file())
 
 
 def listing(top: Path) -> list[Path]:
