@@ -8,13 +8,15 @@ no placement needs code of its own.
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
 from support import FactoryTestCase
 from test_adopt import repository, slipwai
 from test_adopt_next import in_terminal
-from test_candidates import MONOREPO
+from test_candidates import MONOREPO, adopted
 from test_replay import git
 from test_uncommitted_subdirectory import PAGE
 
@@ -84,3 +86,37 @@ class PlacementChecks(FactoryTestCase):
         with tempfile.TemporaryDirectory() as directory:
             top, project = placed(Path(directory), "sub")
             self.check(top, self.link_to(project, top / "other" / "shortcut"), "shop", "sub/")
+
+
+class WhereNothingChanges(FactoryTestCase):
+    """Holds (S23, R6; AC-S23-7, -8): green before the slice's production change and after, none a RED."""
+
+    def test_hold_at_the_top_of_the_repository_the_recorded_keys_are_spelled_as_before(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            self.assertEqual(git(repo, "status", "--porcelain").stdout, "", "the adoption is committed")
+            result = slipwai(repo, "adopt", "--confirm", "shop")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            keys = json.loads((repo / ".delivery-tools/written.json").read_text())
+            # The set the pre-slice text wrote (observed): these exact spellings, so `./project.json`, an absolute
+            # path or a top-relative prefix would each miss one.
+            self.assertTrue({"project.json", "delivery/.written", "delivery/Makefile", PAGE} <= set(keys), keys)
+            for key in keys:
+                self.assertTrue((repo / key).exists(), key)
+                self.assertFalse(key.startswith(("./", "/")), f"{key}: neither dotted nor absolute")
+                self.assertEqual(key, Path(key).as_posix())
+
+    def test_hold_a_project_copied_to_a_directory_in_no_repository_is_refreshed_and_records_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as elsewhere:
+            repo = adopted(Path(directory))
+            copy = Path(elsewhere) / "shop"
+            shutil.copytree(repo, copy, ignore=shutil.ignore_patterns(".git"))
+            probe = subprocess.run(["git", "rev-parse"], cwd=copy, capture_output=True)
+            if probe.returncode == 0:
+                self.skipTest("the temporary directory sits inside a git repository on this machine")
+            (copy / PAGE).write_text((copy / PAGE).read_text() + "\nA note of mine.\n")
+            result = slipwai(copy, "adopt", "--refresh")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertNotIn("uncommitted", result.stderr, "nothing is refused where git cannot answer")
+            self.assertFalse((copy / ".delivery-tools/written.json").exists(), "nothing to record without git")
