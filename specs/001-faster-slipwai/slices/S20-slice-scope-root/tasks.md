@@ -186,3 +186,107 @@ No screen in this slice
 ## Convergence
 
 *(Written by the Convergence stage: gate evidence, converge verdicts, gaps pass, demo and archive.)*
+
+### Converge pass 1 — 2026-10-03, on `6379351` — **NOT CONVERGED** (one HIGH)
+
+Quick suite (`make test TESTS="test_slice_scope_root test_register_ids test_parallel_slices test_cruise_record
+test_benchmark_brackets test_changelog"`): 50 tests, OK, skipped=1. No file was mutated; every reproduction ran in a
+temporary directory against a copy of the asset scripts or a real `slipwai adopt --yes` of
+`tests/fixtures/adopt/python-worker`.
+
+**Constitution, by principle the diff touches.**
+- **I. A generated project owns its files and passes its own gate** — *unmet in one case*: the two id readers crash
+  on a model slice id with no letters-then-digits head (T005). Otherwise met: nothing under `delivery/` changed
+  (diff is 3 asset scripts, 2 tests, 1 fragment), and the host surface is still refused
+  (`check-slice-scope.py:329`, `:242–256`).
+- **III. Simplicity** — met: two tuples and one predicate (`check-slice-scope.py:94–97`, `:242`); one function
+  `lacking_rows()` (`check-decisions.py:193`); no setting, no shared module.
+- **V. Acceptance-driven** — met for the criteria as written, with the holes T006 names (ten of sixteen fixed host
+  names have no example).
+- **VIII. Versioning** — met in form: `changelog.d/slice-scope-root-deployable.md` line 1 `PATCH`, `adopt` labelled
+  experimental, `VERSION` `1.5.2.dev0`, `test_changelog` green. Its last sentence (*asks nothing of a repository
+  already generated*) is false until T005 lands.
+- **XIV. Agent-generated change meets the same bar** — met: one commit per task, RED recorded per task.
+
+**By level.**
+1. *Checker logic.* AC-S20-1, -2, -3, -4, -5, -6, -7, -9 proven on a real adoption (probes: `tests/test_x.py`,
+   `requirements.txt`, `delivery/survey/pinned.md` exit 0; `Makefile`, `.specify/drive.json`,
+   `.github/workflows/x.yml`, `delivery/.written`, `delivery/survey/survey.md`, `delivery/docs/x.md` exit 1).
+   AC-S20-8 holds for the root's `./`; a *subdirectory* spelled `./apps/api` is not proven and fails open (T007).
+   AC-S20-10, -11, -12 hold for ids of the form letters-digits-slug; not for ids from the model of any other form
+   (T005). D18's list is implemented exactly as written; what the list leaves out is T008.
+2. *Command line.* Exit codes and messages are today's on every path probed. The exception is T005: a traceback and
+   exit 1 where the same project got a finding or a warning and exit 0.
+3. *What ships beside the scripts.* Swept `assets/`, `docs/`, `src/slipwai/project/` for `check-slice-scope`,
+   *outside every deployable*, the register id and the adversary row heading: `first-slice.md`, `guidance.py`,
+   `parallel_slices.py`, `docs/delivery-loop.md`, `docs/adopting.md` describe the rule generically and none says a
+   root deployable owns nothing or that an id is cut to its prefix. Nothing is now wrong; no page is owed.
+4. *Published contract.* Fragment level and label correct; no catch-up paragraph owed once T005 lands (a merge
+   brings the change whole). `VERSION` correct.
+5. *Tests.* Holes in T006. Everything else has an example that names its criterion.
+
+### T005 — **HIGH** — A done slice whose id has no letters-then-digits head crashes both id readers (R5, R6 · AC-S20-13, D19, Principle I)
+
+- [ ] `re.match(r"[A-Za-z]+\d+", ident).group(0)` is applied to every id in `done_slices()`, which also holds ids
+  from `implemented()` — the model's `id:` taken verbatim, constrained by nothing (`event-model/check.py` accepts
+  any string; `SLICE_BRANCH` allows `[A-Za-z0-9][A-Za-z0-9._-]*`). For `place-order` or `1-checkout` the match is
+  `None`.
+- **Reproduction** (temporary project: `project.json`, a copy of `assets/toolkit/scripts`, `docs/event-model/model.yaml`
+  with `- id: place-order` / `status: implemented` / `spec: specs/f/spec.md`, `specs/f/slices/place-order/`):
+  `python3 scripts/agents/benchmark.py check` → `AttributeError: 'NoneType' object has no attribute 'group'`
+  (`agents/benchmark.py:670`), exit 1; with the scripts at `f151b80` → two warnings, exit 0. With a `decisions.md`
+  and an adversary log lacking the row, `python3 scripts/check-decisions.py` → the same error in `lacking_rows()`
+  (`check-decisions.py:193–198`) instead of *no row for place-order*; `--adversary-baseline` goes through the same
+  function. Both targets are in `verify`, so a project that was green turns red on `slipwai migrate` — which a
+  PATCH may not do and the fragment says it does not.
+- **The class, swept:** every place the bare prefix is derived — three (`benchmark.py:670`,
+  `check-decisions.py` `lacking_rows()`, and through it `baseline()`). The register regex itself (`done_slices()`
+  in both files) guards with `if found`. Fix all three with one rule: an id with no such head has no prefix and is
+  looked up whole, as before the slice.
+- **RED** in `tests/test_register_ids.py`: a model slice `place-order`, implemented, naming the feature — (a)
+  `check-benchmark` exits 0 and warns of `slices/place-order`; (b) `check-decisions` with no row fails naming
+  `place-order`, with the row passes.
+
+### T006 — **MEDIUM** — Ten of the sixteen fixed host names, and three behaviours, have no example (AC-S20-2, -8, D19)
+
+- [ ] `tests/test_slice_scope_root.py` refuses `Makefile`, `project.json`, `.specify/`, `.github/`, `AGENTS.md`,
+  `.claude/`. No test names `.gitea`, `.forgejo`, `.gitlab`, `.gitlab-ci.yml`, `CLAUDE.md`, `.codex`, `.cursor`,
+  `.gemini`, `.opencode` (`grep -c` for each over both new test files: 0) — deleting any from
+  `check-slice-scope.py:94–96` leaves the suite green. Also without an example: a deployable with the `path` key
+  *missing* (AC-S20-8 says empty or missing; only `""` is tested); a refusal under `path: "./"` (only greens are);
+  `--adversary-baseline` writing no row for a slice already recorded under its bare prefix (T003's note claims it).
+- **The class:** one table-driven example over every name in AC-S20-2, so the criterion's list and the test's
+  list are the same list.
+
+### T007 — **MEDIUM** — A subdirectory deployable spelled `./apps/api` beside a root deployable loses its files to the root (AC-S20-7, -8)
+
+- [ ] `service_path()` strips only `/`, so `./apps/api` never prefixes a git path. Before the slice the file was
+  refused (*outside every deployable*); now it falls to the root deployable and the other-service rule is skipped.
+- **Reproduction** (temporary repository, root `shop` at `.`, `api` of kind `service`, model block `service: shop`,
+  `apps/api/x.py` changed on `slice/S1`): path `apps/api` → *service `api` is not slice `S1`'s*; `apps/api/` → the
+  same; `./apps/api` → exit 0, *touches only what one slice may*.
+- **The class, swept:** the spellings of a recorded path — `.`, `./`, `""`, missing, `x/`, `./x`. Only `./x` answers
+  wrongly; `ci.gate` has the same reader (`gate.strip("/")`, `check-slice-scope.py:253`) and the same hole for
+  `./ci/gate.yml`. One normalising function for both.
+
+### T008 — **MEDIUM** — a question for the host, not a task to implement: D18's harness and CI names are a subset of what the checker ships beside
+
+- [ ] D18 fixes the list and AC-S20-2 repeats it; the diff implements it exactly. On a real root adoption these are
+  let through (each probed, exit 0): `.mcp.json`, `opencode.json`, `GEMINI.md`, `.agents/skills/x/SKILL.md`,
+  `.kiro/settings/mcp.json`, `.circleci/config.yml`, `Jenkinsfile`, `.gitignore` (which carries the factory's
+  `slipwai:delivery` block), `.githooks/pre-commit`, `.pre-commit-config.yaml`, `GNUmakefile`.
+  `assets/toolkit/scripts/agents/registry.json`, installed beside the checker, names about thirty harnesses'
+  projection directories and context files: Codex's skills are `.agents/skills` (not `.codex/`), Gemini's context
+  file is `GEMINI.md`, Claude Code's and opencode's MCP files are `.mcp.json` and `opencode.json`. None is in
+  `.written` (projections are made by `make agents`). D18's stated purpose is that a slice cannot rewrite the run's
+  settings.
+- **The decision owed:** keep the list as decided; extend the floor by name; or read the harness names from
+  `registry.json`. This pass does not choose. Not graded higher because the criteria are met as written and the
+  gate on `main` and CI still see the change.
+
+### T009 — **LOW** — Delivery at the root with a deployable at the root leaves `.written` itself writable (R-3)
+
+- [ ] Where `DELIVERY` is `.` the delivery clause is skipped, so `.written`, `baseline.json` and `survey/` are the
+  slice's unless `.written` lists them, and the checker reads `.written` from the slice's own tree. research.md R-3
+  assumes no project is laid out so; nothing checks the assumption. Not reproduced — read from
+  `check-slice-scope.py:248–256`.
