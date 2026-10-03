@@ -740,8 +740,9 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
 - **AC-S01-17** — Given a memory the run cannot use — none, unreadable, its commit gone, git unable to list what
   changed — on a slice branch, then the run is today's whole check, its pass line today's plus one clause saying
   why; it never fails for that reason alone and never passes narrower.
-- **AC-S01-18** — Given a corrupt database, or any SQLite error reading the index, on a narrowed run, then the
-  result is never a pass and never *skipped*: the run goes whole and answers as AC-S01-12.
+- **AC-S01-18** — Given a database whose rows a narrowed run cannot read — damage the read meets, or any other
+  SQLite error — then the result is never a pass and never *skipped*: the run goes whole and answers as
+  AC-S01-12. Damage the read of its rows does not meet is what the integrity check finds, in the full gate (D46).
 - **AC-S01-19** — Given a run that fails or skips, then no memory is written or renewed; a narrowed run that finds
   drift syncs as today, compares again, and renews the memory only on a pass.
 - **AC-S01-20** — Given any run, then `git status` reports nothing the gate left, and where `.codegraph/` is
@@ -753,4 +754,5 @@ backend, the `react-vite` frontend and target `none`, freshly generated, nothing
   whose first line is `PATCH`, naming the five directories, the `pom.xml` test and the one kind of finding that
   can disappear (one inside a pruned directory), the count on the two pass lines, and where `check-codegraph`
   compares only what changed; it asks nothing of a generated repository; `VERSION` stays `1.5.2.dev0`; and no
-  file under this repository's own `delivery/` changes (D9).
+  file `delivery/.written` lists changes in this repository (D9; the Pin stage's rows in
+  `delivery/survey/pinned.md` are the method's record, not the factory's files).
