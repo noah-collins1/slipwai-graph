@@ -84,7 +84,7 @@ direction, at any point.
 |---|---|---|---|
 | Path to production | `scripted` | `overridden` | pipeline: .github/workflows/package.yml; pipeline: .github/workflows/publish-package.yml; pipeline: .github/workflows/release.yml; pipeline: .github/workflows/verify.yml; scripted: assets/targets/aws/scripts/deploy.py; scripted: assets/targets/azure/scripts/deploy.py; scripted: tests/fixtures/adopt/converging/deploy.sh; scripted: tests/fixtures/adopt/javascript-gitlab/deploy.sh; scripted: Makefile |
 | Integration | `unknown` | `unrecorded` | CI on github, gate .github/workflows/verify-delivery.yml |
-| Safety net | `tests-exist` | `detected` | test recorded for slipwai-graph |
+| Safety net | `tests-pass` | `confirmed` | make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) — no person has read the gate |
 | Structure | `named` | `detected` | slipwai-graph: tool; not under apps/: . |
 | Platform | `supported` | `detected` | in support on 2026-10-02: Python 3.11; no audit command recorded for slipwai-graph |
 | Constitution | `template` | `detected` | .specify/memory/constitution.md |

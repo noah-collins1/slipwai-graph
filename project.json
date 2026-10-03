@@ -221,7 +221,7 @@
       "axis": "safety-net",
       "rung": "tests-pass",
       "target": "mutation-measured",
-      "evidence": "make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) — no person has read the gate",
+      "evidence": "make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) \u2014 no person has read the gate",
       "provenance": "confirmed",
       "planned": null
     },

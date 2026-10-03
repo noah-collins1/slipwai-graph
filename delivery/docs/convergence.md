@@ -1,4 +1,4 @@
-<!-- convergence: 132c92db73d3a43d -->
+<!-- convergence: 79960088dac2c00f -->
 # Where `slipwai-graph` stands
 
 > **Experimental.** Brownfield adoption is new and will change shape while real repositories teach it what it got wrong: the files under the delivery directory, the facts `project.json` records and the questions `adopt` asks may change in a MINOR release, and `slipwai migrate` brings each change here with a note saying what to do. Every place this reaches you says so until it stops being true. What surprised you — a detection that was wrong, a gate that went red, a sentence this page should have had — belongs on the public issue tracker.
@@ -19,7 +19,7 @@ first slice and offers the next unplanned row as a method slice beside the produ
 |---|---|---|---|---|---|
 | Path to production | `scripted` | `pipeline-decides` | pipeline: .github/workflows/package.yml; pipeline: .github/workflows/publish-package.yml; pipeline: .github/workflows/release.yml; pipeline: .github/workflows/verify.yml; scripted: assets/targets/aws/scripts/deploy.py; scripted: assets/targets/azure/scripts/deploy.py; scripted: tests/fixtures/adopt/converging/deploy.sh; scripted: tests/fixtures/adopt/javascript-gitlab/deploy.sh; scripted: Makefile | *not yet* | `overridden` |
 | Integration | `unknown` | `continuous` | CI on github, gate .github/workflows/verify-delivery.yml | *not yet* | `unrecorded` |
-| Safety net | `tests-exist` | `mutation-measured` | test recorded for slipwai-graph | *not yet* | `detected` |
+| Safety net | `tests-pass` | `mutation-measured` | make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) — no person has read the gate | *not yet* | `confirmed` |
 | Structure | `named` | `typed` | slipwai-graph: tool; not under apps/: . | *not yet* | `detected` |
 | Platform | `supported` | `audited` | in support on 2026-10-02: Python 3.11; no audit command recorded for slipwai-graph | *not yet* | `detected` |
 | Constitution | `template` | `in-full` | .specify/memory/constitution.md | *not yet* | `detected` |

@@ -20,7 +20,7 @@ Experimental: see `../docs/adoption.md`.
 | `changelog.d/` | 1 | markdown |
 | `docs/` | 28 | markdown |
 | `scripts/` | 26 | python, shell |
-| `specs/` | 7 | markdown, json |
+| `specs/` | 18 | markdown, json |
 | `src/` | 147 | python |
 | `tests/` | 180 | python, markdown |
 

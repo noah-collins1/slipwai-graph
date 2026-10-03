@@ -136,6 +136,12 @@ A red gate here is not repaired in the gate: stop and report.
 
 ### T004 — Move the Safety net row and bring principle V into force (AC-S00-6; D11, R5, R6)
 
+- [x] **Done** — `986074f` (host). `project.json` safety-net → `tests-pass` / `confirmed` / evidence naming both
+  gates at `030ad00` with the marks, 830 tests, skipped=9, *no person has read the gate*; constitution V's marker
+  and preamble out, quoted text unwrapped, an *in force since* paragraph carrying the old *what holds here*
+  bullets as history; XIII's marker `at tests-pass`. The same commit carries `specs/001-faster-slipwai/**` (T007)
+  and `running.md` without the drifting test count (T008).
+
 One commit:
 - `project.json`, `convergence[]`, axis `safety-net`: rung `tests-pass`, provenance `confirmed`, `planned`
   null, target unchanged (`mutation-measured`), `evidence` naming the two commands, the commit they were green
@@ -148,6 +154,21 @@ One commit:
 **Files:** `project.json`, `.specify/memory/constitution.md`.
 
 ### T005 — Redraw the page and check the tree agrees (AC-S00-6; R5)
+
+- [x] **Done** — host, on the clean tree at `986074f`. `./slipwai adopt --refresh` exit 0: *refreshed: nothing;
+  every detected fact stands*; **no disagreement on the Safety net row** (D11 holds); four pre-existing
+  disagreements between the person's confirmed/overridden facts and the tree, left as they stand for a person
+  (`slipwai-graph: commands` — `pyproject.toml` proposes `python3 -m pytest` etc. over the confirmed `make …`;
+  `database: schema` none → unmanaged; `infrastructure: home` none → here; `release: path` scripted → pipeline).
+  Seven files rewritten; each read before commit: `delivery/docs/convergence.md` (Safety net `tests-pass` ·
+  `confirmed`), `delivery/commands/ground.md` and `delivery/survey/structure.md` (regenerated),
+  `project.json` (an em dash escaped), `.specify/presets/standard/templates/constitution-template.md` (the
+  preset's journey template following the map) — committed; **`.specify/cruise.json`** (reset to
+  `enabled: false`, `max_iterations: null`) **and `.specify/product-owner.md`** (reset to the template) — reverted
+  with `git checkout --` before commit, and the defect placed in the split as `S21-refresh-keeps-owned-files`
+  (D15). None of the seven is a control the runner watches. `make -f delivery/Makefile check-convergence` (3 of
+  9 axes at target), `check-constitution` (15 covered, 7 as targets — V now in full) and `check-speckit` green.
+  `make ratchet-tighten` not run.
 
 - On a clean tree (`git status --porcelain` empty; it refuses otherwise): `./slipwai adopt --refresh`.
 - Read its report (Refreshed / Disagrees / Not wrapped) before committing. A *Disagrees* line on the Safety
