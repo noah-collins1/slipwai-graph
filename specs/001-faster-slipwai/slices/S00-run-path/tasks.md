@@ -250,6 +250,10 @@ no such field, so AC-S00-2 is unaffected either way.
 
 ### T009 — The new example restores `os.environ` by hand · **LOW**
 
+- [x] **Done** — `4a9dc00` (drive-implement · model: sonnet · delegated, fresh context · rule, refactor on green ·
+  split=0). `mock.patch.dict(os.environ, marks)` replaces the by-hand update and `try/finally`; lint clean;
+  `test_cruise_runner` green with the marks and without.
+
 `tests/test_cruise_runner.py:78–91` sets the two marks with `os.environ.update(marks)` and restores them in a
 `try/finally` of its own. `mock.patch.dict(os.environ, marks)` is already how this tree does exactly that
 (`tests/test_cruise_start.py:282`, `tests/test_event_model.py:70`), and it restores on every exit path without
@@ -257,6 +261,25 @@ the eight lines. A REFACTOR-step leftover, not a behaviour defect: the test is g
 evidence). Fold it when the file is next touched; do not open a cycle for it.
 
 **Files:** `tests/test_cruise_runner.py`.
+
+## Demo feedback — appended tasks
+
+### T010 — D14 and D15 in the shape `check-decisions` holds (AC-S00-5 at the final commit) · **HIGH**
+
+From the demo of 2026-10-03 (`demo-log.md`, verdict `implementation`): at tip `3764193`
+`make -f delivery/Makefile check-decisions` exits 2 — D14's and D15's `Decided by` read
+`host (stage recommendation; standing decision …)`, not an accepted form, and D14's `Written to` named a bare
+`plan.md` the checker resolves from the root. The gates were green at `030ad00`; AC-S00-5 asks for the slice's
+*final* commit. Fix: `Decided by: host (stage recommendation)` on both (the standing entries stay cited in
+**Why**), full path for `plan.md`; then `check-decisions` green, converge pass 2, the demo again for AC-S00-5,
+and both gates at the resulting commit.
+
+**Files:** `specs/001-faster-slipwai/decisions.md`.
+
+- [x] **Done** — host: D14 and D15 `Decided by: host (stage recommendation)` (the standing entries stay cited in
+  **Why**); D14 `Written to` with the full `plan.md` path. `make -f delivery/Makefile check-decisions` →
+  *15 decision(s) … 1 demo(s) in 1 log(s), every field present and every path in the tree*. Committed with the
+  demo log; converge pass 2 and the gates at the resulting commit follow.
 
 ### Converge pass 1 — evidence
 

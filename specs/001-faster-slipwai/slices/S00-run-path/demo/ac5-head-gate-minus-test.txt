@@ -1,0 +1,57 @@
+HEAD=3764193 env: CRUISE_RUNNER=1 CRUISE_ITERATION=2
+$ make -f delivery/Makefile check-python lint typecheck check-imports check-migrations check-slice-scope check-extensions check-agents check-speckit check-codegraph check-ux-gates check-constitution check-benchmark check-decisions check-convergence   (verify minus test, at HEAD)
+python3 delivery/scripts/ratchet.py slipwai-graph lint -- 'make lint'
+make[1]: Entering directory '/home/noahc/math/slipwai-graph'
+./scripts/verify --lint-only
+All checks passed!
+make[1]: Leaving directory '/home/noahc/math/slipwai-graph'
+python3 delivery/scripts/ratchet.py slipwai-graph typecheck -- 'make typecheck'
+make[1]: Entering directory '/home/noahc/math/slipwai-graph'
+python3 -m compileall -q src scripts tests
+./scripts/verify --typecheck-only
+Success: no issues found in 304 source files
+make[1]: Leaving directory '/home/noahc/math/slipwai-graph'
+python3 delivery/scripts/check-imports.py
+check-imports: inward dependency rule holds
+python3 delivery/scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files
+python3 delivery/scripts/check-slice-scope.py
+check-slice-scope: on `adopt-method`, not a `slice/<id>` branch — nothing to hold
+python3 delivery/scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 delivery/scripts/agents/project.py --check
+check-agents: 234 projected files match
+python3 delivery/scripts/agents/models.py --check && python3 delivery/scripts/agents/drive.py --check && python3 delivery/scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is enabled
+python3 delivery/scripts/check-speckit.py
+check-speckit: 2 manifest(s) match, 1 preset(s) valid
+python3 delivery/scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 delivery/scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 delivery/scripts/check-constitution.py
+check-constitution: 15 required principle(s) covered, 7 of them as targets held to the convergence map
+python3 delivery/scripts/test_benchmark.py && python3 delivery/scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: warning: specs/001-faster-slipwai/slices/S00-run-path/benchmark.json: `demo` has been open since 2026-10-03T04:01:32Z — `benchmark.py end` closes it, and the runner cuts an entry off when its iteration ends
+check-benchmark: 1 warning(s) above — what was not measured stays unmeasured; not failing verify
+python3 delivery/scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/001-faster-slipwai/decisions.md:156: D14 `Decided by` is 'host (stage recommendation; standing decision D11)'; it is host (stage recommendation), host (standing decision D<m>), drive-skipper (<model>), drive-bosun or human
+  specs/001-faster-slipwai/decisions.md:156: D14 `Written to` names `plan.md`, which is not in the tree
+  specs/001-faster-slipwai/decisions.md:167: D15 `Decided by` is 'host (stage recommendation; standing decisions D9, D13)'; it is host (stage recommendation), host (standing decision D<m>), drive-skipper (<model>), drive-bosun or human
+
+make: *** [delivery/Makefile:45: check-decisions] Error 1
+
+real	0m0.732s
+user	0m0.608s
+sys	0m0.132s
+exit=2
+HEAD=3764193
+$ make check-structure   (native gate: lint and typecheck ran above; test carried from 030ad00 logs, no src/tests change since)
+python3 scripts/check-structure.py
+check-structure: 147 modules, 7 tiers, no upward imports and no cycles
+exit=0

@@ -1,0 +1,5 @@
+$ ./slipwai --version
+slipwai 1.5.2.dev0
+exit=0
+$ cat VERSION
+1.5.2.dev0

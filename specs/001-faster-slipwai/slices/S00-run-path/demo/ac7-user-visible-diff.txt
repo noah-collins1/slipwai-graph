@@ -1,0 +1,25 @@
+$ git diff --stat 5460bf9..HEAD -- assets src/slipwai catalog.json VERSION changelog.d
+exit=0 (lines of output above: 0)
+$ git diff --stat 5460bf9..HEAD (whole tree, for context)
+ .specify/memory/constitution.md                    | 163 ++++----
+ .../standard/templates/constitution-template.md    | 155 ++++----
+ delivery/commands/ground.md                        |   2 +-
+ delivery/docs/convergence.md                       |   4 +-
+ delivery/survey/running.md                         |  16 +-
+ delivery/survey/structure.md                       |   2 +-
+ project.json                                       |   6 +-
+ specs/001-faster-slipwai/decisions.md              |  59 ++-
+ .../slices/S00-run-path/benchmark.json             | 438 +++++++++++++++++++++
+ .../slices/S00-run-path/data-model.md              |  63 +++
+ .../001-faster-slipwai/slices/S00-run-path/plan.md | 157 ++++++++
+ .../slices/S00-run-path/quickstart.md              |  64 +++
+ .../slices/S00-run-path/research.md                | 125 ++++++
+ .../slices/S00-run-path/tasks.md                   | 370 +++++++++++++++++
+ specs/001-faster-slipwai/spec.md                   |  41 ++
+ specs/001-faster-slipwai/story-split.md            |  12 +
+ tests/test_cruise_runner.py                        |  33 +-
+ tests/test_cruise_start.py                         |  10 +-
+ tests/test_cruise_stop_hook.py                     |   6 +-
+ tests/test_cruise_tell.py                          |   5 +-
+ tests/test_cruise_watch.py                         |   5 +-
+ 21 files changed, 1543 insertions(+), 193 deletions(-)

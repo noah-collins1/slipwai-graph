@@ -159,9 +159,9 @@
 - **Options:** (a) move it on the recorded gate evidence — two green gates at `030ad00` with the marks set, 830 tests, `skipped=9` equal to the baseline, no ratchet line — and say in the artifacts that the guard is latent (recommended by the stage: drive.md stage 9 flips a row the slice reached on evidence naming what established it; the guard was one of D11's reasons, not its ground); (b) hold the row at `tests-exist` until a baseline file exists — which would need a finding to record or `make ratchet-tighten`, neither of which a green tree produces, so the row could never move; (c) change the checker to read the row without a file — a factory control, out of scope (AC-S00-7, catastrophic list).
 - **Decision:** (a). The row moves at T004 as D11 says; `data-model.md` and `plan.md` record that the quarantine guard is latent while no baseline exists; the evidence string names the gate runs a person can re-run. D11 stands.
 - **Why:** The rung's definition is *green in the gate, with no quarantine* (`src/slipwai/convergence.py:59`), which the recorded runs establish directly; the checker's contradiction is a safeguard against a quarantine that was recorded, and none was. Holding the row would make a clean suite the one state that cannot reach `tests-pass`.
-- **Decided by:** host (stage recommendation; standing decision D11)
+- **Decided by:** host (stage recommendation)
 - **Confidence:** high · **Would reverse if:** a person wants a tree-held guard before the row moves — then `S20`'s sibling fix in the factory's checker (read the row's evidence, or treat a missing baseline as "no findings") is a PATCH slice, and the row waits for it.
-- **Written to:** `specs/001-faster-slipwai/slices/S00-run-path/data-model.md`, `plan.md`; `specs/001-faster-slipwai/decisions.md`
+- **Written to:** `specs/001-faster-slipwai/slices/S00-run-path/data-model.md`, `specs/001-faster-slipwai/slices/S00-run-path/plan.md`, `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
 
 ## D15 — Where does the refresh's rewriting of `cruise.json` and the owner brief go?
@@ -170,7 +170,7 @@
 - **Options:** (a) commit what the refresh wrote — not available: it disables the run a person enabled (settings change only through `/cruise-settings`) and destroys a human-owned file; (b) revert both to the committed versions before the T005 commit and record the defect as a factory PATCH slice in the split, as D13 did for the slice-scope checker — recommended by the stage (a defect in what the factory generates is product work landing under `src/slipwai/` first, owner brief priority 3); (c) fix `src/slipwai/resurvey.py` inside S00 — a second capability in a method slice, and a user-visible change the slice's AC-S00-7 forbids.
 - **Decision:** (b). Both files reverted with `git checkout -- .specify/cruise.json .specify/product-owner.md` before anything was committed; `S21-refresh-keeps-owned-files` added to `story-split.md`, third in split order. Until it lands and reaches this repository through `slipwai migrate` (D9), every `/survey` run inside this cruise is followed by the same revert, and T005's record says so.
 - **Why:** `delivery/commands/cruise.md`, *Settings change only through `/cruise-settings`* and *`.specify/cruise.json` is committed: a run's rules are a diff*; `.specify/product-owner.md` lines 1–7 (human-owned); owner brief priority 3 and AC-S00-7 for where the fix lands.
-- **Decided by:** host (stage recommendation; standing decisions D9, D13)
+- **Decided by:** host (stage recommendation)
 - **Confidence:** high · **Would reverse if:** a person says the refresh is meant to re-template those files (then the two would be restored from their own copies instead, and the slice would document it).
 - **Written to:** `specs/001-faster-slipwai/story-split.md` (Split Candidates, Slice graph); `specs/001-faster-slipwai/slices/S00-run-path/tasks.md` (T005 record)
 - **Status:** standing

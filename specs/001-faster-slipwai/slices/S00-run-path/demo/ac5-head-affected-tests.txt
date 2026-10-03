@@ -1,0 +1,69 @@
+HEAD=3764193 env: CRUISE_RUNNER=1 CRUISE_ITERATION=2
+$ make test TESTS="test_constitution test_converge test_adopt_next test_adopt_facts"   (modules naming files the post-030ad00 commits changed)
+PYTHONPATH=src:tests python3 -m unittest -v test_constitution test_converge test_adopt_next test_adopt_facts
+test_an_adopted_repository_ratifies_a_journey_and_the_gate_holds_it_to_the_map (test_constitution.ConstitutionTest.test_an_adopted_repository_ratifies_a_journey_and_the_gate_holds_it_to_the_map)
+A repository on long-lived branches cannot truthfully ratify "trunk MUST be releasable at every commit". ... ok
+test_constitution_gate_holds_the_floor_the_profile_asks_for (test_constitution.ConstitutionTest.test_constitution_gate_holds_the_floor_the_profile_asks_for)
+A constitution that dropped the practices this foundation depends on is a set of gates that ... created: /tmp/tmpwkyn07zh/floor-go
+created: /tmp/tmpwkyn07zh/floor-typescript
+ok
+test_standard_gate_rejects_an_event_sourcing_constitution (test_constitution.ConstitutionTest.test_standard_gate_rejects_an_event_sourcing_constitution) ... created: /tmp/tmpnrluwvpp/standard-constitution
+ok
+test_the_constitution_phase_is_hooked_on_both_sides (test_constitution.ConstitutionTest.test_the_constitution_phase_is_hooked_on_both_sides)
+The gate is only a gate if the drafting phase meets it. `before_constitution` prints the floor ... created: /tmp/tmp4ux8wnec/hooked-constitution
+ok
+test_the_init_commit_passes_and_the_first_spec_makes_the_gate_apply (test_constitution.ConstitutionTest.test_the_init_commit_passes_and_the_first_spec_makes_the_gate_apply)
+`./init` installs the template and pushes; under a production target that push is the first ... created: /tmp/tmpci__k602/first-push
+ok
+test_the_shipped_constitution_template_satisfies_the_gate_it_ships_with (test_constitution.ConstitutionTest.test_the_shipped_constitution_template_satisfies_the_gate_it_ships_with)
+The preset template and the gate are two statements of the same floor, maintained in different ... created: /tmp/tmp3fy8jqnn/template-floor
+created: /tmp/tmp964u19yo/template-floor
+ok
+test_check_refuses_with_every_reason_and_moves_nothing_until_every_row_is_at_its_target (test_converge.ConvergeTest.test_check_refuses_with_every_reason_and_moves_nothing_until_every_row_is_at_its_target) ... ok
+test_converging_moves_the_material_to_the_root_as_one_merge_and_the_repository_is_generated_from_then_on (test_converge.ConvergeTest.test_converging_moves_the_material_to_the_root_as_one_merge_and_the_repository_is_generated_from_then_on) ... ok
+test_the_finishing_commit_falls_back_unless_the_checkout_has_both_a_name_and_an_email (test_converge.ConvergeTest.test_the_finishing_commit_falls_back_unless_the_checkout_has_both_a_name_and_an_email)
+Git refuses a commit that has one and not the other, so half an identity has to count as none. ... ok
+test_the_intro_shows_the_language_rather_than_asking_about_it (test_adopt_next.IntroTest.test_the_intro_shows_the_language_rather_than_asking_about_it)
+The language was the first question to leave the terminal, and the rest followed it (ADR 0003): ... ok
+test_the_switch_it_arrived_behind_is_accepted_and_changes_nothing (test_adopt_next.IntroTest.test_the_switch_it_arrived_behind_is_accepted_and_changes_nothing)
+`--experimental-intro` chose this intro before it was the only one. A script or a habit that still ... ok
+test_a_constitution_is_not_ratified_in_a_repository_that_has_no_spec_kit_yet (test_adopt_next.NextStepsTest.test_a_constitution_is_not_ratified_in_a_repository_that_has_no_spec_kit_yet)
+The template is gone when it has been written over — and also when `./init` has never run, which ... ok
+test_a_fresh_adoption_puts_init_now_and_everything_after_it_then (test_adopt_next.NextStepsTest.test_a_fresh_adoption_puts_init_now_and_everything_after_it_then) ... ok
+test_a_generated_project_is_refused_because_it_stands_in_no_such_sequence (test_adopt_next.NextStepsTest.test_a_generated_project_is_refused_because_it_stands_in_no_such_sequence) ... created: /tmp/tmp1f4xxcpg/shop
+ok
+test_a_row_a_person_placed_is_counted_off_the_open_rows (test_adopt_next.NextStepsTest.test_a_row_a_person_placed_is_counted_off_the_open_rows) ... ok
+test_an_application_nobody_has_started_is_said_and_named (test_adopt_next.NextStepsTest.test_an_application_nobody_has_started_is_said_and_named) ... ok
+test_each_step_turns_to_done_as_the_mark_it_leaves_appears (test_adopt_next.NextStepsTest.test_each_step_turns_to_done_as_the_mark_it_leaves_appears) ... ok
+test_the_adoption_report_says_the_list_it_just_printed_can_be_asked_for_again (test_adopt_next.NextStepsTest.test_the_adoption_report_says_the_list_it_just_printed_can_be_asked_for_again) ... ok
+test_the_sequence_runs_to_the_loop_rather_than_stopping_at_a_ready_repository (test_adopt_next.NextStepsTest.test_the_sequence_runs_to_the_loop_rather_than_stopping_at_a_ready_repository)
+It used to end at the strategy ADR — a repository wrapped, gated and asked to do nothing. The ... ok
+test_init_and_no_init_cannot_both_be_asked_for (test_adopt_next.RunInitTest.test_init_and_no_init_cannot_both_be_asked_for) ... ok
+test_it_is_not_run_unless_asked_and_the_tree_is_left_clean (test_adopt_next.RunInitTest.test_it_is_not_run_unless_asked_and_the_tree_is_left_clean) ... ok
+test_no_init_says_the_same_thing_out_loud (test_adopt_next.RunInitTest.test_no_init_says_the_same_thing_out_loud) ... ok
+test_the_report_does_not_name_init_as_next_when_it_is_about_to_run_it (test_adopt_next.RunInitTest.test_the_report_does_not_name_init_as_next_when_it_is_about_to_run_it)
+Naming a step and then taking it two lines later reads as two instructions about one thing. ... ok
+test_a_recorded_command_that_names_the_repositorys_own_scripts_is_not_repointed (test_adopt_facts.AdoptFactsTest.test_a_recorded_command_that_names_the_repositorys_own_scripts_is_not_repointed)
+`Layout.repoint` respelled every `scripts/` in every assembled file, the person's recorded command ... ok
+test_a_strangler_with_no_new_home_is_said_on_the_gate (test_adopt_facts.AdoptFactsTest.test_a_strangler_with_no_new_home_is_said_on_the_gate)
+A strangler fig decided, slices archived, the ledger empty and every deployable one that was here: the gate ... ok
+test_the_forge_stands_while_the_gate_is_the_only_ci_in_the_tree (test_adopt_facts.AdoptFactsTest.test_the_forge_stands_while_the_gate_is_the_only_ci_in_the_tree)
+The survey leaves out what the factory wrote, so once the repository's own workflow is gone a fresh ... ok
+test_the_gate_holds_the_map_to_the_tree_and_the_page_to_the_record (test_adopt_facts.AdoptFactsTest.test_the_gate_holds_the_map_to_the_tree_and_the_page_to_the_record)
+A row a person moves above what the tree allows fails `verify` by name; a page rendered from other rows ... ok
+test_the_gate_is_written_for_the_forge_found_and_what_the_tree_does_not_say_stays_unrecorded (test_adopt_facts.AdoptFactsTest.test_the_gate_is_written_for_the_forge_found_and_what_the_tree_does_not_say_stays_unrecorded)
+No CI, no remote, no start script: nothing is written for a forge, `shop` is an application whose role ... ok
+test_the_gate_runs_on_the_branch_the_repository_lands_on_and_a_file_taken_over_stays_taken (test_adopt_facts.AdoptFactsTest.test_the_gate_runs_on_the_branch_the_repository_lands_on_and_a_file_taken_over_stays_taken)
+The third real adoption was on `master`, and a workflow hardcoded to `main` never ran on a push; it could ... ok
+test_the_record_stays_still_between_surveys_and_says_when_the_platform_moved (test_adopt_facts.AdoptFactsTest.test_the_record_stays_still_between_surveys_and_says_when_the_platform_moved)
+A `/survey` that finds nothing changed rewrites nothing that a fact did not move: the platform keeps the day ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 20.842s
+
+OK
+
+real	0m20.948s
+user	0m16.027s
+sys	0m2.833s
+exit=0

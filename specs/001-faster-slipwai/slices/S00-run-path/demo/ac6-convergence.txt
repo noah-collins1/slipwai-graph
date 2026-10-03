@@ -1,0 +1,103 @@
+$ python3 -c safety-net row
+{
+  "axis": "safety-net",
+  "rung": "tests-pass",
+  "target": "mutation-measured",
+  "evidence": "make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) \u2014 no person has read the gate",
+  "provenance": "confirmed",
+  "planned": null
+}
+$ make -f delivery/Makefile check-convergence
+python3 delivery/scripts/check-convergence.py
+  path-to-production: `scripted` — below `pipeline-decides`
+  integration: `unknown` — unrecorded: nothing has established it; /drive asks before the first slice
+  safety-net: `tests-pass` — below `mutation-measured`
+  structure: `named` — below `typed`
+  platform: `supported` — below `audited`
+  constitution: `template` — below `in-full`
+  data: `settled` — at target
+  infrastructure: `settled` — at target
+  strategy: `done` — at target
+check-convergence: 3 of 9 axes at target; the map is delivery/docs/convergence.md
+exit=0
+$ grep -n "Safety net" delivery/docs/convergence.md
+22:| Safety net | `tests-pass` | `mutation-measured` | make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) — no person has read the gate | *not yet* | `confirmed` |
+48:### Safety net
+$ make -f delivery/Makefile check-constitution
+python3 delivery/scripts/check-constitution.py
+check-constitution: 15 required principle(s) covered, 7 of them as targets held to the convergence map
+exit=0
+$ grep -n "journey:" .specify/memory/constitution.md
+74:<!-- journey: hexagonal-boundary at named -->
+247:<!-- journey: trunk-based-integration at unknown -->
+293:<!-- journey: one-path-to-production at scripted -->
+331:<!-- journey: build-once-deploy-is-not-release at scripted -->
+367:<!-- journey: fast-feedback at tests-pass -->
+439:<!-- journey: ubiquitous-language-and-domain-types at named -->
+490:<!-- journey: strict-typing at named -->
+568:     a principle marked `journey:` is a target, not yet in force, and check-constitution holds it to the
+exit=0
+$ grep -n "^## .*V\b\|^### .*V\b\|Principle V\|^## V" .specify/memory/constitution.md
+100:### V. Acceptance-Driven Development from Given-When-Then
+$ sed -n 96,135p .specify/memory/constitution.md
+>   untested.
+> - The dependency direction MUST be enforced by an automated check — in this project `make check-imports`
+>   — not by reviewer vigilance.
+
+### V. Acceptance-Driven Development from Given-When-Then
+
+**In force since 2026-10-03** (`001-faster-slipwai`, slice `S00-run-path`, cruise iteration 2): the *safety net* row
+reached `tests-pass` — `make verify` and `make -f delivery/Makefile verify` green at `030ad00` with 830 unittest tests
+and nothing quarantined (`delivery/docs/convergence.md`). Until then this principle was a target at `tests-exist`:
+829 unittest tests ran under `make test`, written with the change they hold; acceptance scenarios in
+Given-When-Then existed for generated projects' specs and, from Faster Slipwai on, for the factory's own
+`specs/001-faster-slipwai/spec.md`; the Faster Slipwai slices are the first held to acceptance scenarios written
+and failing before their implementation, and `check-benchmark` records whether they were.
+
+- **Level.** Every slice MUST have at least one GWT scenario whose **When** enters through the
+  application's own driving port — **the use case** — and whose **Then** is observable there. A scenario
+  satisfiable by calling an internal function is a unit specification, NOT a slice acceptance criterion.
+- **Why the use case and not the delivery adapter.** The use case is the whole path a slice has to get
+  right: authorise, load, decide, persist, report the outcome. Binding acceptance scenarios to an adapter
+  couples every one of them to the thing IV exists to make replaceable, and a project built with no HTTP
+  adapter has no such boundary to bind to at all.
+- **The outside surface still has to be tested, and it has its own level.** A delivery adapter — HTTP
+  route, CLI command, queue consumer — MUST carry a test covering parse, delegate, and the mapping of
+  every outcome to a response. It lives in `tests/edge/` and MUST NOT be the level at which a business
+  rule is proved.
+- **Adversarial testing enters from outside, and this principle does not constrain it.** An attacker
+  stands at the external surface, so that is where the red-team pass reproduces (this principle's evidence
+  gate, and the `adversarial-testing` skill). Where the rule was right and the *route* got past it, the
+  regression test belongs at the edge: a use-case test proves the rule holds and proves nothing about
+  whether the surface can be made to skip it.
+- **What is NOT a GWT scenario**: format and structure validation. That belongs in the type system,
+  which MUST make invalid states unrepresentable. If the compiler can reject it, do not write a scenario.
+- **Cycle**: RED-GREEN-REFACTOR. Tests written after the code they cover MUST be sent back.
+- **One increment at a time (NON-NEGOTIABLE).** The unit of an increment is **one rule** —
+  one numbered rule of the slice's example map, or one acceptance criterion where there is no map,
+  with the examples that belong to it — taken RED-GREEN-REFACTOR: its examples
+  failing, the smallest code that passes them, refactor on green. Within a rule the examples MAY be written
+  together and implemented against, or taken one at a time, as the implementer judges; an increment MUST
+  NOT span rules, and the next rule's examples MUST NOT be written until the current rule is green and
+  refactored. **Writing a slice's scenarios up front as a batch and then implementing against them is
+
+$ grep -n "acceptance-driven" .specify/memory/constitution.md delivery/scripts/check-constitution.py
+delivery/scripts/check-constitution.py:21:  and domain types, the hexagonal boundary, acceptance-driven testing, observability, security and
+delivery/scripts/check-constitution.py:99:    "acceptance-driven-testing": ("safety-net", "tests-pass"),
+delivery/scripts/check-constitution.py:381:        key="acceptance-driven-testing",
+$ grep -n "Safety net" -A8 delivery/docs/convergence.md | sed -n 1,30p
+### Safety net
+
+1. `none` — no test command is recorded for any application that was here
+2. `tests-exist` — a test suite is recorded; whether it is green is not established
+3. `tests-pass` — the suite is green in the gate, with no quarantine
+4. `fast` — the suite is deterministic and fast enough to run on every change
+5. `pinned` — the seams a slice touches are pinned by `/characterise` before they change
+6. `mutation-measured` — the suite's strength is measured by mutation testing ← a generated project sits here
+
+### Structure
+
+1. `as-found` — at least one buildable directory's role — service, library, tool, tests — is not established
+2. `named` — every application is recorded as what it is
+3. `laid-out` — every application lives under `apps/`, the layout a generated project has — or at a Go module's root, which is its import path and lives where it stands
+4. `hexagonal` — every application declares the hexagonal layers and the import gate holds it to them

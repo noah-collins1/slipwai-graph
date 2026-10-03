@@ -1,0 +1,151 @@
+env: CRUISE_RUNNER=1 CRUISE_ITERATION=2
+$ make test TESTS="test_cruise test_cruise_guard test_cruise_index test_cruise_record test_cruise_runner test_cruise_start test_cruise_stop_hook test_cruise_sweep test_cruise_tell test_cruise_watch test_cruise_where"
+PYTHONPATH=src:tests python3 -m unittest -v test_cruise test_cruise_guard test_cruise_index test_cruise_record test_cruise_runner test_cruise_start test_cruise_stop_hook test_cruise_sweep test_cruise_tell test_cruise_watch test_cruise_where
+test_an_adopted_repository_proceeds_on_assumptions_where_a_persons_word_is_the_artifact (test_cruise.CruiseTest.test_an_adopted_repository_proceeds_on_assumptions_where_a_persons_word_is_the_artifact)
+Ground's `unrecorded` rows and the strategy ADR's `Accepted` are a person's, and the first adoption to ... ok
+test_cruise_runs_the_drive_ladder_and_says_what_happens_at_every_stop (test_cruise.CruiseTest.test_cruise_runs_the_drive_ladder_and_says_what_happens_at_every_stop)
+A command that paraphrased the ladder would drift from it; one that stopped where `/drive` stops would ... created: /tmp/tmp9zqon00a/cruise-event-modelling
+created: /tmp/tmp9zqon00a/cruise-standard
+ok
+test_the_benchmark_records_who_drove (test_cruise.CruiseTest.test_the_benchmark_records_who_drove)
+A piloted slice and a driven one cost differently, and a record that cannot say which was which cannot ... created: /tmp/tmpbfiodls8/driver
+ok
+test_the_ladder_and_the_skills_page_name_the_two_types_as_cruises (test_cruise.CruiseTest.test_the_ladder_and_the_skills_page_name_the_two_types_as_cruises)
+Under `/drive` alone a person is the owner and the actor, so the two rows in the delegable-types table ... created: /tmp/tmpk373kzjd/pages-event-modelling
+created: /tmp/tmpk373kzjd/pages-standard
+ok
+test_the_models_table_names_both_stages_and_the_skipper_role_resolves (test_cruise.CruiseTest.test_the_models_table_names_both_stages_and_the_skipper_role_resolves)
+A stage the table does not name runs on the `default` row silently, and a role no harness maps is ... created: /tmp/tmpbgjbtv06/models
+ok
+test_the_settings_command_shows_every_setting_and_changes_them_through_the_script (test_cruise.CruiseTest.test_the_settings_command_shows_every_setting_and_changes_them_through_the_script)
+A setting changed by hand inside an iteration is a run under rules nobody can diff: the command lists ... created: /tmp/tmpgsl2bnfv/settings-command
+ok
+test_the_settings_file_ships_every_setting_at_its_default_and_disabled (test_cruise.CruiseTest.test_the_settings_file_ships_every_setting_at_its_default_and_disabled)
+A run nobody asked for is the failure this prevents: the file exists in every project, at the defaults ... created: /tmp/tmp3whqwrzq/settings-event-modelling
+created: /tmp/tmp3whqwrzq/settings-standard
+ok
+test_the_skipper_decides_and_never_invents_a_fact_and_the_hand_demos_and_never_edits_code (test_cruise.CruiseTest.test_the_skipper_decides_and_never_invents_a_fact_and_the_hand_demos_and_never_edits_code)
+A skipper that deferred is a stalled slice; one that made up a credential is a shipped guess; a hand ... created: /tmp/tmpi26iljk4/types
+ok
+test_the_brief_the_command_and_the_pages_say_a_gate_is_never_repaired_in_the_gate (test_cruise_guard.CruiseGuardTest.test_the_brief_the_command_and_the_pages_say_a_gate_is_never_repaired_in_the_gate)
+The words match the mechanism: the bosun's brief names what it never touches and what a gate the tree ... created: /tmp/tmp06ffw1id/worded
+ok
+test_the_guard_hook_refuses_an_edit_to_a_gate_or_a_control_in_a_runners_session_only (test_cruise_guard.CruiseGuardTest.test_the_guard_hook_refuses_an_edit_to_a_gate_or_a_control_in_a_runners_session_only)
+`.claude/settings.json` runs `guard` before every editing tool. In a session the runner started it ... created: /tmp/tmpiwu3uziz/guarded
+ok
+test_the_runner_parks_an_iteration_that_changed_a_gate_whatever_its_last_line_said (test_cruise_guard.CruiseGuardTest.test_the_runner_parks_an_iteration_that_changed_a_gate_whatever_its_last_line_said)
+The hook covers the editing tools on one harness; the runner covers the shell on every harness. It takes ... created: /tmp/tmpy1hnapca/parks
+ok
+test_an_index_call_is_a_line_of_the_feed_and_status_counts_the_iterations_that_asked (test_cruise_index.CruiseIndexTest.test_an_index_call_is_a_line_of_the_feed_and_status_counts_the_iterations_that_asked)
+The gate checks that the index is fresh, not that anyone uses it: a run kept `check-codegraph` green with ... created: /tmp/tmp09zo1slf/asked
+ok
+test_the_registry_says_which_project_file_each_harness_reads_a_server_from_or_that_nobody_checked (test_cruise_index.CruiseIndexTest.test_the_registry_says_which_project_file_each_harness_reads_a_server_from_or_that_nobody_checked)
+A row is the harness's own documentation, dated, or null with a dated reason — never a guess: six harnesses ... ok
+test_the_run_says_how_the_index_is_reached_before_the_first_iteration (test_cruise_index.CruiseIndexTest.test_the_run_says_how_the_index_is_reached_before_the_first_iteration)
+Nothing where no index was adopted. With one: over MCP where the row knows the project file and the file ... created: /tmp/tmp2x5nt940/reach
+ok
+test_a_finished_slice_with_no_row_in_the_adversary_log_is_a_finding (test_cruise_record.CruiseRecordTest.test_a_finished_slice_with_no_row_in_the_adversary_log_is_a_finding)
+`/adversary` runs after every acceptance and writes a row either way — the attack, or the skip with the ... created: /tmp/tmpydlti0y7/attacked
+ok
+test_a_project_that_migrated_across_the_gate_baselines_its_history_once (test_cruise_record.CruiseRecordTest.test_a_project_that_migrated_across_the_gate_baselines_its_history_once)
+Slices finished before the gate held them to the log cannot be attacked honestly after the fact. ... created: /tmp/tmp9ycqy6xs/baselined
+ok
+test_the_gate_passes_a_true_record_and_an_empty_one (test_cruise_record.CruiseRecordTest.test_the_gate_passes_a_true_record_and_an_empty_one) ... created: /tmp/tmptnwvgix5/record
+ok
+test_the_gate_refuses_every_shape_a_run_could_write_wrong (test_cruise_record.CruiseRecordTest.test_the_gate_refuses_every_shape_a_run_could_write_wrong)
+Each malformation is one finding naming the file, the line and what the shape is — a decision nobody ... created: /tmp/tmpa_e2enjv/shapes
+ok
+test_the_one_model_charges_a_slice_to_its_own_feature_and_no_other (test_cruise_record.CruiseRecordTest.test_the_one_model_charges_a_slice_to_its_own_feature_and_no_other)
+The event model is the whole project's. A project's second feature was failed for every slice its first ... created: /tmp/tmp90sachh_/scoped
+ok
+test_the_owner_brief_ships_as_placeholders_the_skipper_reads_before_every_decision (test_cruise_record.CruiseRecordTest.test_the_owner_brief_ships_as_placeholders_the_skipper_reads_before_every_decision)
+The brief is the person's lever on a run that never stops: the skipper reads it before deciding, a ... created: /tmp/tmpt4od7vo8/brief
+created: /tmp/tmp65unzuok/brief
+ok
+test_a_compacted_context_resumes_from_the_checkpoint_and_the_hooks_replay_it (test_cruise_runner.CruiseRunnerTest.test_a_compacted_context_resumes_from_the_checkpoint_and_the_hooks_replay_it)
+A harness summarises a long context, and the summary loses the state nothing on disk carries. The ... created: /tmp/tmp8nj7iaq2/compact
+ok
+test_a_person_stops_a_run_with_the_stop_file_and_a_spinning_run_parks_itself (test_cruise_runner.CruiseRunnerTest.test_a_person_stops_a_run_with_the_stop_file_and_a_spinning_run_parks_itself)
+The stop file ends the run between iterations, and inside a parked wait. And a run whose iterations ... created: /tmp/tmpphxek30b/stop
+ok
+test_a_stuck_run_gets_one_iteration_to_unblock_and_continues_when_it_moved (test_cruise_runner.CruiseRunnerTest.test_a_stuck_run_gets_one_iteration_to_unblock_and_continues_when_it_moved)
+Blocked is work before it is a stop: the outer loop hands a stuck run one iteration with the reason in ... created: /tmp/tmpl9dl84xx/stuck
+ok
+test_a_test_child_never_inherits_the_marks_of_a_run_the_test_is_itself_running_under (test_cruise_runner.CruiseRunnerTest.test_a_test_child_never_inherits_the_marks_of_a_run_the_test_is_itself_running_under)
+This suite runs inside `/cruise` iterations, whose environment carries `CRUISE_RUNNER` and ... created: /tmp/tmph1493avd/inherits
+ok
+test_parked_waits_for_a_person_and_resumes_when_something_changes (test_cruise_runner.CruiseRunnerTest.test_parked_waits_for_a_person_and_resumes_when_something_changes)
+A parked iteration is the run saying what a person must provide. The loop waits — it does not exit, ... created: /tmp/tmp7ogj2ox2/parked
+ok
+test_the_loop_runs_a_fresh_session_per_iteration_until_the_last_line_says_done (test_cruise_runner.CruiseRunnerTest.test_the_loop_runs_a_fresh_session_per_iteration_until_the_last_line_says_done)
+Each iteration is one headless harness run, and the loop reads one line of it. `continue` runs ... created: /tmp/tmp0sa6r45q/done
+ok
+test_the_makefile_carries_the_loop_and_the_gate_holds_the_logs (test_cruise_runner.CruiseRunnerTest.test_the_makefile_carries_the_loop_and_the_gate_holds_the_logs)
+`make cruise` is the loop, `make cruise-status` the log, and `check-decisions` sits on `verify` ... created: /tmp/tmp11i81vfs/event-modelling
+created: /tmp/tmp11i81vfs/standard
+ok
+test_the_settings_file_the_script_and_the_command_agree_and_a_change_is_checked (test_cruise_runner.CruiseRunnerTest.test_the_settings_file_the_script_and_the_command_agree_and_a_change_is_checked)
+One list of settings, written into the file by the factory and read back by the script: the same ... created: /tmp/tmph88ugoou/settings
+ok
+test_a_runner_that_ends_inside_starts_wait_is_reported_finished_or_refused_by_its_exit (test_cruise_start.CruiseStartTest.test_a_runner_that_ends_inside_starts_wait_is_reported_finished_or_refused_by_its_exit)
+`start` waits for the runner's pid file, and a runner can end inside that wait: cleanly, because there ... created: /tmp/tmprnt03l97/quick
+ok
+test_a_typed_cruise_starts_the_runner_detached_and_a_person_stops_it_from_anywhere (test_cruise_start.CruiseStartTest.test_a_typed_cruise_starts_the_runner_detached_and_a_person_stops_it_from_anywhere)
+A `/cruise` typed into a session has nobody to re-invoke it, on any harness, so the command starts ... created: /tmp/tmpfpxxdw25/start
+ok
+test_the_registry_says_how_each_harness_runs_headless_or_that_nobody_checked (test_cruise_start.CruiseStartTest.test_the_registry_says_how_each_harness_runs_headless_or_that_nobody_checked)
+The loop guesses no flag: a harness runs headless the way its own documentation says, on the date ... created: /tmp/tmpddaonzct/headless
+ok
+test_the_hold_is_spelled_the_way_each_harness_reads_it_and_projected_where_its_shape_is_known (test_cruise_stop_hook.CruiseStopHookTest.test_the_hold_is_spelled_the_way_each_harness_reads_it_and_projected_where_its_shape_is_known)
+Cursor's `stop` takes `followup_message` and carries no text, so `afterAgentResponse` keeps the last ... created: /tmp/tmpi6dhbiho/shapes
+ok
+test_the_stop_hook_holds_a_runners_iteration_that_is_not_at_an_end_and_never_a_typed_session (test_cruise_stop_hook.CruiseStopHookTest.test_the_stop_hook_holds_a_runners_iteration_that_is_not_at_an_end_and_never_a_typed_session)
+Prose in a command file is not a control: one session ended an iteration after the upstream stages, ... created: /tmp/tmp8jv0tqvj/stopping
+ok
+test_a_setting_changed_during_a_run_takes_effect_at_the_next_iteration (test_cruise_sweep.CruiseSweepTest.test_a_setting_changed_during_a_run_takes_effect_at_the_next_iteration)
+`/cruise-settings` promises a change takes effect at the next iteration, and the budgets, the stuck ... created: /tmp/tmpm4u36hu2/settings
+ok
+test_the_iterations_own_model_is_a_setting_the_row_passes_with_its_flag (test_cruise_sweep.CruiseSweepTest.test_the_iterations_own_model_is_a_setting_the_row_passes_with_its_flag)
+Under `/drive` a person chose the session's model when they opened it; under `/cruise` nobody did, and ... created: /tmp/tmpviamd6nf/model
+ok
+test_what_an_iteration_leaves_running_is_ended_with_it (test_cruise_sweep.CruiseSweepTest.test_what_an_iteration_leaves_running_is_ended_with_it)
+`commands/drive.md` leaves the demo's app running past the end of the turn, because a person's first ... created: /tmp/tmpbppxl__v/leftover
+ok
+test_a_person_tells_the_run_something_and_it_is_queued_never_pushed (test_cruise_tell.CruiseTellTest.test_a_person_tells_the_run_something_and_it_is_queued_never_pushed)
+`tell` queues a message; the runner hands it to the iteration it starts next as `told: …` in the ... created: /tmp/tmpyu3mgy5m/tell
+/usr/lib/python3.14/unittest/case.py:615: ResourceWarning: unclosed file <_io.TextIOWrapper name=3 encoding='UTF-8'>
+  result = method()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_the_command_says_a_message_rides_the_next_iteration_and_the_seat_queues_one (test_cruise_tell.CruiseTellTest.test_the_command_says_a_message_rides_the_next_iteration_and_the_seat_queues_one)
+`commands/cruise.md` names the third argument beside the kick-off and `unblock:`, has the iteration ask ... created: /tmp/tmp6tp67wgx/told
+ok
+test_status_and_stop_are_commands_beside_the_seat_and_every_seat_command_repeats_its_output (test_cruise_watch.CruiseWatchTest.test_status_and_stop_are_commands_beside_the_seat_and_every_seat_command_repeats_its_output)
+A person beside a run types `/cruise-status` and `/cruise-stop` rather than remembering the script's ... created: /tmp/tmp4dvznb54/seat
+ok
+test_stop_now_returns_once_the_runner_has_gone_so_a_start_typed_next_starts_one (test_cruise_watch.CruiseWatchTest.test_stop_now_returns_once_the_runner_has_gone_so_a_start_typed_next_starts_one)
+`stop --now` signalled the runner and returned at once, while the runner was still ending the ... created: /tmp/tmpkx1toqgs/stopped
+ok
+test_the_allowlist_covers_every_command_the_command_and_the_hooks_issue_whatever_the_language (test_cruise_watch.CruiseWatchTest.test_the_allowlist_covers_every_command_the_command_and_the_hooks_issue_whatever_the_language)
+A session that cannot ask is refused every command its rules do not name — which is what parked a ... created: /tmp/tmpzgk7otya/typescript
+created: /tmp/tmpzgk7otya/go
+created: /tmp/tmpzgk7otya/python
+ok
+test_the_feed_renders_a_harness_stream_one_line_per_thing_done_and_reads_the_last_line_from_it (test_cruise_watch.CruiseWatchTest.test_the_feed_renders_a_harness_stream_one_line_per_thing_done_and_reads_the_last_line_from_it)
+A harness with an event stream — Claude Code's `stream-json`, Codex's `--json` — is not echoed raw: the ... created: /tmp/tmpsgc2whmg/feed
+ok
+test_the_watch_seat_returns_at_each_boundary_and_the_kick_off_reaches_the_first_iteration_only (test_cruise_watch.CruiseWatchTest.test_the_watch_seat_returns_at_each_boundary_and_the_kick_off_reaches_the_first_iteration_only)
+A typed `/cruise` starts the runner and then watches it from the same session: `watch` prints the feed ... created: /tmp/tmp38lxkr5s/watch
+ok
+test_where_prints_nothing_without_a_runner_and_the_run_beside_one (test_cruise_where.CruiseWhereTest.test_where_prints_nothing_without_a_runner_and_the_run_beside_one) ... created: /tmp/tmpr4jodooy/where
+ok
+
+----------------------------------------------------------------------
+Ran 44 tests in 32.629s
+
+OK
+
+real	0m32.735s
+user	0m20.170s
+sys	0m3.944s
+exit=0
