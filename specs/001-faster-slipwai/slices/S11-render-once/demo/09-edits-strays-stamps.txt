@@ -1,0 +1,74 @@
+### A0: back to the 16-slice fixture, everything deleted, renderer installed: first run timed, then browsers counted under strace
+$ time make model | tail
+
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m4.397s
+user	0m5.721s
+sys	0m1.630s
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+browser starts seen by strace (chrome execs without --type=): 1
+
+### A: AC-S11-3 add a frame (a second evt) to S3
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-2.mmd
+  wrote docs/event-model/segments/model-3.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/segments/model-5.mmd
+  wrote docs/event-model/segments/model-6.mmd
+  wrote docs/event-model/segments/model-7.mmd
+  wrote docs/event-model/segments/model-8.mmd
+  wrote docs/event-model/segments/model-9.mmd
+  wrote docs/event-model/slices/S3.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-2.svg
+  wrote docs/event-model/segments/model-3.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/segments/model-5.svg
+  wrote docs/event-model/segments/model-6.svg
+  wrote docs/event-model/segments/model-7.svg
+  wrote docs/event-model/segments/model-8.svg
+  wrote docs/event-model/segments/model-9.svg
+  wrote docs/event-model/slices/S3.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 10 of 26 diagrams drawn, 16 unchanged. Open docs/event-model/model.html to browse it.
+files changed/added/removed vs before: <./model.html <./model.mmd <./model.svg <./model.yaml <./segments/model-2.mmd <./segments/model-2.svg <./segments/model-3.mmd <./segments/model-3.svg <./segments/model-4.mmd <./segments/model-4.svg <./segments/model-5.mmd <./segments/model-5.svg <./segments/model-6.mmd <./segments/model-6.svg <./segments/model-7.mmd <./segments/model-7.svg <./segments/model-8.mmd <./segments/model-8.svg <./slices/S3.mmd <./slices/S3.svg >./model.html >./model.mmd >./model.svg >./model.yaml >./segments/model-2.mmd >./segments/model-2.svg >./segments/model-3.mmd >./segments/model-3.svg >./segments/model-4.mmd >./segments/model-4.svg >./segments/model-5.mmd >./segments/model-5.svg >./segments/model-6.mmd >./segments/model-6.svg >./segments/model-7.mmd >./segments/model-7.svg >./segments/model-8.mmd >./segments/model-8.svg >./segments/model-9.mmd >./segments/model-9.svg >./slices/S3.mmd >./slices/S3.svg 
+
+### A2: put the model back (frame removed)
+model: 16 slices, 9 of 25 diagrams drawn, 16 unchanged. Open docs/event-model/model.html to browse it.
+
+### D: AC-S11-11 strays in segments/ and slices/
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+model-1.mmd model-1.svg model-2.mmd model-2.svg model-3.mmd model-3.svg model-4.mmd model-4.svg model-5.mmd model-5.svg model-6.mmd model-6.svg model-7.mmd model-7.svg model-8.mmd model-8.svg 
+S1.mmd S1.svg S10.mmd S10.svg S11.mmd S11.svg S12.mmd S12.svg S13.mmd S13.svg S14.mmd S14.svg S15.mmd S15.svg S16.mmd S16.svg S2.mmd S2.svg S3.mmd S3.svg S4.mmd S4.svg S5.mmd S5.svg S6.mmd S6.svg S7.mmd S7.svg S8.mmd S8.svg S9.mmd S9.svg 
+
+### C: AC-S11-7 an SVG with no renderer line (line 2 deleted from slices/S5.svg)
+<!-- em-source-sha256: 7fb13049dd255489489e09e893bcb74a42c927ede0573910f31e5eb7701c0ed9 --
+<svg id="my-svg" width="100%" xmlns="http://www.w3.org/200
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/slices/S5.svg
+
+model: 16 slices, 1 of 25 diagrams drawn, 24 unchanged. Open docs/event-model/model.html to browse it.
+again:
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+<!-- em-source-sha256: 7fb13049dd255489489e09e893bcb74a42c927ede0573910f31e5eb7701c0ed9 -->
+<!-- em-renderer-sha256: 11df4266bbb441db408eeeae08ed7d8c8286dd60868d6e4674f1ee7a8127ddf2 -->
+
+### H: hand-edit an SVG between its stamps and its end (Screen9 -> HANDEDIT in slices/S9.svg)
+1
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.html
+
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+HANDEDIT still in S9.svg: 1; in model.html: 1
+delete it as the page says:
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/slices/S9.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 1 of 25 diagrams drawn, 24 unchanged. Open docs/event-model/model.html to browse it.
+HANDEDIT in S9.svg: 0; in model.html: 0

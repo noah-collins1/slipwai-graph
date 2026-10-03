@@ -1,0 +1,25 @@
+### AC-S11-9: PNG=1 together with a one-frame edit, under strace (execve and renames)
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-5.mmd
+  wrote docs/event-model/slices/S10.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-5.svg
+  wrote docs/event-model/slices/S10.svg
+  wrote docs/event-model/model.png
+  wrote docs/event-model/model.html
+
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+browser starts: 1
+rename("/tmp/s11-demo/fx/fx/docs/event-model/slices/.tmp-global-237833-model.svg", "/tmp/s11-demo/fx/fx/docs/event-model/model.svg") = 0
+rename("/tmp/s11-demo/fx/fx/docs/event-model/slices/.tmp-segment-237833-model-5.svg", "/tmp/s11-demo/fx/fx/docs/event-model/segments/model-5.svg") = 0
+rename("/tmp/s11-demo/fx/fx/docs/event-model/slices/.tmp-slice-237833-S10.svg", "/tmp/s11-demo/fx/fx/docs/event-model/slices/S10.svg") = 0
+rename("/tmp/s11-demo/fx/fx/docs/event-model/slices/.tmp-global-237833-model.png", "/tmp/s11-demo/fx/fx/docs/event-model/model.png") = 0
+$ make model -- --png ?  (the flag form: node ... render.ts --png)
+  wrote docs/event-model/model.png
+
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged. Open docs/event-model/model.html to browse it.
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+
+### nothing of this demo left running:
+(end)

@@ -1,0 +1,166 @@
+### AC-S11-7/-17: a tree drawn by the earlier renderer (25 SVGs with no renderer line), then this slice's scripts put back (git checkout of the three files in the scratch project — standing in for slipwai migrate, which was not run)
+ M README.md
+ M docs/event-model/model.yaml
+?? scripts/event-model/package-lock.json
+SVGs with a renderer line before: 0
+$ make model
+
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+  (model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.)  <- the run after
+SVGs with a renderer line after: 25
+
+### AC-S11-16: the swimlane patch is in the installed mermaid before the first draw
+1
+1
+width pinned: viewBox="-30 -30 4422 470" max-width: 4422px
+
+### AC-S11-4: a one-slice model, first run
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-1.mmd
+  wrote docs/event-model/slices/S1.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-1.svg
+  wrote docs/event-model/slices/S1.svg
+  wrote docs/event-model/model.html
+  wrote README.md (event-model block)
+
+model: 1 slice, 3 of 3 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+browser starts: 1
+
+### the empty model
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+docs/event-model/model.yaml has no slices yet — nothing to render.
+Model your first workflow with the `event-modeling` skill, then run this again.
+  wrote README.md (event-model block)
+exit=0
+ls: cannot access 'docs/event-model/slices': No such file or directory ls: cannot access 'docs/event-model/segments': No such file or directory docs/event-model: README.md model.yaml 
+
+### AC-S11-8: a draw that fails. 16 slices drawn, then S4's cmd renamed to something Mermaid may refuse
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+110:      - {type: cmd, name: "Do 4; end"}
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+[
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "regex",
+    "pattern": "/^[A-Za-z][A-Za-z0-9]*$/",
+    "path": [
+      "slices",
+      3,
+      "frames",
+      1,
+      "name"
+    ],
+    "message": "must be a PascalCase name with no spaces or punctuation"
+  },
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "regex",
+    "pattern": "/^[A-Za-z][A-Za-z0-9]*$/",
+    "path": [
+      "slices",
+      13,
+      "frames",
+      1,
+      "name"
+    ],
+    "message": "must be a PascalCase name with no spaces or punctuation"
+  }
+]
+make: *** [Makefile:92: model] Error 1
+exit=2
+svg files changed: 0
+110:      - {type: cmd, name: "Do[4"}
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+[
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "regex",
+    "pattern": "/^[A-Za-z][A-Za-z0-9]*$/",
+    "path": [
+      "slices",
+      3,
+      "frames",
+      1,
+      "name"
+    ],
+    "message": "must be a PascalCase name with no spaces or punctuation"
+  },
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "regex",
+    "pattern": "/^[A-Za-z][A-Za-z0-9]*$/",
+    "path": [
+      "slices",
+      13,
+      "frames",
+      1,
+      "name"
+    ],
+    "message": "must be a PascalCase name with no spaces or punctuation"
+  }
+]
+make: *** [Makefile:92: model] Error 1
+exit=2
+svg files changed: 0
+110:      - {type: cmd, name: "%%{init}%%"}
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+[
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "regex",
+    "pattern": "/^[A-Za-z][A-Za-z0-9]*$/",
+    "path": [
+      "slices",
+      3,
+      "frames",
+      1,
+      "name"
+    ],
+    "message": "must be a PascalCase name with no spaces or punctuation"
+  },
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "regex",
+    "pattern": "/^[A-Za-z][A-Za-z0-9]*$/",
+    "path": [
+      "slices",
+      13,
+      "frames",
+      1,
+      "name"
+    ],
+    "message": "must be a PascalCase name with no spaces or punctuation"
+  }
+]
+make: *** [Makefile:92: model] Error 1
+exit=2
+svg files changed: 0
+110:      - {type: cmd, name: "Do
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+Missing closing "quote at line 110, column 30:
+
+      - {type: cmd, name: "Do
+                             ^
+
+make: *** [Makefile:92: model] Error 1
+exit=2
+svg files changed: 0
+110:      - {type: cmd, name: 'Do"4'}
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+Implicit keys need to be on a single line at line 111, column 1:
+
+      - {type: cmd, name: 'Do"4'}
+4"}
+^
+
+make: *** [Makefile:92: model] Error 1
+exit=2
+svg files changed: 0

@@ -1,0 +1,46 @@
+### the renderer before this slice (render.ts from 7226c2e^, render-plan.ts and render-session.ts removed) in a second generated project, /tmp/s11-demo/old/old, same 16-slice model
+$ make model (first: installs)
+
+model: 16 slices rendered. Open docs/event-model/model.html to browse it.
+$ time make model (renderer installed, nothing changed)
+model: 16 slices rendered. Open docs/event-model/model.html to browse it.
+
+real	0m15.449s
+user	0m15.032s
+sys	0m4.014s
+$ strace -f -e trace=execve make model
+model: 16 slices rendered. Open docs/event-model/model.html to browse it.
+browser starts (chrome execs without --type=): 25
+ M README.md
+ M docs/event-model/model.yaml
+ D scripts/event-model/render-plan.ts
+ D scripts/event-model/render-session.ts
+ M scripts/event-model/render.ts
+?? scripts/event-model/package-lock.json
+
+### each SVG: the earlier renderer's below its one comment line against this slice's below its two
+identical below the comment lines: 25; differing: 0
+first line equal in both: 25 of 25
+old head:
+<!-- em-source-sha256: d891072f48f6e3c9966632b37d398dfde621ee63bb33880def144c1cb0abd625 -->
+<svg id="my-svg" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999
+new head:
+<!-- em-source-sha256: d891072f48f6e3c9966632b37d398dfde621ee63bb33880def144c1cb0abd625 -->
+<!-- em-renderer-sha256: 11df4266bbb441db408eeeae08ed7d8c8286dd60868d6e4674f1ee7a8127ddf2 -->
+<svg id="my-svg" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999
+.mmd files identical: 25 of 25
+model.html differs by 25 lines when split at '>' :      25 > <!-- em-renderer-sha256: 11df4266bbb44
+
+### the earlier renderer with MERMAID_PUPPETEER_CONFIG unset on this machine, for the message
+    at Object.<anonymous> (/tmp/s11-demo/old/old/scripts/event-model/render.ts:236:6)
+    at Module._compile (node:internal/modules/cjs/loader:1705:14) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 232570,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v22.22.1
+make: *** [Makefile:92: model] Error 1

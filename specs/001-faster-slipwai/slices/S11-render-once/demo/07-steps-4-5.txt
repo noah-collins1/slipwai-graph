@@ -1,0 +1,31 @@
+### step 4: remove S15 and S16
+$ make model
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 68ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/model.html
+  wrote README.md (event-model block)
+
+model: 14 slices, 1 of 22 diagrams drawn, 21 unchanged. Open docs/event-model/model.html to browse it.
+exit=0
+files changed/added/removed vs before: <./model.html <./model.mmd <./model.svg <./model.yaml <./segments/model-8.mmd <./segments/model-8.svg <./slices/S15.mmd <./slices/S15.svg <./slices/S16.mmd <./slices/S16.svg >./model.html >./model.mmd >./model.svg >./model.yaml 
+docs/event-model/segments: model-1.mmd model-1.svg model-2.mmd model-2.svg model-3.mmd model-3.svg model-4.mmd model-4.svg model-5.mmd model-5.svg model-6.mmd model-6.svg model-7.mmd model-7.svg  docs/event-model/slices: S1.mmd S1.svg S10.mmd S10.svg S11.mmd S11.svg S12.mmd S12.svg S13.mmd S13.svg S14.mmd S14.svg S2.mmd S2.svg S3.mmd S3.svg S4.mmd S4.svg S5.mmd S5.svg S6.mmd S6.svg S7.mmd S7.svg S8.mmd S8.svg S9.mmd S9.svg 
+
+### step 5: truncate one SVG (cut the last line of slices/S3.svg)
+2 docs/event-model/slices/S3.svg
+ts="0 0, 10 3.5, 0 7" fill="#333333"/></marker></defs></svg>
+  2 186 docs/event-model/slices/S3.svg
+$ make model
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 70ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/slices/S3.svg
+
+model: 14 slices, 1 of 22 diagrams drawn, 21 unchanged. Open docs/event-model/model.html to browse it.
+exit=0
+files changed/added/removed vs before: <./slices/S3.svg >./slices/S3.svg 
+marker></defs></svg>

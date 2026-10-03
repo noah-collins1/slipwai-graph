@@ -1,0 +1,16 @@
+### AC-S11-8/-18: where a drawing's temporary sits and what it is called — strace of file renames during a full redraw
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+223795 rename("/tmp/s11-demo/fx/fx/docs/event-model/slices/.tmp-global-223795-model.svg", "/tmp/s11-demo/fx/fx/docs/event-model/model.svg") = 0
+223795 rename("/tmp/s11-demo/fx/fx/docs/event-model/slices/.tmp-segment-223795-model-1.svg", "/tmp/s11-demo/fx/fx/docs/event-model/segments/model-1.svg") = 0
+223795 rename("/tmp/s11-demo/fx/fx/docs/event-model/slices/.tmp-segment-223795-model-2.svg", "/tmp/s11-demo/fx/fx/docs/event-model/segments/model-2.svg") = 0
+223795 rename("/tmp/s11-demo/fx/fx/docs/event-model/slices/.tmp-segment-223795-model-3.svg", "/tmp/s11-demo/fx/fx/docs/event-model/segments/model-3.svg") = 0
+...
+svg renames: 25
+git check-ignore on the temporary's directory and on a drawn file:
+.gitignore:13:docs/event-model/slices/	docs/event-model/slices/S1.svg
+.gitignore:10:docs/event-model/model.svg	docs/event-model/model.svg
+.gitignore:14:docs/event-model/segments/	docs/event-model/segments/x
+.gitignore:12:docs/event-model/model.html	docs/event-model/model.html
+ M README.md
+ M docs/event-model/model.yaml
+?? scripts/event-model/package-lock.json

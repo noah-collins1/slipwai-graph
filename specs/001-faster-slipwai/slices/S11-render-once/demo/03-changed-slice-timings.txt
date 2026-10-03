@@ -1,0 +1,155 @@
+Linux 7.0.0-31-generic x86_64
+cores: 12
+node: v22.22.1
+npm: 9.2.0
+model name	: 12th Gen Intel(R) Core(TM) i5-12400
+ 18:34:03 up 14 days, 18:07,  2 users,  load average: 0.78, 1.00, 1.02
+MERMAID_PUPPETEER_CONFIG=/tmp/s11-demo/pptr.json
+{"args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+
+$ (S7 cmd renamed to RenameA1) time make model   -- run 1
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 68ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m1.410s
+user	0m1.837s
+sys	0m0.333s
+exit=0
+files whose bytes changed: ./model.html ./model.mmd ./model.svg ./model.yaml ./segments/model-4.mmd ./segments/model-4.svg ./slices/S7.mmd ./slices/S7.svg 
+
+$ (S7 cmd renamed to RenameA2) time make model   -- run 2
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m1.460s
+user	0m1.903s
+sys	0m0.342s
+exit=0
+files whose bytes changed: ./model.html ./model.mmd ./model.svg ./model.yaml ./segments/model-4.mmd ./segments/model-4.svg ./slices/S7.mmd ./slices/S7.svg 
+
+$ (S7 cmd renamed to RenameA3) time make model   -- run 3
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 74ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m1.428s
+user	0m1.837s
+sys	0m0.342s
+exit=0
+files whose bytes changed: ./model.html ./model.mmd ./model.svg ./model.yaml ./segments/model-4.mmd ./segments/model-4.svg ./slices/S7.mmd ./slices/S7.svg 
+
+$ (S7 cmd renamed to RenameA4) time make model   -- run 4
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m1.440s
+user	0m1.803s
+sys	0m0.346s
+exit=0
+files whose bytes changed: ./model.html ./model.mmd ./model.svg ./model.yaml ./segments/model-4.mmd ./segments/model-4.svg ./slices/S7.mmd ./slices/S7.svg 
+
+$ (S7 cmd renamed to RenameA5) time make model   -- run 5
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m1.444s
+user	0m1.868s
+sys	0m0.376s
+exit=0
+files whose bytes changed: ./model.html ./model.mmd ./model.svg ./model.yaml ./segments/model-4.mmd ./segments/model-4.svg ./slices/S7.mmd ./slices/S7.svg 
+
+$ (S7 cmd renamed to RenameA6) time make model   -- run 6
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m1.399s
+user	0m1.791s
+sys	0m0.340s
+exit=0
+files whose bytes changed: ./model.html ./model.mmd ./model.svg ./model.yaml ./segments/model-4.mmd ./segments/model-4.svg ./slices/S7.mmd ./slices/S7.svg 
+
+$ (S7 cmd renamed to RenameA7) time make model   -- run 7
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/model.html
+
+model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m1.505s
+user	0m1.881s
+sys	0m0.389s
+exit=0
+files whose bytes changed: ./model.html ./model.mmd ./model.svg ./model.yaml ./segments/model-4.mmd ./segments/model-4.svg ./slices/S7.mmd ./slices/S7.svg 

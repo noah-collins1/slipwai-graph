@@ -1,0 +1,66 @@
+$ time make model   (first run; includes npm install of the renderer)
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+added 5 packages in 398ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.mmd
+  wrote docs/event-model/segments/model-1.mmd
+  wrote docs/event-model/segments/model-2.mmd
+  wrote docs/event-model/segments/model-3.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/segments/model-5.mmd
+  wrote docs/event-model/segments/model-6.mmd
+  wrote docs/event-model/segments/model-7.mmd
+  wrote docs/event-model/segments/model-8.mmd
+  wrote docs/event-model/slices/S1.mmd
+  wrote docs/event-model/slices/S2.mmd
+  wrote docs/event-model/slices/S3.mmd
+  wrote docs/event-model/slices/S4.mmd
+  wrote docs/event-model/slices/S5.mmd
+  wrote docs/event-model/slices/S6.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/slices/S8.mmd
+  wrote docs/event-model/slices/S9.mmd
+  wrote docs/event-model/slices/S10.mmd
+  wrote docs/event-model/slices/S11.mmd
+  wrote docs/event-model/slices/S12.mmd
+  wrote docs/event-model/slices/S13.mmd
+  wrote docs/event-model/slices/S14.mmd
+  wrote docs/event-model/slices/S15.mmd
+  wrote docs/event-model/slices/S16.mmd
+
+added 191 packages in 6s
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-1.svg
+  wrote docs/event-model/segments/model-2.svg
+  wrote docs/event-model/segments/model-3.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/segments/model-5.svg
+  wrote docs/event-model/segments/model-6.svg
+  wrote docs/event-model/segments/model-7.svg
+  wrote docs/event-model/segments/model-8.svg
+  wrote docs/event-model/slices/S1.svg
+  wrote docs/event-model/slices/S2.svg
+  wrote docs/event-model/slices/S3.svg
+  wrote docs/event-model/slices/S4.svg
+  wrote docs/event-model/slices/S5.svg
+  wrote docs/event-model/slices/S6.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/slices/S8.svg
+  wrote docs/event-model/slices/S9.svg
+  wrote docs/event-model/slices/S10.svg
+  wrote docs/event-model/slices/S11.svg
+  wrote docs/event-model/slices/S12.svg
+  wrote docs/event-model/slices/S13.svg
+  wrote docs/event-model/slices/S14.svg
+  wrote docs/event-model/slices/S15.svg
+  wrote docs/event-model/slices/S16.svg
+  wrote docs/event-model/model.html
+  wrote README.md (event-model block)
+
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m11.068s
+user	0m13.268s
+sys	0m2.791s
+exit=0

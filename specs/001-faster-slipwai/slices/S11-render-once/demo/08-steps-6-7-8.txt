@@ -1,0 +1,135 @@
+### step 5b: cut the last 30 bytes of segments/model-2.svg (torn mid-file)
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/segments/model-2.svg
+
+model: 14 slices, 1 of 22 diagrams drawn, 21 unchanged. Open docs/event-model/model.html to browse it.
+
+### step 6: PNG=1 make model, twice
+$ PNG=1 make model
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 68ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.png
+
+model: 14 slices, 0 of 22 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+exit=0
+-rw-rw-r-- 1 noahc noahc 31930 2026-10-03 18:35:29.567937995 -0500 docs/event-model/model.png
+docs/event-model/model.png: PNG image data, 2384 x 288, 8-bit/color RGB, non-interlaced
+$ PNG=1 make model
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 66ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.png
+
+model: 14 slices, 0 of 22 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.
+exit=0
+-rw-rw-r-- 1 noahc noahc 31930 2026-10-03 18:35:30.935937461 -0500 docs/event-model/model.png
+docs/event-model/model.png: PNG image data, 2384 x 288, 8-bit/color RGB, non-interlaced
+$ make model (no PNG asked; model.png left?)
+
+model: 14 slices, 0 of 22 diagrams drawn, 22 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+-rw-rw-r-- 1 noahc noahc 31930 2026-10-03 18:35:30.935937461 -0500 docs/event-model/model.png
+
+### step 7: CI=true make model
+$ time CI=true make model
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-1.svg
+  wrote docs/event-model/segments/model-2.svg
+  wrote docs/event-model/segments/model-3.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/segments/model-5.svg
+  wrote docs/event-model/segments/model-6.svg
+  wrote docs/event-model/segments/model-7.svg
+  wrote docs/event-model/slices/S1.svg
+  wrote docs/event-model/slices/S2.svg
+  wrote docs/event-model/slices/S3.svg
+  wrote docs/event-model/slices/S4.svg
+  wrote docs/event-model/slices/S5.svg
+  wrote docs/event-model/slices/S6.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/slices/S8.svg
+  wrote docs/event-model/slices/S9.svg
+  wrote docs/event-model/slices/S10.svg
+  wrote docs/event-model/slices/S11.svg
+  wrote docs/event-model/slices/S12.svg
+  wrote docs/event-model/slices/S13.svg
+  wrote docs/event-model/slices/S14.svg
+
+model: 14 slices, 22 of 22 diagrams drawn, 0 unchanged; everything was drawn because a CI marker is set. Open docs/event-model/model.html to browse it.
+
+real	0m4.004s
+user	0m5.332s
+sys	0m1.468s
+exit=0
+$ GITHUB_ACTIONS=true make model | tail -2
+
+model: 14 slices, 22 of 22 diagrams drawn, 0 unchanged; everything was drawn because a CI marker is set. Open docs/event-model/model.html to browse it.
+$ GITLAB_CI=1 make model | tail -2
+
+model: 14 slices, 22 of 22 diagrams drawn, 0 unchanged; everything was drawn because a CI marker is set. Open docs/event-model/model.html to browse it.
+$ CI= make model | tail -2 (empty marker)
+
+model: 14 slices, 0 of 22 diagrams drawn, 22 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+
+### step 8: delete model.svg, segments/ and slices/ (renderer installed) and time it
+$ time make model
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 68ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+  wrote docs/event-model/segments/model-1.mmd
+  wrote docs/event-model/segments/model-2.mmd
+  wrote docs/event-model/segments/model-3.mmd
+  wrote docs/event-model/segments/model-4.mmd
+  wrote docs/event-model/segments/model-5.mmd
+  wrote docs/event-model/segments/model-6.mmd
+  wrote docs/event-model/segments/model-7.mmd
+  wrote docs/event-model/slices/S1.mmd
+  wrote docs/event-model/slices/S2.mmd
+  wrote docs/event-model/slices/S3.mmd
+  wrote docs/event-model/slices/S4.mmd
+  wrote docs/event-model/slices/S5.mmd
+  wrote docs/event-model/slices/S6.mmd
+  wrote docs/event-model/slices/S7.mmd
+  wrote docs/event-model/slices/S8.mmd
+  wrote docs/event-model/slices/S9.mmd
+  wrote docs/event-model/slices/S10.mmd
+  wrote docs/event-model/slices/S11.mmd
+  wrote docs/event-model/slices/S12.mmd
+  wrote docs/event-model/slices/S13.mmd
+  wrote docs/event-model/slices/S14.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-1.svg
+  wrote docs/event-model/segments/model-2.svg
+  wrote docs/event-model/segments/model-3.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/segments/model-5.svg
+  wrote docs/event-model/segments/model-6.svg
+  wrote docs/event-model/segments/model-7.svg
+  wrote docs/event-model/slices/S1.svg
+  wrote docs/event-model/slices/S2.svg
+  wrote docs/event-model/slices/S3.svg
+  wrote docs/event-model/slices/S4.svg
+  wrote docs/event-model/slices/S5.svg
+  wrote docs/event-model/slices/S6.svg
+  wrote docs/event-model/slices/S7.svg
+  wrote docs/event-model/slices/S8.svg
+  wrote docs/event-model/slices/S9.svg
+  wrote docs/event-model/slices/S10.svg
+  wrote docs/event-model/slices/S11.svg
+  wrote docs/event-model/slices/S12.svg
+  wrote docs/event-model/slices/S13.svg
+  wrote docs/event-model/slices/S14.svg
+
+model: 14 slices, 22 of 22 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+
+real	0m4.037s
+user	0m5.400s
+sys	0m1.542s
+exit=0

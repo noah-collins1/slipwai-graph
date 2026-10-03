@@ -1,0 +1,38 @@
+$ time make model   (nothing changed, run 1)
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+
+real	0m0.692s
+user	0m0.747s
+sys	0m0.099s
+exit=0
+$ time make model   (nothing changed, run 2)
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+
+real	0m0.691s
+user	0m0.748s
+sys	0m0.098s
+exit=0
+$ time make model   (nothing changed, run 3)
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 66ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+
+real	0m0.706s
+user	0m0.778s
+sys	0m0.089s
+exit=0
+$ diff of sha256 and mtimes of docs/event-model before/after:
+identical-bytes-and-mtimes

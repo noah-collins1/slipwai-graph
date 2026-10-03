@@ -35,16 +35,24 @@ variable: `echo '{"args": ["--no-sandbox", "--disable-dev-shm-usage"]}' > /tmp/s
    the Puppeteer config to count: the config's bytes are in the renderer key, so that run redraws all 25.
 4. Remove slices `S15` and `S16` from the model, `make model` — `slices/S15.*` and `slices/S16.*` are gone, and so
    is `segments/model-8.*`, which the model no longer fills (the fixture packs two slices to a segment).
-5. Truncate one SVG (cut its last line), `make model` — that diagram is drawn again.
+5. Truncate one SVG (cut bytes off its end — the drawing is one line, so cutting the last line removes it all),
+   `make model` — that diagram is drawn again.
 6. `PNG=1 make model` twice — `model.png` drawn both times.
 7. `CI=true make model` — every diagram drawn, and the closing line says a CI marker is set.
 8. Delete `docs/event-model/model.svg`, `segments/` and `slices/`, `make model` — every diagram drawn (the page's one sentence on redrawing everything, followed as written).
 
-**Measured at the demo** (the hand writes these into its demo log; the host copies them here):
+**Measured at the demo** (2026-10-03, `drive-hand`, cruise iteration 10, code at `dde4317`; numbers from
+[demo-log.md](demo-log.md) and `demo/03-changed-slice-timings.txt`, `demo/04-strace-one-browser.txt`). Machine: Linux
+x86_64, i5-12400, 12 cores, Node v22.22.1; `MERMAID_PUPPETEER_CONFIG` set as above; command `time make model`, the
+whole recipe, `real`.
 
-| Run | Machine | Command | Wall time | Browsers |
-|---|---|---|---|---|
-| Today, first run | this machine (12 cores, Node 22.22.1) | `make model` | 15.95 s | 25 |
-| First run | | | | |
-| Changed slice, warm | | | | |
-| Nothing changed | | | | |
+| Run | Wall time | Browsers |
+|---|---|---|
+| Before this slice (`render.ts` at `7226c2e^`), same model, renderer installed | 15.449 s | 25 |
+| First run, renderer already installed, every diagram deleted | 4.397 s | 1 |
+| First run in a fresh project (includes installing the renderer) | 11.068 s | 1 |
+| **Changed slice, warm** (one frame of S7 renamed afresh each time; seven runs, in order) | **1.410, 1.460, 1.428, 1.440, 1.444, 1.399, 1.505 s** | 1 |
+| Nothing changed (three runs) | 0.692, 0.691, 0.706 s | 0 |
+
+SC-004 (under 2 seconds, one browser) held on every one of the seven; the browser count is `strace`'s — one
+execution of `chrome-headless-shell` without `--type=` — not the run's own closing line.

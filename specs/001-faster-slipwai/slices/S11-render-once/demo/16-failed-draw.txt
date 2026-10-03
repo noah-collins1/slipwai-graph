@@ -1,0 +1,22 @@
+(the model refuses any frame name Mermaid could choke on — see 15 — so a failing draw is made by ending the run's own browser process mid-run; the browser is found as a descendant of the make this demo started, never by name alone)
+### AC-S11-8: all 25 current under pptr.json; a run under pptr2.json (new renderer key, so all 25 to redraw over existing files); its browser is killed about 1.3 s in
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+/bin/bash: line 3: /proc/236411/cmdline: No such file or directory
+/bin/bash: line 3: /proc/236414/cmdline: No such file or directory
+browser pid among the run's descendants: 236344
+make exit=2
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 69ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+render: could not draw docs/event-model/model.svg: Connection closed.
+make: *** [Makefile:92: model] Error 1
+  (3 SVGs written before the failure)
+of the run's descendants still alive: 
+SVGs: not ending </svg>: 0; still carrying the earlier renderer key (left as they were): 22; carrying the new: 3
+leftovers: 
+$ MERMAID_PUPPETEER_CONFIG=pptr2.json make model (the next run)
+model: 16 slices, 22 of 25 diagrams drawn, 3 unchanged. Open docs/event-model/model.html to browse it.
+leftovers after: 
+$ make model (back under pptr.json)
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.

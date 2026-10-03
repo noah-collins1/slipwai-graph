@@ -1,0 +1,70 @@
+### B1: AC-S11-6 the Puppeteer config's bytes change (one more arg)
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+same config again:
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+back to the first config:
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+<!-- em-renderer-sha256: 11df4266bbb441db408eeeae08ed7d8c8286dd60868d6e4674f1ee7a8127ddf2 -->
+
+### B2: a comment appended to scripts/event-model/patch-mermaid-swimlanes.ts
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+restored:
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+### B3: a comment appended to render.ts
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. Open docs/event-model/model.html to browse it.
+### B4: a comment appended to mermaid.ts (the source builder)
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+
+### E: MERMAID_PUPPETEER_CONFIG names a file that is not there
+$ MERMAID_PUPPETEER_CONFIG=/tmp/s11-demo/nope.json make model
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 69ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+render: could not read MERMAID_PUPPETEER_CONFIG (/tmp/s11-demo/nope.json): ENOENT: no such file or directory, open '/tmp/s11-demo/nope.json'
+make: *** [Makefile:92: model] Error 1
+exit=2
+docs/event-model: every file byte-identical to before
+then with the good config:
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.
+
+### E2: the config is not JSON
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 80ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+render: MERMAID_PUPPETEER_CONFIG (/tmp/s11-demo/bad.json) is not valid JSON: Unexpected token 'o', "not json
+" is not valid JSON
+make: *** [Makefile:92: model] Error 1
+exit=2
+docs/event-model: every file byte-identical to before
+
+### E3: MERMAID_PUPPETEER_CONFIG unset on this machine (Chromium cannot sandbox here)
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 70ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+render: could not start the browser: Failed to launch the browser process:  Code: null
+
+stderr:
+[1003/183719.946894:FATAL:content/browser/zygote_host/zygote_host_impl_linux.cc:129] No usable sandbox! If you are running on Ubuntu 23.10+ or another Linux distro that has disabled unprivileged user namespaces with AppArmor, see https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md. Otherwise see https://chromium.googlesource.com/chromium/src/+/main/docs/linux/suid_sandbox_development.md for more information on developing with the (older) SUID sandbox. If you want to live dangerously and need an immediate workaround, you can try using --no-sandbox.
+
+TROUBLESHOOTING: https://pptr.dev/troubleshooting
+
+make: *** [Makefile:92: model] Error 1
+exit=2
+docs/event-model: every file byte-identical to before
+
+### J: AC-S11-8 a browser that cannot start (executablePath names nothing)
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 69ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render.ts
+render: could not start the browser: Browser was not found at the configured executablePath (/tmp/s11-demo/no-such-chrome)
+make: *** [Makefile:92: model] Error 1
+exit=2
+docs/event-model: every file byte-identical to before
+then with the good config:
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.

@@ -1,0 +1,39 @@
+### G: Ctrl-C (SIGINT to the make process group) in the middle of a full redraw, then run again
+sending SIGINT to process group 220591
+make exit=2
+  wrote docs/event-model/slices/S11.mmd
+  wrote docs/event-model/slices/S12.mmd
+  wrote docs/event-model/slices/S13.mmd
+  wrote docs/event-model/slices/S14.mmd
+  wrote docs/event-model/slices/S15.mmd
+  wrote docs/event-model/slices/S16.mmd
+  wrote docs/event-model/model.svg
+  wrote docs/event-model/segments/model-1.svg
+  wrote docs/event-model/segments/model-2.svg
+  wrote docs/event-model/segments/model-3.svg
+  wrote docs/event-model/segments/model-4.svg
+  wrote docs/event-model/segments/model-5.svg
+  wrote docs/event-model/segments/model-6.svg
+  wrote docs/event-model/segments/model-7.svg
+make: *** [Makefile:92: model] Error 130
+processes left in that session: 
+svgs on disk: 8
+tail: cannot open 'docs/event-model/slices/*.svg' for reading: No such file or directory
+torn: docs/event-model/slices/*.svg
+ls: cannot access 'docs/event-model/slices/*.svg': No such file or directory
+svgs not ending in </svg>: 1 of 8
+entries in docs/event-model that are not a diagram: 
+temporaries anywhere outside node_modules: 
+total 324
+drwxrwxr-x 4 noahc noahc   520 Oct  3 18:33 .
+drwxrwxr-x 5 noahc noahc   380 Oct  3 18:33 ..
+drwxrwxr-x 3 noahc noahc   100 Oct  3 18:33 .mermaid-cli
+-rw-r--r-- 1 noahc noahc 28004 Oct  3 18:33 check.py
+-rw-r--r-- 1 noahc noahc    14 Oct  3 18:33 requirements.txt
+$ make model (after the interrupt)
+model: 16 slices, 17 of 25 diagrams drawn, 8 unchanged. Open docs/event-model/model.html to browse it.
+svgs not ending in </svg>: 0 of 25
+entries in docs/event-model that are not a diagram: 
+temporaries anywhere outside node_modules: 
+$ make model (again)
+model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open docs/event-model/model.html to browse it.

@@ -957,6 +957,93 @@
         "split": 0,
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "demo",
+      "started": "2026-10-03T23:32:52Z",
+      "planned": "demo: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 1,
+          "done": 18
+        },
+        "end": {
+          "open": 1,
+          "done": 18
+        }
+      },
+      "ended": "2026-10-03T23:42:51Z",
+      "seconds": 599,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b.jsonl": 1853417,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a0672ff74d4cfa537.jsonl": 358253,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a1a0e41b19417cee1.jsonl": 536696,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a35c9f474e8b5021b.jsonl": 338518,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a44316f7c9325eb59.jsonl": 279721,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a581f147cfdba3115.jsonl": 348282,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a6747101c12d6ed1c.jsonl": 681170,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a6a25425ed32a97b1.jsonl": 598322,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a74c76731f9953fe2.jsonl": 349852,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-aad8ebae51148b94e.jsonl": 257478,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-ab9f0b0d5eaedd9e1.jsonl": 440135,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-ae3ff24cde80dfa02.jsonl": 232400,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-aea2745f684d5a22c.jsonl": 385448,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-afc9e2f57354f3dae.jsonl": 514480
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b.jsonl": 1891333,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a0672ff74d4cfa537.jsonl": 358253,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a1a0e41b19417cee1.jsonl": 536696,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a35c9f474e8b5021b.jsonl": 338518,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a44316f7c9325eb59.jsonl": 279721,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a50c79369b88dfffb.jsonl": 683917,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a581f147cfdba3115.jsonl": 348282,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a6747101c12d6ed1c.jsonl": 681170,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a6a25425ed32a97b1.jsonl": 598322,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a74c76731f9953fe2.jsonl": 349852,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-aad8ebae51148b94e.jsonl": 257478,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-ab9f0b0d5eaedd9e1.jsonl": 440135,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-ae3ff24cde80dfa02.jsonl": 232400,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-aea2745f684d5a22c.jsonl": 385448,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-afc9e2f57354f3dae.jsonl": 514480
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "89c9fcef-9863-417c-bb5a-0a2437f5497b",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-fable-5-1": {
+            "input": 2,
+            "output": 2021,
+            "cache_read": 276719,
+            "cache_creation": 875
+          }
+        },
+        "subagents": {
+          "claude-fable-5-1": {
+            "input": 62,
+            "output": 4609,
+            "cache_read": 2212826,
+            "cache_creation": 114122
+          }
+        },
+        "agents": [
+          "drive-hand"
+        ]
+      },
+      "ran": [
+        "claude-fable-5-1"
+      ],
+      "agents": [
+        "drive-hand"
+      ],
+      "delegated": true,
+      "signals": {
+        "outcome": "accepted",
+        "driver": "cruise"
+      }
     }
   ]
 }
