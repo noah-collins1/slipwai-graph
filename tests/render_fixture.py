@@ -25,6 +25,8 @@ LAUNCH_FAILS_VARIABLE = "STAND_IN_LAUNCH_FAILS"
 """Set this and `puppeteer.launch` throws, as a browser that cannot be started does."""
 PNG_FAILS_VARIABLE = "STAND_IN_PNG_FAILS"
 """Set this and every PNG draw throws `png refused`, whatever the source; an SVG draws as always."""
+CLOSE_FAILS_VARIABLE = "STAND_IN_CLOSE_FAILS"
+"""Set this and the browser's `close` throws, as a browser that will not shut down does."""
 FAIL_MARKER = "STAND-IN-DRAW-FAILS"
 """Put this in a slice's name and the draw of every diagram whose source carries it throws."""
 
@@ -110,10 +112,14 @@ export default {
   async launch(options = {}) {
     if (process.env.__LAUNCH__) throw new Error('Failed to launch the browser process');
     log({ event: 'session', via: 'module', chunk_fixed: chunkFixed(), options });
-    return { async close() { log({ event: 'close', via: 'module' }); } };
+    return { async close() {
+      log({ event: 'close', via: 'module' });
+      if (process.env.__CLOSE__) throw new Error('browser would not close');
+    } };
   },
 };
-""".replace("__LOG__", LOG_VARIABLE).replace("__LAUNCH__", LAUNCH_FAILS_VARIABLE)
+""".replace("__LOG__", LOG_VARIABLE).replace("__LAUNCH__", LAUNCH_FAILS_VARIABLE).replace(
+    "__CLOSE__", CLOSE_FAILS_VARIABLE)
 
 
 def broken_swimlane_chunk(project: Path) -> str:

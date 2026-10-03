@@ -117,7 +117,11 @@ function writeFinished(kind: Diagram['kind'], path: string, bytes: string | Uint
     writeFileSync(temporary, bytes);
     renameSync(temporary, join(ROOT, path));
   } catch (error) {
-    rmSync(temporary, { force: true });
+    try {
+      rmSync(temporary, { force: true });
+    } catch {
+      // The write's own failure is the one to say; a temporary that will not go is taken by the next run.
+    }
     throw new Error(`render: could not write ${path}: ${reasonOf(error)}`);
   }
   console.log(`  wrote ${path}`);

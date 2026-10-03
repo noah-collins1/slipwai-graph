@@ -24,7 +24,7 @@ import {
   type Diagram,
 } from './render-plan.ts';
 import { patchInstalledMermaid } from './patch-mermaid-swimlanes.ts';
-import { CLI_PREFIX, installRenderer, lazySession, rendererKey } from './render-session.ts';
+import { CLI_PREFIX, installRenderer, lazySession, reasonOf, rendererKey } from './render-session.ts';
 import { renderPage } from './page.ts';
 import { renderReadmeSection, withReadmeSection } from './readme.ts';
 import type { Model } from './model.ts';
@@ -93,12 +93,20 @@ async function main(): Promise<void> {
   const key = rendererKey();
   const stale = diagrams.filter((diagram) => !isCurrent(diagram, key));
   const session = lazySession();
+  // A browser that will not close must not hide the failure the run already had: both are said, the first first.
+  let failure: unknown;
   try {
     await drawDiagrams(stale, session, key);
     if (wantPng) await drawPng(diagrams[0]?.source ?? '', session, MODEL_PNG);
-  } finally {
-    await session.close();
+  } catch (error) {
+    failure = error;
   }
+  try {
+    await session.close();
+  } catch (error) {
+    failure = failure === undefined ? error : new Error(`${reasonOf(failure)}\n${reasonOf(error)}`);
+  }
+  if (failure !== undefined) throw failure;
 
   const pictures = <K extends number | string>(kind: string): Map<K, string> =>
     new Map(diagrams.filter((d) => d.kind === kind).map((d) => [d.ref as K, readSvg(d)] as const));

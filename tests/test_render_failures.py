@@ -14,7 +14,9 @@ import unittest
 from pathlib import Path
 
 from render_fixture import (
+    CLOSE_FAILS_VARIABLE,
     EVENT_MODEL,
+    FAIL_MARKER,
     IS_WINDOWS,
     LAUNCH_FAILS_VARIABLE,
     MODEL_DIR,
@@ -54,6 +56,27 @@ class FailuresTest(RenderCase):
             self.assertNotIn("could not draw", done.stderr)
             log = self.model_log_of(repo)
             self.assertEqual((log.sessions, log.draws, log.closes), (0, 0, 0), "no close on a session never opened")
+
+    def test_e8_a_draw_that_failed_and_a_browser_that_will_not_close_are_both_said_the_draw_first(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, [*NAMES[:1], f"Bad {FAIL_MARKER}"])
+            done = self.run_model(repo, **{CLOSE_FAILS_VARIABLE: "1"})
+            self.assertNotEqual(done.returncode, 0)
+            lines = render_lines(done.stderr)
+            self.assertTrue(lines[0].startswith("render: could not draw "), lines)
+            self.assertTrue(any("docs/event-model/slices/S2.svg: " in line for line in lines), lines)
+            self.assertEqual(lines[-1], "render: could not close the browser: browser would not close")
+            self.assertEqual(sum("could not close" in line for line in lines), 1)
+
+    def test_e8_a_browser_that_will_not_close_after_every_draw_succeeded_is_one_line_and_the_files_stay(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, NAMES[:2])
+            done = self.run_model(repo, **{CLOSE_FAILS_VARIABLE: "1"})
+            self.assertNotEqual(done.returncode, 0)
+            self.assertEqual(
+                render_lines(done.stderr), ["render: could not close the browser: browser would not close"])
+            self.assertTrue((repo / MODEL_DIR / "slices" / "S1.svg").exists())
+            self.assertTrue((repo / MODEL_DIR / "model.svg").exists())
 
     def test_e8_a_png_that_cannot_be_drawn_names_the_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
