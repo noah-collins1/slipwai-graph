@@ -242,12 +242,44 @@ def row_paths(row: object) -> list[str]:
         value for value in found if value]
 
 
-def git(*arguments: str) -> str | None:
+def run_git(*arguments: str) -> tuple[str | None, str]:
+    """git's stdout, or None where it failed, and git's own first line of stderr — empty where it printed none."""
     try:
-        completed = subprocess.run(["git", *arguments], cwd=ROOT, text=True, errors="surrogateescape", capture_output=True, check=True)
-    except (OSError, ValueError, subprocess.CalledProcessError):  # a NUL or a lone surrogate in an argument is a ValueError
-        return None
-    return completed.stdout
+        completed = subprocess.run(["git", *arguments], cwd=ROOT, text=True, errors="surrogateescape", capture_output=True)
+    except (OSError, ValueError) as error:  # a NUL or a lone surrogate in an argument is a ValueError
+        return None, str(error)
+    if completed.returncode:
+        lines = completed.stderr.strip().splitlines()
+        return None, lines[0] if lines else f"git exited with status {completed.returncode}"
+    return completed.stdout, ""
+
+
+def git(*arguments: str) -> str | None:
+    return run_git(*arguments)[0]
+
+
+class CouldNotCompare(Exception):
+    """A git call between the base and the verdict failed: the answer is *could not compare*, never *no changes*."""
+
+
+def git_must(*arguments: str) -> str:
+    """Like `git`, but a failure is `CouldNotCompare` with git's first line, so it cannot read as an empty answer."""
+    out, reason = run_git(*arguments)
+    if out is None:
+        raise CouldNotCompare(reason)
+    return out
+
+
+ABSENT = ("does not exist in", "exists on disk, but not in")
+
+
+def git_show(base: str, path: str) -> str | None:
+    """`git show <base>:<path>`: None where the path is absent at the base — an answer — and `CouldNotCompare`
+    where git failed for any other reason."""
+    out, reason = run_git("show", f"{base}:{path}")
+    if out is None and not any(words in reason for words in ABSENT):
+        raise CouldNotCompare(reason)
+    return out
 
 
 def checkout_problem() -> str | None:
@@ -431,18 +463,18 @@ def changed_files(base: str) -> dict[str, str]:
     read NUL-separated (`-z`): git quotes a name with a non-ASCII byte, a tab or a quote otherwise, and a quoted
     path matches no rule."""
     changes: dict[str, str] = {}
-    fields = (git("diff", "--name-status", "-z", "--no-renames", base) or "").split("\0")
+    fields = git_must("diff", "--name-status", "-z", "--no-renames", base).split("\0")
     for status, path in zip(fields[0::2], fields[1::2]):
         if path:
             changes[path] = status[:1]
-    for path in (git("ls-files", "-z", "--others", "--exclude-standard") or "").split("\0"):
+    for path in git_must("ls-files", "-z", "--others", "--exclude-standard").split("\0"):
         if path:
             changes[path] = "A"
     return changes
 
 
 def deletions(base: str, path: str) -> int:
-    for record in (git("diff", "--numstat", "-z", base, "--", path) or "").split("\0"):
+    for record in git_must("diff", "--numstat", "-z", base, "--", path).split("\0"):
         parts = record.split("\t")
         if len(parts) >= 2 and parts[1].isdigit():
             return int(parts[1])
@@ -452,7 +484,7 @@ def deletions(base: str, path: str) -> int:
 def project_document(base: str) -> dict:
     """`project.json` as the base commit has it — never the branch's own, which a slice could rewrite to hand itself
     ownership of the host's paths. A base with no `project.json` (or an unreadable one) records nothing."""
-    text = git("show", f"{base}:./project.json")
+    text = git_show(base, "./project.json")
     try:
         document = json.loads(text) if text is not None else None
     except (ValueError, RecursionError):
@@ -595,7 +627,7 @@ class Scope:
         """Every other slice's block must read as it does on the base."""
         if self.model is None:
             return []
-        base_text = git("show", f"{self.base}:{MODEL.as_posix()}")
+        base_text = git_show(self.base, MODEL.as_posix())
         if base_text is None:
             return []
         base_slices, head_slices = slices_of(load_model(base_text)), slices_of(self.model)
@@ -779,12 +811,20 @@ def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
         return violations, "", "", f"check-slice-scope: {line}{note}", True
     short = (git("rev-parse", "--short", base) or base).strip()
     compared = f"compared with `{found_base.trunk}` at {short}"
-    scope = Scope(slice_id, base)
-    for path, status in sorted(changed_files(base).items()):
-        found = scope.violation(path, status)
-        if found:
-            violations.append(found)
-    violations.extend(scope.model_violations())
+    try:
+        scope = Scope(slice_id, base)
+        for path, status in sorted(changed_files(base).items()):
+            found = scope.violation(path, status)
+            if found:
+                violations.append(found)
+        violations.extend(scope.model_violations())
+    except CouldNotCompare as error:  # D31, D32: the diff did not run, so there is nothing to say passed
+        why = str(error) or "git gave no reason"
+        if forge_checkout():
+            return violations, "", "", (f"check-slice-scope: slice/{slice_id} was NOT checked — git could not compare it "
+                                        f"with `{found_base.trunk}` at {short}: {why}"), False
+        return violations, "", "", (f"check-slice-scope: slice/{slice_id} could not be compared with "
+                                    f"`{found_base.trunk}` at {short} — {why}"), True
     return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may ({compared}){note}", \
         f" — {compared}{note}", "", False
 

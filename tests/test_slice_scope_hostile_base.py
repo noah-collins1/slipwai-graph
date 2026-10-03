@@ -143,3 +143,40 @@ class HostileInputTest(SliceScopeFixtures):
                 self.assertIn("fatal:", result.stderr)
                 for word in ("branch", "history", "fetch-depth", "NOT checked"):
                     self.assertNotIn(word, result.stderr)
+
+
+class CouldNotCompareTest(SliceScopeFixtures):
+    run_gate = cast(Any, no_base_tests.NoBaseTest.run_gate)
+    commit = cast(Any, no_base_tests.NoBaseTest.commit)
+    origin = cast(Any, no_base_tests.NoBaseTest.origin)
+    clone = cast(Any, no_base_tests.NoBaseTest.clone)
+    """T026 (B2): where a base was found and git cannot produce the diff, the gate never says the slice passed."""
+
+    def blind_clone(self) -> Path:
+        """A treeless partial clone whose remote is gone: `merge-base` works on the commits it has, `git diff` needs
+        the base's tree and cannot fetch it — B2's own reproduction, with a `file://` origin and no network."""
+        origin = self.origin()
+        git(origin, "config", "uploadpack.allowfilter", "true")
+        clone = self.clone(origin, "--filter=tree:0", "--branch", "slice/S1")
+        git(clone, "remote", "set-url", "origin", "file:///gone")
+        return clone
+
+    def test_a_diff_that_cannot_run_fails_a_developer_in_one_line_naming_the_base_and_gits_own_words(self) -> None:
+        clone = self.blind_clone()
+        short = out(clone, "rev-parse", "--short", "origin/main")
+        result = self.run_gate(clone)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertNotIn("touches only what one slice may", result.stdout + result.stderr)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(len(result.stderr.splitlines()), 1, result.stderr)
+        for word in ("`main`", short, "fatal:", "/gone"):
+            self.assertIn(word, result.stderr)
+
+    def test_under_a_marker_the_slice_is_not_checked_and_the_reason_is_gits(self) -> None:
+        for env in (MARKER, DETACHED):
+            with self.subTest(env=env):
+                result = self.run_gate(self.blind_clone(), env)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotIn("touches only what one slice may", result.stdout + result.stderr)
+                self.assertIn("NOT checked", result.stderr)
+                self.assertIn("fatal:", result.stderr)
