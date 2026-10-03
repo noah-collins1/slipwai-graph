@@ -121,7 +121,8 @@ def confirm(root: Path, confirming: dict[str, dict], declining: list[str]) -> Co
             "this repository has no outstanding candidates — every buildable directory the survey found has "
             "been confirmed or declined. `slipwai adopt --refresh` reports one that has appeared since."
         )
-    refuse_foreign(root, resurvey.writes(root, layout_of(document)), "`slipwai adopt --confirm`")
+    given = " ".join(flag for flag, answers in (("--confirm", confirming), ("--decline", declining)) if answers)
+    refuse_foreign(root, resurvey.writes(root, layout_of(document)), f"`slipwai adopt {given}`")
     named = [*confirming, *declining]
     for name in named:
         candidate_named(candidates, name)

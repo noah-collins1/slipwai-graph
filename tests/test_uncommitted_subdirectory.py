@@ -64,6 +64,25 @@ class RefusalInSubdirectoryTest(FactoryTestCase):
             self.refused(project, *answer)
             self.assertEqual((project / "project.json").read_bytes(), before)
 
+    def says(self, *arguments: str) -> str:
+        """The first words of the refusal for an edited convergence page: which command it says it is."""
+        with tempfile.TemporaryDirectory() as directory:
+            _, project = placed(Path(directory))
+            (project / PAGE).write_text("mine\n")
+            return self.refused(project, *arguments).split(" writes ")[0].split("error: ")[-1]
+
+    def test_a_refused_decline_names_decline_and_not_confirm(self) -> None:
+        self.assertEqual(self.says("--decline", "themes"), "`slipwai adopt --decline`")
+
+    def test_hold_a_refused_confirm_names_confirm(self) -> None:
+        self.assertEqual(self.says("--confirm", "sub"), "`slipwai adopt --confirm`")
+
+    def test_a_refused_run_given_both_names_both(self) -> None:
+        self.assertEqual(self.says("--confirm", "sub", "--decline", "themes"), "`slipwai adopt --confirm --decline`")
+
+    def test_hold_a_refused_refresh_names_refresh(self) -> None:
+        self.assertEqual(self.says("--refresh"), "`slipwai adopt --refresh`")
+
     def test_a_listed_file_deleted_and_not_committed_is_refused_by_name(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             _, project = placed(Path(directory))
