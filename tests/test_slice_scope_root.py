@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from collections.abc import Mapping
 from pathlib import Path
 
 from support import NO_MAINTENANCE, commit_all
@@ -58,9 +59,9 @@ class SliceScopeFixtures(unittest.TestCase):
 
     script = "delivery/scripts/check-slice-scope.py"
 
-    def repo(self, deployables: dict, model: bool = False, written: str | None = None,
-             registry: bool | str = False, delivery: str = "delivery", existing: dict[str, str] | None = None,
-             **project: object) -> Path:
+    def repo(self, deployables: dict, model: bool = False, written: str | bytes | None = None,
+             registry: bool | str = False, delivery: str = "delivery",
+             existing: Mapping[str, str | bytes] | None = None, **project: object) -> Path:
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         repo = Path(directory.name)
@@ -72,7 +73,7 @@ class SliceScopeFixtures(unittest.TestCase):
         shutil.copy(SCRIPTS / "check-slice-scope.py", home / "scripts")
         shutil.copy(SCRIPTS / "event-model/check.py", home / "scripts/event-model")
         if written is not None:
-            (home / ".written").write_text(written)
+            (home / ".written").write_bytes(written if isinstance(written, bytes) else written.encode())
         if registry is True:
             (home / "scripts/agents").mkdir()
             shutil.copy(SCRIPTS / "agents/registry.json", home / "scripts/agents")
@@ -81,7 +82,7 @@ class SliceScopeFixtures(unittest.TestCase):
             (home / "scripts/agents/registry.json").write_text(registry)
         for name, text in (existing or {}).items():
             (repo / name).parent.mkdir(parents=True, exist_ok=True)
-            (repo / name).write_text(text)
+            (repo / name).write_bytes(text if isinstance(text, bytes) else text.encode())
         if model:
             (home / "docs/event-model").mkdir(parents=True)
             (home / "docs/event-model/model.yaml").write_text(MODEL)

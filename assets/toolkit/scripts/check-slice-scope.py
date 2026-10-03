@@ -117,6 +117,26 @@ def recorded_path(value: object) -> str | None:
     return "/".join(part for part in value.split("/") if part not in ("", ".")) or "."
 
 
+def read_text(path: Path) -> str | None:
+    """A file the gate reads, or None: one that is absent, unreadable or not UTF-8 adds nothing and ends nothing."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, ValueError):  # UnicodeDecodeError is a ValueError
+        return None
+
+
+def read_json(path: Path) -> object:
+    """A JSON file the gate reads, or None where it is absent, unreadable, undecodable, malformed or nested past
+    the parser's recursion limit."""
+    text = read_text(path)
+    if text is None:
+        return None
+    try:
+        return json.loads(text)
+    except (ValueError, RecursionError):
+        return None
+
+
 def harness_paths(registry: Path) -> tuple[set[str], set[str]]:
     """The files and the directories the harness registry names as the host's, read as `<delivery>/scripts/agents/
     registry.json` lists them: every row's `contextFile`, `skillsDir`, `commandsDir`, `agentFile.dir`,
@@ -124,10 +144,8 @@ def harness_paths(registry: Path) -> tuple[set[str], set[str]]:
     host's whole, as `.claude/` is; one segment is that file. A path outside the repository (`~/…`, `/…`) is not
     here, a row of the wrong shape adds nothing, and a registry that is absent, unreadable or not JSON adds
     nothing at all: the fixed names still answer."""
-    try:
-        harnesses = json.loads(registry.read_text(encoding="utf-8")).get("harnesses")
-    except (OSError, ValueError, AttributeError):
-        return set(), set()
+    document = read_json(registry)
+    harnesses = document.get("harnesses") if isinstance(document, dict) else None
     files: set[str] = set()
     directories: set[str] = set()
     for row in harnesses if isinstance(harnesses, list) else []:
@@ -222,10 +240,7 @@ def deletions(base: str, path: str) -> int:
 
 
 def project_document() -> dict:
-    try:
-        document = json.loads((ROOT / "project.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
+    document = read_json(ROOT / "project.json")
     return document if isinstance(document, dict) else {}
 
 
@@ -270,7 +285,7 @@ class Scope:
         self.base = base
         self.apps = deployables()
         self.host: tuple[set[str], set[str], set[str]] | None = None
-        model_text = (ROOT / MODEL).read_text(encoding="utf-8") if (ROOT / MODEL).is_file() else None
+        model_text = read_text(ROOT / MODEL)
         self.model = load_model(model_text) if model_text is not None else None
         own = slices_of(self.model).get(slice_id, {})
         self.service = own.get("service") if isinstance(own.get("service"), str) else None
@@ -324,9 +339,8 @@ class Scope:
             ci = project_document().get("ci")
             gate = ci.get("gate") if isinstance(ci, dict) else None
             exact = {recorded_path(gate)} if isinstance(gate, str) else set()
-            written = ROOT / DELIVERY / ".written"
-            if written.is_file():
-                exact |= set(written.read_text(encoding="utf-8").splitlines())
+            ledger = read_text(ROOT / DELIVERY / ".written")
+            exact |= {line.strip() for line in (ledger or "").splitlines() if line.strip()}
             self.host = files, directories, exact
         return self.host
 

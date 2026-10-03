@@ -6,7 +6,9 @@ a deployable under a subdirectory and for the host's own paths. The fixtures are
 """
 from __future__ import annotations
 
-from test_slice_scope_root import SliceScopeFixtures
+from pathlib import Path
+
+from test_slice_scope_root import SliceScopeFixtures, git
 
 
 class SliceScopeAdoptedRulesTest(SliceScopeFixtures):
@@ -56,3 +58,39 @@ class SliceScopeAdoptedRulesTest(SliceScopeFixtures):
         for path in (".github/migrations/0002_x.sql", "delivery/migrations/0002_x.sql", ".claude/migration/0002_x.py"):
             with self.subTest(path=path):
                 self.assertNotEqual(self.verdict(repo, path).returncode, 0)
+
+    def quiet(self, repo: Path, path: str = "tests/test_x.py") -> None:
+        """The gate answers green on a path the slice owns, and no input ends it on a traceback."""
+        result = self.verdict(repo, path)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_a_written_ledger_that_is_not_utf8_adds_nothing(self) -> None:
+        """T014 (D22, AC-S20-19): the host surface reads `.written` tolerantly; the fixed names still answer."""
+        repo = self.repo(self.root(), written=b"\xff\xfe\x00lib/x.py\n")
+        self.quiet(repo)
+        self.refused(repo, "project.json")
+
+    def test_a_registry_nested_past_the_recursion_limit_adds_nothing(self) -> None:
+        """T014 (D22, AC-S20-19): the registry is read tolerantly, and a pathological one is no harness row."""
+        repo = self.repo(self.root(), registry="[" * 200000)
+        self.quiet(repo)
+        self.refused(repo, "project.json")
+
+    def test_a_project_record_nested_past_the_recursion_limit_owns_nothing(self) -> None:
+        """T014 (D22): `project.json` that cannot be parsed has no deployables, so nothing is the slice's."""
+        repo = self.repo(self.root())
+        (repo / "project.json").write_text("[" * 200000)
+        git(repo, "commit", "-qam", "nested")
+        result = self.verdict(repo, "tests/test_x.py")
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_a_model_that_is_not_utf8_is_no_model(self) -> None:
+        """T014 (D22): an undecodable `model.yaml` names no slice, and the gate still answers."""
+        self.quiet(self.repo(self.root(), existing={"delivery/docs/event-model/model.yaml": b"\xff\xfe"}))
+
+    def test_a_written_line_with_trailing_whitespace_names_its_path(self) -> None:
+        """T014 (D22, G5): `lib/generated.py  ` and a CRLF line are the paths they name."""
+        repo = self.repo(self.root(), written="lib/generated.py  \nlib/other.py\r\n")
+        self.refused(repo, "lib/generated.py", "lib/other.py")
+        self.green(repo, "lib/own.py")
