@@ -267,7 +267,7 @@ run records something and the *not recorded* assertion can fail (a confirm runs 
 
 ### T009 — Both full gates on the final tip (host task)
 
-- [ ] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after
+- [x] (both green at `fee89b8`, the tip after T017, with the runner's marks set: 1108 tests, `skipped=9`, each; evidence in `demo/gates-fee89b8.txt`. `make verify`'s first run was red for a reason outside the tree — `/tmp` out of room in `tests/test_matrix.py` — and green on the same commit once this run's scratch repositories were removed. The diff under `delivery/` is `delivery/survey/pinned.md` only; `VERSION`, `src/slipwai/add_service.py`, `tests/test_uncommitted.py` and `tests/test_refresh_owned.py` are unchanged. The demo ran before the adversary pass, at `44fde15`: accepted.) **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after
   T008; both green (Principle XIV). Confirm the slice's diff touches under `delivery/` only
   `delivery/survey/pinned.md`, `VERSION` is `1.5.2.dev0`, `src/slipwai/add_service.py` is unchanged, and
   `tests/test_uncommitted.py` and `tests/test_refresh_owned.py` are unedited. Then the demo from

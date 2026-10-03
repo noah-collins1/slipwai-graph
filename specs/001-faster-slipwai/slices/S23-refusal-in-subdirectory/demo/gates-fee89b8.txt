@@ -1,0 +1,39 @@
+# Gates at fee89b8 (cruise iteration 6, 2026-10-03; CRUISE_RUNNER and CRUISE_ITERATION set as the runner set them)
+
+## make verify — first run: red, for a reason outside the tree
+/tmp (tmpfs, 16G) ran out of room while tests/test_matrix.py installed a generated project's toolchain;
+this run's own scratch repositories under /tmp were removed (about 2.7G) and the gate was run again on the same commit.
+error: Failed to install: mypy-2.3.1-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (mypy==2.3.1)
+  cause: Failed to copy to `/tmp/tmp2hqjyp7a/verify-python-postgres/apps/service/.venv/lib/python3.14/site-packages/08ae81f72d5a2b5fa9e0__mypyc.cpython-314-x86_64-linux-gnu.so`
+  cause: failed to copy file from /home/noahc/.cache/uv/archive-v0/5PKSwZK596vCCYAN/08ae81f72d5a2b5fa9e0__mypyc.cpython-314-x86_64-linux-gnu.so to /tmp/tmp2hqjyp7a/verify-python-postgres/apps/service/.venv/lib/python3.14/site-packages/.tmpAnd6cp: Disk quota exceeded (os error 122)
+make[1]: *** [Makefile:64: lint] Error 2
+make[1]: Leaving directory '/tmp/tmp2hqjyp7a/verify-python-postgres'
+ERROR
+4751:Ran 1108 tests in 969.062s
+4753:FAILED (errors=1, skipped=9)
+4755:done verify exit=2
+
+## make verify — second run, same commit: tail of /tmp/s23-gates/verify.log
+5605:Ran 1108 tests in 1175.212s
+5607:OK (skipped=9)
+
+verify: all gates passed
+done verify exit=0
+
+## make -f delivery/Makefile verify — tail of /tmp/s23-gates/delivery.log
+5643:Ran 1108 tests in 1176.909s
+5645:OK (skipped=9)
+python3 delivery/scripts/check-convergence.py
+  path-to-production: `scripted` — below `pipeline-decides`
+  integration: `unknown` — unrecorded: nothing has established it; /drive asks before the first slice
+  safety-net: `tests-pass` — below `mutation-measured`
+  structure: `named` — below `typed`
+  platform: `supported` — below `audited`
+  constitution: `template` — below `in-full`
+  data: `settled` — at target
+  infrastructure: `settled` — at target
+  strategy: `done` — at target
+check-convergence: 3 of 9 axes at target; the map is delivery/docs/convergence.md
+
+verify: all gates passed
+done delivery exit=0
