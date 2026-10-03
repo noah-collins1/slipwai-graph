@@ -181,13 +181,21 @@ def done_slices(feature: Path) -> set[str]:
         for line in register.read_text(encoding="utf-8").splitlines():
             if line.strip().startswith("|"):
                 first = line.strip().strip("|").split("|")[0].strip().strip("`")
-                found = re.match(r"([A-Za-z]+\d+)\b", first)
+                found = re.match(r"[A-Za-z]+\d+[A-Za-z0-9._-]*", first)
                 if found:
-                    done.add(found.group(1))
+                    done.add(found.group(0))
     for ident, named in implemented():
         if named == feature.name or (named is None and (feature / "slices" / ident).is_dir()):
             done.add(ident)
     return done
+
+
+def lacking_rows(done: set[str], log_text: str) -> list[str]:
+    """The done slices the adversary log has no row for: a row is headed with the slice's whole id or with its bare
+    prefix (`S00` for `S00-run-path`), which rows written before the id was read whole still use."""
+    rows = set(re.findall(r"^## (\S+) · ", log_text, re.M))
+    return sorted(ident for ident in done
+                  if ident not in rows and re.match(r"[A-Za-z]+\d+", ident).group(0) not in rows)
 
 
 def unowned() -> list[str]:
@@ -206,8 +214,7 @@ def check_adversary_rows() -> list[str]:
         if not done:
             continue
         log = feature / ADVERSARY_LOG
-        rows = set(re.findall(r"^## (\S+) · ", log.read_text(encoding="utf-8"), re.M)) if log.is_file() else set()
-        for ident in sorted(done - rows):
+        for ident in lacking_rows(done, log.read_text(encoding="utf-8") if log.is_file() else ""):
             findings.append(f"{log.relative_to(ROOT).as_posix()}: no row for {ident}, which is done — `/adversary` runs "
                             "after every acceptance and records the attack or the skip; an unwritten row is a pass "
                             "that has to be run again")
@@ -235,7 +242,7 @@ def baseline() -> int:
             continue
         log = feature / ADVERSARY_LOG
         text = log.read_text(encoding="utf-8") if log.is_file() else f"# Adversary log — {feature.name}\n"
-        missing = sorted(done_slices(feature) - set(re.findall(r"^## (\S+) · ", text, re.M)))
+        missing = lacking_rows(done_slices(feature), text)
         if not missing:
             continue
         rows = "".join(f"\n## {ident} · {PREDATES} · {today}\n\nFinished before `check-decisions` held every done "
