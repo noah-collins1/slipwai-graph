@@ -167,6 +167,7 @@ interface MermaidCli {
  * searched for.
  */
 function browserFailure(error: unknown): BrowserError {
+  if (error instanceof BrowserError) return error; // a step that already said what it was: not the launch
   if (puppeteerConfigPath() === undefined && typeof process.getuid === 'function' && process.getuid() === 0) {
     process.stderr.write(
       'render: running as root, and Chromium will not start without --no-sandbox. Point MERMAID_PUPPETEER_CONFIG '
@@ -174,7 +175,7 @@ function browserFailure(error: unknown): BrowserError {
         + 'CI workflow does exactly this.\n',
     );
   }
-  return error instanceof BrowserError ? error : new BrowserError(`render: could not start the browser: ${reasonOf(error)}`);
+  return new BrowserError(`render: could not start the browser: ${reasonOf(error)}`);
 }
 
 function parseConfig(path: string): object {
@@ -186,12 +187,21 @@ function parseConfig(path: string): object {
   }
 }
 
+/** A package of the prefix, imported by its entry; one that cannot be loaded is named as that, never as the launch. */
+async function load<T>(packageName: string): Promise<T> {
+  try {
+    return (await import(pathToFileURL(entryOf(packageName)).href)) as T;
+  } catch (error) {
+    throw new BrowserError(`render: could not load ${packageName} from ${CLI_PREFIX}: ${reasonOf(error)}`);
+  }
+}
+
 async function launch(): Promise<RenderSession> {
-  const cli = (await import(pathToFileURL(entryOf('@mermaid-js/mermaid-cli')).href)) as MermaidCli;
-  const loaded = (await import(pathToFileURL(entryOf('puppeteer')).href)) as {
+  const cli = await load<MermaidCli>('@mermaid-js/mermaid-cli');
+  const loaded = await load<{
     default?: { launch(options: object): Promise<Browser> };
     launch?: (options: object) => Promise<Browser>;
-  };
+  }>('puppeteer');
   const puppeteer = loaded.default ?? (loaded as { launch(options: object): Promise<Browser> });
   const configPath = puppeteerConfigPath();
   const config = configPath === undefined ? {} : parseConfig(configPath);

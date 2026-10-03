@@ -28,6 +28,14 @@ from render_fixture import (
 ROOT_LINE = "render: running as root, and Chromium will not start without --no-sandbox."
 NAMES = [f"Do thing {i}" for i in range(1, 5)]
 
+PROBE_LOAD = """import { BrowserError, lazySession } from './render-session.ts';
+process.getuid = () => 0;
+const message = 'render: could not load puppeteer from the prefix';
+const session = lazySession(async () => { throw new BrowserError(message); });
+try { await session.draw('x', 'svg'); } catch (error) { console.log((error as Error).message); }
+await session.close();
+"""
+
 PROBE = """import { lazySession } from './render-session.ts';
 process.getuid = () => 0;
 const session = lazySession(async () => { throw new Error('stand-in: no sandbox'); });
@@ -78,6 +86,21 @@ class FailuresTest(RenderCase):
             self.assertTrue((repo / MODEL_DIR / "slices" / "S1.svg").exists())
             self.assertTrue((repo / MODEL_DIR / "model.svg").exists())
 
+    def test_e8_a_package_that_cannot_be_loaded_from_the_prefix_is_named_and_is_not_a_browser_that_would_not_start(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, NAMES[:1])
+            (repo / EVENT_MODEL / ".mermaid-cli/node_modules/puppeteer/src/index.js").unlink()
+            done = self.run_model(repo, MERMAID_PUPPETEER_CONFIG="")
+            self.assertNotEqual(done.returncode, 0)
+            lines = render_lines(done.stderr)
+            self.assertEqual(len(lines), 1, done.stderr)
+            self.assertTrue(lines[0].startswith("render: could not load puppeteer from "), lines)
+            self.assertIn(".mermaid-cli", lines[0])
+            self.assertNotIn("could not start the browser", done.stderr)
+            self.assertNotIn(ROOT_LINE, done.stderr)
+
     def test_e8_a_png_that_cannot_be_drawn_names_the_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.project(directory, NAMES[:1])
@@ -121,10 +144,10 @@ class FailuresTest(RenderCase):
             self.assertEqual(len(lines), 1, done.stderr)
             self.assertIn(f"could not read the installed version in {manifest}", lines[0])
 
-    def probe(self, repo: Path, **env: str) -> subprocess.CompletedProcess[str]:
+    def probe(self, repo: Path, source: str = PROBE, **env: str) -> subprocess.CompletedProcess[str]:
         self.model_log(repo)  # the project's own run, which installs the TypeScript runner the probe needs
         script = repo / EVENT_MODEL / "probe-root.mts"
-        script.write_text(PROBE)
+        script.write_text(source)
         return subprocess.run(
             ["node", str(repo / EVENT_MODEL / "node_modules/tsx/dist/cli.mjs"), str(script)],
             cwd=repo, text=True, capture_output=True, env={**os.environ, **env},
@@ -141,6 +164,14 @@ class FailuresTest(RenderCase):
                              '["render: could not start the browser: stand-in: no sandbox",'
                              '"render: could not start the browser: stand-in: no sandbox",'
                              '"render: could not start the browser: stand-in: no sandbox"]')
+
+    def test_e16_run_as_root_a_failure_that_is_not_the_launch_does_not_get_the_root_advice(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, NAMES[:1])
+            done = self.probe(repo, PROBE_LOAD, MERMAID_PUPPETEER_CONFIG="")
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertNotIn(ROOT_LINE, done.stderr)
+            self.assertEqual(done.stdout.strip(), "render: could not load puppeteer from the prefix")
 
     def test_e16_run_as_root_with_a_config_given_the_root_line_is_not_said(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
