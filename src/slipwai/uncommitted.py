@@ -33,10 +33,14 @@ def changed(root: Path) -> list[str] | None:
     writes; None where this is not a Git repository.
 
     Git reports a path from the repository's top, so where `root` is a subdirectory of it the prefix
-    (`git rev-parse --show-prefix`, empty at the top) is taken off.
+    (`git rev-parse --show-prefix`, empty at the top) is taken off. A change outside `root` is not one: the status
+    is limited to it, and a path that does not start with the prefix is dropped.
     """
     status = subprocess.run(
-        ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"], cwd=root, capture_output=True, check=False
+        ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--", "."],
+        cwd=root,
+        capture_output=True,
+        check=False,
     )
     where = subprocess.run(["git", "rev-parse", "--show-prefix"], cwd=root, capture_output=True, check=False)
     if status.returncode != 0 or where.returncode != 0:
@@ -46,7 +50,8 @@ def changed(root: Path) -> list[str] | None:
     while fields:
         entry = fields.pop(0)
         if len(entry) > 3:
-            paths.append(entry[3:].removeprefix(prefix))
+            if entry[3:].startswith(prefix):
+                paths.append(entry[3:].removeprefix(prefix))
             if entry[0] in "RC" and fields:  # a rename or copy names where it came from next
                 fields.pop(0)
     return paths

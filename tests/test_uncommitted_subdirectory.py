@@ -115,3 +115,29 @@ class RefusalInSubdirectoryTest(FactoryTestCase):
                 edited.write("\nA note of mine.\n")
             self.refused(project, "--refresh", naming=key)
             self.assertIn("A note of mine.", (project / key).read_text())
+
+    def test_hold_an_edit_elsewhere_in_the_repository_refuses_nothing(self) -> None:
+        """R3e1, a hold: passes before (`other/note.txt` spells nothing a run writes) and after."""
+        with tempfile.TemporaryDirectory() as directory:
+            top, project = placed(Path(directory))
+            (top / "other/note.txt").write_text("mine\n")
+            result = slipwai(project, "adopt", "--confirm", "sub")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((top / "other/note.txt").read_text(), "mine\n")
+
+    def test_a_file_at_the_top_that_spells_a_path_the_run_writes_is_neither_refused_nor_recorded(self) -> None:
+        """R3e2. The run is a `--confirm` that leaves many files uncommitted and recorded, so an empty record cannot
+        make the last assertion pass; the file is one the run lists but does not change in the project."""
+        name = "delivery/agents/drive-implement.md"
+        with tempfile.TemporaryDirectory() as directory:
+            top, project = placed(Path(directory))
+            (top / "delivery/agents").mkdir(parents=True)
+            (top / name).write_text("the top's own\n")
+            git(top, "add", name)
+            git(top, "-c", "user.name=t", "-c", "user.email=t@local", "commit", "-q", "-m", "top")
+            (top / name).write_text("the top's own, edited\n")
+            result = slipwai(project, "adopt", "--confirm", "sub")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((top / name).read_text(), "the top's own, edited\n")
+            self.assertIn(PAGE, self.recorded(project), "the run did record what it left")
+            self.assertNotIn(name, self.recorded(project))
