@@ -12,8 +12,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from slipwai.assets import ROOT
 from test_decisions_scope import entry, run, scratch
+
+from slipwai.assets import ROOT
 
 RELEASED = "596740f"  # the last commit before the Scope: line was read by the checker
 FIXTURE = ROOT / "specs/001-faster-slipwai/decisions.md"
