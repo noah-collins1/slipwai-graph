@@ -353,7 +353,7 @@ every route by which a checkout is called the forge's, in every no-base state, o
 
 ### T014 — A slice name in another case is still a slice name (MEDIUM · R2, AC-S22-4 · not reproducible on this platform)
 
-- [ ] **MEDIUM.** `usable()` refuses a `slice/<id>` name by `SLICE_BRANCH`, which is case-sensitive; on a
+- [x] (6a0d9a2) **MEDIUM.** `usable()` refuses a `slice/<id>` name by `SLICE_BRANCH`, which is case-sensitive; on a
   case-insensitive filesystem (macOS, Windows) with loose refs, `refs/heads/Slice/S1` resolves to the slice's own
   branch, so a committed `ci.branch: Slice/S1` would make the base HEAD and the `project.json` edit unseen — the
   door D30 closes. On Linux the name has no ref and `main` answers (run in pass 1: refused, *`Slice/S1` … has no
@@ -370,7 +370,7 @@ without regard to case.
 
 ### T015 — Teeth for the two unpinned arms of name and base selection (LOW)
 
-- [ ] **LOW.** Mutants that survive both suites (pass 1, 21 run): `usable()` without `git check-ref-format`
+- [x] (71220bf; both mutants now die) **LOW.** Mutants that survive both suites (pass 1, 21 run): `usable()` without `git check-ref-format`
   (`a..b`, `a b` then read *has no branch here* rather than *is not a branch name* — same verdict, wrong sentence);
   `older_of()` without its `git merge-base first second` fallback (two bases neither an ancestor of the other —
   the plan's *Design* states it, the map has no example). One command-line test each; no production change expected.
@@ -379,7 +379,7 @@ without regard to case.
 
 ### T016 — The fragment's first paragraph does not contradict its catch-up (LOW · R8, AC-S22-21)
 
-- [ ] **LOW.** `changelog.d/slice-scope-base.md` paragraph 1 ends *This asks nothing of a repository already
+- [x] (01d9fd3; rewritten once, with D32's CI run) **LOW.** `changelog.d/slice-scope-base.md` paragraph 1 ends *This asks nothing of a repository already
   generated*, and the **Catch-up** paragraph then names two things a project will see, one of them a new local
   failure; paragraphs 1 and 2 also each define the trunk. Say once what the trunk is, and replace *asks nothing*
   with what is true: `migrate` carries the script, and a checkout with no trunk to compare with now fails locally.
