@@ -534,7 +534,7 @@ One task per commit, in order; all edit the script. New tests go in new files (`
 
 ### T026 — A comparison that could not run is *could not compare* (`HIGH` B2 · AC-S22-31)
 
-- [ ] **RED:** a base, and a `git diff` that fails (B2's treeless clone with its remote gone, or the smallest
+- [x] (d07148d; B2's own treeless clone, offline; `ls-files --others` failing goes through the same guard, untested — no offline way to make it fail) **RED:** a base, and a `git diff` that fails (B2's treeless clone with its remote gone, or the smallest
   honest stand-in the test can build offline): today the pass line. **GREEN names the class:** every git call
   between the base and the verdict whose failure would read as *no changes* (`diff --name-status`, `ls-files
   --others`, `diff --numstat`, `show <base>:…` where a failure is not *absent*): developer exit 1, one line;
@@ -544,7 +544,7 @@ One task per commit, in order; all edit the script. New tests go in new files (`
 
 ### T027 — What the gate prints is safe to paste and true (`MEDIUM` B3 · `LOW` A5, B5, A4 · the hand's notes 2, 3 · AC-S22-32)
 
-- [ ] **RED:** one test per clause of AC-S22-32, B3's with the printed text handed to `sh -c` in a scratch
+- [x] (f8a01ac; a hostile name is still named, cleaned, as the missing branch — never inside a command) **RED:** one test per clause of AC-S22-32, B3's with the printed text handed to `sh -c` in a scratch
   directory and a sentinel file asserted absent. **GREEN names the class:** every place the script prints a name it
   did not choose or a command — `fetch_command()`, the passed-over words, the no-base lines, the NOT-checked line,
   the report line.
@@ -553,7 +553,7 @@ One task per commit, in order; all edit the script. New tests go in new files (`
 
 ### T028 — The fragment and the docstring follow (AC-S22-21) — last
 
-- [ ] `changelog.d/slice-scope-base.md` and the module docstring say what T024–T027 changed for a reader: when a
+- [x] (cec171b) `changelog.d/slice-scope-base.md` and the module docstring say what T024–T027 changed for a reader: when a
   fetch command is and is not printed; that a comparison that could not run fails locally and is NOT checked in
   CI; that a recorded trunk sharing no history is passed over for `main`.
 
