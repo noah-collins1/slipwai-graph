@@ -532,6 +532,155 @@ the next comparison whole. The four pages reworded.
 
 No screen in this slice
 
+## Phase 4: Convergence, pass 1 (appended by `drive-converge` at `f849ef7`; the slice's code tip is `1b4b7b5`)
+
+Grades: `CRITICAL` and `HIGH` re-open the loop; `MEDIUM` and `LOW` are what the slice may ship without. Each GREEN
+names the class it closes, not the one instance.
+
+### T015 — [HIGH] The controls' path set is as fresh as the signature: a hook file a registry row gains is held (D56 · AC-S02-2, -7)
+
+- [ ] **Found.** `control_paths()` (`assets/toolkit/scripts/agents/cruise.py:523`–`536`) reads `registry.json` once per
+  runner process and keeps the hook files in `_HOOK_FILES`. Before the slice it read the registry on every signature. D56
+  says the later signature *walks the same paths* and that `controls_changed()` *answers byte for byte as today*; this is
+  the one place the slice traded a control's reach for a read (constitution I, *no check is removed anywhere to make the
+  loop faster*).
+- **Evidence** (scratch, `/tmp/s02-converge/repro/test_repro.py`, a generated `standard`/`python` project, the runner's
+  module loaded as `tests/test_runner_controls.py` loads it): a registry row is given
+  `hooks.projection.where: .newharness/hooks.json` and the file is written. The comparison answers
+  `["scripts/agents/registry.json (modified)"]` — the run still parks, but before the slice it also named
+  `.newharness/hooks.json (added)`. After a person keeps the change and the run goes on, the next iteration rewrites
+  `.newharness/hooks.json`: the comparison answers `[]`. With `_HOOK_FILES` reset, so the registry is read again, the same
+  edit answers `[".newharness/hooks.json (modified)"]`. The guard held that file for the rest of the run before the slice,
+  and does not now, until a new runner process.
+- **RED.** An example at the probe seam and one through the runner: a registry row gains a hook file in one iteration
+  (or during a park); a later iteration of the same process edits that file; the run parks naming it `(modified)`, and
+  the iteration that added it is reported with `(added)` beside the registry's `(modified)`. Red today.
+- **GREEN — the class:** every input that decides *which* paths a signature covers is read as freshly as the signature
+  itself, with AC-S02-1 kept (no control opened for content while its record stands) — e.g. the hook files are derived
+  again whenever the record's hash of `registry.json` is not the one they were derived from. No path set is fixed for
+  the life of the process.
+
+### T016 — [HIGH] A hold on a memo runs with the memo engaged: the park holds prove nothing about the record (D56 · AC-S02-2, -3, -4, -6, -8)
+
+- [ ] **Found.** Every example in `tests/test_runner_controls_park.py` generates a project and runs the runner at once,
+  so each gate was written less than two seconds before it is hashed and the record (`bookkeeping.py:70`) holds nothing
+  for it: every signature in those runs hashes every file. The holds pass whatever the record's rule is. The module's
+  docstring says *a hold is shown to have teeth by making the record reuse a hash on size and modification time alone*;
+  that is not what happens.
+- **Evidence** (mutations in a clone under `/tmp/s02-converge/A`, the checkout untouched):
+  (1) `Record.digest` reuses any held hash whatever the file's facts say — all of `test_runner_controls_park` passes
+  (AC-S02-2, -3, -4, -6, -7, -8 holds green); `test_runner_controls` fails only its two *reads* examples.
+  (2) `Record.digest` compares size and modification time only (`held[0][:2] == facts[:2]`) — `test_runner_controls` and
+  `test_runner_controls_park` pass whole, 20 tests; the only red in the suite is the fingerprint's
+  `test_hold_a_same_size_rewrite_with_different_bytes_changes_the_value_even_with_its_time_restored`, which shares the
+  class. So AC-S02-3 and AC-S02-4, the two criteria D56 exists for, are held for the controls by no test of the controls,
+  and nothing would go red if the strict record alone were weakened.
+  (3) An unreadable file answered from its held hash — the AC-S02-8 hold stays green, for the same reason.
+- **RED.** The same holds with the changed gate vouched for by the record at the before-signature of the iteration that
+  changes it (the gate older than the margin when that signature is taken: a first iteration that outlasts the margin
+  and a second that edits, or the equivalent at the probe seam with the record's clock moved as
+  `test_runner_controls.py` already does), each seen red under mutation (2), and AC-S02-8 under (3). The wait is real
+  where the runner is run for real — D50's T023 let such waits stand; it is not a seam or a setting.
+- **GREEN — the class:** every *hold* written against a record, memory or offset in this slice is run in a state where
+  that record vouches for the file under test, and is seen to fail when the record's rule is weakened; the docstring
+  says what was actually seen. Sweep the slice's other holds for the same shape (the log's and the fingerprint's were
+  seen red here: see the verdict).
+
+### T017 — [MEDIUM] The fragment names CI as what sees a narrowed comparison's blind spot; D59 says it is not the catch (AC-S02-46)
+
+- [ ] **Found.** `changelog.d/runner-bookkeeping.md:9` lists *`make verify` on the trunk or any branch not named
+  `slice/<id>`, CI, or any check after `.codegraph/gate-memory.json` is deleted* as the next whole comparison. D59:
+  *CI normally has no index, so it is not the catch* — `.codegraph/` is ignored by git, and with no index the gate says
+  so and passes (`docs/verification.md`).
+- **GREEN — the class:** a published sentence that tells a person what catches a residual names only what does, in the
+  state a generated project is actually in; here, CI is named only *where CI has an index*, or dropped. By reading; no
+  code involved.
+
+### T018 — [LOW] The AC-S01-24 row of e36 discriminates nothing of its own (lead d; AC-S02-36)
+
+- [ ] **Found, by reading and not by mutation.** `tests/test_health_memory_states.py:162` gives the *not safely older*
+  state the same `after` step as the AC-S01-23 row above it (`same_size_with_its_time_restored`), which moves the
+  change time, so the file is a candidate with or without the two-second rule and the row passes either way.
+- **GREEN — the class:** a row in a state table is either seen red with the rule it names removed, or says in its name
+  which other row's mechanism it rides on.
+
+### T019 — [LOW] Constructor arguments nothing passes (lead b; constitution III)
+
+- [ ] **Found.** `Record(clock=…)` (`bookkeeping.py:48`) and `Log(report=…)` (`bookkeeping.py:91`) are passed by nothing in
+  the tree: the tests assign `CONTROL_RECORD.clock` / `SPECS_RECORD.clock` as attributes, and only `Record(report=…)` is
+  constructed with an argument (`tests/test_runner_controls.py:129`). Neither is reachable by an iteration — the three
+  instances (`cruise.py:463`, `:498`, `:541`) are built with no argument, and no environment variable or file feeds them
+  — so this is surplus, not a hole.
+- **GREEN — the class:** a parameter exists because a caller passes it; drop the two, or have the tests construct
+  through them.
+
 ## Convergence
 
-*(left for the converge verdict)*
+**Pass 1 — NOT CONVERGED: two `HIGH` (T015, T016), one `MEDIUM` (T017), two `LOW` (T018, T019). Incomplete — the budget
+ended before every criterion was traced; what was not done is listed last.** Judged at `f849ef7` over
+`git diff 596740f..HEAD -- assets src docs tests VERSION changelog.d`. The slice's fifteen targeted suites ran green
+through `make test TESTS=…` (97 tests, 1 skipped). No file of the checkout was mutated: every mutation ran in a clone
+under `/tmp/s02-converge/`.
+
+### Constitution, principle by principle
+
+- **I (owns its files, passes its own gate; a memoised gate is additive).** *Version and fragment:* `VERSION:1` reads
+  `1.6.0.dev0`; `changelog.d/runner-bookkeeping.md:1` claims `MINOR`; `tests.test_changelog` green. *Nothing of the
+  project's overwritten:* `git diff 596740f..HEAD -- delivery` is empty (D9). *The gate is not narrowed:*
+  `check-codegraph.py` gains two docstring lines and no code; `health()` neither reads nor writes the memory under a CI
+  marker (`code_index.py:254`, `:266`), seen red when the first is removed (`test_e38…`, three examples).
+  **Unmet in one reach:** the controls comparison lost a path it held (`cruise.py:523`–`536`; T015).
+- **III (simplicity, the rung).** The record lives in the process and is never written (`bookkeeping.py:8`; D56–D58), one
+  class serves both records (`cruise.py:463` `strict=False` per D57, `:541` `strict=True` per D56), `health()` uses the
+  gate's own functions and memory rather than a second cache (`code_index.py:229`–`274`). Surplus: T019.
+- **V (acceptance at the use case).** The runner is driven as a subprocess against a fake harness and the log read back
+  (`tests/test_runner_controls_park.py:66`, `tests/test_runner_log.py`, `test_runner_log_stale.py`); fakes are written
+  in the test tree, no mocking framework. **Unmet for AC-S02-3, -4, -6, -8 as proof:** T016.
+- **VII (observability).** What the bookkeeping did is said where a person reads it: `bookkeeping.log_bytes` and
+  `stream_bytes` on the entry (`cruise.py:1329`–`1331`), and `health()`'s one-line account (`code_index.py:219`–`226`).
+- **VIII (a persisted schema is additive; readers tolerate).** The entry's `bookkeeping` object is optional and nothing
+  reads it back (`cruise.py:1329`); the memory file is written only through the gate's own writer
+  (`code_index.py:270`–`272`); a `Scope:` line is accepted absent and refused only when present and malformed
+  (`check-decisions.py:129`, `:178`), and the filter carries what it cannot place as global (`check-decisions.py:317`).
+- **XIII (target, not in force).** No test asserts a wall-clock ratio (AC-S02-21, D58). T016's RED needs a real wait
+  past the two-second margin where the runner runs for real; D50's T023 is the precedent.
+- **XIV (the same bar).** The diff edits no specification, criterion or constitution; both full gates are the host's
+  T014 and were not run here.
+- **II, IV (target), VI, IX–XII, XV:** not touched by this diff. The log has one writer; its append re-checks the
+  file's facts first (`bookkeeping.py:129`–`131`), seen red when that check is removed (five examples of
+  `test_runner_log_stale`).
+
+### Level by level
+
+1. **Logic.** *Proved:* the two records are built with the rule their decisions give (lead g); the margin and the
+   all-four rule read as D56 writes them (`bookkeeping.py:27`–`42`, `:70`); the check before the append and the whole
+   read on any difference (lead h) are held by tests seen red; a tolerant parse of the log is caught by both AC-S02-29
+   examples (lead f, e29); a signature that moves on a touch is caught by the AC-S02-5 park half (lead f, e5); `health()`
+   in CI is caught (lead i). `--scope`: equal-or-bare-prefix matching, the first `Scope` line read, overridden entries
+   named, the counts — run by hand on a seven-entry log, all as D60 says; e59, e60 and e62 go red with the gate's code
+   disabled (lead c: discriminating). `stream_bytes` is 0 for a deleted stream or no index, which is what was read (lead
+   e: not a finding). *Not proved:* T015, T016. e7 guards code the slice did not alter, and no mutation of the slice's
+   diff reaches it. The `except Exception` paths of `compare()` and `memory_of()` (`code_index.py:245`, `:258`) and
+   `stream_use()` were read, not mutated.
+2. **Use case.** One iteration end to end is exercised by the subprocess suites, green. `health()` before it: one
+   `sync` at most and only where files are behind (`code_index.py:329`–`330`), a rebuilt database compared whole
+   (`:346`), the memory renewed only on `current`/`synced` (`:350`). Read and suite-green; not re-derived by mutation.
+3. **Delivery adapter.** `check-decisions.py --scope`: entries and the closing line on stdout, exit 0; several
+   `decisions.md` or none, one line on stderr, exit 1; a malformed command line, usage on stderr, exit 2; no file
+   written, no `__pycache__/` (run in a scratch generation). The log entry: `bookkeeping` as above.
+4. **Screen.** None in this slice.
+5. **Published contract.** In a scratch generation: `commands/cruise.md`, `agents/drive-skipper.md` and
+   `agents/drive-bosun.md` carry the verb and the `Scope:` line; the entry shape is in `commands/cruise.md`,
+   `.specify/product-owner.md` and the checker's docstring; the verb runs as the pages say. The fragment's sentences on
+   the log, the stream, `bookkeeping`, the fingerprint, the controls and `Scope:` match the code; one does not (T017),
+   and it does not yet say what T015 found. No toolkit `open`/`read_text` added by the diff lacks `encoding="utf-8"` or
+   binary mode (lead j).
+
+### Not finished
+
+- A criterion-by-criterion trace of all 69: AC-S02-18 to -20, -32, -33, -42 to -44 and -68 were taken on the green
+  suites and not individually followed to an assertion.
+- An **adopted** layout was not generated: that `scripts/check-decisions.py` in the briefs becomes
+  `delivery/scripts/…` rests on reading `Layout.relocate` (`src/slipwai/layout.py:90`), not on a run.
+- T018 was read, not mutated; the stream's offset (T012) and `health()`'s exception paths were not mutated.
+- This file now has two `## Phase 4` headings (User Story 3's, and the one above, which the brief named).
