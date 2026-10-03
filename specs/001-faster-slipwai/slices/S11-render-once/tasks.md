@@ -453,7 +453,7 @@ the loop.
 
 #### T014 — `LOW` — A browser that will not close does not replace the failure the run already had (AC-S11-8)
 
-- [ ] Lead, from the code and not reproduced: `render.ts` 96–101 closes the session in a `finally`, and since T010
+- [x] *(done at `e05d7ca`: the lead reproduced — a close that failed hid the draw's lines; both are now said, the draw's first.)* Lead, from the code and not reproduced: `render.ts` 96–101 closes the session in a `finally`, and since T010
   `close` throws `render: could not close the browser: …` (`render-session.ts` 203–209). A throw in a `finally`
   replaces the error in flight, so a run whose draw failed *and* whose browser then fails to close prints only the
   close line: the `could not draw <svg>` lines are lost. Exit is still non-zero. Reproduction: give the stand-in a
@@ -469,7 +469,7 @@ the fragment only if a sentence of it changes (`Level PATCH; VERSION already 1.6
 
 #### T015 — `LOW` — The root line and "could not start the browser" are said only of the browser's launch (AC-S11-16)
 
-- [ ] Lead, from the code and not reproduced: T010 moved the root explanation from around `puppeteer.launch` to
+- [x] *(done at `e287dc6`: the lead reproduced — a package that cannot be loaded read as *could not start the browser*; it is now named as itself and the root line is said only of the launch.)* Lead, from the code and not reproduced: T010 moved the root explanation from around `puppeteer.launch` to
   `lazySession`'s `open().catch` (`render-session.ts` 221–223), so `browserFailure` now also wraps `entryOf` and the
   two `import()`s of `launch` (190–195). A prefix whose mermaid-cli or Puppeteer entry cannot be imported is reported
   as `render: could not start the browser: Cannot find module …`, and as root with no config it is preceded by the
@@ -488,7 +488,7 @@ name; the root line is printed only when the step that failed is the start.
 
 #### T016 — `MEDIUM` — The way to redraw everything names the whole timeline's file (G1 · AC-S11-10)
 
-- [ ] `docs/event-model/model.svg` is outside `segments/` and `slices/`, so the remedy as written redraws 24 of 25.
+- [x] *(done at `65a3843`: RED: the followed remedy drew 5 of 6, the timeline left.)* `docs/event-model/model.svg` is outside `segments/` and `slices/`, so the remedy as written redraws 24 of 25.
   **RED:** `tests/test_render_docs.py`'s followed example deletes exactly what the sentence names and expects every
   diagram drawn (today: the timeline is left). **GREEN (the class):** every text that gives the remedy — the README
   block under `assets/toolkit/docs/event-model/README.md` (both places: forcing a redraw, and the browser behind an
@@ -500,7 +500,7 @@ name; the root line is printed only when the step that failed is the start.
 
 #### T017 — `LOW` — Two runs, a CI marker, and an edited `render.ts` are each said (G4, G6, G7 · AC-S11-18, -19, -20)
 
-- [ ] (a) The temporary's name carries the process id (`.tmp-<kind>-<pid>-<file name>`); removal of what the model
+- [x] *(done at `1d336ea`: teeth, not a clean RED; the naming is held through a probe that imports it.)* (a) The temporary's name carries the process id (`.tmp-<kind>-<pid>-<file name>`); removal of what the model
   does not produce still takes any `.tmp-` entry; the README says one run per tree at a time. **RED:** an example
   that reads the temporary's name while a draw is held (the stand-in can pause on a marker file) or, failing that, a
   probe importing `writeFinished`'s naming — and the hold that a leftover `.tmp-` of any process is removed.
@@ -513,6 +513,26 @@ name; the root line is printed only when the step that failed is the start.
 `changelog.d/render-once.md`, `tests/test_render_files.py`, `tests/test_render_files_report.py`,
 `tests/test_render_docs.py`, `tests/render_fixture.py` (additions only), a new `tests/test_render_runs.py` if a file
 would pass 350 lines.
+
+#### T018 — `HIGH` — The render tests pass whatever CI marker the suite itself runs under (found by the host at `1d336ea`)
+
+- [ ] Evidence: `CI=true make test TESTS="test_render_once"` → `FAILED (failures=3)` at `1d336ea`. Every render test
+  hands `os.environ` to `make model`, and under `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` nothing is skipped (AC-S11-5), so
+  in this factory's own CI every example that expects a diagram to be left fails: the full gate would be red on the
+  forge and green here.
+
+**RED:** the module run with each marker set in the suite's own environment fails today. **GREEN (the class):**
+one helper in `tests/render_fixture.py` builds the environment every render test's subprocess gets, with the three
+markers removed unless the test sets one; sweep every `subprocess` call and every `env=` in the seven render modules
+and the fixture so none passes `os.environ` through unfiltered. **Verify:** the seven modules green three times —
+plain, under `CI=true`, and under `GITHUB_ACTIONS=true GITLAB_CI=true`. Also, in the fragment's catch-up, the first
+sentence and the `render.ts` sentence stop contradicting each other: nothing is asked of a repository that left
+`render.ts` as generated (`tests/test_render_docs.py` follows the wording).
+
+**Files:** `tests/render_fixture.py`, `tests/test_render_once.py`, `tests/test_render_current.py`,
+`tests/test_render_files.py`, `tests/test_render_files_report.py`, `tests/test_render_docs.py`,
+`tests/test_render_failures.py`, `changelog.d/render-once.md`. (`tests/test_render_pinned.py` reaches `make model`
+only through the fixture's helper; if it passes an environment of its own, say so and the host decides.)
 
 ## Convergence
 
