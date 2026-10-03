@@ -20,7 +20,10 @@ database before it judges one, and what a person runs to repair an index by hand
 only: on a `slice/<id>` branch in a developer's checkout, outside CI, it compares only what changed since its last
 whole comparison and leaves the integrity check to the trunk and CI; it keeps that record in
 `.codegraph/gate-memory.json` (ignored by Git), and deleting that file makes the next run whole.
-`session` is the same step at the
+`health` itself compares the same way — through the gate's own functions and memory — on every branch, the trunk
+included, wherever no CI marker is set: it hashes only what changed since the last whole comparison, says how many
+files that was of how many, and always runs the integrity check. With no usable memory, or in CI, it hashes every
+tracked file. `session` is the same step at the
 start of a Claude Code session — a person's `/drive` has no runner in front of it — and prints only what it did or
 could not do, since a hook's output lands in the session's context. The database is ignored by Git and derived from the source, so a corrupt one loses nothing by being moved
 aside (to `.codegraph/corrupt/`, the latest only) and rebuilt. `sync` keeps the index current while an iteration is
@@ -199,6 +202,53 @@ def behind() -> int | None:
     return None if found is None else len(found[1]) + len(found[2])
 
 
+class Compared:
+    """One comparison of the index with the tree: what `drift()` found (None where it could not say), how many files
+    were hashed to find it, and the memory it was narrowed by (None where it compared everything)."""
+
+    def __init__(self, found: Any, hashed: int, record: dict[str, Any] | None, moment: Any = None) -> None:
+        self.found, self.hashed, self.record, self.moment = found, hashed, record, moment
+
+    def behind(self) -> int | None:
+        return None if self.found is None else len(self.found[1]) + len(self.found[2])
+
+    def said(self) -> str:
+        """In one line, how much of the index was hashed and why that was enough, where the comparison was narrowed."""
+        if self.record is None or self.found is None:
+            return ""
+        return (f"hashed {self.hashed} of {len(self.found[0])} file(s), only what changed since the last whole "
+                f"comparison ({self.moment(float(self.record['whole']))})")
+
+
+def compare(tooling: Any, record: dict[str, Any] | None) -> Compared:
+    """The index against the tree, through the gate's own candidates and memory: only what the memory cannot vouch
+    for is hashed. With no usable memory, or where reading or using it goes wrong, every tracked file is."""
+    if record is not None:
+        try:
+            read = tooling.read_once(record)
+            if not isinstance(read, str):
+                rows, candidates = read
+                tooling.HASHED[0] = 0
+                found = tooling.drift(candidates, rows)
+                if found is not None:
+                    return Compared(found, tooling.HASHED[0], record, tooling.moment_of)
+        except Exception:  # noqa: BLE001 — whatever the memory held, reading it or using it, it is the whole run
+            pass
+    tooling.HASHED[0] = 0
+    return Compared(tooling.drift(), tooling.HASHED[0], None)
+
+
+def memory_of(tooling: Any) -> dict[str, Any] | None:
+    """The gate's memory of its last whole comparison where this run may use it: outside CI, and usable."""
+    if any(os.environ.get(marker) for marker in tooling.CI_MARKERS):
+        return None
+    try:
+        record = tooling.remembered()
+    except Exception:  # noqa: BLE001
+        return None
+    return record if isinstance(record, dict) else None
+
+
 def set_aside() -> str:
     """Move the database and its journal files under `.codegraph/corrupt/`, keeping only this latest copy."""
     shutil.rmtree(ASIDE, ignore_errors=True)
@@ -227,6 +277,8 @@ def health() -> dict[str, Any]:
         return {}
     began = time.monotonic()
     result: dict[str, Any] = {}
+    tooling: Any = None
+    compared: Compared | None = None
     if route() is None:
         result = {"state": "unreachable", "detail": f"{NO_ROUTE}; so nothing can maintain or query the index"}
     elif not DATABASE.is_file():
@@ -246,7 +298,9 @@ def health() -> dict[str, Any]:
             result = {"state": "failed", "detail": f"the database failed its integrity check ({problem}), was moved "
                                                    f"to {where}/, and `codegraph init` failed: {said}"}
     else:
-        stale = behind()
+        tooling = gate()
+        compared = compare(tooling, memory_of(tooling))
+        stale = compared.behind()
         if stale:
             done, said = cli("sync", ".")
             result = {"state": "synced", "detail": f"{stale} tracked file(s) were ahead of the index; synced it"}
@@ -254,11 +308,17 @@ def health() -> dict[str, Any]:
                 result = {"state": "failed", "detail": f"{stale} tracked file(s) ahead of the index, and `codegraph "
                                                        f"sync` failed: {said}"}
         else:
-            result = {"state": "current", "detail": "opens, passes its integrity check, and describes the tree"}
+            result = {"state": "current", "detail": "opens, passes its integrity check, and describes the tree"
+                      + (f"; {compared.said()}" if compared.said() else "")}
     if result["state"] in ("built", "rebuilt", "synced"):
         problem, stale = (checked() if DATABASE.is_file() else "no database was written"), None
-        if problem is None:
-            stale = behind()
+        if problem is None and result["state"] == "synced" and tooling is not None and compared is not None:
+            compared = compare(tooling, compared.record)  # the comparison after the sync is made the same way
+            stale = compared.behind()
+            if not stale and compared.said():
+                result["detail"] += f"; {compared.said()}"
+        elif problem is None:
+            stale = behind()  # a database just made is not the one the memory compared: the whole comparison
         if problem is not None or stale:
             result = {"state": "failed", "detail": f"{result['detail']}, and it is still "
                       + (f"not sound ({problem})" if problem else f"behind on {stale} file(s)")}
