@@ -244,3 +244,53 @@ class NoBaseTest(SliceScopeFixtures):
         """D30: a target that is no branch name falls through to the trunk the record names, else `main`."""
         repo = self.no_trunk_ref()
         self.fails_with(repo, FETCH_MAIN, env={"GITHUB_BASE_REF": "-bad"})
+
+    MARKERS = ("GITHUB_ACTIONS", "GITLAB_CI", "CI")
+
+    def stated_not_checked(self, repo: Path, marker: str) -> None:
+        stderr = self.not_checked(self.run_gate(repo, {marker: "true"}))
+        self.assertNotIn("git fetch origin", stderr)
+
+    def test_a_ci_marker_alone_makes_an_attached_checkout_the_forges(self) -> None:
+        """AC-S22-22: depth-1 single-branch, `HEAD` attached, neither branch variable — each marker."""
+        for marker in self.MARKERS:
+            with self.subTest(marker=marker):
+                clone = self.clone(self.origin(), "--depth", "1", "--branch", "slice/S1")
+                self.assertEqual(out(clone, "symbolic-ref", "HEAD"), "refs/heads/slice/S1")
+                self.stated_not_checked(clone, marker)
+
+    def test_a_ci_marker_covers_the_other_no_base_states_too(self) -> None:
+        """AC-S22-22: no common ancestor at this depth, and an unrelated trunk."""
+        self.stated_not_checked(self.no_ancestor(), "CI")
+        repo = self.origin()
+        self.unrelated_main(repo)
+        self.stated_not_checked(repo, "GITLAB_CI")
+
+    def test_a_ci_marker_with_a_usable_base_still_refuses_a_host_change(self) -> None:
+        """AC-S22-23: the marker buys nothing where there is something to compare with."""
+        repo = self.origin()
+        self.commit(repo, "Makefile")
+        self.base_rejects(repo, "Makefile", {"GITHUB_ACTIONS": "true"})
+
+    def test_a_ci_marker_with_no_base_still_fails_a_lost_record(self) -> None:
+        """AC-S22-23: both lines, exit 1."""
+        repo = self.no_trunk_ref()
+        (repo / LOST).parent.mkdir(parents=True, exist_ok=True)
+        (repo / LOST).write_text("x\n")
+        result = self.run_gate(repo, {"CI": "true"})
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(LOST, result.stderr)
+        self.assertIn("NOT checked", result.stderr)
+
+    def test_a_ci_marker_on_another_branch_keeps_nothing_to_hold(self) -> None:
+        """AC-S22-23."""
+        clone = self.clone(self.origin(), "--depth", "1", "--branch", "slice/S1")
+        git(clone, "checkout", "-q", "-b", "feature/x")
+        result = self.run_gate(clone, {"GITHUB_ACTIONS": "true"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("not a `slice/<id>` branch — nothing to hold", result.stdout)
+
+    def test_an_empty_marker_is_no_marker(self) -> None:
+        """AC-S22-17 and D32's *non-empty*: the variable alone, markers empty, is a developer's exit 1."""
+        repo = self.no_trunk_ref()
+        self.fails_with(repo, FETCH_MAIN, env={"GITHUB_HEAD_REF": "slice/S1", "CI": "", "GITHUB_ACTIONS": ""})

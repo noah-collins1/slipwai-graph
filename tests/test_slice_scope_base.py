@@ -15,7 +15,7 @@ from test_slice_scope_root import SliceScopeFixtures, git
 class SliceScopeBaseTest(SliceScopeFixtures):
     def run_gate(self, repo: Path, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
         quiet = dict.fromkeys(("GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME", "GITHUB_BASE_REF",
-                               "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"), "")
+                               "CI_MERGE_REQUEST_TARGET_BRANCH_NAME", "CI", "GITHUB_ACTIONS", "GITLAB_CI"), "")
         return subprocess.run(["python3", self.script], cwd=repo, text=True, capture_output=True,
                               env={**os.environ, **quiet, **(env or {})})
 

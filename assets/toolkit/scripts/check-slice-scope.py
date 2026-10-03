@@ -80,9 +80,12 @@ pull-request target has only the local promise, and a pull request aimed at anot
 
 With no base to compare with, a developer's checkout fails with the command to run: `git fetch origin <trunk>`
 where there is no trunk ref, `git fetch --unshallow origin` where a shallow clone is too short to reach the
-branch point. A forge's pull-request checkout (the branch name in `GITHUB_HEAD_REF` or `CI_COMMIT_REF_NAME`, `HEAD`
-detached) exits 0 and says on stderr that the slice was NOT checked, because that checkout is depth 1; the verify
-job's checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`) for the check to hold there.
+branch point. A CI run — a detached pull-request checkout (the branch name in `GITHUB_HEAD_REF` or
+`CI_COMMIT_REF_NAME`, `HEAD` detached) or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — exits 0 and says
+on stderr that the slice was NOT checked, because that checkout is depth 1; the verify job's checkout needs
+`fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`) for the check to hold there. A local shell with one of those
+variables set gets the same NOT-checked line. With a usable base a CI run is held as locally, and a lost record
+still fails it.
 """
 
 from __future__ import annotations
@@ -653,8 +656,11 @@ def lost_records() -> list[str]:
 
 
 def forge_checkout() -> bool:
-    """A forge's pull-request checkout: the branch name came from a variable and `HEAD` is detached. Anything else
-    is a developer's."""
+    """A forge's checkout, by either route (D31, D32): the branch name came from a variable and `HEAD` is detached,
+    or the environment says the run is CI — `GITHUB_ACTIONS`, `GITLAB_CI` or `CI` non-empty. Anything else is a
+    developer's."""
+    if any(os.environ.get(v) for v in ("GITHUB_ACTIONS", "GITLAB_CI", "CI")):
+        return True
     named = any(os.environ.get(v) for v in ("GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME"))
     return named and git("symbolic-ref", "-q", "HEAD") is None
 
