@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from pathlib import Path
 
 from support import FactoryTestCase
 from test_codegraph_memory import whole_line
@@ -160,3 +161,61 @@ class WhatGitsComparisonNormalisesAwayTest(FactoryTestCase):
             self.assertEqual(audited.result.returncode, 0, audited.result.stderr)
             self.assertRegex(audited.result.stdout, narrowed_line(1))
             self.assertIn(path, audited.opened)
+
+
+class ATrackedFileTheIndexHoldsNoRowForTest(FactoryTestCase):
+    """T021: narrowing narrows the hashing, never the never-seen judgement; the whole run's own test decides it."""
+
+    def same_as_the_whole_run(self, project: Project, path: str) -> None:
+        failed = project.run(**NO_SYNC)
+        self.assertEqual(failed.returncode, 1, failed.stdout)
+        self.assertIn("never seen", failed.stderr)
+        self.assertIn(f"- {path}", failed.stderr)
+        whole = project.run(CI="1", **NO_SYNC)  # a CI marker: the same tree, compared whole
+        self.assertEqual((failed.returncode, failed.stderr), (whole.returncode, whole.stderr))
+
+    def declined(self, project: Project) -> Path:
+        """A tracked `.py` file the index declined: committed, no row, older than the index's last `indexed_at`."""
+        target = project.repo / "declined.py"
+        target.write_text("x = 1\n")
+        project.commit("a file the index declined")
+        os.utime(target, (0, 0))
+        return target
+
+    def test_a_declined_file_touched_after_a_whole_pass_is_judged_as_the_whole_run_judges_it(self) -> None:
+        for how in ("touch", "crlf"):
+            with self.subTest(how), tempfile.TemporaryDirectory() as directory:
+                project = Project(self, directory)
+                target = self.declined(project)
+                project.whole()
+                project.slice()
+                if how == "touch":
+                    os.utime(target)
+                else:
+                    target.write_bytes(b"x = 1\r\n")
+                self.assertEqual(project.git("diff", "--name-only", "HEAD"), "", "git does not name it")
+                self.same_as_the_whole_run(project, "declined.py")
+
+    def test_hold_a_declined_file_left_alone_stays_current(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = Project(self, directory)
+            self.declined(project)
+            project.whole()
+            project.slice()
+            passed = project.run(**NO_SYNC)
+            self.assertEqual(passed.returncode, 0, passed.stderr)
+            self.assertRegex(passed.stdout, narrowed_line(0))
+
+    def test_hold_a_file_newly_tracked_after_the_memory_is_judged_however_git_reports_it(self) -> None:
+        """Hold: the run is the whole run's, committed, staged, or intent-to-add. Its teeth are git's report."""
+        for how in ("commit", "add", "add -N"):
+            with self.subTest(how), tempfile.TemporaryDirectory() as directory:
+                project = Project(self, directory)
+                project.whole()
+                project.slice()
+                (project.repo / "brand_new.py").write_text("y = 2\n")
+                if how == "commit":
+                    project.commit("a new file")
+                else:
+                    project.git("add", *how.split()[1:], "brand_new.py")
+                self.same_as_the_whole_run(project, "brand_new.py")

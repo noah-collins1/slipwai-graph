@@ -167,7 +167,8 @@ def listing(label: str, paths: list[str]) -> list[str]:
 def drift(only: set[str] | None = None) -> tuple[dict[str, tuple[str, float]], list[str], list[str]] | None:
     """What the index holds, and the tracked files it has never seen or read before they changed; None where
     there is no index, no `files` table to read, or no checkout to compare it with. `only` narrows the judgement to
-    those paths and nothing else; with none, every tracked file is judged, which is what `behind()` asks."""
+    those paths to be *hashed*; a tracked file the index holds no row for is judged either way. With none, every
+    tracked file is hashed, which is what `behind()` asks."""
     if not INDEX.is_file():
         return None
     rows = indexed()
@@ -183,12 +184,16 @@ def drift(only: set[str] | None = None) -> tuple[dict[str, tuple[str, float]], l
     last = max((at for _, at in rows.values()), default=0.0)
     missing, changed = [], []
     for path in paths:
-        if Path(path).suffix not in suffixes or (only is not None and path not in only):
+        if Path(path).suffix not in suffixes:
             continue
         absolute = ROOT / path
         if not absolute.is_file():
             continue
         row = rows.get(path)
+        # Narrowing is of the hashing: a file with a row and no reason to be hashed is the memory's to vouch for.
+        # One with no row costs a stat, not a hash, and is judged as the whole run judges it, whatever git reports.
+        if row is not None and only is not None and path not in only:
+            continue
         if row is None:
             # A file the index has never seen is a hole only where it appeared *after* the index last ran.
             # Matching the suffix is not enough: CodeGraph declines files of a language it indexes — a
