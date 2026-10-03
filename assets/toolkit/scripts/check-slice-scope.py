@@ -32,7 +32,8 @@ What a slice's change may contain — everything since the branch left `main`, c
   CI systems `slipwai adopt` recognises, and `ci.gate`), the harnesses' files and directories as
   `<delivery>/scripts/agents/registry.json` names them (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`,
   `.claude/`, `.agents/`, `.kiro/` and the rest; a registry that is missing or unreadable adds nothing), the
-  delivery directory less `survey/pinned.md` and `survey/running.md`, and every path in `<delivery>/.written`.
+  delivery directory less `survey/pinned.md` and `survey/running.md` (where the delivery directory is the root,
+  `.written`, `baseline.json` and the other survey pages), and every path in `<delivery>/.written`.
   Git hooks and `.gitignore` are the repository's own. A path is recorded as `x`, `x/` or `./x` alike;
 - **the context's events module additively**: a line may be added, none removed. It is the contract;
 - **new migration files only**, timestamped so two slices never mint the same name: `YYYYMMDDHHMM_<name>`,
