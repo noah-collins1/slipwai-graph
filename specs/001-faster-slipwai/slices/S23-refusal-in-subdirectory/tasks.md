@@ -370,7 +370,7 @@ service boundary in the diff.
 
 ### T010 — *One git cannot read* is held by an example (`MEDIUM` · AC-S23-8 · Principle V)
 
-- [ ] Tests only; no production edit expected. AC-S23-8 names two states and `tests/test_uncommitted_places.py` holds
+- [x] (`9511efe`) Tests only; no production edit expected. AC-S23-8 names two states and `tests/test_uncommitted_places.py` holds
   one (a directory in no repository). By hand at `12a4608`: project in `sub/`, `delivery/docs/convergence.md`
   edited, `.git/HEAD` overwritten with `garbage` → `adopt --refresh` exit 0, no traceback, no `written.json`, the
   edit written over — the criterion's *as today*. Nothing fails if that becomes a refusal or a traceback.
@@ -385,7 +385,7 @@ today copies a top-level project only), each asserting exit 0, nothing refused, 
 
 ### T011 — Every status entry that carries a second path is read as one entry (`LOW` · AC-S23-2, -7 · Principle V)
 
-- [ ] `changed()` skips the origin of a rename or copy only where the *first* status letter is `R` or `C`
+- [x] (`0bd2d2d`) `changed()` skips the origin of a rename or copy only where the *first* status letter is `R` or `C`
   (`uncommitted.py:55`), and nothing observes even that: with the two lines deleted, 42 tests stay green (this
   pass's mutation). Where the second letter is `R` — a file renamed in the working tree and added with
   `git add -N` — the origin is read as an entry of its own with its first three characters cut off. Reproduced:
@@ -431,7 +431,7 @@ have met changes.
 
 ### T014 — Each placement repeats the criteria AC-S23-6 names (`LOW` · AC-S23-6 · Principle V)
 
-- [ ] `PlacementChecks.check` runs AC-S23-1, the record's spelling and the `other/` edit. AC-S23-6 says AC-S23-1,
+- [x] (`6e6c154`) `PlacementChecks.check` runs AC-S23-1, the record's spelling and the `other/` edit. AC-S23-6 says AC-S23-1,
   -3 and -5 hold *as written*: the second run that must exit 0 over what the first left (AC-S23-3) and the file
   outside the project whose path spells one the run writes (AC-S23-5) are not repeated per placement. Both rest on
   the same twelve lines and hold in `sub/`; the gap is the example, not the behaviour.
@@ -444,7 +444,7 @@ a recorded path (for `a/b/`, at the top *and* in `a/`) neither refuses nor is re
 
 ### T015 — A refused `--decline` is told what `--decline` writes (`LOW` · AC-S23-2 · delivery adapter)
 
-- [ ] `slipwai adopt --decline themes` over an uncommitted edit prints `` `slipwai adopt --confirm` writes
+- [x] (`d803713`) `slipwai adopt --decline themes` over an uncommitted edit prints `` `slipwai adopt --confirm` writes
   `delivery/docs/convergence.md` … `` (`confirm.py:124`): the person is told of a flag they did not give. Older than
   this slice and the same at the top; AC-S23-2 asks only that it is *refused the same way*, which it is. For the
   host to place — here or the Parking Lot. **GREEN names the sweep:** every verb string handed to
@@ -456,3 +456,14 @@ a recorded path (for `a/b/`, at the top *and* in `a/`) neither refuses nor is re
 **Host note on T010, T011, T014, T015 (D42).** All four are this slice's, each through its test. T015's files:
 `src/slipwai/confirm.py`, a new example in `tests/test_uncommitted_subdirectory.py`, and a clause in
 `changelog.d/refusal-in-subdirectory.md`; T011's fragment clause the same way where a person could have met it.
+
+**Phase 4 record (host, cruise iteration 6).** T011, T015, T010 and T014 each ran as one `drive-implement` delegate
+on sonnet, fresh context, boundary `task`, one after another. T011: `R` or `C` in either status column is one entry
+(new `tests/test_uncommitted_renames.py`, twelve shapes at the top and in `ab/`, the converge pass's mutation now
+caught by sixteen subtests); the fragment is unchanged, since no refusal a person could meet through the CLI was
+reproduced. T015: a refused run names the flags it was given; the fragment says so. T010: no repository, an
+unreadable `HEAD` and an unreadable index, at the top and in `sub/` — a state where only `rev-parse` fails could
+not be made with a real repository, so that half of the test is held through `status` alone. T014: every placement
+repeats the second run, the edit on top and the file outside the project; the second-run and edit-on-top
+assertions were not seen failing on their own (every mutation tried fails the first refusal first).
+Pass 1's verdict stands: converged, nothing `HIGH` or `CRITICAL`, no second pass.
