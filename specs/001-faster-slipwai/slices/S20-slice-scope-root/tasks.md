@@ -76,7 +76,7 @@ the next commit.
 
 ### T002 — The host surface stays the host's at a root deployable (R2 · AC-S20-2, -3, -4, -5)
 
-- [ ] **Open**
+- [x] **Done** — `5345251` (drive-implement · model: sonnet · delegated, fresh context · rule/rule · split=0). RED seen as `<path> was let through` for e1, e2, e4, e5, e6, e7, e8; e3 green on arrival. One example added at the host's request: `test_a_real_adoption_at_the_root` drives `slipwai adopt --yes` and checks the adopted tree's own `delivery/scripts/check-slice-scope.py`; it was not seen red before the code (its first run errored in its own setup) and was shown to have teeth afterwards by running it against the script at `c281272` (*Makefile was let through*). A real adoption records `kind: application`.
 
 **Rule R2** — where the root deployable would claim a path, the host's surface is refused with today's *outside
 every deployable … Land it on `main` before the fan-out*. Needs T001 (the fallback it restricts).
@@ -133,7 +133,7 @@ a row headed with the whole id or the bare prefix `[A-Za-z]+\d+`, and its findin
 
 ### T004 — `check-benchmark` finds the record under the whole id (R6 · AC-S20-12)
 
-- [ ] **Open**
+- [x] **Done** — `d4a85da` (drive-implement · model: sonnet · delegated, fresh context · rule/rule · split=0). RED seen: e1 warned of `slices/S00`, e3 named `slices/S00` instead of `slices/S00-run-path`; e2 and e4 green on arrival. `check()` is `done_slices()`'s only caller in the script; the not-closed warning names whichever folder holds the record.
 
 **Rule R6** — the record is looked for at `slices/<whole id>/`, then `slices/<prefix>/`. Shares
 `tests/test_register_ids.py` with T003, so it follows T003.

@@ -1,8 +1,17 @@
 PATCH
 
-**`check-slice-scope` no longer refuses a slice's own code in an adopted repository.** A repository adopted
-with its one application at the root records that deployable at `.`, and the gate read `.` as owning no path,
-so a slice's tests and its code outside a subdirectory were all refused as *outside every deployable*. A
-deployable at `.` now owns every path no deployable in a subdirectory claims; a service under `apps/` still
-owns its own files, and an empty `path` still owns nothing. This asks nothing of a repository already
-generated: `slipwai migrate` carries the corrected script.
+**`check-slice-scope` no longer refuses a slice's own code in a repository adopted at its root (`adopt`,
+experimental), and a slice id with a slug is read whole.** A repository adopted with its one application at
+the root records that deployable at `.`, and the gate read `.` as owning no path, so a slice's tests and its
+code were all refused as *outside every deployable*. A deployable at `.` now owns every path no deployable in a
+subdirectory claims, except what stays the host's there: `project.json`, the root `Makefile`, `.specify/`, CI
+configuration, the agents' guidance and settings, every path in `<delivery>/.written`, and the delivery
+directory apart from `survey/pinned.md` and `survey/running.md`, which the ladder has a slice write. A service
+under `apps/` still owns its own files, an empty `path` still owns nothing, and a project with no deployable at
+`.` gets the answers it had.
+
+`check-decisions` and `check-benchmark` cut a register id such as `S00-run-path` to `S00`, so an adversary-log
+row headed with the full id was reported missing and the slice's `benchmark.json` was looked for under
+`slices/S00/`. Both now read the id whole, and still accept a row or a record written under the bare prefix.
+
+This asks nothing of a repository already generated: `slipwai migrate` carries the corrected scripts.

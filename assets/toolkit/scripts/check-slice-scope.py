@@ -25,12 +25,12 @@ What a slice's change may contain — everything since the branch left `main`, c
   is never edited; superseding one is the host's, on `main`;
 - **code and tests of the service that owns it** — `service` in its model block, or any service where the
   model names none — and, where the block names a `context`, nothing under another context's directory in
-  `domain/` or `application/`. A browser app is open to every slice: a white box is one screen. A deployable recorded at `.` — an adopted
-  repository's one application — owns every path no other deployable claims, its tests and sibling
-  directories included, except the host's surface: `project.json`, the root `Makefile`, `.specify/`, CI
-  configuration (`.github/` and its forge siblings, and `ci.gate`), harness guidance (`AGENTS.md`, `CLAUDE.md`,
-  `.claude/` and the other agents' directories), the delivery directory less `survey/pinned.md` and
-  `survey/running.md`, and every path in `<delivery>/.written`;
+  `domain/` or `application/`. A browser app is open to every slice: a white box is one screen. A deployable
+  recorded at `.` — an adopted repository's one application — owns every path no other deployable claims, its
+  tests and sibling directories included, except the host's surface: `project.json`, the root `Makefile`,
+  `.specify/`, CI configuration (`.github/` and its forge siblings, and `ci.gate`), harness guidance
+  (`AGENTS.md`, `CLAUDE.md`, `.claude/` and the other agents' directories), the delivery directory less
+  `survey/pinned.md` and `survey/running.md`, and every path in `<delivery>/.written`;
 - **the context's events module additively**: a line may be added, none removed. It is the contract;
 - **new migration files only**, timestamped so two slices never mint the same name: `YYYYMMDDHHMM_<name>`,
   or `V<YYYYMMDDHHMM>__<name>` under Flyway. The shipped numbered ones keep working — the order is lexical
