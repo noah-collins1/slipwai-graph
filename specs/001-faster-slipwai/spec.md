@@ -104,14 +104,16 @@ changed. A per-slice stage is briefed with its own slice block and one hop of ne
 **Why this priority**: Rendering is quadratic over a feature today (one browser per diagram per merge) and the
 per-slice stages read the whole model, so context grows with every slice.
 
-**Independent Test**: On the 16-slice fixture, change one slice; `make model` launches one browser, rewrites
-two diagrams and finishes in under 2 s. Bytes handed to the example-map stage for slice 16 equal those for
+**Independent Test**: On the 16-slice fixture, change one slice; `make model` launches one browser, redraws
+the three diagrams whose source changed (that slice's, its segment's and the whole timeline's; D67) and finishes
+in under 2 s. Bytes handed to the example-map stage for slice 16 equal those for
 slice 1.
 
 **Acceptance Scenarios**:
 
 1. **Given** a 16-slice model with one changed slice, **When** `make model` runs, **Then** one browser launches
-   and only that slice's and its segment's diagrams are rewritten.
+   and exactly the diagrams whose source changed are redrawn: that slice's, its segment's and the whole
+   timeline's, which contains every slice (D67).
 2. **Given** a 200-slice synthetic model, **When** `make check-model` runs, **Then** it finishes in time linear
    in slices.
 3. **Given** a per-slice stage, **When** it is briefed, **Then** the brief holds the slice's block and the
@@ -1160,6 +1162,87 @@ two iterations silently.*
 - **AC-S02-88** — Given the stream's identity check and each `except` arm around the record in `health()`, then
   each is seen red when removed, by an example with a stand-in written in the test tree, or is gone (T020, T021).
   (D63)
+
+### S11-render-once
+
+**Gaps reviewed** 2026-10-03, cruise iteration 10, host with `drive-skipper` for D68 and D69: the two examples in
+`story-split.md` against `main()`, `runMermaid()` and `stampSvg()` in `assets/toolkit/scripts/event-model/render.ts`,
+`stamp()` and `extractHash()` in `mermaid.ts`, the stamp's reader in `check.ts`, the `model` recipe in
+`src/slipwai/project/model_targets.py` and the ignore lines in `src/slipwai/project/gitignore.py`. Measured on a
+project generated for the purpose (event-modelling profile, Python backend, no frontend, target `none`; a model of
+16 state-change slices): today's run starts 25 browsers and takes 15.95 s; one browser drawing one diagram takes
+about 0.6 s; the recipe's install step, already installed, 0.29 s. Found and written back: the example's *two
+diagrams* left out the whole timeline, which contains every slice (D67); a skip resting on the source hash alone
+would keep a picture drawn by an older renderer, and a stamped file cut short would be skipped as current (D68);
+the two output directories are deleted wholesale today, which a skip cannot survive (D68); nothing said what the
+2 seconds times, on what, or what holds *one browser* without a browser in the suite (D69). Every rendered file is
+ignored in a generated project, so a fresh checkout and CI draw everything: the skip is a developer's-machine
+saving and the single browser is the saving everywhere.
+
+- **AC-S11-1** — Given any model with at least one slice, when `make model` runs, then at most one renderer session
+  (one browser) is opened: exactly one where at least one diagram is drawn, opened on the first diagram to draw,
+  and none where nothing is drawn. (D69)
+- **AC-S11-2** — Given the reference fixture (D69: 16 state-change slices of three frames each, default `render`
+  settings, no slice reading another — 25 diagrams: 1 whole timeline, 8 segments, 16 slices), every diagram drawn
+  by a previous run, and an edit to one slice's own content that keeps its frame count and that no other slice
+  reads, when `make model` runs, then one session is opened, exactly three diagrams are redrawn — the timeline,
+  that slice's segment and that slice — and 22 are left as they were, byte for byte. (D67)
+- **AC-S11-3** — Given any edit to the model, then exactly the diagrams whose Mermaid source hash changed are
+  redrawn and no other: an edit that adds or removes a frame also redraws every later slice and segment, because
+  frame numbers are global. (D67, D68)
+- **AC-S11-4** — Given a first run, a fresh checkout or a CI run on the fixture, then one session is opened, 25
+  diagrams are drawn and none is left; no time is claimed for it. Given a one-slice model on a first run, then one
+  session draws three diagrams. (D69)
+- **AC-S11-5** — Given a diagram, then it is left only when all four hold, and is drawn otherwise: the first line
+  of its SVG is `<!-- em-source-sha256: <hash> -->` with the hash of the Mermaid the model produces now (the `.mmd`
+  on disk is never the evidence); its second line is `<!-- em-renderer-sha256: <key> -->` with this run's renderer
+  key; the file ends with `</svg>` once trailing whitespace is trimmed; and no CI marker is set (`CI`,
+  `GITHUB_ACTIONS` or `GITLAB_CI` non-empty). (D68)
+- **AC-S11-6** — Given the renderer key, then it is one SHA-256 over the installed mermaid-cli version and the
+  installed mermaid version, each read from its `package.json` under `scripts/event-model/.mermaid-cli/`; the bytes
+  of `render.ts`, of `patch-mermaid-swimlanes.ts` and of any other script the drawing runs through (the plan names
+  the closed set); and the bytes of the file `MERMAID_PUPPETEER_CONFIG` names, or a fixed word where it is unset.
+  A change to any one of them redraws every diagram on the next run. (D68)
+- **AC-S11-7** — Given an SVG with no renderer line (one an earlier factory drew), then it is redrawn, once. Given
+  the second line, then `extractHash` reads the source stamp exactly as before, and the page carries both comments
+  where it inlines the picture. (D68)
+- **AC-S11-8** — Given a diagram being drawn, then its SVG reaches its final name only by a rename of a complete
+  file that already carries both lines; the temporary file sits on the same filesystem in a directory the
+  project's ignore list already covers, and no ignore line is added. Given a draw that fails, then the earlier
+  file is as it was, the run names the diagram and exits non-zero. Given a file torn by anything else (no closing
+  `</svg>`), then it is redrawn. (D68)
+- **AC-S11-9** — Given `PNG=1` or `--png`, then `model.png` is drawn on every such run, never left, in the same
+  session and by the same rename; not asked for, an existing `model.png` is left as today. (D68)
+- **AC-S11-10** — Given a person who wants everything redrawn, then there is no setting and no flag: deleting a
+  diagram, or `segments/` and `slices/`, is the way, and `assets/toolkit/docs/event-model/README.md` says so in one
+  sentence. (D68)
+- **AC-S11-11** — Given `segments/` and `slices/`, when a run starts, then every entry whose name the current model
+  does not produce (`model-<i>.mmd` and `model-<i>.svg` per segment, `<slice id>.mmd` and `<slice id>.svg` per
+  slice) is removed before anything is drawn — file or directory, a leftover temporary included — so a renamed or
+  removed slice still leaves nothing behind. The empty-model branch does what it does today. (D68)
+- **AC-S11-12** — Given the `.mmd` files, `model.html` and the README block, then each is computed every run and
+  written only where its bytes differ from the file on disk; `model.html` is built from the SVGs on disk after
+  drawing. One `wrote <path>` line is printed for each file the run wrote and none for a file it left. (D68, D69)
+- **AC-S11-13** — Given a run on a model with slices, then its closing line says what it did: on the fixture's edit,
+  `model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. Open docs/event-model/model.html to browse it.`; where
+  nothing changed, `model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. Open
+  docs/event-model/model.html to browse it.` The empty-model message stays as it is. (D69)
+- **AC-S11-14** — Given the suite, then the counts — sessions opened, diagrams drawn, diagrams left — are held for
+  the changed-slice run, the nothing-changed run and the first run through a stand-in written in the test tree that
+  implements the session's interface: no browser, no mocking framework, no clock. (D69)
+- **AC-S11-15** — Given the reference fixture on a warm tree (mermaid-cli installed, every diagram drawn by a
+  previous run, then the one edit; no PNG), when `make model` runs at the demo, then the whole recipe as typed,
+  its install step included, finishes in under 2 seconds of wall time and one real browser is seen to start by a
+  means other than the run's closing line. The command, the machine and the number are written in the quickstart,
+  beside the first run's time and today's 15.95 s. A measurement of 2 seconds or more is a failed demo, never a
+  revised number. (D69, SC-004)
+- **AC-S11-16** — Given what the renderer already does — the swimlane patch applied to the installed mermaid before
+  the first draw, `MERMAID_PUPPETEER_CONFIG` passed to the browser, the line naming that variable when Chromium
+  will not start as root, the pinned width — then each still holds through the one session.
+- **AC-S11-17** — Given a repository already generated, after `slipwai migrate`, then nothing is asked of it: its
+  first `make model` redraws every diagram once, and since the output is ignored nothing committed changes; one
+  that removed the ignore lines and commits the diagrams sees the second comment line in each SVG once. The
+  fragment in `changelog.d/` says both and claims PATCH; `VERSION` stays `1.6.0.dev0`. (D68)
 
 ### S24-ci-fetches-slice-base
 

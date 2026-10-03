@@ -1,0 +1,117 @@
+{
+  "_comment": "What each stage of /drive cost this slice and how well it did, one entry per stage run, appended by scripts/agents/benchmark.py at the stage's start and end. Tokens come from the harness's own transcript or are null with the reason; signals are what the stage reported. `make benchmark` reads every record. docs/agent-harnesses.md says what the numbers can and cannot be compared with.",
+  "feature": "001-faster-slipwai",
+  "slice": "S11-render-once",
+  "from": "c4a266557f201f300d0d44a6ff0902f663d0eb05",
+  "stages": [
+    {
+      "stage": "gaps",
+      "started": "2026-10-03T21:44:57Z",
+      "planned": "gaps: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 0,
+          "done": 28
+        },
+        "end": {
+          "open": 0,
+          "done": 28
+        }
+      },
+      "ended": "2026-10-03T21:47:21Z",
+      "seconds": 144,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b.jsonl": 413894
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b.jsonl": 726973
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "89c9fcef-9863-417c-bb5a-0a2437f5497b",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-fable-5-1": {
+            "input": 22,
+            "output": 9630,
+            "cache_read": 1131569,
+            "cache_creation": 45942
+          }
+        },
+        "subagents": {},
+        "agents": []
+      },
+      "ran": [
+        "claude-fable-5-1"
+      ],
+      "agents": null,
+      "delegated": false,
+      "signals": {
+        "driver": "cruise"
+      }
+    },
+    {
+      "stage": "skipper",
+      "started": "2026-10-03T21:47:26Z",
+      "planned": "skipper: skipper → host model — `skipper` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 0,
+          "done": 28
+        },
+        "end": {
+          "open": 0,
+          "done": 28
+        }
+      },
+      "ended": "2026-10-03T21:50:14Z",
+      "seconds": 168,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b.jsonl": 726973
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b.jsonl": 810370,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a0672ff74d4cfa537.jsonl": 358253,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/89c9fcef-9863-417c-bb5a-0a2437f5497b/subagents/agent-a44316f7c9325eb59.jsonl": 279721
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "89c9fcef-9863-417c-bb5a-0a2437f5497b",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-fable-5-1": {
+            "input": 4,
+            "output": 4769,
+            "cache_read": 242083,
+            "cache_creation": 2577
+          }
+        },
+        "subagents": {
+          "claude-fable-5-1": {
+            "input": 26,
+            "output": 3053,
+            "cache_read": 543803,
+            "cache_creation": 127354
+          }
+        },
+        "agents": [
+          "drive-skipper"
+        ]
+      },
+      "ran": [
+        "claude-fable-5-1"
+      ],
+      "agents": [
+        "drive-skipper"
+      ],
+      "delegated": true,
+      "signals": {
+        "driver": "cruise"
+      }
+    }
+  ]
+}
