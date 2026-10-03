@@ -327,6 +327,16 @@ def fetch_command(name: str) -> str:
     return f"git fetch origin {name}:refs/remotes/origin/{name}"
 
 
+MASTER_CLAUSE = ("`master` is here too and `project.json` records no trunk — if `master` is the trunk, set "
+                 "`ci.branch` to `master` in `project.json` on it, or delete the stale `main`")
+
+
+def newer_master(main_base: str) -> bool:
+    """Whether `master` has a ref and a base strictly newer than `main`'s (D33): words only, never the base."""
+    exists, base = bases_of("master")
+    return exists and base is not None and base != main_base and is_ancestor(main_base, base)
+
+
 def merge_base() -> Base:
     """Where the branch left the trunk: the name `ci.branch` of the working tree's `project.json` records where it
     is usable and has a ref, else `main` where it has one, else `master` — so `master` counts only as the recorded
@@ -348,6 +358,8 @@ def merge_base() -> Base:
     for name in names:
         exists, base = bases_of(name)
         if exists:
+            if name == "main" != recorded and base and newer_master(base):
+                passed_over = "; ".join(filter(None, (passed_over, MASTER_CLAUSE)))
             target = target_base(name)
             if base is None and target and target[1]:
                 return Base(target[1], target[0], True, passed_over)
