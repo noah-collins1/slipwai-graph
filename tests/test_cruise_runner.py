@@ -13,6 +13,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+from unittest import mock
 
 from support import FactoryTestCase
 
@@ -76,19 +77,10 @@ class CruiseRunnerTest(FactoryTestCase):
         `CRUISE_ITERATION`. A script a test spawns is not an iteration: `cruise()` hands it the parent's
         environment without the two marks, so `loop` reads as typed (UNREAD), not as a refused nested start."""
         marks = {"CRUISE_RUNNER": "1", "CRUISE_ITERATION": "2"}
-        before = {k: os.environ.get(k) for k in marks}
-        os.environ.update(marks)
-        try:
-            with tempfile.TemporaryDirectory() as directory:
-                repo = self.generate(directory, "inherits", "standard", "python")
-                enable(repo)
-                typed = cruise(repo, "loop")
-        finally:
-            for key, value in before.items():
-                if value is None:
-                    os.environ.pop(key, None)
-                else:
-                    os.environ[key] = value
+        with mock.patch.dict(os.environ, marks), tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "inherits", "standard", "python")
+            enable(repo)
+            typed = cruise(repo, "loop")
         self.assertIn(UNREAD, typed.stdout + typed.stderr)
 
     def test_the_settings_file_the_script_and_the_command_agree_and_a_change_is_checked(self) -> None:
