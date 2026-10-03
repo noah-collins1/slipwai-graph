@@ -117,3 +117,37 @@ class HeldTest(FactoryTestCase):
             for name in FOUR:
                 self.assertIn(name, listed)
             self.assertNotIn("owned:", result.stdout)
+
+
+class UncommittedTest(FactoryTestCase):
+    """The refusal protects what a run writes; it no longer lists the four a refresh leaves where they are (R3)."""
+
+    def test_an_uncommitted_edit_to_a_seeded_file_is_not_refused_and_stands(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            path = repo / CRUISE
+            path.write_text(json.dumps({**json.loads(path.read_text()), "mine": 10}, indent=2) + "\n")
+            edited = path.read_text()
+            result = slipwai(repo, "adopt", "--refresh")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(path.read_text(), edited)
+
+    def test_an_uncommitted_hand_edit_to_the_convergence_page_is_still_refused_by_name(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            self.assertEqual(slipwai(repo, "adopt", "--confirm", "shop").returncode, 0)
+            page = repo / "delivery/docs/convergence.md"
+            page.write_text(page.read_text() + "\nA note of mine.\n")
+            refused = slipwai(repo, "adopt", "--refresh")
+            self.assertEqual(refused.returncode, 2)
+            self.assertIn("`delivery/docs/convergence.md`", refused.stderr)
+
+    def test_an_uncommitted_deletion_of_a_seeded_file_is_still_refused_by_name(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            self.assertEqual(slipwai(repo, "adopt", "--confirm", "shop").returncode, 0)
+            (repo / CRUISE).unlink()
+            refused = slipwai(repo, "adopt", "--refresh")
+            self.assertEqual(refused.returncode, 2)
+            self.assertIn(f"`{CRUISE}`", refused.stderr)
+            self.assertFalse((repo / CRUISE).exists(), "and nothing was written")

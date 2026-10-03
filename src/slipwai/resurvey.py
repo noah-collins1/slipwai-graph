@@ -58,10 +58,10 @@ class Refreshed:
 
 
 def writes(root: Path, layout: Layout) -> set[str]:
-    """Every path a refresh may write or remove: the factory's listing, and the pages the record drives."""
+    """Every path a refresh may write or remove: the listing and the record's pages, less the seeded it keeps."""
     listing = root / layout.under(WRITTEN)
     listed = set(listing.read_text(encoding="utf-8").split()) if listing.is_file() else set()
-    return listed | {layout.under(page) for page in (SURVEY_PAGE, STRUCTURE_PAGE, "docs/convergence.md")}
+    return listed.union(map(layout.under, (SURVEY_PAGE, STRUCTURE_PAGE, "docs/convergence.md"))) - kept(root, layout)
 
 
 def reconciled_app(app: App, found: Survey, done: Refreshed) -> App:
