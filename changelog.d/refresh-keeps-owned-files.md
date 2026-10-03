@@ -15,6 +15,10 @@ Separately, the strategy page no longer names a prerequisite the map shows as me
 and the structure are now read from the rows as the map shows them after the refresh, in `project.json` and in
 `<delivery>/docs/change-strategy.md` alike. What is recommended, and why, is derived as before.
 
+A person who lowers `release.path` in `project.json` under a Path to production row they placed higher now has the
+row follow it at the next refresh, as `check-convergence` would have made them write by hand, so the strategy page
+names *a pipeline that deploys on a passing `verify`* again; a row at or below what the record says stands.
+
 A repository whose refresh already reset one of the four restores it from its history: `git checkout <commit> --
 .specify/cruise.json` (and likewise the others) from the commit before that refresh. Nothing else is asked of a
 repository already adopted.

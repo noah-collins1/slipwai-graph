@@ -219,6 +219,18 @@ def strategy_row(adoption: Adoption) -> Row:
     return row(axis, "why-recorded", f"why: {adoption.why}", "detected")
 
 
+def follows_record(old: Row, new: Row) -> bool:
+    """Whether a person's Path to production row gives way to the fresh one: the fresh row carries a person's
+    provenance (only a `release` record a person answered gives it that), sits at `unknown`, `manual` or
+    `scripted`, and the recorded rung is above it."""
+    axis = BY_KEY["path-to-production"]
+    return (
+        new["axis"] == axis.key and old.get("provenance") in ("confirmed", "overridden")
+        and new["provenance"] in ("confirmed", "overridden") and new["rung"] in ("unknown", "manual", "scripted")
+        and old.get("rung") in axis.rungs and axis.index(old["rung"]) > axis.index(new["rung"])
+    )
+
+
 def reconciled(recorded: list[Row], fresh: list[Row], refreshed: list[str]) -> list[Row]:
     """The recorded rows against a fresh detection: a row the tree or nobody placed follows the tree, a row a
     person placed stands — its `planned` slice with it — and every change is said."""
@@ -232,6 +244,15 @@ def reconciled(recorded: list[Row], fresh: list[Row], refreshed: list[str]) -> l
         old = kept.get(new["axis"])
         if old is None:
             result.append(new)
+            continue
+        if follows_record(old, new):
+            # A person's `release.path` below the row they placed: the gate would fail the row, so the refresh
+            # writes what it would have had them write. The row keeps its `planned`.
+            refreshed.append(
+                f"convergence: path-to-production refreshed from `{old['rung']}` to `{new['rung']}` "
+                "(release.path in project.json)"
+            )
+            result.append({**new, "planned": old.get("planned")})
             continue
         if old.get("provenance") in ("confirmed", "overridden"):
             # The person's words are the evidence for a row they placed — `/ground` writes them there — and the

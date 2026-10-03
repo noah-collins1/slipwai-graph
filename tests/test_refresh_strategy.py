@@ -130,6 +130,32 @@ class RefreshStrategyTest(FactoryTestCase):
             self.assertEqual(((repo / "project.json").read_text(), (repo / PAGE).read_text()), settled)
 
 
+def released(parent: Path, path: str) -> Path:
+    """`node_repository` adopted with `--release <path>`: the row and the `release` record are a person's answer."""
+    repo = node_repository(parent)
+    result = slipwai(repo, "adopt", "--yes", "--no-init", "--release", path)
+    assert result.returncode == 0, result.stderr
+    return repo
+
+
+def release_path(repo: Path, path: str) -> None:
+    """A person edits `release.path` in `project.json` and commits."""
+    document = record(repo)
+    document["release"]["path"] = path
+    (repo / "project.json").write_text(json.dumps(document, indent=2) + "\n")
+    commit(repo)
+
+
+def path_row(repo: Path) -> dict:
+    return next(r for r in record(repo)["convergence"] if r["axis"] == "path-to-production")
+
+
+def refreshed_out(repo: Path) -> str:
+    result = slipwai(repo, "adopt", "--refresh")
+    assert result.returncode == 0, result.stderr
+    return result.stdout
+
+
 def maven(parent: Path, why: str | None) -> Path:
     """A Maven service on Spring 3.2.8 and JUnit 3, past end of life, adopted (with `why` when there is one): the
     tree reads Safety net `tests-exist`, so `before` carries the platform, the delivery rungs and, for a trigger
@@ -138,6 +164,80 @@ def maven(parent: Path, why: str | None) -> Path:
     result = slipwai(repo, "adopt", "--yes", "--no-init", *(["--why", why] if why else []))
     assert result.returncode == 0, result.stderr
     return repo
+
+
+class PersonLowersReleasePathTest(FactoryTestCase):
+    """AC-S21-12 (D28): a person's Path to production row above what a `release` record they answered allows follows
+    that record down at a refresh; every other row of theirs stands."""
+
+    def lowered(self, rung: str, adopted_at: str = "pipeline") -> tuple[Path, str]:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        repo = released(Path(directory.name), adopted_at)
+        self.assertEqual((path_row(repo)["rung"], path_row(repo)["provenance"]), (adopted_at, "overridden"))
+        release_path(repo, rung)
+        return repo, refreshed_out(repo)
+
+    def test_a_release_path_lowered_below_the_row_moves_the_row_and_names_the_prerequisite(self) -> None:
+        repo, out = self.lowered("manual")
+        row = path_row(repo)
+        self.assertEqual((row["rung"], row["provenance"]), ("manual", "overridden"))
+        self.assertIn("convergence: path-to-production refreshed from `pipeline` to `manual`", out)
+        self.assertIn("release.path", out)
+        self.assertEqual(leads(repo, "the path to production is `manual`"), (True, True))
+        self.assertEqual(leads(repo, PIPELINE), (True, True), "the pipeline is a prerequisite again")
+        self.assertIn("manual", (repo / "delivery/docs/convergence.md").read_text())
+
+    def test_the_sweep_every_lower_rung_the_record_can_name_under_every_rung_above_it(self) -> None:
+        for above in ("pipeline", "one-path", "pipeline-decides"):
+            for below in ("unknown", "manual", "scripted"):
+                with self.subTest(row=above, release=below):
+                    directory = tempfile.TemporaryDirectory()
+                    self.addCleanup(directory.cleanup)
+                    repo = released(Path(directory.name), "pipeline")
+                    document = record(repo)
+                    for r in document["convergence"]:
+                        if r["axis"] == "path-to-production":
+                            r.update(rung=above, planned="S9-next")
+                    document["release"]["path"] = below
+                    (repo / "project.json").write_text(json.dumps(document, indent=2) + "\n")
+                    commit(repo)
+                    out = refreshed_out(repo)
+                    row = path_row(repo)
+                    self.assertEqual((row["rung"], row["provenance"], row["planned"]), (below, "overridden", "S9-next"))
+                    self.assertIn(f"refreshed from `{above}` to `{below}`", out)
+                    self.assertEqual(leads(repo, f"the path to production is `{below}`"), (True, True))
+                    commit(repo)
+                    settled = (repo / "project.json").read_text()
+                    self.assertNotIn("path-to-production refreshed", refreshed_out(repo))
+                    self.assertEqual((repo / "project.json").read_text(), settled)
+
+    def test_a_row_at_or_below_the_record_stands_and_its_entry_is_still_named(self) -> None:
+        """A hold: adopted `--release manual`, later `release.path: pipeline`."""
+        repo, out = self.lowered("pipeline", "manual")
+        self.assertEqual((path_row(repo)["rung"], path_row(repo)["provenance"]), ("manual", "overridden"))
+        self.assertNotIn("path-to-production refreshed", out)
+        self.assertEqual(leads(repo, "the path to production is `manual`"), (True, True))
+
+    def test_a_row_at_one_path_over_release_path_pipeline_stands_with_no_entry(self) -> None:
+        """A hold: `release.path` cannot spell `one-path`."""
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        repo = released(Path(directory.name), "pipeline")
+        recorded(repo, "path-to-production", "one-path")
+        out = refreshed_out(repo)
+        self.assertEqual(path_row(repo)["rung"], "one-path")
+        self.assertNotIn("path-to-production refreshed", out)
+        self.assertEqual(leads(repo, "the path to production is"), (False, False))
+
+    def test_a_row_over_a_detected_release_record_stands(self) -> None:
+        """A hold: a `release` record nobody answered is not a person's newer word."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = adopted(Path(directory))
+            recorded(repo, "path-to-production", "pipeline")
+            out = refreshed_out(repo)
+            self.assertEqual(path_row(repo)["rung"], "pipeline")
+            self.assertNotIn("path-to-production refreshed", out)
 
 
 class RefreshBeforeIsAssembledWholeTest(FactoryTestCase):
