@@ -174,7 +174,7 @@ green, then `make lint typecheck check-structure`. Commit.
 
 ### T006 — A developer's checkout with no usable base fails with what to run (R5 · AC-S22-14, -15, -17, -19)
 
-- [ ] **Rule R5** — exit 1, one line. Needs T005.
+- [x] **Rule R5** (0fcc763; also: a target with a ref is the base where the trunk has none, D30) — exit 1, one line. Needs T005.
 
 **RED** (new `tests/test_slice_scope_no_base.py`; each fails today with *nothing to hold*, exit 0):
 - e1 `git clone --depth 1 --branch slice/S1 file://…` (single branch: no trunk ref) → exit 1, names `main` and
