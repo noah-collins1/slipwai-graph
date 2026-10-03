@@ -331,7 +331,7 @@ def remembered() -> dict[str, Any] | str:
         return NO_RECORD
     try:
         record = json.loads(MEMORY.read_text())
-    except (OSError, ValueError):
+    except (OSError, ValueError, RecursionError, MemoryError):
         return UNREADABLE
     if not isinstance(record, dict) or any(not isinstance(record.get(name), kind) for name, kind in SHAPE.items()):
         return UNREADABLE
@@ -505,10 +505,10 @@ def main() -> int:
     tooling = code_index()
     why = None
     if narrowable():
-        record = remembered()
         try:
+            record = remembered()
             done = narrowed(tooling, record) if isinstance(record, dict) else record
-        except Exception:  # noqa: BLE001 — whatever the memory held, a record the run cannot use is the whole run
+        except Exception:  # noqa: BLE001 — whatever the memory held, reading it or using it, it is the whole run
             done = UNREADABLE
         if isinstance(done, int):
             return done

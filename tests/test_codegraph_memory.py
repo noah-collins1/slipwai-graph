@@ -162,6 +162,23 @@ class AMemoryThatCannotBeUsedTest(FactoryTestCase):
                         self.assertRegex(run.stdout,
                                          whole_line("the record of the last whole comparison could not be read"))
 
+    def test_a_memory_too_deeply_nested_to_be_decoded_is_the_whole_run(self) -> None:
+        """T022: reading the memory is guarded as using it is; nesting past the decoder's stack is one more content."""
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.prepared(directory)
+            text = project.memory.read_text()
+            deep = "[" * 100000 + "]" * 100000
+            nested = {"a bare run of brackets": "[" * 200000,
+                      "a valid record whose dirty is nested": text.replace('"dirty": []', f'"dirty": {deep}')}
+            self.assertNotEqual(nested["a valid record whose dirty is nested"], text, "the record carries `dirty`")
+            for name, content in nested.items():
+                with self.subTest(name):
+                    project.memory.write_text(content)
+                    run = project.run()
+                    self.assertEqual(run.returncode, 0, run.stderr)
+                    why = "the record of the last whole comparison could not be read"
+                    self.assertRegex(run.stdout, whole_line(why))
+
     def test_hold_a_sound_database_whose_files_table_cannot_be_read_is_skipped_as_today(self) -> None:
         """D48: AC-S01-18's *never skipped* is about damage. The narrowed attempt goes whole, the integrity check
         passes, and what is left is CodeGraph's schema having moved on, in today's words, with no clause added."""
