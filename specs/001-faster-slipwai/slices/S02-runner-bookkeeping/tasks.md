@@ -89,7 +89,7 @@ the log's record; the three write to separate test modules.
 
 ### T002 — [P] [US1] A control's content is read once while its size, times and identity stand (R1 · AC-S02-1 … -11)
 
-- [ ] **Rule R1.** New `assets/toolkit/scripts/agents/bookkeeping.py` holding the stat-vouched hash record (all four
+- [x] *(6ef64b6)* **Rule R1.** New `assets/toolkit/scripts/agents/bookkeeping.py` holding the stat-vouched hash record (all four
   facts — size, modification time, change time, identity — or the file is hashed every time; two seconds' margin; the
   record is the process's, never written); `controls_signature()` in `cruise.py` asks it. The comparison is still
   content (D56). Test modules `tests/test_runner_controls.py` (new; the reads and the two-second and no-change-time
@@ -137,7 +137,7 @@ imports the sibling the way it imports `code_index`. The signature's value for a
 
 ### T003 — [P] [US1] The fingerprint is path and content, each file read once while its record stands (R2 · AC-S02-12 … -21)
 
-- [ ] **Rule R2.** `fingerprint()` in `cruise.py` digests path and per-file SHA-256 of every file under `specs/` but the
+- [x] *(043239e, 05aef6d)* **Rule R2.** `fingerprint()` in `cruise.py` digests path and per-file SHA-256 of every file under `specs/` but the
   log and the checkpoint, through the T002 record with as many facts as the platform reports (D57); the value changes
   once, the field keeps its name and 16 hex characters. Needs T002 (the record). Test module
   `tests/test_runner_fingerprint.py` (new).
@@ -180,7 +180,7 @@ and status exactly as they are, drops a removed file's record; reuse under the s
 
 ### T004 — [P] [US1] The log is read whole once per process, and again only when it is not what the runner left (R3 · AC-S02-22 … -29, -32, -33)
 
-- [ ] **Rule R3.** `entries()`/`record()` in `cruise.py` and the loop in `drive()`; the log as left (entry count; the
+- [x] *(a151f5c)* **Rule R3.** `entries()`/`record()` in `cruise.py` and the loop in `drive()`; the log as left (entry count; the
   file's size, times and identity after the runner's own append) held in the process and checked again before the
   append; `bookkeeping.log_bytes` on each entry; the iteration number stays the count of entries plus one (D58). Needs
   T003 (same files). Test modules `tests/test_runner_log.py` (new; the counts) and `tests/test_runner_log_stale.py`
@@ -230,7 +230,7 @@ the gate or of `health()` that compared everything.
 
 ### T005 — [P] [US2] The gate, the sync count and the tree are today's (R7 · AC-S02-43, -44, -45) — pinned first
 
-- [ ] **Rule R7 — every example is a hold: green today, written as holds, saying so, observed passing.** Numbered
+- [x] *(33facda)* **Rule R7 — every example is a hold: green today, written as holds, saying so, observed passing.** Numbered
   after R4–R6 in the plan, scheduled first here: it pins what the narrowing must not break, and so is committed before
   any production change in this story (as S01's T008 was). Test module `tests/test_health_narrowed.py` (new; R4's
   examples join it at T006).
@@ -254,7 +254,7 @@ the gate or of `health()` that compared everything.
 
 ### T006 — [P] [US2] `health()` hashes what changed since the last whole comparison, on any branch outside CI (R4 · AC-S02-34, -35, -41, -42)
 
-- [ ] **Rule R4.** `health()` in `code_index.py` compares through the gate's own candidates and memory
+- [x] *(6eba6d0 (e41's second half — the next run hashes 0 — landed with T008, where health() writes the memory))* **Rule R4.** `health()` in `code_index.py` compares through the gate's own candidates and memory
   (`remembered()`, `candidates_of()`, `unvouched()`, `read_once()`, `narrowed()` in `check-codegraph.py`, research item
   5; `drift(only, rows)` already takes a narrowed set); only what those need made callable is changed in the gate
   script, and `main()` and `narrowable()` are not edited. `detail` says in one line how many files of how many were
@@ -283,7 +283,7 @@ module is already loaded there for `drift()`); no memory write yet (T008).
 
 ### T007 — [P] [US2] What the memory cannot vouch for is the whole comparison, said in one clause (R5 · AC-S02-36, -37, -39)
 
-- [ ] **Rule R5.** Every drift state of S01 answers as `health()` without a memory does; each reason the memory cannot
+- [x] *(5622e7d (e36 holds sixteen states; AC-S01-24's is added by T012's delegate))* **Rule R5.** Every drift state of S01 answers as `health()` without a memory does; each reason the memory cannot
   be used is one clause in `detail`; a rebuilt database is compared whole. Needs T006. Test modules
   `tests/test_health_memory.py` (new; e37, e39) and `tests/test_health_memory_states.py` (new; the per-state table of e36).
 
@@ -309,7 +309,7 @@ any rebuilt database run the whole comparison; no new judgement of a file's stat
 
 ### T008 — [P] [US2] The memory is written by a `health()` that ends current, and never in CI (R6 · AC-S02-38, -40)
 
-- [ ] **Rule R6.** Through the gate's writer (`remember()`, D59); `failed`, `unreachable`, unopened → as it was. Needs
+- [x] *(822e47f)* **Rule R6.** Through the gate's writer (`remember()`, D59); `failed`, `unreachable`, unopened → as it was. Needs
   T007 (same test file and scripts). Test file `tests/test_health_memory.py`.
 
 **RED:**
@@ -336,7 +336,7 @@ any rebuilt database run the whole comparison; no new judgement of a file's stat
 
 ### T009 — [P] [US3] `--scope <id>` prints the standing entries in scope, global, or without a line (R8 · AC-S02-47 … -56)
 
-- [ ] **Rule R8.** A verb of the script that already parses entries: `--scope <id>` and `--feature`; verbatim, number
+- [x] *(13b6b03)* **Rule R8.** A verb of the script that already parses entries: `--scope <id>` and `--feature`; verbatim, number
   order, a closing line of counts; never drops what it cannot place; writes nothing (D60). Test modules
   `tests/test_decisions_scope.py` (new; e47–e54) and `tests/test_decisions_scope_edges.py` (new; e55, e56).
 
@@ -364,7 +364,7 @@ any rebuilt database run the whole comparison; no new judgement of a file's stat
 
 ### T010 — [P] [US3] The gate accepts absence and refuses a malformed line (R9 · AC-S02-57 … -63)
 
-- [ ] **Rule R9.** `check_decisions()` validates the `Scope:` value when present; absence is never a failure; one
+- [x] *(1716e4c, bf660de — the gate code landed in 13b6b03 with T009, so e59, e60 and e62 were seen red by disabling it afterwards, not before it existed)* **Rule R9.** `check_decisions()` validates the `Scope:` value when present; absence is never a failure; one
   `note:` where an entry lacks it after one that has it. Needs T009 (same script). Test file
   `tests/test_decisions_scope_gate.py` (new).
 
@@ -396,7 +396,7 @@ or empty fails with the entry's number; the `note:` is printed to stdout, exit u
 
 ### T011 — [P] [US4] The entry's shape, both briefs and the command write and read the line (R10 · AC-S02-64 … -68)
 
-- [ ] **Rule R10.** `DECISION_ENTRY` in `cruise_record.py`, the skipper's and bosun's briefs in `cruise_agents.py`, the
+- [x] *(9b57a82 (VERSION 1.6.0.dev0 and the fragment's first form in the same commit))* **Rule R10.** `DECISION_ENTRY` in `cruise_record.py`, the skipper's and bosun's briefs in `cruise_agents.py`, the
   command's iteration-start and *Deciding* text in `src/slipwai/project/cruise.py` (331 lines: no net growth past 350);
   an owner brief already seeded is left alone. **This task's first commit that adds the line carries `VERSION` →
   `1.6.0.dev0` and `changelog.d/runner-bookkeeping.md` in its first form** (first line `MINOR`; what T011 changes for a

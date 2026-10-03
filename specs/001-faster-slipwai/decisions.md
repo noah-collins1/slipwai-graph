@@ -772,3 +772,15 @@
 - **Confidence:** medium · **Would reverse if:** the owner says the skipper must also see `depends_on` neighbours' decisions before `S13` lands — then (b), with a reader of the Slice graph added here — or says even the two refusals on a present line need their approval, in which case the checker notes them and the filter's carry-as-global is the only guard.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (S02's criteria, AC-S02-47 to AC-S02-69); `specs/001-faster-slipwai/story-split.md` (Parking Lot: absence as a finding, a person's approval; S03's VERSION note)
 - **Status:** standing
+
+
+## D61 — Does AC-S02-68's *that file is unchanged* exempt a seeded owner brief from `migrate`'s merge?
+- **Stage:** implementation · **Slice:** S02-runner-bookkeeping · **When:** 2026-10-03T18:20:07Z · **Iteration:** 9
+- **Question:** T011's delegate handed back: AC-S02-68 says that when `slipwai migrate` runs on a project whose owner brief an earlier factory seeded, the file is unchanged (D24). `migrate` is a three-way merge, so a brief the project never edited would take the new `Scope:` line in its entry example from the merge. Is the criterion an exemption from the merge, or the project's text surviving it?
+- **Options:** (a) the project's text survives: a refresh never writes the file, `migrate` merges the factory's new default beside the project's change, a brief nobody edited takes the new shape — what D24 already says; (b) `migrate` leaves the file byte for byte, edited or not — a change to what `migrate` writes, which D24 ruled out (*`generate`, `add-service` and `migrate` are untouched*).
+- **Decision:** (a). AC-S02-68 is reworded to *what the project wrote in that file survives*, and the fragment's catch-up paragraph says the same: a refresh never rewrites the brief, `migrate` merges the new shape beside the project's own text, and where a merge leaves the example without the line it may be added by hand.
+- **Why:** D24 keeps the four seeded files in `.written` precisely so that a newer factory's default reaches them through `migrate` beside the project's change; an exemption would stop the new entry shape reaching the one page the skipper reads before every decision.
+- **Decided by:** host (standing decision D24)
+- **Confidence:** high · **Would reverse if:** a person wants the owner brief out of `migrate`'s merge altogether, which is D24's to reopen.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S02-68), `specs/001-faster-slipwai/slices/S02-runner-bookkeeping/tasks.md` (T013's fragment wording, through the delegate's brief)
+- **Status:** standing

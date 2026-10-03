@@ -990,7 +990,9 @@ skipper seeing a neighbour's decisions through the Slice graph (`S14-result-cont
 - **AC-S02-67** — Given the generated cruise command, then its iteration-start and *Deciding* text point at the
   verb for a slice's question, and keep *every standing entry* for a feature-level one. (D60)
 - **AC-S02-68** — Given a project whose owner brief was seeded by an earlier factory, when `slipwai migrate` runs,
-  then that file is unchanged (D24) and the catch-up note says the line may be added by hand. (D60)
+  then what the project wrote in that file survives (D24) and the catch-up note says the line may be added by hand.
+  *Read by D61:* `migrate` is a three-way merge, so a brief nobody edited takes the new shape from it; a refresh
+  never writes the file. (D60)
 - **AC-S02-69** — Given the commit that adds the line, then `VERSION` reads `1.6.0.dev0`, a fragment in
   `changelog.d/` claims `MINOR` with the catch-up paragraph, and `tests/test_changelog.py` passes. One fragment
   for the slice, the highest level winning: it also names the optional `bookkeeping` object on a log entry (D58),
