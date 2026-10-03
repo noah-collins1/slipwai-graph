@@ -1,0 +1,127 @@
+# Story split — Faster Slipwai (001-faster-slipwai)
+
+Written by `/cruise` iteration 1 from `spec.md`, `.specify/product-owner.md` and the convergence map
+(`delivery/docs/convergence.md`). The PRD the owner brief links is a Claude Docs artifact this session could not
+open; where the spec and the brief are silent, the split says so rather than guessing what the PRD says.
+
+## Parent
+
+**Actor:** a developer who ran `slipwai generate` or `slipwai adopt` and now drives or cruises that repository
+with coding agents. **Need:** a delivery loop whose time per feature grows like S·log S instead of S², while
+every gate still runs on every change before it reaches `main`. **Outcome:** slices reach `main` sooner and the
+gate stays trustworthy; the one thing that would make the work pointless is a faster loop that lets through what
+today's gate catches. **Constraint:** the loop pays its gate serially about three times per slice over the whole
+repository, merges slices one at a time in split order, re-renders every diagram on every merge, and its runner's
+bookkeeping grows with the log. Every change lands in the files the factory writes (`assets/`,
+`src/slipwai/project/`) and reaches a generated project through `slipwai migrate`; this repository is a user of
+the factory like any other, and a second actor, the factory maintainer, needs each change to land as a release
+with its level named in `changelog.d/`.
+
+## Recommended First Slice
+
+`S00-run-path` is a method slice the ladder requires before any slice changes code that was here (Pin stage: an
+application nobody has proved starts refuses every slice). The first **product** slice is `S01-gate-walks`: the
+generated gate stops walking `.venv`, `node_modules`, `target/`, `__pycache__` and `.git`, and reads
+`project.json` once.
+
+Why this first: the owner's order is walks and logs, then stamps, then `-j`, then the scoped gate, then the
+merge tree. Pruning walks needs no design decision, is a PATCH (the same answers, generated better), is
+measurable on its own (SC-005: at most 100 entries enumerated on the skeleton), and its demo — generate a Python
+starter, run its gate, read what it enumerated — is the demo path every later slice reuses.
+
+## Split Candidates
+
+| Slice | Value | Includes | Defers | Acceptance Examples | Release Constraint |
+|---|---|---|---|---|---|
+| `S00-run-path` (method) | The team knows the factory starts and its suite is green before anything changes it | `delivery/survey/running.md` written from a real run of the recorded `smoke` (`./slipwai --version`); one green `make verify` and `make -f delivery/Makefile verify` recorded as evidence, run the way the cruise runner runs it; the tests under `tests/test_cruise_*.py` that spawn `cruise.py` clear `CRUISE_RUNNER` and `CRUISE_ITERATION` from the child's environment, since inherited from an iteration they make `start` refuse and the suite red for no fault of the tree (seen in iteration 1: 7 of 829 red inside the iteration, 0 with the two variables unset); `safety-net: tests-exist → tests-pass` | Nothing it changes in code | Given this checkout, when `./slipwai --version` runs, then it prints `1.5.2.dev0` and `running.md` no longer reads *Not yet proven* · Given this checkout, when `make verify` runs, then it is green with no quarantined test, and the convergence row's evidence names the run | Docs and the map only; nothing reaches a generated project |
+| `S01-gate-walks` | A generated gate stops reading what it never needed | FR-004: `check-imports` and `check-migrations` prune `.venv`, `node_modules`, `target/`, `__pycache__`, `.git` before descending and read `project.json` once; FR-022 (part): `check-codegraph` hashes only files git reports changed since the last sync and runs the SQLite integrity check in CI only; SC-005 | Per-branch scoping of the UX gate (→ `S07`); anything about stamps | Given the generated Python skeleton, when `make check-imports` runs, then it enumerates at most 100 entries and reports the count · Given a skeleton with a populated `.venv` and `node_modules`, when `check-migrations` runs, then its findings equal the run without them and it never descends into either · Given one source file changed since the last sync, when `check-codegraph` runs on a branch, then it hashes that one file; given CI, then it also runs the integrity check | PATCH; lands on `main` as a `.dev` snapshot and reaches a project only through `slipwai migrate` run by its maintainer |
+| `S02-runner-bookkeeping` | Cruising at iteration 50 costs what iteration 1 did | FR-015: the runner tails `cruise-log.jsonl` and the stream from a stored offset, fingerprints `specs/` by path and mtime, drift-checks only changed files; FR-024: `controls_signature()` once per iteration from mtimes, one codegraph sync per iteration unless a delegate reports changed files; FR-016: a `Scope:` line on decision entries, `check-decisions` accepts it, the skipper brief carries in-scope and global entries only; SC-006 | Result contracts (→ `S14`) | Given a 50-iteration synthetic log, when iteration 51 starts, then `entries()` reads only the new bytes and its time is within 20 % of iteration 1 · Given an unchanged `specs/` tree, when `fingerprint()` runs, then it opens no file for content · Given 100 standing decisions of which 4 name the slice's scope, when the skipper is briefed, then it receives those 4 and the ones marked global · Given an entry without `Scope:`, when `check-decisions` runs, then it still passes (the line is optional until every writer adds it) | PATCH for the runner, MINOR for the `Scope:` line (a new thing an entry may carry); snapshot + `migrate` as above |
+| `S03-verify-stamp` | The gate returns in under a second on a tree it already passed | FR-001: `make verify` records a success stamp keyed by git tree hash, gate-script hash and recorded tool versions, reuses it on an unchanged tree saying so in one line, honours `VERIFY_FORCE=1`, and never trusts a stamp in CI (owner priority 5); SC-001 | Per-check stamps (→ `S07`) | Given a tree the gate passed, when `make verify` runs again unchanged, then it prints the stamp it reused and exits 0 in under 1 s · Given a one-character source change, when `make verify` runs, then the full gate runs and a new stamp is written · Given `VERIFY_FORCE=1` on a stamped tree, then the full gate runs · Given a changed `scripts/check-*.py` or a new ruff version, then the stamp is invalid and the full gate runs · Given `CI=true`, then no stamp is read | MINOR (a new variable, a new file the gate writes); first slice to raise `VERSION` to `1.6.0.dev0`; snapshot + `migrate` |
+| `S04-parallel-gate` | The gate's independent checks run at once and each toolchain syncs once | FR-002: read-only checks declared so `make -j verify` runs them concurrently with the serial run's results; writers `.NOTPARALLEL` locally (edge case: anything writing `.specify/`); FR-003: `./scripts/verify` syncs each toolchain once per invocation, `check-drawio` skips `npm install` when the installed tree matches the committed lockfile | xdist (→ `S05`) | Given the skeleton, when `make -j verify` runs, then every check the serial run ran runs, in any order, and the exit code matches · Given a Python starter, when `./scripts/verify` runs, then `uv sync` runs once · Given an installed `node_modules` matching the lockfile, when `check-drawio` runs, then it skips the install and says so | PATCH; snapshot + `migrate` |
+| `S05-xdist` | The root gate's tests run across cores where the project says they may | FR-009: pytest runs with xdist where `project.json` marks the project parallel-safe (default on for new projects, one-line opt-out); other backends record what their runner already does | Scoped test selection (→ `S06`) | Given a new Python project, when `make verify` runs at the root, then pytest runs with `-n auto` and the pass/fail set equals the serial run's · Given `"parallelSafe": false` in `project.json`, then pytest runs serially · Given a TypeScript, Go or Java starter, then the matrix test still passes and the recorded test command is unchanged | MINOR (a new `project.json` key with a documented default); snapshot + `migrate` |
+| `S06-scoped-gate` | A slice branch runs the gate for what it touched | FR-006: `make verify-scoped` exists, equals `make verify` on `main`, and on `slice/<id>` runs per-file checks on changed files, mypy incrementally, and tests of touched contexts plus `depends_on` neighbours' contract tests (neighbours read from the slice graph or `model.yaml`); FR-007: the drive ladder calls it at slice start and before the push, the full gate once at the merge root | Neighbours declared by `provides`/`requires` (→ `S16`); per-check skipping (→ `S07`) | Given a slice branch that changed one context, when `make verify-scoped` runs, then only that context's files are linted and only its tests and its neighbours' contract tests run · Given `main`, when `make verify-scoped` runs, then it is `make verify` · Given the same tree, then the full gate's findings before and after are identical (SC-007) | MINOR (a new target); snapshot + `migrate`; the merge root and CI still run the full gate — constitution I |
+| `S07-scoped-checks` | The method-file and preview checks skip what did not change on a branch | FR-023: `check-agents`, `check-speckit`, `check-extensions`, `check-constitution` run only when their inputs changed since the stamp on a branch, always on `main` and in CI; FR-022 (rest): `check-ux-gates` defaults `UX_GATES_SINCE` to the merge-base on `slice/<id>` and to everything on `main`; SC-009 | — | Given a slice branch touching one source file, when `make verify-scoped` runs, then the four method-file checks report they were skipped and `check-ux-gates` renders only that file's previews · Given `main` or `CI=true`, then all four run | PATCH; snapshot + `migrate` |
+| `S08-scoped-mutation` | A slice's mutation run is proportional to its change | FR-008: `make mutation` scopes to the diff against merge-base for every backend; `make mutation-full` keeps the whole-module run | — | Given a branch that changed one production module, when `make mutation` runs, then only that module's mutants run, for Python, TypeScript, Go and Java starters · Given `make mutation-full`, then the whole module runs as today | MINOR (a new target); snapshot + `migrate` |
+| `S09-phase4-fanout` | After a fan-out, each slice's Phase 4 runs in its own worktree at the same time | FR-010 (part): adversary, mutation and the scoped gate per slice, concurrently, in the slice's worktree; the ladder text and the runner's stream say so | The merge tree (→ `S10`) | Given 8 ready slices on a generated project, when the fan-out finishes, then the cruise stream shows adversary, mutation and scoped-gate steps overlapping in time, one set per slice | MINOR (the ladder changes); snapshot + `migrate`; `main` still moves one merge at a time until `S10` |
+| `S10-merge-tree` | A fan-out converges through a merge tree instead of one merge after another | FR-010 (rest): passing slices merge pairwise into integration branches with fan-in `drive.json.merge_fanin` (default 2), each running the scoped gate on its union; the root runs the full gate once; `main` only fast-forwards; an unresolved conflict parks its subtree only; FR-011: `make model` and `make model-drawio` once at the root; SC-002, SC-003 | — | Given 8 passing slices, when they merge, then the longest dependent chain is 3 and the root runs the full gate once · Given two slices whose changes conflict, when the later-in-split side rebases and fails, then that subtree parks and the others continue · Given a fan-out that converges, then diagrams render once at the root and `main` fast-forwarded | MINOR (a new `drive.json` setting with a documented default); snapshot + `migrate`; nothing merges to a real project's `main` from here |
+| `S11-render-once` | Diagrams render through one browser and only when their source changed | FR-012: `render.ts` opens one browser session per run and re-renders only diagrams whose source changed; SC-004 | Linear model checks (→ `S12`) | Given the 16-slice fixture with one changed slice, when `make model` runs, then one browser launches, two diagrams are rewritten and it finishes in under 2 s · Given a one-slice model, then one browser renders three diagrams as today | PATCH; event-modelling profile only; snapshot + `migrate` |
+| `S12-model-sidecar` | The model is parsed once and its checks stay linear as slices grow | FR-005: `model.yaml` parsed once per verify into a sidecar every consumer reads; FR-013: `check.py` cycle detection and `board-plan.ts` frame lookup linear in slices; one file plus a sidecar index, never per-slice files (owner brief: splitting `model.yaml` is a person's call) | One-hop briefs (→ `S13`); contract edges (→ `S16`) | Given a 200-slice synthetic model, when `make check-model` runs, then its time grows linearly with slices · Given one verify run, then `model.yaml` is parsed once and every consumer reads the sidecar | MINOR (a new generated file); event-modelling profile; snapshot + `migrate` |
+| `S13-one-hop-brief` | A per-slice stage reads its slice and its neighbours, not the whole model | FR-014: example-map, plan, tasks, implement and converge briefs carry the slice's block and the blocks it reads from or is read by, and nothing else of the model | Logging reads beyond the brief (→ `S17`) | Given slice 16 of the fixture, when the example-map stage is briefed, then the bytes handed to it equal those for slice 1 · Given a slice with two neighbours, then the brief holds exactly three blocks | PATCH; snapshot + `migrate` |
+| `S14-result-contract` | Every delegate hands back the same structured result | FR-017: every delegate ends with a fenced `result-contract` block (scope, status, contracts_changed, invariants_checked, tests, decisions, assumptions, unresolved, change_summary, difficulty_observed); `check-decisions` holds its shape; a missing block is a converge finding; SC-008 (first half) | Difficulty scoring (→ `S15`) | Given a delegate hand-back without the block, when converge runs, then it is a finding · Given a hand-back with the block, when `check-decisions` runs, then a malformed block fails naming the field | MINOR (every agent brief changes); snapshot + `migrate` |
+| `S15-difficulty-score` | The planner says how hard each task is and the record shows how hard it was | FR-018: every task carries `difficulty: 1–5 — reason`; `make benchmark` joins planned and observed difficulty with converge passes, escalations and mutation survivors per task; FR-028 (part): those features logged per task; SC-008 (second half) | Boundary-cut and cross-context features (→ `S17`); routing (→ `S18`) | Given the tasks stage writes `tasks.md`, then every task carries a difficulty and reason · Given one finished slice, when `make benchmark` runs, then it prints the joined table per task | MINOR (the tasks template changes); snapshot + `migrate` |
+| `S16-contract-edges` | A slice says what it provides and requires, and the gate checks it | FR-020: slice blocks may declare `provides`/`requires`; `check-model` validates every `requires` has a provider and reports per-slice degree, boundary cut, cross-context edges and top-3 share; the scoped gate's neighbour set may read these edges | Benchmark locality metrics (→ `S17`) | Given a `requires` nothing provides, when `make check-model` runs, then it fails naming the slice and the contract · Given a valid model, then it reports degree, cut, cross-context edges and top-3 share | MINOR (a new optional key in `model.yaml`, additive); event-modelling profile; snapshot + `migrate` |
+| `S17-locality-report` | The team can see whether the bounded-degree assumption holds | FR-025: `make benchmark` reports K-effective, the Gini coefficient of slice-touch frequency and top-3 share per feature, flagging a node above a configurable share as a decomposition candidate; FR-026: every read beyond a one-hop brief logged as a context-expansion event with its reason, reported per slice; FR-028 (rest) | — | Given one finished feature, when `make benchmark` runs, then it prints K-effective, Gini, top-3 share and expansions per slice · Given a stage that opened a block outside its brief, then the log carries an expansion event with a reason | PATCH on top of `S15`/`S16`; snapshot + `migrate` |
+| `S18-route-log` | Model routing by difficulty is measurable before it is ever switched on | FR-019: `models.json` gains a documented, default-off `route_by_difficulty` whose only effect is a log line naming the tier the policy would choose; FR-027: the documented semantics (planner, converge and skipper always strong; worker tier from difficulty, cut and cross-context edges with an upward cascade on a failed scoped gate; adversary at least the worker's tier on a different model family) | Switching routing on — out of scope by the owner brief | Given `route_by_difficulty` off, when a worker is dispatched, then a log line names the tier the policy would have chosen and the dispatched model is unchanged · Given the setting absent, then nothing is logged and nothing changes | MINOR (a new setting, default off); snapshot + `migrate`; never switched on by this run |
+| `S19-pip-audit` (method) | The factory's own dependencies are audited by its gate | `platform: supported → audited`: `pip-audit` run green once, then recorded as `slipwai-graph`'s `audit` command; the programme's one tooling step | Any other row of the map | Given this checkout, when `pip-audit` runs over the locked environment, then it reports no known vulnerability · Given the command recorded in `project.json`, then `make -f delivery/Makefile check-convergence` reads the Platform row at `audited` | Docs, the map and this repository's own command record; a dev dependency and `project.json` are the host's to write on `main`, not a slice branch's |
+
+## Slice graph
+
+| Slice | depends_on | parallel_ok_with | Notes |
+|---|---|---|---|
+| `S00-run-path` | — | — | Alone first: the Pin stage refuses every other slice until `running.md` is proven |
+| `S01-gate-walks` | `S00-run-path` | `S02-runner-bookkeeping`, `S11-render-once` | Touches `assets/toolkit/scripts/check-*.py`; disjoint from the runner and from `event-model/` |
+| `S02-runner-bookkeeping` | `S00-run-path` | `S01-gate-walks`, `S11-render-once` | Touches `assets/toolkit/scripts/agents/` and `check-decisions.py` |
+| `S03-verify-stamp` | `S01-gate-walks` | `S11-render-once` | Touches `src/slipwai/project/makefile.py` and `src/slipwai/tooling.py`; raises `VERSION` to `1.6.0.dev0` |
+| `S04-parallel-gate` | `S03-verify-stamp` | `S11-render-once` | Same files as `S03`; the stamp's key must know the gate's script set before `-j` reshapes it |
+| `S05-xdist` | `S04-parallel-gate` | `S08-scoped-mutation`, `S11-render-once`, `S12-model-sidecar` | Python `pyproject` template and `native_commands.py` |
+| `S06-scoped-gate` | `S04-parallel-gate` | `S08-scoped-mutation`, `S11-render-once`, `S12-model-sidecar` | The ladder text (`parallel_slices.py`, `commands.py`) and a new toolkit script |
+| `S07-scoped-checks` | `S06-scoped-gate`, `S03-verify-stamp` | `S08-scoped-mutation`, `S12-model-sidecar` | Stays inside the check scripts; shares nothing with `S08` |
+| `S08-scoped-mutation` | `S04-parallel-gate` | `S05-xdist`, `S06-scoped-gate`, `S07-scoped-checks`, `S12-model-sidecar` | `mutation.py`, `native_commands.py`; the `mutation-full` target is its one `makefile.py` line |
+| `S09-phase4-fanout` | `S06-scoped-gate`, `S08-scoped-mutation` | `S12-model-sidecar`, `S14-result-contract` | Needs the scoped gate and scoped mutation to run per slice |
+| `S10-merge-tree` | `S09-phase4-fanout`, `S07-scoped-checks` | `S13-one-hop-brief`, `S14-result-contract` | The riskiest slice; after every gate it relies on is proven (owner priority 4) |
+| `S11-render-once` | `S00-run-path` | `S01`–`S06`, `S08` | `event-model/render.ts` only |
+| `S12-model-sidecar` | `S11-render-once` | `S05`–`S09` | Not a build dependency on `S11` — serialised because both live in `event-model/` and `check-drawio` holds the canvas to the model |
+| `S13-one-hop-brief` | `S12-model-sidecar` | `S10-merge-tree`, `S14-result-contract` | Reads the sidecar index |
+| `S14-result-contract` | `S02-runner-bookkeeping` | `S09`, `S10`, `S13` | Shares `check-decisions.py` with `S02`, so after it |
+| `S15-difficulty-score` | `S14-result-contract` | `S16-contract-edges` | Observed difficulty arrives in the result contract |
+| `S16-contract-edges` | `S12-model-sidecar` | `S15-difficulty-score` | `check.py` after its linear rewrite |
+| `S17-locality-report` | `S13-one-hop-brief`, `S15-difficulty-score`, `S16-contract-edges` | `S18-route-log` | Benchmark output only |
+| `S18-route-log` | `S15-difficulty-score`, `S16-contract-edges` | `S17-locality-report` | `models.json`, `models.py` and their docs |
+| `S19-pip-audit` | `S00-run-path` | any | Cheap; placed last by the owner's priority 3 (the generated project's loop first); taken earlier if a fan-out has a free seat |
+
+`/drive` and `/where-are-we` read this table to compute the **ready** set: not yet done, every `depends_on`
+already done. Ready slices whose contract is settled run in parallel: one `/drive` session fans out over the
+unclaimed ones, one delegate per slice on a `slice/<id>` branch, and merges them back in split order; a session
+that cannot delegate takes the earliest ready slice in split order and names the rest.
+
+## Parking Lot
+
+- **FR-021 is every slice's.** Each user-visible slice adds its `changelog.d/` fragment in the commit that makes the
+  change; `S03-verify-stamp` is the first MINOR and raises `VERSION` to `1.6.0.dev0`; nothing here is MAJOR.
+- **E8 — this repository taking each change through `slipwai migrate`** — is not done inside the cruise run: a
+  migrate rewrites `delivery/scripts/`, which the runner treats as a changed control and parks on. It is a
+  person's step between runs, or the first thing a person does when the run ends. Until then this repository's
+  own loop runs the gate it has today.
+- **Safety net `tests-pass` → `fast` → `pinned` → `mutation-measured`**: `pinned` is held per slice by the Pin
+  stage; `mutation-measured` for this repository means a mutation command for the factory itself, which the owner
+  brief rules out of scope (making this repository's own suite fast beyond what the general changes give it).
+  Not planned in this run.
+- **Structure `named` → `laid-out`** would move the factory under `apps/`; the owner brief puts the generated
+  project's loop first and no product slice waits on it. Not planned in this run.
+- **Constitution row reads `template` while the file is ratified** — `/survey` re-reads it; the row flips at the
+  first Convergence stage that runs `/survey`, from the fact already in the tree.
+- **The PRD's owner decisions 1–7** could not be read (the artifact needs a permission this session lacks).
+  Decision 3 is known from the brief (sidecar index, never per-slice files without a person). The others are
+  taken slice by slice through the skipper protocol as their stages raise them, and the entry says the PRD was
+  not consulted.
+- **The gate inside an iteration inherits the runner's environment.** `make -f delivery/Makefile verify` run from a cruise iteration carries `CRUISE_RUNNER` and `CRUISE_ITERATION` into the factory's own tests, and the ones that start a runner refuse; the same suite is green with them unset. `S00-run-path` fixes the tests (a change under `tests/`, not user-visible); until it lands, a green gate for a commit made inside an iteration is established by running the suite with the two variables cleared and saying so in the commit.
+- **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
+  `S04` and `S09` name that in their plans rather than opening a slice.
+
+## Warnings
+
+- Every slice changes code that existed before the method did, so the Pin stage applies to each: the seam it
+  changes is pinned by `/characterise` first, with a fake in the test tree and no mocking framework.
+- Most slices share `src/slipwai/project/makefile.py`, `src/slipwai/tooling.py` and `native_commands.py`; the
+  `parallel_ok_with` column lists only pairs whose files are disjoint, and a fan-out that finds otherwise
+  serialises the pair rather than merging a conflict.
+- `S09` and `S10` change the ladder's own text (`drive.md`, `cruise.md` as generated) and the runner; they are the
+  only slices whose demo is a synthetic fan-out rather than a gate run, and the demo is on a generated project,
+  never on this repository's live run.
+- `S19-pip-audit` and `S00-run-path` write things a slice branch may not (`project.json`, a dev dependency, a survey
+  page); the host does those writes on `main` at the Convergence stage, as the ladder says.
+
+## Next Step
+
+Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,
+`S02-runner-bookkeeping` and `S11-render-once` form the first fan-out once it is done.
