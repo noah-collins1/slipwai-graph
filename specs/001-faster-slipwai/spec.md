@@ -183,6 +183,38 @@ report appears in verify output and under `specs/<feature>/benchmark`.
 
 ---
 
+### User Story 8 - Easily reversible decisions are approved provisionally (Priority: P3)
+
+A decision the owner brief says to ask a person about no longer stops a slice when it is easy to revert. Each
+decision entry carries a reversibility score computed from the tree; under a new `decide: provisional` setting
+the skipper takes `easy` and `guarded` always-ask items as provisional, names the commits that revert them, and
+batches them for the owner to ratify or revert; `hard` items still block. Added 2026-10-03 from the paper's
+author's own experience: decision throughput, not tier design, was the problem the paper left unsolved.
+
+**Why this priority**: It removes the decision-wait tax the run has already paid once (S24 on D54), without
+widening what anyone may do to the merge root, CI, flags or stored data.
+
+**Independent Test**: With `decide: provisional`, a fixture decision that changes a flag default (guarded)
+proceeds as provisional with a revert range; the D54 fixture (one workflow line propagated by `migrate`) still
+blocks; a run with an unratified provisional decision past its date ends `parked: ratify D<n>`, not `done`.
+
+**Acceptance Scenarios**:
+
+1. **Given** a new decision entry, **When** it is written, **Then** it carries `Reversibility: easy | guarded |
+   hard` derived from its commits, dependants, flag, and whether a schema, contract, CI workflow or
+   migrate-propagated file is touched.
+2. **Given** `decide: provisional` and a `guarded` always-ask item, **When** the skipper decides, **Then** the
+   entry is `Status: provisional · ratify by <date>` with `Revert: <range>` and the slice continues.
+3. **Given** `decide: provisional` and a `hard` item, **When** the skipper decides, **Then** it is
+   `unavailable: a person's approval` as today.
+4. **Given** a provisional decision, **When** the owner sends `ratify D<n>` or `revert D<n>`, **Then** the
+   status changes, and a revert applies the named commits in reverse, runs the gate, and names the slices that
+   must re-enter the ladder.
+5. **Given** an unratified provisional decision past its date, **When** the ready set is empty, **Then** the
+   run parks on it instead of saying `done`.
+
+---
+
 ### Edge Cases
 
 - A stamped tree whose toolchain changed (new ruff, new mypy): the stamp key includes recorded tool versions,
@@ -264,6 +296,19 @@ report appears in verify output and under `specs/<feature>/benchmark`.
   converge passes, escalations, mutation survivors, boundary cut, cross-context edges) MUST be logged per
   task; building the predictor is out of scope.
 
+- **FR-029**: Every decision entry MUST carry a `Reversibility:` line scored from the tree (commits produced,
+  dependants, flag, schema or contract or CI or migrate-propagated file touched) as `easy`, `guarded` or `hard`.
+- **FR-030**: `cruise.json` MUST gain `decide: provisional` (default unchanged); under it `easy` and `guarded`
+  always-ask items MUST be taken as `Status: provisional · ratify by <date>` with `Revert: <range>`, and `hard`
+  items MUST still block.
+- **FR-031**: Provisional decisions MUST be listed with their revert recipes in `cruise-report.md` and
+  `cruise-status`; `ratify D<n>` and `revert D<n>` MUST resolve them, a revert applying the named commits in
+  reverse and running the gate; the completion audit MUST refuse `done` while one is unratified past its date.
+- **FR-032**: The slice register and the result contract MUST carry the decision ids a slice depended on, so a
+  revert names the slices that must re-enter the ladder.
+- **FR-033**: Provisional approval MUST never widen what the merge root or CI checks, flip a flag, or take a
+  `hard` decision.
+
 ### Key Entities
 
 - **Verify stamp**: tree hash, gate script hash, tool versions, timestamp, result.
@@ -288,6 +333,8 @@ report appears in verify output and under `specs/<feature>/benchmark`.
   difficulty score.
 - **SC-009**: On a slice branch touching one source file, `check-codegraph` hashes one file, `check-ux-gates`
   renders only that file's previews, and the four method-file checks report that they were skipped.
+- **SC-011**: Under `decide: provisional`, the guarded fixture proceeds, the D54 fixture blocks, and an
+  unratified provisional decision past its date parks the run rather than ending it.
 - **SC-010**: After one feature, `make benchmark` prints K-effective, Gini, top-3 share and the
   context-expansion count per slice.
 
