@@ -495,10 +495,10 @@ change.
 `make model` opens one browser per run, on the first diagram it has to draw, and draws only the diagrams
 whose source or renderer changed since the SVG on disk was drawn; a run with nothing to draw opens none, and
 under a CI marker (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`) every diagram is drawn. To force a redraw there is no
-setting and no flag: delete a diagram, or `segments/` and `slices/`, and the next `make model` draws what is
+setting and no flag: delete a diagram, or `docs/event-model/model.svg`, `segments/` and `slices/`, and the next `make model` draws what is
 missing. What counts as a change of renderer is the installed mermaid-cli, Mermaid and Puppeteer versions, the
 drawing scripts and your Puppeteer config's bytes; a browser upgraded behind an `executablePath` that config names
-is not noticed, and deleting `segments/` and `slices/` is the remedy.
+is not noticed, and deleting `docs/event-model/model.svg`, `segments/` and `slices/` is the remedy.
 
 **GitHub's Markdown renderer runs a Mermaid older than 11.15**, so a fenced `eventmodeling`
 block will not draw there — check what it runs today by putting a fenced `info` diagram in a comment, which

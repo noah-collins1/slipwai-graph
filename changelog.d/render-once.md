@@ -12,8 +12,7 @@ diagram and exits non-zero. What the model no longer produces is removed by name
 page and the README block are written only where their bytes differ, one `wrote` line each. The run closes by
 saying what it did, for example `model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged.` and, when nothing
 changed, `model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started.` The drawn SVGs are the
-same bytes as before, below one added comment line. To force a redraw, delete a diagram, or `segments/` and
-`slices/`: there is no setting and no flag.
+same bytes as before, below one added comment line. To force a redraw, delete a diagram, or `docs/event-model/model.svg`, `segments/` and `slices/`: there is no setting and no flag.
 
 **Catch-up.** Nothing is asked of a repository already generated. After `slipwai migrate` its first
 `make model` redraws every diagram once, and since the output is ignored nothing committed changes; a repository that

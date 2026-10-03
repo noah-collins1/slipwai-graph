@@ -27,25 +27,31 @@ def flat(path: Path) -> str:
     return re.sub(r"\s+", " ", path.read_text())
 
 
+REMEDY = "`docs/event-model/model.svg`, `segments/` and `slices/`"
+"""What a person deletes to have everything redrawn: the whole timeline sits outside the two directories."""
+
+
 class SaysItTest(unittest.TestCase):
     def test_e10_the_shipped_readme_says_how_to_force_a_redraw_and_that_there_is_no_setting_or_flag(self) -> None:
         text = flat(README)
-        self.assertIn("there is no setting and no flag: delete a diagram, or `segments/` and `slices/`", text)
+        self.assertIn(f"there is no setting and no flag: delete a diagram, or {REMEDY}", text)
         self.assertIn("the installed mermaid-cli, Mermaid and Puppeteer versions", text)
-        self.assertIn("a browser upgraded behind an `executablePath` that config names is not noticed, and deleting "
-                      "`segments/` and `slices/` is the remedy", text)
+        self.assertIn(f"a browser upgraded behind an `executablePath` that config names is not noticed, and deleting "
+                      f"{REMEDY} is the remedy", text)
+        self.assertNotIn("or `segments/` and `slices/`", text)
 
     def test_e10_the_event_model_page_no_longer_says_a_browser_per_diagram(self) -> None:
         text = flat(PAGE)
         self.assertNotRegex(text, r"(?i)browser (per|for each|for every) diagram")
         self.assertIn("draws through one browser", text)
-        self.assertIn("delete a diagram, or `segments/` and `slices/`", text)
+        self.assertIn(f"delete a diagram, or {REMEDY}", text)
 
     def test_e17_the_fragment_claims_patch_and_says_both_catch_up_things(self) -> None:
         text = FRAGMENT.read_text()
         self.assertEqual(text.splitlines()[0], "PATCH")
         prose = flat(FRAGMENT)
         self.assertIn("the installed mermaid-cli, Mermaid and Puppeteer versions", prose)
+        self.assertIn(f"delete a diagram, or {REMEDY}", prose)
         self.assertIn("Nothing is asked of a repository already generated.", prose)
         self.assertIn("its first `make model` redraws every diagram once, and since the output is ignored nothing "
                       "committed changes", prose)
@@ -63,7 +69,7 @@ class SaysItTest(unittest.TestCase):
 
 @unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class FollowedTest(RenderCase):
-    def test_e10_deleting_a_diagram_redraws_it_alone_and_deleting_the_two_directories_redraws_what_they_held(
+    def test_e10_deleting_a_diagram_redraws_it_alone_and_deleting_what_the_remedy_names_redraws_every_diagram(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -75,10 +81,14 @@ class FollowedTest(RenderCase):
             log = self.model_log(repo)
             self.assertEqual((log.sessions, log.draws), (1, 1), "the deleted diagram, alone")
             self.assertTrue((root / "slices/S2.svg").exists())
-            shutil.rmtree(root / "segments")
-            shutil.rmtree(root / "slices")
+            # what the README's sentence names, followed to the letter: every path in its remedy is deleted
+            sentence = re.search(r"delete a diagram, or ((?:`[^`]+`(?:, | and )?)+)", flat(README))
+            assert sentence is not None
+            for name in re.findall(r"`([^`]+)`", sentence.group(1)):
+                target = repo / name if name.startswith("docs/") else root / name  # the two directories sit in root
+                shutil.rmtree(target) if target.is_dir() else target.unlink()
             log = self.model_log(repo)
-            self.assertEqual((log.sessions, log.draws), (1, 5), "two segments and three slices; the timeline stands")
+            self.assertEqual((log.sessions, log.draws), (1, 6), "the timeline, two segments, three slices")
 
     def test_e17_after_migrate_the_first_run_redraws_every_diagram_once_and_adds_the_second_comment_line(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
