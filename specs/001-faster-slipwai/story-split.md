@@ -132,6 +132,16 @@ that cannot delegate takes the earliest ready slice in split order and names the
   `specs/` on a `slice/<id>` branch — so the first slice branch a `/cruise` run works on is red for the runner's
   own file. Older than `S20` and hidden until it; a candidate PATCH slice (ignore the log, or let the checker
   pass it) for the completion audit to place.
+- **A refresh in a relocated delivery directory rewrites `survey/structure.md` straight after `adopt`** (found by
+  S21's converge pass): with `--delivery ops/method` the delivery directory's own file count moves 281 → 285 between
+  `adopt --yes` and the first refresh, so the page is rewritten with no fact behind it; the default layout rewrites
+  nothing. Older than `S21`; a candidate PATCH slice for the completion audit to place.
+- **A refresh moves an `overridden` `ci.branch` to the checked-out branch** (found by S21's converge pass, on a
+  clone of this repository): `ci.branch` went `main` → `adopt-method` and `.github/workflows/verify-delivery.yml`
+  was rewritten, though the `ci` record's provenance is `overridden`. Not investigated; older than `S21`. A
+  candidate PATCH slice for the completion audit — and until it lands, a `/survey` run in this repository off
+  `main` is followed by a revert of `project.json`'s `ci.branch` and the workflow, which is a control the runner
+  parks on.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 

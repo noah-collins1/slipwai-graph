@@ -202,7 +202,7 @@ below are what the slice still owes, none of which re-opens the loop. Evidence f
 
 ### T006 — A refresh's `before` is held whole at the CLI, not only its three row entries (`MEDIUM` · AC-S21-10 · Principle V)
 
-- [ ] `with_reconciled()` (`src/slipwai/strategy.py`) is a second place `before` is assembled, and two of its three
+- [x] `with_reconciled()` (`src/slipwai/strategy.py`) is a second place `before` is assembled, and two of its three
   inputs have no test through a refresh. Reproduced in a disposable clone, each restored afterwards: replacing
   `record.get("recommended", "leave-it")` with the literal `"leave-it"`, and replacing the platform products with
   `[]`, each left `make test TESTS="test_refresh_owned test_refresh_strategy test_strategy test_adopt_facts
@@ -223,7 +223,7 @@ No production edit is expected.
 
 ### T007 — The stamp's `- left` is observed or removed (`LOW` · AC-S21-5 · Principle III)
 
-- [ ] `resurvey.py`'s last line subtracts the kept files from what `stamp()` records, and nothing observes it:
+- [x] `resurvey.py`'s last line subtracts the kept files from what `stamp()` records, and nothing observes it:
   removing `- left` left `test_refresh_owned` and `test_refresh_strategy` green (clone, restored). By reading
   `uncommitted.py`, `refuse_foreign` consults the stamp only for paths in `writes()`, which already leaves the kept
   out, so the only observable is `.delivery-tools/written.json` itself. The changelog's *a later run does not take
@@ -237,7 +237,7 @@ the whole rule, not for `stamp` alone.
 
 ### T008 — Generated text about who writes the four agrees with D24 (`LOW` · AC-S21-8 · Principle I) — verify first
 
-- [ ] `src/slipwai/project/decisions.py` writes into every project's `.specify/product-owner.md`: *`slipwai
+- [x] `src/slipwai/project/decisions.py` writes into every project's `.specify/product-owner.md`: *`slipwai
   migrate` never rewrites it*. AC-S21-8, D24 and this slice's fragment say `.written` lists it so that `migrate`
   merges a newer factory's version with the project's. Found by reading; **not reproduced by running `migrate`** in
   this pass, so the first step is to see which of the two a migrate over a filled-in brief actually does. The text
@@ -249,3 +249,27 @@ one test over the generated text; not this one sentence. If the brief is meant t
 merge, that is a product question for the host, not this task's to choose.
 
 **Files:** to be named by the host once the first step says which statement is true.
+
+**T006, T007 done** (commit after `7b84df0`, tests only): three examples over a Maven repository with a product out
+of support and a capability trigger hold the strategy name, the products and the rows a refresh hands `before`; a
+record example holds *never stamps* and a non-text brief holds *never compares* — each seen failing under its
+mutation in a disposable clone. **T008 closed as stated, not changed** (D26): a merge is not a rewrite; the brief's
+line stands.
+
+## Convergence
+
+**Converged on pass 1** (2026-10-03, cruise iteration 4, `drive-converge`, host model, fresh context) at `7be3773`:
+no `CRITICAL` or `HIGH`; one `MEDIUM` and two `LOW` appended as T006–T008 and closed above, so no second pass was
+spent. Levels accounted for in the one pass: functions (`recommend()` unchanged over 2160 input combinations against
+`c72571d`), callers (`cli_adopt.py:202`, `confirm.py:124`, `:161`; `adopt.py:234` reconciles nothing), the CLI
+(`adopt --refresh`, `adopt --confirm`, default and relocated delivery directory), the pages (`change-strategy.md`
+renders the record's `before`, `strangle_command.py:53`; no generated text tells anyone to revert the four), the
+published contract (fragment `PATCH`, experimental, restore instruction; `VERSION` `1.5.2.dev0`). The sweep for
+siblings: 283 other listed files appended-to and refreshed, all reset, none of them seeded-then-project-owned (D24
+leaves the record-driven ones in the loop). Constitution: **I** — `resurvey.py:263–267` (the kept files skipped),
+`resurvey.py:63` (left out of the refusal), `project/seeded.py:20–22`; **III** — one 22-line module, one function
+(`strategy.py:118–121`); **V** — `tests/test_refresh_owned.py`, `tests/test_refresh_strategy.py` through the CLI,
+each example with teeth; **VIII** — `changelog.d/refresh-keeps-owned-files.md:1` `PATCH`, `VERSION` unchanged. No
+application start-up path changed. The map: no rung reached by this slice; `make check-convergence` run at T005.
+Two findings outside the slice's diff went to the split's Parking Lot.
+

@@ -284,3 +284,14 @@
 - **Confidence:** high · **Would reverse if:** a person wants `before` to stay the tree's reading as a second opinion beside the map — then the page says so in words instead.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S21-9, AC-S21-10)
 - **Status:** standing
+
+## D26 — Does the owner brief's own line, *`slipwai migrate` never rewrites it*, contradict D24, and is the generated text changed?
+- **Stage:** convergence (pass 1, T008) · **Slice:** S21-refresh-keeps-owned-files · **When:** 2026-10-03T07:21:46Z · **Iteration:** 4
+- **Question:** `src/slipwai/project/decisions.py` writes into every `.specify/product-owner.md`: *This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` never rewrites it.* D24, AC-S21-8 and the fragment say the brief stays in `.written` so that `migrate` merges a newer factory's version with the project's. The converge pass asked which statement is wrong, and whether the brief is meant to be exempt from the merge.
+- **Options:** (a) the two agree and nothing changes: `migrate` is a three-way merge of the factory's change with the project's text — it never replaces the brief with the factory's version, which is what *rewrite* means and what the refresh did — recommended by the stage's own first step (*see which of the two a migrate actually does*): `src/slipwai/migrate.py` and `replay.py` carry no exemption for the brief and no path that writes a listed file over a project's change; (b) reword the generated line to say *merges* — a change to the template of a file every project has filled in, which hands each of them a merge on their own brief for one word; (c) exempt the brief from `migrate` — a change to what `migrate` writes, which S21 defers and D24 decided against.
+- **Decision:** (a). The line stands as written; no generated text changes; T008 is closed as *stated, not changed*.
+- **Why:** For the person who filled the brief in, both sentences promise the same thing — their text is not replaced — and the slice makes the refresh keep that promise too. Owner brief, *Taste*: plain words, and no churn in a human-owned file for a distinction the reader does not act on.
+- **Decided by:** host (standing decision D24)
+- **Confidence:** medium · **Would reverse if:** a `migrate` over a filled-in brief is ever seen to conflict or replace a section — then the line is reworded, or the brief leaves the merge, as its own PATCH.
+- **Written to:** `specs/001-faster-slipwai/slices/S21-refresh-keeps-owned-files/tasks.md` (T008)
+- **Status:** standing
