@@ -119,7 +119,7 @@ behaviours this slice changes, each to be recorded in `delivery/survey/pinned.md
 implementation, with the tests that already hold them where they do: (1) the slice-scope gate's answers on a
 generated project — `tests/test_parallel_slices.py` `SliceScopeGateTest`; (2) `check-decisions`' adversary-row
 finding for a done slice — `tests/test_cruise_record.py`; (3) `check-benchmark`'s done-slice warnings —
-`tests/test_benchmark_brackets.py`. What is not pinned is exactly what the slice changes on purpose: the root
+`tests/test_benchmark_brackets.py`. **Pinned 2026-10-03** (cruise iteration 3, host): three rows appended to `delivery/survey/pinned.md`, each naming tests that were already there and green before any change (9 tests in `SliceScopeGateTest` and `test_cruise_record`, and `test_benchmark_brackets`); no new characterisation test was needed and no seam introduced. What is not pinned is exactly what the slice changes on purpose: the root
 path owning nothing, and the id cut to its prefix.
 
 ## Branch and integration
