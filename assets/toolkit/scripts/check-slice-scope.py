@@ -246,6 +246,7 @@ class Base(NamedTuple):
     trunk: str
     has_ref: bool
     passed_over: str = ""  # the report words where `ci.branch` named something that was not used; else empty
+    bare: str = ""  # the same words with no `git fetch` command in them: what a forge's output may carry
 
 
 def bases_of(name: str) -> tuple[bool, str | None]:
@@ -348,28 +349,34 @@ def merge_base() -> Base:
     recorded = usable(value)
     names = [recorded] if recorded else []
     names += [name for name in ("main", "master") if name not in names]
-    passed_over = ""
+    passed_over = bare = ""
     if isinstance(value, str) and value.strip():
-        if recorded is None:
-            passed_over = f"`ci.branch` names `{value.strip()}`, which is not a branch name"
+        stripped = value.strip()
+        if recorded is None and SLICE_NAME.match(stripped.removeprefix("refs/heads/")):
+            passed_over = bare = f"`ci.branch` names `{stripped}`, a slice branch, which is never the trunk"
+        elif recorded is None:
+            passed_over = bare = f"`ci.branch` names `{stripped}`, which is not a branch name"
         elif not bases_of(recorded)[0]:
-            passed_over = (f"`ci.branch` names `{recorded}`, which has no branch here — "
-                           f"`{fetch_command(recorded)}` would bring it")
+            bare = f"`ci.branch` names `{recorded}`, which has no branch here"
+            passed_over = f"{bare} — `{fetch_command(recorded)}` would bring it"
+    elif value is not None and not isinstance(value, str):
+        passed_over = bare = "`ci.branch` is not a string, so it was passed over"
     for name in names:
         exists, base = bases_of(name)
         if exists:
             if name == "main" != recorded and base and newer_master(base):
                 passed_over = "; ".join(filter(None, (passed_over, MASTER_CLAUSE)))
+                bare = "; ".join(filter(None, (bare, MASTER_CLAUSE)))
             target = target_base(name)
             if base is None and target and target[1]:
-                return Base(target[1], target[0], True, passed_over)
+                return Base(target[1], target[0], True, passed_over, bare)
             if base is None:
-                return Base(None, name, True, passed_over)
-            return Base(older_of(base, target[1] if target else None), name, True, passed_over)
+                return Base(None, name, True, passed_over, bare)
+            return Base(older_of(base, target[1] if target else None), name, True, passed_over, bare)
     target = target_base(names[0])
     if target:
-        return Base(target[1], target[0], True, passed_over)
-    return Base(None, target_name() or names[0], False, passed_over)
+        return Base(target[1], target[0], True, passed_over, bare)
+    return Base(None, target_name() or names[0], False, passed_over, bare)
 
 
 def changed_files(base: str) -> dict[str, str]:
@@ -687,28 +694,30 @@ def forge_checkout() -> bool:
     return named and git("symbolic-ref", "-q", "HEAD") is None
 
 
-def not_checked(slice_id: str, trunk: str) -> str:
-    """The forge's answer where there is no base: not a pass, not a failure, and said on stderr (D31)."""
+def not_checked(slice_id: str, trunk: str, note: str = "") -> str:
+    """The forge's answer where there is no base: not a pass, not a failure, and said on stderr (D31). It names
+    no `git fetch`: the fix there is the job's checkout, not a command a person runs."""
+    said = f"; {note}" if note else ""
     return (f"check-slice-scope: slice/{slice_id} was NOT checked — this CI checkout has no `{trunk}` history to "
             "compare with. The check holds on a developer's machine; for it to hold here the verify job's "
-            "checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: \"0\"`).")
+            f"checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: \"0\"`){said}.")
 
 
-def check(branch: str | None) -> tuple[list[str], str, str, str]:
-    """The violations, the one line to print when there are none, what the refusal header ends with, and a
-    notice for stderr that is neither."""
+def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
+    """The violations, the one line to print when there are none, what the refusal header ends with, a line
+    for stderr that is neither — printed after any findings — and whether that line is a developer's failure."""
     violations = lost_records()
     match = SLICE_BRANCH.match(branch or "")
     if match is None:
         where = f"on `{branch}`" if branch else "on a detached checkout"
-        return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold", "", ""
+        return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold", "", "", False
     slice_id = match.group("id")
     found_base = merge_base()
     base = found_base.commit
     note = f"; {found_base.passed_over}" if found_base.passed_over else ""
     if base is None:
         if forge_checkout():
-            return violations, "", note, not_checked(slice_id, found_base.trunk)
+            return violations, "", "", not_checked(slice_id, found_base.trunk, found_base.bare), False
         trunk = found_base.trunk
         if not found_base.has_ref:
             line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held — run `{fetch_command(trunk)}`"
@@ -716,7 +725,7 @@ def check(branch: str | None) -> tuple[list[str], str, str, str]:
             line = f"slice/{slice_id} shares no history with `{trunk}` at this depth — run `git fetch --unshallow origin`"
         else:
             line = f"slice/{slice_id} shares no history with `{trunk}` — a slice branch is cut from `{trunk}`"
-        return [*violations, line], "", note, ""
+        return violations, "", "", f"check-slice-scope: {line}{note}", True
     short = (git("rev-parse", "--short", base) or base).strip()
     compared = f"compared with `{found_base.trunk}` at {short}"
     scope = Scope(slice_id, base)
@@ -726,18 +735,19 @@ def check(branch: str | None) -> tuple[list[str], str, str, str]:
             violations.append(found)
     violations.extend(scope.model_violations())
     return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may ({compared}){note}", \
-        f" — {compared}{note}", ""
+        f" — {compared}{note}", "", False
 
 
 def main() -> int:
-    violations, report, note, notice = check(current_branch())
-    if notice:
-        print(notice, file=sys.stderr)
+    violations, report, note, notice, failed = check(current_branch())
     if violations:
         print(f"check-slice-scope: a slice branch reaches outside what one slice may touch{note}\n", file=sys.stderr)
         for violation in violations:
             print(f"  {violation}", file=sys.stderr)
         print(file=sys.stderr)
+    if notice:
+        print(notice, file=sys.stderr)
+    if violations or failed:
         return 1
     if report:
         print(report)

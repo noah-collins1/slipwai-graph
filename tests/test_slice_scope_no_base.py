@@ -47,11 +47,15 @@ class NoBaseTest(SliceScopeFixtures):
         subprocess.run(["git", "clone", "-q", *options, url, str(target)], check=True, capture_output=True)
         return target
 
-    def fails_with(self, repo: Path, *words: str, env: dict[str, str] | None = None) -> str:
+    def fails_with(self, repo: Path, *words: str, env: dict[str, str] | None = None, header: bool = False) -> str:
+        """A developer's no-base failure: exit 1, and on stderr one line of its own (AC-S22-28) — the header
+        *reaches outside* only above findings, which `header=True` says there are."""
         result = self.run_gate(repo, env)
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertNotIn("nothing to hold", result.stdout + result.stderr)
-        self.assertIn("reaches outside what one slice may touch", result.stderr)
+        self.assertEqual("reaches outside what one slice may touch" in result.stderr, header, result.stderr)
+        if not header:
+            self.assertEqual(len(result.stderr.splitlines()), 1, result.stderr)
         for word in words:
             self.assertIn(word, result.stderr)
         return result.stderr
@@ -141,7 +145,7 @@ class NoBaseTest(SliceScopeFixtures):
             repo = build()
             (repo / LOST).parent.mkdir(parents=True, exist_ok=True)
             (repo / LOST).write_text("x\n")
-            self.fails_with(repo, LOST, "the record is about to be lost", words)
+            self.fails_with(repo, LOST, "the record is about to be lost", words, header=True)
 
     def no_trunk_ref(self) -> Path:
         repo = self.origin()

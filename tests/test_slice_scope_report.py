@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from test_slice_scope_base import SliceScopeBaseTest
+from test_slice_scope_no_base import out
 from test_slice_scope_root import git
 
 OWN = "specs/f/slices/S1/a.md"
@@ -95,3 +96,99 @@ class MasterBesideMainTest(SliceScopeBaseTest):
         out = self.run_gate(repo).stderr  # `project.json` itself is refused, so the header carries the words
         self.assertIn("`ci.branch` names `nowhere`", out)
         self.assertIn(CLAUSE, out)
+
+
+class NoBaseReportTest(SliceScopeBaseTest):
+    """AC-S22-28 (G5, G8): a no-base failure is a line of its own, and a forge's output carries no fetch."""
+
+    HEADER = "reaches outside what one slice may touch"
+
+    def no_trunk(self) -> Path:
+        repo = self.repo(self.root())
+        self.commit(repo, OWN)
+        git(repo, "branch", "-D", "main")
+        return repo
+
+    def unrelated(self) -> Path:
+        repo = self.repo(self.root())
+        self.commit(repo, OWN)
+        tree = out(repo, "hash-object", "-t", "tree", "/dev/null")
+        git(repo, "update-ref", "refs/heads/main", out(repo, "commit-tree", tree, "-m", "x"))
+        return repo
+
+    def lose(self, repo: Path) -> None:
+        (repo / "specs/f").mkdir(parents=True, exist_ok=True)
+        (repo / "specs/f/plan.md").write_text("x\n")
+
+    def test_a_developers_no_base_failure_is_one_line_of_its_own(self) -> None:
+        for build, words in ((self.no_trunk, "has no `main` to compare with"), (self.unrelated, "shares no history")):
+            with self.subTest(words=words):
+                result = self.run_gate(build())
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(result.stdout, "")
+                lines = result.stderr.splitlines()
+                self.assertEqual(len(lines), 1, result.stderr)
+                self.assertTrue(lines[0].startswith(f"check-slice-scope: slice/S1 {words.split(' ')[0]}"), lines[0])
+                self.assertIn(words, lines[0])
+                self.assertNotIn(self.HEADER, result.stderr)
+
+    def test_a_lost_record_keeps_the_header_and_the_no_base_line_follows_it(self) -> None:
+        """Order: the findings under their header first, then the no-base line, forge or developer."""
+        for env, words in (({}, "has no `main` to compare with"), ({"CI": "true"}, "was NOT checked")):
+            with self.subTest(env=env):
+                repo = self.no_trunk()
+                self.lose(repo)
+                result = self.run_gate(repo, env)
+                self.assertEqual(result.returncode, 1)
+                lines = result.stderr.splitlines()
+                self.assertIn(self.HEADER, lines[0])
+                self.assertIn("specs/f/plan.md", result.stderr)
+                self.assertIn(words, lines[-1])
+                self.assertEqual(sum(words in line for line in lines), 1)
+
+    def test_a_forges_not_checked_output_carries_no_fetch_command(self) -> None:
+        """G5: a recorded name with no branch here is passed over, and the note names no `git fetch`."""
+        for lost in (False, True):
+            with self.subTest(lost=lost):
+                repo = self.repo(self.root(), ci={"branch": "develop"})
+                git(repo, "branch", "-D", "main")
+                if lost:
+                    self.lose(repo)
+                result = self.run_gate(repo, {"CI": "true"})
+                self.assertIn("was NOT checked", result.stderr)
+                self.assertIn("`ci.branch` names `develop`, which has no branch here", result.stderr)
+                self.assertNotIn("git fetch", result.stdout + result.stderr)
+                self.assertEqual(result.returncode, 1 if lost else 0)
+
+
+class RecordShapeTest(SliceScopeBaseTest):
+    """AC-S22-28 (G6, G7): a record that was passed over is said so, in words that are true."""
+
+    def said(self, value: object) -> str:
+        repo = self.repo(self.root(), ci={"branch": value})
+        self.commit(repo, OWN)
+        result = self.run_gate(repo)
+        return result.stdout + result.stderr
+
+    def test_a_slice_shaped_name_is_a_slice_branch_never_the_trunk(self) -> None:
+        for value in ("slice/S9", "Slice/S9", "refs/heads/slice/S9"):
+            with self.subTest(value=value):
+                stderr = self.said(value)
+                self.assertIn("a slice branch, which is never the trunk", stderr)
+                self.assertNotIn("not a branch name", stderr)
+
+    def test_a_record_that_is_not_a_string_is_said_to_be_passed_over(self) -> None:
+        for value in (7, 1.5, True, ["main"], {"name": "main"}):
+            with self.subTest(value=value):
+                stderr = self.said(value)
+                self.assertIn("`ci.branch` is not a string, so it was passed over", stderr)
+                self.assertNotIn("name", stderr.replace("`ci.branch` is not a string", ""))
+                self.assertNotIn("1.5", stderr)
+
+    def test_an_absent_null_or_blank_record_stays_silent(self) -> None:
+        for value in (None, "", "  "):
+            with self.subTest(value=value):
+                self.assertNotIn("passed over", self.said(value))
+        repo = self.repo(self.root(), ci={})
+        self.commit(repo, OWN)
+        self.assertNotIn("passed over", self.run_gate(repo).stdout)
