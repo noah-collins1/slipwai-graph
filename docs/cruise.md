@@ -243,7 +243,11 @@ reached, or that it cannot be. Before every iteration the runner makes the index
 (`scripts/agents/code_index.py health`): it opens the database and runs SQLite's integrity check, moves a
 corrupt one to `.codegraph/corrupt/` and rebuilds it — the database is ignored by Git and derived from the
 source, and CodeGraph's own `status` and `sync` call a malformed one up to date — and syncs one the tree has
-moved past; the entry's `index` says which, and the feed says it before the iteration starts. Inside the
+moved past; the entry's `index` says which, and the feed says it before the iteration starts. That check narrows as the
+gate does, on any branch outside CI: it hashes only what changed since the last whole comparison, and what a narrowed
+comparison cannot see — a file whose bytes changed while its size, times and identity all read as before — it cannot
+see either; deleting `.codegraph/gate-memory.json` makes its next comparison whole. The runner's check before an
+iteration writes that record when it ends current, as a passing gate run does, and never in CI. Inside the
 iteration, on Claude Code, a `PostToolUse` hook syncs the index each time a delegate returns (CodeGraph's watcher
 is off wherever it decides it is sandboxed, so the index is not trusted to follow), and a `PreToolUse` hook
 refuses a search of the source for a symbol from any session or delegate — told apart by the event's `agent_id`

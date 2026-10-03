@@ -121,6 +121,10 @@ checkout opened where that tooling is missing keeps a database nothing updates, 
 On a `slice/<id>` branch in a developer's checkout, outside CI, the gate compares only what changed since its last
 whole comparison and leaves the integrity check to the trunk and CI; it keeps that record in
 `.codegraph/gate-memory.json` (ignored by Git), and deleting that file makes the next run whole.
+The runner's check before an iteration narrows the same way, on any branch outside CI, from the same record: it
+hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
+changed while its size, times and identity all read as before — it cannot see either; and deleting that file makes
+its next comparison whole.
 {style_gate}{production_gate}
 `make check-constitution` is the one gate that reads a document rather than code, and it waits for the
 document: `./init` installs the constitution *template*, and while that file is still the untouched template

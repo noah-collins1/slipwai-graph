@@ -14,6 +14,10 @@ the index at all, because a checkout travels into
 places its tooling does not, and `make check-codegraph` is what notices an index nothing is maintaining (on a `slice/<id>` branch, outside CI, it
 compares only what changed and leaves the integrity check to the trunk and CI; its record is
 `.codegraph/gate-memory.json`, and deleting that file makes the next run whole).
+The runner's check before an iteration narrows the same way, on any branch outside CI, from the same record: it
+hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
+changed while its size, times and identity all read as before — it cannot see either; and deleting that file makes
+its next comparison whole.
 See docs/extensions.md for what every extension's `init.py` owes.
 
 It indexes this project and nothing else. CodeGraph's own `codegraph install` also rewrites the global config
@@ -104,6 +108,10 @@ That is the whole run, which the trunk, every other branch and CI make. On a `sl
 checkout, outside CI, the gate compares only what changed since its last whole comparison and leaves the integrity
 check to the trunk and CI; it keeps that record in `.codegraph/gate-memory.json` (ignored by Git), and deleting that
 file makes the next run whole.
+The runner's check before an iteration narrows the same way, on any branch outside CI, from the same record: it
+hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
+changed while its size, times and identity all read as before — it cannot see either; and deleting that file makes
+its next comparison whole.
 
 **A sub-agent does not inherit this session's connection**, and needs none: `scripts/codegraph` is in its shell.
 Do not pass the parent conversation merely to carry that fact — every harness receives this `AGENTS.md` block,

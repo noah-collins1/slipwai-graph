@@ -20,10 +20,12 @@ database before it judges one, and what a person runs to repair an index by hand
 only: on a `slice/<id>` branch in a developer's checkout, outside CI, it compares only what changed since its last
 whole comparison and leaves the integrity check to the trunk and CI; it keeps that record in
 `.codegraph/gate-memory.json` (ignored by Git), and deleting that file makes the next run whole.
-`health` itself compares the same way — through the gate's own functions and memory — on every branch, the trunk
-included, wherever no CI marker is set: it hashes only what changed since the last whole comparison, says how many
-files that was of how many, and always runs the integrity check. With no usable memory, or in CI, it hashes every
-tracked file. A `health` that ends current, or synced with the comparison after the sync clean, records what it
+`health` is the runner's check before an iteration, and the runner's check before an iteration narrows the same way —
+through the gate's own functions and memory — on every branch, the trunk included, wherever no CI marker is set: it
+hashes only what changed since the last whole comparison, says how many files that was of how many, and always runs
+the integrity check. What a narrowed comparison cannot see — a file whose bytes changed while its size, times and
+identity all read as before — it cannot see either, and deleting `.codegraph/gate-memory.json` makes its next
+comparison whole. With no usable memory, or in CI, it hashes every tracked file. A `health` that ends current, or synced with the comparison after the sync clean, records what it
 vouched for in that memory as a passing gate run does, outside CI and in no other case. `session` is the same step at the
 start of a Claude Code session — a person's `/drive` has no runner in front of it — and prints only what it did or
 could not do, since a hook's output lands in the session's context. The database is ignored by Git and derived from the source, so a corrupt one loses nothing by being moved
