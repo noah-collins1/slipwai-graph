@@ -187,3 +187,22 @@ Findings: seven, none `CRITICAL` (no actor's data reaches another and no actor g
 Held, seam A: 44 import findings and 17 migration findings byte-identical over names where `Path` and string order differ; a `project.json` that is not an object, hostile `path`, `kind` and `contexts` values — the same last line as the earlier script, never a new traceback; names with newlines and non-UTF-8 bytes; FIFOs and sockets in the tree; link loops; 1900 levels of depth; the count equal to an independent enumeration on the Python, Java, Go and TypeScript skeletons (79, 130, 91, 76); the scripts run from another directory and from `<delivery>/scripts`. Older, not findings: `scripts/` linked from outside the project reads the wrong root; a path beyond the system's limit is skipped by both. Not probed: Python 3.12 and 3.13 (3.14 only on this machine), case-insensitive filesystems.
 
 Held, seam B: every branch shape but `slice/<id>` exactly, a tag or remote ref of that name, a detached `HEAD`, `CI=0`/`false`/a space — all whole; `.gitignore` edited to un-ignore `.codegraph/`, a record committed with `git add -f`, a record naming `..` or absolute paths (membership only — nothing outside the project opened or written); `core.ignoreStat`, `core.fsmonitor`, `core.checkStat=minimal`, `core.trustctime=false`, a broken `diff.orderFile` — an edit still fails, since the stat record does not depend on git's answer; a merge in progress; sparse checkout; a future mtime; twelve simultaneous narrowed runs. Observed, not a finding: the residual D49 accepted is reachable without the clock — a byte changed through a shared memory map on tmpfs moved none of size, times or identity (the fragment now names it). Not run: a partial clone, textconv and external diff drivers, the real CodeGraph CLI (the hand drove it in the demo).
+
+## S02 · eb2a40a · 2026-10-03
+
+Slice `S02-runner-bookkeeping` (cruise iteration 9), diff `596740f..eb2a40a`: `assets/toolkit/scripts/agents/bookkeeping.py`
+(new: the stat-vouched hash record, the log as the runner left it), `assets/toolkit/scripts/agents/cruise.py`
+(`control_paths()`, `controls_signature()`, `fingerprint()`, the log's and the stream's offsets, the optional
+`bookkeeping` object on an entry), `assets/toolkit/scripts/agents/code_index.py` (`health()` compares through the
+gate's record and renews it; `delegate_use()` from an offset), `assets/toolkit/scripts/check-decisions.py` (the
+`Scope:` line and the `--scope` verb), the generated command and briefs, the pages, fourteen test modules, one
+fragment, `VERSION` `1.6.0.dev0`.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | A new verb with two flags, `check-decisions.py --scope <id> [--feature <name>]`, and two new refusals in the gate it shares a file with (`assets/toolkit/scripts/check-decisions.py`); `code_index.py health` prints a new `detail`; the runner's log entry gains an object. No earlier row covers `check-decisions`' arguments or the runner's log |
+| driven adapter or the provider types behind one | widened | The filesystem behind the runner: content read through a record of `os.fstat` facts in place of every time (`assets/toolkit/scripts/agents/bookkeeping.py` `Record.digest`), the log and the stream read from remembered offsets (`Log`, `stream_use()`); the gate's record `.codegraph/gate-memory.json` gains a second writer (`renew()` in `code_index.py`; the S01 row covers the gate's own writer) |
+| authorisation decision (who can reach one that already exists) | widened | The run's one authorisation rule — an iteration never edits a gate or a control, and the runner parks on any change — now rests on the record: `controls_signature()` and `control_paths()` in `assets/toolkit/scripts/agents/cruise.py` decide what is compared and what is re-read |
+| concurrency, idempotency, ordering, retention, or time | widened | Three records kept across iterations and trusted by the next; a two-second rule on file times in the runner; the session, a person and the runner all able to write the log, the stream and the controls while an iteration runs; `health()` and the gate writing one record |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: four triggers `widened`.
