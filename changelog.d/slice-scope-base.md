@@ -24,8 +24,9 @@ may see afterwards. On a developer's machine, a slice branch with no trunk to co
 shallow clone too short to reach the branch point — used to pass as "nothing to hold"; it now fails with a
 single line that names the command to run (`git fetch origin <trunk>:refs/remotes/origin/<trunk>`, or
 `git fetch --unshallow origin`); the longer form is there because a bare `git fetch origin <trunk>` in a
-single-branch clone leaves no ref for the check to find. In any CI run with no trunk to compare with — a pull-request checkout, which is depth 1 by default, or a run with `CI`, `GITHUB_ACTIONS` or
-`GITLAB_CI` set — the check still exits 0 and now says on stderr that the slice was NOT checked. A maintainer who
+single-branch clone leaves no ref for the check to find. In any CI run with no trunk to compare with — a
+pull-request checkout, which is depth 1 by default, or a run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — the
+check still exits 0 and now says on stderr that the slice was NOT checked. A maintainer who
 wants it held there adds `fetch-depth: 0` to the verify job's checkout (`GIT_DEPTH: "0"` on GitLab). A local shell
 with one of those variables set gets the same line instead of the failure.
 
