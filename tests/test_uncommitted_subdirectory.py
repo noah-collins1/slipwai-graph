@@ -8,6 +8,7 @@ named by the project's own spelling.
 from __future__ import annotations
 
 import json
+import re
 import tempfile
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from test_replay import git
 from test_uncommitted import settle_a_row
 
 PAGE = "delivery/docs/convergence.md"
+WHERE = "spelled from the project's directory"
 
 
 def placed(parent: Path, at: str = "sub") -> tuple[Path, Path]:
@@ -177,7 +179,11 @@ class RefusalInSubdirectoryTest(FactoryTestCase):
             left = self.left_uncommitted(top, project)
             result = slipwai(project, "adopt", "--refresh")
             self.assertEqual(result.returncode, 2, f"exit {result.returncode}: {result.stdout + result.stderr}")
-            self.assertTrue(any(f"`{name}`" in result.stderr for name in left), result.stderr)
+            owed = [name for name in left if name != "project.json"]  # the input, never refused
+            named = result.stderr.split(" writes ", 1)[1].split(", and each holds")[0]
+            self.assertEqual(re.findall(r"`([^`]+)`", named), owed[:8], "the first eight, sorted, each backticked")
+            rest = re.search(r" and (\d+) more$", named)
+            self.assertEqual(int(rest.group(1)) if rest else 0, max(len(owed) - 8, 0), "and N more, N the rest")
             self.assertNotIn("sub/delivery", result.stderr)
 
     def test_hold_those_files_committed_the_refresh_exits_zero(self) -> None:
@@ -189,3 +195,20 @@ class RefusalInSubdirectoryTest(FactoryTestCase):
             git(top, "-c", "user.name=t", "-c", "user.email=t@local", "commit", "-q", "-m", "leftovers")
             result = slipwai(project, "adopt", "--refresh")
             self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_a_refusal_says_where_its_names_are_spelled_from_in_a_subdirectory(self) -> None:
+        """AC-S23-11: a person typing `git` at the top with these names would otherwise get nothing."""
+        with tempfile.TemporaryDirectory() as directory:
+            _, project = placed(Path(directory))
+            (project / PAGE).write_text("mine\n")
+            self.assertIn(WHERE, self.refused(project, "--refresh"))
+
+    def test_a_refusal_says_where_its_names_are_spelled_from_at_the_top_of_a_repository(self) -> None:
+        """AC-S23-11, beside `tests/test_uncommitted.py`: the same clause where the project is the repository."""
+        with tempfile.TemporaryDirectory() as directory:
+            top, _ = placed(Path(directory), at=".")
+            (top / PAGE).write_text("mine\n")
+            result = slipwai(top, "adopt", "--refresh")
+            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+            self.assertIn(f"`{PAGE}`", result.stderr)
+            self.assertIn(WHERE, result.stderr)

@@ -100,6 +100,7 @@ def refuse_foreign(root: Path, writes: set[str], verb: str) -> None:
         shown = ", ".join(f"`{path}`" for path in foreign[:8]) + more
         raise GenerationError(
             f"{verb} writes {shown}, and each holds an uncommitted change that is not what slipwai left there — "
-            "writing over it would lose it. Commit or stash those first. Nothing else uncommitted stops this: "
+            "writing over it would lose it. Commit or stash those first. Each path is spelled from the project's "
+            "directory. Nothing else uncommitted stops this: "
             "project.json, what ./init wrote, an earlier answer's regeneration and your own source are left alone."
         )
