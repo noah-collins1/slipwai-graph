@@ -442,7 +442,7 @@ Eleven findings: one `HIGH`, three `MEDIUM`, seven `LOW`; the quickstart's steps
 
 ### T018 — The fetch the gate prints writes the ref it says is missing (`HIGH` G1 · AC-S22-26, D34)
 
-- [ ] **RED:** in a `--single-branch` clone (full, and `--depth 1`) the test reads the command out of the failure
+- [x] (6cc28a9) **RED:** in a `--single-branch` clone (full, and `--depth 1`) the test reads the command out of the failure
   line, runs it, and runs the gate again: today the same line comes back. The same for the passed-over note's fetch.
   **GREEN names the class:** every `git fetch` the script prints — the no-trunk line and the passed-over note — is
   `git fetch origin <name>:refs/remotes/origin/<name>`; the `--unshallow` line is already true and is run by the
@@ -453,7 +453,7 @@ Eleven findings: one `HIGH`, three `MEDIUM`, seven `LOW`; the quickstart's steps
 
 ### T019 — `HEAD` is never a trunk's name, and a symbolic ref is never a trunk ref (`MEDIUM` G2 · AC-S22-27, D34)
 
-- [ ] **RED:** a slice commits `ci.branch: HEAD`; in a plain clone of a repository whose own `HEAD` is on the slice,
+- [x] (6b1e112; each part dies under its own mutant) **RED:** a slice commits `ci.branch: HEAD`; in a plain clone of a repository whose own `HEAD` is on the slice,
   the gate passes today with *compared with `HEAD`*. **GREEN names the class:** `usable()` refuses `HEAD` in any
   case from every source (`ci.branch`, both target variables); `bases_of()` skips a candidate ref that
   `git symbolic-ref -q` resolves.
