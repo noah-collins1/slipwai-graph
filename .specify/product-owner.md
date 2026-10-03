@@ -35,8 +35,8 @@ time per feature grows like S·log S rather than S², with every gate still run 
    then the merge tree); the merge tree comes after the gate it relies on is proven.
 5. Deterministic over fast: a stamp or cache that could cache a false green is wrong; include tool versions
    and script hashes in its key, and never trust it in CI.
-6. Measurement before behaviour: result contracts and difficulty scores are recorded in this release; model
-   routing by difficulty is logged, not switched on.
+6. Measurement before behaviour: result contracts and difficulty scores are recorded first, the classifier is
+   calibrated on them, and it routes only workers, with the rule-based policy as its fallback.
 
 ## Taste
 
@@ -50,7 +50,9 @@ within `make check-structure`'s budgets: split along the structure rather than g
 - Changing what the gate, the adversary or mutation testing check at the merge root and in CI.
 - Replacing the harness, Spec Kit, or the ladder's stages; the organisational parts of the coordination-tax
   paper (decision tiers, the PM model, the inventory-size rule).
-- Switching model routing on. Logging the tier it would choose is in scope; choosing is not.
+- Switching model routing on by a hand-written rule alone. Routing is decided per spec node by a JEV-style or
+  open-source local classifier calibrated on this repository's result contracts (User Story 9), with the rule as
+  its fallback; the planner, judge, skipper and adversary keep fixed tiers.
 - Making this repository's own unittest suite fast beyond what the general changes give it.
 - Any MAJOR change: no axis, option, CLI flag or `schemaVersion` is removed or renamed.
 
