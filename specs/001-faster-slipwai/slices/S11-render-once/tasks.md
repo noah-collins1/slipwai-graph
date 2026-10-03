@@ -534,6 +534,21 @@ sentence and the `render.ts` sentence stop contradicting each other: nothing is 
 `tests/test_render_failures.py`, `changelog.d/render-once.md`. (`tests/test_render_pinned.py` reaches `make model`
 only through the fixture's helper; if it passes an environment of its own, say so and the host decides.)
 
+#### T019 — `MEDIUM` — The hold that a second run writes nothing is never run on Linux (found by the host at `dde4317` · AC-S11-12)
+
+- [ ] Evidence: the seven modules report `skipped=1`, and it is
+  `test_e12_a_second_run_on_an_unchanged_tree_writes_nothing_and_says_nothing_was_written`: its guard `clock_is_fine`
+  writes a probe twice in a row and skips where the two modification times are equal, which on Linux they are (the
+  kernel stamps both within one tick). The two `make model` runs it guards are seconds apart, so the guard asks the
+  wrong question, and the example — including `wrote(second) == []`, which needs no clock — has never run here.
+
+**GREEN (the class):** the guard goes, or asks what the example needs (a time apart at least as long as the two runs
+are); the `wrote` assertion never depends on a clock; sweep the seven modules for any other `skipTest` or guard that
+fires on this machine and say which examples ran. **Verify:** the module reports no skip here; teeth by making
+`writeIfDifferent` always write.
+
+**Files:** `tests/test_render_files_report.py`, `tests/render_fixture.py` (additions only).
+
 ## Convergence
 
 **Converged at `107f008`, at the loop's bound: two passes** (`drive-converge`, host model, fresh context each). Pass 1
