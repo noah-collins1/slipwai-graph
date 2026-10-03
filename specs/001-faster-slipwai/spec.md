@@ -611,3 +611,57 @@ with a host-surface change committed, no forge variable set, and a full clone.
   pull-request target whose base won over the recorded trunk's, then the line names the target and says the pull
   request targets it. Given a recorded trunk with no ref and no other base, then the fetch is printed once.
 
+
+### S23-refusal-in-subdirectory
+
+**Gaps reviewed** 2026-10-03, cruise iteration 6, host: the three examples in `story-split.md` against `changed()`,
+`stamp()` and `refuse_foreign()` in `src/slipwai/uncommitted.py` and their two callers (`src/slipwai/resurvey.py`,
+`src/slipwai/confirm.py`), and against a scratch repository adopted in `sub/` (both edits to
+`delivery/docs/convergence.md` and `delivery/commands/ground.md` were written over at exit 0, and
+`.delivery-tools/written.json` stayed `{}`). Found and written back: which name the refusal prints was unstated
+(D36; AC-S23-1); `--confirm` and `--decline` were named in the slice and had no example, nor had a deletion or an
+untracked file (AC-S23-2); *slipwai itself left the change* had no measurement (AC-S23-3, AC-S23-4); a change
+elsewhere in the repository had no answer, and one whose path from the top spells a path the run writes is refused
+today by mistake (D36; AC-S23-5); a deeper directory, a name git would quote and a symbolic link were unstated
+(AC-S23-6); *every answer is today's* had no measurement (AC-S23-7, AC-S23-8); what a repository already adopted in
+a subdirectory meets at its first run after the fix was unstated (D37; AC-S23-9); and the release level
+(AC-S23-10). Swept for the same mistake — a path git reports from the repository's top compared with one relative
+to the project — over every `git` call under `src/slipwai/`: one more, `history()` in `src/slipwai/structure.py`,
+which is the survey's and not the refusal's, placed in the Parking Lot (D38). Unless a criterion says otherwise the
+repository is one git repository whose adopted project — `project.json` and the delivery directory — is in `sub/`,
+with the adoption committed, a sibling directory `other/` beside it, and every command run in `sub/`.
+
+- **AC-S23-1** — Given an uncommitted edit a person made to a file the refresh writes
+  (`delivery/docs/convergence.md`), when `slipwai adopt --refresh` runs, then it exits 2, the message names
+  `` `delivery/docs/convergence.md` `` — the path as the project spells it, with no `sub/` in front, the way it reads
+  at the top of a repository — the edit stands, and no other file is written.
+- **AC-S23-2** — Given the same edit, when `slipwai adopt --confirm <candidate>` or `--decline <candidate>` runs,
+  then it is refused the same way and `project.json` is not changed. Given instead an uncommitted deletion of a
+  listed file, or an untracked file at a path the run writes, then the refusal names it as it does at the top.
+- **AC-S23-3** — Given no edit of a person's, when `adopt --confirm` records one answer, a convergence row is then
+  settled by hand in `project.json`, and `adopt --confirm` and `adopt --refresh` run after it with nothing
+  committed in between, then each exits 0: what the first run left is recognised as slipwai's own.
+  `sub/.delivery-tools/written.json` holds those paths spelled relative to the project, and `git status` does not
+  show the file.
+- **AC-S23-4** — Given what AC-S23-3's first run left uncommitted, when a person then edits one of those files and
+  a refresh runs, then it is refused naming that file.
+- **AC-S23-5** — Given uncommitted changes outside the project — `other/note.txt` edited, and a file at the
+  repository's top whose path from the top is one the run writes inside the project
+  (`delivery/docs/convergence.md` at the top, beside `sub/`) — when the refresh runs, then neither stops it, neither
+  is written to, and neither is recorded in `written.json`.
+- **AC-S23-6** — Given the project two directories down (`a/b/`), in a directory whose name holds a space and a
+  non-ASCII letter, or reached through a symbolic link to its directory, then AC-S23-1, AC-S23-3 and AC-S23-5 hold
+  as written.
+- **AC-S23-7** — Given a project at the top of its repository, then every answer is today's: the assertions
+  `tests/test_uncommitted.py` and `tests/test_refresh_owned.py` already make pass unchanged, and the paths in
+  `written.json` are spelled as before.
+- **AC-S23-8** — Given a project directory that is not in a git repository, or one git cannot read, then nothing is
+  refused and nothing is recorded, as today, and no run ends on a traceback.
+- **AC-S23-9** — Given a repository adopted in a subdirectory where an earlier factory's `--confirm` or `--refresh`
+  left regenerated files uncommitted (it recorded nothing there), when the first run after this change meets them,
+  then it refuses naming them, as it does a person's edit — it cannot tell the two apart — and committing or
+  stashing once is what clears it (D37). The fragment says so.
+- **AC-S23-10** — Given the slice's diff, when it is reviewed, then it carries one fragment under `changelog.d/`
+  whose first line is `PATCH`, which says *experimental: brownfield adoption*, what was lost before, and what
+  AC-S23-9 asks of a repository already adopted; `VERSION` stays `1.5.2.dev0`; and `slipwai add-service`'s own
+  refusal — any uncommitted change anywhere in the repository — is not changed by this slice.

@@ -394,3 +394,36 @@
 - **Confidence:** medium · **Would reverse if:** a person wants a recorded trunk that shares no history with the branch to fail outright instead of falling to `main` — then T024's first half becomes a developer's exit 1 naming the record — or says a gate that cannot ask git must fail everywhere, which moves B4's exit into `S24`'s approval.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S22-29 to AC-S22-32); `specs/001-faster-slipwai/slices/S22-slice-scope-base/tasks.md` (T024–T028); `specs/001-faster-slipwai/adversary-log.md`; `specs/001-faster-slipwai/story-split.md` (Parking Lot); `specs/001-faster-slipwai/slices/S22-slice-scope-base/quickstart.md`
 - **Status:** standing
+
+## D36 — In a project that sits in a subdirectory of its git repository, which uncommitted changes does the refusal look at, and how does it name them?
+- **Stage:** slice gaps · **Slice:** S23-refusal-in-subdirectory · **When:** 2026-10-03T10:57:22Z · **Iteration:** 6
+- **Question:** The split's first example says the refresh *refuses naming the file*. `git status` spells a path from the repository's top (`sub/delivery/docs/convergence.md`) and a run spells what it writes from the project (`delivery/docs/convergence.md`). Which spelling is compared, recorded and printed, and what of a change outside the project — including one whose path from the top happens to spell a path the run writes?
+- **Options:** (a) compare, record and print every path relative to the project, and look only at changes under the project's directory — recommended by the stage: it is what the top-of-repository case already does, and the split's third example says every answer there is today's; (b) print the path from the repository's top — the person is told a name no other line of slipwai's output uses, and `written.json` would change its spelling at the top or carry two; (c) refuse on any uncommitted change anywhere in the repository — the refusal this module was written to replace (its own docstring), and it would stop `/ground`'s one-commit sequence for a neighbour's work.
+- **Decision:** (a). Only changes under the project's directory are looked at; each is spelled relative to the project when compared with what the run writes, when recorded in `.delivery-tools/written.json`, and when printed. A change elsewhere in the repository never refuses a run and is never recorded — nothing here writes there — and one at the top whose path spells a project path (today refused by mistake) is among them.
+- **Why:** The developer reads one name for a file wherever their project sits, and the refusal protects exactly where a run writes — `src/slipwai/uncommitted.py`'s docstring: *a run can only lose that where it writes*; `story-split.md`, S23's examples one and three.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person wants the path printed from the repository's top so it can be pasted into a `git` command run there.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S23-1, AC-S23-5, AC-S23-7)
+- **Status:** standing
+
+## D37 — What does the first run after the fix do with regenerated files an earlier factory left uncommitted in a subdirectory project?
+- **Stage:** slice gaps · **Slice:** S23-refusal-in-subdirectory · **When:** 2026-10-03T10:57:22Z · **Iteration:** 6
+- **Question:** Before the fix, `stamp()` recorded nothing where the project is in a subdirectory, so slipwai's own uncommitted regeneration there has no digest. Once the refusal works, the next `--confirm` or `--refresh` meets those files and cannot tell them from a person's edit. Refuse, or let them through?
+- **Options:** (a) refuse, naming them; commit or stash once clears it, and the fragment says so — recommended by the stage: the slice's value is *never writes over uncommitted work*, and the owner brief's priority 5 puts a wrong pass below a slow one; (b) treat any unrecorded change as slipwai's own on the first run — writes over a person's edit in exactly the layout the slice exists for; (c) re-derive what slipwai would have written and compare — the module records by digest because the record moves between answers (`tests/test_uncommitted.py`, third test), so the comparison is wrong whenever a row moved.
+- **Decision:** (a). No special case: an uncommitted change with no matching digest is refused. `changelog.d/`'s fragment says what a repository adopted in a subdirectory may meet once — a refusal naming files slipwai itself left — and that committing or stashing them clears it.
+- **Why:** For the developer the cost is one commit they were about to make anyway (`/ground` ends in one); the other options cost work they cannot get back.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person says mid-`/ground` repositories in a subdirectory are common enough to want a one-time flag that takes the leftover as slipwai's own.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S23-9, AC-S23-10)
+- **Status:** standing
+
+## D38 — Where does the same mistake in the survey's history go (`history()` in `src/slipwai/structure.py`)?
+- **Stage:** slice gaps · **Slice:** S23-refusal-in-subdirectory · **When:** 2026-10-03T10:57:22Z · **Iteration:** 6
+- **Question:** The gaps sweep over every `git` call under `src/slipwai/` found one more place where git answers from the repository's top: `history()` runs `git log --name-only` in the project's directory, which lists every commit of the whole repository with paths spelled from the top (seen in a scratch repository: `sub/.gitignore` where `--relative` gives `.gitignore`), so the structure page of a subdirectory project counts its neighbours' commits and names files it cannot find. Is that S23's?
+- **Options:** (a) fix it in S23 — a second capability (what the survey reads) joined to the refusal with an *and*, against the split's *Defers: any other change to what the refusal protects* and constitution V; (b) the Parking Lot, for the completion audit to place as a slice or rule out — recommended by the stage, as D29 placed S21's F2–F5; (c) nothing — it would be found again.
+- **Decision:** (b). One line in `story-split.md`'s Parking Lot; nothing in `structure.py` changes in S23. The other `git` calls read were clean of it: `quick_wins.py`'s `ls-files` and `replay.py`'s `diff -- <relative>` are relative to where they run, and `adopt.py`'s and `add_service.py`'s `status` only ask whether anything at all is uncommitted.
+- **Why:** A wrong structure page misleads and loses nothing; the refusal loses work. One slice, one demo.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** the completion audit or a person reads the survey's history in a subdirectory project as worth a slice now.
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (Parking Lot); `specs/001-faster-slipwai/spec.md` (S23's *Gaps reviewed* note)
+- **Status:** standing

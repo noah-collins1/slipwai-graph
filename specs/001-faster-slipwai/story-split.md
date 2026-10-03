@@ -202,6 +202,11 @@ that cannot delegate takes the earliest ready slice in split order and names the
   to hold* (`rebase-merge/head-name` would answer) — with the other `current_branch()` lines; a gate that cannot
   ask git at all still exits 0, now saying so — whether it should fail is, in CI, a person's, beside `S24`; and a
   refused path is still told *Land it on `main`* where the trunk has another name (the script's older messages).
+- **The survey's history in a subdirectory project (D38; found by S23's gaps sweep).** `history()` in
+  `src/slipwai/structure.py` runs `git log --name-only` in the project's directory, which lists the whole
+  repository's commits with paths spelled from its top, so the structure page of a project adopted in `sub/`
+  counts its neighbours' commits and names files under `sub/…` it cannot find. The same mistake as S23's,
+  in what the survey reads rather than what the refusal protects. For the completion audit to place.
 
 ## Next Step
 
