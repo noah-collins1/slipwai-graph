@@ -227,7 +227,8 @@ temporary directory against a copy of the asset scripts or a real `slipwai adopt
 
 ### T005 — **HIGH** — A done slice whose id has no letters-then-digits head crashes both id readers (R5, R6 · AC-S20-13, D19, Principle I)
 
-- [ ] `re.match(r"[A-Za-z]+\d+", ident).group(0)` is applied to every id in `done_slices()`, which also holds ids
+- [x] **Done** — `06850ab` (drive-implement · sonnet · fresh context). RED: the traceback for `place-order` in `check-decisions`, in `--adversary-baseline` and in `check-benchmark` (the third seen in the run summary only). Sweep: three unguarded prefix derivations, all closed; an id with no letters-then-digits head is looked up whole.
+- [x] `re.match(r"[A-Za-z]+\d+", ident).group(0)` is applied to every id in `done_slices()`, which also holds ids
   from `implemented()` — the model's `id:` taken verbatim, constrained by nothing (`event-model/check.py` accepts
   any string; `SLICE_BRANCH` allows `[A-Za-z0-9][A-Za-z0-9._-]*`). For `place-order` or `1-checkout` the match is
   `None`.
@@ -249,7 +250,8 @@ temporary directory against a copy of the asset scripts or a real `slipwai adopt
 
 ### T006 — **MEDIUM** — Ten of the sixteen fixed host names, and three behaviours, have no example (AC-S20-2, -8, D19)
 
-- [ ] `tests/test_slice_scope_root.py` refuses `Makefile`, `project.json`, `.specify/`, `.github/`, `AGENTS.md`,
+- [x] **Done** — `40ce2a6`. Held, green on arrival: one table over the 24 fixed host names, a missing/None/non-string `path`, a refusal under `./`. Teeth shown by deleting `.opencode`, `.circleci`, `CLAUDE.md`, `.gitlab-ci.yml` one at a time (red each time, restored). The `--adversary-baseline` example is in `06850ab` (green on arrival; teeth not shown).
+- [x] `tests/test_slice_scope_root.py` refuses `Makefile`, `project.json`, `.specify/`, `.github/`, `AGENTS.md`,
   `.claude/`. No test names `.gitea`, `.forgejo`, `.gitlab`, `.gitlab-ci.yml`, `CLAUDE.md`, `.codex`, `.cursor`,
   `.gemini`, `.opencode` (`grep -c` for each over both new test files: 0) — deleting any from
   `check-slice-scope.py:94–96` leaves the suite green. Also without an example: a deployable with the `path` key
@@ -260,7 +262,8 @@ temporary directory against a copy of the asset scripts or a real `slipwai adopt
 
 ### T007 — **MEDIUM** — A subdirectory deployable spelled `./apps/api` beside a root deployable loses its files to the root (AC-S20-7, -8)
 
-- [ ] `service_path()` strips only `/`, so `./apps/api` never prefixes a git path. Before the slice the file was
+- [x] **Done** — `bb594ab`. RED: `./apps/api` forms let through to the root, `ci.gate` as `./ci/gate.yml` let through. One function, `recorded_path()`, for deployable paths and `ci.gate`; only the `./x` forms answered wrongly.
+- [x] `service_path()` strips only `/`, so `./apps/api` never prefixes a git path. Before the slice the file was
   refused (*outside every deployable*); now it falls to the root deployable and the other-service rule is skipped.
 - **Reproduction** (temporary repository, root `shop` at `.`, `api` of kind `service`, model block `service: shop`,
   `apps/api/x.py` changed on `slice/S1`): path `apps/api` → *service `api` is not slice `S1`'s*; `apps/api/` → the
@@ -271,7 +274,8 @@ temporary directory against a copy of the asset scripts or a real `slipwai adopt
 
 ### T008 — **MEDIUM** — a question for the host, not a task to implement: D18's harness and CI names are a subset of what the checker ships beside
 
-- [ ] D18 fixes the list and AC-S20-2 repeats it; the diff implements it exactly. On a real root adoption these are
+- [x] **Done** — `5082b5f` (as D20 decided). RED: the five harness paths, every added CI and Makefile name, and the `CI_FORGES` coverage test (seven keys). Held: a missing, unreadable or malformed registry; `.gitignore` and git hooks. A malformed row adds nothing while well-formed rows beside it still count; the registry, `.written` and `ci.gate` are read once per run.
+- [x] D18 fixes the list and AC-S20-2 repeats it; the diff implements it exactly. On a real root adoption these are
   let through (each probed, exit 0): `.mcp.json`, `opencode.json`, `GEMINI.md`, `.agents/skills/x/SKILL.md`,
   `.kiro/settings/mcp.json`, `.circleci/config.yml`, `Jenkinsfile`, `.gitignore` (which carries the factory's
   `slipwai:delivery` block), `.githooks/pre-commit`, `.pre-commit-config.yaml`, `GNUmakefile`.
@@ -294,7 +298,8 @@ green on arrival.
 
 ### T009 — **LOW** — Delivery at the root with a deployable at the root leaves `.written` itself writable (R-3)
 
-- [ ] Where `DELIVERY` is `.` the delivery clause is skipped, so `.written`, `baseline.json` and `survey/` are the
+- [x] **Done** — `9e82aad`, `d0d69fc` (docstring). RED: `.written` let through where delivery is the root. D18 not widened.
+- [x] Where `DELIVERY` is `.` the delivery clause is skipped, so `.written`, `baseline.json` and `survey/` are the
   slice's unless `.written` lists them, and the checker reads `.written` from the slice's own tree. research.md R-3
   assumes no project is laid out so; nothing checks the assumption. Not reproduced — read from
   `check-slice-scope.py:248–256`.
