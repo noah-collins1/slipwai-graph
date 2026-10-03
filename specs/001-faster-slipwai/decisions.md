@@ -427,3 +427,14 @@
 - **Confidence:** medium · **Would reverse if:** the completion audit or a person reads the survey's history in a subdirectory project as worth a slice now.
 - **Written to:** `specs/001-faster-slipwai/story-split.md` (Parking Lot); `specs/001-faster-slipwai/spec.md` (S23's *Gaps reviewed* note)
 - **Status:** standing
+
+## D39 — In what order are the remaining slices taken, and may S24 be driven?
+- **Stage:** split (a person's steer through `/cruise-tell`, read at the boundary after plan and tasks) · **Slice:** none (feature-level) · **When:** 2026-10-03T11:02:22Z · **Iteration:** 6
+- **Question:** The split placed every defect slice the run found (S20–S24) ahead of the PRD's slices, and S24 waited on a person's approval (D31, D32). The owner sent, in their words: *Owner steer: after S23 closes, take S01-gate-walks next, then S02 and S11, per the owner brief's priority 4 (the PRD's slice order). Defect slices the adversary or gaps open (S24 and any new S2x) go to the pool behind the PRD slices unless a finding is CRITICAL. S24's workflow change is approved by the owner (D31's person's approval: yes), to be taken after S01.*
+- **Options:** (a) keep the split's order — defect slices first as found; (b) the owner's: PRD order after S23, defect slices behind unless `CRITICAL`, S24 approved and taken after S01 — the person's answer.
+- **Decision:** (b), as sent. After `S23-refusal-in-subdirectory` closes: `S01-gate-walks`, then `S02-runner-bookkeeping` and `S11-render-once`, and on through the PRD's order. A slice opened by an adversary or gaps finding from here on is placed behind the PRD's slices, not ahead of them, unless the finding is `CRITICAL` (which the ladder already puts first). `S24-ci-fetches-slice-base` has the person's approval D31 and D32 named as unavailable: it may be driven, and no earlier than after S01. **The host's reading, not the owner's words:** the message says both that S24 goes behind the PRD slices and that it is taken after S01; the split records S24 as ready once S01 is done and places it directly after S01, ahead of S02 and S11, taking the sentence about S24 itself over the general one. A person who meant the other reading moves its row.
+- **Why:** Owner brief, priority 4, and the owner's own message; the approval is the input D31 said nobody in the run had.
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** the owner sends another order, or says S24 was meant to wait behind every PRD slice.
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (S24's row, Slice graph, Parking Lot)
+- **Status:** standing

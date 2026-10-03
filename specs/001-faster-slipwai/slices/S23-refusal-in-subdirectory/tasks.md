@@ -52,7 +52,7 @@ None is marked: every implementation task shares `src/slipwai/uncommitted.py` or
 
 ### T001 — Pin what the refusal answers where the project is the repository's top (host task)
 
-- [ ] **Host task — not delegated.** The host appends one row to `delivery/survey/pinned.md` before T002 and commits
+- [x] **Host task — not delegated.** The host appends one row to `delivery/survey/pinned.md` before T002 and commits
   it alone: what the refusal answers where the project is the top of its repository, naming the holding tests —
   `tests/test_uncommitted.py` (the `/ground` sequence commits once; a hand edit to a file a refresh writes is refused
   by name; what slipwai left is its own after the record moves; the same where `.git` is read-only) and
