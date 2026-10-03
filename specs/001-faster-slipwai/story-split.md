@@ -122,6 +122,15 @@ that cannot delegate takes the earliest ready slice in split order and names the
   (`S09`, `S10`), each a MINOR; the PRD's E9 is their source. No finished slice is re-opened for them: the entries
   D1 to D62 gain no `Reversibility:` line by hand, and `S02`'s `Scope:` line stands as shipped. `S28` waits on
   `S14-result-contract` for FR-032, wherever the order puts it.
+- **What S11's adversary pass and demo left (D72), behind the PRD's slices (D39), for the completion audit.** *Older
+  than the slice:* a first install of the renderer interrupted after `mmdc` appears is treated as installed (B2 —
+  the slice's line now says what to delete; the guard is unchanged); a browser that stops answering holds the run
+  for Puppeteer's own timeout, minutes, and the run has no bound of its own (B3 — a bound is a number or a setting
+  for a person to choose); SIGKILL of the render process leaves the browser running (B5); two failures of the
+  swimlane patcher are not `render:` lines and one names the wrong cause (B7). *Stated:* the record vouches for two
+  lines and the closing tag, not the picture's body (A6, D68). *The hand's notes:* the validator's raw JSON for a
+  frame name the model refuses; under a CI marker every SVG gets a `wrote` line though its bytes are the same; the
+  whole timeline at 16 slices is unreadable until *full size* is pressed.
 - **For a person, from S11's after-converge gaps (D71, G5).** Slice ids that differ only in case (`S1`, `s1`) pass
   `check-model` and are one file on a case-insensitive filesystem: one slice's diagram overwrites the other's, the
   page shows one picture for both since it is built from the files, and one of the two is redrawn on every run.

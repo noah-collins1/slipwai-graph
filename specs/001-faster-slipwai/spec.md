@@ -1258,6 +1258,25 @@ saving and the single browser is the saving everywhere.
   may meet a conflict there, because the renderer's pin, width and browser handling moved to `render-session.ts`.
   (D71)
 
+- **AC-S11-21** — Given `docs/event-model/segments` or `slices` that is a symbolic link, a file or anything but a
+  real directory, when a run starts, then that entry is removed as itself — never what a link names — and a
+  directory is made; nothing outside `docs/event-model/` is removed by any run. Given an entry at a name the model
+  produces (an SVG, a `.mmd`, the page, the PNG) that is not a regular file — a link, a directory, a FIFO — then it
+  is removed and drawn or written afresh, never read, written through or descended. Each thing removed from the two
+  directories is printed as `removed <path>`. (D72)
+- **AC-S11-22** — Given a slice id as long as the model allows a file name for, then its diagram is drawn: the
+  temporary's name does not carry the file's name. (D72)
+- **AC-S11-23** — Given the renderer key, then every environment variable whose name begins `PUPPETEER_` is in it,
+  as name and value in name order, and the Puppeteer config's bytes are read once: the bytes keyed are the bytes
+  launched with. A Puppeteer rc file is not noticed, and the page says so beside the browser behind a path the
+  config names. (D70, D72)
+- **AC-S11-24** — Given a browser that stops during a run — killed, crashed or disconnected — then the run says
+  once that the browser stopped, blames no diagram for it, exits non-zero, and leaves the earlier files, no
+  temporary and no browser. Given a browser that cannot start for want of a sandbox, then the line names
+  `MERMAID_PUPPETEER_CONFIG` whoever runs it; given one whose files are missing from the install, then the line says
+  to delete `scripts/event-model/.mermaid-cli` and run again. (D72)
+- **AC-S11-25** — Given a run that drew only the PNG, then the closing line says the PNG was drawn. (D72)
+
 ### S24-ci-fetches-slice-base
 
 **Gaps review open — blocked on a person's approval (D54)**, 2026-10-03, cruise iteration 8, host with `drive-skipper`

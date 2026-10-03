@@ -549,6 +549,72 @@ fires on this machine and say which examples ran. **Verify:** the module reports
 
 **Files:** `tests/test_render_files_report.py`, `tests/render_fixture.py` (additions only).
 
+### After the adversary pass (2026-10-03, two seams at `dde4317`; D72; the row under `## S11` in `adversary-log.md`)
+
+#### T020 — `HIGH` — Nothing is removed, read or written through a link, and nothing outside `docs/event-model/` is ever removed (A1, A2, A3, A5 · AC-S11-21)
+
+- [ ] Evidence (seam A, `/tmp/s11-adv-A.md`): `docs/event-model/slices -> <dir>` and `make model` empties `<dir>` at
+  exit 0; committed as `slices -> ../..` it removed `.git`, the `Makefile` and `model.yaml`. A dangling link or a file
+  at `slices`, or a directory at `slices/S1.svg` or `S1.mmd`, fails every run; `slices/S2.mmd -> <file>` is written
+  through; `mkfifo slices/S1.svg` hangs the run.
+
+**RED:** each of those, with the stand-in: the victim directory's and file's bytes stand; the link, the file or the
+FIFO is gone and a real directory or a drawn file is in its place; exit 0; a `removed <path>` line for each thing
+removed from the two directories (the hand's note 3). **GREEN (the class):** one rule in `render-plan.ts` — `lstat`
+before use: the two directories must be real directories or are removed as themselves and made; an entry at a
+produced name that is not a regular file is removed, then drawn or written; sweep every path the three scripts read,
+write, rename onto or descend under `docs/event-model/` (`model.svg`, `model.png`, `model.mmd`, `model.html`, each
+segment's and slice's two files, the temporaries) and say for each what a link, a directory and a FIFO there now
+gives. The pins stay green unedited.
+
+**Files:** `assets/toolkit/scripts/event-model/render-plan.ts`, `render.ts`, a new `tests/test_render_links.py`,
+`tests/render_fixture.py` (additions only), `changelog.d/render-once.md` (one clause: removal by name never follows
+a link).
+
+#### T021 — `LOW` — The temporary's name does not carry the file's name (A4 · AC-S11-22)
+
+- [ ] Evidence: an id of `S` and 245 letters passes the model; `.tmp-slice-<pid>-<id>.svg` passes 255 bytes and the run
+  fails `ENAMETOOLONG`. **RED:** that id is drawn. **GREEN:** `.tmp-<pid>-<n>` with a counter per process, still in
+  `docs/event-model/slices/`, still removed as a leftover by any later run; AC-S11-18's example follows the new shape.
+
+**Files:** `assets/toolkit/scripts/event-model/render-plan.ts`, `tests/test_render_files.py` or `tests/test_render_links.py`.
+
+#### T022 — `MEDIUM` — Puppeteer's environment is in the key, and the config is read once (B1, B6 · AC-S11-23)
+
+- [ ] Evidence (seam B, `/tmp/s11-adv-B.md`): `PUPPETEER_EXECUTABLE_PATH=<other browser> make model` → `0 of 25 drawn`;
+  a config swapped between the key and the launch is drawn under the first bytes' key. **RED:** in e6's sweep, a
+  `PUPPETEER_` variable set, changed and unset each redraws everything; the stand-in's `launch` receives exactly the
+  options the keyed bytes parse to (a config file replaced after the key is computed — through a probe, a fake `open`
+  in the test tree — is not what is launched with). **GREEN (the class):** every input the launch takes from outside
+  the scripts is either in the key or named in the README's sentence on what the key does not notice (a browser
+  behind a path the config names; a Puppeteer rc file); the fragment's line on the key says the same.
+
+**Files:** `assets/toolkit/scripts/event-model/render-session.ts`, `render.ts`, `assets/toolkit/docs/event-model/README.md`,
+`changelog.d/render-once.md`, `tests/test_render_current.py`, `tests/test_render_docs.py`, `tests/test_render_failures.py`,
+`tests/render_fixture.py` (additions only).
+
+#### T023 — `LOW` — A browser that stopped is said once, as the browser, and a browser that cannot start says what to do (B4, B3's blame, B2's message, the hand's note 4 · AC-S11-24)
+
+- [ ] Evidence: `kill -9` of the browser mid-window → four `could not draw …: Connection closed.` lines; no sandbox and
+  no config → Chromium's own paragraph, the variable never named unless root; an interrupted install →
+  `Could not find chrome-headless-shell` on every run with no word on the prefix. **RED:** the stand-in's browser
+  disconnects mid-window (a new fixture variable) → one line saying the browser stopped, no diagram blamed, exit
+  non-zero, earlier files and no temporary; a launch failing with a no-sandbox message and no config → the line names
+  `MERMAID_PUPPETEER_CONFIG`; a launch failing for a missing browser → the line says to delete
+  `scripts/event-model/.mermaid-cli` and run again. **GREEN (the class):** every failure whose cause is the browser
+  rather than a diagram is reported once as the browser; sweep `drawDiagrams`, `drawPng` and `lazySession`.
+
+**Files:** `assets/toolkit/scripts/event-model/render-session.ts`, `render-plan.ts`, `render.ts`,
+`tests/test_render_failures.py` (or a new `tests/test_render_browser.py` past 350 lines), `tests/render_fixture.py`.
+
+#### T024 — `LOW` — A PNG-only run says the PNG was drawn (the hand's note 1 · AC-S11-25)
+
+- [ ] Evidence (demo): `PNG=1` with nothing else to draw closes `0 of 22 diagrams drawn, 22 unchanged.` though a
+  browser ran. **RED:** that run's closing line says the PNG was drawn; AC-S11-13's two lines unchanged without `PNG`.
+  **GREEN:** one clause; sweep the closing line's cases (drawn, none, CI, PNG, each with the others).
+
+**Files:** `assets/toolkit/scripts/event-model/render-plan.ts`, `render.ts`, `tests/test_render_files_report.py`.
+
 ## Convergence
 
 **Converged at `107f008`, at the loop's bound: two passes** (`drive-converge`, host model, fresh context each). Pass 1
