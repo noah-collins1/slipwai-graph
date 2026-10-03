@@ -354,6 +354,77 @@ No screen in this slice
 
 *(appended by `drive-converge`)*
 
+### Pass 1 (2026-10-03, at `273129c`)
+
+#### T009 — `HIGH` — The finished-file write has no example that fails when the rename is removed (AC-S11-8, AC-S11-9)
+
+- [ ] **Hold with teeth, tests only unless the sweep finds a write that bypasses it.** Evidence: `writeFinished`
+  (`render-plan.ts` 109–120) changed in the working tree to `writeFileSync(join(ROOT, path), bytes)` — no temporary, no
+  rename — and `make test TESTS="test_render_files test_render_files_report test_render_pinned"` ran 15 tests, OK; the
+  file was restored with `git checkout --`. "Reaches its final name only by a rename of a complete file" and the PNG's
+  "by the same rename" are implemented and unheld; `test_e8`'s `leftovers == []` cannot fail either, because a failed
+  *draw* never writes a temporary.
+
+**RED/hold:** (1) an SVG and `model.png` that exist and are redrawn arrive as a *new* file — an example a direct
+write fails, e.g. the earlier file made read-only (`chmod 0444`) is still replaced, or its inode changes; skips, saying
+why, on Windows and as root where the platform cannot show it. (2) The rename cannot happen (`segments/` made
+`0555`): exit non-zero, the earlier file's bytes stand, no `.tmp-*` anywhere under `docs/event-model/`, the session
+closed (log: one close). Teeth shown for each by the mutation above and by deleting the `rmSync(temporary)` in the
+catch.
+
+**GREEN (the class, not the instance):** sweep every write under `docs/event-model/` that `render.ts`,
+`render-plan.ts` and `render-session.ts` make and say for each which example fails if it stops being temporary-then-
+rename (SVG, PNG) or write-if-different (`.mmd`, page, README block); any without one gets one here.
+
+**Files:** `tests/test_render_files.py` (or a new `tests/test_render_finished.py` if it nears 350 lines).
+
+#### T010 — `MEDIUM` — A failure that is not one diagram's draw is reported as itself, once, and held (AC-S11-8, AC-S11-16)
+
+- [ ] Evidence, each reproduced on a scratch project with the stand-in (`/tmp/s11-converge/fx2`): (a) the stand-in's
+  `launch` throwing → stderr is `render: could not draw <svg>: Failed to launch the browser process` once per diagram
+  of the first window (three lines for a one-slice model, four on the fixture): the browser's failure is reported as
+  three or four diagrams'; (b) a PNG draw throwing → stderr is the bare reason (`png refused`), no `render:` and no
+  `model.png`; (c) `MERMAID_PUPPETEER_CONFIG` naming a missing file → bare `ENOENT … open '/nonexistent.json'`, the
+  variable not named; (d) no test in `tests/` names the root line (`grep -rn 'running as root' tests/` is empty), so
+  AC-S11-16's third clause — `explainRootLaunch`, `render-session.ts` 137–146 and 160–162 — is unheld, as is any launch
+  failure at all.
+
+**RED:** a launch that fails → exit non-zero, one line saying the browser could not be started, no diagram blamed, no
+close on a session never opened; the root line through a probe that imports `render-session.ts`, sets
+`process.getuid = () => 0` and gives `lazySession` an `open` that throws (a fake in the test tree, D69's seam) — with
+and without `MERMAID_PUPPETEER_CONFIG`; a failed PNG names `docs/event-model/model.png`; a config path that cannot be
+read names the variable.
+
+**GREEN (the class):** sweep every `throw` and rejected promise that can leave `main()` in the three scripts
+(`drawDiagrams`, `drawPng`, `writeFinished`, `rendererKey`, `launch`, `entryOf`) and give each a `render:` line naming
+what failed — the diagram, the file, or the browser — exactly once.
+
+**Files:** `assets/toolkit/scripts/event-model/render-plan.ts`, `render-session.ts`, `tests/test_render_files.py` or a
+new module; the fragment if a sentence of it changes (`Level PATCH; VERSION already 1.6.0.dev0`).
+
+#### T011 — `LOW` — The skip rule's positions have examples (AC-S11-5)
+
+- [ ] Reproduced as *held by the code, not by a test*: a renderer line on line 3 (a blank line 2), the two lines
+  swapped, both stamps on one line, and CRLF line ends each redraw that diagram once and then leave it; a second,
+  wrong source stamp on line 3 is left, and `check.py` agrees (it reads the first match). Add the four redraw
+  examples and the one left example to `tests/test_render_current.py`; teeth by changing `isCurrent`'s
+  `split('\n', 2)` comparison to a `includes`. **Sweep:** every reader of the two lines (`isCurrent`, `extractHash`
+  in `mermaid.ts`, `check.ts` 96 and 142, `page.ts`) named with the line it reads and the example that holds it.
+
+**Files:** `tests/test_render_current.py`.
+
+#### T012 — `LOW` — `1 slices`, `--png`, and a skip reason that stopped being true
+
+- [ ] (a) A one-slice model closes `model: 1 slices, 3 of 3 diagrams drawn, 0 unchanged.` (reproduced; the pre-slice
+  line said `1 slices rendered` too, so nothing regressed) — the closing-line builder agrees its nouns with their
+  counts, the two verbatim lines of AC-S11-13 unchanged; sweep every count the three scripts print. (b) `--png` is
+  read at `render.ts` 69 and no test passes it; one example beside `PNG=1`. (c) every render test is skipped on
+  Windows "because the stand-in's `.bin/mmdc` is a shebang script", and since T002 nothing spawns `mmdc`: say the
+  true reason (`make`, the recipe) or lift the skip where it no longer applies; sweep the six modules.
+
+**Files:** `assets/toolkit/scripts/event-model/render-plan.ts`, `tests/test_render_files_report.py`,
+`tests/test_render_files.py`, the skip decorators of `tests/test_render_*.py`.
+
 ## Convergence
 
 *(the verdict, written by `drive-converge`)*
