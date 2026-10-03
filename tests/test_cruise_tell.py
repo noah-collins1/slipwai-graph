@@ -7,14 +7,13 @@ from inside its own iterations, so nothing here depends on a timer racing the lo
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import tempfile
 import time
 from pathlib import Path
 
 from support import FactoryTestCase
-from test_cruise_runner import cruise, enable, fake_harness, logged
+from test_cruise_runner import cruise, enable, fake_harness, logged, outside_a_run
 
 from slipwai.project.cruise import LOG
 from slipwai.project.cruise_record import INBOX, TOLD
@@ -145,7 +144,7 @@ if [ "$n" -eq 1 ]; then echo "cruise: parked: which region the tenant lives in";
             cruise(repo, "--set", "poll_minutes=10")
             runner = subprocess.Popen(["python3", "scripts/agents/cruise.py", "run"], cwd=repo, text=True,
                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                      env={**os.environ, **env, "CRUISE_POLL_SECONDS": "600"})
+                                      env=outside_a_run({**env, "CRUISE_POLL_SECONDS": "600"}))
             assert runner.stdout is not None
             seen: list[str] = []
             for line in runner.stdout:

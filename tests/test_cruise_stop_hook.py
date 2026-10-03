@@ -11,13 +11,12 @@ checkpoint.
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import tempfile
 from pathlib import Path
 
 from support import FactoryTestCase
-from test_cruise_runner import REGISTRY, enable
+from test_cruise_runner import REGISTRY, enable, outside_a_run
 
 from slipwai.project.cruise import STOP_FILE, UNREAD
 from slipwai.project.cruise_record import CHECKPOINT, LAST_RESPONSE
@@ -26,9 +25,8 @@ RUNNER = {"CRUISE_RUNNER": "1", "CRUISE_ITERATION": "2"}
 
 
 def hook(repo: Path, verb: str, event: dict, env: dict[str, str]) -> subprocess.CompletedProcess:
-    unset = {k: v for k, v in os.environ.items() if k not in ("CRUISE_RUNNER", "CRUISE_ITERATION")}
     return subprocess.run(["python3", "scripts/agents/cruise.py", verb], cwd=repo, text=True, capture_output=True,
-                          env={**unset, **env}, input=json.dumps(event))
+                          env=outside_a_run(env), input=json.dumps(event))
 
 
 class CruiseStopHookTest(FactoryTestCase):

@@ -17,7 +17,7 @@ from pathlib import Path
 from support import FactoryTestCase
 
 from slipwai.assets import TOOLKIT_ROOT
-from slipwai.project.cruise import CONFIG, LOG, SETTINGS, STOP_FILE, cruise_config
+from slipwai.project.cruise import CONFIG, LOG, SETTINGS, STOP_FILE, UNREAD, cruise_config
 from slipwai.project.cruise_record import (
     CHECKPOINT,
     CHECKPOINT_ENTRY,
@@ -40,9 +40,18 @@ echo "iteration $n of the fake harness"
 """
 
 
+RUN_MARKS = ("CRUISE_RUNNER", "CRUISE_ITERATION")
+
+
+def outside_a_run(env: dict[str, str] | None = None) -> dict[str, str]:
+    """The parent environment without the runner's two marks, then `env` on top: a child of a test is not an
+    iteration unless the test says so, and a test that says so passes the marks in `env`."""
+    return {**{k: v for k, v in os.environ.items() if k not in RUN_MARKS}, **(env or {})}
+
+
 def cruise(repo: Path, *arguments: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(["python3", "scripts/agents/cruise.py", *arguments], cwd=repo, text=True,
-                          capture_output=True, stdin=subprocess.DEVNULL, env={**os.environ, **(env or {})})
+                          capture_output=True, stdin=subprocess.DEVNULL, env=outside_a_run(env))
 
 
 def enable(repo: Path, harness: str = "claude", **settings: str) -> None:
@@ -62,6 +71,26 @@ def logged(repo: Path) -> list[dict]:
 
 
 class CruiseRunnerTest(FactoryTestCase):
+    def test_a_test_child_never_inherits_the_marks_of_a_run_the_test_is_itself_running_under(self) -> None:
+        """This suite runs inside `/cruise` iterations, whose environment carries `CRUISE_RUNNER` and
+        `CRUISE_ITERATION`. A script a test spawns is not an iteration: `cruise()` hands it the parent's
+        environment without the two marks, so `loop` reads as typed (UNREAD), not as a refused nested start."""
+        marks = {"CRUISE_RUNNER": "1", "CRUISE_ITERATION": "2"}
+        before = {k: os.environ.get(k) for k in marks}
+        os.environ.update(marks)
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                repo = self.generate(directory, "inherits", "standard", "python")
+                enable(repo)
+                typed = cruise(repo, "loop")
+        finally:
+            for key, value in before.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+        self.assertIn(UNREAD, typed.stdout + typed.stderr)
+
     def test_the_settings_file_the_script_and_the_command_agree_and_a_change_is_checked(self) -> None:
         """One list of settings, written into the file by the factory and read back by the script: the same
         keys, the same defaults, the same words for what each controls — and a hand edit or a `--set` outside

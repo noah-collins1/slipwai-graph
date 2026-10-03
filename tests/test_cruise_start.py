@@ -21,7 +21,7 @@ from typing import Any
 from unittest import mock
 
 from support import FactoryTestCase
-from test_cruise_runner import LOG, REGISTRY, STOP_FILE, cruise, enable, fake_harness, logged
+from test_cruise_runner import LOG, REGISTRY, STOP_FILE, cruise, enable, fake_harness, logged, outside_a_run
 
 from slipwai.project.cruise_record import RUNNER_LOG, RUNNER_PID
 
@@ -279,7 +279,7 @@ if [ "$n" -lt 3 ]; then echo "cruise: continue"; else echo "cruise: done"; fi"""
 
             env = fake_harness(Path(directory), 'echo "cruise: done"')
             said = io.StringIO()
-            with (mock.patch.dict(module.os.environ, env), mock.patch.object(module.subprocess, "Popen", ending(0)),
+            with (mock.patch.dict(module.os.environ, outside_a_run(env), clear=True), mock.patch.object(module.subprocess, "Popen", ending(0)),
                   contextlib.redirect_stdout(said)):
                 module.start([])
             self.assertRegex(said.getvalue(), re.escape(
@@ -289,7 +289,7 @@ if [ "$n" -lt 3 ]; then echo "cruise: continue"; else echo "cruise: done"; fi"""
                             "cruise: done — every specification is satisfied\n"))
             self.assertEqual(said.getvalue().count("\n"), 1)
             self.assertFalse((repo / RUNNER_PID).exists())
-            with (mock.patch.dict(module.os.environ, env), mock.patch.object(module.subprocess, "Popen", ending(1)),
+            with (mock.patch.dict(module.os.environ, outside_a_run(env), clear=True), mock.patch.object(module.subprocess, "Popen", ending(1)),
                   self.assertRaises(RuntimeError) as refused):
                 module.start([])
             self.assertTrue(str(refused.exception).startswith(

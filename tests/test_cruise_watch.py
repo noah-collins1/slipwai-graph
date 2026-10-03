@@ -8,7 +8,6 @@ headless iteration cannot ask.
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
 import tempfile
@@ -16,7 +15,7 @@ import time
 from pathlib import Path
 
 from support import FactoryTestCase
-from test_cruise_runner import cruise, enable, fake_harness, logged
+from test_cruise_runner import cruise, enable, fake_harness, logged, outside_a_run
 
 from slipwai.project.cruise_record import RUNNER_LOG, RUNNER_PID, RUNNER_STREAM
 
@@ -164,7 +163,7 @@ else sed 's/cruise: continue/cruise: done/' {fixtures}/claude-stream.jsonl; fi""
                                  "approval). The runner waits: a change under specs/ or a commit resumes it, `touch "
                                  ".specify/cruise.stop` ends it; nothing to watch until then")
                 again = subprocess.run(["python3", "scripts/agents/cruise.py", "watch", "--minutes", "1"], cwd=repo,
-                                       text=True, capture_output=True, env={**os.environ, **env}, timeout=20)
+                                       text=True, capture_output=True, env=outside_a_run(env), timeout=20)
                 self.assertTrue(again.stdout.startswith("cruise: watch: parked — "), again.stdout)
             finally:
                 cruise(repo, "stop", "--now")
