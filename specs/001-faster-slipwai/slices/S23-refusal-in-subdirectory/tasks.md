@@ -295,3 +295,160 @@ run records something and the *not recorded* assertion can fail (a confirm runs 
 No screen in this slice
 
 ## Convergence
+
+**Converged on pass 1** (2026-10-03, cruise iteration 6, `drive-converge`, host model, fresh context) at `12a4608`,
+over `13ec3c1..12a4608`: no `CRITICAL` or `HIGH`; one `MEDIUM` and five `LOW` appended as T010–T015 under Phase 4
+below, none of which re-opens the loop. The pass ended inside its budget and is complete for what it lists; what it
+could not sweep on this machine is named at the end. No `.codegraph/` in this tree: callers were found by text
+search (`grep` over `src/slipwai/`).
+
+**Levels.** *Domain* — `changed()` (`src/slipwai/uncommitted.py:31–57`) probed directly in scratch repositories
+under `/tmp` over the status shapes listed under *Sweeps*; `stamp()` (`:76–85`) and `refuse_foreign()` (`:88–105`)
+are unchanged by the diff and read `changed()` only through `path in now`, so the project-relative spelling reaches
+both by construction. *Use case* — three call sites, all of them: `resurvey.py:167` (the refusal, before the first
+write of a refresh, the wrappers at `:172`), `confirm.py:124` (before `project.json` is written at `:156`; `--confirm`
+and `--decline` are one function, `cli_adopt.py:192`), `resurvey.py:305` (the stamp, last line of a refresh). A
+confirm's refresh runs `clean_checked=True`, after the check at `confirm.py:124` and nothing but `project.json`
+written in between. Every path through `--refresh`, `--confirm`, `--decline` reaches the refusal before it writes.
+*Delivery adapter* — exit 2 and the message on stderr, run by hand and held by the tests; the message for a
+`--decline` given alone says `` `slipwai adopt --confirm` writes `` (T015, not this slice's). *Screen* — none.
+*Published contract* — the fragment (`changelog.d/refusal-in-subdirectory.md:1` `PATCH`, *experimental: brownfield
+adoption*, what was lost, the catch-up of D37): each sentence checked against a run and none found untrue in the
+state it describes; `docs/adopting.md:149` one sentence, true; `written.json`'s keys project-relative in a
+subdirectory and spelled as before at the top; `VERSION` `1.5.2.dev0`; `add_service.py`, `tests/test_uncommitted.py`
+and `tests/test_refresh_owned.py` not in the diff. T002 asked for the *module* docstring to say where `changed()`
+looks; the function's docstring says it and the module's is unchanged and still true — a difference from the task
+text the Implementation record does not list, no task.
+
+**Criteria** (tests in `tests/test_uncommitted_subdirectory.py` unless `places`, which is
+`tests/test_uncommitted_places.py`). AC-S23-1 — `test_a_hand_edit_to_a_file_a_refresh_writes_is_refused_by_the_projects_name_for_it`.
+AC-S23-2 — `test_the_same_edit_refuses_confirm_…`, `…refuses_decline_…`, `test_a_listed_file_deleted_…`,
+`test_a_path_the_run_writes_that_is_present_and_untracked_…`. AC-S23-3 — `test_hold_what_a_run_left_and_a_row_settled_by_hand_…`
+(a hold) with `test_what_a_run_leaves_uncommitted_is_recorded_as_the_project_spells_it`. AC-S23-4 —
+`test_an_edit_on_top_of_what_a_run_left_is_refused_naming_that_file`. AC-S23-5 — `test_hold_an_edit_elsewhere_…`,
+`test_a_file_at_the_top_that_spells_a_path_the_run_writes_is_neither_refused_nor_recorded`; the criterion as written
+(`delivery/docs/convergence.md` at the top, `--refresh`) run by hand: exit 0, both edits stand, record `{}`.
+AC-S23-6 — `places`, four placement tests; they repeat AC-S23-1, the record's spelling and the `other/` edit, not
+AC-S23-3's second run nor AC-S23-5's top-level file (T014). AC-S23-7 — `tests/test_uncommitted.py` and
+`tests/test_refresh_owned.py` unedited and green (run here, with the two new modules: 42 tests), `places`
+`test_hold_at_the_top_…`. AC-S23-8 — `places` `test_hold_a_project_copied_to_a_directory_in_no_repository_…` holds
+the first clause; **the second, *one git cannot read*, has no example** (T010; right at HEAD by hand). AC-S23-9 —
+`test_an_earlier_factorys_uncommitted_leftovers_are_refused_once_naming_them`, `test_hold_those_files_committed_…`,
+and the fragment's *Catch-up* paragraph. AC-S23-10 — the fragment, `tests/test_changelog.py`, `git diff --stat`
+over the slice.
+
+**Mutation** (one, restored with `git checkout -- src/slipwai/uncommitted.py`; `git diff --stat -- src tests` empty
+after): the rename rule's two lines (`uncommitted.py:55–56`) deleted → `test_uncommitted test_uncommitted_subdirectory
+test_uncommitted_places test_refresh_owned` 42 tests OK. The rule T002 was told to keep is observed by nothing (T011).
+
+**Sweeps** (git 2.53.0, `changed()` called on scratch repositories; project in `sub/` unless said). Siblings whose
+name the project's is a prefix of (`sub2/`, `subdir/`) and the top's `d/a.md`, all edited → `[]`; `sub/sub/d/a.md`
+→ `sub/d/a.md` (the prefix comes off once). Staged rename inside→outside → the deletion, by the project's name;
+outside→inside → the new path, no stray field; inside→inside → the new path only; a rename onto a path → that path;
+`status.renames=copies` → the copy. Unmerged `UU` → reported. Tracked-and-ignored, edited → reported;
+untracked-and-ignored at a path → not seen, as at the top (AC-S23-7; today's answer, not a task — the host may park
+it). An untracked nested repository → `nested/`; a dirty gitlink → `nested`; neither is a path a run writes; a project
+that is itself a nested repository is its own top. `status.relativePaths`, `status.showUntrackedFiles=no`,
+`core.quotePath` → no effect. A linked worktree, a directory named `s[u]b*` (the pathspec is `.`, not the name) →
+right. `GIT_DIR` and `GIT_WORK_TREE` both set, `GIT_WORK_TREE` alone, `GIT_PREFIX` → right; `GIT_DIR` alone → T012;
+`GIT_CEILING_DIRECTORIES`, a corrupt `HEAD` → `None`, nothing refused. A worktree rename under intent-to-add (` R`) →
+T011. `git` not installed → T013. **Not swept:** a case-insensitive filesystem (the directory entered as `SUB`
+where the index says `sub`) and Windows path spellings — neither can be made on this machine.
+
+**Constitution.** **I** (the factory does not write over a person's file) — `uncommitted.py:39–57` gives the refusal
+the project's spelling, `resurvey.py:167` and `confirm.py:124` refuse before any write, and nothing outside the
+project is recorded or written (`uncommitted.py:53`). **III** — one function grown by twelve lines, no module, flag
+or setting; the prefix filter at `:53` is unreachable while the pathspec at `:40` holds, kept on purpose
+(research R-3). **V** — every example enters through the CLI (`tests/test_uncommitted_subdirectory.py:44–171`,
+`tests/test_uncommitted_places.py:62–122`), the fix begins with a boundary scenario (`:44`), holds are named holds;
+gaps T010, T011, T014. **VIII** — `changelog.d/refusal-in-subdirectory.md:1` `PATCH`, `VERSION` unchanged; the
+persisted `written.json` keeps its spelling at the top (`tests/test_uncommitted_places.py:94`). **XIV** — both full
+gates are T009's, the host's, not run by this pass. No other principle is touched: no money, time, identity or
+service boundary in the diff.
+
+## Phase 4: Convergence pass 1 (appended 2026-10-03; converge delegate)
+
+### T010 — *One git cannot read* is held by an example (`MEDIUM` · AC-S23-8 · Principle V)
+
+- [ ] Tests only; no production edit expected. AC-S23-8 names two states and `tests/test_uncommitted_places.py` holds
+  one (a directory in no repository). By hand at `12a4608`: project in `sub/`, `delivery/docs/convergence.md`
+  edited, `.git/HEAD` overwritten with `garbage` → `adopt --refresh` exit 0, no traceback, no `written.json`, the
+  edit written over — the criterion's *as today*. Nothing fails if that becomes a refusal or a traceback.
+
+**RED:** none — a hold, green on arrival, shown to have teeth by turning `return None` (`uncommitted.py:47`) into
+`return []` and seeing it fail, restored with `git checkout -- src/slipwai/uncommitted.py`.
+**GREEN names the sweep:** every way `changed()` answers `None` — no repository, a repository git cannot read, and
+either of the two git calls failing — each with the project at the top *and* in a subdirectory (the hold there
+today copies a top-level project only), each asserting exit 0, nothing refused, nothing recorded, no traceback.
+
+**Files:** `tests/test_uncommitted_places.py` (≤ 350 lines).
+
+### T011 — Every status entry that carries a second path is read as one entry (`LOW` · AC-S23-2, -7 · Principle V)
+
+- [ ] `changed()` skips the origin of a rename or copy only where the *first* status letter is `R` or `C`
+  (`uncommitted.py:55`), and nothing observes even that: with the two lines deleted, 42 tests stay green (this
+  pass's mutation). Where the second letter is `R` — a file renamed in the working tree and added with
+  `git add -N` — the origin is read as an entry of its own with its first three characters cut off. Reproduced:
+  project in `ab/`, `ab/ab/x.md` renamed to `ab/moved.md`, `git add -N ab/moved.md` → status
+  `' R ab/moved.md\0ab/ab/x.md\0'`, `changed()` returns `['moved.md', 'x.md']`; `x.md` is a different file with no
+  change, and were it one a run writes the run would be refused naming it. At the top the same misreading gives a
+  path that matches nothing; it is older than this slice.
+
+**RED:** the reproduction above through `changed()`'s nearest boundary the suite already uses, expecting `x.md`
+absent. **GREEN names the sweep:** every pair of status letters `git status --porcelain=v1 -z` can print whose
+entry carries a second field — `R` or `C` in either column — with one example each for a staged rename inside the
+project (the new path reported, the origin not), outside→inside, inside→outside (the deletion reported), at the top
+and in a subdirectory; not the one pair found here. Extend the fragment by a clause only if a refusal a person could
+have met changes.
+
+**Files:** `src/slipwai/uncommitted.py`, `tests/test_uncommitted_subdirectory.py` or `tests/test_uncommitted_places.py`.
+
+### T012 — `GIT_DIR` in the environment, with no `GIT_WORK_TREE` (`LOW` · **needs a decision** · AC-S23-8, D36)
+
+- [ ] Not answered by the criteria, the plan or D36–D38. With `GIT_DIR=<absolute>/.git` exported and the project
+  in `sub/`, git takes `sub/` for the top of the working tree: on a clean tree `adopt --refresh` exits 2 naming
+  284 files (*… and 276 more*), and *commit or stash* cannot clear it. With `GIT_DIR=.git` (relative) git finds no
+  repository from `sub/`: exit 0 and a person's edit to `delivery/docs/convergence.md` is written over. Before this
+  slice a subdirectory project was never refused, so neither is a regression; at the top both spellings answer
+  correctly. **Options:** (a) leave it — the person exported git's own override, and `git status` in that shell
+  says the same; (b) run the two git calls with `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE` and `GIT_PREFIX`
+  removed from their environment, so the refusal is about the repository the project's directory is in; (c) refuse
+  with one sentence naming the variable. The sweep, whichever is chosen: every `GIT_*` variable that moves the
+  repository, the work tree or the index, for both callers of `changed()`.
+
+**Files:** none until decided.
+
+### T013 — `git` is not installed (`LOW` · **needs a decision** · AC-S23-8)
+
+- [ ] With no `git` on `PATH`, `adopt --refresh` ends on a `FileNotFoundError` traceback raised in `changed()`
+  (`uncommitted.py:39`, from `resurvey.py:167`), exit 1, nothing written. It is older than this slice and the same
+  at the top. AC-S23-8 says *no run ends on a traceback* of a directory *git cannot read*; whether a machine without
+  git is that state is not said. **Options:** (a) as *not a repository* — `None`, nothing refused, nothing recorded;
+  (b) a one-line refusal that the command needs git; (c) leave it, out of this feature. The sweep: every
+  `subprocess` call to `git` under `src/slipwai/` that an adopted project's commands reach.
+
+**Files:** none until decided.
+
+### T014 — Each placement repeats the criteria AC-S23-6 names (`LOW` · AC-S23-6 · Principle V)
+
+- [ ] `PlacementChecks.check` runs AC-S23-1, the record's spelling and the `other/` edit. AC-S23-6 says AC-S23-1,
+  -3 and -5 hold *as written*: the second run that must exit 0 over what the first left (AC-S23-3) and the file
+  outside the project whose path spells one the run writes (AC-S23-5) are not repeated per placement. Both rest on
+  the same twelve lines and hold in `sub/`; the gap is the example, not the behaviour.
+
+**GREEN names the sweep:** for every placement in the file — `a/b/`, the quoted name, both links — a second run
+after the first exits 0, and a committed-then-edited file outside the project at the project-relative spelling of
+a recorded path (for `a/b/`, at the top *and* in `a/`) neither refuses nor is recorded. Tests only.
+
+**Files:** `tests/test_uncommitted_places.py` (≤ 350 lines).
+
+### T015 — A refused `--decline` is told what `--decline` writes (`LOW` · AC-S23-2 · delivery adapter)
+
+- [ ] `slipwai adopt --decline themes` over an uncommitted edit prints `` `slipwai adopt --confirm` writes
+  `delivery/docs/convergence.md` … `` (`confirm.py:124`): the person is told of a flag they did not give. Older than
+  this slice and the same at the top; AC-S23-2 asks only that it is *refused the same way*, which it is. For the
+  host to place — here or the Parking Lot. **GREEN names the sweep:** every verb string handed to
+  `refuse_foreign()` names the flags the run was given (`--confirm`, `--decline`, both, `--refresh`), with an
+  assertion on stderr for each; a `PATCH` clause in a fragment, since the message is what a person reads.
+
+**Files:** `src/slipwai/confirm.py`, `tests/test_uncommitted.py` is not to be edited — a new example beside it.
