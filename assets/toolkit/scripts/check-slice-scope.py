@@ -253,17 +253,22 @@ def is_ancestor(older: str, newer: str) -> bool:
     return git("merge-base", "--is-ancestor", older, newer) is not None
 
 
-def target_base(trunk: str) -> str | None:
-    """The base under the name CI says the pull request targets (`GITHUB_BASE_REF`; GitLab's
-    `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`): the first of the two that is usable, has a ref, and is not the
-    trunk's own name. A branch can push what it likes but cannot change its target."""
+def target_base(trunk: str) -> tuple[str, str | None] | None:
+    """The name CI says the pull request targets (`GITHUB_BASE_REF`; GitLab's `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`)
+    and the base under it: the first of the two that is usable, has a ref, and is not the trunk's own name. A
+    branch can push what it likes but cannot change its target."""
     for variable in ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"):
         name = usable(os.environ.get(variable))
         if name and name != trunk:
             exists, base = bases_of(name)
             if exists:
-                return base
+                return name, base
     return None
+
+
+def target_name() -> str | None:
+    """The pull request's target where CI gives a usable one, ref or no ref."""
+    return next(filter(None, (usable(os.environ.get(v)) for v in ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"))), None)
 
 
 def older_of(first: str, second: str | None) -> str:
@@ -312,8 +317,16 @@ def merge_base() -> Base:
     for name in names:
         exists, base = bases_of(name)
         if exists:
-            return Base(older_of(base, target_base(name)) if base else base, name, True, passed_over)
-    return Base(None, names[0], False, passed_over)
+            target = target_base(name)
+            if base is None and target and target[1]:
+                return Base(target[1], target[0], True, passed_over)
+            if base is None:
+                return Base(None, target_name() or name, True, passed_over)
+            return Base(older_of(base, target[1] if target else None), name, True, passed_over)
+    target = target_base(names[0])
+    if target:
+        return Base(target[1], target[0], True, passed_over)
+    return Base(None, target_name() or names[0], False, passed_over)
 
 
 def changed_files(base: str) -> dict[str, str]:
@@ -621,6 +634,13 @@ def lost_records() -> list[str]:
     return findings
 
 
+def forge_checkout() -> bool:
+    """A forge's pull-request checkout: the branch name came from a variable and `HEAD` is detached. Anything else
+    is a developer's."""
+    named = any(os.environ.get(v) for v in ("GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME"))
+    return named and git("symbolic-ref", "-q", "HEAD") is None
+
+
 def check(branch: str | None) -> tuple[list[str], str, str]:
     """The violations, the one line to print when there are none, and what the refusal header ends with."""
     violations = lost_records()
@@ -633,7 +653,16 @@ def check(branch: str | None) -> tuple[list[str], str, str]:
     base = found_base.commit
     note = f"; {found_base.passed_over}" if found_base.passed_over else ""
     if base is None:
-        return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold", note
+        if forge_checkout():  # until the forge's own line lands, this case answers as it always has
+            return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold", note
+        trunk = found_base.trunk
+        if not found_base.has_ref:
+            line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held — run `git fetch origin {trunk}`"
+        elif (git("rev-parse", "--is-shallow-repository") or "").strip() == "true":
+            line = f"slice/{slice_id} shares no history with `{trunk}` at this depth — run `git fetch --unshallow origin`"
+        else:
+            line = f"slice/{slice_id} shares no history with `{trunk}` — a slice branch is cut from `{trunk}`"
+        return [*violations, line], "", note
     short = (git("rev-parse", "--short", base) or base).strip()
     compared = f"compared with `{found_base.trunk}` at {short}"
     scope = Scope(slice_id, base)
