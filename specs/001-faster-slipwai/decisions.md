@@ -491,5 +491,5 @@
 - **Why:** The owner said where new defects go (D39), and none of these is the slice's regression: the slice made a subdirectory project as safe as one at the top, and these are the places where neither is. B1 gets a slice rather than a line because it loses work in the ordinary use the brief describes — a developer driving the repository with coding agents, which run in containers.
 - **Decided by:** host (standing decision D39)
 - **Confidence:** medium · **Would reverse if:** a person reads B1 as worth taking ahead of the PRD's slices — then S25 is next after S01; or reads A1 or A2 as a slice rather than a line.
-- **Written to:** `specs/001-faster-slipwai/adversary-log.md` (`## S23`); `specs/001-faster-slipwai/story-split.md` (Split Candidates, Slice graph, Parking Lot); `specs/001-faster-slipwai/slices/S23-refusal-in-subdirectory/tasks.md` (T017)
+- **Written to:** `specs/001-faster-slipwai/adversary-log.md` (S23's row); `specs/001-faster-slipwai/story-split.md` (Split Candidates, Slice graph, Parking Lot); `specs/001-faster-slipwai/slices/S23-refusal-in-subdirectory/tasks.md` (T017)
 - **Status:** standing
