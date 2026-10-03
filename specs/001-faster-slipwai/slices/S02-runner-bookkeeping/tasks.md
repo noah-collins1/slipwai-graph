@@ -539,7 +539,7 @@ names the class it closes, not the one instance.
 
 ### T015 — [HIGH] The controls' path set is as fresh as the signature: a hook file a registry row gains is held (D56 · AC-S02-2, -7)
 
-- [ ] **Found.** `control_paths()` (`assets/toolkit/scripts/agents/cruise.py:523`–`536`) reads `registry.json` once per
+- [x] *(7b481a6)* **Found.** `control_paths()` (`assets/toolkit/scripts/agents/cruise.py:523`–`536`) reads `registry.json` once per
   runner process and keeps the hook files in `_HOOK_FILES`. Before the slice it read the registry on every signature. D56
   says the later signature *walks the same paths* and that `controls_changed()` *answers byte for byte as today*; this is
   the one place the slice traded a control's reach for a read (constitution I, *no check is removed anywhere to make the
@@ -562,7 +562,7 @@ names the class it closes, not the one instance.
 
 ### T016 — [HIGH] A hold on a memo runs with the memo engaged: the park holds prove nothing about the record (D56 · AC-S02-2, -3, -4, -6, -8)
 
-- [ ] **Found.** Every example in `tests/test_runner_controls_park.py` generates a project and runs the runner at once,
+- [x] *(924e19b — identity alone is not shown red: a rename also moves the change time)* **Found.** Every example in `tests/test_runner_controls_park.py` generates a project and runs the runner at once,
   so each gate was written less than two seconds before it is hashed and the record (`bookkeeping.py:70`) holds nothing
   for it: every signature in those runs hashes every file. The holds pass whatever the record's rule is. The module's
   docstring says *a hold is shown to have teeth by making the record reuse a hash on size and modification time alone*;
@@ -588,7 +588,7 @@ names the class it closes, not the one instance.
 
 ### T017 — [MEDIUM] The fragment names CI as what sees a narrowed comparison's blind spot; D59 says it is not the catch (AC-S02-46)
 
-- [ ] **Found.** `changelog.d/runner-bookkeeping.md:9` lists *`make verify` on the trunk or any branch not named
+- [x] *(1c01ecc)* **Found.** `changelog.d/runner-bookkeeping.md:9` lists *`make verify` on the trunk or any branch not named
   `slice/<id>`, CI, or any check after `.codegraph/gate-memory.json` is deleted* as the next whole comparison. D59:
   *CI normally has no index, so it is not the catch* — `.codegraph/` is ignored by git, and with no index the gate says
   so and passes (`docs/verification.md`).
@@ -598,7 +598,7 @@ names the class it closes, not the one instance.
 
 ### T018 — [LOW] The AC-S01-24 row of e36 discriminates nothing of its own (lead d; AC-S02-36)
 
-- [ ] **Found, by reading and not by mutation.** `tests/test_health_memory_states.py:162` gives the *not safely older*
+- [x] *(0a790c2 — the row rides on AC-S01-23's and says so)* **Found, by reading and not by mutation.** `tests/test_health_memory_states.py:162` gives the *not safely older*
   state the same `after` step as the AC-S01-23 row above it (`same_size_with_its_time_restored`), which moves the
   change time, so the file is a candidate with or without the two-second rule and the row passes either way.
 - **GREEN — the class:** a row in a state table is either seen red with the rule it names removed, or says in its name
@@ -606,7 +606,7 @@ names the class it closes, not the one instance.
 
 ### T019 — [LOW] Constructor arguments nothing passes (lead b; constitution III)
 
-- [ ] **Found.** `Record(clock=…)` (`bookkeeping.py:48`) and `Log(report=…)` (`bookkeeping.py:91`) are passed by nothing in
+- [x] *(b5f15bc)* **Found.** `Record(clock=…)` (`bookkeeping.py:48`) and `Log(report=…)` (`bookkeeping.py:91`) are passed by nothing in
   the tree: the tests assign `CONTROL_RECORD.clock` / `SPECS_RECORD.clock` as attributes, and only `Record(report=…)` is
   constructed with an argument (`tests/test_runner_controls.py:129`). Neither is reachable by an iteration — the three
   instances (`cruise.py:463`, `:498`, `:541`) are built with no argument, and no environment variable or file feeds them
