@@ -436,7 +436,8 @@ Each is a failing test first, through the checker's command line in a temporary 
 
 ### T016 — **HIGH** — A path git quotes is held like any other (A1 · AC-S20-2, -3, -14, -15, -17)
 
-- [ ] RED: on a root deployable's slice branch, `.github/workflows/déploy.yml`, `delivery/scripts/é.py`,
+- [x] **Done** — `8e84546`. RED: `.github/workflows/déploy.yml` let through (the test stops at its first path; the others share the reading), an edit to `db/migrations/0002_añadir.py` let through, `apps/shop/é.py` refused. Every path-carrying `git` call now reads `-z`.
+- [x] RED: on a root deployable's slice branch, `.github/workflows/déploy.yml`, `delivery/scripts/é.py`,
   `.specify/é.sh`, a file with a tab or a quote in its name under `.claude/`, another slice's
   `specs/f/slices/S2/é.md`, and an edit to an existing `db/migrations/0002_añadir.py` — committed and uncommitted —
   each pass today. GREEN in `changed_files()` (and `deletions()` if it shares the reading): git's paths are read
@@ -445,7 +446,8 @@ Each is a failing test first, through the checker's command line in a temporary 
 
 ### T017 — **HIGH** — Ownership comes from the record the branch left, not the one it wrote (A2 · AC-S20-2, -3, -5)
 
-- [ ] RED: a slice edits `project.json` to add deployables whose `path` is `project.json`, `.github`, `delivery`,
+- [x] **Done** — `f3da33e`. RED: exit 0 with six host paths planted as deployables and edited; a planted `ci.gate` let through; a base with no record let `lib/own.py` through. The deployables and `ci.gate` are read from the base commit; `.written`, the registry and the model stay on the slice's tree, each inside the delivery directory the host surface refuses (read from the code, no example of its own). `git()` no longer raises on output that is not UTF-8.
+- [x] RED: a slice edits `project.json` to add deployables whose `path` is `project.json`, `.github`, `delivery`,
   `Makefile`, `.claude`, `AGENTS.md`, then edits those paths — exit 0 today. GREEN: the deployables record (and
   `ci.gate`) the checker decides by is the base commit's `project.json` (`git show <base>:project.json`); where the
   base has none, no deployable owns anything. Held: with `project.json` unchanged on the branch every answer is
@@ -455,7 +457,8 @@ Each is a failing test first, through the checker's command line in a temporary 
 
 ### T018 — **MEDIUM** — The checker's root is the repository's, whatever a slice plants (A4, A5 · AC-S20-3, -19)
 
-- [ ] RED: a committed `delivery/project.json` → `delivery/Makefile`, `delivery/baseline.json`, a new skill and an
+- [x] **Done** — `3db79e3`. RED: the checker named `Makefile` relative to a moved root; a traceback at import. The root is the work tree's top where it holds `project.json`, else the walk, which now skips the script's own directory. Not exercised: the untracked-only variant and the walk outside a git work tree.
+- [x] RED: a committed `delivery/project.json` → `delivery/Makefile`, `delivery/baseline.json`, a new skill and an
   untracked `.github/workflows/new.yml` pass today; a `project.json` beside the script → a traceback at import.
   GREEN: the root is the git work tree's top where it holds a `project.json`, else today's walk; neither planted
   file moves it and neither ends on a traceback. Held: the generated layout (`scripts/` at the root) and the
@@ -463,7 +466,8 @@ Each is a failing test first, through the checker's command line in a temporary 
 
 ### T019 — **MEDIUM** — A register cell is an id only where it was one before, with its slug (B1, B3 · AC-S20-10, -12, D19)
 
-- [ ] RED (in `tests/test_register_ids.py`): a register row `S03a`, and rows starting `e2e`, `k8s`, `S01_run_path`,
+- [x] **Done** — `0243e01`. RED: seven cells read wrongly in each script (`S00-run-path.`, `S2.`, `S03a`, `e2e`, `k8s`, `sha256sum`, `S01_run_path`). Pattern, identical in both: the released head, then a slug that starts at `-` or `.` and ends on a letter or digit. Every cell that read nothing at `f151b80` reads nothing.
+- [x] RED (in `tests/test_register_ids.py`): a register row `S03a`, and rows starting `e2e`, `k8s`, `S01_run_path`,
   with no adversary row and no record → `check-decisions` exits 1 and `check-benchmark` warns today; at `f151b80`
   both were silent. A cell `S00-run-path.` with a `## S00-run-path · …` row → *no row for S00-run-path.* today.
   GREEN in both scripts' `done_slices()`: the head is today's released rule (letters, digits, then a word
