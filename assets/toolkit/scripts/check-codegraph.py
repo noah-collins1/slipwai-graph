@@ -259,12 +259,35 @@ def remember(rows: dict[str, tuple[str, float]], whole: float | None = None) -> 
         pass
 
 
-def remembered() -> dict[str, Any] | None:
+# Why a run on a slice branch compared everything: said once, in one clause, on the pass line.
+NO_RECORD = "no earlier whole comparison is recorded"
+UNREADABLE = "the record of the last whole comparison could not be read"
+SCRIPTS = "the gate's scripts changed since"
+COMMIT_GONE = "the commit it was taken at is gone"
+OTHER_DATABASE = "the index database is not the one it was compared against"
+INDEX_UNREADABLE = "the index could not be read"
+GIT_SILENT = "git could not say what changed"
+SHAPE = {"key": str, "commit": str, "dirty": list, "rows": dict, "database": list, "whole": (int, float)}
+
+
+def remembered() -> dict[str, Any] | str:
+    """The memory of the last whole comparison, or the reason it cannot be used."""
+    if not MEMORY.is_file():
+        return NO_RECORD
     try:
         record = json.loads(MEMORY.read_text())
     except (OSError, ValueError):
-        return None
-    return record if isinstance(record, dict) else None
+        return UNREADABLE
+    if not isinstance(record, dict) or any(not isinstance(record.get(name), kind) for name, kind in SHAPE.items()):
+        return UNREADABLE
+    if record["key"] != gate_key():
+        return SCRIPTS
+    commit = record["commit"]
+    if not re.fullmatch(r"[0-9a-f]{40,64}", commit) or git_output("cat-file", "-e", f"{commit}^{{commit}}") is None:
+        return COMMIT_GONE
+    if database_of() != record["database"]:
+        return OTHER_DATABASE
+    return record
 
 
 def candidates_of(record: dict[str, Any], rows: dict[str, tuple[str, float]]) -> set[str] | None:
@@ -299,12 +322,14 @@ def moment_of(seconds: float) -> str:
     return moment(seconds * 1000)
 
 
-def narrowed(tooling: Any, record: dict[str, Any]) -> int | None:
-    """The comparison of a `slice/<id>` branch: only the candidates are hashed. None where it cannot be made."""
+def narrowed(tooling: Any, record: dict[str, Any]) -> int | str:
+    """The comparison of a `slice/<id>` branch: only the candidates are hashed. A reason where it cannot be made."""
     rows = indexed()
-    candidates = None if rows is None else candidates_of(record, rows)
-    if rows is None or candidates is None or database_of() != record["database"]:
-        return None
+    if rows is None:
+        return INDEX_UNREADABLE
+    candidates = candidates_of(record, rows)
+    if candidates is None:
+        return GIT_SILENT
     repairing = os.environ.get("CODEGRAPH_GATE_NO_SYNC") != "1" and tooling.route() is not None
     HASHED[0] = 0
     found = drift(candidates)
@@ -315,9 +340,11 @@ def narrowed(tooling: Any, record: dict[str, Any]) -> int | None:
         synced = (f"synced {len(found[1]) + len(found[2])} file(s) first; " if done
                   else f"`codegraph sync` did not take ({said}); ")
         rows = indexed()
-        candidates = None if rows is None else candidates_of(record, rows)
-        if rows is None or candidates is None:
-            return None
+        if rows is None:
+            return INDEX_UNREADABLE
+        candidates = candidates_of(record, rows)
+        if candidates is None:
+            return GIT_SILENT
         HASHED[0] = 0
         found = drift(candidates)
         assert found is not None
@@ -327,7 +354,7 @@ def narrowed(tooling: Any, record: dict[str, Any]) -> int | None:
 
 
 def conclude(found: tuple[dict[str, tuple[str, float]], list[str], list[str]], synced: str, said: str,
-             whole: float | None = None) -> int:
+             whole: float | None = None, clause: str = "") -> int:
     """The verdict on a comparison, and the memory a pass leaves behind."""
     rows, missing, changed = found
     paths = tracked() or []
@@ -341,7 +368,7 @@ def conclude(found: tuple[dict[str, tuple[str, float]], list[str], list[str]], s
         print(RESTORE, file=sys.stderr)
         return 1
     if not missing and not changed:
-        print(f"check-codegraph: {synced}index current — {said or f'{len(rows)} file(s), indexed {moment(last)}'}")
+        print(f"check-codegraph: {synced}index current — {said or f'{len(rows)} file(s), indexed {moment(last)}'}{clause}")
         remember(rows, whole)
         return 0
     report = [f"check-codegraph: {synced}the code index no longer describes this working tree",
@@ -354,8 +381,9 @@ def conclude(found: tuple[dict[str, tuple[str, float]], list[str], list[str]], s
     return 1
 
 
-def whole(tooling: Any) -> int:
-    """Every tracked file compared, the integrity check run and a corrupt index repaired: today's gate."""
+def whole(tooling: Any, why: str | None = None) -> int:
+    """Every tracked file compared, the integrity check run and a corrupt index repaired: today's gate. On a slice
+    branch that could have compared less, `why` is said after the pass line."""
     try:
         problem = tooling.damage()
     except tooling.Unopened as error:
@@ -394,7 +422,7 @@ def whole(tooling: Any) -> int:
                   else f"`codegraph sync` did not take ({said}); ")
         found = drift()
         assert found is not None
-    return conclude(found, synced, "")
+    return conclude(found, synced, "", clause=f" (compared everything: {why})" if why else "")
 
 
 def main() -> int:
@@ -403,12 +431,14 @@ def main() -> int:
               "check")
         return 0
     tooling = code_index()
-    record = remembered() if narrowable() else None
-    if record is not None:
-        done = narrowed(tooling, record)
-        if done is not None:
+    why = None
+    if narrowable():
+        record = remembered()
+        done = narrowed(tooling, record) if isinstance(record, dict) else record
+        if isinstance(done, int):
             return done
-    return whole(tooling)
+        why = done
+    return whole(tooling, why)
 
 
 if __name__ == "__main__":

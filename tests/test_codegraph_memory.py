@@ -8,6 +8,7 @@ a file git was told not to report, a database that is not the one that was compa
 """
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import sqlite3
@@ -103,3 +104,71 @@ class WhatTheMemoryCannotVouchForTest(FactoryTestCase):
             self.assertEqual(replaced.returncode, 0, replaced.stderr)
             self.assertRegex(replaced.stdout, r"^check-codegraph: index current — \d+ file\(s\), indexed ")
             self.assertNotIn("hashed", replaced.stdout)
+
+
+def whole_line(why: str) -> str:
+    return (r"^check-codegraph: index current — \d+ file\(s\), indexed \d{4}-\d\d-\d\d \d\d:\d\d:\d\d "
+            rf"\(compared everything: {why}\)\n$")
+
+
+class AMemoryThatCannotBeUsedTest(FactoryTestCase):
+    """R9: the whole run, said in one clause — never a failure for that alone, never a narrower pass."""
+
+    def prepared(self, directory: str, name: str = "memory") -> Project:
+        project = Project(self, directory, name)
+        project.whole()
+        self.assertTrue(project.memory.is_file(), "a passing whole comparison leaves its memory")
+        project.slice()
+        return project
+
+    def test_no_memory_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.prepared(directory)
+            project.memory.unlink()
+            run = project.run()
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertRegex(run.stdout, whole_line("no earlier whole comparison is recorded"))
+
+    def test_a_memory_that_is_not_json(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.prepared(directory)
+            for broken in ("{", "[]", '{"commit": 1}'):
+                project.memory.write_text(broken)
+                run = project.run()
+                self.assertEqual(run.returncode, 0, run.stderr)
+                self.assertRegex(run.stdout, whole_line("the record of the last whole comparison could not be read"))
+
+    def test_a_commit_the_repository_no_longer_has(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.prepared(directory)
+            record = json.loads(project.memory.read_text())
+            project.memory.write_text(json.dumps({**record, "commit": "0" * 40}))
+            run = project.run()
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertRegex(run.stdout, whole_line("the commit it was taken at is gone"))
+
+    def test_a_gate_script_that_changed_since(self) -> None:
+        for script in ("scripts/check-codegraph.py", "scripts/agents/code_index.py"):
+            with self.subTest(script), tempfile.TemporaryDirectory() as directory:
+                project = self.prepared(directory)
+                with (project.repo / script).open("a") as handle:
+                    handle.write("# one more byte\n")
+                project.resync()
+                run = project.run()
+                self.assertEqual(run.returncode, 0, run.stderr)
+                self.assertRegex(run.stdout, whole_line("the gate's scripts changed since"))
+
+    def test_a_corrupt_database_is_rebuilt_or_failed_never_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.prepared(directory)
+            project.database.write_bytes(b"garbage " * 1000)
+            rebuilt = project.run()
+            self.assertEqual(rebuilt.returncode, 0, rebuilt.stderr)
+            self.assertRegex(rebuilt.stdout, r"^check-codegraph: rebuilt a corrupt database first \([\d.]+s\); "
+                             r"index current — \d+ file\(s\), indexed .* \(compared everything: ")
+            self.assertNotIn("hashed", rebuilt.stdout)
+            project.database.write_bytes(b"garbage " * 1000)
+            refused = project.run(**NO_SYNC)
+            self.assertEqual(refused.returncode, 1)
+            self.assertIn("fails SQLite's integrity check", refused.stderr)
+            self.assertNotIn("skipped", refused.stdout + refused.stderr)
