@@ -520,21 +520,25 @@ def child_environment(harness: dict[str, Any] | None) -> dict[str, str]:
     return environment
 
 
-_HOOK_FILES: list[Path] | None = None
+# The hook files the registry names, and the hash of the registry they were derived from.
+_HOOKS: tuple[str, list[Path]] | None = None
 
 
 def control_paths() -> list[Path]:
     """Every gate and control the run is held by, present or not: the fixed ones, and the hook file of every harness
-    whose registry row projects one. The hook files are read from the registry once per process: the registry is
-    one of the controls, and a signature that opened it to learn the paths would open a control every time."""
-    global _HOOK_FILES
-    if _HOOK_FILES is None:
-        _HOOK_FILES = []
+    whose registry row projects one. The registry is one of the controls, so the hook files are derived again
+    whenever its hash is not the one they were derived from; that hash comes from the control record, which stats
+    the file and opens it only where it cannot vouch for it, so a registry no one touches is not opened (D56)."""
+    global _HOOKS
+    stamp = CONTROL_RECORD.digest(REGISTRY)
+    if _HOOKS is None or _HOOKS[0] != stamp:
+        hooks: list[Path] = []
         for row in registry().values():
             projection = (row.get("hooks") or {}).get("projection") if isinstance(row.get("hooks"), dict) else None
             if isinstance(projection, dict) and projection.get("where"):
-                _HOOK_FILES.append(ROOT / str(projection["where"]))
-    return list(dict.fromkeys([*CONTROL_PATHS, *_HOOK_FILES]))
+                hooks.append(ROOT / str(projection["where"]))
+        _HOOKS = (stamp, hooks)
+    return list(dict.fromkeys([*CONTROL_PATHS, *_HOOKS[1]]))
 
 
 # What the runner remembers of a control's bytes while its stat facts stand: all four facts, or the file is hashed.
@@ -558,7 +562,9 @@ def controls_signature() -> dict[str, str]:
         for path in files:
             try:
                 if path.is_file():
-                    signature[path.relative_to(ROOT).as_posix()] = CONTROL_RECORD.digest(path)
+                    # The registry's hash was just taken to learn the paths: it is that file's entry too.
+                    stamp = _HOOKS[0] if _HOOKS is not None and path == REGISTRY else None
+                    signature[path.relative_to(ROOT).as_posix()] = stamp or CONTROL_RECORD.digest(path)
             except OSError:
                 continue
     CONTROL_RECORD.retain({str(ROOT / path) for path in signature})
