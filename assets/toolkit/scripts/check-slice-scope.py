@@ -25,7 +25,9 @@ What a slice's change may contain — everything since the branch left `main`, c
   is never edited; superseding one is the host's, on `main`;
 - **code and tests of the service that owns it** — `service` in its model block, or any service where the
   model names none — and, where the block names a `context`, nothing under another context's directory in
-  `domain/` or `application/`. A browser app is open to every slice: a white box is one screen;
+  `domain/` or `application/`. A browser app is open to every slice: a white box is one screen. A deployable recorded at `.` — an adopted
+  repository's one application — owns every path no other deployable claims, its tests and sibling
+  directories included;
 - **the context's events module additively**: a line may be added, none removed. It is the contract;
 - **new migration files only**, timestamped so two slices never mint the same name: `YYYYMMDDHHMM_<name>`,
   or `V<YYYYMMDDHHMM>__<name>` under Flyway. The shipped numbered ones keep working — the order is lexical
@@ -211,12 +213,17 @@ class Scope:
         return [str(context) for context in contexts if str(context) != self.context]
 
     def owning_app(self, path: str) -> str | None:
-        """The deployable a path sits under, by its recorded `path`, or None for a path outside every app."""
+        """The deployable a path sits under, by its recorded `path`, or None for a path outside every app.
+        A deployable at `.` (or `./`) is the whole repository, so it is asked last: it owns what no deployable
+        in a subdirectory claims."""
+        root = None
         for name in self.apps:
             app_path = self.service_path(name)
-            if app_path and (path == app_path or path.startswith(app_path + "/")):
+            if app_path == ".":
+                root = root or name
+            elif app_path and (path == app_path or path.startswith(app_path + "/")):
                 return name
-        return None
+        return root
 
     def spec_violation(self, path: str) -> str | None:
         parts = path.split("/")
