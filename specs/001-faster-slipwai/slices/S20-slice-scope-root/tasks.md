@@ -284,6 +284,14 @@ temporary directory against a copy of the asset scripts or a real `slipwai adopt
   `registry.json`. This pass does not choose. Not graded higher because the criteria are met as written and the
   gate on `main` and CI still see the change.
 
+**Answered by D20** (drive-skipper, cruise iteration 3) — T008 is now a task to implement, in
+`assets/toolkit/scripts/check-slice-scope.py` and `tests/test_slice_scope_root.py`, against AC-S20-14 to AC-S20-16
+in `spec.md`: harness paths read from `<delivery>/scripts/agents/registry.json` (tolerantly — absent, unreadable or
+malformed adds nothing and never a traceback); the CI names of `CI_FORGES` and the `GNUmakefile`/`makefile`
+spellings added by name, with a test holding the checker's CI names to every key of `CI_FORGES`; git hooks and
+`.gitignore` green. RED: each newly refused path let through today; the hooks and `.gitignore` examples are held,
+green on arrival.
+
 ### T009 — **LOW** — Delivery at the root with a deployable at the root leaves `.written` itself writable (R-3)
 
 - [ ] Where `DELIVERY` is `.` the delivery clause is skipped, so `.written`, `baseline.json` and `survey/` are the

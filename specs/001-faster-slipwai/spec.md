@@ -356,7 +356,8 @@ deployable and `layout.delivery` set, and the check runs on a `slice/<id>` branc
   exits non-zero naming the path with today's *outside every deployable … Land it on `main` before the fan-out*
   message. The CI names held are `.github/`, `.gitea/`, `.forgejo/`, `.gitlab/`, `.gitlab-ci.yml` and
   `project.json`'s `ci.gate`; the harness names are `AGENTS.md`, `CLAUDE.md`, `.claude/`, `.codex/`, `.cursor/`,
-  `.gemini/`, `.opencode/`.
+  `.gemini/`, `.opencode/`. *Amended by D20 (converge pass 1):* these names are the floor; AC-S20-14 to
+  AC-S20-16 say what is added to it and what stays the repository's own.
 - **AC-S20-3** — Given a changed file under `<delivery>/scripts/`, `<delivery>/skills/` or `<delivery>/commands/`,
   or `<delivery>/Makefile`, or `<delivery>/baseline.json`, when the check runs, then it is refused with the same
   message; and a file under `<delivery>/docs/` other than the model, the canvas, a mockup and a new ADR keeps
@@ -390,3 +391,15 @@ deployable and `layout.delivery` set, and the check runs on a `slice/<id>` branc
   whose first line is `PATCH`, saying what changed and that it asks nothing of a repository already generated;
   `VERSION` stays `1.5.2.dev0`; nothing under `delivery/scripts/` changed (the fix reaches this repository
   through a person's `slipwai migrate`, D9); and `make verify` and `make -f delivery/Makefile verify` are green.
+- **AC-S20-14** — Given the registry at `<delivery>/scripts/agents/registry.json`, when a slice branch changes
+  `.mcp.json`, `opencode.json`, `GEMINI.md`, a file under `.agents/` or a file under `.kiro/` — one at a time —
+  then each is refused with today's message: every path a harness row names (`contextFile`, `skillsDir`,
+  `commandsDir`, `agentFile.dir`, `hooks.projection.where`, `projectMcp.file`) is the host's, by its first
+  segment where it has more than one (D20). Given the registry removed, unreadable or not JSON, then D18's fixed
+  names are still refused, those five pass, and the checker exits with its own code, never a traceback.
+- **AC-S20-15** — Given a changed `Jenkinsfile`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, a file under
+  `.circleci/`, `.woodpecker.yml`, `.drone.yml`, `.travis.yml`, `GNUmakefile` or `makefile` — one at a time —
+  then each is refused; and the checker's CI names cover every key of `CI_FORGES` in
+  `src/slipwai/delivery_facts.py`, held by a test, so a forge `adopt` learns later is not forgotten here.
+- **AC-S20-16** — Given a changed `.gitignore`, `.githooks/pre-commit` or `.pre-commit-config.yaml`, then the
+  check is green: git hooks and the ignore file are the repository's own (D20).

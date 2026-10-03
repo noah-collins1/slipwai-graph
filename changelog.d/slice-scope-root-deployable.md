@@ -4,9 +4,11 @@ PATCH
 experimental), and a slice id with a slug is read whole.** A repository adopted with its one application at
 the root records that deployable at `.`, and the gate read `.` as owning no path, so a slice's tests and its
 code were all refused as *outside every deployable*. A deployable at `.` now owns every path no deployable in a
-subdirectory claims, except what stays the host's there: `project.json`, the root `Makefile`, `.specify/`, CI
-configuration, the agents' guidance and settings, every path in `<delivery>/.written`, and the delivery
-directory apart from `survey/pinned.md` and `survey/running.md`, which the ladder has a slice write. A service
+subdirectory claims, except what stays the host's there: `project.json`, the root `Makefile` in any spelling
+make reads, `.specify/`, CI configuration for every system `adopt` recognises, every agent's guidance, skills,
+hooks and settings as `scripts/agents/registry.json` names them, every path in `<delivery>/.written`, and the
+delivery directory apart from `survey/pinned.md` and `survey/running.md`, which the ladder has a slice write.
+Git hooks and `.gitignore` are the repository's own. A service
 under `apps/` still owns its own files, an empty `path` still owns nothing, and a project with no deployable at
 `.` gets the answers it had.
 
