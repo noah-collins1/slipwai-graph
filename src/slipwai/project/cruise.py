@@ -15,7 +15,7 @@ import json
 from ..layout import AT_ROOT, Layout
 from ..origin import Adoption
 from ..services import App
-from .cruise_agents import DECISIONS, OWNER_BRIEF, SKIPPER
+from .cruise_agents import DECISIONS, OWNER_BRIEF, SCOPE_VERB, SKIPPER
 from .cruise_hand import hand_section
 from .cruise_record import ADR_RULE, CHECKPOINT, CHECKPOINT_ENTRY, CONFIG, DECISION_ENTRY, SCRIPT, STOP_FILE
 from .cruise_seat import watch_seat_body
@@ -124,8 +124,9 @@ printed: the runner it started drives the ladder from here, one fresh session pe
 runs no stage of it. A refusal is the whole answer — a runner already running, the stop file present, no
 harness on PATH it can run an iteration through. Then take the watch seat (*The watch seat*, below). **Where
 it says the outer loop started this session**, this is an iteration: read the owner brief (`{OWNER_BRIEF}`)
-and every standing entry in `{DECISIONS}`, and say the iteration number from `{LOG}`, the branch and its
-distance from trunk, and that a person stops this run with `touch {STOP_FILE}`. Where `.codegraph/` is in the
+and every standing entry in `{DECISIONS}` (a slice's question reads those `{SCOPE_VERB}` prints; a
+feature-level one reads all), and say the iteration number from `{LOG}`, the branch and its distance from
+trunk, and that a person stops this run with `touch {STOP_FILE}`. Where `.codegraph/` is in the
 tree, the runner has already opened, checked and synced it for this iteration: a caller or blast-radius question
 is one call — `scripts/codegraph callers <symbol>`, or `codegraph_explore` — and `python3 {SCRIPT} status`
 counts, per delegate, who asked it and who searched the source for a symbol first. Open a `skipper`, `hand` or `bosun`
@@ -159,7 +160,8 @@ where the table is silent, the ladder's own rule stands.
 A product question is decided, never deferred, and every decision is written twice — into the artifact the
 stage owns, and as the next entry of `{DECISIONS}`, which is the only place a person can read every decision
 this run took. Read the standing entries before any decision, so a hundred answers stay consistent with each
-other. Under `decide: recommended-first`, decide here when the stage itself recommends an answer (the
+other: for a slice's question, those `{SCOPE_VERB}` prints; for a feature-level one, every standing entry.
+Under `decide: recommended-first`, decide here when the stage itself recommends an answer (the
 release-constraint stage says *recommend the answer with its reason rather than asking an open question*),
 when a standing entry already covers the question, or when the specification or the constitution answers it
 outright. Anything else is an **open question**: delegate it to one fresh `{SKIPPER}` delegate with the

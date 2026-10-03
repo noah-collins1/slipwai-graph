@@ -40,6 +40,7 @@ the run never accepts its own architecture decision — with the next unused num
 decided; the ADR is where the next slice looks for why, and `{REPORT}` lists every ADR still `Proposed`."""
 DECISION_ENTRY = f"""## D<n> — <the question, in one line>
 - **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
+- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
 - **Question:** <as the stage raised it>
 - **Options:** <each, marking the one the stage recommended>
 - **Decision:** <one>

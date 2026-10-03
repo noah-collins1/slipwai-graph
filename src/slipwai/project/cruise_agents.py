@@ -16,6 +16,11 @@ SKIPPER, HAND, BOSUN = "drive-skipper", "drive-hand", "drive-bosun"
 # Where a decision is written, per feature; the shape of an entry is `cruise.DECISION_ENTRY`.
 DECISIONS = "specs/<feature>/decisions.md"
 OWNER_BRIEF = ".specify/product-owner.md"
+# How a delegate reads the standing entries of one slice (D60); written once, used by both briefs and the command.
+SCOPE_VERB = "python3 scripts/check-decisions.py --scope <slice-id>"
+SCOPE_READ = (f"For a question that names a slice, read its standing entries through `{SCOPE_VERB}` (add\n"
+              f"`--feature <name>` where `specs/` holds more than one `decisions.md`); read every standing\n"
+              f"entry in `{DECISIONS}` where the brief names no slice.")
 DEMO_LOG = "specs/<feature>/slices/<id>/demo-log.md"
 EVIDENCE = "specs/<feature>/slices/<id>/demo/"
 # What the hand drives a screen with, first: a CLI, so it runs from the shell on every harness and every
@@ -49,8 +54,8 @@ def cruise_body(layout: Layout) -> dict[str, str]:
 The brief names the question, the stage that raised it, the slice it holds up, the options as the stage put
 them and — where the stage recommends one — its recommendation. Before deciding, read the four things an owner
 decides from, in this order: the specification (`specs/<feature>/spec.md`), the constitution
-(`.specify/memory/constitution.md`), the owner brief (`{OWNER_BRIEF}`) and every standing entry in
-`{DECISIONS}`. A decision that contradicts a standing one is wrong unless it says which entry it overrides and
+(`.specify/memory/constitution.md`), the owner brief (`{OWNER_BRIEF}`) and the standing entries of
+`{DECISIONS}`. {SCOPE_READ} A decision that contradicts a standing one is wrong unless it says which entry it overrides and
 why; a decision that contradicts a constitution MUST is not available, and you say so rather than picking the
 least bad option.
 
@@ -65,7 +70,8 @@ existing repository's release path is, whether a person has approved a release �
 here has, and the honest answer is `unavailable: <what a person must provide>`. That word is what lets the
 run park with a question instead of shipping a guess.
 
-You write nothing. Return the whole entry, in the shape `{DECISIONS}` shows, under the number the brief gave
+You write nothing. Return the whole entry, in the shape `{DECISIONS}` shows, with its `Scope:` line (the slice ids whose
+later decisions must agree with it, or `global`), under the number the brief gave
 it — `D<n>` is allocated by the session that delegated you, before dispatch, so that several of you deciding
 at once cannot come back with the same one — with `Decided by:` naming this type and the model you ran on.
 That session appends it to `{DECISIONS}` in number order, writes the decision into the artifact the stage
@@ -125,7 +131,7 @@ The brief names the blocker and what was tried: an input nobody here has — a c
 service that is not up — a question whose every option seems to break a constitution MUST, a checkout that
 would not rebase, a run that has made no progress for several iterations, a delegate that died mid-slice.
 Read the slice's plan and examples, the constitution, the owner brief (`{OWNER_BRIEF}`) and the standing
-entries in `{DECISIONS}` before you move. Then take the least surprising way round, in this order of
+entries of `{DECISIONS}` before you move. {SCOPE_READ} Then take the least surprising way round, in this order of
 preference, and stop at the first that works:
 
 1. **Stub the world.** The code is a hexagon: put a fake adapter behind the port the missing thing sits
@@ -140,7 +146,8 @@ preference, and stop at the first that works:
 3. **Repair the run.** Rebase and resolve, verify a dead delegate's leftovers against the tree and finish or
    revert them, find why a gate loops and fix the cause in the tree the gate measures.
 
-Every move is an entry in `{DECISIONS}` with `Decided by: {BOSUN}`, its *Would reverse if* naming what a
+Every move is an entry in `{DECISIONS}` with `Decided by: {BOSUN}`, and every entry you write carries a
+`Scope:` line (the slice ids whose later decisions must agree with it, or `global`); its *Would reverse if* naming what a
 person must eventually supply, and a task in the next slice to remove the stub when they do. Commit on the
 slice branch as increments, green, and say in the message that it is a workaround.
 
