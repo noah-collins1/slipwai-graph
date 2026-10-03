@@ -60,7 +60,7 @@ None is marked: every implementation task shares a file with its neighbour.
 
 ### T002 — A seeded file that is there is the project's; one that is missing is written (R1, with R2 and R4 held, and R6 begun · AC-S21-1, -2, -3, -4, -6, -7, -8, -11)
 
-- [ ] **Rule R1** — a refresh never compares, rewrites, counts or stamps `.specify/cruise.json`,
+- [x] **Rule R1** — a refresh never compares, rewrites, counts or stamps `.specify/cruise.json`,
   `.specify/product-owner.md`, `.specify/models.json` or `.specify/drive.json` where it exists on disk when the
   refresh starts. **R2**, **R4** and **R6** are folded in, for the reason given under *How the example map was cut*.
 
