@@ -231,7 +231,7 @@ Needs US1 whole (the plan, the session and the finished-file write exist). Edits
 
 ### T005 — [US2] What the model no longer produces is removed by name, before drawing (R4 · AC-S11-11)
 
-- [ ] **Rule R4.** The two directories are no longer deleted wholesale. At the start of a run, every entry in `segments/`
+- [x] **Rule R4.** *(done at `87fb091`: a hold on arrival — removal by name landed in T003; teeth shown by a wholesale delete and by removing nothing.)* The two directories are no longer deleted wholesale. At the start of a run, every entry in `segments/`
   and `slices/` whose name the current model does not produce (`model-<i>.mmd` and `model-<i>.svg` per segment,
   `<slice id>.mmd` and `<slice id>.svg` per slice) is removed before anything is drawn — file or directory, a
   leftover temporary included (T004's prefix and suffix). The empty-model branch does what it does today. Test module
@@ -258,7 +258,7 @@ named in the report.
 
 ### T006 — [US2] Text files are written only when they differ, and the run says what it did (R5 · AC-S11-12, -13)
 
-- [ ] **Rule R5.** The `.mmd` files, `model.html` and the README block are each computed every run and written only
+- [x] **Rule R5.** *(done at `7a99ba5`: RED: the old closing line, and every `.mmd` and the page rewritten on an unchanged tree.)* The `.mmd` files, `model.html` and the README block are each computed every run and written only
   where their bytes differ from the file on disk; `model.html` is built from the SVGs on disk after drawing. One
   `wrote <path>` line per file written and none for a file left. The closing line reports `{ slices, diagrams, drawn,
   unchanged, sessionOpened }` (data-model, *Report*): on the fixture's edit `model: 16 slices, 3 of 25 diagrams drawn,
@@ -286,7 +286,7 @@ then `make lint typecheck check-structure`. Commit (`Level PATCH; VERSION alread
 
 ### T007 — [US2] The page, the fragment and the docs say it (R6 · AC-S11-10, -17)
 
-- [ ] **Rule R6.** Completes `changelog.d/render-once.md` and corrects the page. The one sentence in
+- [x] **Rule R6.** *(done at `273129c`: the sentences were written before their test, so a hold with teeth shown on each of the three files, not a RED.)* Completes `changelog.d/render-once.md` and corrects the page. The one sentence in
   `assets/toolkit/docs/event-model/README.md` on forcing a redraw (no setting and no flag: delete a diagram, or
   `segments/` and `slices/`). The fragment's two catch-up sentences, first line still `PATCH`: after `slipwai migrate`
   nothing is asked of a repository, its first `make model` redraws every diagram once and nothing committed changes
@@ -319,7 +319,7 @@ file `delivery/.written` lists.
 
 ### T008 — The slice's neighbouring suites, then the lint, type and structure gates (closing task before convergence)
 
-- [ ] `make test TESTS="test_toolkit test_utf8_io test_changelog test_event_model test_layout test_monorepos"` green,
+- [x] *(run at `273129c` with the six render modules added: 71 tests OK, 1 skipped; lint, typecheck and structure green.)* `make test TESTS="test_toolkit test_utf8_io test_changelog test_event_model test_layout test_monorepos"` green,
   then `make lint typecheck check-structure`. No file over 350 lines under `src/` or `tests/`; the three scripts under
   `assets/toolkit/scripts/event-model/` are each wholly the owner of their rule (no second copy of the enumeration or of
   the write). If any of this fails, the delegate stops and reports which task's change broke it; it does not edit a file
