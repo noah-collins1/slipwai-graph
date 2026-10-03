@@ -273,3 +273,18 @@ each example with teeth; **VIII** — `changelog.d/refresh-keeps-owned-files.md:
 application start-up path changed. The map: no rung reached by this slice; `make check-convergence` run at T005.
 Two findings outside the slice's diff went to the split's Parking Lot.
 
+## Phase 4: Gaps after converge (2026-10-03; `drive-gaps`, read-only; triaged as D27)
+
+### T009 — Every clause of AC-S21-1, -4, -5, -6, -9 and -10 is held by an example (`MEDIUM` G1, G2 · `LOW` G3–G6)
+
+- [ ] Tests only; no production edit expected. Each new assertion is shown to have teeth by a mutation in a
+  disposable clone. **GREEN names the sweep:** (G1, G2) each of the four, deleted and committed, is written with the
+  factory default *and counted* (`1 file(s) rewritten`); (G4) the `cruise.json` example uses `enabled: true` and
+  `max_iterations: 10`, as the criterion says; (G5) every adopt flag that reaches the refresh — `--refresh`,
+  `--confirm`, `--decline` — has an example leaving the four, and `--confirm` over an uncommitted edit to one is not
+  refused; (G3) every key of the strategy record other than `before` is equal before and after a refresh, not five
+  named ones; (G6) a row recorded `overridden` above the precondition's rung drops the entry, and one recorded
+  `confirmed` at `none` or `manual` keeps it, naming that rung.
+
+**Files:** `tests/test_refresh_owned.py`, `tests/test_refresh_strategy.py` (each ≤ 350 lines).
+

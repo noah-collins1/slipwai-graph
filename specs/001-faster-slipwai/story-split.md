@@ -142,6 +142,13 @@ that cannot delegate takes the earliest ready slice in split order and names the
   candidate PATCH slice for the completion audit — and until it lands, a `/survey` run in this repository off
   `main` is followed by a revert of `project.json`'s `ci.branch` and the workflow, which is a control the runner
   parks on.
+- **Left by S21's gaps pass for the completion audit** (D27), each older than `S21` and the same before and after
+  it: no test runs `slipwai migrate` over a seeded file the project edited (the tripwire D26 names); a seeded path
+  that is a directory ends a refresh on a traceback, and one that is a dangling symlink is written through; a
+  convergence row whose rung is not on its ladder ends a refresh on a traceback (`constitution_journey.py`); and
+  the adoption block in `AGENTS.md` says *never edit anything listed in `.written` by hand … `slipwai migrate`
+  replaces them*, which reads against the four files a project owns and against `migrate` being a merge — a
+  generated sentence in a block `adopt` appends once, so a PATCH with a catch-up note.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 
