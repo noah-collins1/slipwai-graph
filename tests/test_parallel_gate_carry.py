@@ -160,6 +160,9 @@ class TheFragmentIsTrueAndStandsAloneTest(FactoryTestCase):
         self.assertRegex(text, r"experimental")
         self.assertIn("adopted", text)
         self.assertIn("serially whatever `-j` says", text)
+        self.assertIn("`make -f delivery/Makefile -j verify`", text)
+        self.assertIn("keeps `-j` for its own targets", text)
+        self.assertIn("`make -j verify` typed at such a root is not promised", text)
         self.assertNotIn("above", text, "a paragraph copied into a note cannot point at the body above it")
         self.assertEqual(len(OWED.findall(FRAGMENT.read_text(encoding="utf-8"))), 1, "one paragraph")
 
@@ -196,8 +199,10 @@ class TheGatesPageIsTrueTest(FactoryTestCase):
             "the order of the lines is not promised",
             "`verify` as the only goal",
             "`make -j ci` is not promised",
-            "An adopted repository's gate runs serially whatever `-j` says",
-            "a recorded command that itself calls `make`",
+            "An adopted repository's gate runs serially whatever `-j` says when make is started on its Makefile, "
+            "`make -f delivery/Makefile -j verify`",
+            "keeps `-j` for its own targets, and `make -j verify` typed there is not promised",
+            "A recorded command that itself calls `make` is that application's own",
         ):
             self.assertIn(said, page)
 

@@ -34,8 +34,9 @@ test run shows no progress until then; on a make older than 4.0 lines may interl
 promised either way. A failed run ends on `{FAILED}`, then make's own last line. The claim is for `verify` as the only goal:
 `make -j ci` is not promised. A passing run that installed dependencies as it went is not recorded, the next run on the
 unchanged tree is, and `make install` beforehand makes the first one count. An adopted repository's gate runs serially
-whatever `-j` says: a bare `.NOTPARALLEL:` holds its own targets, and a recorded command that itself calls `make` is the one
-thing it cannot hold, that application's own.
+whatever `-j` says when make is started on its Makefile, `make -f delivery/Makefile -j verify`; a root Makefile that includes
+it keeps `-j` for its own targets, and `make -j verify` typed there is not promised. A recorded command that itself calls
+`make` is that application's own.
 
 """
 

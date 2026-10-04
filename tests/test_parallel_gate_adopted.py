@@ -25,7 +25,8 @@ from slipwai.selection import Selection
 from slipwai.services import default_apps
 
 sys.dont_write_bytecode = True
-DIRECTIVE = re.compile(r"^# [^\n]+\n\.NOTPARALLEL:\n", re.M)
+DIRECTIVE = re.compile(
+    r"^# [^\n]+\n# [^\n]*keeps its own -j\.\nifeq \(\$\(words \$\(MAKEFILE_LIST\)\),1\)\n\.NOTPARALLEL:\nendif\n", re.M)
 CHECKS = ("lint", "typecheck", "test")
 # Starts, waits (bounded: `STANDIN_TICKS` fiftieths of a second) for another stand-in to start or to be in flight,
 # says which, ends. `lint` and `typecheck` are red with one finding named for each, so the ratchet has a baseline to

@@ -80,14 +80,24 @@ NOTHING_CONFIRMED = """verify: ## Refuses until a candidate has been confirmed a
 \t@exit 1"""
 
 
-# A bare `.NOTPARALLEL:` makes the whole Makefile serial, `make -j` and `ratchet-tighten`'s sub-make included. An adopted
+# A bare `.NOTPARALLEL:` holds the whole run make is started on, `ratchet-tighten`'s sub-make included. An adopted
 # repository's gate is not the stamped one (nothing syncs once for it), and its ratchet runs read and write one
-# `baseline.json` that overlapping runs would lose entries from; so it runs as `make verify` does. After the `verify`
-# rule, not before it: that rule's bytes and its place under `.PHONY: verify ci` are pinned.
+# `baseline.json` that overlapping runs would lose entries from; so it runs as `make verify` does. Only where this is the
+# one makefile read: a root Makefile that includes it is the repository's own make run and keeps its own `-j` (D95).
+# After the `verify` rule, not before it: that rule's bytes and its place under `.PHONY: verify ci` are pinned.
 SERIAL = """
 
-# Serial under -j: this gate is not stamped, and its ratchet runs share one baseline.json.
-.NOTPARALLEL:"""
+# Serial under -j when make is started on this file (`make -f delivery/Makefile -j verify`): the gate is not stamped, and
+# its ratchet runs share one baseline.json. A Makefile that includes this one keeps its own -j.
+ifeq ($(words $(MAKEFILE_LIST)),1)
+.NOTPARALLEL:
+endif"""
+
+
+def include_says(layout: Layout) -> str:
+    """What an include of the delivery Makefile does to `-j`, and the run that is held serial; said where it is offered."""
+    return (f"The include adds the method's targets and leaves your own `-j` alone; the gate is held serial by "
+            f"`{layout.make} -j verify`.")
 
 
 def gate_target(apps: list[App], dependencies: str, layout: Layout) -> str:

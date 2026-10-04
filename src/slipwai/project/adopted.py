@@ -16,6 +16,7 @@ from ..layout import Layout
 from ..origin import Adoption
 from ..services import App, wrapped_of
 from .adopted_ci import ACTIONS_GATE, delivery_workflow, gitlab_job
+from .adopted_targets import include_says
 from .drive_adoption import adoption_hooks
 from .pins import GITATTRIBUTES
 from .shared_packages import PACKAGES
@@ -122,10 +123,10 @@ def adoption_page(project_name: str, apps: list[App], adoption: Adoption, layout
     why = f"\n\n**Why:** {adoption.why}\n" if adoption.why else ""
     makefile_step = (
         f"Offer the targets as the repository's own: add `-include {where(layout)}Makefile` to the root `Makefile`,\n"
-        "   and `make verify` is one word again."
+        f"   and `make verify` is one word again. {include_says(layout)}"
         if adoption.survey.get("makefile")
         else f"`make verify` is one word: the repository had no `Makefile`, so `adopt` wrote one that includes\n"
-        f"   `{where(layout)}Makefile`, in a marked block. Targets of the repository's own go around it."
+        f"   `{where(layout)}Makefile`, in a marked block; its own targets go around it. {include_says(layout)}"
     )
     return f"""# How the delivery method was installed here
 
@@ -334,11 +335,10 @@ moved inside it unseen.
 
 
 def makefile_block(layout: Layout) -> str:
-    """The root `Makefile` `adopt` writes where the repository has none, so that `make verify` is one word from
-    the start. Marked like the other appended blocks: targets of the repository's own go around it."""
+    """The root `Makefile` `adopt` writes where there is none, so `make verify` is one word; its own targets go around it."""
     return f"""# slipwai:delivery:begin — written by `slipwai adopt`, since this repository had no Makefile
 # The delivery method's targets, offered as this repository's own: `make verify`, `make help`. Add targets of
-# your own around this block, not inside it.
+# your own around this block, not inside it. {include_says(layout)}
 -include {where(layout)}Makefile
 # slipwai:delivery:end
 """

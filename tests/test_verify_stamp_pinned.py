@@ -69,11 +69,16 @@ NOTHING_CONFIRMED_RULE = (
     "\t@echo '  /ground, in the agent, asks about each; `slipwai adopt --confirm <name>` does it without one.'\n"
     "\t@exit 1\n"
 )
-# What S04-parallel-gate R6 adds after an adopted repository's `verify` rule, before `ci`: a blank line, one comment,
-# and a bare `.NOTPARALLEL:`. The rule's own bytes above it are what the two tests below still hold.
+# What S04-parallel-gate R6 and D95 add after an adopted repository's `verify` rule, before `ci`: a blank line, one
+# comment, and a bare `.NOTPARALLEL:` inside a guard true only when no other makefile has been read. The rule's own
+# bytes above it are what the two tests below still hold.
 SERIAL = (
-    "\n# Serial under -j: this gate is not stamped, and its ratchet runs share one baseline.json.\n"
+    "\n# Serial under -j when make is started on this file (`make -f delivery/Makefile -j verify`): the gate is not "
+    "stamped, and\n"
+    "# its ratchet runs share one baseline.json. A Makefile that includes this one keeps its own -j.\n"
+    "ifeq ($(words $(MAKEFILE_LIST)),1)\n"
     ".NOTPARALLEL:\n"
+    "endif\n"
 )
 
 
