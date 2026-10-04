@@ -60,7 +60,7 @@ root `Makefile` and `tests/` reach no user), and no second copy of the script.
 
 ### T001 — [US1] A tree that passed is not judged again off the trunk (R1 · AC-S33-1, -2, -7)
 
-- [ ] **Rule R1.** Creates `tests/test_factory_gate_stamp.py` with its fixture (the temporary repository, the
+- [x] **Rule R1.** Creates `tests/test_factory_gate_stamp.py` with its fixture (the temporary repository, the
   copied files, the stand-in checks, the environment builder, the log reader) **only as far as R1 needs it**.
 
 **RED** (each fails today because `verify` has no stamp and no `verify-checks` target):
@@ -85,7 +85,7 @@ Commit by path.
 
 ### T002 — [US1] The trunk, CI and force always run in full (R2 · AC-S33-3, -4)
 
-- [ ] **Rule R2.** Follows T001 (same two files). The script's own `standing()` and `VERIFY_FORCE` carry this
+- [x] **Rule R2.** Follows T001 (same two files). The script's own `standing()` and `VERIFY_FORCE` carry this
   rule, so **each example is observed first**: it is a RED with its GREEN named in the report if it fails, and
   otherwise a **hold written as one and seen to have teeth** (teeth: stop `verify` calling the script, or drop the
   environment pass-through) — the report says which, and no example is claimed that was neither.
@@ -103,7 +103,7 @@ names the reason (the script already answers).
 
 ### T003 — [US1] A slice of the suite is not the gate (R3 · AC-S33-5)
 
-- [ ] **Rule R3.** Follows T002.
+- [x] **Rule R3.** Follows T002.
 
 **RED** (fails today: `verify` calls the script regardless):
 - e1 a pass, then `make verify TESTS=x` (and, separately, `SKIP=x`) → the checks run as before with the named
@@ -118,7 +118,7 @@ construct newer than GNU Make 3.81). The script is not called, so nothing reads,
 
 ### T004 — [US1] The tools the suite looks for are in the key (R4 · AC-S33-6)
 
-- [ ] **Rule R4.** Follows T003.
+- [x] **Rule R4.** Follows T003.
 
 **RED** (fails today: no `--tool` is passed, so a tool appearing changes nothing):
 - e1 after a pass, a stand-in `tofu` is put on `PATH` → the next `make verify` is a full run; the pass after that is
@@ -138,7 +138,7 @@ and `--make "$(MAKE)"`. The list is written once.
 
 ### T005 — [US1] Nothing else moves (R5 · AC-S33-8, -9) — hold
 
-- [ ] **Rule R5.** Follows T004. A **hold task**: the rule guards what T001–T004 left alone, so no RED is expected
+- [x] **Rule R5.** Follows T004. A **hold task**: the rule guards what T001–T004 left alone, so no RED is expected
   and each example is **written as a hold and seen to have teeth**; the commit may touch `Makefile` only for the one
   `make help` line if the earlier tasks left it unsaid.
 - e1 `make help` lists `verify` with a line saying a tree that already passed is not judged again *(fails today
@@ -156,7 +156,7 @@ and `--make "$(MAKE)"`. The list is written once.
 
 ### T006 — Export the patch and prove it applies (host task)
 
-- [ ] **Host task; no story.** In the worktree, `git diff adopt-method...s33-patch -- Makefile
+- [x] **Host task; no story.** In the worktree, `git diff adopt-method...s33-patch -- Makefile
   tests/test_factory_gate_stamp.py > /home/noahc/math/slipwai-graph/specs/001-faster-slipwai/slices/S33-factory-gate-stamp/s33.patch`
   (the patch names only those two paths). Then from `/home/noahc/math/slipwai-graph` on `adopt-method`:
   `git apply --check specs/001-faster-slipwai/slices/S33-factory-gate-stamp/s33.patch` exits 0, **and nothing is

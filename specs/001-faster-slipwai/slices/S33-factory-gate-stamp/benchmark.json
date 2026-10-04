@@ -161,17 +161,63 @@
         "start": {
           "open": 14,
           "done": 0
+        },
+        "end": {
+          "open": 14,
+          "done": 0
         }
       },
-      "cursor": {
-        "source": "claude",
-        "session": "3f644856-c9f8-4a4d-9d9d-f4921635a839",
-        "files": {
-          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3f644856-c9f8-4a4d-9d9d-f4921635a839.jsonl": 870066
+      "ended": "2026-10-04T19:11:21Z",
+      "seconds": 503,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3f644856-c9f8-4a4d-9d9d-f4921635a839.jsonl": 870066,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3f644856-c9f8-4a4d-9d9d-f4921635a839/subagents/agent-acd84c338510fd739.jsonl": 333490
         },
-        "subagents": {
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3f644856-c9f8-4a4d-9d9d-f4921635a839.jsonl": 940676,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3f644856-c9f8-4a4d-9d9d-f4921635a839/subagents/agent-a476b3cfb21e3b758.jsonl": 602130,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3f644856-c9f8-4a4d-9d9d-f4921635a839/subagents/agent-acd84c338510fd739.jsonl": 333490
         }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "3f644856-c9f8-4a4d-9d9d-f4921635a839",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 10,
+            "output": 3869,
+            "cache_read": 689561,
+            "cache_creation": 8017
+          }
+        },
+        "subagents": {
+          "claude-sonnet-5-5": {
+            "input": 88,
+            "output": 1176,
+            "cache_read": 3398097,
+            "cache_creation": 100532
+          }
+        },
+        "agents": [
+          "drive-implement"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "agents": [
+        "drive-implement"
+      ],
+      "delegated": true,
+      "signals": {
+        "verify_failures": 0,
+        "delegate": "rule",
+        "cycle": "rule",
+        "split": 0,
+        "driver": "cruise"
       }
     }
   ]
