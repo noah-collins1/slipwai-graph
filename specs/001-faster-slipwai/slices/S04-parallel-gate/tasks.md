@@ -605,7 +605,7 @@ adopted page).
 
 ### T010 — Both full gates on the final tip, then the demo (host task)
 
-- [ ] **Host task — not delegated.** First `make test TESTS="test_toolkit test_utf8_io test_changelog"` (the slice touches
+- [x] *(both gates green at `c37dc4a` — `make verify`, 1847 tests, exit 0 at 17:33Z, and the delivery gate with the CI markers set, exit 0 at 18:12Z; the first run, at `3a48dec`, was red on two suites the tasks' own runs had not included, fixed in tests (D98); demo 1 `accepted` before the adversary pass, demo 2 `accepted` at `3a48dec` over the steps D97 changed; AC-S04-62 held: the stamp's script is not in `3f44288..c37dc4a`)* **Host task — not delegated.** First `make test TESTS="test_toolkit test_utf8_io test_changelog"` (the slice touches
   `assets/toolkit/`), then `make verify` and `make -f delivery/Makefile verify` on the tree after T009, both green
   (Principle XIV), the second also once with `CI=true GITHUB_ACTIONS=true` exported. `make verify`'s `test_matrix` holds every
   distinct native-gate shape of every backend to its own gate, which with `make starters` materialising every combination
@@ -618,19 +618,19 @@ adopted page).
 
 ### T011 — The adversary pass (host task)
 
-- [ ] **Host task.** `drive-adversary` over the sync's boundary (a `uv` that fails halfway, two `make` runs at once on one
+- [x] *(two seams at `a7da5f0`, nine findings, none `CRITICAL` or `HIGH`; D97; T023)* **Host task.** `drive-adversary` over the sync's boundary (a `uv` that fails halfway, two `make` runs at once on one
   `.venv`, `MAKEFLAGS` set by a caller), the gate's failure line under `-j`, the lock's three migration cases and the
   adopted line; any confirmed finding is a regression test at the owning layer, appended as a task below.
 
 ### T012 — Mutation (host task)
 
-- [ ] **Host task.** `drive-mutation` over `parallel_gate.py`, `gate.py` and `model_targets.py`; the report recorded, the tree clean
+- [x] *(N/A — this repository records no mutation command (`project.json`), as for the ten slices before it; said in the register row and owed to the cruise report)* **Host task.** `drive-mutation` over `parallel_gate.py`, `gate.py` and `model_targets.py`; the report recorded, the tree clean
   afterwards. This repository has no mutation command configured (as for every slice before it), which is reported, not
   pretended; survivors append tasks.
 
 ### T013 — Register row and benchmark (host task)
 
-- [ ] **Host task.** The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in this
+- [x] *(the register row and the benchmark record closed in the commit that carries this tick)* **Host task.** The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in this
   slice's own pull request (`AGENTS.md`).
 
 ---

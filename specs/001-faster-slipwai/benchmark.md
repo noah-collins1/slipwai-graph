@@ -1,10 +1,10 @@
 # Benchmark — 001-faster-slipwai
 
-Drawn 2026-10-04T11:06:48Z at `bf44aa5` from 11 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
+Drawn 2026-10-04T18:12:58Z at `c37dc4a` from 12 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
 
 ## Slices
 
-10 slice(s) recorded, 22h25m+ in all.
+11 slice(s) recorded, 27h31m+ in all.
 
 | slice | delegate/cycle | wall | in | out | models | sessions | converge | +tasks | gaps | mutation | adversary | demo | verify✗ | rework | tasks | files | ±lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -13,6 +13,7 @@ Drawn 2026-10-04T11:06:48Z at `bf44aa5` from 11 record(s) under `specs/001-faste
 | S01-gate-walks | story/rule, task/example, task/rule | 2h29m+ | 47.1M (+2 unread) | 165.7k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 9 | 22/13 | — | 7 | accepted | 1 | 0 | 33 | 45 | +6623/-59 |
 | S02-runner-bookkeeping | story/rule, task/example | 3h00m | 81M (+1 unread) | 205.3k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 5 | 69/0 | — | 18 | accepted | 0 | 0 | 28 | 79 | +11047/-78 |
 | S03-verify-stamp | story/rule, task/rule | 5h05m | 112.5M | 267.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 3 | 15 | 31/8 | — | 18 | accepted | 27 | 0 | 42 | 78 | +12971/-48 |
+| S04-parallel-gate | task/rule | 5h06m | 106.5M | 251.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 3 | 8 | 63/19 | — | 9 | accepted | 0 | 0 | 24 | 68 | +11069/-78 |
 | S11-render-once | story/rule, task/rule | 2h49m | 41.4M (+1 unread) | 132.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 6 | 17/7 | n/a (no command recorded) | 13 | accepted | 0 | 0 | 24 | 48 | +6103/-164 |
 | S20-slice-scope-root | rule/rule, task/example, task/rule | 1h09m+ | 22.8M (+3 unread) | 113.4k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 8 | 8/6 | — | 9 | accepted | 1 | 0 | 34 | 44 | +3998/-36 |
 | S21-refresh-keeps-owned-files | rule/rule, task/rule | 1h01m | 19.4M | 81.3k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 1 | 3 | 8/8 | — | 6 | accepted | 0 | 0 | 11 | 42 | +3092/-24 |
@@ -115,6 +116,32 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | skipper | 2026-10-04 05:39 | 5m09s | 1.2M | 11.4k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
 | implement | 2026-10-04 05:45 | 59m06s | 26.4M | 30.3k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=2, delegate=task, cycle=rule, split=0, driver=cruise |
 | demo | 2026-10-04 06:45 | 4m50s | 1.6M | 8.3k | claude-fable-5-1 | drive-hand | yes | outcome=accepted, driver=cruise |
+
+### S04-parallel-gate — 5h06m
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| skipper | 2026-10-04 11:11 | 5m17s | 2M | 12.4k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
+| gaps | 2026-10-04 11:17 | 2m27s | 1.1M | 20.1k | claude-fable-5-1 | — | no | gaps=63, driver=cruise |
+| plan | 2026-10-04 11:22 | 3m49s | 1.4M | 21.5k | claude-fable-5-1 | — | no | driver=cruise |
+| tasks | 2026-10-04 11:26 | 12m51s | 7.5M | 6k | claude-fable-5-1, claude-sonnet-5-5 | drive-tasks | yes | driver=cruise |
+| pin | 2026-10-04 11:39 | 2m01s | 1.6M | 5.3k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | driver=cruise |
+| implement | 2026-10-04 11:41 | 36m38s | 14.9M | 28.6k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | — |
+| skipper | 2026-10-04 12:18 | 17m28s | 8.4M | 19k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement, drive-skipper | yes | driver=cruise |
+| converge | 2026-10-04 13:04 | 8m29s | 3.7M | 6.9k | claude-fable-5-1 | drive-converge | yes | driver=cruise |
+| implement | 2026-10-04 13:13 | 13m35s | 2.4M | 4.8k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+| converge | 2026-10-04 13:27 | 7m57s | 2.7M | 6.1k | claude-fable-5-1 | drive-converge | yes | driver=cruise |
+| skipper | 2026-10-04 13:35 | 5m02s | 666.5k | 7.3k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-04 13:40 | 11m04s | 1.6M | 4.9k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+| gaps | 2026-10-04 13:51 | 12m28s | 13.9M | 12.8k | claude-fable-5-1 | drive-gaps | yes | gaps=19, driver=cruise |
+| skipper | 2026-10-04 14:03 | 6m01s | 1.6M | 3k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-04 14:10 | 49m41s | 13.6M | 29.5k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+| converge | 2026-10-04 15:00 | 7m25s | 2.6M | 7.1k | claude-fable-5-1 | drive-converge | yes | driver=cruise |
+| demo | 2026-10-04 15:08 | 11m26s | 4.2M | 9.5k | claude-fable-5-1 | drive-hand | yes | outcome=accepted, driver=cruise |
+| adversary | 2026-10-04 15:20 | 12m02s | 6M | 12.5k | claude-fable-5-1 | drive-adversary | yes | findings=9, seams=2, driver=cruise |
+| skipper | 2026-10-04 15:33 | 7m31s | 2.2M | 10.1k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-04 15:40 | 25m47s | 4.9M | 8.9k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+| demo | 2026-10-04 16:06 | 47m07s | 9.5M | 14.7k | claude-fable-5-1 | drive-hand | yes | outcome=accepted, driver=cruise |
 
 ### S11-render-once — 2h49m
 
@@ -243,6 +270,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 ## Notes
 
 - S03-verify-stamp: converge ran 3 times, appending 15 task(s) — a slice too large, or fixes too narrow to close the class of what they found
+- S04-parallel-gate: converge ran 3 times, appending 8 task(s) — a slice too large, or fixes too narrow to close the class of what they found
 - S01-gate-walks: implemented as story/rule and task/example and task/rule — its wall compares with neither
 - S02-runner-bookkeeping: implemented as story/rule and task/example — its wall compares with neither
 - S03-verify-stamp: implemented as story/rule and task/rule — its wall compares with neither
@@ -256,6 +284,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 - S00-run-path mutation: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S01-gate-walks gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S01-gate-walks plan: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
+- S04-parallel-gate implement: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
 - S20-slice-scope-root gaps: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
 - S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
