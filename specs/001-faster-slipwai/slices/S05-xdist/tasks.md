@@ -87,7 +87,7 @@ signature T004 extends).
 
 ### T001 — [US2] A new project is marked (R1 · AC-S05-1)
 
-- [ ] **Rule R1.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first
+- [x] **Rule R1.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first
   line `MINOR`, the lead sentence, and a **Catch-up.** paragraph standing alone: a project made before stays serial and
   `"parallelSafe": true` is the one line that opts it in, then `make verify` once; T005 completes it).
 
@@ -113,7 +113,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 
 ### T002 — [P] [US2] The mark reaches the gate's pytest at run time (R2 · AC-S05-2, -3, -4, -5)
 
-- [ ] **Rule R2.** Needs T001 only for a project with the key to exist in the generator; the gate's tests may also write
+- [x] **Rule R2.** Needs T001 only for a project with the key to exist in the generator; the gate's tests may also write
   the key into a copied `project.json` themselves, so the manifest is disjoint from T001's.
 
 **RED** (new `tests/test_xdist_gate.py`; a generated Python project, a stand-in `uv` recording argv, `./scripts/verify`
@@ -148,7 +148,7 @@ test_flag_gate test_check_python"` green, then `make lint typecheck check-struct
 
 ### T003 — [P] [US2] The plugin is installed, locked, and only the gate uses it (R3 · AC-S05-6, -7)
 
-- [ ] **Rule R3.** **Shares `src/slipwai/project/languages/python.py` with T002**, so it runs after T002 (or T002 after
+- [x] **Rule R3.** **Shares `src/slipwai/project/languages/python.py` with T002**, so it runs after T002 (or T002 after
   it), never beside it. Disjoint from T001, T004 and T005.
 
 **RED** (new `tests/test_xdist_plugin.py`; the existing `tests/test_uv.py` is amended in this task, its pins named in
@@ -177,7 +177,7 @@ line as above (a new pinned tool in every Python service).
 
 ### T004 — [P] [US2] What exists keeps its answer (R4 · AC-S05-8, -9)
 
-- [ ] **Rule R4.** Needs T001 (the `metadata()` keyword). Disjoint from T002, T003 and T005 by manifest.
+- [x] **Rule R4.** Needs T001 (the `metadata()` keyword). Disjoint from T002, T003 and T005 by manifest.
 
 **RED** (new `tests/test_xdist_carry.py`; `newer_factory`, `git` from `tests/test_replay.py`, `migrate` from
 `tests/test_migrate.py`, `add_service` from `tests/test_add_service.py`, `adopted` and `slipwai` from
@@ -214,7 +214,7 @@ check-structure`. Commit by path; level line as above.
 
 ### T005 — [P] [US2] The words are true (R5 · AC-S05-10, -11, -12, -13)
 
-- [ ] **Rule R5.** Needs T001 only for the fragment it completes; disjoint from T002–T004 except
+- [x] **Rule R5.** Needs T001 only for the fragment it completes; disjoint from T002–T004 except
   `changelog.d/xdist.md`, which no one but T001 and T005 touches.
 
 **RED** (new `tests/test_xdist_page.py`; generated projects' `docs/gates.md`):
@@ -247,7 +247,7 @@ by path; level line as above.
 
 ### T006 — Every suite that reads generated Python output, once, before the gates (host task)
 
-- [ ] **Host task; no story.** After T001–T005 are committed, run, in one command, every suite that reads a generated
+- [x] **Host task; no story.** After T001–T005 are committed, run, in one command, every suite that reads a generated
   Python project's dev list, `scripts/verify`, `project.json` or the gates page, so a break that no task's own Verify
   reached surfaces here and not in the full gate:
   `make test TESTS="test_uv test_matrix test_parallel_gate_families test_parallel_gate_sync test_parallel_gate_run
