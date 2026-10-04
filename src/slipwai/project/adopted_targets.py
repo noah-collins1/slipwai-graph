@@ -80,9 +80,20 @@ NOTHING_CONFIRMED = """verify: ## Refuses until a candidate has been confirmed a
 \t@exit 1"""
 
 
+# A bare `.NOTPARALLEL:` makes the whole Makefile serial, `make -j` and `ratchet-tighten`'s sub-make included. An adopted
+# repository's gate is not the stamped one (nothing syncs once for it), and its ratchet runs read and write one
+# `baseline.json` that overlapping runs would lose entries from; so it runs as `make verify` does. After the `verify`
+# rule, not before it: that rule's bytes and its place under `.PHONY: verify ci` are pinned.
+SERIAL = """
+
+# Serial under -j: this gate is not stamped, and its ratchet runs share one baseline.json.
+.NOTPARALLEL:"""
+
+
 def gate_target(apps: list[App], dependencies: str, layout: Layout) -> str:
     """The `verify` rule: the gate over `dependencies` — behind the stamp, unless the repository adopted the method — or
-    the refusal that stands in for it while nothing is confirmed."""
-    if not apps:
-        return NOTHING_CONFIRMED
-    return stamped_gate(apps, dependencies) if stamped(apps, layout) else GATE.format(dependencies=dependencies)
+    the refusal that stands in for it while nothing is confirmed. Wherever it is not the stamped gate it is followed by
+    `SERIAL`."""
+    if apps and stamped(apps, layout):
+        return stamped_gate(apps, dependencies)
+    return (GATE.format(dependencies=dependencies) if apps else NOTHING_CONFIRMED) + SERIAL

@@ -69,6 +69,12 @@ NOTHING_CONFIRMED_RULE = (
     "\t@echo '  /ground, in the agent, asks about each; `slipwai adopt --confirm <name>` does it without one.'\n"
     "\t@exit 1\n"
 )
+# What S04-parallel-gate R6 adds after an adopted repository's `verify` rule, before `ci`: a blank line, one comment,
+# and a bare `.NOTPARALLEL:`. The rule's own bytes above it are what the two tests below still hold.
+SERIAL = (
+    "\n# Serial under -j: this gate is not stamped, and its ratchet runs share one baseline.json.\n"
+    ".NOTPARALLEL:\n"
+)
 
 
 class GeneratedGatePinnedTest(FactoryTestCase):
@@ -117,19 +123,21 @@ class GeneratedGatePinnedTest(FactoryTestCase):
 
 class WrappedGatePinnedTest(FactoryTestCase):
     def test_the_gate_refuses_while_nothing_is_confirmed_byte_for_byte(self) -> None:
-        """Hold (pin 2, `NOTHING_CONFIRMED`): the rule as written, no prerequisite, and the closing line absent."""
+        """Hold (pin 2, `NOTHING_CONFIRMED`): the rule as written, no prerequisite, the closing line absent, then the
+        serial directive (R6)."""
         with tempfile.TemporaryDirectory() as directory:
             repo = adopted(Path(directory))
             makefile = (repo / "delivery/Makefile").read_text()
-            self.assertIn(".PHONY: verify ci\n" + NOTHING_CONFIRMED_RULE + "ci: verify ", makefile)
+            self.assertIn(".PHONY: verify ci\n" + NOTHING_CONFIRMED_RULE + SERIAL + "ci: verify ", makefile)
             self.assertNotIn("verify: all gates passed", makefile)
 
     def test_a_confirmed_application_gets_the_gate_byte_for_byte(self) -> None:
-        """Hold (pin 2, `GATE`): the rule as written, `check-convergence` last, the closing line."""
+        """Hold (pin 2, `GATE`): the rule as written, `check-convergence` last, the closing line, then the serial
+        directive (R6)."""
         with tempfile.TemporaryDirectory() as directory:
             repo = adopted(Path(directory))
             self.assertEqual(slipwai(repo, "adopt", "--confirm", "shop").returncode, 0)
             makefile = (repo / "delivery/Makefile").read_text()
             rule = f"verify: {' '.join(WRAPPED)} {HEADING}\n" + CLOSING
-            self.assertIn(".PHONY: verify ci\n" + rule + "ci: verify ", makefile)
+            self.assertIn(".PHONY: verify ci\n" + rule + SERIAL + "ci: verify ", makefile)
             self.assertNotIn("verify-checks", makefile)
