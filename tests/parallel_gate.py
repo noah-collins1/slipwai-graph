@@ -4,8 +4,7 @@ Not a test module. A shape is generated once per process and copied per test; th
 into a directory first on `PATH`; evidence is the log a stand-in appends to, never a printed line. A stand-in `uv`
 logs `start<TAB>arguments` when it is called and `end<TAB>arguments` when it returns, so a log shows what ran and
 whether two calls overlapped; where a test asks, a `sync` holds, bounded, while another `uv` call is in flight and
-logs `met` if another call was in flight or started meanwhile and `alone` if none came. Nothing here sleeps as proof
-and nothing reads a clock.
+logs `met` if another call was in flight or started meanwhile, else `alone`. Nothing sleeps as proof or reads a clock.
 """
 from __future__ import annotations
 
@@ -132,6 +131,7 @@ log end "$args"
 exit 0
 """
 _QUIET = "#!/bin/sh\nexit 0\n"
+_NPM = '#!/bin/sh\nd=.; [ "$1" = --prefix ] && d=$2\nmkdir -p $d/node_modules; : >$d/node_modules/.package-lock.json\n'
 # `./mvnw`, `go`, `gofmt`: logs `native-start`/`native-end` around a bounded wait for another native call in flight
 # (`barrier-met`, else `barrier-alone`); `go test -coverprofile` and `go list` answer so the coverage script passes.
 _NATIVE = """#!/bin/sh
@@ -175,9 +175,9 @@ def shape(name: str) -> Path:
 
 
 def write_stand_ins(directory: Path) -> None:
-    """`uv` as above; `npm`, `node` and `pip-audit` as tools that do nothing and succeed."""
+    """`uv` as above; `npm` leaving its marker; `node` and `pip-audit` as tools that do nothing and succeed."""
     directory.mkdir(parents=True, exist_ok=True)
-    for name, text in (("uv", _UV), ("npm", _QUIET), ("node", _QUIET), ("pip-audit", _QUIET)):
+    for name, text in (("uv", _UV), ("npm", _NPM), ("node", _QUIET), ("pip-audit", _QUIET)):
         (directory / name).write_text(text, encoding="utf-8")
         (directory / name).chmod(0o755)
 
