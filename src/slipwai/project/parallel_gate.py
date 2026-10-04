@@ -17,11 +17,27 @@ import re
 
 from ..services import App, services_of
 from ..tooling import verify_path
+from .gate import FAILED
 from .native_commands import STEP, steps
 from .openapi import exporting
 
 SYNC = "sync"
 FIRST = "check-python"
+
+# The paragraph the gates page of a stamped project carries beside the stamp's (`docs.documentation_files`). Wherever the
+# gate is not the stamped one the page has neither: a moved layout's and an adopted repository's gate is serial, and the
+# page says nothing of `-j` there, so every sentence below is read for a gate that is stamped. The adopted clause is
+# said here, for a developer who works in both kinds of repository; the fragment's catch-up says it to the adopted one.
+PAGE = f"""`make -j verify` runs the gate's checks at once, from GNU Make 3.81 on; use it when you wait on the gate locally,
+and `make verify` where you want them one after another. Each check's output appears when that check finishes, so a long
+test run shows no progress until then; on a make older than 4.0 lines may interleave, and the order of the lines is not
+promised either way. A failed run ends on `{FAILED}`, then make's own last line. The claim is for `verify` as the only goal:
+`make -j ci` is not promised. A passing run that installed dependencies as it went is not recorded, the next run on the
+unchanged tree is, and `make install` beforehand makes the first one count. An adopted repository's gate runs serially
+whatever `-j` says: a bare `.NOTPARALLEL:` holds its own targets, and a recorded command that itself calls `make` is the one
+thing it cannot hold, that application's own.
+
+"""
 
 
 def python_services(apps: list[App]) -> list[App]:

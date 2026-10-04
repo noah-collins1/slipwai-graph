@@ -18,6 +18,7 @@ from .evolving import evolving_page
 from .existing import production_included_line
 from .flags import FLAG_GATE_NOTE
 from .gate import stamped
+from .parallel_gate import PAGE as PARALLEL_PAGE
 from .pins import pin_list
 from .skills_page import skills_page
 
@@ -49,7 +50,7 @@ def documentation_files(
 ) -> dict[str, str]:
     """Every file under `docs/` that the services' selections decide the content of. A project whose gate is not
     stamped (a wrapped application, the delivery material moved) has a gates page with nothing of a stamp in it."""
-    stamp_paragraphs = STAMP_PAGE if stamped(apps, layout) else ""
+    stamp_paragraphs = STAMP_PAGE + PARALLEL_PAGE if stamped(apps, layout) else ""
     event = profile == "event-modelling"
     frontend = frontend_of(apps)
     services = services_of(apps)
