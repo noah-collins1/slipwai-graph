@@ -414,11 +414,11 @@ Findings: eight — one `HIGH`, three `MEDIUM` counting T018's class, four `LOW`
 
 | # | Seam | Severity | Finding | Triage | State |
 |---|---|---|---|---|---|
-| A1 | A | HIGH | Tests that share module-level state, or a `pytest_sessionfinish` hook that sets the exit status, are red serially and green in parallel; the generated CI runs `make verify` with the mark on, so no gate runs the suite serially. New | D106; T022 | open |
-| A2 | A | MEDIUM | `--adversarial-only` reads every worker crashing at collection (exit 5) as no adversarial tests and passes. New | D106; T022 | open |
-| A3 | A | LOW | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` or `PYTEST_ADDOPTS="-p no:xdist"` fails the gate on a bare usage error. New | D108; T024 | open |
+| A1 | A | HIGH | Tests that share module-level state, or a `pytest_sessionfinish` hook that sets the exit status, are red serially and green in parallel; the generated CI runs `make verify` with the mark on, so no gate runs the suite serially. New | D106; T022 | fixed at 7235418 |
+| A2 | A | MEDIUM | `--adversarial-only` reads every worker crashing at collection (exit 5) as no adversarial tests and passes. New | D106; T022 | fixed at 7235418 |
+| A3 | A | LOW | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` or `PYTEST_ADDOPTS="-p no:xdist"` fails the gate on a bare usage error. New | D108; T024 | fixed at 39f41ea |
 | A4 | A | LOW | The stamp keys on no pytest variable: `PYTEST_ADDOPTS=--co make verify` would stamp a tree whose tests never ran (read, not run). Older (S03) | D108 part 5: a method slice behind S32 (Parking Lot), and the cruise report | parked |
-| B1 | B | MEDIUM | `add-service`, `describe-service` and `adopt --refresh` collapse a mark written twice to the last copy's value, flipping a person's `false` (serial) to `true`. New | D107; T023, closing T018 | open |
-| B2 | B | LOW | A project with no Python service has a page sentence saying `project.json` carries the mark `true`, whatever it carries. New | D108; T024 | open |
-| B3 | B | LOW | A mark `1e400` is rewritten as `Infinity`, which is not JSON. Older mechanism, newly reachable | D108; T024 | open |
+| B1 | B | MEDIUM | `add-service`, `describe-service` and `adopt --refresh` collapse a mark written twice to the last copy's value, flipping a person's `false` (serial) to `true`. New | D107; T023, closing T018 | fixed at 85bb78e |
+| B2 | B | LOW | A project with no Python service has a page sentence saying `project.json` carries the mark `true`, whatever it carries. New | D108; T024 | fixed at 39f41ea |
+| B3 | B | LOW | A mark `1e400` is rewritten as `Infinity`, which is not JSON. Older mechanism, newly reachable | D108; T024 | fixed at 39f41ea |
 | A5 | A | LOW | With the mark `false` a test that calls `os._exit(0)` ends the serial run green part way; parallel is red. Older; S05 makes it stricter | Declined: not this slice's; the cruise report | declined |

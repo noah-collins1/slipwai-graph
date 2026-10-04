@@ -286,14 +286,14 @@ by path; level line as above.
 
 ### T010 — The adversary pass (host task)
 
-- [ ] Per the trigger table in `delivery/skills/adversary` / `adversary-log.md`: `drive-adversary` over the one seam this
+- [x] Per the trigger table in `delivery/skills/adversary` / `adversary-log.md`: `drive-adversary` over the one seam this
   slice opens — the mark's reader in the generated script (a `project.json` that is a directory, huge, invalid UTF-8,
   `{"parallelSafe": true, "parallelSafe": false}`, a symlink, run from another working directory) and `migrate` over a
   project with each value; confirmed findings become regression tests at the owning layer, appended as tasks below.
 
 ### T011 — Mutation (host task)
 
-- [ ] **N/A** — this repository records no mutation command in `project.json`, as for every slice before it; said in the
+- [x] **N/A** — this repository records no mutation command in `project.json`, as for every slice before it; said in the
   register row and owed to the cruise report, not pretended.
 
 ### T012 — Both full gates on the final tip (host task)
@@ -458,7 +458,7 @@ checkout, and on a scratch repository `adopt`ed by this checkout. No production 
 
 ### T018 — `MEDIUM` — A mark added anywhere but after `"target"` comes out of `migrate` twice, silently, and the opt-in does nothing
 
-- [ ] **Finding.** T014's fix took pass 1's option (b): the reader in `scripts/verify` treats a key written twice as
+- [x] **Finding.** T014's fix took pass 1's option (b): the reader in `scripts/verify` treats a key written twice as
   serial (`python.py:181`), and the catch-up and the gates page name where the line goes (`changelog.d/xdist.md:5`,
   `parallel_tests.py:19`). So the opt-out can no longer be defeated, which is what made T014 `HIGH`. What is left is the
   duplicate: `metadata()` writes the key after `"target"` (`metadata.py:65`), so a person who added it anywhere else —
@@ -480,7 +480,7 @@ checkout, and on a scratch repository `adopt`ed by this checkout. No production 
 
 ### T019 — `LOW` — A module at the project's root named like one the xdist workers import crashes every worker where the serial run passes
 
-- [ ] **Finding.** T017's `-I` keeps the reader honest when a `json.py` sits at the project's root, so the mark now reads
+- [x] **Finding.** T017's `-I` keeps the reader honest when a `json.py` sits at the project's root, so the mark now reads
   `true` there — and then pytest-xdist's workers, started from the root, import that `json.py` and crash: *maximum crashed
   workers reached: 48*, *no tests ran*, exit 5, and `--test-only` fails the gate. The same tree with the mark `false`
   passes all 87 tests per service. AC-S05-2 says the parallel run's pass/fail set equals the serial run's on the same
@@ -532,7 +532,7 @@ T022 and T023 have disjoint manifests and run concurrently; T024 follows both (i
 
 ### T022 — `HIGH` — A parallel run passes a test that leaks state into another, and CI runs it in parallel (A1, A2; D106)
 
-- [ ] **RED first**, in a new `tests/test_xdist_ci.py` (the gate's existing stand-in harness in `tests/test_xdist_gate.py`
+- [x] **RED first**, in a new `tests/test_xdist_ci.py` (the gate's existing stand-in harness in `tests/test_xdist_gate.py`
   is the model; keep both files under 350 lines): (1) with the mark `true` and each of `CI`, `GITHUB_ACTIONS`,
   `GITLAB_CI` set alone — to `true` and to `false` — the generated `scripts/verify --test-only` and `all` run pytest
   with no `-n`; with none set, the flags are there; (2) with the mark `true`, `--adversarial-only` runs pytest with no
@@ -551,7 +551,7 @@ T022 and T023 have disjoint manifests and run concurrently; T024 follows both (i
 
 ### T023 — `MEDIUM` — A key written twice in `project.json` is collapsed by `add-service`, `describe-service` and `adopt --refresh`, and `migrate` makes one without a word (B1, T018; D107)
 
-- [ ] **RED first**, in a new `tests/test_manifest_duplicates.py`: the B1 file (`"parallelSafe": false,` after `"name"`,
+- [x] **RED first**, in a new `tests/test_manifest_duplicates.py`: the B1 file (`"parallelSafe": false,` after `"name"`,
   the generated `true` after `"target"`) through `add-service`, `describe-service` and `adopt --refresh` (an adopted
   scratch repository) — each exits non-zero with one line naming `project.json`, the key and "keep one copy";
   `project.json` byte-for-byte unchanged; nothing committed. A duplicate nested in `deployables` refused the same way.
@@ -573,7 +573,7 @@ then `make lint typecheck check-structure`.
 
 ### T024 — `LOW` — The plugin with autoload off, the words on a root module and `-p no:xdist`, the page of a project with no Python, and a non-finite mark (A3, B2, B3, T019; D108)
 
-- [ ] **RED first**, in a new `tests/test_xdist_words.py`: (1) with the mark `true` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`,
+- [x] **RED first**, in a new `tests/test_xdist_words.py`: (1) with the mark `true` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`,
   a generated Python project's real `./scripts/verify --test-only` starts its workers (`created:`), and without it no
   "already registered" error — the spelling (`-p xdist` or `-p xdist.plugin`) is the one that passes both; `FLAGS` in
   `parallel_tests.py` and the script carry the same words; (2) the page's sentence on when to set the mark `false` names a
