@@ -675,7 +675,7 @@ what that question covers, and where none is, a test says so.
 
 #### T023 — `LOW` — `verify-stamp.py` is 643 lines in one file (owner brief, *Taste*)
 
-- [ ] Evidence: `wc -l assets/toolkit/scripts/verify-stamp.py` → 643. It holds four things with their own reasons to
+- [x] *(placed by D81: `S04`, the first slice to change the script next, splits it (Parking Lot); not done here)* Evidence: `wc -l assets/toolkit/scripts/verify-stamp.py` → 643. It holds four things with their own reasons to
   change: the two closed lists, the key (git, files, tools), the stamp's file (path, read, write, remove), and the two
   verbs with make's modes. The lists are what T017's test imports.
 
@@ -866,7 +866,7 @@ T023 is `S04`'s (Parking Lot); G4, G7 and G8 are Parking Lot and cruise-report l
 
 #### T031 — `MEDIUM` — Every machine-supplied tool a recipe of the gate launches is asked (G1 · AC-S03-14, D81)
 
-- [ ] **RED:** an event-modelling project's `VERIFY_STAMP` asks neither `node` nor `npm`, though `check-drawio`'s recipe
+- [x] *(done at `2fb7004`: `node` and `npm` are asked wherever the gate has the model's checks; `tests/test_verify_stamp_launches.py` derives every command a gate recipe launches in seven shapes)* **RED:** an event-modelling project's `VERIFY_STAMP` asks neither `node` nor `npm`, though `check-drawio`'s recipe
   launches both; and a test over the generated `Makefile` of every shape `tests/test_verify_stamp_scan.py` generates —
   the command each recipe line reachable from the gate launches is on that project's tool list, a file of the project,
   or named in the test with the reason it is pinned — fails today on those two. **GREEN (the class):** a row of the one
@@ -878,7 +878,7 @@ T023 is `S04`'s (Parking Lot); G4, G7 and G8 are Parking Lot and cruise-report l
 
 #### T032 — `MEDIUM` — The JVM asked is the one the wrapper would run (G2, T021's third item · AC-S03-14, -17, D81)
 
-- [ ] **RED:** with `JAVA_HOME` naming a JVM that reports another version than the `java` on `PATH`, a stamped Java
+- [x] *(done at `cca6b04`: the JVM asked is `JAVA_HOME`'s where set, else the one on `PATH`; the scan names each shell script's selecting variables)* **RED:** with `JAVA_HOME` naming a JVM that reports another version than the `java` on `PATH`, a stamped Java
   project is reused today. **GREEN:** `JAVA_HOME`'s `bin/java` is asked where the variable is non-empty, else the one on
   `PATH`; one that cannot be launched is AC-S03-17's case; the variable's value is in neither key nor stamp. The
   closed-list test stops saying the wrapper and each backend's `scripts/verify` *hold nothing*: each shell script the
@@ -889,7 +889,7 @@ T023 is `S04`'s (Parking Lot); G4, G7 and G8 are Parking Lot and cruise-report l
 
 #### T033 — `LOW`, a MUST — What the stamp stores of a tool's answer (T030 · AC-S03-18, D81; constitution, persisted data)
 
-- [ ] **RED:** each of T030's lines (a Windows path with a space, a `~user` path, a path after a comma) and a host name,
+- [x] *(done at `6634452`: a stored tool entry is its version-shaped words and a digest of the whole answer)* **RED:** each of T030's lines (a Windows path with a space, a `~user` path, a path after a comma) and a host name,
   printed by a stand-in tool, is found in a file under the stamp's directory today. **GREEN:** per tool the stamp stores
   its name, the version-shaped words of its answer and the digest of the whole answer — the digest alone where no such
   word is found; the key is unchanged (D80). Closes T030.
@@ -898,7 +898,7 @@ T023 is `S04`'s (Parking Lot); G4, G7 and G8 are Parking Lot and cruise-report l
 
 #### T034 — `LOW` — Each line says what happened, and the two readings are pinned (T021, T027, T029 · AC-S03-11, -26, D81)
 
-- [ ] **RED:** the *not recorded* line does not say which part of the key moved, nor — where it is the files — that a
+- [x] *(done at `9f462be`: the not-recorded line names the part that moved; a directory is called a directory; three holds with teeth)* **RED:** the *not recorded* line does not say which part of the key moved, nor — where it is the files — that a
   check may have written one, that `git status` shows it and that the next run records; a directory at the stamp's path
   is told *delete that file*. **GREEN:** both, with no list of files kept between the two halves of a run. **Holds,
   pinning what the code already does, each shown to have teeth:** a run that both tightens the ratchet and ignores
@@ -909,7 +909,7 @@ T023 is `S04`'s (Parking Lot); G4, G7 and G8 are Parking Lot and cruise-report l
 
 #### T035 — `LOW` — The page and the fragment say when to force and how the trunk is recognised (T028, G3 · AC-S03-25, -30, -31, D81)
 
-- [ ] **RED:** the page has no sentence on when to force, none on how the trunk is recognised or what a team with another
+- [x] *(done at `ef66461`: the page and the fragment say when to force, how the trunk is recognised and the `ci.branch` catch-up)* **RED:** the page has no sentence on when to force, none on how the trunk is recognised or what a team with another
   trunk name does, says *everything the checks answer from* and *set* of a CI marker; the fragment's catch-up says nothing
   is asked. **GREEN:** the page's three sentences as AC-S03-31 now reads, *non-empty*, and no *everything*; the fragment's
   tool wording (*the tools the machine supplies that the gate launches*), its trunk sentence and its catch-up exception
