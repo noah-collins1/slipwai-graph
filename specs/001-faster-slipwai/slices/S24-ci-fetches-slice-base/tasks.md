@@ -340,12 +340,12 @@ path; level line (PATCH, `VERSION` not raised because it already carries the MIN
 
 ### T010 — The adversary pass (host task)
 
-- [ ] **Host task.** `drive-adversary` over the no-base states and both routes of `forge_checkout()` through the
+- [x] *(two seams at `edb78cd`, eight findings, none `CRITICAL`; triage D87; fixes T020–T024)* **Host task.** `drive-adversary` over the no-base states and both routes of `forge_checkout()` through the
   script's command line; any confirmed finding is a regression test at the owning layer, appended as a task below.
 
 ### T011 — Mutation (host task)
 
-- [ ] **Host task.** `drive-mutation` over `check()`/`not_checked()` and the three generator changes, the report
+- [x] *(N/A — no command: this repository has no mutation tool configured, as for every slice before it; `delivery/commands/mutation.md` says to report that and not pretend. The setup decision is a person's. Teeth were seen by hand for each hold and for the F1 fix.)* **Host task.** `drive-mutation` over `check()`/`not_checked()` and the three generator changes, the report
   recorded; the tree clean afterwards. Survivors append tasks.
 
 ### T012 — Register row and benchmark (host task)
@@ -402,7 +402,7 @@ delegate; T023 is disjoint and runs beside them.
 
 ### T020 — On a pull request, an unrelated branch-chosen base never stands (`HIGH` · F1 · AC-S24-14)
 
-- [ ] **RED:** in a new `tests/test_slice_scope_forge_hostile.py`, AC-S24-14's checkout built with
+- [x] *(80cfa1f; teeth seen by the host: the one-line fix reversed, three failures, restored)* **RED:** in a new `tests/test_slice_scope_forge_hostile.py`, AC-S24-14's checkout built with
   `tests/forge_checkout.py`: the slice records `ci.branch: evil`, edits `Makefile`, merges an orphan root commit
   carrying its own tree, and the root is pushed as `evil`; with GitHub's variables, and with GitLab's, the gate exits 1
   naming `Makefile` and `project.json`, *compared with `main`* at the commit where the branch left it, in the words
@@ -417,7 +417,7 @@ delegate; T023 is disjoint and runs beside them.
 
 ### T021 — The fetch the gate prints names the branch in full (`MEDIUM` · F3 · AC-S24-16, AC-S24-9)
 
-- [ ] **RED:** every assertion in `tests/` that quotes the printed fetch expects
+- [x] *(4531d3a)* **RED:** every assertion in `tests/` that quotes the printed fetch expects
   `git fetch origin refs/heads/<name>:refs/remotes/origin/<name>`, and one new example in
   `tests/test_slice_scope_forge_hostile.py`: a remote with a branch `main` and a tag `main` at the slice's head; the
   printed command is run as printed; the gate re-run compares with the branch (a host change is refused). Observed
@@ -432,7 +432,7 @@ delegate; T023 is disjoint and runs beside them.
 
 ### T022 — The NOT-checked line says which refs it looked for (`LOW` · F4 · AC-S24-15)
 
-- [ ] **RED:** in `tests/test_slice_scope_forge_nobase.py` (or the hostile file if that one would pass 350 lines): a
+- [x] *(0637839)* **RED:** in `tests/test_slice_scope_forge_nobase.py` (or the hostile file if that one would pass 350 lines): a
   full-history checkout whose only remote is `upstream`, an in-scope slice, a CI marker → exit 1 and one line naming
   `refs/heads/main` and `refs/remotes/origin/main` and ending *on any other CI, a full clone with the trunk's branch
   fetched from a remote named `origin`*; and the existing no-base examples assert the two refs. **GREEN:**
@@ -443,7 +443,7 @@ delegate; T023 is disjoint and runs beside them.
 
 ### T023 — The two refused cases S31 will weigh rest on kept runs (`MEDIUM` · B1, B2 · AC-S24-8)
 
-- [ ] Tests only — holds, each saying it holds a reading `S31-gates-read-recorded-trunk` will weigh. With the shipped
+- [x] *(4182248, both in `tests/test_ci_history_gates.py`; `source_tip_checkout()` added to the helper)* Tests only — holds, each saying it holds a reading `S31-gates-read-recorded-trunk` will weigh. With the shipped
   `check-migrations.py`: a pull request to `release/1` whose expand landed there in an earlier pull request is refused
   on the full-history pull-request checkout; an expand squash-merged to `main` and its contract on the same branch,
   not merged with `main`, is refused on a checkout detached at the branch's tip and passes on the merge commit.
@@ -455,7 +455,7 @@ delegate; T023 is disjoint and runs beside them.
 
 ### T024 — The fragments say it (F3, F4, B1, B2 · AC-S24-11)
 
-- [ ] After T020–T022. D87 gives the sentences and where each goes: the third paragraph of
+- [x] *(bcd66dc)* After T020–T022. D87 gives the sentences and where each goes: the third paragraph of
   `changelog.d/ci-fetches-slice-base.md` (the refs the line names and the remote's name; the printed fetch as the
   first exception to *every answer is what it was*); inside the single **Catch-up.** paragraph, after *…or seed the
   new flag `off`.* and before *Where the trunk is not `main` or `master`…* (the source-tip branch and the pull request
