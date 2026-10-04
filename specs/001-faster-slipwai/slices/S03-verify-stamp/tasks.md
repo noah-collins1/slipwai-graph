@@ -965,7 +965,7 @@ AC-S03-32 to -42 in `spec.md`; D83's numbered items are the rules. T022 is close
 
 #### T040 — `MEDIUM` — The recipe: a make whose path holds a space, the makefile the gate ran from, and `ci` on the checks' own target (C2, C3, C8 · AC-S03-38, -39; D83 items 9, 10, 13)
 
-- [ ] **RED:** a make reached through a directory with a space fails the gate today; `make -f build.mk verify` with no
+- [x] *(done at `f53af33` (and the migrate example's helper at `c1a626b`): make is quoted, the checks run from the makefile the gate ran from, `ci` depends on `verify-checks` and the script no longer reads the goals)* **RED:** a make reached through a directory with a space fails the gate today; `make -f build.mk verify` with no
   `Makefile` fails; `release: ci` then `make release` on a stamped tree prints the reuse line. **GREEN:** as the two
   criteria say; the script stops reading the goals and the forcing goal leaves it; the examples that hold the forced
   line under `make ci` are brought to AC-S03-38; the pin's helper still reads the gate's prerequisites.
@@ -974,7 +974,7 @@ AC-S03-32 to -42 in `spec.md`; D83's numbered items are the rules. T022 is close
 
 #### T041 — `LOW` — The page and the fragment after D83; an unstamped project's page is what it was (C7 · AC-S03-40, -41; D83 items 1, 3, 9, 12, 14)
 
-- [ ] **RED:** an adopted repository's gates page speaks of a stamp; the page and the fragment lack the `CI=1` sentence,
+- [x] *(done at `8765ed7`: an unstamped project's page is what it was; the stamped page and the fragment carry D83's sentences)* **RED:** an adopted repository's gates page speaks of a stamp; the page and the fragment lack the `CI=1` sentence,
   that `make ci` records nothing, that an unusable `ci.branch` is said on a line, and the two further unseen things; the
   page's sentence on what the key holds does not say *every file under the project except what the gate rebuilds or
   never reads*. **GREEN:** each, each instruction followed by a test; the fragment's catch-up gains its three lines;

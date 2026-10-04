@@ -23,11 +23,26 @@ The actor is a developer in a project the factory generated. Everything below is
 6. Add a comment to `scripts/check-imports.py`; `make verify` — every check runs.
 7. `CI=true make verify` on a stamped tree — every check runs and nothing about a stamp is printed.
 8. `git checkout main` (or the trunk's name) with the same files; `make verify` twice — both run every check.
-9. `make ci` on a stamped tree — it prints the forced line and the gate's checks run. `make ci` goes on to the
-   audit and the integration tests, which need more than this machine may have: its exit code is not the evidence.
+9. `make ci` on a stamped tree — every check of the gate runs, no line about a stamp is printed, and the stamp
+   file is the same bytes afterwards (D83: `ci` runs the checks through their own target and records nothing).
+   `make ci` goes on to the audit and the integration tests, which need more than this machine may have: its
+   exit code is not the evidence.
 10. Break a test; `make verify` fails; fix it back by `git checkout`; `make verify` runs every check (no stamp
     survived the failure).
 11. `git status --short --ignored` — nothing of the stamp; `ls "$(git rev-parse --git-dir)/slipwai"` shows it.
 
 Residual named for the cruise report: the Java backends carry the mechanism and no time claim (a JVM's start-up
 is inside the budget on this machine by estimate only).
+
+Added after the adversary pass (D83), for the second demo:
+
+12. With `scratch_*.py` added to `.gitignore` and committed, and the gate stamped again: write a file
+    `apps/service/tests/scratch_try.py` that does not compile — `git status --short` shows nothing, and `make
+    verify` runs every check and fails. Remove the file and run until the gate records again.
+13. Start `make verify VERIFY_FORCE=1` and, while its checks run, start a second `make verify VERIFY_FORCE=1` in
+    another shell: the run that started first ends `verify: this pass was not recorded — another run of the gate
+    started here after this one began, so only that run may record`.
+14. `git init` a copy of the project with no commit yet and run `make verify` twice: both run every check and say
+    nothing of a stamp.
+15. Step 3 again, seven times: the measurement that replaces the first one (AC-S03-42).
+
