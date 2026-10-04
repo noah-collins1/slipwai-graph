@@ -539,7 +539,7 @@ npm), `tests/test_model_lock.py` (new), `tests/test_model_install.py` (new), `te
 
 ### T009 — [US1] It reaches a project that exists, and the words are true (R8 · AC-S04-56 to -63, -21)
 
-- [ ] **Rule R8. Last** — needs T002 to T008: the page and the fragment say what they landed, and `migrate` carries all of
+- [x] *(5e16e66: the page's paragraph is `PAGE` in `parallel_gate.py`, on the stamped project's page only — an adopted or moved-layout page says nothing of `-j`, and its maintainer is told in the fragment's catch-up; the fragment opens `MINOR`, its catch-up one paragraph standing alone, followed by hand against a factory archived at 3f44288 for the three lock cases; e4, e5 red first, e1–e3, e6 holds with teeth; `migrate`'s refusal does not name the untracked file, as AC-S04-57 does not ask)* **Rule R8. Last** — needs T002 to T008: the page and the fragment say what they landed, and `migrate` carries all of
   it. Completes the fragment T002 began.
 
 **RED** (new `tests/test_parallel_gate_carry.py`; a project "made at the commit before this slice" is **this checkout's
