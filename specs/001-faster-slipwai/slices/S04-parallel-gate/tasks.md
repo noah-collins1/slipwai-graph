@@ -167,7 +167,7 @@ opportunities*).
 
 ### T002 — [US1] One sync per `make` run, and a mode reached any other way syncs first (R1 · AC-S04-28 to -41, -44, -14)
 
-- [ ] **Rule R1.** **The first commit that changes a user-visible tree, so the fragment lands in it** (first line
+- [x] *(55283e2: one `…: sync` line beside the `consumers` line rather than a word on each target line, `migrate` and `dev` on their own lines inside their regions; `openapi.py` and `native_commands.py` not edited; e5, e6, e9, e11, e12, e13 holds with teeth)* **Rule R1.** **The first commit that changes a user-visible tree, so the fragment lands in it** (first line
   `MINOR`, a first draft: the gate in parallel, one sync, the lockfile, the three catch-up cases in one stand-alone
   **Catch-up.** paragraph; T009 completes it against what landed). Builds `tests/parallel_gate.py` **only as far as R1
   needs it**.
