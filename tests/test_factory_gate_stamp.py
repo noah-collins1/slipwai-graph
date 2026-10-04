@@ -1,0 +1,274 @@
+"""The factory's own `make verify` asks the verify stamp first (S33).
+
+The root `Makefile`, `verify-stamp.py` and `check-slice-scope.py` are copied, at their shipped paths, into a throwaway
+git repository on a branch that is not the trunk. The four checks are stand-ins written here that append to a log and
+exit as told, so what ran is read from the log, never from what a run printed. A tool the key asks the version of is
+a stand-in executable on a `PATH` directory this test controls.
+"""
+from __future__ import annotations
+
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE
+
+from slipwai.assets import ROOT
+
+sys.dont_write_bytecode = True
+
+SCRIPTS = "assets/toolkit/scripts/"
+COPIED = ("Makefile", SCRIPTS + "verify-stamp.py", SCRIPTS + "check-slice-scope.py")
+FULL = ["verify --lint-only", "verify --typecheck-only", "check-structure", "test"]
+VERIFY = (
+    "#!/bin/sh\necho \"verify $*\" >> \"$STANDIN_LOG\"\n"
+    "[ \"$1\" = \"$STANDIN_FAIL\" ] && { echo 'lint failed (stand-in)' >&2; exit 1; }\nexit 0\n"
+)
+STRUCTURE = ("import os, sys\nwith open(os.environ['STANDIN_LOG'], 'a') as log:\n    log.write('check-structure\\n')\n"
+             "sys.exit(1 if os.environ.get('STANDIN_FAIL') == 'check-structure' else 0)\n")
+SUITE = ("import os, unittest\n\n\nclass X(unittest.TestCase):\n    def test_x(self):\n"
+         "        with open(os.environ['STANDIN_LOG'], 'a') as log:\n            log.write('test\\n')\n"
+         "        self.assertNotEqual(os.environ.get('STANDIN_FAIL'), 'test')\n")
+
+
+def git(repo: Path, *args: str) -> str:
+    return subprocess.run(["git", *args], cwd=repo, check=True, text=True, capture_output=True).stdout
+
+
+class GateCase(unittest.TestCase):
+    repo: Path
+
+    def setUp(self) -> None:
+        scratch = Path(tempfile.mkdtemp(prefix="factory-gate-"))
+        self.addCleanup(shutil.rmtree, scratch, ignore_errors=True)
+        self.repo, self.bin, self.log = scratch / "repo", scratch / "bin", scratch / "standin.log"
+        self.bin.mkdir()
+        self.repo.mkdir()
+        for name in COPIED:
+            (self.repo / name).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(ROOT / name, self.repo / name)
+        written = (("scripts/verify", VERIFY), ("scripts/check-structure.py", STRUCTURE), ("tests/test_x.py", SUITE),
+                   ("src/mod.py", "X = 1\n"), (".gitignore", "__pycache__/\n"),
+                   ("project.json", '{"ci": {"branch": "main"}}\n'))
+        for name, text in written:
+            (self.repo / name).parent.mkdir(exist_ok=True)
+            (self.repo / name).write_text(text, encoding="utf-8")
+        (self.repo / "scripts/verify").chmod(0o755)
+        git(self.repo, "init", "-q", "-b", "main")
+        for key, value in (("user.name", "t"), ("user.email", "t@local"), ("commit.gpgsign", "false")):
+            git(self.repo, "config", key, value)
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "-m", "trunk")
+        git(self.repo, "checkout", "-q", "-b", "topic")
+        self.log.write_text("", encoding="utf-8")
+
+    def gate(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
+        """`make verify` as a person types it; the log of what the stand-ins ran is kept between runs."""
+        # the outer `make test TESTS=...` exports its own variables to every child
+        names = CI_MARKERS + MAKE_STATE + GIT_STATE + ("TESTS", "SKIP", "VERIFY_FORCE")
+        full = {k: v for k, v in os.environ.items() if k not in names}
+        full.update(PATH=f"{self.bin}{os.pathsep}{full.get('PATH', '')}", STANDIN_LOG=str(self.log),
+                    PYTHONDONTWRITEBYTECODE="1", **env)
+        return subprocess.run(["make", "verify", *args], cwd=self.repo, env=full, text=True, capture_output=True,
+                              timeout=180)
+
+    def ran(self) -> list[str]:
+        """What ran since the last call, from the stand-ins' log."""
+        lines = self.log.read_text(encoding="utf-8").splitlines()
+        self.log.write_text("", encoding="utf-8")
+        return lines
+
+    def stamps(self) -> dict[str, tuple[bytes, int]]:
+        """Every file the stamp keeps under the git directory: bytes and mtime, so an untouched stamp reads as one."""
+        directory = self.repo / ".git" / "slipwai"
+        files = directory.glob("*") if directory.is_dir() else ()
+        return {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in files}
+
+    def append(self, name: str) -> None:
+        with (self.repo / name).open("a", encoding="utf-8") as handle:
+            handle.write("# edited\n")
+
+    def passes(self) -> None:
+        done = self.gate()
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        self.assertEqual(self.ran(), FULL)
+
+
+class TestPassedTreeIsNotJudgedAgain(GateCase):
+    def test_second_run_on_an_unchanged_tree_starts_no_check(self) -> None:  # e1
+        self.passes()
+        done = self.gate()
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.ran(), [])
+        self.assertIn("already passed it at", done.stdout)
+
+    def test_a_changed_tree_runs_the_four_checks_in_their_order(self) -> None:  # e2
+        self.passes()
+        changes = {
+            "tracked": lambda: (self.repo / "src/mod.py").write_text("X = 2\n", encoding="utf-8"),
+            "untracked": lambda: (self.repo / "notes.txt").write_text("new\n", encoding="utf-8"),
+            "makefile": lambda: self.append("Makefile"),
+            "script": lambda: self.append("scripts/verify"),
+        }
+        for name, change in changes.items():
+            with self.subTest(name):
+                change()
+                self.assertEqual(self.gate().returncode, 0)
+                self.assertEqual(self.ran(), FULL)
+
+    def test_a_failing_check_leaves_no_stamp(self) -> None:  # e3
+        for failing in ("--lint-only", "check-structure", "test"):
+            with self.subTest(failing):
+                done = self.gate(STANDIN_FAIL=failing)
+                self.assertNotEqual(done.returncode, 0)
+                self.assertIn("did not pass", done.stdout + done.stderr)
+                self.ran()
+                self.assertFalse(list((self.repo / ".git" / "slipwai").glob("*.json")))
+                self.assertEqual(self.gate().returncode, 0)
+                self.assertEqual(self.ran(), FULL)
+                shutil.rmtree(self.repo / ".git" / "slipwai")
+
+
+class TestAlwaysRunsInFull(GateCase):
+    def test_force_runs_every_check_and_says_so(self) -> None:  # e1
+        self.passes()
+        # in the environment, then on make's command line
+        for forced in (lambda: self.gate(VERIFY_FORCE="1"), lambda: self.gate("VERIFY_FORCE=1")):
+            done = forced()
+            self.assertEqual(self.ran(), FULL)
+            self.assertIn("forced by VERIFY_FORCE=1", done.stdout)
+
+    def test_a_ci_marker_reads_writes_and_removes_no_stamp(self) -> None:  # e2
+        for marker in CI_MARKERS:
+            with self.subTest(marker):
+                shutil.rmtree(self.repo / ".git" / "slipwai", ignore_errors=True)
+                self.assertEqual(self.gate(**{marker: "1"}).returncode, 0)
+                self.assertEqual((self.ran(), self.stamps()), (FULL, {}))
+                self.passes()
+                before = self.stamps()
+                self.assertTrue(before)
+                self.assertEqual(self.gate(**{marker: "1"}).returncode, 0)
+                self.assertEqual((self.ran(), self.stamps()), (FULL, before))
+
+    def test_the_trunk_reads_writes_and_removes_no_stamp(self) -> None:  # e3
+        self.passes()
+        before = self.stamps()
+        self.assertTrue(before)
+        git(self.repo, "checkout", "-q", "main")
+        self.assertEqual(self.gate().returncode, 0)
+        self.assertEqual((self.ran(), self.stamps()), (FULL, before))
+        shutil.rmtree(self.repo / ".git" / "slipwai")
+        self.assertEqual(self.gate().returncode, 0)
+        self.assertEqual((self.ran(), self.stamps()), (FULL, {}))
+
+
+class TestASliceOfTheSuiteIsNotTheGate(GateCase):
+    NARROW = ("verify --lint-only", "verify --typecheck-only", "check-structure", "test")
+
+    def test_tests_and_skip_run_the_checks_and_leave_the_stamp_alone(self) -> None:  # e1
+        self.passes()
+        before = self.stamps()
+        self.assertTrue(before)
+        for argument in ("TESTS=test_x", "SKIP=test_nothing"):
+            with self.subTest(argument):
+                self.assertEqual(self.gate(argument).returncode, 0)
+                self.assertEqual((self.ran(), self.stamps()), (list(self.NARROW), before))
+        done = self.gate()
+        self.assertEqual((done.returncode, self.ran()), (0, []))
+        self.assertIn("already passed it at", done.stdout)
+
+    def test_a_slice_writes_no_stamp_and_the_next_plain_run_is_full(self) -> None:  # e2
+        for argument in ("TESTS=test_x", "SKIP=test_nothing"):
+            with self.subTest(argument):
+                shutil.rmtree(self.repo / ".git" / "slipwai", ignore_errors=True)
+                self.assertEqual(self.gate(argument).returncode, 0)
+                self.assertEqual((self.ran(), self.stamps()), (list(self.NARROW), {}))
+                self.passes()
+
+
+class TestToolsAreInTheKey(GateCase):
+    def tool(self, name: str, answer: str) -> None:
+        """A stand-in `name` first on `PATH` that answers `--version` with the text in its `.version` file."""
+        (self.bin / (name + ".version")).write_text(answer + "\n", encoding="utf-8")
+        path = self.bin / name
+        path.write_text('#!/bin/sh\ncat "$0.version"\n', encoding="utf-8")
+        path.chmod(0o755)
+
+    def listed(self) -> list[str]:
+        words = re.search(r"^VERIFY_TOOLS\s*:?=(.*)$", (self.repo / "Makefile").read_text(encoding="utf-8"), re.M)
+        self.assertIsNotNone(words)
+        return words.group(1).split() if words else []
+
+    def reused(self) -> bool:
+        done = self.gate()
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return not self.ran()
+
+    def test_a_listed_tool_appearing_puts_the_next_run_in_full(self) -> None:  # e1
+        self.passes()
+        self.tool("tofu", "OpenTofu v1.8.0")
+        self.passes()
+        self.assertTrue(self.reused())
+        self.assertIn("tofu", self.listed())
+
+    def test_a_listed_tool_answering_another_version_puts_the_next_run_in_full(self) -> None:  # e2
+        self.tool("node", "v20.1.0")
+        self.passes()
+        self.tool("node", "v22.0.0")
+        self.passes()
+        self.assertIn("node", self.listed())
+
+    def test_a_tool_that_is_not_there_is_no_obstacle_and_make_is_in_the_key(self) -> None:  # e3
+        self.passes()
+        self.assertTrue(self.reused())
+        real = shutil.which("make") or "make"
+        for version in ("GNU Make 4.4.1", "GNU Make 9.9"):
+            self.tool("make", version)
+            (self.bin / "make").write_text(
+                f'#!/bin/bash\n[ "$1" = --version ] && {{ cat "$0.version"; exit 0; }}\nexec -a make {real} "$@"\n',
+                encoding="utf-8")
+            self.passes()
+        self.assertNotIn("sh", self.listed())
+
+
+class TestNothingElseMoves(GateCase):
+    def dry(self, *targets: str, **variables: str) -> list[str]:
+        arguments = [f"{name}={value}" for name, value in variables.items()]
+        done = subprocess.run(["make", "-n", *targets, *arguments], cwd=self.repo, text=True, capture_output=True,
+                              env={k: v for k, v in os.environ.items() if k not in MAKE_STATE + ("TESTS", "SKIP")})
+        return done.stdout.splitlines()
+
+    def test_help_says_a_passed_tree_is_not_judged_again(self) -> None:  # e1
+        done = subprocess.run(["make", "help"], cwd=self.repo, text=True, capture_output=True)
+        line = next(line for line in done.stdout.splitlines() if line.split()[:1] == ["verify"])
+        self.assertIn("already passed is not judged again", line)
+        self.assertIn("VERIFY_FORCE=1", line)
+
+    def test_the_script_is_run_where_it_ships_and_copied_nowhere(self) -> None:  # e2
+        names = ("verify-stamp.py", "check-slice-scope.py")
+        for name in names:
+            self.assertFalse((ROOT / "scripts" / name).exists(), f"scripts/{name} is a second copy")
+        text = (self.repo / "Makefile").read_text(encoding="utf-8")
+        self.assertIn(SCRIPTS + "verify-stamp.py", text)
+        self.assertEqual(re.findall(r"(?<!assets/toolkit/scripts/)verify-stamp\.py", text), [])
+
+    def test_the_other_targets_and_the_ci_workflow_run_what_they_ran(self) -> None:  # e3
+        self.assertEqual(self.dry("lint"), ["./scripts/verify --lint-only"])
+        self.assertEqual(self.dry("typecheck"),
+                         ["python3 -m compileall -q src scripts tests", "./scripts/verify --typecheck-only"])
+        self.assertEqual(self.dry("check-structure"), ["python3 scripts/check-structure.py"])
+        self.assertEqual(self.dry("test"), ["PYTHONPATH=src python3 -m unittest discover -s tests -v"])
+        self.assertEqual(self.dry("test", TESTS="test_x"), ["PYTHONPATH=src:tests python3 -m unittest -v test_x"])
+        workflow = (ROOT / ".github/workflows/verify.yml").read_text(encoding="utf-8")
+        self.assertNotIn("verify-stamp", workflow)
+        for step in ("make lint", "make typecheck", "make check-structure"):
+            self.assertIn(f"- run: {step}\n", workflow)
+
+
+if __name__ == "__main__":
+    unittest.main()
