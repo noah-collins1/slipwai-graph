@@ -69,7 +69,7 @@ FACTORY_IDENTITY = os.environ | {
 
 def project_files(
     project_name: str, profile: str, target: str, apps: list[App], layout: Layout = AT_ROOT,
-    adoption: Adoption | None = None,
+    adoption: Adoption | None = None, *, parallel_safe: bool | None = None,
 ) -> dict[str, str]:
     """Every file a generated project starts with, keyed by its path in the new repository.
 
@@ -97,7 +97,7 @@ def project_files(
     event = profile == "event-modelling"
     generated = {
         "README.md": readme(project_name, profile, apps, target),
-        "project.json": metadata(project_name, profile, target, apps, layout, adoption),
+        "project.json": metadata(project_name, profile, target, apps, layout, adoption, parallel_safe=parallel_safe),
         "init": init_script(apps, target, layout),
         ".gitignore": build_artifacts(event, apps, target),
         ".gitattributes": GITATTRIBUTES,
@@ -200,6 +200,7 @@ def write_project(
     settled: set[str] | None = None,
     layout: Layout = AT_ROOT,
     adoption: Adoption | None = None,
+    parallel_safe: bool | None = None,
 ) -> None:
     """Write the project and commit it, once, as the repository it starts life as.
 
@@ -209,7 +210,10 @@ def write_project(
     shed. Left unsaid, a project keeps every feature its answers selected and stays open to choose again.
     `layout` is the one `files` was assembled for.
     """
-    files = project_files(project_name, profile, target, apps, layout, adoption) if files is None else files
+    files = (
+        project_files(project_name, profile, target, apps, layout, adoption, parallel_safe=parallel_safe)
+        if files is None else files
+    )
     executables = {layout.place(path) for path in executable_paths(profile, apps)}
     destination.mkdir(parents=True, exist_ok=True)
     for relative, content in files.items():

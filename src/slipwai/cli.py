@@ -278,7 +278,7 @@ def generate_main(argv: list[str]) -> None:
         # Staged beside the destination — inside it, when writing in place, so the parent's permissions never matter.
         with tempfile.TemporaryDirectory(prefix=f".{args.name}-", dir=here if in_place else output) as staging:
             staging_path = Path(staging)
-            write_project(staging_path, args.name, args.profile, args.target, apps)
+            write_project(staging_path, args.name, args.profile, args.target, apps, parallel_safe=True)
             if in_place:
                 # Moved in entry by entry: the folder is where the person is standing, so it is kept, not replaced.
                 for entry in list(staging_path.iterdir()):
