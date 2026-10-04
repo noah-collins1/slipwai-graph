@@ -25,7 +25,7 @@ from slipwai.assets import ROOT
 sys.dont_write_bytecode = True
 
 SERVICE = "apps/service"
-# name -> the arguments of `slipwai generate`; `two` is `plain` with a second Python service added to it.
+# name -> the arguments of `slipwai generate`; ADDED is `add-service <name> --language <language>` on top of it.
 SHAPES: dict[str, tuple[str, ...]] = {
     "plain": ("--profile", "standard", "--backend", "python", "--frontend", "none", "--http", "none"),
     "db": ("--profile", "event-modelling", "--backend", "python", "--frontend", "none", "--http", "none",
@@ -34,6 +34,11 @@ SHAPES: dict[str, tuple[str, ...]] = {
             "--event-store", "postgres"),
 }
 SHAPES["two"] = SHAPES["plain"]
+for _name, _backend, _frontend in (("quarkus", "java-quarkus", "none"), ("spring", "java-spring", "react-vite"),
+                                   ("go", "go", "none"), ("go-web", "go", "react-vite"), ("ts", "typescript", "none"),
+                                   ("java-py", "java-quarkus", "react-vite"), ("java-go", "java-quarkus", "none")):
+    SHAPES[_name] = ("--profile", "standard", "--backend", _backend, "--frontend", _frontend, "--http", "none")
+ADDED = {"two": ("second", "python"), "java-py": ("second", "python"), "java-go": ("second", "go")}
 
 _UV = """#!/bin/sh
 log() { printf '%s\\t%s\\n' "$1" "$2" >> "$STANDIN_LOG"; }
@@ -127,6 +132,25 @@ log end "$args"
 exit 0
 """
 _QUIET = "#!/bin/sh\nexit 0\n"
+# `./mvnw`, `go`, `gofmt`: logs `native-start`/`native-end` around a bounded wait for another native call in flight
+# (`barrier-met`, else `barrier-alone`); `go test -coverprofile` and `go list` answer so the coverage script passes.
+_NATIVE = """#!/bin/sh
+[ "$1" = version ] && { echo "go version go1.24.0 linux/amd64"; exit 0; }
+log() { printf '%s\\t%s\\n' "$1" "$2" >> "$STANDIN_LOG"; }
+log native-start "@NAME@ $*"
+n=0; seen=alone
+flying() { echo $(($(grep -c '^native-start' "$STANDIN_LOG") - $(grep -c '^native-end' "$STANDIN_LOG"))); }
+while [ "$n" -lt 15 ]; do
+  [ "$(flying)" -ge 2 ] && { seen=met; break; }
+  sleep 0.05; n=$((n + 1))
+done
+log "barrier-$seen" "@NAME@ $*"
+case "@NAME@ $*" in
+  "go test"*coverprofile*) printf 'mode: set\\nexample/x/x.go:1.1,2.2 1 1\\n' > coverage.out ;;
+  "go list"*) echo '{"ImportPath":"example/x","Name":"x","TestGoFiles":["x_test.go"]}' ;;
+esac
+log native-end "@NAME@ $*"
+"""
 _cache: dict[str, Path] = {}
 
 
@@ -138,9 +162,9 @@ def shape(name: str) -> Path:
         subprocess.run([str(ROOT / "slipwai"), "generate", "project", *SHAPES[name], "--output", str(parent),
                         "--skip-checks"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         repo = parent / "project"
-        if name == "two":
-            subprocess.run([str(ROOT / "slipwai"), "add-service", "second", "--language", "python"], cwd=repo,
-                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if name in ADDED:
+            subprocess.run([str(ROOT / "slipwai"), "add-service", ADDED[name][0], "--language", ADDED[name][1]],
+                           cwd=repo, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         git(repo, "checkout", "-q", "-b", BRANCH)
         for key, value in (("user.name", "t"), ("user.email", "t@local"), ("commit.gpgsign", "false")):
             git(repo, "config", key, value)
@@ -156,6 +180,13 @@ def write_stand_ins(directory: Path) -> None:
     for name, text in (("uv", _UV), ("npm", _QUIET), ("node", _QUIET), ("pip-audit", _QUIET)):
         (directory / name).write_text(text, encoding="utf-8")
         (directory / name).chmod(0o755)
+
+
+def write_native(path: Path, name: str) -> None:
+    """The native tool `name` (`mvnw`, `go`, `gofmt`) written at `path`."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_NATIVE.replace("@NAME@", name), encoding="utf-8")
+    path.chmod(0o755)
 
 
 def gate_environment(
@@ -242,9 +273,20 @@ def line_events(log: Path) -> list[str]:
 
 def has_output_sync() -> bool:
     """Whether the `make` on this machine lists `output-sync` among its features."""
-    done = subprocess.run(["make", "-f", "-"], input="$(info $(.FEATURES))\n.PHONY: x\nx:;@:\n", text=True,
+    done = subprocess.run(["make", "-f", "-"], input="$(info $(.FEATURES))\nx:;@:\n", text=True,
                           capture_output=True, timeout=60)
     return "output-sync" in done.stdout.split()
+
+
+def native_calls(log: Path) -> list[tuple[str, str]]:
+    """Each native tool's `start` and `end` as (event, "<tool> <arguments>"), in the order written."""
+    return [(e.removeprefix("native-"), a) for e, a in log_lines(log) if e.startswith("native-")]
+
+
+def native_overlapped(log: Path) -> bool:
+    """Whether a native call started while another was still running."""
+    events = [event for event, _ in native_calls(log)]
+    return any(events[: i + 1].count("start") - events[: i + 1].count("end") > 1 for i in range(len(events)))
 
 
 def overlapped(log: Path) -> bool:

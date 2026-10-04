@@ -11,7 +11,8 @@ reason, `record` always exits 0), and a run that did not pass never reaches `rec
 output by target where the running make lists `output-sync` among its features (`VERIFY_GROUP`: the one construct newer
 than GNU Make 3.81 a generated Makefile names, and never handed to a make that lacks it). It is quoted, so a make whose
 path holds a space runs it, and is given the makefile the gate ran from, so a project whose makefile is not named
-`Makefile` runs it too. `ci` hangs on `verify-checks`, not on `verify`: the extended gate never asks about a stamp, by
+`Makefile` runs it too. It is also given `VERIFY_ORDER=1`, which only the gate's checks read (`parallel_gate.gate_order`):
+a Java or Go project's native checks wait for one another there, and are what they were when typed alone. `ci` hangs on `verify-checks`, not on `verify`: the extended gate never asks about a stamp, by
 whatever route it is reached, and the recipe reads no goals.
 
 Every generated project takes it, whatever its backends, transports and browser apps; the one exception is a
@@ -32,7 +33,7 @@ FAILED = "verify: the gate did not pass; each failed check is named above on a l
 STAMPED = """VERIFY_STAMP := {arguments}
 VERIFY_GROUP := $(if $(filter output-sync,$(.FEATURES)),--output-sync=target)
 verify: ## Full deterministic pre-commit gate (a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway)
-\t@run=$$(python3 {script} token); python3 {script} reuse --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP) || {{ "$(MAKE)" $(VERIFY_GROUP) --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 {script} record --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP); }} || {{ rc=$$?; [ "$$rc" -eq 1 ] || echo '{failed}'; exit "$$rc"; }}
+\t@run=$$(python3 {script} token); python3 {script} reuse --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP) || {{ "$(MAKE)" $(VERIFY_GROUP) --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks VERIFY_ORDER=1 && python3 {script} record --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP); }} || {{ rc=$$?; [ "$$rc" -eq 1 ] || echo '{failed}'; exit "$$rc"; }}
 .PHONY: verify-checks
 verify-checks: {dependencies}
 \t@echo

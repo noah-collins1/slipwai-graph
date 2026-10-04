@@ -92,3 +92,26 @@ def python_first(stamped: bool, dependencies: str) -> str:
     """
     waiting = [word for word in dependencies.split() if word != FIRST]
     return f"{' '.join(waiting)}: {FIRST}\n" if stamped and waiting else ""
+
+
+def gate_order(stamped: bool, apps: list[App]) -> str:
+    """The order the gate's own sub-make gives the native checks, inside `ifdef VERIFY_ORDER` (3.80) so that a target typed
+    alone is what it was: only the gate's recipe hands its sub-make the variable.
+
+    Two of the families write where the others read. Maven's three checks write one service's `target/`, so with a Java
+    service `typecheck` waits for `lint` and `test` for `typecheck`. Go's first `go` command resolves the workspace and
+    writes `go.work.sum` on a fresh clone, and that is `typecheck`'s, so with a Go service `lint` and `test` wait for it
+    (`typecheck` stays first, as it is in the serial run). A project with both takes the Java chain, which covers Go.
+    Python and TypeScript need neither: after the sync and the root's install their checks write only their own caches.
+    Nothing where the gate is not the stamped one, which is serial.
+    """
+    languages = {service.language for service in services_of(apps)}
+    if not stamped:
+        return ""
+    if "java" in languages:
+        rules = "typecheck: lint\ntest: typecheck\n"
+    elif "go" in languages:
+        rules = "lint test: typecheck\n"
+    else:
+        return ""
+    return f"# Under the gate the checks that share a build directory run one after another.\nifdef VERIFY_ORDER\n{rules}endif\n"
