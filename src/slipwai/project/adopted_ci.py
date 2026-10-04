@@ -69,6 +69,16 @@ def setup_steps(apps: list[App]) -> str:
     return steps
 
 
+# `check-slice-scope`, `check-migrations` and `check-flags` compare a change with the trunk, so the gate's checkout
+# asks for history; the same sentence is said once for each forge's way of asking.
+FULL_HISTORY_STEP = """      # Full history: `check-slice-scope`, `check-migrations` and `check-flags` compare this change with the
+      # trunk, and a checkout of one commit gives them nothing to compare with.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+"""
+
+
 def delivery_workflow(apps: list[App], layout: Layout, branch: str = "main") -> str:
     """`.github/workflows/verify-delivery.yml`: the delivery gate, beside whatever CI the repository already runs, on
     pushes to the branch the repository actually lands on (`ci.branch`, read from `.git`) and on every pull request."""
@@ -86,8 +96,7 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-{setup_steps(apps)}      - run: {layout.make} verify
+{FULL_HISTORY_STEP}{setup_steps(apps)}      - run: {layout.make} verify
 {smoke_job(apps, layout)}"""
 
 
@@ -138,6 +147,9 @@ def gitlab_job(apps: list[App], layout: Layout) -> str:
 #     - local: {include}
 verify-delivery:
   stage: test
+  variables:
+    # Full history: the gate's checks compare this change with the trunk.
+    GIT_DEPTH: "0"
 {image}  script:
     - {layout.make} verify
 """ + (f"""
