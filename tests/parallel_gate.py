@@ -63,6 +63,44 @@ case "$1" in
     [ -f "$dir/.venv/pyvenv.cfg" ] || printf '%s' "$STANDIN_PYVENV" > "$dir/.venv/pyvenv.cfg"
     ;;
   run)
+    # The tool a gate recipe runs (`ruff check` and `mypy` are the two a barrier or a failure names), as `lint` and
+    # `typecheck` call it: the word after `--no-sync`.
+    tool=; after=; word=
+    for a in "$@"; do
+      if [ -n "$after" ]; then tool=$a; after=; word=1; continue; fi
+      if [ -n "$word" ]; then [ "$tool" = ruff ] && [ "$a" != check ] && tool=; word=; fi
+      [ "$a" = --no-sync ] && after=1
+    done
+    peer=
+    case "$tool" in ruff) peer=mypy ;; mypy) peer=ruff ;; esac
+    # Met only where the peer arrived before this call left the barrier and was not already through it: a serial run's
+    # second check finds the first one's `.done` and is alone, however the first one's marker stands.
+    rendezvous() {
+      seen=alone
+      if [ ! -e "$STANDIN_LOG.$peer.$1.done" ]; then
+        : > "$STANDIN_LOG.$tool.$1"
+        n=0
+        while [ "$n" -lt 60 ]; do
+          if [ -e "$STANDIN_LOG.$peer.$1" ]; then seen=met; break; fi
+          sleep 0.05; n=$((n + 1))
+        done
+      fi
+      : > "$STANDIN_LOG.$tool.$1.done"
+      log "barrier-$seen" "$tool $1"
+    }
+    if [ -n "$peer" ]; then
+      if [ -n "$STANDIN_BARRIER" ]; then rendezvous 0; fi
+      i=1
+      while [ "$i" -le "${STANDIN_LINES:-0}" ]; do
+        echo "$tool line $i"
+        if [ -n "$STANDIN_BARRIER" ]; then rendezvous "$i"; fi
+        i=$((i + 1))
+      done
+    fi
+    case " $STANDIN_FAIL_TOOLS " in
+      "  ") ;;
+      *" $tool "*) echo "uv: $tool failed (stand-in)" >&2; log end "$args"; exit 1 ;;
+    esac
     # `python -m <package>.openapi <out>`: the document the project already commits, as the app would write it.
     prev=; module=; project=.
     for a in "$@"; do
@@ -180,6 +218,11 @@ def sync_ended_before_any_run(log: Path) -> bool:
     return bool(ends) and (not runs or max(ends) < runs[0])
 
 
+def barrier_events(log: Path) -> list[str]:
+    """Each barrier verdict a stand-in logged, `met` or `alone`, in the order written."""
+    return [e.removeprefix("barrier-") for e, _ in log_lines(log) if e.startswith("barrier-")]
+
+
 def overlapped(log: Path) -> bool:
     """Whether a sync was held while another `uv` call was in flight (the stand-in logged `met`)."""
     return any(event == "met" for event, _ in log_lines(log))
@@ -221,8 +264,21 @@ class ParallelGateTestCase(unittest.TestCase):
     def make(self, *args: str, env: dict[str, str | None] | None = None) -> subprocess.CompletedProcess[str]:
         return self.run_in("make", *args, env=env)
 
+    def make_merged(self, *args: str, env: dict[str, str | None] | None = None) -> tuple[int, list[str]]:
+        """`make <args>` with both streams on one pipe, so lines are in the order they were written: (exit, lines)."""
+        done = subprocess.run(["make", *args], cwd=self.repo, env=self.environment(env), text=True, timeout=180,
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        return done.returncode, done.stdout.splitlines()
+
     def forget_log(self) -> None:
+        """Empty the log and take away the barrier's markers, so a second run in one test starts afresh."""
         self.log.write_text("", encoding="utf-8")
+        for marker in self.log.parent.glob(f"{self.log.name}.*"):
+            marker.unlink()
+
+    def stamps(self) -> list[Path]:
+        """The stamps the project holds, under the git directory."""
+        return sorted((self.repo / ".git" / "slipwai").glob("verify-stamp-*.json"))
 
     def assert_passed(self, done: subprocess.CompletedProcess[str]) -> None:
         self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
