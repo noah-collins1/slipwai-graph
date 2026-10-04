@@ -71,6 +71,22 @@ class WhereTest(StampTestCase):
         git(self.repo, "checkout", "-q", "main")
         self.assert_untouched()
 
+    def test_the_trunk_reads_no_stamp_whatever_branch_a_pull_requests_variables_name(self) -> None:
+        """e21 (D74 R2, AC-S03-21): the trunk is the name D30 and D33 resolve, never the branch a pull request targets.
+        A target that is older than the trunk, one that shares no history, one with no ref: each variable, no marker."""
+        git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "branch", "release")  # at this commit; the next one leaves it behind
+        (self.repo / "later.txt").write_text("later\n", encoding="utf-8")
+        git(self.repo, "add", "later.txt")
+        git(self.repo, "commit", "-q", "-m", "later")
+        git(self.repo, "checkout", "-q", "--orphan", "island")
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", "island")
+        git(self.repo, "checkout", "-q", "main")
+        for target in ("release", "island", "no-such-branch"):
+            for variable in ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"):
+                with self.subTest(f"{variable}={target}"):
+                    self.assert_untouched({variable: target})
+
     def test_master_is_the_trunk_where_there_is_no_main(self) -> None:
         """e21 (D33): with no `main` ref, `master` is the trunk."""
         git(self.repo, "branch", "-m", "main", "master")

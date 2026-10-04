@@ -455,7 +455,8 @@ def write_file(path: str, text: str) -> None:
 
 def trunk_name() -> str:
     """The trunk, by the one definition there is: `merge_base` of `check-slice-scope.py` beside this script, which
-    resolves it as D30 and D33 say (a usable `ci.branch` of `project.json` that has a ref, else `main` where it has
+    resolves it as D30 and D33 say, in `Base.named` and never in `Base.trunk`, which is the name a pull request's
+    target may have taken (a usable `ci.branch` of `project.json` that has a ref, else `main` where it has
     one, else `master`). Loaded, never copied, so the two cannot come to different answers."""
     spec = importlib.util.spec_from_file_location(
         "check_slice_scope_for_the_stamp", os.path.join(os.path.dirname(os.path.abspath(__file__)), SLICE_SCOPE))
@@ -467,7 +468,7 @@ def trunk_name() -> str:
         spec.loader.exec_module(module)
     finally:
         sys.dont_write_bytecode = was
-    return str(module.merge_base().trunk)
+    return str(module.merge_base().named)
 
 
 def eligible() -> bool:

@@ -330,6 +330,7 @@ class Base(NamedTuple):
     passed_over: str = ""  # the report words where `ci.branch` named something that was not used; else empty
     bare: str = ""  # the same words with no `git fetch` command in them: what a forge's output may carry
     targeted: bool = False  # the pull request's target, not the trunk's own base, is what the branch is compared with
+    named: str = ""  # the trunk's name by D30 and D33 alone, with no pull-request target in it: what `trunk` is not
 
 
 def bases_of(name: str) -> tuple[bool, str | None]:
@@ -479,17 +480,17 @@ def merge_base() -> Base:
                 bare = "; ".join(filter(None, (bare, MASTER_CLAUSE)))
             target = target_base(name)
             if target and target[1] is None:
-                return Base(None, target[0], True, passed_over, bare)  # a target with no history in common is no base
+                return Base(None, target[0], True, passed_over, bare, False, name)  # a target with no history in common is no base
             chosen = older_of(base, target[1] if target else None)
             if target and chosen != base:  # the target's base won: say so, and name the target, not the trunk
-                return Base(chosen, target[0], True, passed_over, bare, True)
-            return Base(chosen, name, True, passed_over, bare)
+                return Base(chosen, target[0], True, passed_over, bare, True, name)
+            return Base(chosen, name, True, passed_over, bare, False, name)
     target = target_base(names[0])
     if target:
-        return Base(target[1], target[0], True, passed_over, bare, True)
+        return Base(target[1], target[0], True, passed_over, bare, True, names[0])
     if skipped:
-        return Base(None, skipped[0], True, passed_over, bare)
-    return Base(None, target_name() or names[0], False, passed_over, bare)
+        return Base(None, skipped[0], True, passed_over, bare, False, skipped[0])
+    return Base(None, target_name() or names[0], False, passed_over, bare, False, names[0])
 
 
 def changed_files(base: str) -> dict[str, str]:
