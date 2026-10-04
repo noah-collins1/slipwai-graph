@@ -17,6 +17,7 @@ import unittest
 
 from parallel_gate import ParallelGateTestCase, barrier_events, has_output_sync, line_events, log_text
 from support import FactoryTestCase
+from test_parallel_gate_run import FAILED, gate_line
 
 from slipwai.catalog import CATALOG
 
@@ -82,6 +83,43 @@ class GroupedOutputTest(ParallelGateTestCase):
         self.assertEqual(line_events(self.log), ["seen"], log_text(self.log))
 
 
+# The two ways the variable reaches a make that did not write it: its command line, and the environment with `-e`.
+WAYS: dict[str, tuple[tuple[str, ...], dict[str, str | None]]] = {
+    "command line": (("-j", "verify", "VERIFY_GROUP=-i"), {}),
+    "environment with -e": (("-e", "-j", "verify"), {"VERIFY_GROUP": "-i"}),
+}
+
+
+class GroupingVariableIsTheMakefilesOwnTest(ParallelGateTestCase):
+    SHAPE = "plain"
+
+    def test_e5_a_red_tree_stays_red_whatever_the_variable_says(self) -> None:
+        """AC-S04-82: `-i` handed to the sub-make through `VERIFY_GROUP` would make it ignore the failures; each way
+        exits non-zero, ends on the failed-run line, writes no stamp, and the next plain run runs in full."""
+        for way, (args, env) in WAYS.items():
+            with self.subTest(way=way):
+                self.forget_log()
+                code, lines = self.make_merged(*args, env={**env, "STANDIN_FAIL_TOOLS": "ruff pytest"})
+                self.assertNotEqual(code, 0, "\n".join(lines))
+                self.assertRegex(gate_line(lines)[0], FAILED, "\n".join(lines))
+                self.assertNotIn("verify: all gates passed", lines)
+                self.assertEqual(self.stamps(), [])
+                self.forget_log()
+                self.assertNotEqual(self.make("verify", env={"STANDIN_FAIL_TOOLS": "ruff pytest"}).returncode, 0)
+
+    def test_e6_a_green_tree_passes_both_ways_and_groups_as_without_the_variable(self) -> None:
+        """AC-S04-82, green half (a hold; teeth: `override` taken off the variable, which the red test also sees)."""
+        if not has_output_sync():
+            self.skipTest("this make does not list output-sync among its features")
+        for way, (args, env) in WAYS.items():
+            with self.subTest(way=way):
+                self.forget_log()
+                code, lines = self.make_merged(
+                    *args, env={**env, **FORCE, "STANDIN_LINES": "3", "STANDIN_BARRIER": "1"})
+                self.assertEqual(code, 0, "\n".join(lines))
+                self.assertEqual(sorted(tagged(lines)), ["mypy", "ruff"], "lines interleave:\n" + "\n".join(lines))
+
+
 class MakefileTextTest(FactoryTestCase):
     def assert_nothing_newer(self, makefile: str) -> None:
         """No `.WAIT`, no `.NOTPARALLEL` with a prerequisite, grouping named only in the one guarded expression."""
@@ -94,7 +132,7 @@ class MakefileTextTest(FactoryTestCase):
         """AC-S04-11: the one guarded expression, read from the generated text (3.81 is read, not run)."""
         with tempfile.TemporaryDirectory() as directory:
             makefile = (self.generate(directory, "one", "standard", "python", http="none") / "Makefile").read_text()
-        self.assertIn(f"VERIFY_GROUP := {GUARDED}\n", makefile)
+        self.assertIn(f"override VERIFY_GROUP := {GUARDED}\n", makefile)
         recipe = re.search(r"^verify:.*\n((?:\t.*\n)+)", makefile, re.M)
         assert recipe is not None
         self.assertIn('"$(MAKE)" $(VERIFY_GROUP) --no-print-directory', recipe.group(1))

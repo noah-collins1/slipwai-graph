@@ -31,7 +31,7 @@ STAMP_SCRIPT = "scripts/verify-stamp.py"
 
 FAILED = "verify: the gate did not pass; each failed check is named above on a line carrying ***"
 STAMPED = """VERIFY_STAMP := {arguments}
-VERIFY_GROUP := $(if $(filter output-sync,$(.FEATURES)),--output-sync=target)
+override VERIFY_GROUP := $(if $(filter output-sync,$(.FEATURES)),--output-sync=target)
 verify: ## Full deterministic pre-commit gate (a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway)
 \t@run=$$(python3 {script} token); python3 {script} reuse --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP) || {{ "$(MAKE)" $(VERIFY_GROUP) --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks VERIFY_ORDER=1 && python3 {script} record --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP); }} || {{ rc=$$?; [ "$$rc" -eq 1 ] || echo '{failed}'; exit "$$rc"; }}
 .PHONY: verify-checks
