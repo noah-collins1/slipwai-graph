@@ -275,7 +275,8 @@ class AMigratedProjectIsBroughtTheStampTest(StampTestCase):
         rule = re.search(r"^VERIFY_STAMP := .*?^verify-checks: ([^\n]*)\n", makefile, re.M | re.S)
         assert rule is not None
         old = f"verify: {rule.group(1)} ## Full deterministic pre-commit gate\n"
-        (self.repo / "Makefile").write_text(makefile.replace(rule.group(0), old), encoding="utf-8")
+        makefile = makefile.replace(rule.group(0), old).replace("\nci: verify-checks ", "\nci: verify ")
+        (self.repo / "Makefile").write_text(makefile, encoding="utf-8")
         (self.repo / "scripts/verify-stamp.py").unlink()
         git(self.repo, "add", "-A")
         git(self.repo, "-c", "maintenance.auto=false", "commit", "-q", "--amend", "--no-edit")
