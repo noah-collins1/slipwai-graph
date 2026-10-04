@@ -14,7 +14,7 @@ target running a Python mode names as a prerequisite, so `make verify`, `make -j
 and `make install test` each sync every service once; `make migrate` and `make dev` take the same target. The recipes
 call `./scripts/verify <mode> --synced`, an argument only the `Makefile` passes: a mode run any other way — by hand, from
 a CI step, from an agent's hook — syncs first exactly as before, and nothing the factory publishes outside the `Makefile`
-spells it. A failed sync stops the run before any check starts, and says so once.
+spells it. A failed sync starts no check that runs a Python service's code, and says so once.
 
 In a project with the event profile the model tooling now installs from a lock the factory ships,
 `scripts/event-model/package-lock.json`, with `npm ci`, once per `make` run and only when the lock or the manifest is newer

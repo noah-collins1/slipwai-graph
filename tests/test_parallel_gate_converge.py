@@ -12,6 +12,7 @@ from parallel_gate import ParallelGateTestCase, sync_lines, synced_projects
 from test_parallel_gate_sync_ways import apps_of
 from test_verify_stamp_scan import makefile_rules
 
+from slipwai.assets import ROOT
 from slipwai.catalog import axis_default
 from slipwai.scaffold import project_files
 from slipwai.selection import resolve_selection
@@ -53,6 +54,18 @@ class EveryPythonModeNamesSyncTest(unittest.TestCase):
                                 self.assertIn("--synced", re.split(r"&&|;", line[call.start():])[0], (target, line))
                         elif NON_SYNCING.search(line):
                             self.fail(f"{target} does not name sync but runs {line!r}")
+
+
+FRAGMENT = (ROOT / "changelog.d/parallel-gate.md").read_text(encoding="utf-8")
+
+
+class OrderSentencesAreTrueOfAParallelRunTest(unittest.TestCase):
+    def test_t015_a_failed_sync_is_said_for_what_it_stops_not_for_the_whole_run(self) -> None:
+        """AC-S04-38 holds no run line after a failed sync; under `-j` the checks that do not run a Python service's
+        code have started, so the words claim only the first."""
+        text = " ".join(FRAGMENT.split())
+        self.assertNotIn("stops the run before any check starts", text)
+        self.assertIn("A failed sync starts no check that runs a Python service's code, and says so once.", text)
 
 
 class FormatSyncsOnceTest(ParallelGateTestCase):
