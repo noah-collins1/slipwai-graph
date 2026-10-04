@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from ..layout import Layout
 from ..services import App, wrapped_of
+from .gate import stamped, stamped_gate
 
 
 def smoke_lines(wrapped: list[App], layout: Layout) -> str:
@@ -80,6 +81,8 @@ NOTHING_CONFIRMED = """verify: ## Refuses until a candidate has been confirmed a
 
 
 def gate_target(apps: list[App], dependencies: str) -> str:
-    """The `verify` rule: the gate over `dependencies`, or the refusal that stands in for it while nothing
-    is confirmed."""
-    return GATE.format(dependencies=dependencies) if apps else NOTHING_CONFIRMED
+    """The `verify` rule: the gate over `dependencies` — behind the stamp where `gate.stamped` says so — or the
+    refusal that stands in for it while nothing is confirmed."""
+    if not apps:
+        return NOTHING_CONFIRMED
+    return stamped_gate(dependencies) if stamped(apps) else GATE.format(dependencies=dependencies)
