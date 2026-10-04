@@ -395,6 +395,75 @@ path; level line (PATCH, `VERSION` not raised because it already carries the MIN
 
 **Files:** `changelog.d/ci-fetches-slice-base.md`.
 
+## Phase 7: Adversary findings (appended 2026-10-04; D87)
+
+T020, T021, T022 and T024 edit `assets/toolkit/scripts/check-slice-scope.py` or the fragments and run in that order, one
+delegate; T023 is disjoint and runs beside them.
+
+### T020 — On a pull request, an unrelated branch-chosen base never stands (`HIGH` · F1 · AC-S24-14)
+
+- [ ] **RED:** in a new `tests/test_slice_scope_forge_hostile.py`, AC-S24-14's checkout built with
+  `tests/forge_checkout.py`: the slice records `ci.branch: evil`, edits `Makefile`, merges an orphan root commit
+  carrying its own tree, and the root is pushed as `evil`; with GitHub's variables, and with GitLab's, the gate exits 1
+  naming `Makefile` and `project.json`, *compared with `main`* at the commit where the branch left it, in the words
+  used where the target won. Observed failing today: exit 0, *compared with `evil`*. A second example: the same refs
+  on a slice inside its scope pass with that line. **GREEN:** D87's rule — the last fallback of `older_of()` returns
+  its second argument; nothing else in `merge_base()` moves. **The class:** in every pull-request checkout with a
+  usable target that has a base, the commit compared with is the target's base or an ancestor of it — a sweep test
+  over the shapes the suite already builds (trunk base older, target base older, equal, unrelated) asserts that
+  invariant with `git merge-base --is-ancestor`. The docstrings of `older_of()` and the module follow.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_forge_hostile.py` (new).
+
+### T021 — The fetch the gate prints names the branch in full (`MEDIUM` · F3 · AC-S24-16, AC-S24-9)
+
+- [ ] **RED:** every assertion in `tests/` that quotes the printed fetch expects
+  `git fetch origin refs/heads/<name>:refs/remotes/origin/<name>`, and one new example in
+  `tests/test_slice_scope_forge_hostile.py`: a remote with a branch `main` and a tag `main` at the slice's head; the
+  printed command is run as printed; the gate re-run compares with the branch (a host change is refused). Observed
+  failing today (the tag is fetched; exit 0). **GREEN:** `fetch_command()` and its docstring; the module docstring's
+  sentence about the command. **The class:** every place the script prints or describes a fetch (search the script
+  for `git fetch`); every test that quotes it (`grep -rn "git fetch origin" tests` — `tests/test_cruise_watch.py` is
+  another script's and is not touched unless it quotes this gate's line).
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_forge_hostile.py`,
+`tests/test_slice_scope_base.py`, `tests/test_slice_scope_no_base.py`, `tests/test_slice_scope_printed.py`,
+`tests/test_slice_scope_forge_nobase.py`, and any other test module the search finds quoting this gate's command.
+
+### T022 — The NOT-checked line says which refs it looked for (`LOW` · F4 · AC-S24-15)
+
+- [ ] **RED:** in `tests/test_slice_scope_forge_nobase.py` (or the hostile file if that one would pass 350 lines): a
+  full-history checkout whose only remote is `upstream`, an in-scope slice, a CI marker → exit 1 and one line naming
+  `refs/heads/main` and `refs/remotes/origin/main` and ending *on any other CI, a full clone with the trunk's branch
+  fetched from a remote named `origin`*; and the existing no-base examples assert the two refs. **GREEN:**
+  `not_checked()` and its docstring; the module docstring. No base selection changes.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_forge_nobase.py`,
+`tests/test_slice_scope_forge_hostile.py`, and any test module asserting the old last clause.
+
+### T023 — The two refused cases S31 will weigh rest on kept runs (`MEDIUM` · B1, B2 · AC-S24-8)
+
+- [ ] Tests only — holds, each saying it holds a reading `S31-gates-read-recorded-trunk` will weigh. With the shipped
+  `check-migrations.py`: a pull request to `release/1` whose expand landed there in an earlier pull request is refused
+  on the full-history pull-request checkout; an expand squash-merged to `main` and its contract on the same branch,
+  not merged with `main`, is refused on a checkout detached at the branch's tip and passes on the merge commit.
+  If `tests/test_ci_history_gates.py` would pass 350 lines, the two go in a new `tests/test_ci_history_branches.py`.
+  Teeth seen for each.
+
+**Files:** `tests/test_ci_history_gates.py`, `tests/test_ci_history_branches.py` (new, if needed),
+`tests/forge_checkout.py` (only if the source-tip checkout needs a helper there).
+
+### T024 — The fragments say it (F3, F4, B1, B2 · AC-S24-11)
+
+- [ ] After T020–T022. D87 gives the sentences and where each goes: the third paragraph of
+  `changelog.d/ci-fetches-slice-base.md` (the refs the line names and the remote's name; the printed fetch as the
+  first exception to *every answer is what it was*); inside the single **Catch-up.** paragraph, after *…or seed the
+  new flag `off`.* and before *Where the trunk is not `main` or `master`…* (the source-tip branch and the pull request
+  to a non-trunk branch); `changelog.d/slice-scope-base.md` quotes the new command wherever it quotes the old one.
+  Wrapped at about 115 columns; the catch-up stays one paragraph. `make test TESTS="test_changelog"` green.
+
+**Files:** `changelog.d/ci-fetches-slice-base.md`, `changelog.d/slice-scope-base.md`.
+
 ## Parallel opportunities
 
 By manifest (each task's "Files" line):

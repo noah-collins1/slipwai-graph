@@ -1576,8 +1576,16 @@ non-empty), the trunk is `main`, and the branch is `slice/S1`.
   at depth 1. That is the developer's machine's answer, not a new one. The fragment says so and what to do, and a
   test runs the shipped `check-migrations.py` on both repositories and holds those answers. Reading the recorded
   trunk is `S31-gates-read-recorded-trunk`.
+  **And (D87; adversary B1, B2).** Two more cases answer in CI as on a developer's full clone, and are refused: a
+  pull request that targets a branch other than the trunk is compared with the trunk all the same, so a contract
+  is refused there although its expand reached that branch in an earlier pull request; and where CI checks out the
+  branch's own tip and not its merge with the trunk, a branch whose expand landed by squash and which carries on
+  with the contract is refused until it merges the trunk. The fragment's catch-up says both and what clears each, a
+  hold test for each is in `tests/test_ci_history_gates.py`, and both are `S31-gates-read-recorded-trunk`'s to
+  weigh at its gaps stage.
 - **AC-S24-9** — Given a developer's checkout (no CI marker, and no branch-name variable with a detached `HEAD`),
-  then every exit code and every line of `check-slice-scope` is what it was before the slice.
+  then every exit code and every line of `check-slice-scope` is what it was before the slice — except the printed
+  fetch, which names the branch in full (AC-S24-16; D87).
 - **AC-S24-10** — Given a project made by the factory before this change, when `slipwai migrate` runs, then each of
   the three files is carried forward or left alone exactly as `migrate` treats a file of its kind today — the slice
   changes nothing about what `migrate` owns — and the catch-up paragraph of the fragment is true to that: followed
@@ -1601,3 +1609,20 @@ non-empty), the trunk is `main`, and the branch is `slice/S1`.
   green: the suites that asserted *NOT checked*, exit 0, under a CI marker (`tests/test_slice_scope_no_base.py`,
   `tests/test_slice_scope_hostile_base.py`, and any other the sweep finds) assert the failure, and every test of a
   developer's answer still clears the markers (AC-S22-24).
+- **AC-S24-14** — *Added by D87 (adversary F1).* Given the checkout of AC-S24-4, where the slice's commits record
+  `ci.branch: evil` and edit `Makefile`, merge an orphan root commit carrying the slice's own tree, and that root is
+  pushed as branch `evil`, with `GITHUB_BASE_REF=main` (and the same on GitLab's two variables), when
+  `check-slice-scope` runs, then it exits 1 naming `Makefile` and `project.json`, compared with `main` at the commit
+  where the branch left `main`, in the words it uses where the pull request's target won; the same refs on a slice
+  that stays inside its scope pass with that line; and in every pull-request checkout with a usable target that has
+  a base, the commit compared with is the target's base or an ancestor of it — where the two bases share no
+  history, the target's.
+- **AC-S24-15** — *Added by D87 (adversary F4).* Given a forge's checkout with no usable base, then the NOT-checked
+  line names the two refs it looked for, `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>`, and its last clause
+  reads *on any other CI, a full clone with the trunk's branch fetched from a remote named `origin`*; given a
+  full-history checkout whose only remote is `upstream`, the line is that one, exit 1; no base selection changes and
+  no other remote is read (D30: only the two full names answer).
+- **AC-S24-16** — *Added by D87 (adversary F3).* Given any line in which the gate prints a fetch, then the command
+  is `git fetch origin refs/heads/<name>:refs/remotes/origin/<name>`; given a remote with a branch `main` and a tag
+  `main` at the slice's head, when the printed command is run and the gate re-run, then the slice is compared with
+  the branch, not the tag.
