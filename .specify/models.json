@@ -24,7 +24,8 @@
     "claude": {
       "strong": "host",
       "fast": "sonnet",
-      "skipper": "host"
+      "skipper": "host",
+      "implement": "opus"
     },
     "codex": {
       "strong": "host",
