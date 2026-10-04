@@ -23,6 +23,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import stat
 import subprocess
 import sys
@@ -125,6 +126,9 @@ SLICE_SCOPE = "check-slice-scope.py"
 # How long a version question may take, and the one argument that is not `--version` for the tools that spell it
 # otherwise (`java -version` answers on standard error, which the answer is read from too).
 ASK_TIMEOUT = 5
+# What reads as a path in a line a tool printed: an absolute, home-relative or relative one, or a drive's, starting a word
+# or following `=`, `:`, a quote or a bracket (so `linux/amd64` stays).
+PATH_LIKE = re.compile(r"(?:(?<=[=:\s'\"(\[])|^)(?:~|\.{1,2}|[A-Za-z]:)?[/\\][^\s'\")\]]*")
 VERSION_ARGUMENTS = {"go": "version", "java": "-version"}
 CANNOT_LINE = "verify: the full gate runs and this run records nothing — {reason}"
 NOTHING = "nothing"
@@ -311,14 +315,15 @@ def history_digest() -> str:
 
 
 def ask(tool: str, command: str) -> str:
-    """The first non-empty line `command` prints when asked its version, whole. Launched once, with no standard input,
-    its output read from a file so that nothing it leaves running can hold this script."""
+    """What the key holds of a tool: everything it printed when asked its version, on both streams, as a digest — so a
+    notice ahead of the version cannot hide a changed one (D80) — behind the one line a person is shown, the first
+    non-empty line of standard output, or of standard error where it printed none there, with anything that looks like
+    a path elided: what is stored is a fact true on any machine. Launched once, with no standard input, its output
+    read from files so that nothing it leaves running can hold this script."""
     argument = VERSION_ARGUMENTS.get(tool, "--version")
-    with tempfile.TemporaryFile() as output:
+    with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
         try:
-            child = subprocess.Popen(
-                [command, argument], stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
-            )
+            child = subprocess.Popen([command, argument], stdin=subprocess.DEVNULL, stdout=out, stderr=err)
         except FileNotFoundError:
             raise CannotAsk(tool + " is not on PATH")
         except OSError as error:
@@ -329,13 +334,15 @@ def ask(tool: str, command: str) -> str:
             child.kill()
             child.wait()
             raise CannotAsk(tool + " did not answer within " + str(ASK_TIMEOUT) + " seconds when asked its version")
-        output.seek(0)
-        text = output.read().decode("utf-8", "replace")
+        out.seek(0)
+        err.seek(0)
+        printed = [out.read(), err.read()]
     if code != 0:
         raise CannotAsk(tool + " exited " + str(code) + " when asked its version")
-    for line in text.splitlines():
-        if line.strip():
-            return line.strip()
+    for stream in printed:
+        for line in stream.decode("utf-8", "replace").splitlines():
+            if line.strip():
+                return PATH_LIKE.sub("<path>", line.strip()) + " [answer " + digest(printed)[:16] + "]"
     raise CannotAsk(tool + " printed nothing when asked its version")
 
 

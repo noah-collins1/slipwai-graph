@@ -51,6 +51,7 @@ case "$1" in
       silent) printf '\\n\\n'; exit 0;;
       hang) exec sleep 60;;
     esac
+    [ -n "$STANDIN_UV_NOTICE" ] && printf '%b\\n' "$STANDIN_UV_NOTICE" >&2
     printf '%b\\n' "${STANDIN_UV_VERSION:-uv 0.12.20 (stand-in)}"
     exit 0;;
   sync)

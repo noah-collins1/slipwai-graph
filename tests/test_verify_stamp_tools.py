@@ -65,7 +65,7 @@ class AskedTest(StampTestCase):
         assert isinstance(tools, dict)
         for name in ASKED:
             self.assertTrue(str(tools[name]).strip(), name)
-        self.assertEqual(tools["uv"], "uv 0.12.20 (stand-in)")
+        self.assertRegex(str(tools["uv"]), r"^uv 0\.12\.20 \(stand-in\) \[answer [0-9a-f]{16}\]$")
         self.assertIn("interpreter apps/service/.venv", tools)
         self.assertEqual(tools["interpreter apps/service/.venv"], "3.14.4")
         self.forget_log()
@@ -74,7 +74,7 @@ class AskedTest(StampTestCase):
         self.assertEqual(self.checks(), [])
 
     def test_another_line_from_a_tool_runs_the_gate(self) -> None:
-        """e15: the first non-empty line, whole; a changed one runs the gate and writes a new stamp."""
+        """e15: a changed first line runs the gate and writes a new stamp."""
         self.assertEqual(self.run_gate().returncode, 0)
         before = self.stamp()["key"]
         self.forget_log()
@@ -84,13 +84,61 @@ class AskedTest(StampTestCase):
         stamp = self.stamp()
         tools = stamp["tools"]
         assert isinstance(tools, dict)
-        self.assertEqual(tools["uv"], "uv 0.13.0 (another build)")
+        self.assertTrue(str(tools["uv"]).startswith("uv 0.13.0 (another build) [answer "), tools["uv"])
         self.assertNotEqual(stamp["key"], before)
         self.forget_log()
         self.run_gate({"STANDIN_UV_VERSION": "\\n\\nuv 0.13.0 (another build)\\nsecond line"})
         self.assertEqual(self.checks(), [], "the new stamp was not written")
         self.run_gate()
         self.assertTrue(self.checks(), "the first line came back and the other stamp was reused")
+
+    def test_a_notice_ahead_of_the_version_does_not_hide_a_changed_version(self) -> None:
+        """e15 (T026, D80): the key takes everything the tool printed, on both streams — a notice on its first line
+        and the version on its second, here on the other stream, and a change of the version runs the gate."""
+        notice: dict[str, str | None] = {"STANDIN_UV_NOTICE": "warning: something"}
+        self.assertEqual(self.run_gate(notice).returncode, 0)
+        self.forget_log()
+        self.run_gate(notice)
+        self.assertEqual(self.checks(), [], "the same answer was not reused")
+        changed: list[dict[str, str | None]] = [
+            {**notice, "STANDIN_UV_VERSION": "uv 0.99.0"},
+            {"STANDIN_UV_NOTICE": "warning: something\\nuv 0.12.20", "STANDIN_UV_VERSION": "uv 0.99.0"},
+        ]
+        for env in changed:
+            with self.subTest(str(env)):
+                self.forget_log()
+                self.run_gate(env)
+                self.assertTrue(self.checks(), "a changed version behind a notice was reused")
+
+    def test_a_changed_byte_on_the_second_line_of_standard_output_runs_the_gate(self) -> None:
+        """e15 (T026): the same on one stream."""
+        self.assertEqual(self.run_gate({"STANDIN_UV_VERSION": "uv 0.12.20\\nbuild 1"}).returncode, 0)
+        self.forget_log()
+        self.run_gate({"STANDIN_UV_VERSION": "uv 0.12.20\\nbuild 2"})
+        self.assertTrue(self.checks(), "a changed second line was reused")
+
+    def test_the_stamp_shows_the_first_line_of_standard_output_or_of_standard_error_where_it_printed_none(self) -> None:
+        """e15 (T026, D80): one line per tool, for a person."""
+        self.run_gate({"STANDIN_UV_NOTICE": "warning: something"})
+        tools = self.stamp()["tools"]
+        assert isinstance(tools, dict)
+        self.assertTrue(str(tools["uv"]).startswith("uv 0.12.20 (stand-in)"), tools["uv"])
+        self.assertNotIn("\n", str(tools["uv"]))
+        self.assertNotIn("warning", str(tools["uv"]))
+
+    def test_no_file_under_the_git_directory_holds_a_path_a_tool_printed(self) -> None:
+        """e15 (T026): a notice with a path on either stream and in the first line of standard output; the stamp and the
+        note hold none of it."""
+        printed: list[dict[str, str | None]] = [
+            {"STANDIN_UV_NOTICE": "warning: cache at /home/someone/.cache/uv"},
+            {"STANDIN_UV_VERSION": "warning: cache at /home/someone/.cache/uv\\nuv 0.12.20"},
+            {"STANDIN_UV_VERSION": "Picked up JAVA_TOOL_OPTIONS: -Djava.io.tmpdir=/home/someone/tmp"},
+        ]
+        for env in printed:
+            with self.subTest(str(env)):
+                self.run_gate(env)
+                for path in (self.repo / ".git" / "slipwai").iterdir():
+                    self.assertNotIn("/home/someone", path.read_text(encoding="utf-8"), path.name)
 
     def test_no_path_of_an_executable_is_in_the_stamp(self) -> None:
         """e15: not the stand-ins' directory, not where the real tools are."""
