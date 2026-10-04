@@ -1,0 +1,13 @@
+$ grep -n parallelSafe project.json
+13:  "parallelSafe": true,
+$ bash -x ./scripts/verify --adversarial-only --synced
++ uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration -k adversarial
+collected 87 items / 87 deselected / 0 selected
+====================== 87 deselected, 2 warnings in 0.26s ======================
+exit: 0
+
+$ ./scripts/verify --adversarial-only --synced (plain)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+====================== 87 deselected, 2 warnings in 0.26s ======================
+exit: 0

@@ -540,6 +540,11 @@ rotted.
     values are only reached once Postgres is offered for your language, but `install` and the CI image
     are not. `app_tooling` in `tooling.py` is how the Makefile and the CI workflow read this table — once
     per service, with the service's own path stamped in — so it needs nothing from you beyond the entry.
+14. **`project/parallel_tests.py`** — `RUNNERS`, read by `parallel_tests_page`, keyed by backend: the one sentence
+    the generated `docs/gates.md` says about whether this backend's runner already runs tests in parallel
+    (Vitest by file, `go test` by package, Surefire one at a time). A backend with no entry gets no sentence
+    rather than a `KeyError`, so a missing one is silent: write the sentence that is true of the runner the
+    new backend's `native` table runs, and add the backend to the page's tests in `tests/test_xdist_page.py`.
 
 ## 3. src/slipwai/project/languages/<language>.py
 

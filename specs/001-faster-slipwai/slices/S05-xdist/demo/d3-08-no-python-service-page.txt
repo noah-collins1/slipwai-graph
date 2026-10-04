@@ -1,0 +1,27 @@
+=== /tmp/s05d3/fresh/shop
+13:  "parallelSafe": true,
+23:      "language": "typescript",
+44:      "language": "typescript",
+$ grep -n -i 'parallelSafe\|across cores' docs/gates.md
+58:Where `project.json` carries `"parallelSafe": true`, a Python service's tests run across cores; it changes nothing until a Python service is added.
+
+=== /tmp/s05d3/go/shop
+13:  "parallelSafe": true,
+23:      "language": "go",
+44:      "language": "typescript",
+$ grep -n -i 'parallelSafe\|across cores' docs/gates.md
+58:Where `project.json` carries `"parallelSafe": true`, a Python service's tests run across cores; it changes nothing until a Python service is added.
+
+=== /tmp/s05d3/go/shop: add a Python service, then read the page and the gate
+$ /home/noahc/math/slipwai-graph/slipwai add-service orders --backend python
+
+Nothing is committed. Review with `git status` and `git diff`; `git checkout . && git clean -fd` undoes it.
+Next: make verify
+exit: 0
+$ grep -n -i 'parallelSafe' docs/gates.md | cut -c1-200
+58:**Tests across cores.** A Python service's gate runs its tests across cores where `project.json` says it may: `"parallelSafe": true`,
+64:tell which copy is meant: add the line `"parallelSafe": true,` once, with its comma, right after the `"target"` line, where `generate` writes it. The gate reads the mark each time it runs, so a cha
+$ bash -x ./scripts/verify --test-only --synced | grep pytest/workers
+created: 4/4 workers
+4 workers [87 items]
+======================== 87 passed, 8 warnings in 1.49s ========================

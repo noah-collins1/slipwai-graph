@@ -1,0 +1,92 @@
+=== Copy A: pre-release project (8b0d103's slipwai generate shop --backend python), mark added after "name" and committed
+4423883 opt in, after name
+4baaa4f Scaffold shop
+10:  "parallelSafe": true,
+
+$ /home/noahc/math/slipwai-graph/slipwai migrate
+migrated shop to slipwai 1.6.0.dev0: 5 files changed, 54 insertions(+), 3 deletions(-)
+One merge commit. The files this project had changed itself were kept; the rest are what the factory now generates for its answers.
+project.json has "parallelSafe" twice after this merge; the gate reads "parallelSafe" written twice as serial, so a parallel setting does nothing until you keep one copy.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+exit: 0
+
+726425c Migrate shop to slipwai 1.6.0.dev0
+4cc0022 Replay shop with slipwai 1.6.0.dev0
+4423883 opt in, after name
+$ grep -n parallelSafe project.json
+10:  "parallelSafe": true,
+14:  "parallelSafe": true,
+
+$ grep -n -o '[^.]*parallelSafe" twice[^.]*\.[^.]*\.' .slipwai/catch-up.md
+25:json has "parallelSafe" twice after this merge; the gate reads "parallelSafe" written twice as serial, so a parallel setting does nothing until you keep one copy.
+$ grep -c 'twice' .slipwai/catch-up.md
+2
+$ head -c 600 .slipwai/catch-up.md
+# Catch up: shop, 1.6.0.dev0 to 1.6.0.dev0
+
+`slipwai migrate` wrote this before it returned — whether the merge committed or stopped at conflicts — from the catch-up note in each version's entry in the factory's own `CHANGELOG.md`, written by whoever made the change, in the commit that made it. It is what a merge could not do for you.
+
+Work it with `/catch-up`, which reads this file and runs `make verify` against it. This file is git-ignored and disposable: delete it when the work is done, and the changelog stays the record.
+
+## Why the versions crossed could not be listed as such
+
+Because
+
+$ bash -x ./scripts/verify --test-only --synced | grep pytest/workers/passed
++ uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+======================== 87 passed, 2 warnings in 1.28s ========================
+exit: 0
+
+=== Copy B: same pre-release project, no mark; migrate, then the fragment's Catch-up paragraph literally
+$ /home/noahc/math/slipwai-graph/slipwai migrate
+migrated shop to slipwai 1.6.0.dev0: 4 files changed, 53 insertions(+), 3 deletions(-)
+One commit, fast-forwarded — this project had no changes of its own since the last factory commit.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+exit: 0
+$ grep -n parallelSafe project.json  (none expected: migrate never adds one)
+$ grep -c 'twice after this merge' .slipwai/catch-up.md
+0
+$ (add the line `"parallelSafe": true,` right after the "target" line)
+diff --git a/project.json b/project.json
+index 1fe6291..117ddb7 100644
+--- a/project.json
++++ b/project.json
+@@ -10,6 +10,7 @@
+   "profile": "event-modelling",
+   "frontend": "react-vite",
+   "target": "none",
++  "parallelSafe": true,
+   "capabilities": [
+     "continuous-delivery",
+     "event-modelling",
+valid JSON
+$ make verify
+All checks passed!
+created: 4/4 workers
+4 workers [87 items]
+======================== 87 passed, 8 warnings in 1.69s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+verify: all gates passed
+exit: 0
+$ make test | grep workers/passed
+created: 4/4 workers
+4 workers [87 items]
+======================== 87 passed, 8 warnings in 1.03s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+exit: 0
+
+=== Copy A again, now carrying the duplicate the merge left: migrate a second time
+36c17574e15e85e799c0531db1d280555522a894c03588c559ac940cf8444353  project.json
+726425c
+$ /home/noahc/math/slipwai-graph/slipwai migrate
+slipwai migrate: error: project.json has "parallelSafe" twice; keep one copy and run this again
+exit: 2
+36c17574e15e85e799c0531db1d280555522a894c03588c559ac940cf8444353  project.json
+726425c
+(no tracked change listed = clean)

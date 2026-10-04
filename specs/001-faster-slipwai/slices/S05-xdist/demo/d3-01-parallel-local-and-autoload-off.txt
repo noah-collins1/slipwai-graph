@@ -1,0 +1,60 @@
+$ (cwd /tmp/s05d3/py/shop — generated with: ./slipwai generate shop --backend python --output /tmp/s05d3/py --no-init --no-install --skip-checks; the brief's command without --backend made a typescript service)
+$ grep -n parallelSafe project.json
+13:  "parallelSafe": true,
+$ env | grep -E '^(CI|GITHUB_ACTIONS|GITLAB_CI)='  (none expected)
+$ sed -n 218,222p Makefile
+test: ## Run the complete native test suite
+	./scripts/verify --test-only --synced
+	npm --workspace apps/web test
+test-integration: ## Run the integration suite; against a real database it needs `make services-up migrate` first
+	$(INTEGRATION_TEST)
+
+$ bash -x ./scripts/verify --test-only --synced 2>&1 | grep -E '^\+.*pytest'
++ uv run --project apps/service --no-sync pytest -p xdist -n auto --maxprocesses 4 apps/service/tests --ignore=apps/service/tests/integration
+
+$ make test
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s05d3/py/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 8 warnings in 1.23s ========================
+npm --workspace apps/web test
+> shop-web@0.1.0 test
+> vitest run
+ RUN  v4.1.11 /tmp/s05d3/py/shop/apps/web
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  17:40:44
+   Duration  1.16s (transform 97ms, setup 294ms, import 136ms, tests 310ms, environment 1.95s)
+exit: 0
+
+$ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 make test
+  /tmp/s05d3/py/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 8 warnings in 1.22s ========================
+npm --workspace apps/web test
+> shop-web@0.1.0 test
+> vitest run
+ RUN  v4.1.11 /tmp/s05d3/py/shop/apps/web
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  17:40:48
+   Duration  1.15s (transform 115ms, setup 315ms, import 137ms, tests 315ms, environment 1.79s)
+exit: 0
+
+$ make test 2>&1 | grep -E 'workers|passed|failed|error'
+created: 4/4 workers
+4 workers [87 items]
+======================== 87 passed, 8 warnings in 1.34s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+
+$ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 make test 2>&1 | grep -E 'workers|passed|failed|error'
+created: 4/4 workers
+4 workers [87 items]
+======================== 87 passed, 8 warnings in 1.12s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)

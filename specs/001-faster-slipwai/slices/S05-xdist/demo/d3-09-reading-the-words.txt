@@ -1,0 +1,33 @@
+Example 9 — the fragment (changelog.d/xdist.md at 4b397e4) and the generated docs/gates.md "Tests across cores"
+paragraph (/tmp/s05d3/py/shop/docs/gates.md lines 58-66), read as the developer against what d3-01..d3-08 showed.
+
+Sentence -> what was seen
+- "-p xdist -n auto --maxprocesses 4 ... in make test and make verify" -> d3-01: exactly that command, "created: 4/4 workers".
+- "loaded by name so a run with PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 still starts its workers" -> d3-01: 4/4 workers, 87 passed.
+- "so is every run where CI, GITHUB_ACTIONS or GITLAB_CI is set" / page: "set, to anything" -> d3-02: CI=true,
+  GITHUB_ACTIONS=true, CI=false, GITLAB_CI=1 each run pytest with no -n.
+- "a parallel run can hide a test that depends on another test's leftovers ... a test that passes locally but fails in
+  CI is the first thing to look for" -> d3-03: five local make test runs passed with the leaking test; CI=true make test
+  and CI=true make verify failed on test_two_appends_b (['a','b'] == ['b']). One local make verify also caught it, so
+  "can hide" (not "hides") is the right word.
+- "the adversarial run is serial too" -> d3-04: no -n, exit 0 on 87 deselected.
+- "refuses one that writes a key twice, or a parallelSafe that is not a finite JSON value, in one line and before
+  writing anything" -> d3-05 (describe-service, add-service, add-frontend), d3-06 (migrate a second time), d3-07
+  (1e400, NaN): one error line each, project.json hash unchanged, git status clean.
+- "migrate says so after its merge when the merge itself left a key twice" / catch-up "names it in its report and in
+  .slipwai/catch-up.md" -> d3-06 copy A: exit 0, one report line, the same line under "## project.json" in
+  catch-up.md, gate serial.
+- Catch-up "add the line "parallelSafe": true, ... right after the "target" line ... and run make verify once"
+  -> d3-06 copy B: valid JSON, one key, no duplicate line, make verify passed with 4 workers.
+- No-Python sentence -> d3-08: present verbatim in typescript and go projects; adding a Python service replaces it with
+  the full paragraph and the gate runs 4 workers.
+
+Could I act on it?
+- Yes for opting in, opting out, the duplicate and the non-finite refusals: each message names what to do.
+- Partly for "passes locally but fails in CI": the page explains why and what to look for, but does not name the local
+  command that reproduces CI's serial run. "CI ... set, to anything" lets me infer `CI=1 make test`, which is what
+  reproduced it in d3-03; a developer has to make that step.
+- The duplicate refusal and the catch-up line say "keep one copy" but not which; after migrate's merge both copies hold
+  the person's own value (copy A: both true), so either is right — the line could say so.
+- The refusals arrive under argparse's usage block (9 lines for add-service), the way every existing refusal of this
+  CLI does (describe-service nosuch, d3-05) — a usage block for arguments that were fine.

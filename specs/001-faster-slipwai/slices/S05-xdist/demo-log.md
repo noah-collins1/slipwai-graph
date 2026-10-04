@@ -91,3 +91,42 @@
     - The page still tells a developer to "set it `false`" without saying that `check-slice-scope` refuses a `project.json` edit on a `slice/*` branch. This carries over from demo 1 and was not re-tested here.
     - The source wraps the page's paragraph unevenly. Some lines are 270 to 291 characters, beside lines of about 130. The rendered Markdown is unaffected, but the raw file reads ragged.
   - The scratch projects under `/tmp` were the only thing this demo ran. They are deleted, and no process was left running.
+
+## 2026-10-04T22:44:13Z — accepted · iteration 15 · drive-hand (claude-opus-5-5)
+- **Started with:** this checkout at 4b397e4. Fresh projects: `./slipwai generate shop --backend python --output /tmp/s05d3/py --no-init --no-install --skip-checks`. The brief's command without `--backend` made a typescript service, which was used for example 8. Each Python project was prepared with `uv sync --project apps/service --locked`, then driven with `make test`, `make verify` and `./scripts/verify --test-only` / `--adversarial-only`. Older-project path: `git archive 8b0d103 | tar -x`, then that tree's `./slipwai generate shop --backend python --output /tmp/s05d3/before --no-init --no-install --skip-checks`, then this checkout's `slipwai migrate` in two copies. · **Seeded:** none. A scratch test file with two tests sharing a module list (example 3) was added and then removed. Marks were edited and committed in disposable copies.
+- **Driven through:** CLI. `.specify/cruise.json` names `browser`, but this slice has no screen and no HTTP surface. It changes a generated `project.json`, `scripts/verify`, `docs/gates.md` and what `slipwai` commands do.
+- **Examples:** demo 3 covers what D106 to D108 changed.
+  - AC-S05-2: passed.
+    - With mark `true` and no CI marker, pytest runs `-p xdist -n auto --maxprocesses 4` and reports "created: 4/4 workers" (87 passed).
+    - With `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`, it still reports 4/4 workers. This is also the first point of AC-S05-16.
+  - AC-S05-14: passed.
+    - `CI=true`, `GITHUB_ACTIONS=true`, `CI=false` and `GITLAB_CI=1` each run pytest with no `-n`.
+    - A leaking pair of tests passed five local parallel `make test` runs.
+    - `CI=true make test` and `CI=true make verify` both failed on the second test (`['a', 'b'] == ['b']`).
+    - The gates page says why the two runs differ and what to look for.
+  - AC-S05-5: passed. With mark `true`, `--adversarial-only` runs with no `-n`. It exits 0 on 87 deselected.
+  - AC-S05-15: passed.
+    - A committed duplicate mark (`false` after "name", `true` after "target") is refused by `describe-service`, `add-service`, `add-frontend` and a second `migrate`. Each prints one line: `project.json has "parallelSafe" twice; keep one copy and run this again`. The hash is unchanged and `git status` is clean.
+    - An older project whose own mark sat after "name" migrates with exit 0. The report and `.slipwai/catch-up.md` (its own `## project.json` section) carry the same sentence, and the gate runs serial.
+    - Following the fragment's **Catch-up.** paragraph literally gives one key, valid JSON and no such line. `make verify` passes with 4 workers.
+  - AC-S05-16: passed.
+    - `1e400` (with `describe-service`) and `NaN` (with `add-service`) are each refused in one line ending "set it to true or false", with nothing written.
+    - Typescript and go projects carry the no-Python sentence verbatim. In the go project, adding a Python service swaps it for the full paragraph and gives 4 workers.
+    - The page names `-p no:xdist` in `PYTEST_ADDOPTS` and a root `json.py`.
+  - Reading the words (example 9): passed. Every new sentence in the fragment and on the page matched a run above.
+- **Evidence:**
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-01-parallel-local-and-autoload-off.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-02-ci-markers-serial.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-03-shared-state-ci-catches.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-04-adversarial-serial.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-05-duplicate-mark-refused.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-06-migrate-older-project.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-07-non-finite-mark-refused.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-08-no-python-service-page.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d3-09-reading-the-words.txt`
+- **Feedback:** nothing re-enters the ladder. Notes for the next slice, none a reason to withhold acceptance:
+  - The page explains why a test can pass locally and fail in CI, but it does not name the command that reproduces CI's serial run locally. The developer has to infer `CI=1 make test` from "set, to anything".
+  - "keep one copy" does not say which copy to keep. After `migrate`'s merge, both copies hold the person's own value, so either is right, and the line could say so.
+  - The refusals print under argparse's usage block (9 lines for `add-service`) even though the arguments were fine. Every existing refusal of this CLI does the same, so this is a CLI-wide note, not S05's.
+  - In one of two local parallel `make verify` runs, the leaking test was also caught. The words "can hide" are the accurate ones.
+  - The scratch projects under `/tmp/s05d3` were the only thing this demo ran, and they are deleted. No process was left running.

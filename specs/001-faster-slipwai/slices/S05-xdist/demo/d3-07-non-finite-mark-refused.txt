@@ -1,0 +1,18 @@
+$ grep -n parallelSafe project.json   (committed)
+13:  "parallelSafe": 1e400,
+62fba9f2056639a1647bd9394241238f667dc12c111beac6864e861024afd203  project.json
+
+$ /home/noahc/math/slipwai-graph/slipwai describe-service service --purpose "Owns orders."
+slipwai describe-service: error: project.json has "parallelSafe": 1e400, which is not a JSON value this factory can write back: set it to true or false
+exit: 2
+62fba9f2056639a1647bd9394241238f667dc12c111beac6864e861024afd203  project.json
+(status empty = clean)
+
+$ (mark NaN, committed) /home/noahc/math/slipwai-graph/slipwai add-service billing --backend go
+slipwai add-service: error: project.json has "parallelSafe": NaN, which is not a JSON value this factory can write back: set it to true or false
+exit: 2
+4f18d70038f19f4e82d0b4c8281c9ba3ad2213a5ee5ac4d0c7b11f0701039a6b  project.json
+(status empty = clean)
+
+$ bash -x ./scripts/verify --test-only | grep pytest  (gate with NaN)
++ uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration

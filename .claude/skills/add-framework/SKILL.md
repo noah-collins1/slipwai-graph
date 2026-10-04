@@ -262,6 +262,7 @@ current, and the question is what makes them the user's.
 | `native` (permission globs) | `project/agent_settings.py` | **Yes** where the build or test command differs |
 | `toolchain_setup` | `project/ci_workflows.py` | **No** — keyed by family; one `actions/setup-*` per ecosystem |
 | `gate` | `project/docs.py` | **Yes** where the test runner differs |
+| `RUNNERS`, read by `parallel_tests_page` | `project/parallel_tests.py` | **Yes, always** — one row per backend key, the gates page's sentence on whether the runner already runs tests in parallel; the sibling's is usually its family's sentence word for word, as both Java rows are. A missing row is silent, not a `KeyError` |
 | `paths` | `project/event_model.py` | Usually **no** — illustrative source paths |
 | `tools` | `project/mutation.py` | Usually **no** — one mutation tester per ecosystem |
 | `language_artifacts` | `project/gitignore.py` | Usually **no** — one build output per build tool |

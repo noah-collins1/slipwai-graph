@@ -1,0 +1,37 @@
+$ grep -n parallelSafe project.json   (committed)
+10:  "parallelSafe": false,
+14:  "parallelSafe": true,
+11c7fdbd60656333051a489ee704bbf8d3468601c7940b39dfb3cebc54acc59e  project.json
+
+$ /home/noahc/math/slipwai-graph/slipwai describe-service service --purpose "Owns orders."
+usage: slipwai describe-service [-h] [--purpose TEXT] [--context NAME] name
+slipwai describe-service: error: project.json has "parallelSafe" twice; keep one copy and run this again
+exit: 2
+11c7fdbd60656333051a489ee704bbf8d3468601c7940b39dfb3cebc54acc59e  project.json
+
+$ /home/noahc/math/slipwai-graph/slipwai add-service billing --backend go
+usage: slipwai add-service [-h] [--language {typescript,python,go,java}]
+                           [--framework quarkus|spring-boot]
+                           [--backend {typescript,python,go,java-quarkus,java-spring}]
+                           [--event-store memory|sqlite|postgres]
+                           [--http none|fastify|fastapi|net-http|quarkus-rest|spring-web]
+                           [--auth none|keycloak|cognito|entra|auth0]
+                           [--users none|keycloak|cognito|auth0]
+                           [--purpose TEXT] [--context NAME]
+                           name
+slipwai add-service: error: project.json has "parallelSafe" twice; keep one copy and run this again
+exit: 2
+11c7fdbd60656333051a489ee704bbf8d3468601c7940b39dfb3cebc54acc59e  project.json
+(git status / diff above: empty = clean)
+
+--- for comparison: an existing refusal in a valid project (describe-service of a service that does not exist)
+$ /home/noahc/math/slipwai-graph/slipwai describe-service nosuch --purpose x
+usage: slipwai describe-service [-h] [--purpose TEXT] [--context NAME] name
+slipwai describe-service: error: project.json lists no application named 'nosuch'; it has service, web
+exit: 2
+
+$ (cwd /tmp/s05d3/dup/shop) /home/noahc/math/slipwai-graph/slipwai add-frontend admin
+slipwai add-frontend: error: project.json has "parallelSafe" twice; keep one copy and run this again
+exit: 2
+11c7fdbd60656333051a489ee704bbf8d3468601c7940b39dfb3cebc54acc59e  project.json
+(status empty = clean)

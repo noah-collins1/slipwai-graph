@@ -2159,3 +2159,15 @@
   - The cruise report when it is written: the pytest variables missing from the stamp's key.
   - S05's `changelog.d/` fragment.
 - **Status:** standing
+
+## D109 — The owner's note: the factory gate is red on `test_maintenance_skills` after S05's table — fix it inside S05?
+- **Stage:** Phase 4 (T012, before the gates) · **Slice:** S05-xdist · **When:** 2026-10-04T22:50:59Z · **Iteration:** 15
+- **Scope:** S05-xdist
+- **Question:** A person ran the factory gate after S33's patch and found two red tests: `test_factory_repository`'s gate test (theirs to fix, done in `e3bc084`) and `test_maintenance_skills.test_every_language_keyed_table_is_documented`, which is S05's: `parallel_tests_page` is keyed by backend and the `add-language` and `add-framework` skills must name it.
+- **Options:** (a) fix it inside S05, before its gates — the owner's word; (b) a slice of its own.
+- **Decision:** (a). `add-language` section 2 gains item 14 naming `RUNNERS` and `parallel_tests_page`; `add-framework`'s table gains its row (T025). The person's `e3bc084` left `tests/test_factory_repository.py` at 353 lines, over the 350-line budget `make check-structure` holds; it was trimmed back in `e997a5f` with nothing it asserts changed.
+- **Why:** The owner said so (`/cruise-tell`, iteration 15); the table is S05's, and a maintainer adding a backend reads these two skills for every table a new key must reach.
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** nothing — the owner's instruction.
+- **Written to:** `specs/001-faster-slipwai/slices/S05-xdist/tasks.md`, `.claude/skills/add-language/SKILL.md`, `.claude/skills/add-framework/SKILL.md`
+- **Status:** standing

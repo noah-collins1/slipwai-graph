@@ -1198,6 +1198,83 @@
         "cycle": "rule",
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "demo",
+      "started": "2026-10-04T22:39:53Z",
+      "planned": "demo: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 2,
+          "done": 22
+        },
+        "end": {
+          "open": 2,
+          "done": 22
+        }
+      },
+      "ended": "2026-10-04T22:49:47Z",
+      "seconds": 594,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def.jsonl": 1461875,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a114eae44ee33a079.jsonl": 386607,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a16878f33654d4bae.jsonl": 297857,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a2ad5e3c73e39b8dd.jsonl": 391495,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a589a81dad77dc468.jsonl": 307480,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a6c91cc6817179520.jsonl": 444776,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-aaaf6c87449424ce5.jsonl": 265355,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-ac887974ff16438fb.jsonl": 243671,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-afb1f6e139e5a29dd.jsonl": 468200
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def.jsonl": 1547127,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a114eae44ee33a079.jsonl": 386607,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a16878f33654d4bae.jsonl": 297857,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a2ad5e3c73e39b8dd.jsonl": 391495,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a589a81dad77dc468.jsonl": 307480,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a6c91cc6817179520.jsonl": 444776,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-a8c151d4d3788b8e8.jsonl": 453219,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-aaaf6c87449424ce5.jsonl": 265355,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-ac887974ff16438fb.jsonl": 243671,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/05a39d46-4295-41f9-91dc-c84148cc6def/subagents/agent-afb1f6e139e5a29dd.jsonl": 468200
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "05a39d46-4295-41f9-91dc-c84148cc6def",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 8,
+            "output": 4092,
+            "cache_read": 777165,
+            "cache_creation": 9569
+          }
+        },
+        "subagents": {
+          "claude-opus-5-5": {
+            "input": 62,
+            "output": 4256,
+            "cache_read": 1494363,
+            "cache_creation": 70100
+          }
+        },
+        "agents": [
+          "drive-hand"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5"
+      ],
+      "agents": [
+        "drive-hand"
+      ],
+      "delegated": true,
+      "signals": {
+        "outcome": "accepted",
+        "driver": "cruise"
+      }
     }
   ]
 }

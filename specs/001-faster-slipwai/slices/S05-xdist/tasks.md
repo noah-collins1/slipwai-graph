@@ -590,6 +590,17 @@ then `make lint typecheck check-structure`.
 **Verify:** `make test TESTS="test_xdist_words test_xdist_ci test_xdist_gate test_xdist_page test_xdist_carry"`, then
 `make lint typecheck check-structure`.
 
+
+### T025 — The two maintenance skills name the gates page's per-backend table (a person's note, iteration 15; D109)
+
+- [x] **From the owner, through `/cruise-tell`.** `tests/test_maintenance_skills.py::test_every_language_keyed_table_is_documented`
+  is red: `parallel_tests_page` in `src/slipwai/project/parallel_tests.py` indexes `RUNNERS` by backend, and the
+  `add-language` and `add-framework` skills must name it. Fixed inside S05, before its gates: `add-language` section 2
+  item 14 and a row in `add-framework`'s table (`.claude/skills/add-language/SKILL.md`,
+  `.claude/skills/add-framework/SKILL.md`). Factory-maintenance text — reaches no user.
+
+**Verify:** `make test TESTS="test_maintenance_skills test_backend_obligations"`.
+
 ## Convergence
 
 **Not converged — pass 1 of 2 (cruise iteration 14, `drive-converge`, host model, fresh context): two `HIGH` open, T014

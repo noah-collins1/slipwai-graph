@@ -1,0 +1,52 @@
+=== CI=true (others unset)
+$ env CI=true bash -x ./scripts/verify --test-only --synced | grep pytest/workers/passed
++ uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+======================== 87 passed, 2 warnings in 0.59s ========================
+exit: 0
+$ env CI=true make test | grep workers/passed
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.58s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+exit: 0
+
+=== GITHUB_ACTIONS=true (others unset)
+$ env GITHUB_ACTIONS=true bash -x ./scripts/verify --test-only --synced | grep pytest/workers/passed
++ uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+======================== 87 passed, 2 warnings in 0.59s ========================
+exit: 0
+$ env GITHUB_ACTIONS=true make test | grep workers/passed
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.62s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+exit: 0
+
+=== CI=false (others unset)
+$ env CI=false bash -x ./scripts/verify --test-only --synced | grep pytest/workers/passed
++ uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+======================== 87 passed, 2 warnings in 0.55s ========================
+exit: 0
+$ env CI=false make test | grep workers/passed
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.53s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+exit: 0
+
+=== GITLAB_CI=1 (others unset)
+$ env GITLAB_CI=1 bash -x ./scripts/verify --test-only --synced | grep pytest/workers/passed
++ uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+======================== 87 passed, 2 warnings in 0.55s ========================
+exit: 0
+$ env GITLAB_CI=1 make test | grep workers/passed
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.55s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+exit: 0
+
