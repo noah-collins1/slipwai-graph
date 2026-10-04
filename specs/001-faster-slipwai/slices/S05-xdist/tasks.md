@@ -493,6 +493,20 @@ checkout, and on a scratch repository `adopt`ed by this checkout. No production 
   not start at the root; a `tests/test_xdist_gate.py` example states which, with a stand-in that records the worker's
   working directory if the second.
 
+### T020 — `MEDIUM` — The words the after-converge gaps pass found missing (G1–G3; D105)
+
+- [ ] **Host-routed fix, before the demo (it changes the page the demo reads).** RED first, as examples in
+  `tests/test_xdist_page.py`: (G1) a TypeScript-, a Go- and a Java-only project's gates page names `parallelSafe`, says
+  in one sentence what it does and that it changes nothing until a Python service is added, and no sentence opens
+  with "the other runners" where no Python paragraph precedes it; (G2) the fragment's catch-up says a dependency of
+  the project's own, dev or not, can stop `migrate` on a service's `uv.lock`; (G3) the page's sentence on `false`
+  says the mark needs `pytest-xdist` in each Python service's development tools. GREEN in
+  `src/slipwai/project/parallel_tests.py` and `changelog.d/xdist.md`. Sweep: every sentence of the mark's paragraph
+  and the runners' paragraph read against a project of each backend family, and against a Python project after
+  `add-service` of another backend.
+
+**Verify:** `make test TESTS="test_xdist_page test_xdist_gate test_changelog"`, then `make lint typecheck check-structure`.
+
 ## Convergence
 
 **Not converged — pass 1 of 2 (cruise iteration 14, `drive-converge`, host model, fresh context): two `HIGH` open, T014

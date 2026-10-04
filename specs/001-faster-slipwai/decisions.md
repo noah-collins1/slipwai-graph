@@ -2011,3 +2011,15 @@
 - **Confidence:** high · **Would reverse if:** a generated project's integration suite stops sharing a database, or a backend's runner changes its default.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (S05's criteria); `delivery/docs/adr/0003-pytest-xdist-in-generated-python-services.md` (at Proposed)
 - **Status:** standing
+
+## D105 — After S05's converge: a project with no Python service carries the mark and its page says nothing of it — say one sentence, or write the key only where there is Python?
+- **Stage:** 9 convergence (after-converge gaps, G1–G3) · **Slice:** S05-xdist · **When:** 2026-10-04T20:33:05Z · **Iteration:** 14
+- **Scope:** S05-xdist
+- **Question:** The after-converge gaps pass found that a TypeScript-, Go- or Java-only project gets `"parallelSafe": true` (D102, rule 1) while its gates page names the mark nowhere and opens a sentence with "the other runners" after nothing (G1, MEDIUM); that the catch-up note says a lock conflict needs a dev dependency of the project's own, where any dependency does (G2, LOW); and that the page does not say the mark needs the plugin, so a service that removed it fails on an argument error with no word to explain it (G3, LOW).
+- **Options:** (a) keep D102's key in every project; the page of a project with no Python service says in one sentence what the mark does and that it changes nothing until a Python service is added, the dangling "other" goes, the note says "a dependency of its own, dev or not", and the page's sentence on `false` says the mark needs `pytest-xdist` in each Python service's development tools — **recommended**; (b) write the key only where a Python service exists, and have `add-service` add it with the first one — a change to D102's first rule and a second writer of the key.
+- **Decision:** (a).
+- **Why:** D102 already decided the key is the project's, whatever its backend, because `add-service` can bring a Python service later; a key with no word about it is the gap, not the key. One sentence costs less than a second writer of `project.json`, and the two LOW words are the ones a person reading the page or the note would act on.
+- **Decided by:** host (standing decision D102)
+- **Confidence:** high · **Would reverse if:** the owner would rather a project with no Python service carried no key at all.
+- **Written to:** `specs/001-faster-slipwai/slices/S05-xdist/tasks.md` (T020)
+- **Status:** standing
