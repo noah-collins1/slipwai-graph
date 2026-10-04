@@ -217,6 +217,32 @@ class StampTestCase(unittest.TestCase):
         return [line for line in run.stdout.splitlines() if line.startswith(REUSE_PREFIX) and line != CLOSING]
 
 
+def key_of(repo: Path) -> str:
+    """The key of `repo` as `reuse` would build it with no tool to ask, in this process, in that directory."""
+    module = load_script(repo)
+    was = Path.cwd()
+    os.chdir(repo)
+    try:
+        return str(module.build_key({})["key"])
+    finally:
+        os.chdir(was)
+
+
+def probe_path(entry: str, under: str = "") -> str:
+    """A path an exempt entry or an ignore line matches, made concrete: a star becomes a name, a directory a file in
+    it. `under` is a directory it is put in, for an entry that matches at any depth."""
+    path = entry.lstrip("/").replace("**/", "x/").replace("*", "x")
+    if path.endswith("/"):
+        path += "probe.txt"
+    return under + path
+
+
+def exclude(repo: Path, *paths: str) -> None:
+    """Make git ignore `paths` through `.git/info/exclude`, which no commit carries and `.gitignore` does not list."""
+    with (repo / ".git" / "info" / "exclude").open("a", encoding="utf-8") as handle:
+        handle.write("".join(f"/{path}\n" for path in paths))
+
+
 INSTANT = re.compile(r"\b\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\b")
 
 

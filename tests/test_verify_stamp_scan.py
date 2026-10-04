@@ -1,23 +1,25 @@
-"""R6 (AC-S03-7, -9), T017: the closed-list test scans every script the gate runs, in every shape of project.
+"""R6 (AC-S03-9, -32), T017: the closed-list test scans every script the gate runs, in every shape of project.
 
 The subject is derived from the generated `Makefile`, not from a file-name pattern: the targets `verify-checks` (or
 `verify`, where a project has no stamp) depends on, transitively and through `$(MAKE)`; every `scripts/…` file their
 recipes launch; and whatever a launched script imports or names as a `*.py` file under `scripts/`. A script added to a
 recipe — or a sibling a script loads — is scanned the day it exists. What the scan cannot read is named below with the
-reason it holds nothing, so a new one fails the test; and every ignore line a project can get is on the list or named
-with the reason it is no input.
+reason it holds nothing, so a new one fails the test; and every ignore line a project can get is, in both directions,
+either left out of the key by an exempt entry with its reason or in the key — a file at it moves the key.
 """
 from __future__ import annotations
 
 import ast
 import re
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
-from stamp_fixture import CI_MARKERS, load_script, template
+from stamp_fixture import CI_MARKERS, exclude, key_of, load_script, probe_path, template
 from support import FactoryTestCase
-from test_verify_stamp_lists import ignored_patterns, unlisted
+from test_verify_stamp_lists import READ, ignored_patterns, unlisted
 
 # Shapes that add a prerequisite or an ignore line: (name, profile, backend, frontend, axes).
 SHAPES = (
@@ -40,57 +42,18 @@ NOT_SCANNED = {
 }
 # Launched by a recipe the gate runs, and not an input: the stamp is the thing that reads the lists.
 THE_STAMP = "scripts/verify-stamp.py"
-# An ignore line no check reads, or that the recipe rebuilds on every run: the reason is the value.
-NOT_INPUTS = {
-    "coverage/": "written by `test`, never read by a check",
-    ".build/": "written by `make build`, which the gate does not run",
-    "apps/web/dist/": "rebuilt by `build-packages`, a prerequisite of lint, typecheck and test",
-    "packages/*/dist/": "rebuilt by `build-packages`, a prerequisite of lint, typecheck and test",
-    "packages/api-client/src/schema.ts": "rebuilt by `build-packages` from the published document on every run",
-    "scripts/event-model/.mermaid-cli/": "the browser renderer, which `make model` uses and the gate never runs",
-    "docs/event-model/model.mmd": "CI-owned rendering written by `make model`; `check-model` reads `model.yaml`",
-    "docs/event-model/model.svg": "CI-owned rendering written by `make model`; `check-model` reads `model.yaml`",
-    "docs/event-model/model.png": "CI-owned rendering written by `make model`; `check-model` reads `model.yaml`",
-    "docs/event-model/model.html": "CI-owned rendering written by `make model`; `check-model` reads `model.yaml`",
-    "docs/event-model/slices/": "CI-owned rendering written by `make model`; `check-model` reads `model.yaml`",
-    "docs/event-model/segments/": "CI-owned rendering written by `make model`; `check-model` reads `model.yaml`",
-    ".slipwai/catch-up.md": "a note `slipwai migrate` leaves for a person; no check reads it",
-    ".specify-tools/": "the Spec Kit installer's own tooling, run by `./init`, never by the gate",
-    "specs/cruise-checkpoint.md": "the iteration in flight; `/cruise` writes and deletes it, no check reads it",
-    ".specify/cruise.stop": "run state of `/cruise`, read by the runner only",
-    ".specify/cruise.pid": "run state of `/cruise`, read by the runner only",
-    ".specify/cruise-run.log": "run state of `/cruise`, read by the runner only",
-    ".specify/cruise-stream.jsonl": "run state of `/cruise`, read by the runner only",
-    ".specify/cruise-watch.cursor": "run state of `/cruise`, read by the runner only",
-    ".specify/cruise-last-response.txt": "run state of `/cruise`, read by the runner only",
-    ".specify/cruise-inbox.jsonl": "run state of `/cruise`, read by the runner only",
-    ".specify/cruise-told.jsonl": "run state of `/cruise`, read by the runner only",
-    "__pycache__/": "bytecode the interpreter writes; it holds nothing a source does not",
-    "*.pyc": "bytecode the interpreter writes; it holds nothing a source does not",
-    ".venv/": "`uv sync --locked` runs on every run (scripts/verify), the interpreter's version is in the tools",
-    ".pytest_cache/": "a tool cache the full gate reads the same way (D73: not in the key)",
-    ".ruff_cache/": "a tool cache the full gate reads the same way (D73: not in the key)",
-    "apps/*/requirements.txt": "exported by `make build` from the lock for the buildpack; the gate does not run it",
-    "gremlins.json": "written by `make mutation`, which the gate does not run",
-    "coverage.out": "written by the recipe's `go test` just before `go-coverage.py` reads it, on every run",
-    "target/": "Maven's output, rebuilt by every compile and test the recipe runs (D73: not in the key)",
-    ".flattened-pom.xml": "Maven's derived file, rebuilt from the pom by every build",
-    "*.sqlite3": "an event log a service writes at run time; no check reads it",
-    "*.sqlite3-wal": "an event log a service writes at run time; no check reads it",
-    "*.sqlite3-shm": "an event log a service writes at run time; no check reads it",
-    "infra/**/.terraform/": "`tofu init`'s provider cache, run by `make deploy`, not by the gate",
-    "infra/**/*.tfplan": "a plan `make deploy` writes, not read by the gate",
-    "infra/**/terraform.tfstate.backup": "state `make deploy` writes, not read by the gate",
-}
-# Ignore lines the stamp's list holds in a form of its own, not by the line's own text: the line and the entry.
-LISTED_AS = {
-    "node_modules/": "node_modules/.package-lock.json",
-    "scripts/event-model/node_modules/": "scripts/event-model/node_modules/.package-lock.json",
-    ".codegraph/": ".codegraph/codegraph.db",
+# Where a probe for an entry that matches at any depth is put: the places the factory's ignore lines are anchored.
+PLACES = ("", "apps/service/", "apps/web/", "packages/x/", "infra/stack/")
+# Exempt entries no generated ignore line has: the caches a gate's own tools write, which the factory does not list.
+NOT_GENERATED = {
+    ".mypy_cache/": "`mypy` in `typecheck`",
+    ".coverage": "`coverage` beside `pytest`",
+    "*.tsbuildinfo": "`tsc` incremental builds",
 }
 
+
 def _reads(script: str, *literals: str) -> dict[str, str]:
-    return {f"{script}: reads the ignored path {literal}, which is not on the list": "" for literal in literals}
+    return {READ.format(label=script, literal=literal): "" for literal in literals}
 
 
 def _variables(script: str, *names: str) -> dict[str, str]:
@@ -220,13 +183,13 @@ class GateScriptsTest(FactoryTestCase):
             _projects[name] = self.generate(directory, name, profile, backend, frontend, **axes)
         return _projects[name]
 
-    def lists(self) -> tuple[tuple[str, ...], set[str]]:
+    def lists(self) -> tuple[ModuleType, set[str]]:
         script = load_script(template())
-        return tuple(script.IGNORED_INPUTS), set(script.VARIABLES) | set(script.UNKEYED_VARIABLES) | set(CI_MARKERS)
+        return script, set(script.VARIABLES) | set(script.UNKEYED_VARIABLES) | set(CI_MARKERS)
 
     def raw(self, project: Path, scripts: list[Path]) -> list[str]:
-        entries, variables = self.lists()
-        return unlisted(scripts, project, (project / ".gitignore").read_text(encoding="utf-8"), entries, variables)
+        script, variables = self.lists()
+        return unlisted(scripts, project, script, variables)
 
     def findings(self, project: Path, scripts: list[Path]) -> list[str]:
         return [found for found in self.raw(project, scripts) if found not in EXPLAINED]
@@ -275,7 +238,7 @@ class GateScriptsTest(FactoryTestCase):
                     finally:
                         path.write_text(original, encoding="utf-8")
                     self.assertEqual(found, [
-                        f"{label}: reads the ignored path .specify-tools/state.json, which is not on the list",
+                        READ.format(label=label, literal=".specify-tools/state.json"),
                         f"{label}: reads the variable A_NEW_SWITCH, which is on neither list",
                     ])
 
@@ -296,17 +259,54 @@ class GateScriptsTest(FactoryTestCase):
             (project / "scripts" / "helper_for_it.py").unlink()
         self.assertLessEqual({"check-new-thing.py", "helper_for_it.py"}, names)
 
-    def test_every_ignore_line_a_project_can_get_is_an_input_or_names_why_it_is_not(self) -> None:
-        """T017: the lines of each shape's `.gitignore`, and the extensions' (which every project carries)."""
-        entries, _ = self.lists()
+    def generated_lines(self) -> list[str]:
+        """The lines of each shape's `.gitignore`, and the extensions' (which every project carries)."""
         seen: set[str] = set()
         for shape in SHAPES:
-            project = self.project(shape)
-            seen.update(ignored_patterns((project / ".gitignore").read_text(encoding="utf-8")))
-        for pattern in sorted(seen):
-            with self.subTest(line=pattern):
-                bare = pattern.lstrip("/").rstrip("/")
-                listed = any(entry.rstrip("/") == bare for entry in entries) or LISTED_AS.get(pattern) in entries
-                self.assertTrue(listed or pattern in NOT_INPUTS, f"{pattern} is neither listed nor named with a reason")
-                self.assertFalse(listed and pattern in NOT_INPUTS, f"{pattern} is both an input and exempt")
-        self.assertEqual(sorted(set(NOT_INPUTS) - seen), [], "a reason for a line no shape has any more")
+            seen.update(ignored_patterns((self.project(shape) / ".gitignore").read_text(encoding="utf-8")))
+        return sorted(seen)
+
+    def moves_the_key(self, probe: str) -> bool:
+        """Whether an ignored file at `probe` moves the key of a copy of the fixture project."""
+        scratch = Path(tempfile.mkdtemp(prefix="stamp-line-"))
+        self.addCleanup(shutil.rmtree, scratch, ignore_errors=True)
+        repo = scratch / "project"
+        shutil.copytree(template(), repo, symlinks=True)
+        exclude(repo, probe)
+        before = key_of(repo)
+        (repo / probe).parent.mkdir(parents=True, exist_ok=True)
+        (repo / probe).write_text("one\n", encoding="utf-8")
+        return key_of(repo) != before
+
+    def test_every_ignore_line_a_project_can_get_is_left_out_with_a_reason_or_is_in_the_key(self) -> None:
+        """AC-S03-32, direction one: a line's own path is either under an exempt entry, which has one of the three
+        reasons, or a file there moves the key."""
+        script, _ = self.lists()
+        lines = self.generated_lines()
+        self.assertGreater(len(lines), 40)
+        for line in lines:
+            with self.subTest(line=line):
+                probe = probe_path(line)
+                entry = script.exempt_entry(probe)
+                if entry is not None:
+                    self.assertIn(entry[1], script.REASONS, f"{line}: {entry[0]} has no reason")
+                    self.assertFalse(self.moves_the_key(probe), f"{probe} is exempt by {entry[0]} and moved the key")
+                else:
+                    self.assertTrue(self.moves_the_key(probe), f"{probe} is covered and did not move the key")
+
+    def test_every_exempt_entry_is_an_ignore_line_a_project_gets_or_names_why_not(self) -> None:
+        """AC-S03-32, direction two: nothing is left out of the key that no project's ignore lines mention, unless
+        the table above names the tool that writes it; and that table holds no entry the list lost."""
+        script, _ = self.lists()
+        scratch = Path(tempfile.mkdtemp(prefix="stamp-lines-"))
+        self.addCleanup(shutil.rmtree, scratch, ignore_errors=True)
+        subprocess.run(["git", "init", "-q", str(scratch)], check=True)
+        (scratch / ".gitignore").write_text("".join(line + "\n" for line in self.generated_lines()), encoding="utf-8")
+        unmatched = set()
+        for entry, _, _ in script.EXEMPT:
+            probes = [probe_path(entry, under) for under in PLACES]
+            ignored = [subprocess.run(["git", "check-ignore", "-q", "--", probe], cwd=scratch, check=False)
+                       .returncode == 0 for probe in probes]
+            if not any(ignored):
+                unmatched.add(entry)
+        self.assertEqual(sorted(unmatched), sorted(NOT_GENERATED))

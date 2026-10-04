@@ -8,17 +8,19 @@ file under the git directory, never in the working tree, holding the key the tre
 here can fail the gate: `reuse` exits 0 only after printing its line, and `record` always exits 0.
 
 The key is one SHA-256 over named parts, each a digest of its own so the stamp can show them apart. It starts the
-way a tree is judged — every file git tracks and every file it does not ignore, by raw bytes, executable bit and a
+way a tree is judged — every file git tracks and every file it does not ignore, for the whole repository, and every
+file under the project's directory that git ignores except a closed exempt list, by raw bytes, executable bit and a
 link's target, read from the working tree through no filter, and the index's entries — where the checkout stands
-in its repository: `HEAD`, every branch and remote ref, the shallow boundary — and, as a part of its own, the
-`Makefile` and the scripts the gate runs from. The parts a later rule adds are named where they join.
+in its repository: `HEAD`, every ref git lists, the shallow boundary and the repository's configuration — and, as a
+part of its own, the `Makefile` and the scripts the gate runs from. The parts a later rule adds are named where they
+join.
 
 Starts on any `python3`: nothing here is newer than the syntax the gate's `check-python` message is printed from,
 and an interpreter older than 3.10 answers "no stamp" before it reads anything.
 """
 from __future__ import annotations
 
-import glob
+import fnmatch
 import hashlib
 import importlib.util
 import json
@@ -35,79 +37,78 @@ import time
 # The stamp's fields: the key a later run compares, the three parts it is made of, the instant of the pass, and
 # the result, which is only ever a pass.
 FIELDS = ("key", "tree", "scripts", "tools", "passed", "result")
-# The two closed lists. What a check reads that git ignores and the gate does not rebuild from the tree, by its bytes
-# (absence is a value); and the variables a check reads that can change its answer, by value (unset is not empty).
-# A test fails when a script the gate runs (every one a `verify-checks` recipe launches, and what it imports) reads an ignored path or a variable that is on neither list. A directory
-# is every file under it; a `*` is one level of names.
-IGNORED_INPUTS: tuple[str, ...] = (
-    # the code index `check-codegraph` opens, and the write-ahead file beside it — never `gate-memory.json`, which is
-    # that check's memo of itself and is written by every pass
-    ".codegraph/codegraph.db",
-    ".codegraph/codegraph.db-wal",
-    # the installed UX-gates kit and the installed ui-ux-pro-max skill: ignored, pinned by the extension that
-    # installs them, and read by `check-ux-gates` and `check-speckit`
-    "tools/ux-gates/",
-    "skills/ui-ux-pro-max/",
-    # a project's tests may read it, though no gate script does
-    ".env",
-    # what the gate installs beside the checkout for `check-model`, which puts it first on `sys.path` and imports `yaml`
-    # from it — installed only on an `ImportError`, never from a lock on every run
-    ".delivery-tools/",
-    # the slots a Spec Kit command writes through, which `check-slice-scope` refuses a regular file at
-    "specs/*/plan.md",
-    "specs/*/research.md",
-    "specs/*/data-model.md",
-    "specs/*/quickstart.md",
-    "specs/*/tasks.md",
-    # what npm says is installed, where the recipe installs only when the lock is newer (`node_modules`) or with
-    # `npm install` (the model tooling) rather than from the lock on every run; Python's `uv sync --locked` runs on
-    # every run, so `.venv` is outside, with its interpreter's version in the tools
-    "node_modules/.package-lock.json",
-    "scripts/event-model/node_modules/.package-lock.json",
-) + (
-    # every harness projection directory `scripts/agents/registry.json` names, which `check-agents` and
-    # `check-speckit` compare with their sources
-    ".agents/skills/",
-    ".alquimia/skills/",
-    ".agents/commands/",
-    ".augment/commands/",
-    ".bob/skills/",
-    ".bob/commands/",
-    ".claude/skills/",
-    ".claude/commands/",
-    ".claude/agents/",
-    ".clinerules/workflows/",
-    ".codebuddy/commands/",
-    ".codex/agents/",
-    ".github/skills/",
-    ".github/agents/",
-    ".cursor/skills/",
-    ".cursor/agents/",
-    ".devin/skills/",
-    ".factory/skills/",
-    ".firebender/commands/",
-    ".forge/commands/",
-    ".gemini/commands/",
-    ".gemini/agents/",
-    ".goose/recipes/",
-    ".grok/skills/",
-    ".junie/commands/",
-    ".kilo/commands/",
-    ".kimi-code/skills/",
-    ".kiro/prompts/",
-    ".lingma/skills/",
-    ".omp/commands/",
-    ".opencode/commands/",
-    ".opencode/agents/",
-    ".pi/prompts/",
-    ".qoder/commands/",
-    ".qwen/commands/",
-    ".rovodev/skills/",
-    ".shai/commands/",
-    ".tabnine/agent/commands/",
-    ".trae/skills/",
-    ".vibe/skills/",
-    ".zcode/skills/",
+# The two closed lists. What the key leaves out of the files under the project that git ignores, each entry with the
+# reason it is left out; and the variables a check reads that can change its answer, by value (unset is not empty).
+# Everything else under the project's directory is in the key by its bytes, whatever makes git ignore it — a committed
+# pattern, `.git/info/exclude`, a user's excludes file — and an ignored directory nobody listed is hashed whole. A
+# test fails when a check script reads a path under an entry outside its exceptions. An entry is a name that matches
+# at any depth (`__pycache__/` a directory, `*.pyc` a file) or, with a `/` inside it, a path from the project's
+# directory; a `*` is one level of names. Its exceptions are paths inside the directory it matches that stay in the key.
+REBUILT = "rebuilt"
+CACHE = "cache"
+RECORD = "record"
+REASONS = {
+    REBUILT: "the gate's own recipe rebuilds it from a committed lock or source on every run",
+    CACHE: "a cache or an output a tool writes, which no check reads as an input",
+    RECORD: "a record the gate or the runner writes about itself",
+}
+EXEMPT: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    # `uv sync --locked` runs before every phase; the interpreter's version is in the tools
+    (".venv/", REBUILT, ()),
+    # `build-packages`, a prerequisite of lint, typecheck and test, rebuilds the packages' output and the typed client
+    ("dist/", REBUILT, ()),
+    ("packages/api-client/src/schema.ts", REBUILT, ()),
+    # the recipe's `go test` writes it just before `go-coverage.py` reads it; Maven's output is rebuilt by every
+    # compile and test the recipe runs, and the flattened pom by every build
+    ("coverage.out", REBUILT, ()),
+    ("target/", REBUILT, ()),
+    (".flattened-pom.xml", REBUILT, ()),
+    # bytecode and the tools' caches: nothing a source does not say
+    ("__pycache__/", CACHE, ()),
+    ("*.pyc", CACHE, ()),
+    (".pytest_cache/", CACHE, ()),
+    (".ruff_cache/", CACHE, ()),
+    (".mypy_cache/", CACHE, ()),
+    (".coverage", CACHE, ()),
+    ("*.tsbuildinfo", CACHE, ()),
+    ("coverage/", CACHE, ()),
+    # what npm installs, which the recipe installs only when the lock is newer: the manifest npm wrote of what is
+    # installed stays in the key, and `check-model` reads nothing else of it
+    ("node_modules/", CACHE, (".package-lock.json",)),
+    # written by `make build`, `make mutation` and `make deploy`, which the gate does not run
+    (".build/", CACHE, ()),
+    ("apps/*/requirements.txt", CACHE, ()),
+    ("gremlins.json", CACHE, ()),
+    (".terraform/", CACHE, ()),
+    ("*.tfplan", CACHE, ()),
+    ("terraform.tfstate.backup", CACHE, ()),
+    # the data a service writes at run time, the Spec Kit installer's tooling, and what `make model` renders (the gate
+    # reads `model.yaml` and the committed `model.drawio`)
+    ("*.sqlite3", CACHE, ()),
+    ("*.sqlite3-wal", CACHE, ()),
+    ("*.sqlite3-shm", CACHE, ()),
+    (".specify-tools/", CACHE, ()),
+    ("scripts/event-model/.mermaid-cli/", CACHE, ()),
+    ("docs/event-model/model.mmd", CACHE, ()),
+    ("docs/event-model/model.svg", CACHE, ()),
+    ("docs/event-model/model.png", CACHE, ()),
+    ("docs/event-model/model.html", CACHE, ()),
+    ("docs/event-model/slices/", CACHE, ()),
+    ("docs/event-model/segments/", CACHE, ()),
+    # the code index's own files, of which `check-codegraph` reads the database and the write-ahead file beside it and
+    # writes `gate-memory.json`, its memo of itself, on every pass
+    (".codegraph/", RECORD, ("codegraph.db", "codegraph.db-wal")),
+    # what a factory command leaves for a person, and the state of `/cruise`, which only its runner reads
+    (".slipwai/catch-up.md", RECORD, ()),
+    ("specs/cruise-checkpoint.md", RECORD, ()),
+    (".specify/cruise.stop", RECORD, ()),
+    (".specify/cruise.pid", RECORD, ()),
+    (".specify/cruise-run.log", RECORD, ()),
+    (".specify/cruise-stream.jsonl", RECORD, ()),
+    (".specify/cruise-watch.cursor", RECORD, ()),
+    (".specify/cruise-last-response.txt", RECORD, ()),
+    (".specify/cruise-inbox.jsonl", RECORD, ()),
+    (".specify/cruise-told.jsonl", RECORD, ()),
 )
 VARIABLES: tuple[str, ...] = (
     "UX_GATES_REQUIRE", "UX_GATES_SINCE", "UX_GATES_SHARD", "CODEGRAPH_GATE_NO_SYNC", "SLIPWAI_NO_INSTALL",
@@ -220,11 +221,21 @@ def shown(path: bytes | str) -> str:
     return "".join(char if char.isprintable() else char.encode("unicode_escape").decode("ascii") for char in text)
 
 
-def covered_files() -> list[bytes]:
-    """Every file the gate judges: tracked, and untracked where git does not ignore it, under this directory. An
-    untracked directory that is itself a repository is listed as one entry ending in `/`, and the files in it are
-    not listed: the key cannot vouch for them."""
-    listed = git("ls-files", "-z", "--cached", "--others", "--exclude-standard")
+def top_level() -> str:
+    """The repository's work tree, where git is asked about the whole of it."""
+    return os.fsdecode(git("rev-parse", "--show-toplevel").removesuffix(b"\n"))
+
+
+def project_prefix() -> bytes:
+    """Where this project sits in its repository, from the top, as git writes it: empty at the top, else ending in `/`."""
+    return git("rev-parse", "--show-prefix").removesuffix(b"\n")
+
+
+def covered_files(top: str) -> list[bytes]:
+    """Every file the gate judges that git lists, from the top of the whole repository: tracked, and untracked where git
+    does not ignore it. An untracked directory that is itself a repository is listed as one entry ending in `/`, and
+    the files in it are not listed: the key cannot vouch for them."""
+    listed = git("-C", top, "ls-files", "-z", "--cached", "--others", "--exclude-standard")
     paths = sorted(set(path for path in listed.split(b"\0") if path))
     for path in paths:
         if path.endswith(b"/"):
@@ -232,36 +243,38 @@ def covered_files() -> list[bytes]:
     return paths
 
 
-def index_problem() -> str | None:
+def index_problem(top: str) -> str | None:
     """Why the index cannot vouch for the working tree, or None: an entry marked `assume-unchanged` (git does not look
     at it) or `skip-worktree`, or a submodule (an entry of mode 160000, a repository the key does not read). `ls-files
     -v` tags an `assume-unchanged` entry with a lower-case letter and a `skip-worktree` one with `S`; both it and
     `--stage` read the index and never write it."""
-    marks = [(record[:1].decode("ascii", "replace"), record[2:]) for record in git("ls-files", "-v", "-z").split(b"\0")
-             if record]
+    marks = [(record[:1].decode("ascii", "replace"), record[2:]) for record in
+             git("-C", top, "ls-files", "-v", "-z").split(b"\0") if record]
     for tag, path in marks:
         if tag.islower():
             return shown(path) + " is marked assume-unchanged, so git does not look at it"
     for tag, path in marks:
         if tag == "S":
             return shown(path) + " is marked skip-worktree, so git does not look at it"
-    for record in index_entries().split(b"\0"):
+    for record in index_entries(top).split(b"\0"):
         if record.startswith(b"160000 "):
             return shown(record.partition(b"\t")[2]) + " is a submodule (an index entry of mode 160000)"
     return None
 
 
-def file_record(path: bytes) -> bytes:
+def file_record(path: bytes, top: str) -> bytes:
     """One covered file as the key sees it, whatever it is: a regular file by its executable bit and the SHA-256 of
-    its raw bytes, a link by its target as written and never followed, a file that is not there as missing. Read with
-    `lstat` and `open`, through none of git's filters and none of its stat shortcuts."""
+    its raw bytes, a link by its target as written and never followed, a file that is not there as missing. `path` is
+    from the top of the repository, which is where it is read from, with `lstat` and `open`, through none of git's
+    filters and none of its stat shortcuts."""
+    place = os.path.join(os.fsencode(top), path)
     try:
-        status = os.lstat(path)
+        status = os.lstat(place)
         if stat.S_ISLNK(status.st_mode):
-            return path + b"\0link\0" + os.readlink(path)
+            return path + b"\0link\0" + os.readlink(place)
         if not stat.S_ISREG(status.st_mode):
             raise CannotTell(shown(path) + " is neither a file nor a link")
-        with open(path, "rb") as handle:
+        with open(place, "rb") as handle:
             content = hashlib.sha256(handle.read()).hexdigest().encode("ascii")
     except FileNotFoundError:
         return path + b"\0missing"
@@ -270,22 +283,74 @@ def file_record(path: bytes) -> bytes:
     return path + b"\0" + (b"exec" if status.st_mode & stat.S_IXUSR else b"file") + b"\0" + content
 
 
-def ignored_records(entry: str) -> list[bytes]:
-    """What an `IGNORED_INPUTS` entry holds now: a name with a `*` by every path it matches; a directory (an entry that
-    ends in `/`) by every file and link under it, none where it is absent; anything else as one file, where missing is
-    a record of its own. Nothing is followed, so a link is its target."""
-    if "*" in entry:
-        return [record for path in sorted(glob.glob(entry)) for record in ignored_records(path)]
-    path = entry.rstrip("/")
-    if os.path.islink(path) or (not entry.endswith("/") and not os.path.isdir(path)):
-        return [file_record(os.fsencode(path))]
-    if not os.path.isdir(path):
-        return []
+def directory_match(segments: list[str], names: list[str], directories: int) -> int | None:
+    """Where an entry's directory names end in a path whose first `directories` names are directories: after the first
+    directory that matches a lone name (at any depth), or after the leading names where there are several (from the
+    project's directory); None where they do not."""
+    if len(names) == 1:
+        for index in range(directories):
+            if fnmatch.fnmatchcase(segments[index], names[0]):
+                return index + 1
+        return None
+    if len(names) <= directories and all(fnmatch.fnmatchcase(seg, name) for seg, name in zip(segments, names)):
+        return len(names)
+    return None
+
+
+def exempt_entry(relative: str) -> tuple[str, str, tuple[str, ...]] | None:
+    """The `EXEMPT` entry that leaves the path out of the key, or None where it stays in: `relative` is from the
+    project's directory with `/` between names, and ends in `/` where it is a directory. A path that is one of an
+    entry's exceptions, or inside one, is not left out by that entry."""
+    segments = relative.rstrip("/").split("/")
+    is_directory = relative.endswith("/")
+    for entry in EXEMPT:
+        pattern, _, exceptions = entry
+        names = pattern.rstrip("/").split("/")
+        if pattern.endswith("/"):
+            end = directory_match(segments, names, len(segments) if is_directory else len(segments) - 1)
+            inside = segments[end:] if end is not None else []
+            if end is None or any(inside[: len(kept.split("/"))] == kept.split("/") for kept in exceptions):
+                continue
+            return entry
+        tail = segments[-1:] if len(names) == 1 else segments
+        if not is_directory and len(tail) == len(names) and all(
+                fnmatch.fnmatchcase(seg, name) for seg, name in zip(tail, names)):
+            return entry
+    return None
+
+
+def tree_records(path: str, top: str, prefix: bytes, listed: set[bytes]) -> list[bytes]:
+    """Every file and link under `path` (a name from the project's directory) that git does not list, by its record,
+    pruned where the exempt list says; nothing is followed, so a link is its target. A directory that is itself a
+    repository, outside the list, is a part of the key that cannot be read."""
+    project = os.path.join(top, os.fsdecode(prefix))
+    here = os.path.join(project, path) if path else project
     try:
-        names = sorted(os.listdir(path))
+        names = sorted(os.listdir(here))
     except OSError as error:
-        raise CannotTell("cannot read " + shown(path) + " (" + (error.strerror or str(error)) + ")")
-    return [record for name in names for record in ignored_records(os.path.join(path, name))]
+        raise CannotTell("cannot read " + shown(here) + " (" + (error.strerror or str(error)) + ")")
+    records: list[bytes] = []
+    for name in names:
+        relative = path + "/" + name if path else name
+        if not path and name == ".git":
+            continue
+        place = os.path.join(project, relative)
+        from_top = prefix + os.fsencode(relative)
+        if os.path.islink(place) or not os.path.isdir(place):
+            if from_top not in listed and exempt_entry(relative) is None:
+                records.append(file_record(from_top, top))
+            continue
+        entry = exempt_entry(relative + "/")
+        if entry is not None:
+            for exception in entry[2]:
+                kept = from_top + b"/" + os.fsencode(exception)
+                if os.path.lexists(os.path.join(place, exception)) and kept not in listed:
+                    records.append(file_record(kept, top))
+            continue
+        if os.path.lexists(os.path.join(place, ".git")):
+            raise CannotTell(shown(relative) + "/ is an ignored directory that is itself a repository")
+        records.extend(tree_records(relative, top, prefix, listed))
+    return records
 
 
 def variable_record(name: str) -> bytes:
@@ -294,25 +359,32 @@ def variable_record(name: str) -> bytes:
     return name.encode("utf-8") + (b"\0unset" if value is None else b"\0set\0" + os.fsencode(value))
 
 
-def index_entries() -> bytes:
-    """The index's entries — mode, blob id, stage, name — as `ls-files --stage` lists them, which reads the index
-    and never writes it."""
-    return git("ls-files", "-z", "--stage")
+def index_entries(top: str) -> bytes:
+    """The index's entries — mode, blob id, stage, name — as `ls-files --stage` lists them for the whole repository,
+    which reads the index and never writes it."""
+    return git("-C", top, "ls-files", "-z", "--stage")
+
+
+def file_bytes(path: str) -> bytes:
+    """What a file git names holds, or its absence, which is a value of its own."""
+    if os.path.exists(path):
+        with open(path, "rb") as handle:
+            return b"present\0" + handle.read()
+    return b"absent"
 
 
 def history_digest() -> str:
-    """Where the checkout stands in its repository: the branch `HEAD` names (nothing where it is detached) and the
-    commit it names (nothing on an unborn branch), every ref under `refs/heads` and `refs/remotes`, and the shallow
-    boundary — the bytes of the file git names for it, or their absence."""
-    refs = git("for-each-ref", "--format=%(objectname) %(refname)", "refs/heads", "refs/remotes")
-    shallow = git("rev-parse", "--git-path", "shallow").decode("utf-8").strip()
-    boundary = b"absent"
-    if os.path.exists(shallow):
-        with open(shallow, "rb") as handle:
-            boundary = b"present\0" + handle.read()
+    """Where the checkout stands in its repository, and how git is told to read it: the branch `HEAD` names (nothing
+    where it is detached) and the commit it names (nothing on an unborn branch), every ref git lists with what it names
+    — branches, remote-tracking refs, tags, replace refs, notes, the stash — the shallow boundary, and the bytes of
+    the repository's configuration file and the worktree's. Each is the bytes of the file git names for it, or their
+    absence."""
+    refs = git("for-each-ref", "--format=%(objectname) %(refname)")
+    named = [git("rev-parse", "--git-path", name).decode("utf-8", "surrogateescape").removesuffix("\n")
+             for name in ("shallow", "config", "config.worktree")]
     return digest([
         git_or_nothing("symbolic-ref", "-q", "HEAD"), git_or_nothing("rev-parse", "-q", "--verify", "HEAD"), refs,
-        boundary,
+        *[file_bytes(path) for path in named],
     ])
 
 
@@ -397,24 +469,29 @@ def machine_tools(options: Options) -> dict[str, str]:
 
 
 def is_gate_script(path: bytes) -> bool:
-    """The `Makefile` and everything covered under `scripts/`, at any depth: what the gate runs from."""
+    """The `Makefile` and everything covered under `scripts/`, at any depth: what the gate runs from. `path` is from the
+    project's directory."""
     return path == b"Makefile" or path.startswith(b"scripts/")
 
 
 def key_parts(tools: dict[str, str]) -> tuple[dict[str, object], dict[str, str]]:
     """The key and the digests it is made of, so a run can say which part moved. Each part of the stamp is a digest of
-    its own, so the stamp shows them apart: `tree` is every covered file, the index, the history, the ignored inputs
-    and the variables; `scripts` is the covered files the gate runs from, which `tree` holds as well. Each covered file
-    is read once. `tools` is what the machine reported, asked once per run. The second value is what `reuse` keeps for
-    `record`: digests of the parts, never a name of a file."""
-    records = [(path, file_record(path)) for path in covered_files()]
-    ignored = digest([record for entry in IGNORED_INPUTS for record in [entry.encode("utf-8")] + ignored_records(entry)])
+    its own, so the stamp shows them apart: `tree` is every file git lists for the whole repository, every file under
+    the project's directory that git ignores except what the exempt list leaves out, the index, the history and the
+    variables; `scripts` is the covered files the gate runs from, which `tree` holds as well. Each file is read once.
+    `tools` is what the machine reported, asked once per run. The second value is what `reuse` keeps for `record`:
+    digests of the parts, never a name of a file."""
+    top, prefix = top_level(), project_prefix()
+    listed = covered_files(top)
+    records = [(path, file_record(path, top)) for path in listed]
+    ignored = digest(tree_records("", top, prefix, set(listed)))
     variables = digest([variable_record(name) for name in VARIABLES])
-    index, history = index_entries(), history_digest()
+    index, history = index_entries(top), history_digest()
     parts = {
         "history": history, "index": digest([index]), "ignored": ignored, "variables": variables,
         "files": digest([record for _, record in records]),
-        "scripts": digest([record for path, record in records if is_gate_script(path)]),
+        "scripts": digest([record for path, record in records
+                           if path.startswith(prefix) and is_gate_script(path[len(prefix):])]),
     }
     tree = digest(
         [history.encode("ascii"), index, ignored.encode("ascii"), variables.encode("ascii")]
@@ -624,7 +701,7 @@ def reuse(options: Options) -> int:
             # `-i`: the checks run and may fail with the run still exiting 0, so no stamp may stand to be reused
             # afterwards; this run records nothing (`record` declines it too)
             return begin_full_run({NOTHING: True})
-        problem = index_problem()
+        problem = index_problem(top_level())
         if problem is not None:
             raise CannotTell(problem)
         key, parts = key_parts(machine_tools(options))
@@ -648,9 +725,10 @@ def not_recorded(reason: str) -> int:
 # The parts of the key a pass can find moved, in the order they are told, and how a person is told each.
 PARTS = (
     ("scripts", "the Makefile or a script under scripts/"), ("files", "a file"), ("index", "the index"),
-    ("history", "a branch or the history"), ("ignored", "an ignored input"), ("variables", "a variable a check reads"),
+    ("history", "a branch or the history"), ("ignored", "a file git ignores"), ("variables", "a variable a check reads"),
 )
 WRITTEN = " — a check may have written one; `git status` shows it, and the next run records"
+WRITTEN_IGNORED = " — a check may have written one; `git status --ignored` shows it, and the next run records"
 
 
 def moved(before: object, after: dict[str, str]) -> str:
@@ -663,7 +741,8 @@ def moved(before: object, after: dict[str, str]) -> str:
     said = ", ".join(words for name, words in PARTS if name in names)
     if not said:
         return "the key changed while the checks ran"
-    return said + " changed while the checks ran" + (WRITTEN if {"files", "scripts"} & set(names) else "")
+    advice = WRITTEN_IGNORED if "ignored" in names else WRITTEN if {"files", "scripts"} & set(names) else ""
+    return said + " changed while the checks ran" + advice
 
 
 def why_no_note() -> str | None:

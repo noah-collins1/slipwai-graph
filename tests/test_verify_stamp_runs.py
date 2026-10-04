@@ -11,7 +11,7 @@ import subprocess
 import threading
 from pathlib import Path
 
-from stamp_fixture import CLOSING, StampTestCase
+from stamp_fixture import CLOSING, StampTestCase, exclude
 
 NOT_RECORDED = "not recorded"
 
@@ -126,6 +126,18 @@ class RunsTest(StampTestCase):
         again = self.run_gate()
         self.assertEqual(self.not_recorded(again), [])
         self.assertIsNotNone(self.stamp_path(), "the next run did not record")
+
+    def test_the_line_for_a_file_git_ignores_that_a_check_wrote_names_that_part(self) -> None:
+        """e11 (D83 item 1): an ignored file is its own part of the key; `git status --ignored` is what shows it."""
+        exclude(self.repo, "scratch_out.txt")
+        run = self.run_gate({"STANDIN_EDIT": "scratch_out.txt"})
+        lines = self.not_recorded(run)
+        self.assertEqual(len(lines), 1, run.stdout)
+        self.assertIn("a file git ignores changed while the checks ran", lines[0])
+        self.assertIn("a check may have written one", lines[0])
+        self.assertIn("git status --ignored", lines[0])
+        self.assertNotIn("scratch_out.txt", lines[0])
+        self.assertIsNone(self.stamp_path())
 
     def test_the_line_for_a_gate_script_a_check_wrote_says_so(self) -> None:
         """e11 (T034): the part is named — the `Makefile` and `scripts/`, which are the gate."""
