@@ -201,7 +201,7 @@ scripts/event-model/node_modules/.package-lock.json: scripts/event-model/package
 	@touch scripts/event-model/node_modules/.package-lock.json
 	$(eval MODEL_INSTALLED := yes)
 check-drawio: scripts/event-model/node_modules/.package-lock.json ## …
-	@$(if $(MODEL_INSTALLED),true,echo 'check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled')
+	@$(if $(MODEL_INSTALLED),true,echo 'check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled')
 	node … render-drawio.ts --check
 ```
 
@@ -246,3 +246,14 @@ None.
 ## Complexity Tracking
 
 Empty.
+
+## What changed after this plan was written
+
+The plan above is as the plan stage left it, with the skip line's words brought up to date. Where the slice ended
+elsewhere, the decisions say why and `tasks.md` says what landed: the model tooling's marker is a file of the recipe's own,
+`scripts/event-model/node_modules/.installed`, and `install` names it (D93, D96); the install is spelled `npm --prefix
+scripts/event-model ci`; the gate-only order is read only from make's command line (`$(origin VERIFY_ORDER)`), and Go's is
+`typecheck test: lint` (D96); the two install markers wait for `check-python` by an order-only prerequisite inside that
+guard, and `check-ux-gates` and a TypeScript `check-openapi` wait for `build-packages` (D96); the adopted directive sits
+inside `ifeq ($(words $(MAKEFILE_LIST)),1)` (D95); `VERIFY_GROUP` is defined with `override` and the skip line says what
+make compared (D97).

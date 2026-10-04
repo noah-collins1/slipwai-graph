@@ -962,7 +962,7 @@ and `specs/001-faster-slipwai/adversary-log.md` carries the table.
 
 ### T023 — `MEDIUM` — What D97 fixes: the grouping variable cannot be overridden, the skip line says what make compared, and the page, the README and the catch-up say what the adversary found unsaid (A1, A3, A5, B1, B2, B4 · AC-S04-48, -55, -60, -82 to -85)
 
-- [ ] Two cycles of code, then words and holds. (1) A1: `override VERIFY_GROUP := …` in `STAMPED`, red first through
+- [x] *(3a6b102, dbe127f, babd4a6, 2a6ec85: `override VERIFY_GROUP`, red first on a stamped red tree; the skip line's new words; the page's three sentences, the README's way out, the fragment's `-k` exception and the catch-up's ignored-lock sentence; AC-S04-83 held on Go and Quarkus with teeth; AC-S04-85 held through `.git/info/exclude`, its teeth not shown since `migrate.py` is outside the task)* Two cycles of code, then words and holds. (1) A1: `override VERIFY_GROUP := …` in `STAMPED`, red first through
   AC-S04-82. (2) B2: `SKIPPED` becomes `check-drawio: scripts/event-model/package-lock.json is not newer than the
   installed model tooling; not reinstalled`, red first through the tests that quote the line. (3) Words, each red first
   through the sentence a test holds: `PAGE` gains D97's three sentences (items 3, 5, 6); the model's README gains the way
