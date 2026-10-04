@@ -76,7 +76,8 @@ there is a base, what was compared is said: the pass line and the refusal header
 or the `master` clause below. Where there is none, the no-base line below says so instead. A recorded name that has
 a ref and shares no history with the branch is passed over for the next name, and said so; a pull-request target
 that does is no base at all. Where the target's base won over the trunk's, the line names the target and says the
-pull request targets it.
+pull request targets it — and it wins as well where the trunk's base and the target's share no history, so on a
+pull request the commit compared with is always the target's base or an ancestor of it.
 
 Where `project.json` records no usable trunk, `main` and `master` both have refs, and `master`'s base is strictly
 newer than `main`'s, the same line and header add that `master` is here too and `project.json` records no trunk,
@@ -384,13 +385,15 @@ def target_name() -> str | None:
 
 def older_of(first: str, second: str | None) -> str:
     """Across two names the older base: the one that is an ancestor of the other, else where the two histories
-    meet, else the first — the target can only move the base back."""
+    meet, else the second — the pull request's target, which the branch did not choose. The target can only move
+    the base back, so the commit compared with is always the target's base or an ancestor of it (D87, F1): where
+    a name the branch chose shares no history with the target, the target's base stands."""
     if second is None or second == first or is_ancestor(first, second):
         return first
     if is_ancestor(second, first):
         return second
     found = git("merge-base", first, second)
-    return found.strip() if found and found.strip() else first
+    return found.strip() if found and found.strip() else second
 
 
 def usable(value: object) -> str | None:
