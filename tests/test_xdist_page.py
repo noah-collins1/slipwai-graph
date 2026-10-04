@@ -72,6 +72,33 @@ class TheGatesPageSaysWhatTheMarkDoes(FactoryTestCase):
             for sentence in RUNNERS.values():
                 self.assertEqual(page.count(sentence), 1, sentence)
 
+    def test_a_project_with_no_python_service_says_what_the_mark_does_and_that_it_does_nothing_yet(self) -> None:
+        """G1 (D105): the key is written whatever the backend, so the page says one sentence of it."""
+        for backend in CATALOG["backends"]:
+            if FAMILY[backend] == "python":
+                continue
+            with self.subTest(backend=backend), tempfile.TemporaryDirectory() as parent:
+                page = self.page(parent, backend)
+                self.assertIn("`\"parallelSafe\": true`", page)
+                self.assertIn("changes nothing until a Python service is added", page)
+                self.assertNotIn("The other runners", page)
+
+    def test_a_python_project_with_another_backend_still_says_the_other_runners(self) -> None:
+        with tempfile.TemporaryDirectory() as parent:
+            repo = self.generate(parent, "shop", language="python")
+            added = subprocess.run([str(ROOT / "slipwai"), "add-service", "second", "--language", "go"],
+                                   cwd=repo, capture_output=True, text=True, timeout=120)
+            self.assertEqual(added.returncode, 0, added.stderr)
+            page = squashed((repo / "docs/gates.md").read_text(encoding="utf-8"))
+            self.assertIn("The other runners", page)
+            self.assertNotIn("changes nothing until a Python service is added", page)
+
+    def test_the_sentence_on_false_says_the_mark_needs_the_plugin(self) -> None:
+        """G3 (D105): a service that removed `pytest-xdist` fails on an argument error, so say what the mark needs."""
+        with tempfile.TemporaryDirectory() as parent:
+            page = self.page(parent, "python")
+            self.assertIn("needs `pytest-xdist` in each Python service's development tools", page)
+
     def test_hold_an_adopted_repositorys_page_gains_nothing_about_a_stamp(self) -> None:
         """A hold: the adopted page may carry the mark's words, never the stamp's."""
         with tempfile.TemporaryDirectory() as directory:
@@ -114,5 +141,5 @@ class TheFragmentsCatchUpNoteStandsAlone(FactoryTestCase):
         """T015: a project with a dependency of its own meets a conflict on `uv.lock`."""
         note = self.paragraph()
         for words in ("apps/<service>/uv.lock", "either side", "uv lock --project apps/<service>", "git add",
-                      "commit", "once by hand", "dev dependency of its own"):
+                      "commit", "once by hand", "a dependency of its own, dev or not"):
             self.assertIn(words, note)

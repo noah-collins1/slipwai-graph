@@ -17,7 +17,12 @@ which every new project has, adds `{FLAGS}` (`pytest-xdist`, capped at four work
 and so is `false`, or a file the gate cannot read: a project made before the mark existed has none, and `slipwai migrate` never adds
 one. Only the JSON `true` turns it on (a string `"true"` is serial), and a mark written twice is serial, because the gate cannot
 tell which copy is meant: add the line `"parallelSafe": true` once, right after the `"target"` line, where `generate` writes it. The gate reads the mark each time it runs, so a change takes effect on the next run with nothing regenerated. Set it `false`
-when the tests share a file, a port, a database or module-level state, which a second worker would trip over.
+when the tests share a file, a port, a database or module-level state, which a second worker would trip over. The mark needs `pytest-xdist`
+in each Python service's development tools, which every service has; a service that removed it fails on an argument error until it is back.
+"""
+
+# A project with no Python service carries the key too, because `add-service` can bring one later.
+NO_PYTHON = """`project.json` carries `"parallelSafe": true`: it runs a Python service's tests across cores. It changes nothing until a Python service is added.
 """
 
 # What each family's runner does with the tests the gate hands it, whatever the mark says: no backend's command changes.
@@ -35,7 +40,10 @@ def parallel_tests_page(apps: list[App]) -> str:
     none of them — an adopted repository's applications are not the factory's, so its page gains nothing."""
     backends = backends_of(apps)
     runners = list(dict.fromkeys(RUNNERS[backend] for backend in backends if backend in RUNNERS))
-    parts = ([MARK] if "python" in backends else []) + (
-        ["The other runners need no mark and run as they always have. " + " ".join(runners) + "\n"] if runners else []
+    python = "python" in backends
+    lead = ("The other runners need no mark and run as they always have. " if python
+            else "Each runner here needs no mark and runs as it always has. ")
+    parts = ([MARK] if python else [NO_PYTHON] if runners else []) + (
+        [lead + " ".join(runners) + "\n"] if runners else []
     )
     return "\n" + "\n".join(parts) if parts else ""
