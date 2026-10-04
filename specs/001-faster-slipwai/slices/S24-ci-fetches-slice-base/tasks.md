@@ -88,7 +88,7 @@ T008 follows T002, T003 and T004.
 
 ### T002 — [P] A generated project's `verify` job fetches history, and nothing else does (R1 · AC-S24-1)
 
-- [ ] **Rule R1.** **The first commit that changes a user-visible tree, so the fragment lands in it.**
+- [x] **Rule R1.** **The first commit that changes a user-visible tree, so the fragment lands in it.**
 
 **RED** (new `tests/test_ci_fetch_generated.py`; generate through the same entry points the neighbouring generator
 tests use, and read the files back; never edit an existing test). Each fails today because the `verify` job's checkout
@@ -127,7 +127,7 @@ then `make lint typecheck check-structure`. `VERSION` untouched. Commit by path,
 
 ### T003 — [P] The adopted gate fetches history, on both forges (R2 · AC-S24-2, -3)
 
-- [ ] **Rule R2.** Disjoint from T002 and T004 by manifest; its commit lands after T002's.
+- [x] **Rule R2.** Disjoint from T002 and T004 by manifest; its commit lands after T002's.
 
 **RED** (new `tests/test_ci_fetch_adopted.py`; adopt a temporary git repository through the CLI, with the helpers
 `tests/test_adopt.py` already has — `repository()` and `slipwai()` — or a local copy; no import of another test
@@ -157,7 +157,7 @@ T002's.
 
 ### T004 — [P] In a forge's checkout, no base is a failure (R4, with R6 and the docstring of R7 · AC-S24-5, -6, -7, -9, -12, -13)
 
-- [ ] **Rule R4.** R6 (a developer's checkout is untouched; the suite is green under CI's markers) is **folded in
+- [x] **Rule R4.** R6 (a developer's checkout is untouched; the suite is green under CI's markers) is **folded in
   here**: its proofs are behaviour this task changes and guards, and a task of their own would write tests that pass
   the moment they are written. The docstring of `check-slice-scope.py` (R7e3) is folded in because it is the same
   file as the change. Disjoint from T002, T003 and T005 by manifest.
@@ -216,7 +216,7 @@ T002's.
 
 ### T005 — [P] On the checkout the workflow now makes, a slice is held (R3, and the helper · AC-S24-4)
 
-- [ ] **Rule R3.** This task **owns `tests/forge_checkout.py`** — it is the first and only task to write it; T006 uses
+- [x] **Rule R3.** This task **owns `tests/forge_checkout.py`** — it is the first and only task to write it; T006 uses
   it and comes after. A hold: every example is green today, since the slice changes no line R3 reads. Disjoint from
   T002, T003 and T004 by manifest. The plan's `tests/test_slice_scope_forge.py` held R3 and R4 together; it is split
   — R3 here as `tests/test_slice_scope_forge.py`, R4's examples in T004's `tests/test_slice_scope_forge_nobase.py` —
@@ -255,7 +255,7 @@ path; level line (tests only: reaches no user, number not raised).
 
 ### T006 — [P] With history, the two other gates answer as on a full clone (R5 · AC-S24-8)
 
-- [ ] **Rule R5.** **Uses `tests/forge_checkout.py`, so it needs T005 committed first.** All holds: the slice changes
+- [x] **Rule R5.** **Uses `tests/forge_checkout.py`, so it needs T005 committed first.** All holds: the slice changes
   no line of the three scripts. Disjoint from T002, T003 and T004 by manifest (it runs the shipped scripts and does
   not write them), so it may run beside them once T005 is in.
 
@@ -286,7 +286,7 @@ the test expects exit 1) and with one assertion inverted, observed failing, rest
 
 ### T007 — The sweep for the old words is finished (R7e3, AC-S24-12) — host decision, delegate only if T004 reports a page
 
-- [ ] **Not a task unless T004's report names a page outside its manifest** that still says a CI checkout is depth 1,
+- [x] *(ticked on T004's report: its search of `docs/`, `assets/` and `src/slipwai/` found no page that says the old answer; the one test file outside its manifest, `tests/test_slice_scope_report.py`, was edited by the host in T004's commit `ec599fc`; no commit of its own)* **Not a task unless T004's report names a page outside its manifest** that still says a CI checkout is depth 1,
   that the slice is not checked there, or that a maintainer adds the key by hand. If it does, the host adds that page
   to this task's manifest, and the increment is: the page says what is true (RED: a `grep`-style assertion in the
   page's own test where one exists, otherwise by search); if it does not, the host ticks this task on T004's report
@@ -296,7 +296,7 @@ the test expects exit 1) and with one assertion inverted, observed failing, rest
 
 ### T008 — The release says what it is (R7 · AC-S24-10, -11)
 
-- [ ] **Rule R7.** Needs T002, T003, T004 (it states what they landed). The fragment began in T002; this task
+- [x] *(host, current context — two fragments of prose; e4 is followed by the hand at the demo, quickstart step 4)* **Rule R7.** Needs T002, T003, T004 (it states what they landed). The fragment began in T002; this task
   completes its wording against the final behaviour and edits the second fragment.
 
 **RED:** `tests/test_changelog.py` is in the suite and passes from T002. The checks, written as checks:
