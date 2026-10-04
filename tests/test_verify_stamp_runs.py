@@ -112,6 +112,51 @@ class RunsTest(StampTestCase):
         self.assertEqual(len(self.not_recorded(run)), 1, run.stdout)
         self.assertIsNone(self.stamp_path())
 
+    def test_the_line_for_a_file_a_check_wrote_says_which_part_moved_and_what_to_do(self) -> None:
+        """e11 (T034, D81): the files; a check may have written one, `git status` shows it, the next run records."""
+        run = self.run_gate({"STANDIN_EDIT": "README.md"})
+        line = self.not_recorded(run)[0]
+        self.assertIn("a file changed", line)
+        self.assertIn("a check may have written one", line)
+        self.assertIn("git status", line)
+        self.assertIn("next run records", line)
+        self.assertNotIn("README.md", line, "no list of files is kept between the two halves of a run")
+        self.assertNotIn("README.md", "".join(p.read_text(encoding="utf-8") for p in self.stamp_directory().iterdir()))
+        self.forget_log()
+        again = self.run_gate()
+        self.assertEqual(self.not_recorded(again), [])
+        self.assertIsNotNone(self.stamp_path(), "the next run did not record")
+
+    def test_the_line_for_a_gate_script_a_check_wrote_says_so(self) -> None:
+        """e11 (T034): the part is named — the `Makefile` and `scripts/`, which are the gate."""
+        line = self.not_recorded(self.run_gate({"STANDIN_EDIT": "Makefile"}))[0]
+        self.assertIn("scripts", line)
+        self.assertIn("a check may have written one", line)
+
+    def test_the_line_for_the_index_does_not_say_a_file_was_written(self) -> None:
+        """e11 (T034): where it is not the files, the files' advice is not given."""
+        run = self.run_gate({"STANDIN_STAGE": "README.md"})
+        lines = self.not_recorded(run)
+        self.assertEqual(len(lines), 1, run.stdout)
+        self.assertIn("index", lines[0])
+        self.assertNotIn("a check may have written one", lines[0])
+
+    def test_a_directory_at_the_stamps_path_is_called_a_directory(self) -> None:
+        """e26 (T034): with something in it nothing is emptied; the line says to delete the directory."""
+        self.plant_stamp()
+        path = self.stamp_path()
+        assert path is not None
+        path.unlink()
+        path.mkdir()
+        (path / "keep").write_text("", encoding="utf-8")
+        self.move_tree()
+        run = self.run_gate()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        lines = [line for line in self.reuse_lines(run) if path.name in line]
+        self.assertEqual(len(lines), 1, run.stdout)
+        self.assertIn("directory", lines[0])
+        self.assertNotIn("delete that file", lines[0])
+
     def test_a_stamp_directory_nothing_can_be_written_in_is_a_pass_not_recorded(self) -> None:
         """e11: exit 0, the closing line, one line with the reason, and nothing written."""
         directory = self.stamp_directory()
@@ -163,6 +208,22 @@ class RunsTest(StampTestCase):
                 self.forget_log()
                 again = self.run_gate()
                 self.assertTrue(self.checks(), "the next plain run reused a stamp: " + again.stdout)
+
+    def test_a_run_that_tightens_the_ratchet_and_ignores_errors_touches_nothing(self) -> None:
+        """e26 hold (T029, D80, D81): the ratchet rule is asked first and wins, so `-i` removes nothing, writes nothing
+        and leaves no note, whatever the checks do."""
+        planted = self.plant_stamp()
+        path = self.stamp_path()
+        assert path is not None
+        before = sorted(path.parent.iterdir())
+        for fail in (None, "1"):
+            with self.subTest(f"a check fails: {fail}"):
+                self.forget_log()
+                run = self.run_gate({"RATCHET_TIGHTEN": "1", "STANDIN_UV_FAIL": fail}, ["-i"])
+                self.assertTrue(self.checks(), "the gate did not run: " + run.stdout)
+                self.assertEqual(self.reuse_lines(run), [], run.stdout)
+                self.assertEqual(path.read_bytes(), planted)
+                self.assertEqual(sorted(path.parent.iterdir()), before)
 
     def test_a_stamp_that_cannot_be_removed_under_dash_i_is_named(self) -> None:
         """e26 (T019): the same run where the stamp cannot be removed says which file to delete, as a plain run does."""

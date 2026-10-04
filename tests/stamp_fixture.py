@@ -44,6 +44,7 @@ printf 'uv\\t%s\\n' "$*" >> "$STANDIN_LOG"
 if [ -n "$STANDIN_UV_FAIL" ] && [ "$1" = run ]; then echo "uv: a check failed (stand-in)" >&2; exit 1; fi
 if [ -n "$STANDIN_UV_HANG" ] && [ "$1" = run ]; then echo "uv: waiting (stand-in)"; exec sleep 600; fi
 if [ -n "$STANDIN_EDIT" ] && [ "$1" = run ]; then echo "edited by a check" >> "$STANDIN_EDIT"; fi
+if [ -n "$STANDIN_STAGE" ] && [ "$1" = run ]; then git update-index --chmod=+x -- "$STANDIN_STAGE"; fi
 case "$1" in
   --version)
     case "$STANDIN_UV_MODE" in

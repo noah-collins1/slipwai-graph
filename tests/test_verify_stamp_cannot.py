@@ -168,3 +168,48 @@ class CannotTellTest(StampTestCase):
         self.assert_nothing_local(run)
         for found in path.parent.glob("*.pending"):
             self.assertNotIn(str(self.repo), found.read_text(encoding="utf-8"))
+
+
+# A `python3` too old for the stamp script, as a machine with 3.9 first on `PATH` is: the script's own refusal, which
+# `reuse` answers by exit 1 and `record` by 0, run from the real script.
+OLD_PYTHON = """#!/bin/sh
+case "$1" in
+  scripts/verify-stamp.py)
+    exec "{real}" -c 'import runpy, sys; sys.version_info = (3, 9, 0); sys.argv = sys.argv[1:]; \\
+runpy.run_path(sys.argv[0], run_name="__main__")' "$@";;
+esac
+exec "{real}" "$@"
+"""
+
+
+class AStampThatStoodTest(StampTestCase):
+    """T027 (AC-S03-26, D81): two runs that cannot tell whether they are on the trunk, where nothing may be removed
+    (D74 R5), leave the stamp of a key that passed. Holds: they pin what the code already does."""
+
+    def stands(self, env: dict[str, str | None] | None = None) -> None:
+        planted = self.plant_stamp()
+        path = self.stamp_path()
+        assert path is not None
+        self.forget_log()
+        self.run_gate(env)
+        self.assertTrue(self.checks(), "the gate did not run")
+        self.assertEqual(path.read_bytes(), planted, "a stamp that stood did not stand")
+
+    def test_a_trunk_that_cannot_be_resolved_for_a_reason_that_is_not_gits_removes_nothing(self) -> None:
+        """T027 hold: the script that resolves the trunk does not load, whatever git says."""
+        planted = self.plant_stamp()
+        path = self.stamp_path()
+        assert path is not None
+        (self.repo / "scripts" / "check-slice-scope.py").write_text("raise RuntimeError('broken')\n", encoding="utf-8")
+        run = self.run_gate()
+        self.assertTrue(self.checks(), "the gate did not run: " + run.stdout)
+        self.assertEqual(path.read_bytes(), planted, "a stamp that stood did not stand")
+
+    def test_no_python3_able_to_run_the_stamp_script_removes_nothing(self) -> None:
+        """T027 hold: a 3.9 first on `PATH`: `reuse` answers 1 and `record` 0, the stamp that stood stands."""
+        real = shutil.which("python3")
+        assert real is not None
+        stand_in = self.bin / "python3"
+        stand_in.write_text(OLD_PYTHON.format(real=real), encoding="utf-8")
+        stand_in.chmod(0o755)
+        self.stands()

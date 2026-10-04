@@ -401,19 +401,31 @@ def is_gate_script(path: bytes) -> bool:
     return path == b"Makefile" or path.startswith(b"scripts/")
 
 
-def build_key(tools: dict[str, str]) -> dict[str, object]:
-    """The parts and the key they make. Each part is a digest of its own, so the stamp shows them apart: `tree` is
-    every covered file, the index, the history, the ignored inputs and the variables; `scripts` is the covered files the gate runs from, which `tree`
-    holds as well. Each covered file is read once. `tools` is what the machine reported, asked once per run."""
+def key_parts(tools: dict[str, str]) -> tuple[dict[str, object], dict[str, str]]:
+    """The key and the digests it is made of, so a run can say which part moved. Each part of the stamp is a digest of
+    its own, so the stamp shows them apart: `tree` is every covered file, the index, the history, the ignored inputs
+    and the variables; `scripts` is the covered files the gate runs from, which `tree` holds as well. Each covered file
+    is read once. `tools` is what the machine reported, asked once per run. The second value is what `reuse` keeps for
+    `record`: digests of the parts, never a name of a file."""
     records = [(path, file_record(path)) for path in covered_files()]
-    ignored = [record for entry in IGNORED_INPUTS for record in [entry.encode("utf-8")] + ignored_records(entry)]
-    variables = [variable_record(name) for name in VARIABLES]
+    ignored = digest([record for entry in IGNORED_INPUTS for record in [entry.encode("utf-8")] + ignored_records(entry)])
+    variables = digest([variable_record(name) for name in VARIABLES])
+    index, history = index_entries(), history_digest()
+    parts = {
+        "history": history, "index": digest([index]), "ignored": ignored, "variables": variables,
+        "files": digest([record for _, record in records]),
+        "scripts": digest([record for path, record in records if is_gate_script(path)]),
+    }
     tree = digest(
-        [history_digest().encode("ascii"), index_entries(), digest(ignored).encode("ascii"),
-         digest(variables).encode("ascii")] + [record for _, record in records])
-    scripts = digest([record for path, record in records if is_gate_script(path)])
-    key = digest([tree.encode("ascii"), scripts.encode("ascii"), json.dumps(tools, sort_keys=True).encode("utf-8")])
-    return {"key": key, "tree": tree, "scripts": scripts, "tools": tools}
+        [history.encode("ascii"), index, ignored.encode("ascii"), variables.encode("ascii")]
+        + [record for _, record in records])
+    key = digest([
+        tree.encode("ascii"), parts["scripts"].encode("ascii"), json.dumps(tools, sort_keys=True).encode("utf-8")])
+    return {"key": key, "tree": tree, "scripts": parts["scripts"], "tools": tools}, parts
+
+
+def build_key(tools: dict[str, str]) -> dict[str, object]:
+    return key_parts(tools)[0]
 
 
 def stamp_directory() -> str:
@@ -565,15 +577,17 @@ def remove_stamp() -> str | None:
     path = stamp_path()
     if os.path.islink(os.path.dirname(path)):
         return None  # what is behind a link is not ours to remove; `write_file` replaces the link itself
+    kind = "file"
     try:
         if stat.S_ISDIR(os.lstat(path).st_mode):
+            kind = "directory"
             os.rmdir(path)
         else:
             os.remove(path)
     except FileNotFoundError:
         return None
     except OSError as error:
-        return "cannot remove " + path + " (" + (error.strerror or str(error)) + "); delete that file"
+        return "cannot remove " + path + " (" + (error.strerror or str(error)) + "); delete that " + kind
     return None
 
 
@@ -613,7 +627,7 @@ def reuse(options: Options) -> int:
         problem = index_problem()
         if problem is not None:
             raise CannotTell(problem)
-        key = build_key(machine_tools(options))
+        key, parts = key_parts(machine_tools(options))
     except CannotTell as reason:
         return begin_full_run({}, cannot=str(reason))
     forced = forced_reason(options)
@@ -622,13 +636,34 @@ def reuse(options: Options) -> int:
         if stamp is not None and stamp["key"] == key["key"]:
             print(REUSE_LINE.format(passed=stamp["passed"], abbreviated=str(key["key"])[:12]))
             return 0
-    return begin_full_run({"key": key["key"], "tools": key["tools"]}, forced)
+    return begin_full_run({"key": key["key"], "tools": key["tools"], "parts": parts}, forced)
 
 
 def not_recorded(reason: str) -> int:
     """A pass that was not recorded, and why: one line, and the gate's own exit code stands."""
     print(NOT_RECORDED_LINE.format(reason=reason))
     return 0
+
+
+# The parts of the key a pass can find moved, in the order they are told, and how a person is told each.
+PARTS = (
+    ("scripts", "the Makefile or a script under scripts/"), ("files", "a file"), ("index", "the index"),
+    ("history", "a branch or the history"), ("ignored", "an ignored input"), ("variables", "a variable a check reads"),
+)
+WRITTEN = " — a check may have written one; `git status` shows it, and the next run records"
+
+
+def moved(before: object, after: dict[str, str]) -> str:
+    """Which part of the key moved while the checks ran, from the digests `reuse` kept: what is said, and, where it is
+    the files, that a check may have written one, that `git status` shows it and that the next run records."""
+    kept = before if isinstance(before, dict) else {}
+    names = [name for name, _ in PARTS if kept.get(name) != after[name]]
+    if "scripts" in names and "files" in names:
+        names.remove("files")  # the gate's scripts are among the files: one part, named once
+    said = ", ".join(words for name, words in PARTS if name in names)
+    if not said:
+        return "the key changed while the checks ran"
+    return said + " changed while the checks ran" + (WRITTEN if {"files", "scripts"} & set(names) else "")
 
 
 def why_no_note() -> str | None:
@@ -664,11 +699,11 @@ def record(options: Options) -> int:
         reason = why_no_note()
         return 0 if reason is None else not_recorded(reason)
     try:
-        key = build_key(pending["tools"])
+        key, parts = key_parts(pending["tools"])
     except CannotTell as reason:
         return not_recorded(str(reason))
     if key["key"] != pending["key"]:
-        return not_recorded("the tree changed while the checks ran")
+        return not_recorded(moved(pending.get("parts"), parts))
     passed = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     stamp = dict(key, passed=passed, result="pass")
     try:
