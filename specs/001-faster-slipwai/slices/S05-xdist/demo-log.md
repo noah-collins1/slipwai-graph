@@ -63,3 +63,31 @@
     - Not S05's: `test_a_conditional_append_is_refused_by_an_event_in_flight_when_the_boundary_was_read` fails serially against a real Postgres, at `assert isinstance(found, list)` (a tuple came back). It fails the same way in a project made before the slice (`specs/001-faster-slipwai/slices/S05-xdist/demo/18-integration-before-slice.txt`). This is a separate defect for the Parking Lot.
     - With the mark `true`, every pytest warning appears once per worker (8 warnings instead of 2), as D103 expected.
   - The scratch projects were the only app this demo ran, and they are gone. No long-lived app was started apart from the disposable Postgres, which was stopped.
+
+## 2026-10-04T20:48:48Z — accepted · iteration 14 · drive-hand (claude-opus-5-5)
+- **Started with:** this checkout at 610db14, after T021 (8c7e4cd). For the older-project path: `git archive 8b0d103 | tar -x -C <dir>`, then that tree's `./slipwai generate shop --backend python --output <dir2> --no-init --no-install --skip-checks`, then this checkout's `slipwai migrate` inside `<dir2>/shop`. For the fresh-project path: this checkout's `./slipwai generate shop --backend python --output <dir> --no-init --no-install --skip-checks`. · **Seeded:** none. No backing service was started.
+- **Driven through:** CLI. `.specify/cruise.json` names `browser`, but this slice has no screen and no HTTP surface. It changes a generated `project.json`, `scripts/verify` and `docs/gates.md`, so the CLI is the demo.
+- **Examples:** demo 2 covers what T021 changed, plus the demo-1 examples it could have touched. AC-S05-1, -2, -4 to -10 and -13 are not re-run. T021 changed only the page's words (`src/slipwai/project/parallel_tests.py`) and the fragment.
+  - AC-S05-12: passed. The fragment's first line is `MINOR`.
+    - Where the note sits: after `migrate`, `.slipwai/catch-up.md` carries the note word for word. It is still inside the 1.6.0 entry's **Owes:** paragraph.
+    - Following it literally: the line `"parallelSafe": true,` was added once, with its comma, right after the `"target"` line. `project.json` stays valid JSON.
+    - `make verify` passes ("created: 4/4 workers", 87 passed, "verify: all gates passed"). `make test` then runs with 4 workers, 87 passed.
+    - Before the opt-in, the same migrated project's `make test` was serial. Setting it `false` "to turn it off again" made it serial on the next run.
+  - AC-S05-11: passed. In a fresh project, `docs/gates.md` gives the default ("which every new project has"), "**A missing mark is serial**", and when to set it `false` (a file, a port, a database or module-level state).
+    - The corrected opt-in line reads `"parallelSafe": true,` "once, with its comma". It is identical on the page that `migrate` writes into the older project.
+    - Following the page: `false` gave a serial `make test` and a passing `make verify`. Back to `true` gave 4 workers on both, and `make verify` passed. Nothing was regenerated.
+    - The new small-suite sentence is there and holds against the measurement.
+      - "a fraction of a second": on the starter, `./scripts/verify --test-only` took 0.98 to 1.02 s serial and 1.34 to 1.36 s with workers, about 0.35 s more. This agrees with demo 1 and with the fragment's "about 0.4 s".
+      - "pay back once the suite takes several seconds": I added a scratch file of 48 CPU-bound tests of about 0.1 s each, then deleted it. Serial took 5.80 to 5.82 s and the workers took 2.45 to 2.48 s.
+  - AC-S05-3: passed, re-run on the fresh project. `false`, a missing key, `"true"`, `1`, a key written twice, truncated JSON and a file with mode 000 each run `pytest apps/service/tests --ignore=apps/service/tests/integration` with no `-n`. That is the serial command demo 1 recorded, word for word. `true` adds `-n auto --maxprocesses 4`. Each change took effect on the next run with nothing regenerated.
+- **Evidence:**
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d2-01-older-project-catch-up.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d2-02-fresh-project-mark-and-page.txt`
+  - `specs/001-faster-slipwai/slices/S05-xdist/demo/d2-03-mark-values.txt`
+- **Feedback:**
+  - Demo 1's implementation finding is fixed in both places. The fragment and the page now name the line with its comma, and pasting it as they say keeps `project.json` valid and opts the project in.
+  - **Notes for the next slice (not reasons to withhold acceptance):**
+    - Demo 1's note still stands: in `.slipwai/catch-up.md`, this slice's note is the tail of one long **Owes:** paragraph. It starts at character 11,182 of 12,436, and the paragraph starts at 2,356. A developer will not find it there without searching.
+    - The page still tells a developer to "set it `false`" without saying that `check-slice-scope` refuses a `project.json` edit on a `slice/*` branch. This carries over from demo 1 and was not re-tested here.
+    - The source wraps the page's paragraph unevenly. Some lines are 270 to 291 characters, beside lines of about 130. The rendered Markdown is unaffected, but the raw file reads ragged.
+  - The scratch projects under `/tmp` were the only thing this demo ran. They are deleted, and no process was left running.

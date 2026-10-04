@@ -1,0 +1,63 @@
+## A fresh project from this checkout (610db14): ./slipwai generate shop --backend python --output <dir> --no-init --no-install --skip-checks
+$ grep -n -B1 -A1 parallelSafe project.json
+12-  "target": "none",
+13:  "parallelSafe": true,
+14-  "capabilities": [
+
+## docs/gates.md, the paragraph on the mark, as generated
+**Tests across cores.** A Python service's gate runs its tests across cores where `project.json` says it may: `"parallelSafe": true`,
+which every new project has, adds `-n auto --maxprocesses 4` (`pytest-xdist`, capped at four workers) to the gate's `pytest` in `make test`,
+`make verify` and the adversarial run, and never to the integration run, whose tests share one database. **A missing mark is serial**,
+and so is `false`, or a file the gate cannot read: a project made before the mark existed has none, and `slipwai migrate` never adds
+one. Only the JSON `true` turns it on (a string `"true"` is serial), and a mark written twice is serial, because the gate cannot
+tell which copy is meant: add the line `"parallelSafe": true,` once, with its comma, right after the `"target"` line, where `generate` writes it. The gate reads the mark each time it runs, so a change takes effect on the next run with nothing regenerated. Set it `false`
+when the tests share a file, a port, a database or module-level state, which a second worker would trip over. On a small suite the workers cost a fraction of a second; they pay back once the suite takes several seconds. The mark needs `pytest-xdist`
+in each Python service's development tools, which every service has; a service that removed it fails on an argument error until it is back.
+
+## Followed literally: "Set it `false`", then back to `true` (the one line edited in place; nothing regenerated)
+### mark false
+$ make test
+======================== 87 passed, 2 warnings in 1.06s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+exit=0
+$ VERIFY_FORCE=1 make verify
+======================== 87 passed, 2 warnings in 0.52s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+verify: all gates passed
+exit=0
+### mark true
+$ make test
+created: 4/4 workers
+======================== 87 passed, 8 warnings in 0.96s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+exit=0
+$ VERIFY_FORCE=1 make verify
+created: 4/4 workers
+======================== 87 passed, 8 warnings in 0.97s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+verify: all gates passed
+exit=0
+
+## "On a small suite the workers cost a fraction of a second": the starter suite (87 tests), ./scripts/verify --test-only, wall clock, interleaved
+mark	seconds	exit	workers	pytest summary
+false	1.02	exit=0		======================== 87 passed, 2 warnings in 0.55s ========================
+true	1.36	exit=0	created: 4/4 workers	======================== 87 passed, 8 warnings in 0.98s ========================
+false	0.99	exit=0		======================== 87 passed, 2 warnings in 0.52s ========================
+true	1.34	exit=0	created: 4/4 workers	======================== 87 passed, 8 warnings in 0.96s ========================
+false	0.98	exit=0		======================== 87 passed, 2 warnings in 0.52s ========================
+true	1.34	exit=0	created: 4/4 workers	======================== 87 passed, 8 warnings in 0.97s ========================
+
+## "they pay back once the suite takes several seconds": the same project with a scratch file of 48 CPU-bound tests of ~0.1 s each added (deleted afterwards), same command
+mark	seconds	exit	workers	pytest summary
+false	5.81	exit=0		======================= 135 passed, 2 warnings in 5.35s ========================
+true	2.48	exit=0	created: 4/4 workers	======================= 135 passed, 8 warnings in 2.10s ========================
+false	5.82	exit=0		======================= 135 passed, 2 warnings in 5.35s ========================
+true	2.45	exit=0	created: 4/4 workers	======================= 135 passed, 8 warnings in 2.08s ========================
+false	5.80	exit=0		======================= 135 passed, 2 warnings in 5.35s ========================
+true	2.47	exit=0	created: 4/4 workers	======================= 135 passed, 8 warnings in 2.09s ========================
+
+Machine: 12th Gen Intel(R) Core(TM) i5-12400, nproc 12, Linux 7.0.0-31-generic

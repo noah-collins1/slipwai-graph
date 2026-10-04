@@ -277,7 +277,7 @@ by path; level line as above.
 
 ### T009 — The demo, with the measurement (host task)
 
-- [ ] The demo of [quickstart.md](quickstart.md) run as the actor with this checkout's `./slipwai`: `grep parallelSafe
+- [x] The demo of [quickstart.md](quickstart.md) run as the actor with this checkout's `./slipwai`: `grep parallelSafe
   project.json`, `make test` showing `-n auto --maxprocesses 4`, the opt-out run, a project made before `migrate`d and
   still serial. **AC-S05-13:** on a fresh Python starter measure serial against parallel test time (three runs each,
   the command, the machine, its core count) and the median of `make -j verify` against the serial gate's (D89's

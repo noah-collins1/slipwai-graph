@@ -1,0 +1,58 @@
+## A project made before the slice (factory at 8b0d103), migrated by this checkout (610db14)
+$ git log --oneline
+dbf2368 Replay shop with slipwai 1.6.0.dev0
+10f3116 Scaffold shop
+$ git diff --stat HEAD~1 HEAD
+ apps/service/pyproject.toml |  1 +
+ apps/service/uv.lock        | 24 ++++++++++++++++++++++++
+ docs/gates.md               |  9 +++++++++
+ scripts/verify              | 18 +++++++++++++++---
+ 4 files changed, 49 insertions(+), 3 deletions(-)
+$ make test   (after migrate, before opting in)
+collected 87 items
+======================== 87 passed, 2 warnings in 1.04s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+
+## .slipwai/catch-up.md as migrate wrote it: where the S05 note sits
+note starts at char 11182 of 12436 - inside the 1.6.0 entry's **Owes:** paragraph, which starts at char 2356
+A project made before this release stays serial: `slipwai migrate` carries a project's own `parallelSafe` and never adds one, and `adopt` writes none. To opt in, add the line `"parallelSafe": true,` to the project's `project.json` once, with its comma, right after the `"target"` line, where `generate` writes it (a mark written twice is serial, because the gate cannot tell which copy is meant, and only the JSON `true` turns it on), and run `make verify` once; set it `false` to turn it off again. Every Python service's `pyproject.toml` and `uv.lock` gain `pytest-xdist`, so where a project has a dependency of its own, dev or not, `slipwai migrate` stops on a conflict in `apps/<service>/uv.lock` (the service's path as `project.json` records it): take either side of that file, run `uv lock --project apps/<service>`, `git add` the lock and commit. That is done once by hand, for each service of such a project.
+
+## Followed literally: the line `"parallelSafe": true,` once, with its comma, right after the "target" line
+diff --git a/project.json b/project.json
+index 1fe6291..117ddb7 100644
+--- a/project.json
++++ b/project.json
+@@ -10,6 +10,7 @@
+   "profile": "event-modelling",
+   "frontend": "react-vite",
+   "target": "none",
++  "parallelSafe": true,
+   "capabilities": [
+     "continuous-delivery",
+     "event-modelling",
+$ python3 -m json.tool project.json
+valid JSON
+$ make verify
+All checks passed!
+created: 4/4 workers
+======================== 87 passed, 8 warnings in 0.96s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+verify: all gates passed
+make verify exit=0
+$ make test
+plugins: anyio-4.15.1, xdist-3.8.0
+created: 4/4 workers
+======================== 87 passed, 8 warnings in 0.98s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+make test exit=0
+
+## "set it false to turn it off again": the same line edited to `"parallelSafe": false,`
+13:  "parallelSafe": false,
+$ make test
+======================== 87 passed, 2 warnings in 0.53s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+(no workers created: serial)
