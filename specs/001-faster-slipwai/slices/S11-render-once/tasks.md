@@ -650,3 +650,17 @@ the test tree, no mocking framework (`tests/render_fixture.py`, `tests/test_rend
 convergence map moves (`make -f delivery/Makefile check-convergence` run at this commit). The `.ts` files are run
 under `tsx` by the tests and are not type-checked by a compiler: the event-model tooling carries none. The render
 tests skip on Windows, saying why.
+
+## Phase 4 record
+
+- **Demo:** accepted by `drive-hand`, cruise iteration 10, at `dde4317` ([demo-log.md](demo-log.md)); SC-004 held on
+  seven of seven warm runs (1.399–1.505 s, one browser).
+- **Adversary:** two seams, thirteen findings, none `CRITICAL`; the row under `## S11` in `adversary-log.md`; D72.
+  Fixed through failing tests: T020 (`c5eb98b`), T021 (`45f1032`), T022 (`b895788`), T023 (`bfb71c5`), T024
+  (`f1d7dae`), with T019 (`d50377b`).
+- **Mutation:** N/A — `make -f delivery/Makefile mutation` says no mutation command is recorded in `project.json`;
+  teeth were shown by hand for each hold (the ticks above say which mutation failed which examples).
+- **Gates:** `make verify` (1426 tests, 9 skipped, *all gates passed*) and `make -f delivery/Makefile verify` (*all
+  gates passed*), one after the other, at `abc216d` — the code as of `d50377b`.
+- **Not done here, a person's:** merging `adopt-method`, pushing, `slipwai migrate` on this repository (D9, D12).
+
