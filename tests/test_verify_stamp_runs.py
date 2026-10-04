@@ -148,3 +148,38 @@ class RunsTest(StampTestCase):
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertNotEqual(self.stamp_path().read_bytes(), planted)  # type: ignore[union-attr]
         self.assertEqual(self.not_recorded(run), [])
+
+    def test_a_stamp_that_stood_does_not_stand_through_a_run_that_ignores_errors_and_fails(self) -> None:
+        """e26 (T019): a stamp for exactly this tree, then `make -i verify` with a check that fails: the checks run, the
+        sub-make exits 0, and no stamp is left for the next plain run to reuse. So for a ratchet run, which judges a
+        tree about to change."""
+        for flags, env in ((["-i"], {}), (["-ik"], {}), (["--ignore-errors"], {}), ([], {"RATCHET_TIGHTEN": "1"})):
+            with self.subTest(" ".join(flags) or "RATCHET_TIGHTEN"):
+                self.plant_stamp()
+                self.forget_log()
+                run = self.run_gate({"STANDIN_UV_FAIL": "1", **env}, flags)
+                self.assertTrue(self.checks(), "the gate did not run: " + run.stdout)
+                self.assertIsNone(self.stamp_path(), "a stamp stood through a run whose check failed")
+                self.forget_log()
+                again = self.run_gate()
+                self.assertTrue(self.checks(), "the next plain run reused a stamp: " + again.stdout)
+
+    def test_a_stamp_that_cannot_be_removed_under_dash_i_is_named(self) -> None:
+        """e26 (T019): the same run where the stamp cannot be removed says which file to delete, as a plain run does."""
+        self.plant_stamp()
+        path = self.stamp_path()
+        assert path is not None
+        self.read_only(path.parent)
+        run = self.run_gate({"STANDIN_UV_FAIL": "1"}, ["-i"])
+        self.assertTrue(self.checks(), "the gate did not run")
+        self.assertEqual(len([line for line in self.reuse_lines(run) if path.name in line]), 1, run.stdout)
+
+    def test_a_reuse_that_fails_in_a_way_nobody_foresaw_still_removes_the_stamp(self) -> None:
+        """e26 (T019): `reuse` raising something other than the script's own refusal (here an unreadable `shallow`
+        that is a directory, found while the key is built) runs every check, and the stamp that stood is gone."""
+        self.plant_stamp()
+        (self.repo / ".git" / "shallow").mkdir()
+        self.forget_log()
+        run = self.run_gate({"STANDIN_UV_FAIL": "1"})
+        self.assertTrue(self.checks(), "the gate did not run: " + run.stdout)
+        self.assertIsNone(self.stamp_path(), "a stamp stood through a run whose reuse failed")

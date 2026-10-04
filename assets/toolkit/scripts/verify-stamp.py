@@ -131,8 +131,10 @@ FORCE_VARIABLE = "VERIFY_FORCE"
 FORCING_GOAL = "ci"
 FORCED_LINE = "verify: the full gate runs, forced by {reason}"
 NOT_RECORDED_LINE = "verify: this pass was not recorded — {reason}"
-# make's flags that stop a run from reading or writing a stamp: `-n`, `-t` and `-q` run no check, `-i` lets one fail.
-DECLINING_FLAGS = "ntqi"
+# make's flags under which no check starts: nothing is read, written or removed. `-i` is not among them: it starts
+# every check and lets one fail, so it is `declined` for the stamp but removes the one that stood.
+IDLE_FLAGS = "ntq"
+DECLINING_FLAGS = IDLE_FLAGS + "i"
 REUSE_LINE = (
     "verify: the full gate did not run; this tree already passed it at {passed} (key {abbreviated}); "
     "VERIFY_FORCE=1 runs it anyway"
@@ -510,6 +512,11 @@ def declined() -> bool:
     return bool(os.environ.get(RATCHET_VARIABLE)) or any(letter in make_flags() for letter in DECLINING_FLAGS)
 
 
+def idle() -> bool:
+    """Whether this run starts no check (`-n`, `-t`, `-q`), so that it touches nothing."""
+    return any(letter in make_flags() for letter in IDLE_FLAGS)
+
+
 def remove_stamp() -> str | None:
     """The stamp, gone before the first check starts, so that after a run that failed or was killed there is none.
     Whatever stands at its path is removed as itself: a regular file, a link (never what it points to) or a FIFO by
@@ -555,8 +562,12 @@ def begin_full_run(note: dict[str, object], forced: str | None = None, cannot: s
 
 def reuse(options: Options) -> int:
     try:
-        if declined() or not eligible():
+        if idle() or not eligible():
             return 1
+        if declined():
+            # `-i` or a ratchet: the checks run and may fail with the run still exiting 0, so no stamp may stand to be
+            # reused afterwards; this run records nothing (`record` declines it too)
+            return begin_full_run({NOTHING: "a run that is not recorded"})
         problem = index_problem()
         if problem is not None:
             raise CannotTell(problem)
@@ -629,6 +640,16 @@ def record(options: Options) -> int:
     return 0
 
 
+def remove_after_failure() -> None:
+    """`reuse` failed in a way nobody foresaw and the recipe runs every check: a stamp that stood is removed where this
+    run could have used one, and where even that cannot be told, nothing is."""
+    try:
+        if not idle() and eligible():
+            remove_stamp()
+    except Exception:
+        pass
+
+
 def main(argv: list[str]) -> int:
     verb = argv[0] if argv else ""
     try:
@@ -639,7 +660,8 @@ def main(argv: list[str]) -> int:
         if verb == "record":
             return record(Options(argv[1:]))
     except Exception:
-        pass
+        if verb == "reuse":
+            remove_after_failure()
     return 0 if verb == "record" else 1
 
 
