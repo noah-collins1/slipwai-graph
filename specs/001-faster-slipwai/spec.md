@@ -2006,3 +2006,54 @@ records it was started and exits as the test says.
 - **AC-S33-10** — Each of AC-S33-1 to -7 has an example in the suite that runs the root `Makefile`, copied into a
   temporary repository with stand-in checks, written as a hold and seen once to have teeth; the factory's own
   second `make verify` on an unchanged tree is measured at the demo.
+
+### S05-xdist
+
+**Gaps reviewed** 2026-10-04, cruise iteration 14, host with `drive-skipper` for D102 and D103 and the host's own
+D104: the three examples in `story-split.md` against `python_verify()` in `src/slipwai/project/languages/python.py`,
+`metadata()` in `src/slipwai/project/metadata.py`, `replay.py`'s handling of `project.json`, the service
+`pyproject.toml` template, the generated gates page (`src/slipwai/project/docs.py`), and each other backend's test
+command (`typescript.py`, `go.py`, `java.py`). Run on a Python starter generated for the purpose (event profile,
+FastAPI, SQLite store, 130 tests, 12 cores, pytest 9.1.1, pytest-xdist 3.8.0): serial 0.95 s, `-n 2` 1.13 s, `-n 4`
+1.26 s, `-n auto` 1.9 s; every run passed, and a `-k` that matches nothing exits 5 under the plugin as without it.
+Found and written back: `migrate` regenerates `project.json` through `metadata()`, so a key a new release writes
+would reach every existing project through the merge and switch its tests to parallel unasked (D102); every xdist
+setting is slower than serial on a new project, and twelve workers beside `make -j`'s mypy and ruff is the worst of
+them (D103); the script names its services at generation and nothing rewrites it when `project.json` is edited, so
+a one-line opt-out has to be read when the gate runs (D104); the integration suite shares one database (D104);
+Maven's Surefire runs tests one at a time here, so "the other runners already run in parallel" is not true of
+Java (D104); a new development dependency in every generated Python service is recorded as ADR 0003 at
+`Proposed`.
+
+Unless a criterion says otherwise, *the Python project* is a project generated with a Python service, and *the
+mark* is `parallelSafe` at the top level of the project's `project.json`.
+
+- **AC-S05-1** — *D102.* Given `slipwai generate` with any backend, then `project.json` carries `"parallelSafe": true`.
+- **AC-S05-2** — *D103, D104.* Given the Python project, when `make verify` runs (and `make test`, and
+  `./scripts/verify --adversarial-only`), then its pytest command carries `-n auto --maxprocesses 4`, and the set of
+  tests that passed and failed equals the serial run's on the same tree.
+- **AC-S05-3** — *D104.* Given the mark set to `false`, removed, or any value but the JSON `true`, or `project.json`
+  unreadable, when the gate runs, then pytest runs with no `-n` and every other word of the command as today; the
+  change takes effect on the next run with nothing regenerated.
+- **AC-S05-4** — *D104.* Given the mark `true`, when `make test-integration` runs, then pytest runs with no `-n`.
+- **AC-S05-5** — *D104.* Given the mark `true` and a `-k` that matches no test, when `--adversarial-only` runs, then
+  it passes as it does today (exit 5 read as no adversarial tests).
+- **AC-S05-6** — *D103.* The service `pyproject.toml` template's `addopts` is unchanged: a person's own `pytest` run
+  is serial.
+- **AC-S05-7** — *D104.* `pytest-xdist==3.8.0` is in every generated Python service's development dependencies and
+  in each of the four committed locks, which `uv sync --locked` accepts.
+- **AC-S05-8** — *D102.* Given a project generated before this release, when `slipwai migrate` runs, then its
+  `project.json` has no `parallelSafe` and its gate runs pytest serially; given a project whose mark says `false`
+  or `true`, then after `migrate` it says the same.
+- **AC-S05-9** — *D102.* Given `slipwai adopt` or `adopt --refresh`, then the record carries no `parallelSafe`, and
+  no adopted application's own test command changes.
+- **AC-S05-10** — *D104.* Given a TypeScript, Go or Java starter, then the matrix test still passes and its test
+  command is unchanged; the generated gates page says, for each backend the project has, whether its runner runs
+  tests in parallel — Vitest by file, `go test` by package, Maven's Surefire one at a time.
+- **AC-S05-11** — *D102, D103.* The gates page documents the mark: its default, that a missing mark is serial, and
+  one sentence on when to set it to `false` (tests that share a file, a port, a database or module-level state).
+- **AC-S05-12** — The `changelog.d/` fragment claims MINOR (a new `project.json` key with a documented default), and
+  its catch-up note, standing alone, says a project made before stays serial and names the one line that opts it in.
+- **AC-S05-13** — *D103.* The demo records, in the quickstart and the fragment, serial and parallel test times on a
+  fresh starter with the command, the machine and its core count, and `make -j verify`'s median against the serial
+  gate's (D89's criterion still holds).

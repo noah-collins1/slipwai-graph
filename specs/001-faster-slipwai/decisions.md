@@ -1941,3 +1941,73 @@
 - **Confidence:** high · **Would reverse if:** the owner would rather write the edit themselves, or have the run wait on S33 before S05.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (S33's gaps note); `specs/001-faster-slipwai/story-split.md` (S33's graph row)
 - **Status:** standing
+
+## D102 — What do a project generated before this release, an adopted repository and `slipwai migrate` get from FR-009's parallel-safe mark?
+- **Stage:** 5 slice gaps · **Slice:** S05-xdist · **When:** 2026-10-04T19:16:29Z · **Iteration:** 14
+- **Scope:** S05-xdist
+- **Question:** FR-009 runs pytest with xdist "where the project is marked parallel-safe (default on for new projects, with a one-line opt-out in `project.json`)". `slipwai migrate` rebuilds `project.json` through `metadata()` and keeps only `generator`. So any key a newer `metadata()` writes reaches every existing project through the merge. Adopted repositories get their record from the same `metadata()` plus `Adoption.record()`. An existing project's tests may share state that xdist would break: a SQLite file, a port, module-level state. What do a project generated before this release, an adopted repository and `migrate` get?
+- **Options:** (a) `generate` writes `"parallelSafe": true`. Replay writes the key only where the project already had it, with the value it had, so a missing key stays missing. A missing key means serial. A project made before this release keeps its serial gate until a person adds the line, and the catch-up note says how. An adopted repository's record is written without the key, so it runs serial. **Recommended.** (b) `metadata()` always writes `true`, so `migrate` turns xdist on in every existing project through the merge, with a catch-up note on how to opt out. (c) A missing key means on everywhere, and nothing is written unless a project opts out.
+- **Decision:** (a), the stage's recommendation, with these rules:
+  1. **New projects.** `slipwai generate` writes `"parallelSafe": true` into `project.json` for every project it generates, whatever the backend. The key covers the whole project, and `add-service` can add a Python service to a project that has none. The root gate runs pytest with `-n auto` only where the key is `true`. Setting it to `false` is the one-line opt-out.
+  2. **A missing key means serial.** The gate reads a missing key, or any value other than `true`, as not parallel-safe and runs pytest as it does today.
+  3. **Replay and `migrate`.** Replay writes `parallelSafe` only where the project's own `project.json` already has it, and writes the project's own value. It never adds the key and never flips it. A project generated before this release comes out of `migrate` with no key and a serial gate. A project that has `true` or `false` keeps it.
+  4. **Opting in.** `migrate`'s catch-up note for this release names the line to add (`"parallelSafe": true`), says to run `make verify` once afterwards, and says when to remove the line again: when tests share a file, a port or module-level state. That is also the one sentence the new setting's documentation carries.
+  5. **Adopted repositories.** `slipwai adopt` and `adopt --refresh` write the record without the key, so the repository runs serial. Its own applications' test commands are its own and the key never reaches them (`wrapped_recipes`). A service later added by `add-service` runs the generated Python gate serially until a person adds the line.
+  6. **Criteria to add to S05.**
+     - Given a project generated before this release, when `slipwai migrate` runs, then `project.json` has no `parallelSafe` and pytest runs serially.
+     - Given a project whose `project.json` says `false`, when `migrate` runs, then it still says `false`.
+     - Given an adopted repository, then its record carries no `parallelSafe`.
+- **Why:** The developer who generated a project last month trusts that `migrate` keeps their gate doing what it did. Under (b) or (c), a suite that shares a SQLite file or a port starts failing, or worse passing differently, after an upgrade they ran for something else. That breaks AGENTS.md's MINOR rule that every existing answer keeps meaning what it meant. It also goes against the owner brief's fifth priority (deterministic over fast) and its first (the gate the developer believes in stays the gate). The new project gets the speed by default, which is the measured case: the starter's 130 tests pass under xdist. The project made before gets it with one line it chooses to add. That is the setting the brief's taste asks for: one documented default and one sentence on when to change it. The constitution's catch-up-note rule is met by rule 4.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the owner says projects made before this release should get xdist through `migrate` with an opt-out note. That would be (b), placed in a release whose fragment calls it out.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S05's criteria: rules 1–6 above, and FR-009 read as "a missing key is serial")
+- **Status:** standing
+
+## D103 — How many xdist workers does a parallel-safe project's gate start?
+- **Stage:** 5 slice gaps · **Slice:** S05-xdist · **When:** 2026-10-04T19:16:39Z · **Iteration:** 14
+- **Scope:** S05-xdist
+- **Question:** FR-009 says the root gate runs pytest with xdist where `project.json` marks the project parallel-safe. S05's row puts `-n auto` in its example. The open question is how many workers that run starts. On a fresh starter every xdist setting is slower than serial, and since S04, `make -j verify` runs the test workers beside mypy and ruff on the same cores.
+- **Options:**
+  - (a) `-n auto`, as the row's wording implies.
+  - (b) `-n auto --maxprocesses 4`: one worker per core, never more than four — **recommended**.
+  - (c) `-n logical`, or a count the project sets in a second optional `project.json` key beside `parallelSafe`.
+  - (d) xdist only once the suite is big enough, judged by a rule in the script such as the number of test files.
+- **Decision:** (b). These rules can each be checked by a test or at the demo:
+  1. Where `parallelSafe` is `true` (a missing key is serial — D102, reconciled by the host), the root gate's test command runs pytest with `-n auto --maxprocesses 4`. That is one worker per core, never more than four. A two-core machine gets two.
+  2. Where `"parallelSafe": false`, the gate runs pytest serially with no `-n` flag. Every other part of the command stays the same.
+  3. The flags go on the gate's own test command, not in the `pyproject` template's `addopts`. A person who types `pytest`, or runs one test file under a debugger, gets a serial run as before. FR-009 asks this of the root gate, and nothing else.
+  4. `parallelSafe` stays a boolean. This slice adds no worker-count key. A project that needs a different count comes back as its own question.
+  5. S05's example is reworded from `-n auto` to `-n auto --maxprocesses 4`. The pass/fail set must still equal the serial run's.
+  6. The page the project gets says what the default is. It also says, in one sentence, when to change it: set `"parallelSafe": false` when tests share something one test changes and another reads, such as a file, a port or a database. It says that on a suite this small xdist costs a fraction of a second, and that it pays back once the suite takes several seconds.
+  7. There is no speed criterion for xdist. The demo records serial and xdist times on a fresh starter in the slice's quickstart and its fragment, with the command, the machine and its core count. D89 rule 13's criterion still applies unchanged: the `make -j verify` median must be lower than the serial median.
+  - **Unavailable:** nothing in this decision rests on a missing fact.
+  - **Not verified:** the times below are from one 12-core machine. The cap was not measured under `make -j verify` against `-n auto`; the demo measures that.
+- **Why:**
+  - **The measurement.** This was measured at this gaps stage on a fresh Python starter: event-modelling profile, FastAPI, SQLite store, 130 tests, 12 cores, pytest 9.1.1, pytest-xdist 3.8.0. The command was `uv run --no-sync pytest …`, three runs each:
+    - serial: 0.95 s
+    - `-n 2`: 1.13 s
+    - `-n 4`: 1.26 s
+    - `-n auto` (12 workers): 1.9 s, and the printed warnings went from 2 to 24 because each worker repeats them
+
+    Each worker pays its own interpreter start and imports, so on a new project every xdist setting is slower than serial. xdist only pays once the suite takes several seconds.
+  - **Against (a).** On a starter, (a) costs the developer about a second on every unstamped gate run. On a large machine under `make -j` it starts a dozen interpreters that compete with mypy and ruff for the same cores. That hurts the very wait S04 bought back (owner priority 2, D89 rule 13). It also multiplies every warning line, which goes against the owner's wish for a gate that tells you what failed in one line. A cap of four costs about 0.3 s on a starter, and four or eight repeated warnings instead of twenty-four. It still scales as the suite grows, until four workers stop being enough. That is far past where any generated project starts.
+  - **Against (c).** (c) adds a second setting with its own default. The owner wants each new setting to have one default and one sentence on when to change it. `parallelSafe` already has that sentence; a count would need its own, for a need no one has yet stated.
+  - **Against (d).** (d) is a heuristic that changes the gate's behaviour without anyone deciding it, and a person cannot tell from the command which mode ran. That goes against the owner's taste for plain rules, and against priority 5: a gate should behave the same way every time.
+  - **Why default on, even though it is slower on a starter.** FR-009 decided the default. It is also the right default. A suite that runs under xdist from its first test is kept parallel-safe from its first test. Switching xdist on later, on a large suite, is when hidden shared state is found, and it is found as flaky failures. The stamp (D73–D76) makes repeat runs on an unchanged tree free, so the 0.3 s is paid only when something changed.
+  - **Why only the gate.** Rule 3 keeps a person's own `pytest` run serial, because xdist gets in the way of `-x`, `--pdb` and reading a single failure. FR-009 asks for xdist on the gate only.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** at the demo on D89 rule 13's project, `make -j verify` with the capped workers fails D89's criterion (its median is not lower than the serial median) where it passes with serial pytest. The cap then drops to 2. If that still fails, the default becomes serial pytest under `-j`, which comes back to the owner because it changes how FR-009 is read.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S05's criteria: rules 1–7); `specs/001-faster-slipwai/story-split.md` (S05's row, where its example reads -n auto)
+- **Status:** standing
+
+## D104 — At S05's gaps stage: how the gate reads the mark, which of its modes run in parallel, where the plugin is pinned, and what the other backends record
+- **Stage:** 5 slice gaps · **Slice:** S05-xdist · **When:** 2026-10-04T19:17:58Z · **Iteration:** 14
+- **Scope:** S05-xdist
+- **Question:** With D102 and D103 settled, five readings remain that the specification answers or the stage recommends: (1) the generated `scripts/verify` names its services at generation time, and no command rewrites it when a person edits `project.json` — when does the gate learn the mark? (2) Which of the script's modes take the flags? (3) Where is the plugin pinned? (4) FR-009 says the other backends "record what their runner already does": what is true of each? (5) The key's name and place.
+- **Options:** (a) — **recommended**: (1) the script reads `parallelSafe` from the root `project.json` each time it runs, with the `python3` the gate already requires — only the JSON value `true` turns it on; a file missing or unreadable, a missing key, or any other value is serial; (2) `--test-only`, `all` and `--adversarial-only` take the flags (exit code 5 under the plugin is still 5 when no test matches, measured), `--integration-only` never does (its tests share one database); (3) `pytest-xdist==3.8.0`, the current release, in `BASE_DEVELOPMENT`, so every Python service has it whatever the mark says, with the four committed locks rebuilt; (4) the gates page records, per backend: Vitest runs test files in parallel by default, `go test ./...` runs packages in parallel, Maven's Surefire runs one at a time as configured — no backend's command changes; (5) top-level `parallelSafe`, as the specification spells it. (b) Bake the mark into the script at generation, so editing `project.json` does nothing until a regeneration.
+- **Decision:** (a).
+- **Why:** FR-009 promises a one-line opt-out in `project.json`; a line that does nothing until a regeneration is not one. A database-backed suite in parallel would turn a deterministic gate into a flaky one (the owner brief's fifth priority). Pinning the plugin unconditionally keeps one lock per feature set, as today. The Java sentence is the true one: nothing under `assets/` configures Surefire to run in parallel (read at this stage).
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a generated project's integration suite stops sharing a database, or a backend's runner changes its default.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S05's criteria); `delivery/docs/adr/0003-pytest-xdist-in-generated-python-services.md` (at Proposed)
+- **Status:** standing
