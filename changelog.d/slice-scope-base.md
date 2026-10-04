@@ -27,10 +27,10 @@ shallow clone too short to reach the branch point — used to pass as "nothing t
 single line that names the command to run (`git fetch origin <trunk>:refs/remotes/origin/<trunk>`, or
 `git fetch --unshallow origin`); the longer form is there because a bare `git fetch origin <trunk>` in a
 single-branch clone leaves no ref for the check to find. In any CI run with no trunk to compare with — a
-pull-request checkout, which is depth 1 by default, or a run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — the
-check still exits 0 and now says on stderr that the slice was NOT checked. A maintainer who
-wants it held there adds `fetch-depth: 0` to the verify job's checkout (`GIT_DEPTH: "0"` on GitLab). A local shell
-with one of those variables set gets the same line instead of the failure.
+checkout of one commit, or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — the check says on stderr that
+the slice was NOT checked, with no `git fetch` in it, since nobody can run one on a runner; a local shell with one
+of those variables set gets the same line. What that line's exit code is, and how CI gets the history, is the entry
+beside this one (*CI's `verify` job now fetches full history*).
 
 Two more things, for a repository whose trunk is not the usual one. A trunk named neither `main` nor `master`,
 recorded in `ci.branch`, is compared with for the first time, so slice branches already in flight in such a
@@ -39,5 +39,5 @@ repository are now held to the files one slice may touch, and may be refused whe
 compares with `main` and says so, on its pass line and where it fails: that `master` is here too, and that the fix
 is to set `ci.branch` to `master` in `project.json` on the trunk, or to delete the stale `main`.
 A comparison that could not run — git's diff failing, as in a partial clone whose remote is gone — used to pass; it
-now fails on a developer's machine with git's own first line, and in CI is NOT checked. Where git cannot read the
+now fails with git's own first line, on a developer's machine and in CI. Where git cannot read the
 checkout at all, the check says so and exits 0, as it always did. No setting, flag or file is added.

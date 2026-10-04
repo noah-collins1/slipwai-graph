@@ -1,7 +1,35 @@
 PATCH
 
-**A generated project's `verify` job now fetches full history, so CI holds a slice pull request to its scope and runs two more checks it could not run before.** The job's `actions/checkout@v6` step carries `fetch-depth: 0`, written unconditionally and the same on `push` and on `pull_request`, with a comment naming the three checks that need it. Before, the checkout was one commit deep: `check-slice-scope`, `check-migrations` and `check-flags` found no trunk to compare with and said so, or said nothing, while the pull request went green. Nothing else is fetched differently: the integration jobs, the event-model workflow and the deploy workflows are as they were.
+**CI's `verify` job now fetches full history, so a pull request is held in CI to what `make verify` already holds
+on a developer's machine.** The job's checkout carries `fetch-depth: 0`, written unconditionally and the same on
+`push` and on `pull_request`, in a generated project's `.github/workflows/verify.yml` and in the
+`verify-delivery.yml` that `slipwai adopt` writes (experimental: brownfield adoption); the GitLab job `adopt` writes,
+`verify-delivery`, carries `GIT_DEPTH: "0"`. Before, that checkout was one commit with no trunk in it, so the three
+checks that compare a change with the trunk — `check-slice-scope`, `check-migrations` and `check-flags` — had
+nothing to compare with and let the pull request through. No other job fetches differently: the integration jobs,
+the smoke jobs, and the event-model, deploy and `ux-gates` workflows are as they were.
 
-**`check-migrations` and `check-flags` now hold their *new in this change* rules in CI, on every pull request.** They already held them on a developer's machine; with history in CI the answer is the same in both places. So a pull request that was green before `slipwai migrate` can turn red afterwards, and this is why. Two refusals are new there: `check-migrations` refuses a contracting migration whose `contract:` names an expand added in the same pull request, and `check-flags` refuses a flag declared in the pull request and seeded anything but `off`. Nothing is newly allowed, and pushes to the trunk answer as they did. To clear a red pull request, land the expand first and the contract in a later pull request, or seed the new flag `off`. A slice pull request is also held to the files one slice may touch, and a run where `check-slice-scope` still has no trunk to compare with is now a failure rather than a note saying *NOT checked*.
+**`check-migrations` and `check-flags` now run their *new in this change* rules in CI, on every pull request.**
+They already held them on a developer's machine; CI now gives the same answer. So a pull request that was green
+before `slipwai migrate` can be red after it, and this is why. Two refusals are new in CI: `check-migrations`
+refuses a contracting migration whose `contract:` names an expand added in the same pull request, and `check-flags`
+refuses a flag declared in the pull request and seeded anything but `off`. To clear one, land the expand first and
+the contract in a later pull request, or seed the new flag `off`. Nothing is newly allowed, and a push to the trunk
+answers as it did.
 
-**Catch-up.** `slipwai migrate` carries the changed workflow into a project that kept it as generated. It does not rewrite a workflow the project took over, or a pipeline of its own that sets a CI marker (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`) on a shallow clone: there, add `fetch-depth: 0` to the `verify` job's checkout (on GitLab, `GIT_DEPTH: "0"` on the job), or the checks keep saying they were not run. An open pull request that carries either pattern above goes red on its next run. A repository with a long history pays the full fetch on that one job, on every run. No setting, flag or file is added.
+**A slice pull request is held to its scope in CI, and *NOT checked* is now a failure.** With history, a
+`slice/<id>` pull request that touches what one slice may not is refused in CI as it is locally. Where a CI run
+still has no trunk to compare with, or git could not run the comparison, `check-slice-scope` no longer exits 0
+saying the slice was NOT checked: it exits 1 with that line, which names what the job's checkout needs —
+`fetch-depth: 0`, on GitLab `GIT_DEPTH: "0"`, on any other CI a full clone with the trunk's branch fetched. A branch
+that is not `slice/<id>` has nothing to hold, as before; on a developer's machine every answer is what it was; and
+where git cannot read the checkout at all the check still says so and exits 0.
+
+**Catch-up.** `slipwai migrate` carries the changed workflow into a project that kept it as generated, and replaces
+the two files `adopt` wrote. It does not rewrite a workflow you took over or edited at that step (the merge shows
+you the change), or a pipeline of your own. There — in any CI job that runs `make verify` on a shallow clone with
+`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — a `slice/<id>` branch turns red after `migrate` until the job fetches
+history: add `fetch-depth: 0` under the checkout's `with:` (on GitLab, `GIT_DEPTH: "0"` under the job's
+`variables:`). An open pull request that carries an expand with its contract, or a new flag seeded other than `off`,
+goes red on its next run and is fixed as above. A repository with a long history pays the full fetch on that one
+job, on every run. No setting, flag or file is added.
