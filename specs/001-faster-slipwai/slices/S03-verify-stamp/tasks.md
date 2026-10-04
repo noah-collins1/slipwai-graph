@@ -927,7 +927,7 @@ AC-S03-32 to -42 in `spec.md`; D83's numbered items are the rules. T022 is close
 
 #### T036 — `HIGH` — The key covers every file under the project except a closed exempt list, the whole repository's tracked files, every ref and the repository's configuration (A1, A2, A3, A4 · AC-S03-32, -33, -34; D83 items 1–3)
 
-- [ ] **RED:** the four reproductions — an ignored `scratch_*.py` test that does not compile, a module ignored through
+- [x] *(done at `2ee4a07`: the key covers every file under the project except a closed exempt list (rebuilt, cache, record), the whole repository's tracked files and index, every ref, the repository's configuration)* **RED:** the four reproductions — an ignored `scratch_*.py` test that does not compile, a module ignored through
   `.git/info/exclude` that breaks `check-imports`, a sibling's uncommitted edit beside a subdirectory project on a
   `slice/<id>` branch, a tag named like the trunk and a replace ref, `core.quotePath` flipped — each reused today.
   **GREEN (the class):** the list turned round as D83 item 1 says, with the exempt list beside the checks, each entry
@@ -939,7 +939,7 @@ AC-S03-32 to -42 in `spec.md`; D83's numbered items are the rules. T022 is close
 
 #### T037 — `HIGH` — A note is bound to the run that wrote it (B1, B2 · AC-S03-35; D83 item 4)
 
-- [ ] **RED:** the adversary's interleaving — run A's checks in flight on a passing tree, an edit that fails lint, run B
+- [x] *(done at `10c78c3`: a note carries its run's random token; `record` writes nothing for another run's note or with no token)* **RED:** the adversary's interleaving — run A's checks in flight on a passing tree, an edit that fails lint, run B
   started and failing (and, second example, interrupted), run A finishing — leaves a stamp for the edited tree today;
   `record` typed by hand after a failed run writes one. **GREEN:** the token as item 4 says, shared by the recipe's two
   halves, stored as a random value or a digest; one line where the note is another run's or no token was given.
@@ -948,7 +948,7 @@ AC-S03-32 to -42 in `spec.md`; D83's numbered items are the rules. T022 is close
 
 #### T038 — `MEDIUM` — A run that cannot tell which branch is the trunk does not stamp, and says what to fix (C1, C4, C5 · AC-S03-37; D83 items 7, 8, 11)
 
-- [ ] **RED:** an unborn `master`; a `develop` trunk with no `main`, `master` or usable `ci.branch`; each unusable
+- [x] *(done at `72bf9f3`: unborn or non-branch `HEAD` is silent and unstamped; a trunk that cannot be told says one line)* **RED:** an unborn `master`; a `develop` trunk with no `main`, `master` or usable `ci.branch`; each unusable
   `ci.branch` of C4's table and a missing, unreadable or non-object `project.json`; `HEAD` a symbolic ref outside
   `refs/heads` — each reads or writes a stamp today. **GREEN:** the order of questions as AC-S03-37 gives it. The
   examples T035 and T016 left that expect a `develop` trunk with nothing recorded to reuse are brought to the new rule
@@ -958,7 +958,7 @@ AC-S03-32 to -42 in `spec.md`; D83's numbered items are the rules. T022 is close
 
 #### T039 — `LOW` — Paths, notes, instants and git's reason are taken exactly (B3, B4, B5, B6, C6 · AC-S03-36; D83 items 6, 11)
 
-- [ ] **RED:** one example per finding as the adversary wrote it. **GREEN:** as AC-S03-36 says; sweep every place the
+- [x] *(done at `b55d0a7`: paths lose exactly one line feed; the note's and the directory's paths are named rightly; a malformed instant is no stamp; git's reason is one escaped line)* **RED:** one example per finding as the adversary wrote it. **GREEN:** as AC-S03-36 says; sweep every place the
   script strips, prints a stored value, or names a thing to delete.
 
 **Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_file.py`, `tests/test_verify_stamp_cannot.py`, new `tests/test_verify_stamp_exact.py`.
