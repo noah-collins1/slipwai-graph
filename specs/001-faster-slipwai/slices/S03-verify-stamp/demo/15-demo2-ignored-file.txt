@@ -1,0 +1,67 @@
+== step 12: an ignored file counts
+191a05d ignore scratch files
+541e163 Scaffold stamped
+-- stamping run 1
+verify: all gates passed
+real	0m3.755s
+-- stamping run 2
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:05Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+real	0m0.539s
+-- stamping run 3
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:05Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+real	0m0.551s
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 01:46 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 01:46 ..
+-rw------- 1 noahc noahc 648 Oct  4 01:46 verify-stamp-e3b0c44298fc1c14.json
+6cff291a4f265359ed469cccc59634daa424f086f34628aeaf606756d66e9381  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+-- write apps/service/tests/scratch_try.py that does not compile
+git status --short:
+?? scripts/event-model/package-lock.json
+(end)
+.gitignore:77:scratch_*.py	apps/service/tests/scratch_try.py
+-- make verify
+./scripts/verify --lint-only
+All checks passed!
+31 files already formatted
+./scripts/verify --typecheck-only
+*** Error compiling 'apps/service/tests/scratch_try.py'...
+  File "apps/service/tests/scratch_try.py", line 1
+    def broken(:
+               ^
+SyntaxError: invalid syntax
+
+make[1]: *** [Makefile:62: typecheck] Error 1
+make: *** [Makefile:170: verify] Error 2
+
+real	0m0.998s
+user	0m0.727s
+sys	0m0.237s
+exit 2
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 01:46 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 01:46 ..
+-rw------- 1 noahc noahc 923 Oct  4 01:46 verify-stamp-e3b0c44298fc1c14.pending
+-- again
+*** Error compiling 'apps/service/tests/scratch_try.py'...
+SyntaxError: invalid syntax
+make[1]: *** [Makefile:62: typecheck] Error 1
+make: *** [Makefile:170: verify] Error 2
+real	0m0.956s
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 01:46 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 01:46 ..
+-rw------- 1 noahc noahc 923 Oct  4 01:46 verify-stamp-e3b0c44298fc1c14.pending
+-- remove the file and run until it records
+-- run 1
+verify: all gates passed
+real	0m3.798s
+verify-stamp-e3b0c44298fc1c14.json
+-- run 2
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:12Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+real	0m0.549s
+verify-stamp-e3b0c44298fc1c14.json
+-- run 3
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:12Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+real	0m0.551s
+verify-stamp-e3b0c44298fc1c14.json

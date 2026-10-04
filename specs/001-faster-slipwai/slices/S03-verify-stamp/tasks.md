@@ -984,8 +984,12 @@ AC-S03-32 to -42 in `spec.md`; D83's numbered items are the rules. T022 is close
 
 #### T042 — the host's — Quickstart step 9 corrected and SC-001 measured again (AC-S03-42; D83 items 1, 9)
 
-- [ ] After T036–T041: `quickstart.md` step 9 says what `make ci` now does; `drive-hand` measures the reuse run again
+- [x] *(done: quickstart step 9 corrected and steps 12–15 added (`e056cc7`); demo 2 by `drive-hand` accepted — the reuse run 0.537–0.550 s over ten runs after the key was widened, 0.54–0.57 s over thirty-two)* After T036–T041: `quickstart.md` step 9 says what `make ci` now does; `drive-hand` measures the reuse run again
   on AC-S03-20's project and follows the changed steps; the number replaces the one in the quickstart.
+
+**Mutation (Phase 4):** N/A — `make -f delivery/Makefile mutation` answers that `project.json` records no mutation
+command for this repository. Teeth were shown by hand instead: each hold by a change that failed it (T001, T034), five
+mutations of the script killed by the suite in converge pass 1, and every adversary fix through a failing example first.
 
 ## Parallel opportunities
 

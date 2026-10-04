@@ -11,11 +11,12 @@ The actor is a developer in a project the factory generated. Everything below is
    passed` with no such line: that run recorded.
 3. `time make verify` — one line beginning `verify:` that says the gate did not run, when this tree passed, a
    short key and `VERIFY_FORCE=1`; no check runs. **SC-001: the wall time is under one second.** Write the
-   command, the machine and the number here: measured at the demo of 2026-10-04 (cruise iteration 11) with
-   `time make verify`, the whole command, `real`, on a 12th Gen Intel Core i5-12400 (12 cores), Linux 7.0.0-31
-   x86_64, GNU Make 4.4.1, git 2.53.0, uv 0.12.20, Python 3.14.4, Node v22.22.1, npm 9.2.0 — ten runs in a row:
-   **0.508 s, 0.518 s, 0.518 s, 0.521 s, 0.521 s, 0.515 s, 0.508 s, 0.519 s, 0.510 s, 0.517 s** (worst 0.521 s;
-   seven more at the end of the demo, 0.503 s to 0.526 s), against 3.7 s for the full gate on the same tree.
+   command, the machine and the number here: measured at the second demo of 2026-10-04 (cruise iteration 11,
+   AC-S03-42, code at c1a626b) with `time make verify`, the whole command, `real`, on a 12th Gen Intel Core
+   i5-12400 (12 cores), Linux 7.0.0-31 x86_64, GNU Make 4.4.1, git 2.53.0, uv 0.12.20, Python 3.14.4, Node
+   v22.22.1, npm 9.2.0 — ten runs in a row at step 15:
+   **0.537 s, 0.546 s, 0.549 s, 0.550 s, 0.550 s, 0.550 s, 0.544 s, 0.547 s, 0.543 s, 0.544 s** (worst 0.550 s;
+   twenty-two more through the demo, 0.535 s to 0.565 s), against 3.8 s for the full gate on the same tree.
 4. Change one character in a source file under `apps/service/src/` (a change the formatter accepts — a word
    inside a docstring; whether that run passes is not the point, that every check runs is). Undo it;
    `make verify` — every check runs again (the earlier stamp was removed), and the run after that is reused.

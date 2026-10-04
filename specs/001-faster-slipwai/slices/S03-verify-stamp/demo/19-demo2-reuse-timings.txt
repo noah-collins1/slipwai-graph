@@ -1,0 +1,81 @@
+== step 15: step 3 again — time make verify, the whole command, real; ten runs in a row
+machine:  12th Gen Intel(R) Core(TM) i5-12400, 12 cores, Linux 7.0.0-31-generic x86_64, GNU Make 4.4.1, git version 2.53.0, uv 0.12.20 (2274b80d6 2026-09-28 x86_64-unknown-linux-gnu), Python 3.14.4, node v22.22.1, npm 9.2.0; project on tmpfs under /tmp
+load average before: 0.87 0.89 0.94 1/918 2152217
+?? scripts/event-model/package-lock.json
+topic
+-- run 1
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.537s
+user	0m0.428s
+sys	0m0.083s
+exit 0
+-- run 2
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.546s
+user	0m0.425s
+sys	0m0.078s
+exit 0
+-- run 3
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.549s
+user	0m0.441s
+sys	0m0.081s
+exit 0
+-- run 4
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.550s
+user	0m0.412s
+sys	0m0.105s
+exit 0
+-- run 5
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.550s
+user	0m0.433s
+sys	0m0.086s
+exit 0
+-- run 6
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.550s
+user	0m0.433s
+sys	0m0.087s
+exit 0
+-- run 7
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.544s
+user	0m0.439s
+sys	0m0.085s
+exit 0
+-- run 8
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.547s
+user	0m0.421s
+sys	0m0.090s
+exit 0
+-- run 9
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.543s
+user	0m0.411s
+sys	0m0.095s
+exit 0
+-- run 10
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.544s
+user	0m0.419s
+sys	0m0.091s
+exit 0
+load average after: 0.80 0.88 0.93 1/918 2153137
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 01:48 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 01:48 ..
+-rw------- 1 noahc noahc 648 Oct  4 01:48 verify-stamp-e3b0c44298fc1c14.json
+2249682bf34628c628cea720bde0726ee4e79c60f4af8147c9690fafa794be8e  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json

@@ -1,0 +1,210 @@
+== step 13: two gates at once (first started, second started 1.0 s later, each in its own shell)
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 01:46 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 01:46 ..
+-rw------- 1 noahc noahc 648 Oct  4 01:46 verify-stamp-e3b0c44298fc1c14.json
+ea27e278fb6befbaf9cce0be51b05341f8e1738360c97606feafdd17ffce2e22  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+-- FIRST run, lines beginning verify: and its exit
+1:verify: the full gate runs, forced by VERIFY_FORCE=1
+73:verify: all gates passed
+74:verify: this pass was not recorded — another run of the gate started here after this one began, so only that run may record
+75:exit 0
+-- SECOND run
+1:verify: the full gate runs, forced by VERIFY_FORCE=1
+73:verify: all gates passed
+74:exit 0
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 01:46 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 01:46 ..
+-rw------- 1 noahc noahc 648 Oct  4 01:46 verify-stamp-e3b0c44298fc1c14.json
+9e4c0b7d3a7c4d0c7af5a0ea4fc49642645b333cd6cc422e5ec26f7930431201  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+{
+  "key": "d662ad7cd06c1727175d7e8be9577bb95bc7c39298801d40049b23c94ade105b",
+  "passed": "2026-10-04T06:46:26Z",
+  "result": "pass",
+  "scripts": "beff8606d131d429fac64673f916a40c741b35ad559ac6240c03b8c0fdd792c0",
+  "tools": {
+    "git": "2.53.0 [answer 46b31b17db8e684a]",
+    "interpreter apps/service/.venv": "3.14.4",
+    "make": "4.4.1 [answer 268cdd1fee3838e9]",
+    "node": "v22.22.1 [answer b58f2d61bbad34ff]",
+    "npm": "9.2.0 [answer a99c8ff469e946de]",
+    "python3": "3.14.4 [answer d629b9bbeb3eb13f]",
+    "uv": "0.12.20 [answer 259c9ceedc36130a]"
+  },
+  "tree": "3446249ead6839e80203b3d6d3fb4f3e0ded41eaeef5c0b40d5a50e2e7f536bb"
+}
+
+-- the run after
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:26Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+real	0m0.544s
+-- repeat with the second started 2.5 s in
+-- FIRST
+1:verify: the full gate runs, forced by VERIFY_FORCE=1
+73:verify: all gates passed
+74:verify: this pass was not recorded — another run of the gate started here after this one began, so only that run may record
+75:exit 0
+-- SECOND
+1:verify: the full gate runs, forced by VERIFY_FORCE=1
+73:verify: all gates passed
+74:exit 0
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 01:46 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 01:46 ..
+-rw------- 1 noahc noahc 648 Oct  4 01:46 verify-stamp-e3b0c44298fc1c14.json
+-- the run after
+verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:33Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+real	0m0.552s
+
+======== the first run's whole output (second started 1.0 s later)
+verify: the full gate runs, forced by VERIFY_FORCE=1
+./scripts/verify --lint-only
+All checks passed!
+31 files already formatted
+./scripts/verify --typecheck-only
+Success: no issues found in 29 source files
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (85 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `topic`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+./scripts/verify --test-only
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s03-demo2/stamped/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s03-demo2/stamped/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s03-demo2/stamped/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.55s ========================
+python3 scripts/event-model/check.py
+check-model: valid
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 71ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+verify: this pass was not recorded — another run of the gate started here after this one began, so only that run may record
+exit 0
+
+======== the second run's whole output
+verify: the full gate runs, forced by VERIFY_FORCE=1
+./scripts/verify --lint-only
+All checks passed!
+31 files already formatted
+./scripts/verify --typecheck-only
+Success: no issues found in 29 source files
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (85 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `topic`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+./scripts/verify --test-only
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s03-demo2/stamped/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s03-demo2/stamped/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s03-demo2/stamped/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.55s ========================
+python3 scripts/event-model/check.py
+check-model: valid
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 69ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+exit 0

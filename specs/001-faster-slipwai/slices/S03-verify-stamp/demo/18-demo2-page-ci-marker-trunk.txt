@@ -1,0 +1,173 @@
+== the stamp paragraph of the generated docs/gates.md (lines 10-28)
+A tree that already passed `make verify` is not judged again. A full passing run on a branch that is not the trunk
+records a stamp under the git directory, never in the working tree, so `git status` shows nothing of it. It is keyed by
+what the stamp can see of the checks: every file under the project, tracked, untracked or ignored, except what the gate
+rebuilds or never reads (installed dependencies apart from the manifest of what is installed, caches and build output),
+the index, `HEAD`, every ref and the repository's own git configuration, `Makefile` and `scripts/`, the versions of the
+tools the machine supplies, and the variables a check reads. The next run on the same tree prints one
+line, `verify: the full gate did not run; this tree already passed it …`, starts no check and exits 0. `VERIFY_FORCE` is
+unset by default; anything but empty or `0` forces it, on the command line or in the environment. To run the gate anyway,
+run `make verify VERIFY_FORCE=1`. A stamp cannot see what a project's own tests or tools read from outside the repository: the clock, the network,
+user-level tool configuration, `PATH`, or a variable no gate script names. Nor can it see git's own user-level or
+system configuration, or a file edited by hand inside an installed dependency tree whose manifest did not move.
+A gate that would now fail for one of those alone is reused as green until a file, a ref or a listed input moves or
+`VERIFY_FORCE` is given. CI and the trunk, which never read a stamp, are where it is caught. When a check answers from
+one of those things, run `make verify VERIFY_FORCE=1`. The trunk and CI (`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set to
+a non-empty value) always run the full gate and neither read nor write a stamp. A pipeline that sets none of the three
+sets `CI=1` itself. `make ci` runs every check and records nothing. The trunk is the branch `project.json` records as
+`ci.branch`, else `main`, else `master`. A team whose trunk has another name sets `ci.branch` in `project.json` to it;
+until then that branch reuses a stamp like any other. A `ci.branch` the gate cannot use, or a trunk it cannot find, is
+said on one line before the first check, which tells what to fix; that run runs every check and records nothing.
+
+== followed: a pipeline with no marker sets CI=1
+stamp before: 7ae05c5905113862
+-- CI=1 make verify
+72:verify: all gates passed
+74:real	0m3.228s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- make verify CI=1 (on make's command line)
+72:verify: all gates passed
+74:real	0m3.292s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- plain, after
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:33Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+3:real	0m0.550s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+
+== followed: a ci.branch the gate cannot use is said on a line
+-- project.json ci = {"branch": 7}
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci.branch as something that is not a string, which is not the trunk the gate resolves (`main`); record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.327s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci.branch as something that is not a string, which is not the trunk the gate resolves (`main`); record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.256s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- project.json ci = {"branch": ""}
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci.branch as ``, which is not the trunk the gate resolves (`main`); record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.298s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci.branch as ``, which is not the trunk the gate resolves (`main`); record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.235s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- project.json ci = {"branch": "no-such-branch"}
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci.branch as `no-such-branch`, which is not the trunk the gate resolves (`main`); record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.339s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci.branch as `no-such-branch`, which is not the trunk the gate resolves (`main`); record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.242s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- project.json ci = "main"
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci as something other than an object; record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.240s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci as something other than an object; record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.308s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- project.json ci = {"branch": "has space"}
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci.branch as `has space`, which is not the trunk the gate resolves (`main`); record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.274s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json records ci.branch as `has space`, which is not the trunk the gate resolves (`main`); record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.262s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- project.json ci = {"branch": "topic"}
+72:verify: all gates passed
+74:real	0m3.243s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+72:verify: all gates passed
+74:real	0m3.324s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- project.json not JSON
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: project.json is missing, unreadable or not a JSON object; record `ci.branch` in project.json, or fetch the trunk
+44:make[1]: *** [Makefile:69: check-imports] Error 1
+45:make: *** [Makefile:170: verify] Error 2
+47:real	0m0.812s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+?? scripts/event-model/package-lock.json
+-- restored
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:33Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+3:real	0m0.542s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:33Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+3:real	0m0.547s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+
+== followed: a trunk it cannot find (neither main nor master, no ci.branch)
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: no branch named `main` has a ref here; record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.247s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate runs and this run records nothing — cannot tell which branch is the trunk: no branch named `main` has a ref here; record `ci.branch` in project.json, or fetch the trunk
+73:verify: all gates passed
+75:real	0m3.245s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+-- main back
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:33Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+3:real	0m0.544s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T06:46:33Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+3:real	0m0.551s
+stamp: 7ae05c5905113862 verify-stamp-e3b0c44298fc1c14.json
+
+== afterwards
+git status --short --ignored:
+?? scripts/event-model/package-lock.json
+!! .mypy_cache/
+!! .ruff_cache/
+!! apps/service/.pytest_cache/
+!! apps/service/.ruff_cache/
+!! apps/service/.venv/
+!! apps/service/src/stamped/__pycache__/
+!! apps/service/src/stamped/adapters/driven/__pycache__/
+!! apps/service/src/stamped/adapters/driving/http/__pycache__/
+!! apps/service/src/stamped/application/ports/__pycache__/
+!! apps/service/tests/__pycache__/
+!! apps/service/tests/contract/__pycache__/
+!! apps/service/tests/edge/__pycache__/
+!! apps/service/tests/integration/__pycache__/
+!! scripts/event-model/node_modules/
+git directory:
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 01:46 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 01:48 ..
+-rw------- 1 noahc noahc 648 Oct  4 01:46 verify-stamp-e3b0c44298fc1c14.json
+COMMIT_EDITMSG
+HEAD
+config
+description
+hooks
+index
+info
+logs
+objects
+refs
+slipwai
+== a ci.branch naming a branch that exists (develop), from topic
+72:verify: all gates passed
+74:real	0m3.817s
+stamp: 87d39ab97363f8f1 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:19Z (key c3b4fd048ec4); VERIFY_FORCE=1 runs it anyway
+3:real	0m0.565s
+stamp: 87d39ab97363f8f1 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:19Z (key c3b4fd048ec4); VERIFY_FORCE=1 runs it anyway
+3:real	0m0.559s
+stamp: 87d39ab97363f8f1 verify-stamp-e3b0c44298fc1c14.json
+Deleted branch develop (was 541e163).
+?? scripts/event-model/package-lock.json
+-- restored
+72:verify: all gates passed
+74:real	0m3.786s
+stamp: 2249682bf34628c6 verify-stamp-e3b0c44298fc1c14.json
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T06:48:24Z (key d662ad7cd06c); VERIFY_FORCE=1 runs it anyway
+3:real	0m0.546s
+stamp: 2249682bf34628c6 verify-stamp-e3b0c44298fc1c14.json
