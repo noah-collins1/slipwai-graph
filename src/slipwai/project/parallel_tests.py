@@ -15,7 +15,8 @@ FLAGS = "-p xdist -n auto --maxprocesses 4"
 
 MARK = f"""**Tests across cores.** A Python service's gate runs its tests across cores where `project.json` says it may: `"parallelSafe": true`,
 which every new project has, adds `{FLAGS}` (`pytest-xdist`, capped at four workers) to the gate's `pytest` in `make test`
-and `make verify`, and never to the adversarial run or the integration run, whose tests share one database. **A missing mark is serial**,
+and `make verify`, and never to the adversarial run, nor to the integration run, whose tests share one database; where `CI`, `GITHUB_ACTIONS`
+or `GITLAB_CI` is set, to anything, the gate runs serially whatever the mark says. **A missing mark is serial**,
 and so is `false`, or a file the gate cannot read: a project made before the mark existed has none, and `slipwai migrate` never adds
 one. Only the JSON `true` turns it on (a string `"true"` is serial), and a mark written twice is serial, because the gate cannot
 tell which copy is meant: add the line `"parallelSafe": true,` once, with its comma, right after the `"target"` line, where `generate` writes it. The gate reads the mark each time it runs, so a change takes effect on the next run with nothing regenerated. Set it `false`
