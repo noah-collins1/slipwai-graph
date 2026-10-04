@@ -1805,6 +1805,8 @@ is `sync`, a *run line* one whose first is `run`.
 - **AC-S04-55** — Given the skip line of AC-S04-48, then it is said only where it is true in that make invocation,
   by a mechanism GNU Make 3.81 has; where the plan finds none, the line is said only where it can be said
   truthfully and this criterion and the example are re-worded — a line that could be wrong is not shipped (D91).
+  *Matches* is D91's rule, the marker newer than both manifests: a manifest edited and then dated backwards by hand
+  is not seen, as the root's install has never seen one (*added by D94*).
 
 **Carrying it to a project that exists (constitution I; D88, D91, D92)**
 
