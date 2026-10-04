@@ -15,7 +15,6 @@ unclean tree, and a repository that already has a `project.json` — `slipwai mi
 """
 from __future__ import annotations
 
-import json
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -24,6 +23,7 @@ from .adopt_report import MAKEFILE, SETTINGS, Adopted, report, survey_page
 from .assets import VERSION
 from .errors import GenerationError
 from .layout import Layout
+from .manifest import load_manifest
 from .origin import FORGES, RELEASE_PATHS, Adoption
 from .platform import with_platform
 from .project.adopted import WRITTEN, agents_block, gitignore_block, makefile_block
@@ -292,7 +292,7 @@ def adopt(root: Path, answers: Answers, found: Survey | None = None) -> Adopted:
 
 
 def manifest_of(root: Path) -> dict:
-    return json.loads((root / "project.json").read_text(encoding="utf-8"))
+    return load_manifest(root)
 
 
 __all__ = ["Adopted", "Answers", "WRITTEN", "adopt", "candidates_of", "manifest_of", "proposed", "report"]

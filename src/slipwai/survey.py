@@ -15,7 +15,6 @@ guessed. `ecosystems.py` is the table of what can be recognised.
 """
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from fnmatch import fnmatch
@@ -32,6 +31,7 @@ from .delivery_facts import (
     role_of,
 )
 from .ecosystems import ECOSYSTEMS, Detected, aggregates, read
+from .manifest import load_manifest
 from .origin import FORGES, RELEASE_PATHS
 from .quick_wins import quick_wins
 
@@ -173,7 +173,7 @@ def written_by_factory(root: Path) -> tuple[str, set[str]]:
     """What an earlier adoption put here — the delivery directory and every path it listed in `.written` — so
     that a re-survey does not read the factory's own CI workflow or scripts as the repository's."""
     try:
-        document = json.loads((root / "project.json").read_text(encoding="utf-8"))
+        document = load_manifest(root)
         delivery = document.get("layout", {}).get("delivery", ".")
     except (OSError, ValueError, AttributeError):
         return ".", set()

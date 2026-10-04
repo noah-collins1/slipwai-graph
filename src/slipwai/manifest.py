@@ -173,6 +173,58 @@ def apps_from_manifest(document: dict, allow_empty: bool = False) -> list[App]:
     return apps
 
 
+class _Once(dict):
+    """A JSON object that remembers which keys the text wrote more than once (RFC 8259 leaves their meaning open)."""
+
+    repeated: list[str]
+
+
+def _once(pairs: list[tuple[str, object]]) -> dict:
+    held = _Once()
+    held.repeated = []
+    for key, value in pairs:
+        if key in held:
+            held.repeated.append(key)
+        held[key] = value
+    return held
+
+
+def _paths_twice(node: object, prefix: str = "") -> list[str]:
+    """Every key path the parsed text wrote more than once, at any depth."""
+    found: list[str] = []
+    if isinstance(node, _Once):
+        found += [prefix + key for key in dict.fromkeys(node.repeated)]
+    if isinstance(node, dict):
+        for key, value in node.items():
+            found += _paths_twice(value, f"{prefix}{key}.")
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            found += _paths_twice(value, f"{prefix}{index}.")
+    return found
+
+
+def keys_written_twice(text: str) -> list[str]:
+    """The key paths `text` writes more than once, in any object at any depth; `ValueError` where it is not JSON."""
+    return _paths_twice(json.loads(text, object_pairs_hook=_once))
+
+
+def parse_manifest(text: str) -> object:
+    """`json.loads` for a `project.json`, which refuses a key written twice rather than keeping the last copy."""
+    document = json.loads(text, object_pairs_hook=_once)
+    twice = _paths_twice(document)
+    if twice:
+        raise GenerationError(
+            f'project.json has "{twice[0]}" twice' + (f" (and {len(twice) - 1} more key(s))" if len(twice) > 1 else "")
+            + "; keep one copy and run this again"
+        )
+    return document
+
+
+def load_manifest(root: Path) -> dict:
+    """The parsed `project.json` of the project at `root`, with no check of what it says beyond one copy of each key."""
+    return parse_manifest((root / "project.json").read_text(encoding="utf-8"))  # type: ignore[return-value]
+
+
 def read_manifest(root: Path, verb: str = "add-service") -> dict:
     """The project's `project.json`, or the refusal that says why this directory is not a generated project."""
     manifest = root / "project.json"
@@ -182,7 +234,7 @@ def read_manifest(root: Path, verb: str = "add-service") -> dict:
             f"generated — run {verb} from that directory"
         )
     try:
-        document = json.loads(manifest.read_text(encoding="utf-8"))
+        document = parse_manifest(manifest.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         raise GenerationError(f"project.json is not valid JSON: {error}") from error
     if not isinstance(document, dict):

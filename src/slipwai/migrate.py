@@ -29,7 +29,7 @@ from .assets import NOTES, VERSION
 from .catch_up import notes
 from .errors import GenerationError
 from .layout import AT_ROOT, Layout, layout_of
-from .manifest import read_manifest
+from .manifest import keys_written_twice, read_manifest
 from .replay import Replay, git, replay
 from .scaffold import NO_MAINTENANCE
 
@@ -74,6 +74,8 @@ class Migration:
     # Why the catch-up notes could not be written, or None when they were — which is every migration that
     # changed anything, whatever the versions crossed asked.
     unwritten: str | None = None
+    # Key paths the clean merge left written twice in `project.json` (D107): the merge is kept, and said so.
+    twice: tuple[str, ...] = ()
 
 
 def migrate(root: Path) -> Migration:
@@ -106,8 +108,39 @@ def migrate(root: Path) -> Migration:
         # and half the factory's until somebody decides, and projecting a conflicted file would write the
         # markers into every harness. The report asks for it after the resolving commit instead.
         return Migration(offered, was, conflicts, stat, fast_forward, unwritten=unwritten)
+    twice = merged_twice(root)
+    if twice and unwritten is None:
+        unwritten = append_notes(root, [twice_sentence(key) for key in twice])
     refreshed = refresh(root, document["name"], layout_of(document))
-    return Migration(offered, was, conflicts, stat, fast_forward, refreshed, unwritten)
+    return Migration(offered, was, conflicts, stat, fast_forward, refreshed, unwritten, twice)
+
+
+def merged_twice(root: Path) -> tuple[str, ...]:
+    """The keys the merged `project.json` writes more than once, which a text merge can make of two edits."""
+    try:
+        return tuple(keys_written_twice((root / "project.json").read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        return ()
+
+
+def twice_sentence(key: str) -> str:
+    """One sentence, for the report and for the catch-up note: the file, the key, what it does, what to do."""
+    reads = (
+        f'the gate reads "{key}" written twice as serial, so a parallel setting does nothing until'
+        if key == "parallelSafe"
+        else f'every command here refuses a project.json that writes "{key}" twice until'
+    )
+    return f'project.json has "{key}" twice after this merge; {reads} you keep one copy.'
+
+
+def append_notes(root: Path, sentences: list[str]) -> str | None:
+    """Add `sentences` to the catch-up note; None when they were added, else why not."""
+    try:
+        with (root / NOTES).open("a", encoding="utf-8", newline="\n") as note:
+            note.write("\n## project.json\n\n" + "\n".join(f"- {line}" for line in sentences) + "\n")
+    except OSError as error:
+        return str(error)
+    return None
 
 
 def merge_offered(root: Path, offered: Replay, message: str) -> tuple[str | None, tuple[str, ...], bool]:
@@ -263,6 +296,7 @@ def report(done: Migration) -> str:
             "The extension and harness projections were re-derived from the sources this brought in; they are "
             "ignored by Git or already current, so there is nothing to commit."
         )
+    lines.extend(twice_sentence(key) for key in done.twice)
     lines.append("Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.")
     if done.unwritten is None:
         lines.append(

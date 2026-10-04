@@ -28,6 +28,7 @@ from pathlib import Path
 
 from .harness import Agent, from_environment, from_spec_kit, keys, name_of
 from .host import TOOLCHAINS, Host, detect, disabled, ensure, install_hint, present
+from .manifest import load_manifest
 
 
 def add_setup_arguments(parser: argparse.ArgumentParser, script: str) -> None:
@@ -137,7 +138,7 @@ def record_agent(root: Path, agent: Agent) -> str:
     if settled is None or settled.harness is None:
         return "`./init` recorded no integration, so project.json's agent stays the open question it was."
     manifest = root / "project.json"
-    document = json.loads(manifest.read_text(encoding="utf-8"))
+    document = load_manifest(root)
     document["agent"] = settled.record()
     manifest.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="\n")
     return (
