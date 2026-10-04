@@ -13,6 +13,7 @@ from __future__ import annotations
 from ..services import App
 from ..tooling import app_tooling
 from .native_commands import steps
+from .parallel_gate import in_recipe
 
 # The Make variables one feature's own service needs, keyed by that feature. Where it is addressed and what
 # a real one buys are facts about the product, so they are written per feature — but *whether* any of it is
@@ -49,7 +50,7 @@ def integration_variables(services: list[App], apps: list[App], per_service: lis
         if integration is not None:
             variables = "" if integration in declared else f"{SERVICE_VARIABLES[integration]}\n"
             declared.append(integration)
-            real = app_tooling(service, apps, integration)["integration"]
+            real = in_recipe(app_tooling(service, apps, integration)["integration"], apps)
             text += f"""
 # backing-service:{integration}:begin
 {variables}INTEGRATION_TEST{service.suffix} := {real}

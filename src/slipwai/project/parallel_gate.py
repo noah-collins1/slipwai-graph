@@ -1,0 +1,79 @@
+"""One sync per `make` run: the target every Python-running target names, and the recipes that run a mode without a second one.
+
+`./scripts/verify <mode>` syncs every Python service's environment from its committed lock before it runs the mode, and
+that is what a mode reached any other way — typed by a person, a CI step, an agent's hook — gets. A `make` run that reaches
+several modes (`make verify` reaches three, `make -j verify` runs them at once on one `.venv`) would sync once per mode, so
+the Makefile syncs once instead: `sync` is a phony target, every target whose recipe runs a mode names it as a
+prerequisite, and the recipes pass the script a second argument, `--synced`, that says the environment is built. The
+argument is the Makefile's own. It is never a default and never read from the environment, and nothing published outside
+the Makefile — the CI workflow, `service_commands()`, the pages — spells it: a mode reached any other way syncs first.
+
+Only Python has the target. TypeScript's `npm ci` is already the recipe of one file target, and Go and Java have no
+install step in a gate mode to share.
+"""
+from __future__ import annotations
+
+import re
+
+from ..services import App, services_of
+from ..tooling import verify_path
+from .native_commands import STEP, steps
+from .openapi import exporting
+
+SYNC = "sync"
+
+
+def python_services(apps: list[App]) -> list[App]:
+    """The generated services written in Python: the ones whose environment the target builds."""
+    return [service for service in services_of(apps) if service.language == "python"]
+
+
+def script_of(apps: list[App]) -> str:
+    """Where the Python family's verify script is, as a recipe spells it."""
+    return f"./{verify_path('python', apps)}"
+
+
+def needs(service: App) -> str:
+    """The prerequisite a target of one service's own names, as it sits on a target line: ` sync` or nothing."""
+    return f" {SYNC}" if service.language == "python" else ""
+
+
+def in_recipe(recipe: str, apps: list[App]) -> str:
+    """A recipe whose Python modes run on the environment `sync` built: each call of the script takes `--synced`
+    after its mode, and a written-out `--install-only` line (the sync itself) goes. A project with no Python service
+    has none of either, so the recipe is returned as it is."""
+    if not python_services(apps):
+        return recipe
+    script = re.escape(script_of(apps))
+    kept = [line for line in steps(recipe) if not re.fullmatch(rf"{script} --install-only", line)]
+    return STEP.join(re.sub(rf"({script} --[a-z]+(?:-[a-z]+)*)(?! --synced)", r"\1 --synced", line) for line in kept)
+
+
+def sync_rules(project_name: str, apps: list[App], suites: list[App], formatting: bool) -> str:
+    """The `sync` target and the one line that makes it a prerequisite of every target that runs a Python mode.
+
+    `lint`, `typecheck`, `test`, `adversarial` and `install` always; `format` where this project has one;
+    `test-integration`, or the per-service targets, for a Python service's suite; `openapi` and `check-openapi`
+    where a Python service exports its document. `migrate` and `dev` name it on their own target lines, inside the
+    marked regions they live in (`makefile.install_step`, `makefile.dev_targets`), because a line outside would
+    define a pruned target with no recipe. Nothing for a project with no Python service.
+    """
+    if not python_services(apps):
+        return ""
+    dependents = ["typecheck", "lint", *(["format"] if formatting else []), "test", "adversarial", "install"]
+    python_suites = [s for s in suites if s.language == "python" and s.generated]
+    if len(suites) == 1:
+        dependents += ["test-integration"] if python_suites else []
+    else:
+        dependents += [f"test-integration-{s.name}" for s in python_suites]
+    if any(s.language == "python" for s in exporting(project_name, apps)):
+        dependents += ["openapi", "check-openapi"]
+    return f"""
+# Each Python service's environment, built from its committed lock once per `make` run: every target below names it
+# rather than syncing inside its own recipe, so `make verify`, `make -j verify` and `make lint test` sync once. A mode
+# run any other way (`{script_of(apps)[2:]} --lint-only` by hand) still syncs first.
+.PHONY: {SYNC}
+{SYNC}: check-python ## Build each Python service's environment from its committed lock, once per make run
+\t{script_of(apps)} --install-only
+{' '.join(dependents)}: {SYNC}
+"""

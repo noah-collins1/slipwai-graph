@@ -1,0 +1,228 @@
+"""What the `test_parallel_gate_*` modules share: shapes, stand-in tools, a bounded `make`, and readers over the log.
+
+Not a test module. A shape is generated once per process and copied per test; the stand-ins are executables written
+into a directory first on `PATH`; evidence is the log a stand-in appends to, never a printed line. A stand-in `uv`
+logs `start<TAB>arguments` when it is called and `end<TAB>arguments` when it returns, so a log shows what ran and
+whether two calls overlapped; where a test asks, a `sync` holds, bounded, while another `uv` call is in flight and
+logs `met` if another call was in flight or started meanwhile and `alone` if none came. Nothing here sleeps as proof
+and nothing reads a clock.
+"""
+from __future__ import annotations
+
+import atexit
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+from stamp_fixture import BRANCH, CI_MARKERS, GIT_STATE, MAKE_STATE, PYVENV_CFG, git
+
+from slipwai.assets import ROOT
+
+sys.dont_write_bytecode = True
+
+SERVICE = "apps/service"
+# name -> the arguments of `slipwai generate`; `two` is `plain` with a second Python service added to it.
+SHAPES: dict[str, tuple[str, ...]] = {
+    "plain": ("--profile", "standard", "--backend", "python", "--frontend", "none", "--http", "none"),
+    "db": ("--profile", "event-modelling", "--backend", "python", "--frontend", "none", "--http", "none",
+           "--event-store", "postgres"),
+    "api": ("--profile", "event-modelling", "--backend", "python", "--frontend", "none", "--http", "fastapi",
+            "--event-store", "postgres"),
+}
+SHAPES["two"] = SHAPES["plain"]
+
+_UV = """#!/bin/sh
+log() { printf '%s\\t%s\\n' "$1" "$2" >> "$STANDIN_LOG"; }
+args="$*"
+log start "$args"
+starts() { grep -c '^start' "$STANDIN_LOG"; }
+in_flight() { echo $(($(starts) - $(grep -c '^end' "$STANDIN_LOG"))); }
+case "$1" in
+  --version) echo "uv 0.12.20 (stand-in)" ;;
+  sync)
+    while [ $# -gt 0 ]; do
+      if [ "$1" = --project ]; then dir=$2; fi
+      shift
+    done
+    if [ -n "$STANDIN_SYNC_HOLD" ]; then
+      n=0; seen=alone; first=$(starts)
+      while [ "$n" -lt 40 ]; do
+        if [ "$(in_flight)" -ge 2 ] || [ "$(starts)" -gt "$first" ]; then seen=met; break; fi
+        sleep 0.05; n=$((n + 1))
+      done
+      log "$seen" "sync $dir"
+    fi
+    if [ -n "$STANDIN_SYNC_FAIL" ]; then
+      echo "uv: sync failed (stand-in)" >&2; log end "$args"; exit 1
+    fi
+    mkdir -p "$dir/.venv"
+    [ -f "$dir/.venv/pyvenv.cfg" ] || printf '%s' "$STANDIN_PYVENV" > "$dir/.venv/pyvenv.cfg"
+    ;;
+  run)
+    # `python -m <package>.openapi <out>`: the document the project already commits, as the app would write it.
+    prev=; module=; project=.
+    for a in "$@"; do
+      [ "$prev" = -m ] && module=$a
+      [ "$prev" = --project ] && project=$a
+      prev=$a; last=$a
+    done
+    case "$module" in *.openapi) cp "$project/openapi.json" "$last" ;; esac
+    ;;
+esac
+log end "$args"
+exit 0
+"""
+_QUIET = "#!/bin/sh\nexit 0\n"
+_cache: dict[str, Path] = {}
+
+
+def shape(name: str) -> Path:
+    """The generated project of this shape, on a branch that is not the trunk, with no `.venv`; tests copy it."""
+    if name not in _cache:
+        parent = Path(tempfile.mkdtemp(prefix=f"parallel-gate-{name}-"))
+        atexit.register(shutil.rmtree, parent, ignore_errors=True)
+        subprocess.run([str(ROOT / "slipwai"), "generate", "project", *SHAPES[name], "--output", str(parent),
+                        "--skip-checks"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        repo = parent / "project"
+        if name == "two":
+            subprocess.run([str(ROOT / "slipwai"), "add-service", "second", "--language", "python"], cwd=repo,
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        git(repo, "checkout", "-q", "-b", BRANCH)
+        for key, value in (("user.name", "t"), ("user.email", "t@local"), ("commit.gpgsign", "false")):
+            git(repo, "config", key, value)
+        git(repo, "add", "-A")
+        git(repo, "-c", "maintenance.auto=false", "commit", "-q", "--allow-empty", "-m", "shape")
+        _cache[name] = repo
+    return _cache[name]
+
+
+def write_stand_ins(directory: Path) -> None:
+    """`uv` as above; `npm`, `node` and `pip-audit` as tools that do nothing and succeed."""
+    directory.mkdir(parents=True, exist_ok=True)
+    for name, text in (("uv", _UV), ("npm", _QUIET), ("node", _QUIET), ("pip-audit", _QUIET)):
+        (directory / name).write_text(text, encoding="utf-8")
+        (directory / name).chmod(0o755)
+
+
+def gate_environment(
+    bin_dir: Path, log: Path, extra: dict[str, str | None] | None = None,
+) -> dict[str, str]:
+    """The stand-ins first on `PATH`, the three CI markers and make's and git's state removed unless `extra` sets
+    one (a `None` removes a name)."""
+    env = {key: value for key, value in os.environ.items() if key not in CI_MARKERS + MAKE_STATE + GIT_STATE}
+    env["PATH"] = f"{bin_dir}{os.pathsep}{env.get('PATH', '')}"
+    env["STANDIN_LOG"] = str(log)
+    env["STANDIN_PYVENV"] = PYVENV_CFG
+    for key, value in (extra or {}).items():
+        if value is None:
+            env.pop(key, None)
+        else:
+            env[key] = value
+    return env
+
+
+def run_make(repo: Path, env: dict[str, str], *args: str) -> subprocess.CompletedProcess[str]:
+    """`make <args>` in `repo`, bounded."""
+    return subprocess.run(["make", *args], cwd=repo, env=env, text=True, capture_output=True, timeout=180)
+
+
+def log_text(log: Path) -> str:
+    """The whole log, for a failure message."""
+    return log.read_text(encoding="utf-8") if log.exists() else ""
+
+
+def log_lines(log: Path) -> list[tuple[str, str]]:
+    """Each line of the log as (event, arguments), in the order written."""
+    found = []
+    for line in log.read_text(encoding="utf-8").splitlines() if log.exists() else []:
+        event, _, arguments = line.partition("\t")
+        found.append((event, arguments))
+    return found
+
+
+def _started(log: Path, first: str) -> list[str]:
+    return [a for e, a in log_lines(log) if e == "start" and a.split()[:1] == [first]]
+
+
+def sync_lines(log: Path) -> list[str]:
+    """The arguments of every `uv sync` that started."""
+    return _started(log, "sync")
+
+
+def run_lines(log: Path) -> list[str]:
+    """The arguments of every `uv run` that started."""
+    return _started(log, "run")
+
+
+def synced_projects(log: Path) -> list[str]:
+    """The `--project` of each sync that started, in order."""
+    return [a.split("--project ")[1].split()[0] for a in sync_lines(log) if "--project " in a]
+
+
+def syncs_precede_runs(log: Path) -> bool:
+    """True where every sync started before the first run did (and there was at least one sync)."""
+    kinds = [a.split()[0] for e, a in log_lines(log) if e == "start" and a.split()[:1] in (["sync"], ["run"])]
+    if "sync" not in kinds:
+        return False
+    last_sync = len(kinds) - 1 - kinds[::-1].index("sync")
+    return "run" not in kinds[:last_sync]
+
+
+def sync_ended_before_any_run(log: Path) -> bool:
+    """True where every sync's `end` line precedes the first run's `start` line."""
+    events = [(e, a.split()[0]) for e, a in log_lines(log) if a.split()[:1] in (["sync"], ["run"])]
+    runs = [i for i, (e, kind) in enumerate(events) if e == "start" and kind == "run"]
+    ends = [i for i, (e, kind) in enumerate(events) if e == "end" and kind == "sync"]
+    return bool(ends) and (not runs or max(ends) < runs[0])
+
+
+def overlapped(log: Path) -> bool:
+    """Whether a sync was held while another `uv` call was in flight (the stand-in logged `met`)."""
+    return any(event == "met" for event, _ in log_lines(log))
+
+
+class ParallelGateTestCase(unittest.TestCase):
+    """One copy of `SHAPE` per test, a stand-in directory first on `PATH`, and `run`."""
+
+    SHAPE = "plain"
+    # Whether each service starts with an environment (as a developer's does), or with none (as a fresh clone's).
+    VENV = True
+    repo: Path
+    log: Path
+    bin: Path
+
+    def setUp(self) -> None:
+        sys.dont_write_bytecode = True
+        scratch = Path(tempfile.mkdtemp(prefix="parallel-gate-run-"))
+        self.addCleanup(shutil.rmtree, scratch, ignore_errors=True)
+        self.repo = scratch / "project"
+        shutil.copytree(shape(self.SHAPE), self.repo, symlinks=True)
+        self.bin = scratch / "bin"
+        write_stand_ins(self.bin)
+        self.log = scratch / "standin.log"
+        for manifest in sorted(self.repo.glob("apps/*/pyproject.toml")) if self.VENV else []:
+            (manifest.parent / ".venv").mkdir(exist_ok=True)
+            (manifest.parent / ".venv" / "pyvenv.cfg").write_text(PYVENV_CFG, encoding="utf-8")
+
+    def environment(self, extra: dict[str, str | None] | None = None) -> dict[str, str]:
+        return gate_environment(self.bin, self.log, extra)
+
+    def run_in(
+        self, *command: str, env: dict[str, str | None] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        """A command in the project, as a person types it; the log is kept between runs."""
+        return subprocess.run(command, cwd=self.repo, env=self.environment(env), text=True, capture_output=True,
+                              timeout=180)
+
+    def make(self, *args: str, env: dict[str, str | None] | None = None) -> subprocess.CompletedProcess[str]:
+        return self.run_in("make", *args, env=env)
+
+    def forget_log(self) -> None:
+        self.log.write_text("", encoding="utf-8")
+
+    def assert_passed(self, done: subprocess.CompletedProcess[str]) -> None:
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)

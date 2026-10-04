@@ -24,6 +24,8 @@ from .model_targets import MODEL_GATES, model_targets
 from .mutation import mutation_notes
 from .native_commands import STEP, format_command, gated, go_modules_variable, native_commands, steps
 from .openapi import exporting, openapi_targets
+from .parallel_gate import in_recipe, sync_rules
+from .parallel_gate import needs as sync_needs
 from .production import deploy_role_gate, production_targets
 from .shared_packages import npm_dependency, npm_workspace_targets
 
@@ -52,7 +54,7 @@ def dev_targets(project_name: str, services: list[App], apps: list[App]) -> str:
             command = STEP.join(lines)
         targets += f"""
 # backing-service:{service.transport}:begin
-{service.dev_target}: ## Run {what} in the foreground on http://localhost:{service.port} (Ctrl-C stops it)
+{service.dev_target}:{sync_needs(service)} ## Run {what} in the foreground on http://localhost:{service.port} (Ctrl-C stops it)
 \t{command}
 # backing-service:{service.transport}:end
 """
@@ -62,8 +64,10 @@ def dev_targets(project_name: str, services: list[App], apps: list[App]) -> str:
 def install_step(service: App, tooling: dict) -> tuple[str, str]:
     """How one service's dependencies are made present before a recipe of its own runs: as a prerequisite
     on the target line, or as the first step of the recipe."""
-    if needs := npm_dependency(service):
-        return f" {needs}", ""
+    if needed := npm_dependency(service):
+        return f" {needed}", ""
+    if service.language == "python":
+        return sync_needs(service), ""
     return "", f"\t{tooling['install']}\n"
 
 
@@ -93,7 +97,7 @@ def migrate_targets(services: list[App], apps: list[App]) -> str:
 # backing-service:{feature}:begin
 .PHONY: migrate
 migrate:{needs} ## Apply the {service.selection.axis_of(feature)} migrations (needs services-up)
-{install}\t{tooling['migrate']}
+{install}\t{in_recipe(tooling['migrate'], apps)}
 # backing-service:{feature}:end
 """
     text = ""
@@ -105,7 +109,7 @@ migrate:{needs} ## Apply the {service.selection.axis_of(feature)} migrations (ne
 MIGRATE_TARGETS += migrate-{service.name}
 .PHONY: migrate-{service.name}
 migrate-{service.name}:{needs} ## Apply {service.name}'s {service.selection.axis_of(feature)} migrations (needs services-up)
-{install}\t{tooling['migrate']}
+{install}\t{in_recipe(tooling['migrate'], apps)}
 # backing-service:{feature}:end
 """
     return text + """
@@ -150,7 +154,8 @@ def makefile(project_name: str, profile: str, apps: list[App], target: str = "no
     services = services_of(apps)
     web = web_apps(apps)
     suites, per_suite = gated(apps)
-    native = native_commands(apps)
+    per_suite = [{target: in_recipe(recipe, apps) for target, recipe in commands.items()} for commands in per_suite]
+    native = {target: in_recipe(recipe, apps) for target, recipe in native_commands(apps).items()}
     # `lint` fails on formatting this project has not applied; `format` is what applies it. Written only
     # where a family in this project has a formatter at all, so no project carries a target that does
     # nothing — and never a prerequisite of `verify`, because a gate that rewrites the tree it is judging
@@ -254,6 +259,7 @@ demo-down: ## Stop the demo, keeping any volume
         run_targets = f"\n.PHONY: {phony}{dev_target}{dev_web_target}{demo_targets}"
     service_targets = compose_targets + migrate_targets(services, apps) + run_targets
     mutation_note = mutation_notes(apps)
+    install_lines = "".join(f"\t{line}\n" for line in steps(native["install"]) if line)
     # `$(CI_DATABASE)` expands to nothing once its definition is pruned, which is exactly the difference
     # between the two CI gates. Under a production target the extended gate also builds every image and
     # proves each answers its probe — the half of a deploy that can be proved without an account.
@@ -285,9 +291,8 @@ help: ## Show the available targets
 
 .PHONY: install
 install: ## Install native dependencies; refresh agent projections after init
-\t{native['install']}
-\t@if [ -f .specify/integration.json ]; then $(MAKE){layout.make_flag} --no-print-directory agents; else echo 'Spec Kit not initialized; run ./init when ready.'; fi
-{npm_workspace_targets(apps, target)}
+{install_lines}\t@if [ -f .specify/integration.json ]; then $(MAKE){layout.make_flag} --no-print-directory agents; else echo 'Spec Kit not initialized; run ./init when ready.'; fi
+{npm_workspace_targets(apps, target)}{sync_rules(project_name, apps, suites, bool(formatting))}
 {agent_targets()}
 .PHONY: typecheck lint {'format ' if formatting else ''}check-imports check-migrations check-slice-scope {'check-styles ' if web else ''}{'check-flags ' if target != 'none' else ''}check-speckit check-codegraph check-ux-gates check-constitution constitution-requirements{role_dependency}
 typecheck: ## Run the native compiler or static type check

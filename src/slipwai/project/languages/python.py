@@ -157,13 +157,18 @@ if ! command -v uv >/dev/null 2>&1; then
   echo "Install it from https://docs.astral.sh/uv/, or: python3 -m pip install uv=={UV_VERSION}" >&2
   exit 2
 fi
-for app in $apps; do
-  # From the committed lock and nothing else. `--locked` is the `npm ci` of this ecosystem: it installs
-  # exactly what uv.lock names and refuses, rather than re-resolving, when pyproject.toml has gained or
-  # lost a dependency the lock does not carry. (`--frozen`, its quieter sibling, installs the stale lock
-  # and says nothing, which is the failure this gate exists to catch.) No network where the two agree.
-  uv sync --project "$app" --locked --quiet
-done
+# The Makefile's own recipes pass `--synced` after the mode, having built every environment once for the whole
+# `make` run (`sync`, in the Makefile). It is an argument and never a variable, and never the default: a mode run any
+# other way — by hand, from a CI step, from an agent's hook — syncs first, whatever the environment says.
+if [ "${{2:-}}" != --synced ]; then
+  for app in $apps; do
+    # From the committed lock and nothing else. `--locked` is the `npm ci` of this ecosystem: it installs
+    # exactly what uv.lock names and refuses, rather than re-resolving, when pyproject.toml has gained or
+    # lost a dependency the lock does not carry. (`--frozen`, its quieter sibling, installs the stale lock
+    # and says nothing, which is the failure this gate exists to catch.) No network where the two agree.
+    uv sync --project "$app" --locked --quiet
+  done
+fi
 [ "$mode" = --install-only ] && exit 0
 for app in $apps; do
   # The db-backed suite lives in tests/integration/ and runs only from `make test-integration`, so the

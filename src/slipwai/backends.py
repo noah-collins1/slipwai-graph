@@ -296,7 +296,8 @@ def dev_command(backend: str, qualifier: str, path: str, verify: str = "scripts/
     """
     return {
         "typescript": f"npm --workspace {path} run dev",
-        "python": f"./{verify} --install-only\n\tLOG_FORMAT=pretty PYTHONPATH={path}/src "
+        # No sync of its own: the `dev` target names `sync` (`project/parallel_gate.py`), once per make run.
+        "python": f"LOG_FORMAT=pretty PYTHONPATH={path}/src "
         f"uv run --project {path} --no-sync python -m {python_package_name(qualifier)}.main",
         "go": f"cd {path} && LOG_FORMAT=pretty go run ./cmd/serve",
         # Quarkus dev mode, which is the reason to reach for `make dev` at all: it recompiles and reloads on
