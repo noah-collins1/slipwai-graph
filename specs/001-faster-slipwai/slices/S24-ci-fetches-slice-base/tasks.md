@@ -355,6 +355,33 @@ path; level line (PATCH, `VERSION` not raised because it already carries the MIN
 
 ---
 
+## Phase 5: After-converge gaps (appended 2026-10-04; D86)
+
+### T017 — The words say where the two other gates look, and `adopt` says what a CI of your own needs (`MEDIUM`/`LOW` · G1, G2, G5 · AC-S24-8, -11, -12)
+
+- [ ] **RED:** a test in `tests/test_ci_fetch_adopted.py` adopts a repository whose forge is `other` (and one with no
+  CI, `none`) and asserts the report's CI line ends *on a full clone with the trunk's branch fetched*; observed failing
+  on the old strings. **GREEN:** the two strings in `ci_lines()` (`src/slipwai/adopt_report.py`) and the sentence in
+  `docs/adopting.md` gain those words, exactly as D86 gives them; the fragment gains D86's four passages, verbatim, at
+  the places D86 names (read D86 in `decisions.md` and the skipper's sentences in this task's brief). **The class:**
+  every place `adopt` tells a person to run the gate in a CI it did not write (search `src/slipwai/` and `docs/` for
+  *have your CI run*, *have it run*, *have that CI run*).
+
+**Files:** `src/slipwai/adopt_report.py`, `docs/adopting.md`, `tests/test_ci_fetch_adopted.py`,
+`changelog.d/ci-fetches-slice-base.md`.
+
+### T018 — The reading of AC-S24-8 rests on a kept run, and the pull-request checkout carries tags (`MEDIUM`/`LOW` · G1, G2, G3 · AC-S24-8)
+
+- [ ] Tests only — holds. In `tests/test_ci_history_gates.py`: the shipped `check-migrations.py` on a trunk `develop`
+  beside an older `master`, an expand and its contract in separate commits on `develop` — a push to `develop` with
+  every branch fetched is refused, at depth 1 passes; and on a trunk `develop` with no `main` or `master`, a pull
+  request carrying both with full history passes. Each says in its name or comment that it holds a reading `S31` will
+  change. In `tests/forge_checkout.py` the full-history arm fetches tags as the forge does (research R-1); if any
+  existing test's answer changes with tags fetched, that is reported as a finding and the test is **not** adjusted.
+  Teeth seen for each hold.
+
+**Files:** `tests/test_ci_history_gates.py`, `tests/forge_checkout.py`.
+
 ## Parallel opportunities
 
 By manifest (each task's "Files" line):

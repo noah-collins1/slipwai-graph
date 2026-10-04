@@ -1568,6 +1568,14 @@ non-empty), the trunk is `main`, and the branch is `slice/S1`.
   request and seeded anything but `off`; the same change at depth 1 with no trunk ref passes both, as it did before
   the slice; and a push to the trunk passes both at either depth. None of the three scripts changes by a byte: the
   slice gives them the history, and tests that run the shipped scripts on those checkouts hold what they then say.
+  **Reading (D86).** The above is under this section's default, a trunk named `main`; it holds the same for
+  `master`. `check-migrations` and `check-flags` find their base by those two names and do not read `ci.branch`. In
+  a repository whose trunk has another name: where neither branch exists, they have no base in CI and pass, with
+  history or without; where one exists, they compare with it in CI as on a developer's full clone, so a push to the
+  trunk and every pull request are refused for an expand and its contract both landed since that branch, and pass
+  at depth 1. That is the developer's machine's answer, not a new one. The fragment says so and what to do, and a
+  test runs the shipped `check-migrations.py` on both repositories and holds those answers. Reading the recorded
+  trunk is `S31-gates-read-recorded-trunk`.
 - **AC-S24-9** — Given a developer's checkout (no CI marker, and no branch-name variable with a detached `HEAD`),
   then every exit code and every line of `check-slice-scope` is what it was before the slice.
 - **AC-S24-10** — Given a project made by the factory before this change, when `slipwai migrate` runs, then each of
