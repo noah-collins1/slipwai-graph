@@ -523,7 +523,7 @@ before the checks, `-i` not declining, the `CI` marker dropped) each fail them; 
 
 #### T016 — `CRITICAL` — The trunk reads and writes a stamp when a pull-request target variable is set (AC-S03-21, D74 R2, constitution I)
 
-- [ ] Evidence: `trunk_name()` (`verify-stamp.py` 456–470) returns `merge_base().trunk` of `check-slice-scope.py`, and that
+- [x] *(done at `6bab49c`: the trunk's name is taken from D30 and D33's resolution alone; RED was four subtests on `main` with each target variable)* Evidence: `trunk_name()` (`verify-stamp.py` 456–470) returns `merge_base().trunk` of `check-slice-scope.py`, and that
   field is *the name the branch is compared with*, not the trunk: where `GITHUB_BASE_REF` or
   `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` names a branch whose base is older than the trunk's, `merge_base()` returns
   `Base(chosen, target[0], …, True)` (`check-slice-scope.py` 365–376, 470–484). Reproduced on the fixture: on `main`, with a
@@ -551,7 +551,7 @@ split out there), `tests/test_verify_stamp_where.py`.
 
 #### T017 — `HIGH` — A check reads an ignored directory that is on no list, and the closed-list test cannot see the script that reads it (AC-S03-7, D73 rule 5)
 
-- [ ] Evidence: (a) `scripts/event-model/check.py` — `check-model`, a prerequisite of `verify-checks` in every
+- [x] *(done at `5d8f58e`: `.delivery-tools/` is in the key; the scan derives every script the gate launches from the generated Makefile of seven shapes and follows imports (`tests/test_verify_stamp_scan.py`))* Evidence: (a) `scripts/event-model/check.py` — `check-model`, a prerequisite of `verify-checks` in every
   event-modelling project — puts `.delivery-tools/` first on `sys.path` and imports `yaml` from it (lines 33, 62–64);
   `.gitignore` ignores `.delivery-tools/`, the gate installs into it only on an `ImportError`, never from a lock on every
   run, and `IGNORED_INPUTS` does not name it. On a generated project (event-modelling, TypeScript, react-vite) on branch
@@ -582,7 +582,7 @@ shell script, the `.ts` checks) is listed in the test by name with the reason it
 
 #### T018 — `HIGH` — The page says three things a stamp cannot see, and AC-S03-31 names five others and a consequence (AC-S03-31, D73 residual)
 
-- [ ] Evidence: the page `src/slipwai/project/docs.py` writes (lines 116–124) says *a tool a recipe fetches at a version of
+- [x] *(done at `391a91c`: the page and the fragment carry the five, the consequence and where it is caught)* Evidence: the page `src/slipwai/project/docs.py` writes (lines 116–124) says *a tool a recipe fetches at a version of
   its own, a service outside the checkout, or the network; when a check depends on one, run the gate forced*. AC-S03-31
   requires the clock, the network, user-level tool configuration, `PATH`, and a variable no gate script names; that a
   gate failing for one of those alone *is reused as green until a file, a ref or a listed input moves or `VERIFY_FORCE`
