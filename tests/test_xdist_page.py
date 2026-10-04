@@ -5,6 +5,7 @@ Generation alone: the page is read from a generated project, the fragment from `
 """
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import tempfile
@@ -143,3 +144,58 @@ class TheFragmentsCatchUpNoteStandsAlone(FactoryTestCase):
         for words in ("apps/<service>/uv.lock", "either side", "uv lock --project apps/<service>", "git add",
                       "commit", "once by hand", "a dependency of its own, dev or not"):
             self.assertIn(words, note)
+
+
+def line_told(words: str) -> str:
+    """The line a person is told to add, exactly as the words write it: the first code span after "add the line"."""
+    found = re.search(r"add the line `([^`]+)`", words)
+    assert found, "the words do not say 'add the line `...`'"
+    return found.group(1)
+
+
+def pasted_after_target(repo: Path, line: str) -> dict[str, object]:
+    """What `project.json` holds once a person pastes `line` on its own line right after the `"target"` line."""
+    lines = (repo / "project.json").read_text(encoding="utf-8").splitlines()
+    lines = [text for text in lines if "parallelSafe" not in text]  # a project made before the mark has none
+    at = next(i for i, text in enumerate(lines) if text.lstrip().startswith('"target"'))
+    indent = lines[at][: len(lines[at]) - len(lines[at].lstrip())]
+    lines.insert(at + 1, indent + line)
+    return json.loads("\n".join(lines))
+
+
+class TheLineAPersonIsToldToTypeKeepsProjectJsonValid(FactoryTestCase):
+    """T021: pasted as written, after the `"target"` line, the line leaves JSON that parses with the mark true."""
+
+    def test_the_line_the_page_names_leaves_project_json_valid_with_the_mark_true(self) -> None:
+        with tempfile.TemporaryDirectory() as parent:
+            repo = self.generate(parent, "shop", language="python")
+            page = squashed((repo / "docs/gates.md").read_text(encoding="utf-8"))
+            self.assertIs(pasted_after_target(repo, line_told(page))["parallelSafe"], True)
+
+    def test_the_line_the_note_names_leaves_project_json_valid_with_the_mark_true(self) -> None:
+        with tempfile.TemporaryDirectory() as parent:
+            repo = self.generate(parent, "shop", language="python")
+            text = squashed((ROOT / "changelog.d/xdist.md").read_text(encoding="utf-8"))
+            self.assertIs(pasted_after_target(repo, line_told(text))["parallelSafe"], True)
+
+    def test_the_note_and_the_page_name_the_same_line(self) -> None:
+        with tempfile.TemporaryDirectory() as parent:
+            page = self.generate(parent, "shop", language="python") / "docs/gates.md"
+            text = squashed((ROOT / "changelog.d/xdist.md").read_text(encoding="utf-8"))
+            self.assertEqual(line_told(squashed(page.read_text(encoding="utf-8"))), line_told(text))
+
+
+class TheWordsCarryWhatTheDemoMeasured(FactoryTestCase):
+    def test_the_page_says_the_workers_cost_on_a_small_suite_and_pay_on_a_large_one(self) -> None:
+        """D103 rule 6."""
+        with tempfile.TemporaryDirectory() as parent:
+            page = squashed((self.generate(parent, "shop", language="python") / "docs/gates.md").read_text("utf-8"))
+            self.assertIn("On a small suite the workers cost a fraction of a second", page)
+            self.assertIn("pay back once the suite takes several seconds", page)
+
+    def test_the_fragment_carries_the_measurement_with_its_machine_and_command(self) -> None:
+        """AC-S05-13, D103 rule 7: medians of three, from the demo's timings."""
+        text = squashed((ROOT / "changelog.d/xdist.md").read_text(encoding="utf-8"))
+        for words in ("i5-12400", "12 cores", "87 tests", "medians of three", "`./scripts/verify --test-only`",
+                      "1.36 s", "0.99 s", "3.70 s", "3.30 s", "2.11 s", "1.72 s"):
+            self.assertIn(words, text)
