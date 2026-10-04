@@ -23,7 +23,11 @@ from support import FactoryTestCase
 
 LOG_VARIABLE = "STAND_IN_LOG"
 LAUNCH_FAILS_VARIABLE = "STAND_IN_LAUNCH_FAILS"
-"""Set this and `puppeteer.launch` throws, as a browser that cannot be started does."""
+"""Set this and `puppeteer.launch` throws, as a browser that cannot be started does: `1` gives Puppeteer's opening
+words, anything else is the message itself."""
+DISCONNECT_VARIABLE = "STAND_IN_DISCONNECT"
+"""Set this to N and the browser disconnects as the Nth draw of the run starts, as a killed browser does: that draw
+and every one after it throws `Connection closed.`, and the browser's `disconnected` event fires."""
 PNG_FAILS_VARIABLE = "STAND_IN_PNG_FAILS"
 """Set this and every PNG draw throws `png refused`, whatever the source; an SVG draws as always."""
 CLOSE_FAILS_VARIABLE = "STAND_IN_CLOSE_FAILS"
@@ -99,15 +103,19 @@ const require = createRequire(import.meta.url);
 if (process.env.__REWRITE__ && process.env.MERMAID_PUPPETEER_CONFIG) {
   fs.writeFileSync(process.env.MERMAID_PUPPETEER_CONFIG, process.env.__REWRITE__);
 }
+let draws = 0;
 export async function renderMermaid(browser, definition, outputFormat, opts = {}) {
   log({ event: 'draw', via: 'module', format: outputFormat, source_sha256: sha(definition),
     width: opts.viewport && opts.viewport.width, background: opts.backgroundColor });
+  draws += 1;
+  if (process.env.__DISCONNECT__ && draws === Number(process.env.__DISCONNECT__)) browser.disconnect();
+  if (browser.connected === false) throw new Error('Connection closed.');
   return { data: new Uint8Array(draw(definition, outputFormat)), title: null, desc: null };
 }
 export async function run() { throw new Error('stand-in: run is not provided'); }
 export async function cli() { throw new Error('stand-in: cli is not provided'); }
 export function error() { throw new Error('stand-in: error is not provided'); }
-""".replace("__REWRITE__", REWRITE_CONFIG_VARIABLE)
+""".replace("__REWRITE__", REWRITE_CONFIG_VARIABLE).replace("__DISCONNECT__", DISCONNECT_VARIABLE)
 
 PUPPETEER_MODULE = """import fs from 'node:fs';
 function chunkFixed() {
@@ -120,12 +128,19 @@ function log(entry) {
 }
 export default {
   async launch(options = {}) {
-    if (process.env.__LAUNCH__) throw new Error('Failed to launch the browser process');
+    const failure = process.env.__LAUNCH__;
+    if (failure) throw new Error(failure === '1' ? 'Failed to launch the browser process' : failure);
     log({ event: 'session', via: 'module', chunk_fixed: chunkFixed(), options });
-    return { async close() {
-      log({ event: 'close', via: 'module' });
-      if (process.env.__CLOSE__) throw new Error('browser would not close');
-    } };
+    const listeners = [];
+    return {
+      connected: true,
+      on(event, listener) { if (event === 'disconnected') listeners.push(listener); },
+      disconnect() { this.connected = false; listeners.forEach((listener) => listener()); },
+      async close() {
+        log({ event: 'close', via: 'module' });
+        if (process.env.__CLOSE__) throw new Error('browser would not close');
+      },
+    };
   },
 };
 """.replace("__LOG__", LOG_VARIABLE).replace("__LAUNCH__", LAUNCH_FAILS_VARIABLE).replace(

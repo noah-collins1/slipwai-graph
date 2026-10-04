@@ -171,27 +171,47 @@ function entryOf(packageName: string): string {
 
 interface Browser {
   close(): Promise<void>;
+  on(event: 'disconnected', listener: () => void): unknown;
+  connected?: boolean;
 }
 interface MermaidCli {
   renderMermaid(browser: Browser, source: string, format: string, options: object): Promise<{ data: Uint8Array }>;
 }
 
+/** Chromium's own words, in the launch error's message, for a sandbox it cannot make: the one fix is `--no-sandbox`. */
+const NO_SANDBOX = /No usable sandbox|--no-sandbox/;
+/** Puppeteer's words, in the launch error's message, for a browser whose files are not where the install put them. */
+const NO_BROWSER = /Could not find .+ \(ver\. /;
+
 /**
- * A failure to open the browser, as one error that says so. Chromium refuses to start as root without
- * `--no-sandbox`, which is how every rootless container fails here; when that is the situation and no Puppeteer
- * config was given, one line first says which variable fixes it, rather than leaving Chromium's own message to be
- * searched for.
+ * A failure to open the browser, as one error that says so. Chromium will not start without `--no-sandbox` as root,
+ * nor where the machine allows it no sandbox, which is how every rootless container fails here; when that is the
+ * situation (root, or the launch error's message says no usable sandbox) and no Puppeteer config was given, one line
+ * first says which variable fixes it, rather than leaving Chromium's own message to be searched for. A browser whose
+ * files are missing from the install (an interrupted first install leaves the renderer present and the browser not)
+ * gets one line saying to delete the prefix and run again.
  */
 function browserFailure(error: unknown): BrowserError {
   if (error instanceof BrowserError) return error; // a step that already said what it was: not the launch
-  if (puppeteerConfigPath() === undefined && typeof process.getuid === 'function' && process.getuid() === 0) {
+  const reason = reasonOf(error);
+  if (puppeteerConfigPath() === undefined) {
+    const root = typeof process.getuid === 'function' && process.getuid() === 0;
+    if (root || NO_SANDBOX.test(reason)) {
+      process.stderr.write(
+        `render: ${root ? 'running as root, and Chromium' : 'Chromium found no usable sandbox here, and it'} will not `
+          + 'start without --no-sandbox. Point MERMAID_PUPPETEER_CONFIG '
+          + 'at a JSON file such as {"args": ["--no-sandbox", "--disable-dev-shm-usage"]} and rerun; the generated '
+          + 'CI workflow does exactly this.\n',
+      );
+    }
+  }
+  if (NO_BROWSER.test(reason)) {
     process.stderr.write(
-      'render: running as root, and Chromium will not start without --no-sandbox. Point MERMAID_PUPPETEER_CONFIG '
-        + 'at a JSON file such as {"args": ["--no-sandbox", "--disable-dev-shm-usage"]} and rerun; the generated '
-        + 'CI workflow does exactly this.\n',
+      'render: the browser is missing from the install in scripts/event-model/.mermaid-cli (an interrupted first '
+        + 'install leaves it so): delete scripts/event-model/.mermaid-cli and run again.\n',
     );
   }
-  return new BrowserError(`render: could not start the browser: ${reasonOf(error)}`);
+  return new BrowserError(`render: could not start the browser: ${reason}`);
 }
 
 function parseConfig(config: PuppeteerConfig): object {
@@ -223,14 +243,28 @@ export async function launch(config: PuppeteerConfig | undefined): Promise<Rende
   const puppeteer = loaded.default ?? (loaded as { launch(options: object): Promise<Browser> });
   const options = config === undefined ? {} : parseConfig(config);
   const browser = await puppeteer.launch({ headless: 'shell', ...options });
+  let stopped = false;
+  browser.on('disconnected', () => {
+    stopped = true;
+  });
   return {
     async draw(source, format) {
-      return (await cli.renderMermaid(browser, source, format, DRAW_OPTIONS)).data;
+      try {
+        return (await cli.renderMermaid(browser, source, format, DRAW_OPTIONS)).data;
+      } catch (error) {
+        // A browser that stopped (killed, crashed, disconnected) fails every draw in flight the same way: the cause
+        // is the browser, so it is said once as that, and no diagram is blamed for it.
+        if (stopped || browser.connected === false) {
+          throw new BrowserError(`render: the browser stopped while drawing: ${reasonOf(error)}`);
+        }
+        throw error;
+      }
     },
     close: async () => {
       try {
         await browser.close();
       } catch (error) {
+        if (stopped) return; // already reported as the browser that stopped; letting go of it is not news
         throw new BrowserError(`render: could not close the browser: ${reasonOf(error)}`);
       }
     },
