@@ -16,7 +16,7 @@ def agent_targets() -> str:
     """The `.PHONY` block between the npm workspace targets and the native gate targets."""
     return """.PHONY: check-python agents agents-list check-extensions check-agents models check-benchmark benchmark cruise cruise-watch cruise-status cruise-stop cruise-tell check-decisions
 check-python: ## Fail, first, when python3 is older than the 3.10 every gate script is written for
-\t@python3 -I -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 'check-python: ' + sys.executable + ' is Python ' + sys.version.split()[0] + ', and the gate scripts need 3.10 or newer; put a newer python3 first on PATH (a non-interactive macOS shell finds /usr/bin/python3, which is 3.9, before Homebrew)')"
+\t@python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 'check-python: ' + sys.executable + ' is Python ' + sys.version.split()[0] + ', and the gate scripts need 3.10 or newer; put a newer python3 first on PATH (a non-interactive macOS shell finds /usr/bin/python3, which is 3.9, before Homebrew)')"
 agents: ## Refresh elected extensions, then skills, commands and agent types in every installed agent harness
 \tpython3 scripts/extensions/project.py
 \tpython3 scripts/agents/project.py
