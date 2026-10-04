@@ -125,8 +125,8 @@ def gate_order(stamped: bool, apps: list[App], event: bool = False) -> str:
     gate's recipe hands its sub-make the variable.
 
     Two of the families write where the others read. Maven's three checks write one service's `target/`, so with a Java
-    service `typecheck` waits for `lint` and `test` for `typecheck`. Go's first `go` command resolves the workspace and
-    writes `go.work.sum` on a fresh clone, and `lint` leads the list `verify` hangs its checks on, so with a Go
+    service `typecheck` waits for `lint` and `test` for `typecheck`. A `go` command of `lint` resolves the workspace and
+    writes `go.work.sum` on a fresh clone (its last, staticcheck, where this was run), and `lint` leads the list so with a Go
     service `typecheck` and `test` wait for `lint` and run together after it: the order a serial run always had (D96).
     A project with both takes the Java chain, which covers Go.
     Python and TypeScript need neither: after the sync and the root's install their checks write only their own caches.
