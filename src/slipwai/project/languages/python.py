@@ -170,6 +170,13 @@ if [ "${{2:-}}" != --synced ]; then
   done
 fi
 [ "$mode" = --install-only ] && exit 0
+# The project's own word on running its tests across cores, read now and not at generation: only the JSON `true`
+# in the root project.json turns it on, so a missing key, a `false`, a string or a file that cannot be read is the
+# serial run. One variable, spliced into the three modes that run the default suite; `--integration-only` never.
+parallel=
+if python3 -c 'import json,sys; sys.exit(0 if json.load(open("project.json", encoding="utf-8")).get("parallelSafe") is True else 1)' >/dev/null 2>&1; then
+  parallel="-n auto --maxprocesses 4"
+fi
 for app in $apps; do
   # The db-backed suite lives in tests/integration/ and runs only from `make test-integration`, so the
   # default gate stays runnable with no Docker. Ignoring a directory that does not exist is harmless.
@@ -193,7 +200,7 @@ for app in $apps; do
     --typecheck-only)
       python3 -m compileall -q "$app/src" "$app/tests"
       MYPYPATH="$mypy_path" $run mypy --config-file "$app/pyproject.toml" "$app/src" "$app/tests" ;;
-    --test-only) PYTHONPATH="$app/src" $run pytest $default_suite ;;
+    --test-only) PYTHONPATH="$app/src" $run pytest $parallel $default_suite ;;
     --migrate)
       if [ -f "$app/migrations/apply.py" ]; then
         $run python "$app/migrations/apply.py"
@@ -208,12 +215,12 @@ for app in $apps; do
       fi ;;
     --adversarial-only)
       status=0
-      PYTHONPATH="$app/src" $run pytest $default_suite -k adversarial || status=$?
+      PYTHONPATH="$app/src" $run pytest $parallel $default_suite -k adversarial || status=$?
       [ "$status" -eq 0 ] || [ "$status" -eq 5 ] ;;
     all)
       $run ruff check "$app/src" "$app/tests"
       $run ruff format --check "$app/src" "$app/tests"
-      PYTHONPATH="$app/src" $run pytest $default_suite
+      PYTHONPATH="$app/src" $run pytest $parallel $default_suite
       python3 -m compileall -q "$app/src" "$app/tests"
       MYPYPATH="$mypy_path" $run mypy --config-file "$app/pyproject.toml" "$app/src" "$app/tests" ;;
     *) echo "unknown verify mode: $mode" >&2; exit 2 ;;
