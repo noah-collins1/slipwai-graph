@@ -156,6 +156,7 @@ def openapi_targets(project_name: str, apps: list[App]) -> str:
     installed = f" {NODE_DEPS}" if node_workspace(apps) else ""
     return f"""
 .PHONY: openapi check-openapi
+check-openapi: check-python
 openapi:{installed} ## Write each service's published API document from its own routes, and rebuild the client
 {writes}{client}check-openapi:{installed} ## Fail when a committed API document no longer matches the routes
 {checks}"""

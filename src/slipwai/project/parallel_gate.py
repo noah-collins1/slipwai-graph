@@ -21,6 +21,7 @@ from .native_commands import STEP, steps
 from .openapi import exporting
 
 SYNC = "sync"
+FIRST = "check-python"
 
 
 def python_services(apps: list[App]) -> list[App]:
@@ -73,7 +74,21 @@ def sync_rules(project_name: str, apps: list[App], suites: list[App], formatting
 # rather than syncing inside its own recipe, so `make verify`, `make -j verify` and `make lint test` sync once. A mode
 # run any other way (`{script_of(apps)[2:]} --lint-only` by hand) still syncs first.
 .PHONY: {SYNC}
-{SYNC}: check-python ## Build each Python service's environment from its committed lock, once per make run
+{SYNC}: {FIRST} ## Build each Python service's environment from its committed lock, once per make run
 \t{script_of(apps)} --install-only
 {' '.join(dependents)}: {SYNC}
 """
+
+
+def python_first(stamped: bool, dependencies: str) -> str:
+    """The one line that makes `check-python` first under `-j`: every prerequisite of the gate but itself names it.
+
+    In a serial run nothing moves, because it leads the list already; under `-j` an older `python3` is named before the
+    sync or any check starts. `check-openapi`, which is not in `dependencies` (it hangs on the gate inside its
+    transport's markers), names it on its own target line (`openapi.openapi_targets`), and `sync` on its own. The
+    root's `npm ci` file target and the model tooling's are not checks and do not: a file target that depended on a
+    phony one would reinstall on every run. Nothing where the gate is not the stamped one — an adopted repository's runs
+    serially whatever `-j` says (D88) and its rule is pinned byte for byte, `ci: verify` following it.
+    """
+    waiting = [word for word in dependencies.split() if word != FIRST]
+    return f"{' '.join(waiting)}: {FIRST}\n" if stamped and waiting else ""
