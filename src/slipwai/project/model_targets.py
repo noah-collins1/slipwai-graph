@@ -10,10 +10,19 @@ different question from whether a drawing is current, and stays exactly as it is
 """
 from __future__ import annotations
 
-# What every target that runs the TypeScript pipeline needs first. Repeated per recipe rather than shared
-# through a prerequisite, so each target is one thing to read; with the tree already installed it costs
-# about a second and asks the registry nothing.
-INSTALL = "npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error"
+# The model tooling's install is one file target, in the root's pattern (`node_modules/.package-lock.json`, see
+# `shared_packages.py`): npm writes that marker at the end of a successful install, so it is newer than both
+# manifests exactly when the tree was installed from them. Every target that runs the pipeline names it as a
+# prerequisite rather than installing inside its own recipe, because make runs a shared file target once — under
+# `-j` four recipes each running an install would be four writers on one tree. `npm ci`, not `npm install`: it
+# installs only what the committed lock says and refuses a manifest and lock that disagree, where `install` would
+# rewrite a tracked file under a gate. `MODEL_INSTALLED` is set by the recipe that installed, and read when
+# `check-drawio`'s recipe is expanded, which make does after its prerequisites: so the line saying the install was
+# skipped is said only where it is true. `$(eval)` is GNU Make 3.80's.
+MODEL_DIR = "scripts/event-model"
+MARKER = f"{MODEL_DIR}/node_modules/.package-lock.json"
+INSTALL = f"npm --prefix {MODEL_DIR} ci --no-audit --no-fund --loglevel=error"
+SKIPPED = f"check-drawio: the model tooling matches {MODEL_DIR}/package-lock.json; not reinstalled"
 # tsx's own entry point, run by `node`, rather than `node_modules/.bin/tsx`: that is npm's POSIX shim, which a
 # native Windows `make` cannot run (`'scripts' is not recognized as an internal or external command`), and it
 # was the one gate recipe `make verify` failed on there. The shim runs this same file everywhere else, and the
@@ -21,28 +30,29 @@ INSTALL = "npm --prefix scripts/event-model install --no-audit --no-fund --logle
 TSX = "node scripts/event-model/node_modules/tsx/dist/cli.mjs"
 
 MODEL_TARGETS = f"""
+{MARKER}: {MODEL_DIR}/package.json {MODEL_DIR}/package-lock.json
+\t{INSTALL}
+\t$(eval MODEL_INSTALLED := yes)
+
 .PHONY: check-model
 check-model: ## Validate the global event model and its links to implemented code
 \tpython3 scripts/event-model/check.py
 
 .PHONY: model
-model: ## Regenerate the event-model diagrams and browsable page from model.yaml (needs Node; PNG=1 for a raster copy; MERMAID_PUPPETEER_CONFIG=<json> where Chromium cannot sandbox)
-\t{INSTALL}
+model: {MARKER} ## Regenerate the event-model diagrams and browsable page from model.yaml (needs Node; PNG=1 for a raster copy; MERMAID_PUPPETEER_CONFIG=<json> where Chromium cannot sandbox)
 \t{TSX} scripts/event-model/render.ts
 
 .PHONY: model-drawio
-model-drawio: ## Write the committed draw.io canvas, docs/event-model/model.drawio, from model.yaml (needs Node, no browser)
-\t{INSTALL}
+model-drawio: {MARKER} ## Write the committed draw.io canvas, docs/event-model/model.drawio, from model.yaml (needs Node, no browser)
 \t{TSX} scripts/event-model/render-drawio.ts
 
 .PHONY: check-drawio
-check-drawio: ## Fail when docs/event-model/model.drawio is missing or no longer matches model.yaml
-\t{INSTALL}
+check-drawio: {MARKER} ## Fail when docs/event-model/model.drawio is missing or no longer matches model.yaml
+\t@$(if $(MODEL_INSTALLED),true,echo '{SKIPPED}')
 \t{TSX} scripts/event-model/render-drawio.ts --check
 
 .PHONY: model-drawio-test
-model-drawio-test: ## Run the canvas planner's and serialiser's own tests — no browser, no network
-\t{INSTALL}
+model-drawio-test: {MARKER} ## Run the canvas planner's and serialiser's own tests — no browser, no network
 \t{TSX} --test scripts/event-model/board-plan.test.ts scripts/event-model/drawio.test.ts
 """
 

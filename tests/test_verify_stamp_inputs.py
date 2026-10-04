@@ -205,11 +205,11 @@ class InstalledEnvironmentsTest(FactoryTestCase):
         self.assertIsNone(self.exempt("node_modules/.package-lock.json"))
         self.assertIsNotNone(self.exempt("node_modules/left-pad/index.js"))
 
-    def test_the_model_tooling_installs_without_the_lock_so_its_manifest_is_in_the_key(self) -> None:
-        """e8: `npm --prefix scripts/event-model install` — no `ci`, and a satisfied tree is left as it is."""
+    def test_the_model_tooling_installs_from_its_lock_and_its_manifest_is_in_the_key(self) -> None:
+        """e8: `npm --prefix scripts/event-model ci` — from the committed lock; a satisfied tree is left as it is."""
         makefile = (self.project("python", "event-modelling") / "Makefile").read_text(encoding="utf-8")
-        self.assertIn("npm --prefix scripts/event-model install", makefile)
-        self.assertNotIn("npm --prefix scripts/event-model ci", makefile)
+        self.assertIn("npm --prefix scripts/event-model ci", makefile)
+        self.assertNotIn("npm --prefix scripts/event-model install", makefile)
         self.assertIsNone(self.exempt("scripts/event-model/node_modules/.package-lock.json"))
         self.assertIsNotNone(self.exempt("scripts/event-model/node_modules/yaml/index.js"))
 
