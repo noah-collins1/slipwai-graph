@@ -1305,7 +1305,7 @@
 - **Why:** The owner's: the two checks already hold their rules on a developer's machine, so CI holding them too is the same gate in both places; the fragment tells a maintainer why a pull request may turn red after `slipwai migrate`.
 - **Decided by:** human
 - **Confidence:** high · **Would reverse if:** the owner says otherwise.
-- **Written to:** `specs/001-faster-slipwai/spec.md` (the note that opens S24's section); `specs/cruise-checkpoint.md` (S24 is the next slice after S03, re-entered at slice gaps at its open note)
+- **Written to:** `specs/001-faster-slipwai/spec.md` (the note that opens S24's section; the run's checkpoint, a transient file, carried S24 as the next slice after S03, re-entered at slice gaps at its open note)
 - **Status:** standing
 
 ## D83 — Where does each of the adversary's eighteen findings on S03 go, and how are A1, A2, C3 and C4 closed?
