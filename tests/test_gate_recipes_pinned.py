@@ -23,6 +23,11 @@ from test_add_service import add_service
 sys.dont_write_bytecode = True
 
 STAND_IN = "#!/bin/sh\nprintf '%s\\t%s\\n' \"$(basename \"$0\")\" \"$*\" >> \"$STANDIN_LOG\"\nexit 0\n"
+# npm's stand-in also writes the marker a real install leaves at the end, in the directory `--prefix` names.
+NPM = STAND_IN.replace(
+    "exit 0\n",
+    'dir=.\nwhile [ $# -gt 0 ]; do [ "$1" = --prefix ] && dir=$2; shift; done\n'
+    'mkdir -p "$dir/node_modules"\n: > "$dir/node_modules/.package-lock.json"\nexit 0\n')
 APPS = ("apps/service", "apps/second")
 MODES = (
     "--install-only", "--lint-only", "--typecheck-only", "--test-only", "--migrate", "--integration-only",
@@ -69,7 +74,7 @@ class GateRecipesPinnedTest(FactoryTestCase):
         bin_dir = scratch / "bin"
         bin_dir.mkdir()
         for name in ("uv", "npm", "node"):
-            (bin_dir / name).write_text(STAND_IN, encoding="utf-8")
+            (bin_dir / name).write_text(NPM if name == "npm" else STAND_IN, encoding="utf-8")
             (bin_dir / name).chmod(0o755)
         drop = CI_MARKERS + MAKE_STATE + GIT_STATE
         self.env = {key: value for key, value in os.environ.items() if key not in drop}
@@ -123,6 +128,8 @@ class GateRecipesPinnedTest(FactoryTestCase):
         for target, expected in MODEL_TARGETS.items():
             with self.subTest(target=target):
                 self.log.write_text("", encoding="utf-8")
+                # each target from a tree where the tooling is not installed, as a fresh clone's is
+                shutil.rmtree(self.repo / "scripts/event-model/node_modules", ignore_errors=True)
                 self.run_command("make", target)
                 order = [line.split("\t")[0] for line in self.log.read_text(encoding="utf-8").splitlines()]
                 self.assertEqual(order[0], "npm", order)

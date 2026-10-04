@@ -81,6 +81,18 @@ class SkipTest(SkipCase):
                 self.assertNotIn("not reinstalled", done.stdout)
 
 
+class MarkerDatedTest(SkipCase):
+    def test_e12_the_marker_is_newer_than_both_manifests_after_an_install_that_wrote_it_old(self) -> None:
+        """D91 part 2: the recipe dates the marker itself, so the next run sees a tree that matches."""
+        self.assert_passed(self.make("check-drawio", env={"STANDIN_NPM_STALE": "1"}))
+        marker = (self.repo / MARKER).stat().st_mtime
+        for manifest in MANIFESTS:
+            self.assertGreaterEqual(marker, (self.repo / manifest).stat().st_mtime, manifest)
+        self.forget_log()
+        self.assert_passed(self.make("check-drawio", env={"STANDIN_NPM_STALE": "1"}))
+        self.assertEqual(self.npm_calls(), [])
+
+
 class ParallelTest(SkipCase):
     def test_e8_two_targets_in_parallel_on_a_fresh_clone_install_once_before_either_starts(self) -> None:
         """AC-S04-52: the stand-in `npm` holds, bounded, for a second call or a `node`; `met` would show either."""

@@ -12,7 +12,9 @@ from __future__ import annotations
 
 # The model tooling's install is one file target, in the root's pattern (`node_modules/.package-lock.json`, see
 # `shared_packages.py`): npm writes that marker at the end of a successful install, so it is newer than both
-# manifests exactly when the tree was installed from them. Every target that runs the pipeline names it as a
+# manifests exactly when the tree was installed from them, and the recipe dates it again as the root's does, for an
+# npm that wrote none newer. `install` names it too (D93): `make install` is the one command that makes the first gate's
+# pass count, since a gate that installs as it goes is not recorded. Every target that runs the pipeline names it as a
 # prerequisite rather than installing inside its own recipe, because make runs a shared file target once — under
 # `-j` four recipes each running an install would be four writers on one tree. `npm ci`, not `npm install`: it
 # installs only what the committed lock says and refuses a manifest and lock that disagree, where `install` would
@@ -32,7 +34,10 @@ TSX = "node scripts/event-model/node_modules/tsx/dist/cli.mjs"
 MODEL_TARGETS = f"""
 {MARKER}: {MODEL_DIR}/package.json {MODEL_DIR}/package-lock.json
 \t{INSTALL}
+\t@touch {MARKER}
 \t$(eval MODEL_INSTALLED := yes)
+
+install: {MARKER}
 
 .PHONY: check-model
 check-model: ## Validate the global event model and its links to implemented code

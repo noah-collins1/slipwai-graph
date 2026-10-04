@@ -51,6 +51,7 @@ if [ -n "$STANDIN_NPM_HOLD" ]; then
 fi
 mkdir -p "$dir/node_modules"
 : > "$dir/node_modules/.package-lock.json"
+if [ -n "$STANDIN_NPM_STALE" ]; then touch -d '2000-01-01 00:00:00' "$dir/node_modules/.package-lock.json"; fi
 log npm-end "$args"
 exit 0
 """
@@ -109,6 +110,17 @@ class FreshCloneTest(ModelCase):
         self.assertEqual(self.status(), "")
 
 
+class InstallTest(ModelCase):
+    def test_e11_make_install_installs_the_model_tooling_once_and_a_later_gate_does_not(self) -> None:
+        """AC-S04-65, -54 (stand-ins): `make install` runs the one `npm ci`; `check-drawio` after it runs none."""
+        self.assert_passed(self.make("install"))
+        self.assertEqual(self.npm_calls(), [CI])
+        self.forget_log()
+        done = self.make("check-drawio")
+        self.assert_passed(done)
+        self.assertEqual(self.npm_calls(), [])
+
+
 class RealNpmTest(ModelCase):
     def need_real_tools(self) -> None:
         for tool in ("npm", "node"):
@@ -135,6 +147,22 @@ class RealNpmTest(ModelCase):
 
 
 class OneRuleTest(unittest.TestCase):
+    def test_e11_install_names_the_marker_in_an_event_profile_project_and_only_there(self) -> None:
+        """AC-S04-65: `install` takes the model tooling's marker as a prerequisite; a standard project has none."""
+        event = (shape("db") / "Makefile").read_text(encoding="utf-8").splitlines()
+        self.assertIn(f"install: {MARKER}", event)
+        spelled = [line for line in event if re.search(r"\bnpm\b", line) and PREFIX in line]
+        self.assertEqual(len(spelled), 1, spelled)
+        standard = (shape("plain") / "Makefile").read_text(encoding="utf-8")
+        self.assertNotIn("event-model", standard)
+        self.assertNotIn(f"install: {MARKER}", standard)
+
+    def test_e11_a_moved_layout_names_the_moved_marker_for_install(self) -> None:
+        """AC-S04-65: under `delivery/` the prerequisite spells the same moved path as the file target."""
+        apps = default_apps("python", "none", Selection({"event-store": "postgres", "http": "none"}))
+        makefile = project_files("moved", "event-modelling", "none", apps, Layout("delivery"))["delivery/Makefile"]
+        self.assertIn(f"\ninstall: delivery/{MARKER}\n", makefile)
+
     def test_e9_the_makefile_spells_npm_for_the_model_tooling_once_and_it_is_ci(self) -> None:
         """AC-S04-53: one recipe names `npm` with `scripts/event-model`, and it is `npm ci`."""
         makefile = (shape("db") / "Makefile").read_text(encoding="utf-8")

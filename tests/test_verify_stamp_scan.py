@@ -35,6 +35,8 @@ SHAPES = (
 NOT_SCANNED = {
     "scripts/event-model/render-drawio.ts": "`check-drawio`: reads docs/event-model/model.yaml and compares the"
     " committed model.drawio, both tracked, and the model tooling whose installed manifest is on the list",
+    "scripts/event-model/package-lock.json": "named in `check-drawio`'s skip line, an echo that launches nothing; it is"
+    " tracked, so the key holds it by its bytes",
     "scripts/verify": "the shell runner of `lint`, `typecheck` and `test` per backend: it launches the project's"
     " own tools and syncs `.venv` from the lock on every run, and reads no path a gate script names; the variables"
     " it and the Maven wrapper read are named in `test_verify_stamp_launches`, each deciding which tool is asked or"
