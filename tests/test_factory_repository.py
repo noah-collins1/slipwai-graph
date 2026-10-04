@@ -218,11 +218,14 @@ class FactoryRepositoryTest(FactoryTestCase):
         workflow cannot be run before pushing. Both read the same targets — CI as slices, in parallel jobs.
         """
         makefile = (ROOT / "Makefile").read_text()
-        verify = next(
-            line for line in makefile.splitlines() if line.startswith("verify:")
-        )
+        # `verify` asks the verify stamp first and runs the checks through `verify-checks` (S33), so the
+        # four gates are that target's prerequisites; `verify` must still reach it.
+        verify = next(line for line in makefile.splitlines() if line.startswith("verify:"))
+        checks = next(line for line in makefile.splitlines() if line.startswith("verify-checks:"))
+        self.assertIn("verify-checks", makefile.split(verify, 1)[1].split("\n.PHONY", 1)[0],
+                      "`make verify` no longer reaches verify-checks")
         for gate in ("lint", "typecheck", "check-structure", "test"):
-            self.assertIn(gate, verify, f"`make verify` no longer runs {gate}")
+            self.assertIn(gate, checks, f"`make verify` no longer runs {gate}")
             self.assertRegex(makefile, rf"(?m)^{gate}:.*##", f"{gate} is not a documented target")
         # CI runs the same four targets, as parallel slices of `make test` — every suite named once across
         # the jobs, and the ones that generate whole projects kept out of `checks`.
