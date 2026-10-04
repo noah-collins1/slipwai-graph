@@ -102,7 +102,9 @@ records, with that line after them. A CI run — a detached pull-request checkou
 `CI_COMMIT_REF_NAME`, `HEAD` detached) or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — exits 1 and says
 on stderr that the slice was NOT checked, because that checkout has no history to compare with; the verify job's
 checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`; on any other CI, a full clone with the trunk's
-branch fetched) for the check to hold there. A local shell with one of those
+branch fetched from a remote named `origin`) for the check to hold there. The line names the two refs it looked
+for, `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>`: only those two full names answer, so a clone under
+another remote name has the history and is still told NOT checked. A local shell with one of those
 variables set gets the same NOT-checked line, and one set to `false` still counts: any non-empty value does.
 That line carries no `git fetch`, since nobody can run one on a runner. With a usable base a CI run is held
 as locally, and a lost record still fails it.
@@ -818,12 +820,15 @@ def forge_checkout() -> bool:
 def not_checked(slice_id: str, trunk: str, note: str = "") -> str:
     """The forge's answer where there is no base: a failure, said on stderr, since a gate that could not look
     must not read as one that looked (D31, S24). It names no `git fetch`: the fix there is the job's checkout,
-    not a command a person runs."""
+    not a command a person runs. It names the two refs it looked for, `refs/heads/<trunk>` and
+    `refs/remotes/origin/<trunk>`, and that the remote is called `origin`: a clone under another remote name has
+    the history and is still told so (D87, F4)."""
     said = f"; {note}" if note else ""
     return (f"check-slice-scope: slice/{slice_id} was NOT checked — this CI checkout has no `{trunk}` history to "
-            "compare with. The check holds on a developer's machine; for it to hold here the verify job's "
+            f"compare with (it looked for `refs/heads/{trunk}` and `refs/remotes/origin/{trunk}`). The check holds on "
+            "a developer's machine; for it to hold here the verify job's "
             "checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: \"0\"`; on any other CI, a full clone with the "
-            f"trunk's branch fetched){said}.")
+            f"trunk's branch fetched from a remote named `origin`){said}.")
 
 
 def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:

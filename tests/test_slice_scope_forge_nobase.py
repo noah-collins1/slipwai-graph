@@ -16,13 +16,17 @@ import test_slice_scope_hostile_base as hostile
 import test_slice_scope_no_base as no_base_tests
 from test_slice_scope_root import SliceScopeFixtures, git
 
-OTHER_CI = "on any other CI, a full clone with the trunk's branch fetched"
+OTHER_CI = "on any other CI, a full clone with the trunk's branch fetched from a remote named `origin`"
 LOST = "specs/f/plan.md"
 ATTACHED = (("GITHUB_ACTIONS", {"GITHUB_ACTIONS": "true"}), ("GITLAB_CI", {"GITLAB_CI": "true"}),
             ("CI", {"CI": "true"}))
 DETACHED = (("GITHUB_HEAD_REF", {"GITHUB_HEAD_REF": "slice/S1"}),
             ("CI_COMMIT_REF_NAME", {"CI_COMMIT_REF_NAME": "slice/S1"}))
 TARGETS: tuple[dict[str, str], ...] = ({}, {"GITHUB_BASE_REF": "main"}, {"CI_MERGE_REQUEST_TARGET_BRANCH_NAME": "main"})
+
+
+def git_refs(repo: Path) -> list[str]:
+    return no_base_tests.out(repo, "for-each-ref", "--format=%(refname)").splitlines()
 
 
 class ForgeNoBaseTest(SliceScopeFixtures):
@@ -51,11 +55,19 @@ class ForgeNoBaseTest(SliceScopeFixtures):
         self.assertEqual(result.returncode, 1, f"{env}: {result.stdout}{result.stderr}")
         self.assertEqual(result.stdout, "", env)
         self.assertEqual(len(result.stderr.splitlines()), 1, result.stderr)
-        for word in ("NOT checked", f"`{trunk}`", "fetch-depth: 0", 'GIT_DEPTH: "0"', OTHER_CI):
+        refs = (f"`refs/heads/{trunk}`", f"`refs/remotes/origin/{trunk}`")  # the two refs it looked for (AC-S24-15)
+        for word in ("NOT checked", f"`{trunk}`", "fetch-depth: 0", 'GIT_DEPTH: "0"', OTHER_CI, *refs):
             self.assertIn(word, result.stderr)
         for word in ("git fetch", "nothing to hold"):
             self.assertNotIn(word, result.stderr)
         return result.stderr
+
+    def test_a_full_clone_whose_only_remote_is_upstream_is_told_it_was_not_checked(self) -> None:
+        """AC-S24-15: the history is all there, under `refs/remotes/upstream/`; only the two full names answer."""
+        origin = self.origin()
+        clone = self.clone(origin, "--origin", "upstream", "--no-single-branch", "--branch", "slice/S1")
+        self.assertIn("refs/remotes/upstream/main", git_refs(clone))
+        self.failed_unchecked(clone, {"CI": "true"})
 
     def test_a_depth_one_clone_of_the_slice_fails_under_each_marker(self) -> None:
         """e1: the three markers, each alone, `HEAD` attached."""
