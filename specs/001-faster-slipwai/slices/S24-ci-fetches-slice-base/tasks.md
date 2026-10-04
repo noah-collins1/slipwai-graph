@@ -331,7 +331,15 @@ path; level line (PATCH, `VERSION` not raised because it already carries the MIN
 
 ### T009 — Both full gates on the final tip, then the demo (host task)
 
-- [ ] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T008;
+- [x] *(2026-10-04, cruise iteration 12. `make verify` green at `38df058`: lint, typecheck, check-structure, 1717
+  tests, 9 skipped. `make -f delivery/Makefile verify` with `CI=true GITHUB_ACTIONS=true` exported was red there on
+  three code-index tests of S01's — `tests/gate_audit.py` gave a test back the markers it had cleared — fixed, tests
+  only, at `bf44aa5`; the same gate with the markers exported is green at `bf44aa5` (1717 tests, 9 skipped: all gates
+  passed), lint, typecheck and check-structure are green there, and the helper's five modules are green there without
+  the markers (60 tests). The full suite without the markers was not run again after that one tests-only commit. Under
+  `delivery/` the slice changed only `delivery/survey/pinned.md`; `VERSION`, `check-migrations.py`, both
+  `check-flags.py`, `tools/`, the `Makefile` and this repository's CI are untouched. The demo ran before the gates:
+  demo 1 `implementation`, demo 2 `accepted`, both by `drive-hand`.)* **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T008;
   both green (Principle XIV), once with `CI=true GITHUB_ACTIONS=true` exported (AC-S24-13). Confirm the slice's diff
   touches under `delivery/` only `delivery/survey/pinned.md`, `VERSION` is `1.6.0.dev0`, none of `check-migrations.py`
   or either `check-flags.py` changed, and nothing under `tools/`, the `Makefile` or this repository's CI did. Then the
@@ -350,7 +358,7 @@ path; level line (PATCH, `VERSION` not raised because it already carries the MIN
 
 ### T012 — Register row and benchmark (host task)
 
-- [ ] **Host task.** The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in
+- [x] *(the register row and the benchmark close, in this commit)* **Host task.** The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in
   this slice's own pull request (`AGENTS.md`).
 
 ---
