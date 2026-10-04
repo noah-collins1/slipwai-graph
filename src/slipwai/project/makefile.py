@@ -160,7 +160,7 @@ def makefile(project_name: str, profile: str, apps: list[App], target: str = "no
     # where a family in this project has a formatter at all, so no project carries a target that does
     # nothing — and never a prerequisite of `verify`, because a gate that rewrites the tree it is judging
     # is a gate that always passes.
-    formatting = format_command(apps)
+    formatting = in_recipe(format_command(apps), apps)
     if formatting:
         formatting = f"format: ## Rewrite this project's own code the way `make lint` expects to find it\n\t{formatting}\n"
     verify_dependencies = (
