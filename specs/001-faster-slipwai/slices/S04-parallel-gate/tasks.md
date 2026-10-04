@@ -704,6 +704,12 @@ Not run by either pass, and carried to the board: GNU Make 3.81 and 4.3 (`.FEATU
 `$(words)` and `MAKEFILE_LIST` read or assumed, not run); Go's first run on a fresh clone; `migrate` carrying the
 guarded directive into an already-adopted repository; the `make starters` matrix and the full gates (T010).
 
+**After the gaps fixes (D96, item 11).** The acceptance trace that followed found eighteen things, none above
+`MEDIUM`; T020 and T021 changed the code, and a bounded third reading over `1a8b3ef..HEAD` — taken for that reason only
+— found nothing `CRITICAL`, `HIGH` or `MEDIUM` and one `LOW` (T022, a docstring, closed). The verdict stands at
+`13f5afe`. Not reached by it: a Java run, `check-ux-gates` and `check-openapi` under `-j` with real tools, the catch-up's
+conflict branch by hand.
+
 The map: `make check-convergence` is run with the delivery gate at T010; this slice reached no new rung (no row of
 `project.json`'s `convergence` moves — the factory's own gate is unchanged until a person migrates, D9).
 
@@ -932,4 +938,20 @@ re-words and adds are AC-S04-1, -48, -49, -56, -59, -60, -65 and AC-S04-71 to -8
 `tests/test_model_install_skip.py`, `tests/test_model_install_first.py`, `tests/test_model_lock.py`,
 `tests/test_parallel_gate_carry.py`, `tests/test_gate_recipes_pinned.py` (the marker's name in its stand-in only),
 `tests/test_verify_stamp_inputs.py` (only if it names the marker), and a new `tests/test_model_install_regenerate.py`.
+
+## Phase 4: Convergence re-check after the gaps fixes (cruise iteration 13)
+
+Taken over `git diff 1a8b3ef..HEAD -- src assets tests changelog.d` only, by running generated projects under
+`/tmp/s04-recheck` with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` and `MAKEFLAGS` unset (GNU Make 4.4.1, real `uv`, `npm` and
+`go`; Java not run in this pass). **No `CRITICAL` or `HIGH`, no `MEDIUM`: the verdict of pass 2 stands.** One `LOW`,
+which does not re-open the loop.
+
+### T022 — `LOW` — `gate_order`'s docstring says which `go` command writes `go.work.sum` as the run shows it
+
+- [x] *(13f5afe: the docstring corrected)* `src/slipwai/project/parallel_gate.py`, `gate_order`'s docstring: *"Go's first `go` command resolves the workspace
+  and writes `go.work.sum` on a fresh clone"*. On a fresh clone of a Go starter (go-std, real toolchain) `go vet ./...`,
+  the first `go` command of `lint`, left no `go.work.sum`; `go tool staticcheck ./...`, the last, wrote it; `go test
+  -run '^$' ./...` after it left the file's hash unchanged. The fragment already says it right (*"`lint`, whose last
+  `go` command resolves the workspace"*); the docstring and the fragment should say the same thing. A comment only:
+  nothing generated changes, no fragment, `VERSION` stays. D96's *Would reverse if* did not fire.
 
