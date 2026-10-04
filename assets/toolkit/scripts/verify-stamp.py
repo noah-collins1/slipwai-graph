@@ -29,6 +29,8 @@ import sys
 import tempfile
 import time
 
+# What is persisted under the git directory is a closed set of fields — the stamp's own, and the note's: the key, the
+# tools' lines, or `NOTHING` as a marker that the run records nothing. Free text, and so a path, is printed, not stored.
 # The stamp's fields: the key a later run compares, the three parts it is made of, the instant of the pass, and
 # the result, which is only ever a pass.
 FIELDS = ("key", "tree", "scripts", "tools", "passed", "result")
@@ -550,7 +552,7 @@ def begin_full_run(note: dict[str, object], forced: str | None = None, cannot: s
         cannot = reason
     if cannot is not None:
         print(CANNOT_LINE.format(reason=cannot))
-        note = {NOTHING: cannot}
+        note = {NOTHING: True}  # a marker, never the reason: that is printed, and a path in it is this machine's
     elif forced is not None:
         print(FORCED_LINE.format(reason=forced))
     try:
@@ -567,7 +569,7 @@ def reuse(options: Options) -> int:
         if declined():
             # `-i` or a ratchet: the checks run and may fail with the run still exiting 0, so no stamp may stand to be
             # reused afterwards; this run records nothing (`record` declines it too)
-            return begin_full_run({NOTHING: "a run that is not recorded"})
+            return begin_full_run({NOTHING: True})
         problem = index_problem()
         if problem is not None:
             raise CannotTell(problem)

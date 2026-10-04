@@ -6,6 +6,7 @@ any check; the exit code is the gate's own, read from `make verify-checks` run t
 """
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -38,12 +39,27 @@ class CannotTellTest(StampTestCase):
             self.assertIn(word, lines[0])
         self.assertNotIn("did not run", lines[0])
         self.assertTrue(self.checks(), "the gate did not run")
+        self.assert_nothing_local(run)
         path = self.stamp_path()
         if stands is None:
             self.assertIsNone(path, "a stamp stood, or was written, where the key could not be built")
         else:
             assert path is not None
             self.assertEqual(path.read_bytes(), stands)
+
+    def assert_nothing_local(self, run: subprocess.CompletedProcess[str]) -> None:
+        """T020: whatever the run left under the git directory holds no path of this machine and none of the words it
+        printed for a person: a note is the marker that the run records nothing, and nothing else."""
+        directory = self.repo / ".git" / "slipwai"
+        for found in sorted(directory.iterdir()) if directory.is_dir() else []:
+            if found.is_file():
+                text = found.read_text(encoding="utf-8")
+                self.assertNotIn(str(self.bin.parent), text, f"{found.name} holds a path of this machine")
+                self.assertNotIn(str(self.repo), text, f"{found.name} holds a path of this machine")
+                for line in self.reuse_lines(run):
+                    self.assertNotIn(line.partition(" — ")[2][:20], text, f"{found.name} holds the printed reason")
+                if found.suffix == ".pending":
+                    self.assertEqual(json.loads(text), {"nothing": True}, found.name)
 
     def unreadable(self, name: str) -> None:
         """`name` is there, a stamp stands for the tree with it, and then nothing may read it."""
@@ -136,3 +152,19 @@ class CannotTellTest(StampTestCase):
         self.forget_log()
         run = self.run_gate()
         self.assertTrue(self.checks(), run.stdout)
+
+    def test_a_stamp_that_cannot_be_removed_is_named_on_the_line_and_never_in_the_note(self) -> None:
+        """T020: a non-empty directory where the stamp goes cannot be removed; the line names the file to delete, and
+        the note under the git directory holds neither that path nor the reason."""
+        self.plant_stamp()
+        path = self.stamp_path()
+        assert path is not None
+        path.unlink()
+        path.mkdir()
+        (path / "inside").write_text("x\n", encoding="utf-8")
+        run = self.run_gate()
+        self.assertEqual(len([line for line in self.reuse_lines(run) if path.name in line]), 1, run.stdout)
+        self.assertTrue(list(path.parent.glob("*.pending")), "no note was left")
+        self.assert_nothing_local(run)
+        for found in path.parent.glob("*.pending"):
+            self.assertNotIn(str(self.repo), found.read_text(encoding="utf-8"))
