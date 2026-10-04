@@ -1,0 +1,13 @@
+
+OK
+
+real	0m27.160s
+user	0m21.185s
+sys	0m7.183s
+--- with CI=true GITHUB_ACTIONS=true
+e6, held: `main` and an older `master`, nothing minted. ... ok
+
+----------------------------------------------------------------------
+Ran 124 tests in 26.807s
+
+OK

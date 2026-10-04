@@ -1,0 +1,169 @@
+created: /tmp/s24-demo/ac1/old/shop-python
+created: /tmp/s24-demo/ac1/new/shop-python
+=== python aws: files differing between old and new factory
+Files /tmp/s24-demo/ac1/old/shop-python/.github/workflows/verify.yml and /tmp/s24-demo/ac1/new/shop-python/.github/workflows/verify.yml differ
+Files /tmp/s24-demo/ac1/old/shop-python/scripts/check-slice-scope.py and /tmp/s24-demo/ac1/new/shop-python/scripts/check-slice-scope.py differ
+--- workflows present:
+deploy.yml
+event-model.yml
+production.yml
+rollback.yml
+verify.yml
+--- diff of verify.yml
+21a22,23
+>       # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,
+>       # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
+22a25,26
+>         with:
+>           fetch-depth: 0
+--- every checkout in verify.yml (new)
+7:  push:
+8-    branches: [main]
+9-  pull_request:
+19:  verify:
+20-    runs-on: ubuntu-latest
+21-    steps:
+24:      - uses: actions/checkout@v6
+25-        with:
+26:          fetch-depth: 0
+27-      - uses: actions/setup-python@v6
+28-        with:
+43:  integration:
+44-    runs-on: ubuntu-latest
+45-    container: python:3.13-bookworm
+50:    # the same instant, and the loser died in `Post actions/checkout@v6` with `Cannot find module
+51-    # .../dist/index.js` after all its real steps had passed. That reason is gone — the steps below download
+52-    # no action at all, so there is no cache entry for the two jobs to race over.
+created: /tmp/s24-demo/ac1/old/shop-typescript
+created: /tmp/s24-demo/ac1/new/shop-typescript
+=== typescript azure: files differing between old and new factory
+Files /tmp/s24-demo/ac1/old/shop-typescript/.github/workflows/verify.yml and /tmp/s24-demo/ac1/new/shop-typescript/.github/workflows/verify.yml differ
+Files /tmp/s24-demo/ac1/old/shop-typescript/scripts/check-slice-scope.py and /tmp/s24-demo/ac1/new/shop-typescript/scripts/check-slice-scope.py differ
+--- workflows present:
+deploy.yml
+event-model.yml
+production.yml
+rollback.yml
+verify.yml
+--- diff of verify.yml
+21a22,23
+>       # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,
+>       # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
+22a25,26
+>         with:
+>           fetch-depth: 0
+--- every checkout in verify.yml (new)
+7:  push:
+8-    branches: [main]
+9-  pull_request:
+19:  verify:
+20-    runs-on: ubuntu-latest
+21-    steps:
+24:      - uses: actions/checkout@v6
+25-        with:
+26:          fetch-depth: 0
+27-      - uses: actions/setup-node@v6
+28-        with:
+35:  integration:
+36-    runs-on: ubuntu-latest
+37-    container: node:24-bookworm
+42:    # the same instant, and the loser died in `Post actions/checkout@v6` with `Cannot find module
+43-    # .../dist/index.js` after all its real steps had passed. That reason is gone — the steps below download
+44-    # no action at all, so there is no cache entry for the two jobs to race over.
+created: /tmp/s24-demo/ac1/old/shop-go
+created: /tmp/s24-demo/ac1/new/shop-go
+=== go none: files differing between old and new factory
+Files /tmp/s24-demo/ac1/old/shop-go/.github/workflows/verify.yml and /tmp/s24-demo/ac1/new/shop-go/.github/workflows/verify.yml differ
+Files /tmp/s24-demo/ac1/old/shop-go/scripts/check-slice-scope.py and /tmp/s24-demo/ac1/new/shop-go/scripts/check-slice-scope.py differ
+--- workflows present:
+event-model.yml
+verify.yml
+--- diff of verify.yml
+21a22,23
+>       # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,
+>       # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
+22a25,26
+>         with:
+>           fetch-depth: 0
+--- every checkout in verify.yml (new)
+7:  push:
+8-    branches: [main]
+9-  pull_request:
+19:  verify:
+20-    runs-on: ubuntu-latest
+21-    steps:
+24:      - uses: actions/checkout@v6
+25-        with:
+26:          fetch-depth: 0
+27-      - uses: actions/setup-go@v7
+28-        with:
+41:  integration:
+42-    runs-on: ubuntu-latest
+43-    container: golang:1.26-bookworm
+48:    # the same instant, and the loser died in `Post actions/checkout@v6` with `Cannot find module
+49-    # .../dist/index.js` after all its real steps had passed. That reason is gone — the steps below download
+50-    # no action at all, so there is no cache entry for the two jobs to race over.
+=== adopt old vs new
+[old gh]
+adopt exit 0
+5:CI: .github/workflows/verify-delivery.yml runs the gate on GitHub Actions (detected, from .github/workflows).
+On branch main
+nothing to commit, working tree clean
+[old gl]
+adopt exit 0
+5:CI: delivery/ci/verify-delivery.gitlab-ci.yml is a GitLab job; add `include: [local: delivery/ci/verify-delivery.gitlab-ci.yml]` to .gitlab-ci.yml and it runs the gate.
+On branch main
+nothing to commit, working tree clean
+[old none]
+adopt exit 0
+5:CI: none found in this repository, so nothing was written; when there is one, have it run `make -f delivery/Makefile verify`.
+On branch main
+nothing to commit, working tree clean
+[new gh]
+adopt exit 0
+5:CI: .github/workflows/verify-delivery.yml runs the gate on GitHub Actions (detected, from .github/workflows).
+On branch main
+nothing to commit, working tree clean
+[new gl]
+adopt exit 0
+5:CI: delivery/ci/verify-delivery.gitlab-ci.yml is a GitLab job; add `include: [local: delivery/ci/verify-delivery.gitlab-ci.yml]` to .gitlab-ci.yml and it runs the gate.
+On branch main
+nothing to commit, working tree clean
+[new none]
+adopt exit 0
+5:CI: none found in this repository, so nothing was written; when there is one, have it run `make -f delivery/Makefile verify` on a full clone with the trunk's branch fetched.
+On branch main
+nothing to commit, working tree clean
+14a15,16
+>       # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,
+>       # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
+15a18,19
+>         with:
+>           fetch-depth: 0
+8a9,11
+>   variables:
+>     # Full history: the gate's checks compare this change with the trunk.
+>     GIT_DEPTH: "0"
+--- tree diff adopt gh
+Files /tmp/s24-demo/ac1/old-gh/app/delivery/scripts/check-slice-scope.py and /tmp/s24-demo/ac1/new-gh/app/delivery/scripts/check-slice-scope.py differ
+Files /tmp/s24-demo/ac1/old-gh/app/.github/workflows/verify-delivery.yml and /tmp/s24-demo/ac1/new-gh/app/.github/workflows/verify-delivery.yml differ
+--- tree diff adopt gl
+Files /tmp/s24-demo/ac1/old-gl/app/delivery/ci/verify-delivery.gitlab-ci.yml and /tmp/s24-demo/ac1/new-gl/app/delivery/ci/verify-delivery.gitlab-ci.yml differ
+Files /tmp/s24-demo/ac1/old-gl/app/delivery/scripts/check-slice-scope.py and /tmp/s24-demo/ac1/new-gl/app/delivery/scripts/check-slice-scope.py differ
+--- tree diff adopt none
+Files /tmp/s24-demo/ac1/old-none/app/delivery/scripts/check-slice-scope.py and /tmp/s24-demo/ac1/new-none/app/delivery/scripts/check-slice-scope.py differ
+--- gitlab file (new)
+# Written by slipwai adopt (experimental). The delivery gate as a GitLab CI job: the recorded commands of the
+# applications that were here, and the method's own checks, from the Makefile under delivery/. The
+# repository's own .gitlab-ci.yml is untouched; include this job from it:
+#
+#   include:
+#     - local: delivery/ci/verify-delivery.gitlab-ci.yml
+verify-delivery:
+  stage: test
+  variables:
+    # Full history: the gate's checks compare this change with the trunk.
+    GIT_DEPTH: "0"
+  image: python:3.11
+  script:
+    - make -f delivery/Makefile verify

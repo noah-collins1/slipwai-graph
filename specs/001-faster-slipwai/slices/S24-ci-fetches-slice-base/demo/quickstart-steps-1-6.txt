@@ -1,0 +1,50 @@
+### setup
+slipwai 1.6.0.dev0
+created: /tmp/s24-demo/qs/shop
+d7a4c3e Scaffold shop
+main
+### step 1
+23-      # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
+24-      - uses: actions/checkout@v6
+25-        with:
+26:          fetch-depth: 0
+27-      - uses: actions/setup-python@v6
+28-        with:
+29-          python-version: '3.13'
+1
+### step 2
+CI: .github/workflows/verify-delivery.yml runs the gate on GitHub Actions (detected, from .github/workflows).
+CI: delivery/ci/verify-delivery.gitlab-ci.yml is a GitLab job; add `include: [local: delivery/ci/verify-delivery.gitlab-ci.yml]` to .gitlab-ci.yml and it runs the gate.
+17:      - uses: actions/checkout@v6
+18-        with:
+19-          fetch-depth: 0
+--- gitlab
+8-  stage: test
+9:  variables:
+10-    # Full history: the gate's checks compare this change with the trunk.
+11-    GIT_DEPTH: "0"
+12-  image: python:3.11
+### step 3
+Deleted branch main (was d7a4c3e).
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at d7a4c3e
+
+  Makefile: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+exit 1
+### step 4
+exit 1
+stdout bytes: 0; stderr lines: 1
+check-slice-scope: slice/S1 was NOT checked — this CI checkout has no `main` history to compare with. The check holds on a developer's machine; for it to hold here the verify job's checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`; on any other CI, a full clone with the trunk's branch fetched).
+0
+### step 5
+Deleted branch main (was d7a4c3e).
+check-slice-scope: on `feature/x`, not a `slice/<id>` branch — nothing to hold
+exit 0
+check-migrations: a schema change does not follow expand/contract
+
+  apps/service/migrations/202610020900_orders_drop_legacy.sql: drops a column, and `202610010900_orders_add_status` is new in this same change. Expand and contract ship in separate deployments: land `202610010900_orders_add_status` first, then this one.
+
+exit 1
+### step 6
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries read)
+exit 0

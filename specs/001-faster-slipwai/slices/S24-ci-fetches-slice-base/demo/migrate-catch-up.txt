@@ -1,0 +1,126 @@
+##### A: generated before the slice, workflow kept as generated
+0
+migrated shop-python to slipwai 1.6.0.dev0: 2 files changed, 18 insertions(+), 10 deletions(-)
+One commit, fast-forwarded — this project had no changes of its own since the last factory commit.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+migrate exit 0
+d05b6ac Replay shop-python with slipwai 1.6.0.dev0
+a6f4924 Scaffold shop-python
+
+    Replay shop-python with slipwai 1.6.0.dev0
+
+ .github/workflows/verify.yml |  4 ++++
+ scripts/check-slice-scope.py | 24 ++++++++++++++----------
+ 2 files changed, 18 insertions(+), 10 deletions(-)
+23-      # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
+24-      - uses: actions/checkout@v6
+25-        with:
+26:          fetch-depth: 0
+27-      - uses: actions/setup-python@v6
+28-        with:
+##### B: generated before the slice, the project edited the checkout step
+migrating shop-python to slipwai 1.6.0.dev0 stopped at 1 conflict(s) — each a file both this project and the factory changed since the last migration, and the project decides:
+  .github/workflows/verify.yml
+
+Every other file is merged and staged. For each file above, edit it and `git add` it — or take a side whole: `git checkout --ours -- <file>` keeps this project's version, `--theirs` takes the factory's — then `git commit`. Or `git merge --abort` to walk away from all of it.
+Then: make agents, to re-derive the harness projections from the command and agent files this migration moved — the factory never writes those, so the merge cannot, and `check-agents` fails until they are re-derived.
+Then: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+migrate exit 1
+UU .github/workflows/verify.yml
+M  scripts/check-slice-scope.py
+--- the step as the merge left it
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,
+      # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
+      - uses: actions/checkout@v6
+        with:
+<<<<<<< HEAD
+          submodules: true
+=======
+          fetch-depth: 0
+>>>>>>> fc0952358237ea2c6621cfc3d151aa8d5acfb8a4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - run: python3 -m pip install --disable-pip-version-check -q uv==0.9.26
+      - uses: actions/cache@v4
+        with:
+##### C: adopted before the slice (GitHub, GitLab, none)
+[gh]
+migrate exit 0
+migrated app to slipwai 1.6.0.dev0: 2 files changed, 18 insertions(+), 10 deletions(-)
+One commit, fast-forwarded — this project had no changes of its own since the last factory commit.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+.github/workflows/verify-delivery.yml:19:          fetch-depth: 0
+[gl]
+migrate exit 0
+migrated app to slipwai 1.6.0.dev0: 2 files changed, 17 insertions(+), 10 deletions(-)
+One commit, fast-forwarded — this project had no changes of its own since the last factory commit.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+delivery/ci/verify-delivery.gitlab-ci.yml:11:    GIT_DEPTH: "0"
+[none]
+migrate exit 0
+migrated app to slipwai 1.6.0.dev0: 1 file changed, 14 insertions(+), 10 deletions(-)
+One commit, fast-forwarded — this project had no changes of its own since the last factory commit.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+##### catch-up.md in A: what it says of this change
+21 .slipwai/catch-up.md
+15:CI's `verify` job now fetches full history, so a pull request is held in CI to what `make verify` already holds on a developer's machine. `check-imports`, `check-migrations` and `check-codegraph` stop reading what the answer never needed. `adopt --refresh` (experimental: brownfield adoption) no longer rewrites the four files a project owns. `adopt --refresh`, `--confirm` and `--decline` (experimental: brownfield adoption) now refuse to write over an uncommitted change where the project sits in a subdirectory of its git repository. `make model` draws through one browser, and only the diagrams whose source or renderer changed. A `/cruise` run reads what it has already read once, not again before every iteration, and a decision entry can now say which slices it binds. `check-slice-scope` compares a slice branch with the trunk's own refs, so a branch no longer empties its own check by minting a base. `check-slice-scope` no longer refuses a slice's own code in a repository adopted at its root (`adopt`, experimental), and a slice id with a slug is read whole. `make verify` returns at once on a tree that already passed it.
+17:**Owes:** `slipwai migrate` carries the changed workflow into a project that kept it as generated, and replaces the two files `adopt` wrote. It does not rewrite a workflow you took over or edited at that step (the merge shows you the change), or a pipeline of your own. There — in any CI job that runs `make verify` on a shallow clone with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — a `slice/<id>` branch turns red after `migrate` until the job fetches history: add `fetch-depth: 0` under the checkout's `with:` (on GitLab, `GIT_DEPTH: "0"` under the job's `variables:`). Where `adopt` writes no CI configuration, its report now says the job needs a full clone with the trunk's branch fetched. An open pull request that carries an expand with its contract, or a new flag seeded other than `off`, goes red on its next run and is fixed as above. A repository already adopted in a subdirectory may meet one refusal, once. If an earlier run left regenerated files uncommitted, nothing was recorded for them, and the first refresh, confirm or decline after this change refuses, naming them, because slipwai cannot tell them from an edit of yours. Commit the files it names and run it again; where the list ends in "and N more", type `git add -A . && git commit` in the project's directory, which commits everything uncommitted under the project, and run it again; nothing else is asked. Do not stash them: a stash takes the answers you have settled in `project.json` with it, and the refusal returns after `git stash pop`. The refusal now also says where its names are spelled from: the project's directory, which is not the repository's top when the project sits in a subdirectory. Nothing is asked of a repository that left `render.ts` as generated. After `slipwai migrate` its first `make model` redraws every diagram once, and since the output is ignored nothing committed changes; a repository that removed the ignore lines and commits its diagrams sees the second comment line in each SVG, once. A repository that edited `render.ts` may meet a conflict there when `slipwai migrate` carries it forward, because the renderer's pin, width and browser handling moved to `render-session.ts`. Nothing is asked of an existing log: an entry without a `Scope:` line is carried as global, one without a `bookkeeping` object is read as it always was, and so is one without `controls_changed_between`. A refresh never rewrites a project's own owner brief; `slipwai migrate` merges the new entry shape beside what the project wrote there, and where a merge leaves the entry example without the `Scope:` line, add it by hand. A run already going when the runner is replaced is given up to `stuck_after − 1` more iterations before the stuck detector parks it, once, because the fingerprint's value changed. The first code-index check after the upgrade compares every tracked file, since the record it reads is keyed on the script that wrote it. `slipwai migrate` carries the corrected script; nothing else in a repository changes. Two things you may see afterwards. On a developer's machine, a slice branch with no trunk to compare with — no `main` ref, or a shallow clone too short to reach the branch point — used to pass as "nothing to hold"; it now fails with a single line that names the command to run (`git fetch origin <trunk>:refs/remotes/origin/<trunk>`, or `git fetch --unshallow origin`); the longer form is there because a bare `git fetch origin <trunk>` in a single-branch clone leaves no ref for the check to find. In any CI run with no trunk to compare with — a checkout of one commit, or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — the check says on stderr that the slice was NOT checked, with no `git fetch` in it, since nobody can run one on a runner; a local shell with one of those variables set gets the same line. What that line's exit code is, and how CI gets the history, is the entry beside this one (*CI's `verify` job now fetches full history*). Nothing is asked of a repository already generated, with one exception: `slipwai migrate` brings the new `Makefile` and `scripts/verify-stamp.py`, the first `make verify` runs in full, and `.gitignore` is not touched — but a repository whose trunk is named neither `main` nor `master` and whose `project.json` records no `ci.branch` records it, so that its trunk always runs the full gate; until then that branch reuses a stamp like any other. `make ci` runs every check and records nothing, so the `make verify` that follows a green `make ci` runs in full. A `ci.branch` the gate cannot use, or a trunk it cannot find, is said on one line before the first check, which says to record `ci.branch` or fetch the trunk; that run runs every check and records nothing, where it once stamped in silence. A pipeline that sets none of `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` sets `CI=1` itself.
+##### B continued: the maintainer's side taken whole (the project's workflow, not rewritten), merge committed
+7a6a366 migrate; our workflow kept
+3dab520 our checkout fetches submodules
+fc09523 Replay shop-python with slipwai 1.6.0.dev0
+0
+--- CI on the slice branch, as the un-rewritten workflow checks out (depth 1)
+check-slice-scope: slice/S1 was NOT checked — this CI checkout has no `main` history to compare with. The check holds on a developer's machine; for it to hold here the verify job's checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`; on any other CI, a full clone with the trunk's branch fetched).
+exit 1
+--- catch-up followed: fetch-depth: 0 added under the checkout's with:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+--- CI on the slice branch with the key (full history, detached, no local main)
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 7a6a366)
+exit 0
+##### D: a pipeline of the project's own, adopted repository with no CI written, migrated
+--- own job: shallow clone, CI=true, check-slice-scope
+check-slice-scope: slice/S1 was NOT checked — this CI checkout has no `main` history to compare with. The check holds on a developer's machine; for it to hold here the verify job's checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`; on any other CI, a full clone with the trunk's branch fetched); `ci.branch` names `main`, which has no branch here.
+exit 1
+--- own job: shallow clone, CI=true, make -f delivery/Makefile verify (tail)
+app: no typecheck command recorded in project.json (.)
+python3 delivery/scripts/check-imports.py
+check-imports: inward dependency rule holds (0 directory entries read)
+python3 delivery/scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (0 directory entries read)
+python3 delivery/scripts/check-slice-scope.py
+check-slice-scope: slice/S1 was NOT checked — this CI checkout has no `main` history to compare with. The check holds on a developer's machine; for it to hold here the verify job's checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`; on any other CI, a full clone with the trunk's branch fetched); `ci.branch` names `main`, which has no branch here.
+make: *** [delivery/Makefile:58: check-slice-scope] Error 1
+exit 2
+--- own job: full clone with the trunk's branch fetched, CI=true
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at e4ec2af)
+exit 0
+##### E: adopted GitHub repository whose verify-delivery.yml the project edited, then migrate
+migrate exit 0
+migrated app to slipwai 1.6.0.dev0: 2 files changed, 18 insertions(+), 10 deletions(-)
+One merge commit. The files this project had changed itself were kept; the rest are what the factory now generates for its answers.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+13:    runs-on: self-hosted
+19:          fetch-depth: 0
