@@ -725,7 +725,7 @@ checkout under `/tmp`, with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` and `MAKEFLAGS` 
 
 ### T014 — `MEDIUM` — Every target that names `sync` runs its Python mode with `--synced`; `format` does not
 
-- [ ] **Finding.** `format` is on the `…: sync` line (`parallel_gate.sync_rules`, `dependents`), but its recipe is built by
+- [x] *(f614b2f: `format`'s recipe passes through `in_recipe`; swept both ways over five shapes)* **Finding.** `format` is on the `…: sync` line (`parallel_gate.sync_rules`, `dependents`), but its recipe is built by
   `format_command(apps)` at `src/slipwai/project/makefile.py:163` and never passes through `in_recipe`, so it is written
   `./scripts/verify --format` (mixed: `./scripts/verify-python --format`) and syncs a second time inside the recipe. The
   Makefile's own comment (*every target below names it rather than syncing inside its own recipe*) and the fragment (*every
@@ -747,7 +747,7 @@ checkout under `/tmp`, with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` and `MAKEFLAGS` 
 
 ### T015 — `LOW` — Every sentence the fragment and the page say about order is true of a `-j` run; one is not
 
-- [ ] **Finding.** `changelog.d/parallel-gate.md` says *A failed sync stops the run before any check starts, and says so once.*
+- [x] *(f91818b: the sentence now says a failed sync starts no check that runs a Python service's code)* **Finding.** `changelog.d/parallel-gate.md` says *A failed sync stops the run before any check starts, and says so once.*
   That is the serial run. Under `-j` only the targets that name `sync` wait for it; every other check has started.
   **Evidence.** A `uv` stand-in whose `sync` exits 1, `make -j verify` on a Python project: exit 2, no `run` line in the log
   (AC-S04-38 holds), `make[1]: *** [Makefile:44: sync] Error 1` once, and beneath it the output of `check-speckit`,
@@ -763,7 +763,7 @@ checkout under `/tmp`, with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` and `MAKEFLAGS` 
 
 ### T016 — `LOW` — Every variable that only the gate's recipe is meant to set is read only from there; `VERIFY_ORDER` is read from the environment
 
-- [ ] **Finding.** `ifdef VERIFY_ORDER` (`parallel_gate.gate_order`) is true for a variable exported in a developer's shell, so
+- [x] *(dd12f65: `ifeq ($(origin VERIFY_ORDER),command line)`; `$(origin)` on 3.81 assumed, not run)* **Finding.** `ifdef VERIFY_ORDER` (`parallel_gate.gate_order`) is true for a variable exported in a developer's shell, so
   the sentence in `gate.py` and the fragment — *a target typed by itself is what it was* — does not hold there. More work, never
   a different verdict.
   **Evidence.** Java (Quarkus) project: `make -n test` prints one Maven line (`./mvnw -B -q test`); `VERIFY_ORDER=1 make -n test`
@@ -778,7 +778,7 @@ checkout under `/tmp`, with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` and `MAKEFLAGS` 
 
 ### T017 — `LOW` — `in_recipe` applied twice corrupts the recipe: the look-ahead meant to make it idempotent backtracks
 
-- [ ] **Finding.** `src/slipwai/project/parallel_gate.py:66` — `(… --[a-z]+(?:-[a-z]+)*)(?! --synced)` gives back one letter of the
+- [x] *(9f87a12: the mode is taken whole; applied twice over every mode and both script spellings)* **Finding.** `src/slipwai/project/parallel_gate.py:66` — `(… --[a-z]+(?:-[a-z]+)*)(?! --synced)` gives back one letter of the
   mode when ` --synced` already follows. Latent: every caller applies it once today.
   **Evidence.** The line's own expression applied to its own output: `./scripts/verify --lint-only --synced` →
   `./scripts/verify --lint-onl --syncedy --synced`.
