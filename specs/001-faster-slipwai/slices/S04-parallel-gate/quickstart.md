@@ -14,21 +14,25 @@ make verify            # one check after another; ends `verify: all gates passed
 make -j verify         # the same checks, together; the same last line
 ```
 
-Expect: both exit 0; under `-j` every check's lines stay together; `uv sync` is echoed once, before the checks.
+Expect: both exit 0; under `-j` every check's lines stay together; the sync (`./scripts/verify --install-only`) is
+echoed once, before the checks.
 Break one check (add an unused import to a file under `apps/service/src`) and run `make -j verify`: non-zero, no
-closing line, a `***` line naming `lint`, and the gate's own last line beginning `verify:` that says where to look.
+closing line, a `***` line naming `lint`, and the gate's own last line beginning `verify:` that says where to look: `verify: the gate did not pass; each failed check is named above on a line carrying ***`.
 
 ## 2. One sync, and a mode on its own (AC-S04-28 to -33)
 
 `make lint` alone echoes the sync once, then lints. `./scripts/verify --lint-only` typed directly still syncs.
 
-## 3. The model tooling (AC-S04-45 to -54)
+## 3. The model tooling (AC-S04-45 to -54, -64, -77)
 
 `git status --porcelain` is empty after the first gate: no untracked lock. `make check-drawio` a second time
 prints `check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled` and runs no
 npm command. `touch scripts/event-model/package.json && make check-drawio` runs `npm ci` and does not print it.
-On a branch (`git checkout -b work`), the first `make verify` that passes is recorded and the second prints the
-reuse line.
+On a branch (`git checkout -b work`) of a fresh clone where `make install` has run, the first `make verify` that
+passes is recorded and the second prints the reuse line; on a fresh clone where nothing was installed, the first
+pass installs as it goes and says it records nothing, the second runs in full and is recorded, the third reuses
+(D93). Edit the tooling's manifest to another pinned version (`yaml` 2.8.0), run `npm install --package-lock-only`
+in `scripts/event-model`, then `make check-drawio`: it runs `npm ci` and does not print the skip line (D96).
 
 ## 4. The measurement (AC-S04-22, -23)
 
@@ -50,11 +54,21 @@ passes with its serial run's checks.
 
 ## 6. An adopted repository (AC-S04-24 to -27)
 
-`./slipwai adopt` on a small repository with recorded `lint`, `typecheck` and `test`: its Makefile carries a bare
-`.NOTPARALLEL:` and `make -j verify` runs the three one after another.
+`./slipwai adopt` on a small repository with recorded `lint`, `typecheck` and `test`: its delivery Makefile carries a
+bare `.NOTPARALLEL:` inside a conditional, `make -f delivery/Makefile -j verify` runs the three one after another,
+and two targets of the repository's own in a root Makefile that includes the delivery one still run together under
+`make -j` (D95).
 
 ## 7. A project that exists (AC-S04-56 to -60)
 
 A project generated at the commit before this slice, its first gate run (so an untracked lock is there): `slipwai
 migrate` refuses and names the uncommitted change; with the file deleted, as the fragment's catch-up says, it
 merges, the lock arrives, and `make check-drawio` passes.
+
+The factory before the slice, for this step: `git archive 3f44288 | tar -x -C <dir>` and that tree's `./slipwai`
+(a worktree is not needed). *Run by hand during the slice (D96, G15 and G16):* converge pass 1 migrated a project
+generated from that archive — `Makefile`, `docs/gates.md`, the lock and `scripts/verify` arrived as one
+fast-forward and `make check-drawio` passed; the trace migrated a repository adopted by that archive's factory —
+the lock arrived under `delivery/scripts/event-model/` with its line in `delivery/.written`, and `make -f
+delivery/Makefile check-drawio` passed; T009's delegate followed the three lock cases on Python projects from an
+archive of the same commit.
