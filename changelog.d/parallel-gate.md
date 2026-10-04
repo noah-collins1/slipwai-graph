@@ -26,6 +26,11 @@ the model tooling from its committed lock, needing Node as the gate already did.
 dependencies as it went is not recorded (the stamp's rule stands), so on a fresh clone the first `make verify` runs in
 full again unless `make install` came first. In an adopted repository (experimental) the gate, started on its own Makefile (`make -f delivery/Makefile -j verify`), is serial whatever `-j` says; a root Makefile that includes it keeps `-j` for its own targets, and `make -j verify` typed there is not promised.
 
+Measured at the demo on a Python project with no frontend, warm, on a branch other than the trunk (Linux, a 12th Gen
+Intel Core i5-12400, 12 cores, GNU Make 4.4.1), three runs each: `make verify VERIFY_FORCE=1` took 3.28 s, 3.28 s and
+3.25 s, median 3.28 s; `make -j verify VERIFY_FORCE=1` took 1.70 s, 1.72 s and 1.69 s, median 1.70 s. A Java (Quarkus)
+gate took 22 s under `-j` against 21 s serially.
+
 Run with the real toolchain: Go, TypeScript, Java (Quarkus), Java (Spring) and Python, each serially and under `-j`. Not run: GNU Make 3.81 and 4.3 (4.4.1 was the make), Windows and macOS.
 Migrating a project made before this change — generated, adopted, and with the layout moved, so that a Makefile the earlier
 factory wrote is the one replaced — was run by hand against a factory archived at the commit before it; the kept tests

@@ -197,11 +197,13 @@ class TheFragmentIsTrueAndStandsAloneTest(FactoryTestCase):
         self.assertIn("a shallow CI clone", body)
         self.assertNotIn("run by hand", catch_up())
 
-    def test_the_body_says_which_toolchains_ran_and_leaves_out_the_measurement_the_demo_writes(self) -> None:
+    def test_the_body_says_which_toolchains_ran_and_carries_the_measurement_the_demo_took(self) -> None:
+        """AC-S04-23: both medians, the command, the machine and its core count, as the demo measured them."""
         body = squashed(OWED.sub("", FRAGMENT.read_text(encoding="utf-8")))
         for family in ("Go", "TypeScript", "Java (Quarkus)", "Python", "Spring", "GNU Make 3.81"):
             self.assertIn(family, body)
-        self.assertNotRegex(body, r"\d+(\.\d+)? ?s\b", "no measured number: the host writes them after the demo")
+        for measured in ("3.28 s", "1.70 s", "make verify VERIFY_FORCE=1", "make -j verify VERIFY_FORCE=1", "12 cores"):
+            self.assertIn(measured, body)
 
 
 class TheCatchUpsRegenerateBranchRunsTest(FactoryTestCase):
