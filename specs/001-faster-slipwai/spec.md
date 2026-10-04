@@ -1792,10 +1792,9 @@ is `sync`, a *run line* one whose first is `run`.
   made, the slice parks on that (D91).
 - **AC-S04-47** — Given a fresh clone of a generated event-profile project, when `make check-drawio` runs, then
   the model tooling is installed with `npm ci` and `git status --porcelain` is empty afterwards.
-- **AC-S04-48** — *Re-worded by D96.* Given an installed `scripts/event-model/node_modules` whose marker
+- **AC-S04-48** — *Re-worded by D96 and D97.* Given an installed `scripts/event-model/node_modules` whose marker
   `scripts/event-model/node_modules/.installed` is newer than both manifests, when `make check-drawio` runs, then
-  no npm command runs and the output carries the line `check-drawio: the model tooling matches
-  scripts/event-model/package-lock.json; not reinstalled`. The marker is a file only the install recipe writes,
+  no npm command runs and the output carries the line `check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled`. The marker is a file only the install recipe writes,
   after a successful `npm ci`.
 - **AC-S04-49** — *Re-worded by D96.* Given that installed tree, when `scripts/event-model/package-lock.json` or
   `scripts/event-model/package.json` is modified and `make check-drawio` runs, then `npm ci` runs again and the
@@ -1815,8 +1814,11 @@ is `sync`, a *run line* one whose first is `run`.
 - **AC-S04-55** — Given the skip line of AC-S04-48, then it is said only where it is true in that make invocation,
   by a mechanism GNU Make 3.81 has; where the plan finds none, the line is said only where it can be said
   truthfully and this criterion and the example are re-worded — a line that could be wrong is not shipped (D91).
-  *Matches* is D91's rule, the marker newer than both manifests: a manifest edited and then dated backwards by hand
-  is not seen, as the root's install has never seen one (*added by D94*).
+  *Re-worded by D97, taking D94's reversal:* the line says what make compared, the marker's date against both
+  manifests', and claims no more. Given a lock that differs from what is installed and is dated before the marker —
+  brought in by `cp -p`, `rsync -a`, `tar` or a restored backup — when `make check-drawio` runs, then no install
+  runs and the line is still true as worded; the model's README names deleting `scripts/event-model/node_modules`
+  as the way to install it.
 
 **Carrying it to a project that exists (constitution I; D88, D91, D92)**
 
@@ -1849,6 +1851,8 @@ is `sync`, a *run line* one whose first is `run`.
   *Added by D96:* the catch-up also says `git add` before the commit in the regenerate branch, names the lock's
   and the manifest's paths for both layouts in one clause (under `delivery/` in an adopted repository), and says in
   one sentence that a teammate who ran the earlier gate and has the untracked lock deletes it and then pulls.
+  *Added by D97:* the catch-up also says that a lock the project's `.gitignore` or `.git/info/exclude` names is
+  replaced by the merge, and by a teammate's pull, without a refusal, and to move it aside first if it is wanted.
 - **AC-S04-61** — Given the page a project gets about the gate, when it is read, then it says: `make -j verify`
   runs the checks at once, from GNU Make 3.81, and when to use it (when you wait on the gate locally); each
   check's output appears when that check finishes; on a make older than 4.0 lines may interleave; the order of
@@ -1933,3 +1937,23 @@ is `sync`, a *run line* one whose first is `run`.
   Makefile's path), AC-S04-9 (a failed sync and a failed `check-python`), AC-S04-29 (two services under `-j`),
   AC-S04-25 and -16 (a Go and a Java starter) and AC-S04-54 and -64 (a TypeScript project with real npm), then
   each has an example in the suite, written as a hold and seen once to have teeth.
+- **AC-S04-82** — *Added by D97 (adversary A1).* Given a generated project whose `lint` and `test` fail (stand-ins),
+  when `make -j verify VERIFY_GROUP=-i` runs, and when `VERIFY_GROUP=-i make -e -j verify` runs, then each exits
+  non-zero, ends on the failed-run line, writes no stamp, and the next `make verify` runs in full; given the same
+  two commands on a tree that passes, then each passes and groups output as a run without the variable; and the
+  generated Makefile defines `VERIFY_GROUP` with `override`.
+- **AC-S04-83** — *Added by D97 (adversary A3).* Given a generated project with a Go service or a Java service whose
+  `lint` fails (stand-ins), when `make -k verify` or `make -j -k verify` runs, then it exits non-zero, `lint`'s
+  failure is printed, and `typecheck` and `test` do not start; when `make -k lint typecheck test` runs, then all
+  three start. The gates page says a check that waits for a failed one is not run under `-k` and names that
+  command, and the fragment's sentence that `make verify` is the serial run it was carries the exception.
+- **AC-S04-84** — *Added by D97 (adversary A5, B1).* Given the gates page of a stamped project, when it is read,
+  then it says `--synced` in a recipe make echoes is the Makefile's own and that a mode typed by hand takes none,
+  and that one `make` at a time runs in a tree, since two started together can install over each other; given the
+  model's README as a project receives it, then it says that where a run prints the not-reinstalled line and then
+  cannot find a module — or where a lock arrived with an old date — deleting `scripts/event-model/node_modules`
+  (under the layout's prefix) and running the gate again installs from the lock.
+- **AC-S04-85** — *Added by D97 (adversary B4).* Given a project that ignores `scripts/event-model/package-lock.json`
+  and holds its own copy untracked, when `slipwai migrate` runs, then it does not refuse and the file on disk
+  afterwards is the factory's — a hold, so the parked question for `migrate` starts from a test it must change;
+  held only if the untracked-lock fixture takes an ignore line without a new fixture.

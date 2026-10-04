@@ -1812,3 +1812,85 @@
 - **Confidence:** medium · **Would reverse if:** the real Go run on a fresh clone shows `typecheck` or `test` still writing `go.work.sum` after `lint` has ended. The Go order then returns to `typecheck` first inside the gate, and AC-S04-1 and the fragment say that a Go gate starts `typecheck` before `lint`; item 1 falls and the rest stands.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S04-1, -48, -49, -60 and -65 re-worded; the readings on AC-S04-56 and -59; the new criteria, numbered by the host); `specs/001-faster-slipwai/decisions.md` (this entry; D91 part 2's marker noted as overridden here); `specs/001-faster-slipwai/story-split.md` (the Parking Lot: the root rule's marker, and the three older things); `specs/001-faster-slipwai/slices/S04-parallel-gate/plan.md` (R5's Go order; the marker); `specs/001-faster-slipwai/slices/S04-parallel-gate/tasks.md` (the tasks for items 1 to 7); `specs/001-faster-slipwai/slices/S04-parallel-gate/quickstart.md` (the runs by hand for G15 and G16); at the tasks: `src/slipwai/project/parallel_gate.py`, `src/slipwai/project/model_targets.py`, `src/slipwai/project/shared_packages.py`, `src/slipwai/project/openapi.py`, `src/slipwai/project/makefile.py`, `assets/toolkit/docs/event-model/README.md`, `assets/toolkit/scripts/event-model/package.json`, `changelog.d/parallel-gate.md`, `tests/test_parallel_gate_families.py`, `tests/test_parallel_gate_first.py`, `tests/test_parallel_gate_adopted.py`, `tests/test_parallel_gate_carry.py`, `tests/test_parallel_gate_sync_edges.py`, `tests/test_model_lock.py`; the cruise report when it is written
 - **Status:** standing
+
+## D97 — Where does each of the adversary's nine findings on S04 go (A1–A5, B1–B4), and how is each one that is fixed closed?
+- **Stage:** Phase 4 (adversary triage) · **Slice:** S04-parallel-gate · **When:** 2026-10-04T17:35:00Z · **Iteration:** 13
+- **Question:** Two seams at `a7da5f0` confirmed nine findings, none `CRITICAL` or `HIGH`.
+  - Seam A, the gate under `make -j`:
+    - A1 (LOW, new): `VERIFY_GROUP=-i`, from the command line or with `-e`, reaches the sub-make only, so a red tree prints *all gates passed*, exits 0 and is stamped.
+    - A2 (LOW, older): `--eval='.IGNORE: test lint'` does the same.
+    - A3 (LOW, new): under `-k` on a Go or Java project a red `lint` leaves `typecheck` and `test` unrun and unnamed.
+    - A4 (LOW, new): the adopted guard is false under `MAKEFILES` and under an absolute `-f` path with a space.
+    - A5 (LOW, new): `./scripts/verify --lint-only --synced` typed by hand lints on a stale lock.
+  - Seam B, the model tooling's install:
+    - B1 (MEDIUM, new): two makes at once leave a broken tree under the marker, and no page names the way out.
+    - B2 (MEDIUM, new): manifests that arrive with dates older than the marker are never installed, and the line still says *matches*.
+    - B3 (LOW, new): an npm command or `make -t` that moves the tree or the marker without a manifest is not seen.
+    - B4 (LOW, older): the merge `migrate` makes replaces a lock the project ignores, without a refusal.
+  - Where does each go, and how is each fixed one closed?
+- **Options:** (a) the host's recommendation item by item: A1 fixed by `override`; A3, A5, B1 and B4 as words; A2, A4 and B3 parked; B2 not reversed. (b) (a) with a departure where a run or a standing entry calls for one. (c) Park everything but words. (d) Fix all nine in S04.
+- **Decision:** (b). The host's recommendation is taken on eight items; **B2 departs**, because D94's own condition was met by a run here. No item is a person's and none is `unavailable`.
+  1. **A1 — code now, through a failing test. Taken.**
+     - `STAMPED` in `src/slipwai/project/gate.py` defines the variable as `override VERIFY_GROUP := …`. Nothing else in the recipe moves.
+     - The test: a red tree with stand-ins, under `-j`, with `VERIFY_GROUP=-i` on the command line and again in the environment with `-e`. Each exits non-zero, ends on the failed line and leaves no stamp. On a green tree the same two runs pass and group output as a run without the variable.
+     - Nothing goes in the fragment: no release carried the variable.
+  2. **A2 — Parking Lot and the cruise report. Taken.** It joins D83's `MAKE=/bin/true` line.
+     - One more of the same family, older (S03's recipe), was seen here: `make verify MAKEFILE_LIST=<another file>` runs that file's `verify-checks` and records a stamp. It goes on the same line.
+  3. **A3 — a stated reading, one sentence on the page, one clause in the fragment; no code. Taken, with the fragment added.**
+     - `PAGE` in `src/slipwai/project/parallel_gate.py` gains: *Under `-k` a check that waits for a failed one is not run: in a project with a Go or Java service a failed `lint` leaves `typecheck` and `test` unrun until it passes, and `make -k lint typecheck test` runs all three.*
+     - The fragment's *`make verify` is the serial run it was* gains the exception in one clause.
+     - A hold shows it with stand-ins.
+     - The alternative, an order handed over only when jobs were asked for, is refused. It reads `MAKEFLAGS` for `-j` at parse time, which differs by make version, and 3.81 was not run.
+  4. **A4 — Parking Lot. Taken.** It joins D95's *Not held* line: `MAKEFILES` in the environment, and an absolute `-f` path with a space.
+  5. **A5 — D90 stands; one clause on the page; the cruise report names it. Taken.**
+     - `PAGE` gains: *`--synced` in a recipe make echoes is the Makefile's own, passed after it has synced; a mode typed by hand takes none.*
+  6. **B1 — words now, mechanism parked. Taken, with the page's sentence made general.**
+     - `PAGE` is one text for every stamped project, with or without the event profile, so it says: *One `make` at a time in a tree: two started together can each install over the other.*
+     - The model's README says the particular: *where a run says the tooling was not reinstalled and then cannot find a module, delete `scripts/event-model/node_modules` and run it again* (under the layout's prefix).
+     - A lock around the install, or a check of the tree before the skip line, is a slice of its own behind the PRD's slices (D39). The cruise report names it.
+     - A one-line heal was tried and does not work (see *Run by the skipper*), so it is not ordered.
+  7. **B2 — D94's reversal is taken, words only. Departure.**
+     - This applies D94's *Would reverse if*; it does not override D94. The mechanism stands: the marker newer than both manifests, no content comparison (D91, D96 item 4).
+     - `SKIPPED` in `src/slipwai/project/model_targets.py` becomes: `check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled`.
+     - AC-S04-48 and AC-S04-55 are re-worded. The tests and the quickstart that quote the old line follow. The fragment and the README do not quote it and already say *newer than what is installed*.
+     - The Parking Lot and the cruise report still carry the residual: a lock brought in by `cp -p`, `rsync -a`, `tar` or a restored backup, dated before the last install, is not installed until the marker or `node_modules` is deleted. The README's B1 sentence gains that case in a clause.
+  8. **B3 — Parking Lot and the cruise report. Taken.** It is D83's family: a tree changed without a manifest moving is not seen. With item 7 the line no longer vouches for that tree.
+  9. **B4 — one sentence in the catch-up; `migrate` unchanged; a Parking Lot line. Taken.**
+     - After the untracked-lock sentence: *If the project's `.gitignore` or `.git/info/exclude` names that lock, git treats the copy on disk as disposable, and the merge — and a teammate's pull — replaces it with the factory's without refusing: move it aside first if it is wanted.*
+     - The test that reads the catch-up holds the sentence. A behaviour hold in `tests/test_model_lock.py` is added only if the untracked-lock fixture takes an ignore line without a new fixture.
+     - The Parking Lot line: whether `migrate` should refuse where its merge would overwrite an ignored file.
+  10. **Grade, level, re-entry.** A1 and B2 return to implement as two cycles; the rest are words and holds. Everything sits inside the slice's MINOR and `VERSION` stays `1.6.0.dev0`.
+  - **Not an ADR.** Each item reverses by a refactor of one generator constant, its tests and a fragment. No schema, contract, dependency or stored shape moves.
+- **Why:** The developer has to believe a green gate and a line the gate prints; the maintainer reads one fragment that must be true.
+  - **A1** is the one door the slice itself opened to a stamped red tree. Priority 5 calls a stamp that can record a false green wrong, and the cost is one word. D83's refusal covers a person replacing make; here a variable the slice invented carries a flag past `record`.
+  - **A2** is D83's class exactly: deliberate, older, never read on the trunk or in CI.
+  - **A3** leaves the verdict red either way. What is lost is two names until `lint` is fixed, and the page gives the command that names them.
+  - **A5** is an argument that does what it says where someone typed it, which is why D90 made it an argument and not a variable. D90's reversal condition, a supported way in that bypasses both syncs, is not met.
+  - **B1** is loud and never green, and two makes in one tree are promised nowhere. The developer still needs the way out on a page, because the line they see is misleading.
+  - **B2** departs because D94 named its own condition, a tool in ordinary use shown to restore a lockfile with an old date, and three such tools were shown here. AC-S04-55 says a line that could be wrong is not shipped. The reversal D94 prescribes changes one string and no behaviour, and the new words say what was checked (owner brief, *Taste*). It also stops the line vouching for B1's and B3's trees.
+  - **B4** is git's rule for ignored files. `migrate` and a pull are commands the maintainer runs, and constitution I asks for the catch-up note, which this sentence is.
+  - Nothing here changes what the merge root or CI checks, and no check is removed (owner brief, *Always ask a person*).
+  - **Run by the skipper,** GNU Make 4.4.1, npm 9.2.0, in scratch directories under `/tmp`, since removed:
+
+    | Run | Result |
+    |---|---|
+    | Toy of the `STAMPED` recipe, red tree, `-j`, `VERIFY_GROUP=-i` on the command line and with `-e` | exit 0, *all gates passed*, the stamp step reached |
+    | The same with `override` | exit 2 both ways; also with the variable in the plain environment, with `.FEATURES=-i`, and with `--eval='override VERIFY_GROUP := -i'` |
+    | `override`, green tree | passes; the value is still `--output-sync=target` |
+    | `--eval='.IGNORE: test lint'` with `override` | exit 0, stamp step reached (A2 stands) |
+    | `make verify MAKEFILE_LIST=green.mk` | the other file's `verify-checks` runs, stamp step reached |
+    | `-k verify` with `lint` red under the gate's order | only `lint` runs |
+    | `-k verify-checks` with `lint` red, no order | all three run |
+    | Sub-make's `MAKEFLAGS` at parse time | `-j4 --jobserver-auth=…` for `-j4`, a bare `-j` for `-j` |
+    | The shipped manifest and lock, real `npm ci`, two makes 0.09–0.15 s apart, 21 pairs | 15 left the marker on a broken tree: the first install touches, the second fails |
+    | The same with the recipe removing the marker when `npm ci` fails, 28 pairs | 20 still broken, so no one-line heal |
+    | A lock dated three hours ago brought into a tree installed now, by `cp -p`, `rsync -a`, `tar` | skip line each time over a differing lock; plain `cp` reinstalls |
+    | `git merge` of a branch adding a file the current branch ignores and holds untracked | exit 0, the file replaced, no refusal |
+
+  - **Side effect, repaired.** The first race loop ran with `--offline` against the user's npm cache and left `zod-4.4.3.tgz` reported as not cached. One online `npm ci` in the scratch directory restored it, and an offline install passed afterwards. Later loops used a scratch cache.
+  - **Read, not run:** GNU Make 3.81 (the `override` directive is in its manual, *The override Directive*; only 4.4.1 is on this machine); A4; A5 (line 163 of `src/slipwai/project/languages/python.py`); B3; `migrate`'s own side of B4; the real generated Makefile for A1 and A3, which were run on toys of its recipe.
+  - **Not consulted:** the PRD artifact. No symbol question arose; the five named modules were read whole and the code index was not asked.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** a make this Makefile promises (3.81, read and not run) lets a command-line variable or `-e` past `override`. A1 then joins A2 on the Parking Lot and the variable goes back to plain `:=`. Or a person wants the old word *matches* knowing a date-keeping copy defeats it; item 7 then falls and D94's first reading stands.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S04-48, -55 and -60 re-worded; the new criteria, numbered by the host); `specs/001-faster-slipwai/story-split.md` (the Parking Lot: A2 and the `MAKEFILE_LIST` door beside D83's line; A4 beside D95's; B1's mechanism; B2's residual; B3; B4's question for `migrate`); `specs/001-faster-slipwai/adversary-log.md`; `specs/001-faster-slipwai/slices/S04-parallel-gate/tasks.md`; `specs/001-faster-slipwai/slices/S04-parallel-gate/quickstart.md` (line 29 quotes the old skip line); `specs/001-faster-slipwai/slices/S04-parallel-gate/plan.md` (line 204 quotes it); at the tasks: `src/slipwai/project/gate.py`, `src/slipwai/project/parallel_gate.py`, `src/slipwai/project/model_targets.py`, `assets/toolkit/docs/event-model/README.md`, `changelog.d/parallel-gate.md`, `tests/test_parallel_gate_output.py`, `tests/test_model_install.py`, `tests/test_model_install_skip.py`, `tests/test_model_lock.py`; the cruise report when it is written (A2, A5, B1, B2's residual, B3)
+- **Status:** standing

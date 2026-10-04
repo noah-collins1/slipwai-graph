@@ -278,6 +278,17 @@ that cannot delegate takes the earliest ready slice in split order and names the
   holding); a maintainer whom `migrate` refuses for the untracked lock reads *commit or stash* from `migrate` and
   *delete* only in the changelog. Seen, older than the slice: a Go gate leaves `go.work.sum` untracked; `make model`
   on a fresh project rewrites `README.md`; `make install` ends on npm's audit summary for the root install.
+- **What S04's adversary pass left (D97).** For the cruise report, beside D83's `make verify MAKE=/bin/true`:
+  `--eval='.IGNORE: test lint'` and `make verify MAKEFILE_LIST=<another file>` record a stamp for a tree no check
+  judged, both older than S04 — deliberate, and never read on the trunk or in CI. Beside D95's line: `MAKEFILES` in
+  the environment, and an absolute `-f` path with a space, leave an adopted gate unheld. `--synced` typed by hand
+  runs a mode on whatever environment is there (D90: an argument does what it says). A tree changed without a
+  manifest moving (`npm install --no-save` in the tooling's directory, `make -t`) is not seen, and neither is a lock
+  brought in with a date older than the last install (`cp -p`, `rsync -a`, `tar`, a restored backup) — the skip line
+  no longer vouches for either. Behind the PRD's slices (D39), slices of their own: an install rule for the model
+  tooling that heals a tree two makes broke (a lock around the install, or a check of the tree before the skip line;
+  a recipe that removes the marker when `npm ci` fails was tried and does not); whether `slipwai migrate` should
+  refuse where its merge would overwrite a file the project ignores.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 - **Seen at S24's converge pass (D85; T014 in its `tasks.md`).** `current_branch()` takes `GITHUB_HEAD_REF` whether

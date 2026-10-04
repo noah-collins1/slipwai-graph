@@ -26,8 +26,7 @@ closing line, a `***` line naming `lint`, and the gate's own last line beginning
 ## 3. The model tooling (AC-S04-45 to -54, -64, -77)
 
 `git status --porcelain` is empty after the first gate: no untracked lock. `make check-drawio` a second time
-prints `check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled` and runs no
-npm command. `touch scripts/event-model/package.json && make check-drawio` runs `npm ci` and does not print it.
+prints `check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled` and runs no npm command (the line's words since D97; demo 1 saw the earlier wording, *the model tooling matches …*). `touch scripts/event-model/package.json && make check-drawio` runs `npm ci` and does not print it.
 On a branch (`git checkout -b work`) of a fresh clone where `make install` has run, the first `make verify` that
 passes is recorded and the second prints the reuse line; on a fresh clone where nothing was installed, the first
 pass installs as it goes and says it records nothing, the second runs in full and is recorded, the third reuses

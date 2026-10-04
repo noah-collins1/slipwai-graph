@@ -955,3 +955,25 @@ which does not re-open the loop.
   `go` command resolves the workspace"*); the docstring and the fragment should say the same thing. A comment only:
   nothing generated changes, no fragment, `VERSION` stays. D96's *Would reverse if* did not fire.
 
+## Phase 4: The adversary pass (cruise iteration 13)
+
+Two `drive-adversary` seams at `a7da5f0` confirmed nine findings, none `CRITICAL` or `HIGH`; D97 says where each goes,
+and `specs/001-faster-slipwai/adversary-log.md` carries the table.
+
+### T023 — `MEDIUM` — What D97 fixes: the grouping variable cannot be overridden, the skip line says what make compared, and the page, the README and the catch-up say what the adversary found unsaid (A1, A3, A5, B1, B2, B4 · AC-S04-48, -55, -60, -82 to -85)
+
+- [ ] Two cycles of code, then words and holds. (1) A1: `override VERIFY_GROUP := …` in `STAMPED`, red first through
+  AC-S04-82. (2) B2: `SKIPPED` becomes `check-drawio: scripts/event-model/package-lock.json is not newer than the
+  installed model tooling; not reinstalled`, red first through the tests that quote the line. (3) Words, each red first
+  through the sentence a test holds: `PAGE` gains D97's three sentences (items 3, 5, 6); the model's README gains the way
+  out (item 6, with item 7's clause); the fragment gains the `-k` exception (item 3) and the catch-up the ignored-lock
+  sentence (item 9). (4) Holds: AC-S04-83 with stand-ins; AC-S04-85 if the fixture is cheap.
+
+**Files:** `src/slipwai/project/gate.py`, `src/slipwai/project/model_targets.py`, `src/slipwai/project/parallel_gate.py`,
+`assets/toolkit/docs/event-model/README.md`, `changelog.d/parallel-gate.md`, `tests/test_parallel_gate_output.py`,
+`tests/test_parallel_gate_families.py`, `tests/test_parallel_gate_carry.py`, `tests/test_parallel_gate_converge.py`,
+`tests/test_model_install.py`, `tests/test_model_install_skip.py`, `tests/test_model_install_first.py`,
+`tests/test_model_install_regenerate.py`, `tests/test_model_lock.py`, `tests/test_verify_stamp_recipe.py` (only if it
+pins the variable's line), `tests/test_verify_stamp_scan.py` (the `NOT_SCANNED` reason, if it quotes the old line), and a
+new `tests/test_parallel_gate_override.py` if `test_parallel_gate_output.py` would pass 350 lines.
+
