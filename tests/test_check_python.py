@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 from support import FactoryTestCase
+from test_verify_stamp_pinned import gate_prerequisites
 
 
 class CheckPythonTest(FactoryTestCase):
@@ -20,7 +21,7 @@ class CheckPythonTest(FactoryTestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "interpreter", "standard", "python")
             makefile = (repo / "Makefile").read_text()
-            self.assertRegex(makefile, r"\nverify: check-python ")
+            self.assertEqual(gate_prerequisites(makefile)[0], "check-python")
             check = ["make", "--no-print-directory", "check-python"]
             passed = subprocess.run(check, cwd=repo, text=True, capture_output=True)
             self.assertEqual((passed.returncode, passed.stdout, passed.stderr), (0, "", ""))

@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from support import FactoryTestCase
+from test_verify_stamp_pinned import gate_prerequisites
 
 MODEL_HEADER = "version: 1\nrender:\n  lanes:\n    ui: actor\n    data: none\n    events: stream\n"
 SLICES = (
@@ -43,7 +44,7 @@ class DrawioCanvasTest(FactoryTestCase):
             repo = self.generate(directory, "canvas", language="python")
             makefile = (repo / "Makefile").read_text()
             # In `verify`, after the model's own gate: a canvas reachable only by name is a canvas nobody checks.
-            self.assertRegex(makefile, r"verify: [^\n]*\bcheck-model check-drawio\b")
+            self.assertIn("check-model check-drawio", " ".join(gate_prerequisites(makefile)))
             for target in ("model-drawio:", "check-drawio:", "model-drawio-test:"):
                 self.assertIn(target, makefile)
             # The verify workflow gives a project with no Node of its own one, for exactly this gate.

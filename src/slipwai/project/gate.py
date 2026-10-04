@@ -6,13 +6,16 @@ exits 0 only after printing the one line that says this tree already passed, and
 to the checks, after which `record` writes the stamp. Nothing the script meets can fail the gate (`reuse` exits
 non-zero for any other reason, `record` always exits 0), and a run that did not pass never reaches `record`.
 
-Chosen only for the projects whose gate the stamp is held to so far — one Python service, no transport, no
-frontend, nothing wrapped; every other project keeps `adopted_targets.GATE` as it was.
+Every generated project takes it, whatever its backends, transports and browser apps; the one exception is a
+project of an adopted repository (a wrapped application, or the delivery material moved under a directory, where
+the stamp is never called), which keeps `adopted_targets.GATE` as it was. The
+transport's `check-openapi` line hangs on `verify-checks` inside its own markers, so `./init --http none` cuts it.
 """
 from __future__ import annotations
 
 from ..backends import machine_tools
-from ..services import App, backends_of, services_of, transports_of, web_apps, wrapped_of
+from ..layout import Layout
+from ..services import App, backends_of, services_of, web_apps, wrapped_of
 
 STAMP_SCRIPT = "scripts/verify-stamp.py"
 
@@ -25,13 +28,9 @@ verify-checks: {dependencies}
 \t@echo 'verify: all gates passed'"""
 
 
-def stamped(apps: list[App]) -> bool:
-    """Whether this project's gate is the stamped one."""
-    services = services_of(apps)
-    return (
-        not wrapped_of(apps) and not web_apps(apps) and not transports_of(apps)
-        and len(services) == 1 and services[0].backend == "python"
-    )
+def stamped(apps: list[App], layout: Layout) -> bool:
+    """Whether this project's gate is the stamped one: every generated project's is, an adopted repository's is not."""
+    return not wrapped_of(apps) and not layout.moved
 
 
 def stamp_arguments(apps: list[App]) -> str:

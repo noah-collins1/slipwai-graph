@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 
 from support import FactoryTestCase
+from test_verify_stamp_pinned import gate_prerequisites
 
 
 class StyleGateTest(FactoryTestCase):
@@ -33,7 +34,7 @@ class StyleGateTest(FactoryTestCase):
             self.assertIn("no :root custom property has two imported owners", result.stdout)
             makefile = (repo / "Makefile").read_text()
             self.assertIn("check-styles: ## Fail when imported stylesheets compete", makefile)
-            self.assertRegex(makefile, r"verify: [^\n]*\bcheck-styles\b")
+            self.assertIn("check-styles", gate_prerequisites(makefile))
             self.assertIn("one imported file owns each global property", (repo / "docs/gates.md").read_text())
 
     def test_a_project_with_no_browser_bundle_has_no_style_gate(self) -> None:
@@ -42,7 +43,7 @@ class StyleGateTest(FactoryTestCase):
 
             makefile = (repo / "Makefile").read_text()
             self.assertNotIn("check-styles:", makefile)
-            self.assertNotRegex(makefile, r"verify: [^\n]*\bcheck-styles\b")
+            self.assertNotIn("check-styles", gate_prerequisites(makefile))
 
     def test_two_imported_token_files_fail_with_the_property_and_both_paths(self) -> None:
         """Neither file is wrong alone; the actionable finding is the token and its two owners."""

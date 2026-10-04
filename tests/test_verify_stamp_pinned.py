@@ -81,7 +81,8 @@ class GeneratedGatePinnedTest(FactoryTestCase):
             self.assertIn("# backing-service:fastify:begin\n" + f"{gate_target_name(makefile)}: check-openapi\n"
                           "# backing-service:fastify:end\n", makefile)
             self.assertTrue(gate_rule(makefile).endswith(CLOSING), gate_rule(makefile))
-            self.assertIn(HEADING, gate_rule(makefile))
+            # The description `make help` lists stays on `verify`, the name a developer types.
+            self.assertIn(HEADING, makefile)
 
     def test_a_project_without_a_transport_has_no_document_check(self) -> None:
         """Hold (pin 1): the same checks with no `check-openapi` and no marker for it."""

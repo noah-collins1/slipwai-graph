@@ -18,6 +18,7 @@ from .adopted_targets import adoption_targets, gate_target
 from .agent_targets import agent_targets
 from .compose import composed
 from .flags import flag_gate, flag_gate_dependency
+from .gate import stamped
 from .integration import integration_targets, integration_variables
 from .model_targets import MODEL_GATES, model_targets
 from .mutation import mutation_notes
@@ -176,7 +177,7 @@ def makefile(project_name: str, profile: str, apps: list[App], target: str = "no
     verify_dependencies += flag_gate_dependency(target) + role_dependency
     if wrapped_of(apps):
         verify_dependencies += " check-convergence"
-    verify_target = gate_target(apps, verify_dependencies)
+    verify_target = gate_target(apps, verify_dependencies, layout)
     # Which of each service's answers brings a suite the Docker-free gate cannot run, and which one has
     # migrations to apply, are traits the options declare in `catalog.json` and are read per service.
     integrating = any(s.selection.integration_feature is not None for s in services)
@@ -268,8 +269,9 @@ demo-down: ## Stop the demo, keeping any volume
     production_section = production_targets(project_name, apps, target) if managed(CATALOG, target) else ""
     # The published document's gate, as a prerequisite line per transport rather than a word on `verify`'s
     # own: a project that drops its transport drops the check with it and keeps a gate that runs.
+    gate_name = "verify-checks" if stamped(apps, layout) else "verify"
     document_gate = "".join(
-        f"# backing-service:{transport}:begin\nverify: check-openapi\n# backing-service:{transport}:end\n"
+        f"# backing-service:{transport}:begin\n{gate_name}: check-openapi\n# backing-service:{transport}:end\n"
         for transport in dict.fromkeys(s.transport for s in exporting(project_name, apps))
     )
     phony_integration = " ".join(f"test-integration-{s.name}" for s in suites) if len(suites) > 1 else ""

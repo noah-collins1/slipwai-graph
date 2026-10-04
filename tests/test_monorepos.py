@@ -16,6 +16,7 @@ import tempfile
 from pathlib import Path
 
 from support import FactoryTestCase
+from test_verify_stamp_pinned import gate_prerequisites
 
 from slipwai.backends import BACKEND_EXECUTABLES
 from slipwai.catalog import CATALOG, family_of, framework_of
@@ -103,8 +104,8 @@ class MonorepoTest(FactoryTestCase):
                 ):
                     self.assertIn(target, makefile)
                 # In `verify`, not merely present: a gate reachable only by name is a gate nobody runs.
-                self.assertRegex(makefile, r"verify: [^\n]*\bcheck-constitution\b")
-                self.assertRegex(makefile, r"verify: [^\n]*\bcheck-benchmark\b")
+                self.assertIn("check-constitution", gate_prerequisites(makefile))
+                self.assertIn("check-benchmark", gate_prerequisites(makefile))
                 self.assertEqual("check-model:" in makefile, profile == "event-modelling")
                 self.assertEqual("model:" in makefile, profile == "event-modelling")
                 # A pipeline the constitution calls deterministic cannot fetch a tool by a moving

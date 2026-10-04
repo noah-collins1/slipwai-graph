@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from support import FactoryTestCase
+from test_verify_stamp_pinned import gate_prerequisites
 
 USER = 'resource "aws_iam_user" "reporter" {\n  name = "${var.project}-reporter" # "a quote" and a {brace}\n}\n'
 USER_GRANT = """
@@ -51,7 +52,7 @@ class DeployRoleTest(FactoryTestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "shop", profile="standard", target="aws")
             makefile = (repo / "Makefile").read_text()
-            self.assertRegex(makefile, r"\nverify: [^\n]* check-deploy-role ")
+            self.assertIn("check-deploy-role", gate_prerequisites(makefile))
             self.assertTrue(os.access(repo / "scripts/check-deploy-role.py", os.X_OK))
 
             clean = self.gate(repo)

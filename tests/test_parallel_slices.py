@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 
 from support import NO_MAINTENANCE, FactoryTestCase, commit_all
+from test_verify_stamp_pinned import gate_prerequisites
 
 from slipwai.catalog import CATALOG
 
@@ -123,11 +124,10 @@ class DriveFansOutTest(FactoryTestCase):
                     text = (repo / "commands" / command).read_text()
                     self.assertIn("in two groups, *claimed*", text)
                     self.assertIn("every unclaimed ready slice whose\n  contract is settled, concurrently", text)
-
                 # The gate ships, runs in verify, and the links stay out of the history.
                 makefile = (repo / "Makefile").read_text()
                 self.assertIn("check-slice-scope: ## Fail when a slice/<id> branch touches", makefile)
-                self.assertRegex(makefile, r"verify: [^\n]*\bcheck-slice-scope\b")
+                self.assertIn("check-slice-scope", gate_prerequisites(makefile))
                 self.assertRegex(makefile, r"\.PHONY: [^\n]*\bcheck-slice-scope\b")
                 gate = repo / "scripts/check-slice-scope.py"
                 self.assertTrue(gate.is_file())

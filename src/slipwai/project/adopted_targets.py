@@ -80,9 +80,9 @@ NOTHING_CONFIRMED = """verify: ## Refuses until a candidate has been confirmed a
 \t@exit 1"""
 
 
-def gate_target(apps: list[App], dependencies: str) -> str:
-    """The `verify` rule: the gate over `dependencies` — behind the stamp where `gate.stamped` says so — or the
-    refusal that stands in for it while nothing is confirmed."""
+def gate_target(apps: list[App], dependencies: str, layout: Layout) -> str:
+    """The `verify` rule: the gate over `dependencies` — behind the stamp, unless the repository adopted the method — or
+    the refusal that stands in for it while nothing is confirmed."""
     if not apps:
         return NOTHING_CONFIRMED
-    return stamped_gate(apps, dependencies) if stamped(apps) else GATE.format(dependencies=dependencies)
+    return stamped_gate(apps, dependencies) if stamped(apps, layout) else GATE.format(dependencies=dependencies)

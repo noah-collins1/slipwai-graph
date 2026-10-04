@@ -12,6 +12,7 @@ from pathlib import Path
 
 from support import FactoryTestCase
 from test_adopt import repository, slipwai
+from test_verify_stamp_pinned import gate_prerequisites
 
 from slipwai.assets import TOOLKIT_ROOT
 from slipwai.project.benchmark import SIGNALS
@@ -88,11 +89,10 @@ class BenchmarkTest(FactoryTestCase):
             self.assertIn("`make\nbenchmark` prints the same aggregate", section)
 
             makefile = (repo / "Makefile").read_text()
-            self.assertIn("verify: check-python lint typecheck check-imports check-migrations check-slice-scope "
-                          "check-extensions check-agents "
-                          "check-speckit check-codegraph check-ux-gates check-constitution check-benchmark "
-                          "check-decisions test check-model",
-                          makefile)
+            self.assertIn("check-python lint typecheck check-imports check-migrations check-slice-scope "
+                          "check-extensions check-agents check-speckit check-codegraph check-ux-gates "
+                          "check-constitution check-benchmark check-decisions test check-model",
+                          " ".join(gate_prerequisites(makefile)))
             self.assertIn(
                 "check-benchmark: ## Fail when the benchmark script's own behaviour regresses; warn of an entry "
                 "left open or a done slice with no record", makefile,

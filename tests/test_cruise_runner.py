@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 import tempfile
 import threading
@@ -16,6 +15,7 @@ from pathlib import Path
 from unittest import mock
 
 from support import FactoryTestCase
+from test_verify_stamp_pinned import gate_prerequisites
 
 from slipwai.assets import TOOLKIT_ROOT
 from slipwai.project.cruise import CONFIG, LOG, SETTINGS, STOP_FILE, UNREAD, cruise_config
@@ -246,10 +246,9 @@ echo "cruise: continue\"""")
                               "\tpython3 scripts/agents/cruise.py tell $(CRUISE_FLAGS) $(MSG)", makefile)
                 self.assertIn("check-decisions: ## Fail when a decision log or demo log /cruise wrote has lost its "
                               "shape", makefile)
-                verify = re.search(r"^verify: (.*)$", makefile, re.MULTILINE)
-                assert verify is not None
-                self.assertIn("check-decisions", verify.group(1).split())
-                self.assertIn("check-benchmark check-decisions test", verify.group(1))
+                prerequisites = gate_prerequisites(makefile)
+                self.assertIn("check-decisions", prerequisites)
+                self.assertIn("check-benchmark check-decisions test", " ".join(prerequisites))
                 self.assertTrue((repo / "scripts/agents/cruise.py").is_file())
                 self.assertLess(time.time() - (repo / "scripts/agents/cruise.py").stat().st_mtime, 3600)
 
