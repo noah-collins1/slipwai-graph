@@ -25,6 +25,7 @@ from pathlib import Path
 from types import ModuleType
 
 from slipwai.assets import ROOT
+from slipwai.project.gate import FAILED
 
 sys.dont_write_bytecode = True
 
@@ -232,8 +233,10 @@ class StampTestCase(unittest.TestCase):
             os.environ.update(was)
 
     def reuse_lines(self, run: subprocess.CompletedProcess[str]) -> list[str]:
-        """The lines of a run's own, those beginning `verify:` other than the closing line."""
-        return [line for line in run.stdout.splitlines() if line.startswith(REUSE_PREFIX) and line != CLOSING]
+        """The stamp's lines of a run: those beginning `verify:` other than the gate's two closing lines, a pass's
+        and, since S04, a failed run's (AC-S04-9)."""
+        closing = (CLOSING, FAILED)
+        return [line for line in run.stdout.splitlines() if line.startswith(REUSE_PREFIX) and line not in closing]
 
 
 def key_of(repo: Path) -> str:

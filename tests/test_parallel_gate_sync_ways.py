@@ -29,6 +29,9 @@ sys.dont_write_bytecode = True
 
 # Where a spelling that skips the sync may sit: the Makefile's own recipes, and the script that reads it.
 MAY_CARRY = ("Makefile",)
+# The one sentence a page may say of it (D97, A5): that the argument is the Makefile's own and is never typed by hand.
+ITS_OWN = ("`--synced` in a recipe make echoes is the Makefile's own, passed after it has synced; "
+           "a mode typed by hand takes none.")
 
 
 class WaysIntoAModeTest(ParallelGateTestCase):
@@ -99,7 +102,8 @@ class NothingPublishedSaysTheNonSyncingSpellingTest(ParallelGateTestCase):
 
     def test_e12_only_the_makefile_and_the_scripts_say_it(self) -> None:
         """HOLD (AC-S04-39): across every backend, with a transport and without, with a browser app and without, and
-        with several services, the CI workflow, the pages and `service_commands()` never name `--synced`."""
+        with several services, the CI workflow, the pages and `service_commands()` never name `--synced` as a thing
+        to type; the gate's page names it once, to say it is the Makefile's own (D97)."""
         said: list[str] = []
         for backend in CATALOG["backends"]:
             for http in dict.fromkeys(("none", axis_default("http", backend, "none"))):
@@ -108,6 +112,7 @@ class NothingPublishedSaysTheNonSyncingSpellingTest(ParallelGateTestCase):
                         apps = apps_of(backend, http, frontend, services)
                         files = project_files("sweep", "event-modelling", "none", apps)
                         for path, text in files.items():
+                            text = " ".join(text.split()).replace(ITS_OWN, "") if path == "docs/gates.md" else text
                             if "--synced" in text and path not in MAY_CARRY and not path.startswith("scripts/verify"):
                                 said.append(f"{backend} {http} {frontend} {services}: {path}")
                 for command in service_commands(backend, "apps/service").values():
