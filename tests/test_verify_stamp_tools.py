@@ -43,6 +43,13 @@ class TableTest(unittest.TestCase):
         self.assertEqual(machine_tools(["typescript"], True), everywhere + ["node", "npm"])
         self.assertEqual(machine_tools(["go"], True), everywhere + ["go", "node", "npm"])
 
+    def test_the_model_checks_add_node_and_npm_whatever_the_backend(self) -> None:
+        """T031: `check-drawio` launches both, in a project with no TypeScript and no frontend."""
+        everywhere = ["make", "git", "python3"]
+        self.assertEqual(machine_tools(["python"], False, True), everywhere + ["uv", "node", "npm"])
+        self.assertEqual(machine_tools(["go"], False, True), everywhere + ["go", "node", "npm"])
+        self.assertEqual(machine_tools(["typescript"], True, True), everywhere + ["node", "npm"])
+
     def test_the_recipe_names_the_tools_the_table_gives(self) -> None:
         """e14, the sweep: the words the Makefile hands the script are the table's, one environment per service."""
         makefile = (template() / "Makefile").read_text(encoding="utf-8")

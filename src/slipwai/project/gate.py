@@ -16,6 +16,7 @@ from __future__ import annotations
 from ..backends import machine_tools
 from ..layout import Layout
 from ..services import App, backends_of, services_of, web_apps, wrapped_of
+from .model_targets import MODEL_GATES
 
 STAMP_SCRIPT = "scripts/verify-stamp.py"
 
@@ -33,14 +34,20 @@ def stamped(apps: list[App], layout: Layout) -> bool:
     return not wrapped_of(apps) and not layout.moved
 
 
-def stamp_arguments(apps: list[App]) -> str:
-    """What `VERIFY_STAMP` hands the script: a `--tool` per tool the table asks the machine for, and an
-    `--environment` per Python service, whose interpreter is read from where `uv sync` wrote it."""
-    tools = machine_tools(backends_of(apps), bool(web_apps(apps)))
+def stamp_arguments(apps: list[App], model: bool = False) -> str:
+    """What `VERIFY_STAMP` hands the script: a `--tool` per tool the table asks the machine for (the model's `node` and `npm` where
+    the gate has its checks), and an `--environment` per Python service, whose interpreter is read from where `uv sync` wrote it."""
+    tools = machine_tools(backends_of(apps), bool(web_apps(apps)), model)
     environments = [f"{service.path}/.venv" for service in services_of(apps) if service.backend == "python"]
     return " ".join([f"--tool {tool}" for tool in tools] + [f"--environment {path}" for path in environments])
 
 
+def has_model_checks(dependencies: str) -> bool:
+    """Whether the gate's prerequisites carry the event profile's model checks (`model_targets.MODEL_GATES`)."""
+    return set(MODEL_GATES.split()) <= set(dependencies.split())
+
+
 def stamped_gate(apps: list[App], dependencies: str) -> str:
     """The `verify` rule and the `verify-checks` rule that carries the gate's prerequisites."""
-    return STAMPED.format(script=STAMP_SCRIPT, dependencies=dependencies, arguments=stamp_arguments(apps))
+    arguments = stamp_arguments(apps, has_model_checks(dependencies))
+    return STAMPED.format(script=STAMP_SCRIPT, dependencies=dependencies, arguments=arguments)

@@ -194,6 +194,8 @@ BACKEND_TOOLING: dict[str, Tooling] = {
 # changed lock, which the key already holds. One row per backend, which a test holds against `BACKEND_TOOLING`.
 MACHINE_TOOLS_EVERYWHERE = ("make", "git", "python3")
 MACHINE_TOOLS_WITH_A_FRONTEND = ("node", "npm")
+# The event profile's `check-drawio` runs the model tooling under `node` after an `npm install`, whatever the backend.
+MACHINE_TOOLS_WITH_THE_MODEL = ("node", "npm")
 MACHINE_TOOLS: dict[str, tuple[str, ...]] = {
     "typescript": ("node", "npm"),
     "python": ("uv",),
@@ -203,14 +205,17 @@ MACHINE_TOOLS: dict[str, tuple[str, ...]] = {
 }
 
 
-def machine_tools(backends: list[str], web: bool) -> list[str]:
-    """What a project with these backends, and a browser app or not, asks the machine for: the tools every project
-    has, then each backend's, then a frontend's — in order of first appearance, each once."""
+def machine_tools(backends: list[str], web: bool, model: bool = False) -> list[str]:
+    """What a project with these backends, a browser app or not, and the event profile's model checks or not, asks the
+    machine for: the tools every project has, then each backend's, then a frontend's, then the model's — in order of
+    first appearance, each once."""
     tools = list(MACHINE_TOOLS_EVERYWHERE)
     for backend in backends:
         tools += MACHINE_TOOLS[backend]
     if web:
         tools += MACHINE_TOOLS_WITH_A_FRONTEND
+    if model:
+        tools += MACHINE_TOOLS_WITH_THE_MODEL
     return list(dict.fromkeys(tools))
 
 
