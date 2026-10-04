@@ -204,12 +204,8 @@ class FactoryRepositoryTest(FactoryTestCase):
                 path.read_text()
             except UnicodeDecodeError:
                 binaries.append(path.relative_to(ROOT).as_posix())
-        self.assertEqual(
-            [],
-            binaries,
-            "these assets are not decodable text, so `./slipwai generate` cannot emit them at all:\n  "
-            + "\n  ".join(binaries),
-        )
+        self.assertEqual([], binaries, "these assets are not decodable text, so `./slipwai generate` cannot emit "
+                         "them at all:\n  " + "\n  ".join(binaries))
 
     def test_the_factorys_own_gate_runs_the_same_checks_ci_does(self) -> None:
         """`make verify` locally and CI run the same targets, which is the rule the factory generates.
@@ -218,12 +214,11 @@ class FactoryRepositoryTest(FactoryTestCase):
         workflow cannot be run before pushing. Both read the same targets — CI as slices, in parallel jobs.
         """
         makefile = (ROOT / "Makefile").read_text()
-        # `verify` asks the verify stamp first and runs the checks through `verify-checks` (S33), so the
-        # four gates are that target's prerequisites; `verify` must still reach it.
+        # `verify` asks the stamp first and reaches the four gates through `verify-checks` (S33).
         verify = next(line for line in makefile.splitlines() if line.startswith("verify:"))
         checks = next(line for line in makefile.splitlines() if line.startswith("verify-checks:"))
-        self.assertIn("verify-checks", makefile.split(verify, 1)[1].split("\n.PHONY", 1)[0],
-                      "`make verify` no longer reaches verify-checks")
+        recipe = makefile.split(verify, 1)[1].split("\n.PHONY", 1)[0]
+        self.assertIn("verify-checks", recipe, "`make verify` no longer reaches verify-checks")
         for gate in ("lint", "typecheck", "check-structure", "test"):
             self.assertIn(gate, checks, f"`make verify` no longer runs {gate}")
             self.assertRegex(makefile, rf"(?m)^{gate}:.*##", f"{gate} is not a documented target")
