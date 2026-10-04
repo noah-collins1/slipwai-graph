@@ -1184,3 +1184,14 @@
 - **Confidence:** high · **Would reverse if:** a person asks for stamps in adopted repositories (D74's own condition); the recipe then carries the layout.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S03-24, and what *where a stamp may be used* means)
 - **Status:** standing
+
+## D79 — When git cannot answer at the start of a run, the script cannot ask where the stamp is: does a stamp that stood before stay, or must the script find it another way?
+- **Stage:** converge · **Slice:** S03-verify-stamp · **When:** 2026-10-04T05:25:00Z · **Iteration:** 11
+- **Question:** AC-S03-26 says that after a run that failed no stamp exists for any key, and D76's rule 5 removes the stamp before the first check. Converge pass 1 (T019) showed one case where that cannot be done as built: git fails, so `git rev-parse` cannot say where the git directory is, the full gate runs (AC-S03-13), and a stamp written earlier stays where it was. If that gate fails and git later works, the next run can reuse the earlier stamp for the tree that did pass.
+- **Options:** (a) leave it standing and say so in the criterion: the stamp vouches only for the key that passed, and a run with a working git compares every part of that key again — **the stage's recommendation (converge graded the case MEDIUM for that reason)**; (b) find the git directory without git, by walking up to a `.git` entry and reading a worktree's pointer file, and remove what is there.
+- **Decision:** (a). Where git cannot answer, the run reads no stamp, writes none, and leaves one that stood; its one line carries git's reason (AC-S03-13). The stamp left is for a key every check passed on, and it is reused only where a later run, with git answering, builds the same key from the files, the index, the refs, the tools and the listed inputs as they then are.
+- **Why:** A developer whose git is broken sees the full gate run and is told why nothing is recorded; nothing false is ever recorded. Reading git's own layout without git is a second, unowned reading of where a worktree keeps its files, and a wrong guess there removes or trusts the wrong file; the case it would close needs a gate that fails only while git is broken, on a tree that passed before and is unchanged after.
+- **Decided by:** host (standing decision D76)
+- **Confidence:** medium · **Would reverse if:** a check is found whose failure with a broken git is a true failure of an unchanged tree that the same check passes with git working; the stamp's place is then found without git.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S03-13 and AC-S03-26)
+- **Status:** standing

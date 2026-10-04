@@ -604,7 +604,7 @@ pointer — says D73's residual in full or points at the page that does; none ca
 
 #### T019 — `MEDIUM` — A gate that fails while git cannot answer leaves the earlier stamp, which is then reused (AC-S03-26, AC-S03-10, D73 rule 8)
 
-- [ ] Evidence: on a stamped fixture with a `git` first on `PATH` that exits 128 (`fatal: detected dubious ownership in
+- [x] *(done at `a761dce`: a run that ignores errors, or tightens the ratchet, removes the stamp before its checks; an unforeseen failure of `reuse` removes it too. Left, by D79: where git cannot answer, the stamp's place cannot be asked and it stands)* Evidence: on a stamped fixture with a `git` first on `PATH` that exits 128 (`fatal: detected dubious ownership in
   repository`) and `STANDIN_UV_FAIL=1`: `verify: the full gate runs and this run records nothing — git symbolic-ref -q
   --short HEAD: fatal: …`, `lint` failed, exit 2, and `.git/slipwai/verify-stamp-e3b0c44298fc1c14.json` was still there;
   the next plain run printed the reuse line, exit 0, 0 checks. `begin_full_run` (529–549) takes `remove_stamp()` raising
@@ -627,7 +627,7 @@ cannot say where it is, the question of finding it another way is the host's to 
 
 #### T020 — `MEDIUM` — The note a full run leaves under the git directory can hold an absolute path (constitution, *Additional Constraints*: persisted data)
 
-- [ ] Evidence: with a non-empty directory at the stamp's path, after `make verify` the file
+- [x] *(done at `df58e2a`: the note holds a marker or the key and tool lines, never the reason's words)* Evidence: with a non-empty directory at the stamp's path, after `make verify` the file
   `.git/slipwai/verify-stamp-e3b0c44298fc1c14.pending` held `{"nothing": "cannot remove
   /tmp/s03c/project/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that file"}` —
   `begin_full_run` writes the printed reason into the note (line 542). The stamp itself holds none (`project_name()`,

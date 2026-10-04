@@ -1353,7 +1353,9 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
 - **AC-S03-13** — Given no git on `PATH`, a directory that is no repository, or a git that fails, then the full
   gate runs, no stamp is read or written, and one line before the first check carries git's reason; given a
   covered file that cannot be read, the same, the line naming the file. The run never fails for that reason alone
-  and never passes on less. (D73, D76, D77)
+  and never passes on less. Where git cannot answer, a stamp that stood before is left where it is, since its place
+  cannot be asked; it is for a key that passed, and only a later run with git answering can match it. (D73, D76,
+  D77, D79)
 - **AC-S03-14** — Given the key's tool versions, then they are those of the tools the machine supplies and no
   committed file pins: `make`, `git` and the `python3` on `PATH` in every project; `uv` for a Python backend;
   `node` and `npm` for a TypeScript backend or any project with a frontend; `go` for Go; `java` for both Java
@@ -1405,7 +1407,8 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
 - **AC-S03-26** — Given a full run where a stamp may be used, or a forced one, then the project's stamp is
   removed before the first check starts and written only after the last check passed: after a run that failed,
   was interrupted or was killed, no stamp exists for any key. Where the stamp cannot be removed, one line names
-  the file to delete and the run writes no stamp. (D76)
+  the file to delete and the run writes no stamp. A run under make's ignore-errors mode removes the stamp too and
+  writes none; the one case where a stamp that stood is left is AC-S03-13's git that cannot answer. (D76, D79)
 - **AC-S03-27** — Given a stamp of any age, then it is reused where the key matches: its instant is shown, never
   compared, and there is no setting. Deleting the stamp is always safe and has the effect of forcing. (D76)
 - **AC-S03-28** — Given a run that writes a stamp, then the file is in a directory of the factory's own under the
