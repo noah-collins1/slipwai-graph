@@ -65,6 +65,11 @@ CONFIGURES = {
     "HOME": "where the pinned distribution is cached, by default",
     "PROCESSOR_ARCHITECTURE": "Windows: whether the pinned distribution is Maven or the Maven daemon",
     "PROCESSOR_ARCHITEW6432": "Windows: the same",
+    # S05 (D106): a Python `scripts/verify` runs pytest serially where a CI marker is set. The stamp's `standing`
+    # reads and writes nothing on such a run (`CI_MARKERS`), so the run a marker selects is never stamped.
+    "CI": "a CI run, serial and never stamped",
+    "GITHUB_ACTIONS": "a CI run, serial and never stamped",
+    "GITLAB_CI": "a CI run, serial and never stamped",
 }
 # A name the script assigns before it reads, so it is the script's own and the environment selects nothing by it.
 LOCAL = {"TMP_DOWNLOAD_DIR", "MVN_CMD", "JAVACMD", "JAVACCMD", "MAVEN_HOME"}
