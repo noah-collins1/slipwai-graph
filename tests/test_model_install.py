@@ -28,7 +28,9 @@ sys.dont_write_bytecode = True
 PREFIX = "scripts/event-model"
 MARKER = f"{PREFIX}/node_modules/.installed"
 CI = f"--prefix {PREFIX} ci --no-audit --no-fund --loglevel=error"
-SKIP = "check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled"
+SKIP = (
+    "check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled"
+)
 TARGETS = ("check-drawio", "model-drawio-test", "model", "model-drawio")
 
 _NPM = """#!/bin/sh

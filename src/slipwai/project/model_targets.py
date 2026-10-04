@@ -26,7 +26,7 @@ from __future__ import annotations
 MODEL_DIR = "scripts/event-model"
 MARKER = f"{MODEL_DIR}/node_modules/.installed"
 INSTALL = f"npm --prefix {MODEL_DIR} ci --no-audit --no-fund --loglevel=error"
-SKIPPED = f"check-drawio: the model tooling matches {MODEL_DIR}/package-lock.json; not reinstalled"
+SKIPPED = f"check-drawio: {MODEL_DIR}/package-lock.json is not newer than the installed model tooling; not reinstalled"
 # tsx's own entry point, run by `node`, rather than `node_modules/.bin/tsx`: that is npm's POSIX shim, which a
 # native Windows `make` cannot run (`'scripts' is not recognized as an internal or external command`), and it
 # was the one gate recipe `make verify` failed on there. The shim runs this same file everywhere else, and the
