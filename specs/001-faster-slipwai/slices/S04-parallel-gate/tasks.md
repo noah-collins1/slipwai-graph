@@ -892,3 +892,44 @@ AC-S04-57 and -58 by hand against a factory archived at `3f44288`.
   `spec.md` beside D93 rather than a delegate.
   **Sweep performed.** The first run's line over three families with their real toolchains (Python, TypeScript, Java Spring);
   Go not run here — the Parking Lot already places its `go.work.sum`.
+
+## Phase 4: The after-converge gaps pass (cruise iteration 13)
+
+Two `drive-gaps` delegates traced AC-S04-1 to -70 over `3f44288..HEAD` and returned eighteen findings (G1–G18), none
+above `MEDIUM`; D96 says what each becomes. The findings as numbered are quoted in D96's *Question*; the criteria it
+re-words and adds are AC-S04-1, -48, -49, -56, -59, -60, -65 and AC-S04-71 to -81 in `spec.md`.
+
+### T020 — `MEDIUM` — The gate's own order: Go keeps the serial order, nothing starts beside a failing `check-python`, and every gate target that reads the root's installed tree waits for it (G1–G8 · D96 items 1, 2, 3, 5 · AC-S04-1, -71 to -76, -81)
+
+- [ ] G1: the gate-only order for Go becomes `typecheck test: lint`; AC-S04-1's test runs every family's shape with the
+  order unsorted; the Go chain test stops sorting; `gate_order`'s docstring says the new order. G2: inside the same
+  command-line guard, the root's install marker and the model tooling's marker take `| check-python` (the model
+  marker by the name `model_targets.MARKER`, whatever its value — T021 changes the value, not the name); `python_first`'s
+  docstring is corrected. G3, G4: `check-ux-gates` takes `build-packages` (or the root marker) in a project with an npm
+  workspace, a TypeScript service's `check-openapi` takes `build-packages`; the class is held by a closed-list test
+  over every starter shape. G5–G8: the hold examples D96 item 5 lists for this seam, each with teeth shown once.
+  After GREEN, run a Go starter with the real toolchain on a fresh clone, serially and under `-j`, and report whether
+  `typecheck` or `test` wrote `go.work.sum` after `lint` ended (D96's *Would reverse if*).
+
+**Files:** `src/slipwai/project/parallel_gate.py`, `src/slipwai/project/makefile.py` (333 of 350), `src/slipwai/project/openapi.py`,
+`src/slipwai/project/shared_packages.py`, `tests/test_parallel_gate_first.py`, `tests/test_parallel_gate_families.py`,
+`tests/test_parallel_gate_adopted.py`, `tests/test_parallel_gate_run.py`, `tests/test_parallel_gate_sync.py`, and a new
+`tests/test_parallel_gate_reads.py` (the class, AC-S04-72 to -76). Not `tests/parallel_gate.py` (at 350) and not
+`src/slipwai/project/model_targets.py` (T021's).
+
+### T021 — `MEDIUM` — The model tooling's marker is the recipe's own, and the words a maintainer follows are true (G9–G14, G17 · D96 items 4 to 8 · AC-S04-48, -49, -60, -65, -77 to -81)
+
+- [ ] G9: `model_targets.MARKER` becomes `scripts/event-model/node_modules/.installed` (the name `MARKER` stays), touched
+  after a successful `npm … ci`; the skip line's words and the stamp's script do not change; a real-npm test regenerates
+  the lock on an installed tree and sees the reinstall (AC-S04-77), and one holds AC-S04-78. G10–G12: the catch-up says
+  `git add` before the commit in the regenerate branch, names the paths for both layouts in one clause, and has one
+  sentence for a teammate with the untracked lock. G13: the model README's sentence and the manifest's description.
+  G14, G17: the regenerate branch run with real npm; AC-S04-54 and -64 on TypeScript with real npm. G15, G16: the
+  fragment's run-and-read paragraph says the migration of a project made before the slice was run by hand.
+
+**Files:** `src/slipwai/project/model_targets.py`, `changelog.d/parallel-gate.md`, `assets/toolkit/docs/event-model/README.md`,
+`assets/toolkit/scripts/event-model/package.json` (the description only), `tests/test_model_install.py`,
+`tests/test_model_install_skip.py`, `tests/test_model_install_first.py`, `tests/test_model_lock.py`,
+`tests/test_parallel_gate_carry.py`, `tests/test_gate_recipes_pinned.py` (the marker's name in its stand-in only),
+`tests/test_verify_stamp_inputs.py` (only if it names the marker), and a new `tests/test_model_install_regenerate.py`.
+

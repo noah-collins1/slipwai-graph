@@ -263,6 +263,13 @@ that cannot delegate takes the earliest ready slice in split order and names the
   since S03, the root's; `make install` beforehand makes the first pass count. A slice of its own for the host to
   place behind the PRD's slices: the installs ordered ahead of the stamp's first key, so a fresh worktree's first
   pass is recorded without touching rule 8 — it changes AC-S03-29's order and S03's shipped behaviour for the root.
+- **Seen at S04's after-converge gaps pass (D96).** Behind the PRD's slices (D39): the root's install rule keeps
+  npm's hidden lockfile as its marker, which `npm install --package-lock-only` rewrites without installing — the
+  weakness S04 closed for the model tooling with a marker of the recipe's own, and older than S04 for the root; a
+  moved layout with a generated Python service spells `./scripts/verify` where the script is under `delivery/`
+  (exit 127, the same before S04 — a generated project's gate cannot run there, and the cruise report names it);
+  `make -C delivery` on an adopted repository and `make -f` with an absolute path from another directory fail at
+  once on recipes relative to the working directory. Each fails loudly; none is green.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 - **Seen at S24's converge pass (D85; T014 in its `tasks.md`).** `current_branch()` takes `GITHUB_HEAD_REF` whether

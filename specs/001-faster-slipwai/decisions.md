@@ -1707,3 +1707,108 @@
 - **Confidence:** medium · **Would reverse if:** a make this Makefile promises (3.81, read and not run) evaluates the guard differently, or a person says the one-word door at an including root must be held. The parked mechanism of R7 then comes forward as its own slice and R4 drops.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (FR-002's last sentence; AC-S04-24, -26, -27, -60 and -61 re-worded; the new criteria below, numbered by the host); `specs/001-faster-slipwai/story-split.md` (the S04 row's words; the Parking Lot line for the adopted gate's speed gains the one-word door); `specs/001-faster-slipwai/slices/S04-parallel-gate/tasks.md` (T018's GREEN becomes R1 to R5); at the task, `src/slipwai/project/adopted_targets.py`, `src/slipwai/project/parallel_gate.py`, `src/slipwai/project/adopted.py`, `changelog.d/parallel-gate.md` and `tests/test_parallel_gate_adopted.py`
 - **Status:** standing
+
+## D96 — What does each of the eighteen after-converge gaps findings on S04 become before the demo (G1–G18), and by which mechanism are G2 and G9 closed?
+- **Stage:** gaps (after converge) · **Slice:** S04-parallel-gate · **When:** 2026-10-04T15:40:00Z · **Iteration:** 13
+- **Question:** The slice converged at pass 2 and two `drive-gaps` delegates returned eighteen findings, numbered by the host in `/tmp/s04-gaps/trace.md`, plus three things older than the slice.
+  - G1: the gate-only order for Go runs `typecheck` before `lint` in a serial run.
+  - G2: with an old `python3`, the root's and the model tooling's `npm ci` run beside `check-python` under `-j`.
+  - G3: `check-ux-gates` reads the root's installed tree and names no prerequisite on it.
+  - G4: a TypeScript service's `check-openapi` does not wait for `build-packages`.
+  - G5–G8: promises that hold and have no test.
+  - G9: `npm install --package-lock-only` rewrites npm's hidden lockfile, the rule's marker, without installing.
+  - G10–G12: the catch-up's wording.
+  - G13: two stale texts the factory ships.
+  - G14–G18: promises that held by hand.
+  - Which become code through a failing test, a corrected sentence, a stated reading or a line; and for G2 and G9, which mechanism?
+- **Options:**
+  - (a) The host's recommendation, item by item: fix G1–G4 and G9, test G5–G8, G14 and G17, correct G10–G13, state a reading for G15 and G16, leave G18 to the host's check, and give the three older things one Parking Lot line.
+  - (b) (a) with departures where a run or a standing entry calls for one.
+  - (c) Words only, with every fix behind the PRD's slices.
+  - For G9: (i) a marker file of the recipe's own; (ii) npm's marker kept and the skip line re-worded; (iii) npm's marker kept and the catch-up's command changed to one that installs.
+- **Decision:** (b). The host's recommendation is taken on every item, with four departures: where G2's line sits, how the tests for promises that already hold are written, what `check-ux-gates` names when the sweep is unsure, and which paragraph of the fragment carries G15 and G16. No item is a person's and none is `unavailable`.
+  1. **G1 — code now, through a failing test. Taken.**
+     - The gate-only order for Go becomes `typecheck test: lint`. `lint` leads, as it does in the list `verify` hangs its checks on; `typecheck` and `test` run together after it.
+     - Java's chain already agrees with the list and stays. A project with both families keeps the Java chain.
+     - AC-S04-1's test runs every family's shape and compares the starts unsorted. The Go chain test stops sorting.
+     - The plan's R5, the docstring of `gate_order` and the fragment's Go clause say the new order.
+     - AC-S04-17's Go run is repeated with the real toolchain on a fresh clone, serially and under `-j`, before the fragment says Go was run.
+  2. **G2 — code now, by an order-only prerequisite. Departure: the line sits inside the gate's own conditional.**
+     - The root's install marker and the model tooling's marker take `| check-python` only where `VERIFY_ORDER` came from make's command line, the guard `gate_order` already uses.
+     - AC-S04-13 and AC-S03-29 are then true as written for `make verify` and `make -j verify`.
+     - No door outside the gate newly needs a `python3` of 3.10: `make dev-web`, `make build-packages` and the image build are what they were.
+     - The docstring of `python_first`, which says a file target cannot wait on a phony one, is corrected.
+  3. **G3 and G4 — code now, as the class. Taken, with a default.**
+     - The rule: every target of the gate whose recipe or script reads the root's installed tree names the root's marker, and names `build-packages` where it runs the project's own npm code.
+     - `check-ux-gates` takes the prerequisite in a project with an npm workspace. Where the sweep cannot tell which of the two it needs, it takes `build-packages`, which contains the marker and costs a serial run nothing.
+     - A TypeScript service's `check-openapi` takes `build-packages`.
+     - The sweep is kept as a closed-list test over every starter shape: each gate target either names the prerequisite or is named in the test with the reason it reads nothing there. This is D81's G1 pattern.
+     - A second test runs a fresh tree under `-j` with stand-ins and shows `check-ux-gates` starting after the install has ended.
+     - A standalone `make check-ux-gates` on a fresh clone now installs first. That is an addition, and the fragment says it in one clause.
+  4. **G9 — code now, mechanism (i). Taken.**
+     - The rule's target becomes a file of the recipe's own, `scripts/event-model/node_modules/.installed` under the layout's prefix, touched after a successful `npm … ci`.
+     - **This overrides D91 part 2 in one thing only: which file the marker is.** *Matches* is still the marker newer than both manifests, with no content comparison.
+     - **D94 stands and is not reversed.** Its condition is a lock restored with an old date. G9 is the marker made new without an install, and with a marker npm never writes the skip line is true by D91's rule again.
+     - The skip line's words, AC-S04-55 and the stamp's script are unchanged, so AC-S04-62 holds. The key still reads npm's own hidden lockfile, and D93's unrecorded first pass is as it was.
+     - AC-S04-48, -49 and -65 are re-worded. AC-S04-52 stands, and its test's path follows.
+     - A real-npm test regenerates the lock on an installed tree and sees the reinstall.
+     - The catch-up keeps `npm install --package-lock-only` as the regenerate command, which is now safe.
+     - A tree installed before `migrate` has no such file and reinstalls once, by itself.
+     - Refused: (ii) leaves a gate passing on a tree that disagrees with its lock; (iii) leaves that open to anyone who types the command D91 itself names for making the lock.
+     - The root's rule has the same weakness and is older than the slice. It gets a Parking Lot line and a line in the cruise report, not S04's diff.
+  5. **G5–G8, G14 and G17 — tests now, as holds. Departure on how they are written.**
+     - The behaviour exists, so none can be red for its own reason first. Each is a pinning example under the criterion it holds, and each is shown to have teeth once by the sanctioned route: change the production line, see it fail, restore the file. This follows D81 item 2 and D86's hold test.
+     - G5: AC-S04-26's three path spellings.
+     - G6: AC-S04-9 for a failed sync and a failed `check-python`.
+     - G7: AC-S04-29 with two services under `-j`.
+     - G8: AC-S04-25 and -16 over a Go and a Java starter.
+     - G14: the regenerate branch and the edited-manifest sentence, with real npm.
+     - G17: AC-S04-54 and -64 on TypeScript, with real npm.
+     - The real-npm tests follow the skip convention `tests/test_parallel_gate_carry.py` already uses.
+  6. **G10, G11, G12 — the catch-up corrected. Taken.**
+     - `git add` comes before the commit in the regenerate branch.
+     - The paths are said for both layouts in one clause: under `delivery/` in an adopted repository.
+     - One sentence for a teammate who ran the old gate before pulling: delete the untracked lock, then pull.
+     - AC-S04-60 is re-worded to hold all three.
+  7. **G13 — both texts corrected. Taken.**
+     - The model README's sentence says the tooling installs from its committed lock, and only when a manifest is newer than what is installed.
+     - The manifest's description stops saying `make model` installs it.
+  8. **G15 and G16 — a stated reading. Taken, with the place corrected.**
+     - AC-S04-56 and -59 say that migrating a project made before the slice (generated, adopted and moved-layout) was run by hand against a factory archived at the commit before the slice. A test needing that commit in history fails on a shallow CI clone.
+     - The sentence goes in the fragment's paragraph that says what was run and what was read, not in the catch-up, which AC-S04-60 holds to what a maintainer must do.
+     - The quickstart records the commands and what they printed. The cruise report names it.
+  9. **G18 — the host's check at the gates,** as the tasks already say. There is no product question in it.
+  10. **The three older things — one Parking Lot line, behind the PRD's slices (D39).** They are a moved layout's Python recipes spelling `./scripts/verify`, `make -C delivery`, and `make -f` with an absolute path from another directory. Each fails loudly and none is green. The cruise report names the first, because a generated project's gate cannot run there.
+  11. **Grade, level and re-entry.**
+      - None of the eighteen is above `MEDIUM`. `-j` is asked for by a person, CI and the merge root run serially on a fresh tree, and G3's skipped gates print *SKIPPED, not passed*.
+      - Items 1 to 4 return to implement as tasks, each its own cycle, and the converge verdict is taken again over those diffs before the demo.
+      - Everything sits inside the slice's MINOR. `VERSION` stays `1.6.0.dev0`, and each commit says so.
+  - **Not a person's.** CI and the merge root type `make verify` (read in `src/slipwai/project/ci_workflows.py`), and under it every check runs in the order it had before the slice. G1 restores that order, and no check is removed, added or weakened anywhere.
+  - **Not an ADR.** Each item reverses by a refactor of one generator module, its tests and a fragment. The marker is an ignored file no release has carried, and a tree without it reinstalls.
+- **Why:** The developer has to believe a green gate, serial or parallel, and the maintainer reads one fragment that must be true.
+  - **G1** is the slice breaking its own sentence, *`make verify` is the serial run it was*, on every Go project. The reorder costs nothing under `-j`: one target still resolves the workspace alone, and two follow together.
+  - **G2 unconditional would reach doors the criteria do not speak of.** The browser app's Compose service runs `make dev-web` in the Node image (`src/slipwai/project/compose.py`), and D88 and the fragment already promise that a target typed alone is what it was.
+  - **G3** is the one place a parallel green could stand on less than the serial run checks, which the owner brief calls the thing that makes the work pointless. Fixing only the instance found would leave the next one to be found downstream, so the class is held by a test.
+  - **G9** is priority 5: a skip that can vouch for a stale tree is wrong, and the catch-up was itself prescribing the command that makes it so. A file only the recipe writes is the smallest thing that makes the rule mean what D91 said it means, with no new script and no content comparison.
+  - **The holds** are cheap, and the promises are the slice's own. The constitution refuses a made-up RED, so their teeth are shown the sanctioned way.
+  - **G15 and G16** cannot be a kept test without history a CI clone lacks. Saying what was run by hand is the honest form (D81's Make 3.81 clause).
+  - **Run by the skipper,** on GNU Make 4.4.1 and npm 9.2.0 with Node 22.22.1, in scratch directories under `/tmp`:
+
+    | Run | Result |
+    |---|---|
+    | A file target with `\| check-python`, installed tree, serial and `-j` | no reinstall; a lock touched afterwards reinstalls once |
+    | The same target with an ordinary prerequisite on the phony | reinstalls on every run |
+    | `check-python` failing, fresh and installed tree, `-j`, serial, and `-j -k` | no install and no `build-packages` starts; exit 2 |
+    | The line inside `ifeq ($(origin VERIFY_ORDER),command line)`, through a sub-make | held under the gate; `make build-packages` alone with a failing `check-python` runs as before; an exported `VERIFY_ORDER` does not switch it on |
+    | The shipped manifest and lock, `npm ci`, manifest edited to `yaml` 2.8.0, `npm install --package-lock-only` | npm's hidden lockfile dated 2 ms after the lock, so the old rule skips over an installed 2.9.0 |
+    | The same sequence with the recipe's own marker | `npm ci` reruns, 2.8.0 is installed, and the next run prints the skip line |
+    | `npm ci` over a tree holding the marker | the marker is removed |
+    | A plain `npm install` over a tree holding the marker | the marker is left |
+    | The manifest's description changed | `npm ci` accepts the shipped lock; a lock regenerated from it is byte-identical; the lock's root entry carries no description |
+
+  - **Read, not run:** the Go recipes (`gofmt -l`, `go vet`, then `go tool staticcheck` in `lint`; `go test -run '^$'` in `typecheck`); `check-ux-gates.py`'s probe; the stamp's exemption of `node_modules/` except npm's hidden lockfile.
+  - **Not verified:** a real Go gate after the reorder; GNU Make 3.81 (order-only prerequisites are documented from 3.80, `$(origin)` is older); which of the two prerequisites the render gates need; the PRD artifact was not consulted. Symbol questions were answered by reading the five named modules and by text search over generated strings; the code index was not asked.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** the real Go run on a fresh clone shows `typecheck` or `test` still writing `go.work.sum` after `lint` has ended. The Go order then returns to `typecheck` first inside the gate, and AC-S04-1 and the fragment say that a Go gate starts `typecheck` before `lint`; item 1 falls and the rest stands.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S04-1, -48, -49, -60 and -65 re-worded; the readings on AC-S04-56 and -59; the new criteria, numbered by the host); `specs/001-faster-slipwai/decisions.md` (this entry; D91 part 2's marker noted as overridden here); `specs/001-faster-slipwai/story-split.md` (the Parking Lot: the root rule's marker, and the three older things); `specs/001-faster-slipwai/slices/S04-parallel-gate/plan.md` (R5's Go order; the marker); `specs/001-faster-slipwai/slices/S04-parallel-gate/tasks.md` (the tasks for items 1 to 7); `specs/001-faster-slipwai/slices/S04-parallel-gate/quickstart.md` (the runs by hand for G15 and G16); at the tasks: `src/slipwai/project/parallel_gate.py`, `src/slipwai/project/model_targets.py`, `src/slipwai/project/shared_packages.py`, `src/slipwai/project/openapi.py`, `src/slipwai/project/makefile.py`, `assets/toolkit/docs/event-model/README.md`, `assets/toolkit/scripts/event-model/package.json`, `changelog.d/parallel-gate.md`, `tests/test_parallel_gate_families.py`, `tests/test_parallel_gate_first.py`, `tests/test_parallel_gate_adopted.py`, `tests/test_parallel_gate_carry.py`, `tests/test_parallel_gate_sync_edges.py`, `tests/test_model_lock.py`; the cruise report when it is written
+- **Status:** standing
