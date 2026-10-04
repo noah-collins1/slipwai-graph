@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from stamp_fixture import StampTestCase, git
+from stamp_fixture import StampTestCase, commit_all, git
 
 
 class HistoryTest(StampTestCase):
@@ -69,15 +69,20 @@ class HistoryTest(StampTestCase):
         shallow.write_text(head + "\n", encoding="utf-8")
         self.runs_in_full(lambda: shallow.write_text(self.other_commit() + "\n", encoding="utf-8"))
 
-    def test_an_unborn_branch_is_a_value_and_not_a_failure(self) -> None:
-        """e5: `HEAD` that names no commit yet stamps like any other, and the commit that follows moves it."""
+    def test_an_unborn_branch_has_no_stamp_and_the_commit_that_follows_is_where_one_begins(self) -> None:
+        """e5, brought to AC-S03-37 (D83 item 7a): a `HEAD` that names no commit reads and writes nothing, and says
+        nothing; the first commit makes it a branch like any other, and the key holds what it names."""
         git(self.repo, "checkout", "-q", "--orphan", "fresh")
         first = self.run_gate()
         self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
-        self.assertIsNotNone(self.stamp_path(), "a pass on an unborn branch left no stamp")
+        self.assertIsNone(self.stamp_path(), "a pass on an unborn branch left a stamp")
+        self.assertEqual(self.reuse_lines(first), [])
+        commit_all(self.repo, "the first commit")
+        self.assertEqual(self.run_gate().returncode, 0)
+        self.assertIsNotNone(self.stamp_path())
         self.forget_log()
         self.run_gate()
-        self.assertEqual(self.checks(), [], "the unborn branch's stamp was not reused")
+        self.assertEqual(self.checks(), [], "the first commit's stamp was not reused")
 
 
 class ScriptsTest(StampTestCase):

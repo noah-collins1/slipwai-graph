@@ -188,8 +188,8 @@ class ThePageSaysWhatTheStampDoesTest(StampTestCase):
         self.assertNotRegex(page, r"GITLAB_CI` set\)")
 
     def test_following_the_page_a_trunk_named_develop_reuses_a_stamp_until_ci_branch_is_recorded(self) -> None:
-        git(self.repo, "branch", "-m", "main", "develop")
-        git(self.repo, "checkout", "-q", "develop")
+        # `main` keeps its ref (D81 stands there); with none, the run cannot tell the trunk and says so (AC-S03-37)
+        git(self.repo, "checkout", "-q", "-b", "develop")
         self.plant_stamp()
         self.assertEqual(self.run_gate().returncode, 0)
         self.assertEqual(self.checks(), [], "until `ci.branch` is recorded, develop is a branch like any other")

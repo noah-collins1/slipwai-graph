@@ -32,6 +32,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from typing import Any
 
 # What is persisted under the git directory is a closed set of fields — the stamp's own, and the note's: the key, the
 # tools' lines, or `NOTHING` as a marker that the run records nothing. Free text, and so a path, is printed, not stored.
@@ -585,11 +586,9 @@ def write_file(path: str, text: str) -> None:
         raise
 
 
-def trunk_name() -> str:
-    """The trunk, by the one definition there is: `merge_base` of `check-slice-scope.py` beside this script, which
-    resolves it as D30 and D33 say, in `Base.named` and never in `Base.trunk`, which is the name a pull request's
-    target may have taken (a usable `ci.branch` of `project.json` that has a ref, else `main` where it has
-    one, else `master`). Loaded, never copied, so the two cannot come to different answers."""
+def trunk_module() -> Any:
+    """`check-slice-scope.py` beside this script, loaded, never copied: the one definition of the trunk, so the two cannot
+    come to different answers."""
     spec = importlib.util.spec_from_file_location(
         "check_slice_scope_for_the_stamp", os.path.join(os.path.dirname(os.path.abspath(__file__)), SLICE_SCOPE))
     if spec is None or spec.loader is None:
@@ -600,18 +599,59 @@ def trunk_name() -> str:
         spec.loader.exec_module(module)
     finally:
         sys.dont_write_bytecode = was
-    return str(module.merge_base().named)
+    return module
+
+
+TRUNK_FIX = "record `ci.branch` in project.json, or fetch the trunk"
+
+
+def trunk_problem() -> tuple[str, str | None]:
+    """The trunk's name, and why this run cannot tell which branch is the trunk, or None where it can: `project.json` is missing, unreadable or
+    not an object; it records a `ci.branch` that is not the trunk the gate resolves (not a string, not a branch name, a
+    slice branch, another case, no branch here, whatever the reason); or the name the trunk resolves to has no ref. The
+    trunk is resolved by `merge_base` of `check-slice-scope.py` in `Base.named` and never in `Base.trunk`, which is the
+    name a pull request's target may have taken (a usable `ci.branch` that has a ref, else `main` where it has one,
+    else `master`). A `ci.branch` simply not recorded, with `main` or `master` present, is no problem (D81)."""
+    module = trunk_module()
+    record = module.read_json(module.ROOT / "project.json")
+    if not isinstance(record, dict):
+        return "", "project.json is missing, unreadable or not a JSON object; " + TRUNK_FIX
+    ci = record.get("ci")
+    value = ci.get("branch") if isinstance(ci, dict) else None
+    named = str(module.merge_base().named)
+    if ci is not None and not isinstance(ci, dict):
+        return named, "project.json records ci as something other than an object; " + TRUNK_FIX
+    if value is not None and module.usable(value) != named:
+        what = "`" + shown(value)[:80] + "`" if isinstance(value, str) else "something that is not a string"
+        return named, ("project.json records ci.branch as " + what + ", which is not the trunk the gate resolves (`"
+                       + shown(named)[:80] + "`); " + TRUNK_FIX)
+    if not module.bases_of(named)[0]:
+        return named, "no branch named `" + shown(named)[:80] + "` has a ref here; " + TRUNK_FIX
+    return named, None
+
+
+def standing() -> tuple[bool, str | None]:
+    """Whether a stamp may be used at all on this run, and the one line to say first where it cannot be told. The
+    questions are asked in this order: a CI marker; a `HEAD` that names no commit or is a symbolic ref outside
+    `refs/heads` or is detached (all silent); whether the trunk can be told (the line); and then whether this is the
+    trunk (silent). Where a stamp may not be used a run reads nothing, writes nothing, removes nothing — it is the gate
+    as it was, with the line where there is one. Asked by both verbs, so a `record` that follows a run that could not
+    read writes nothing either."""
+    if any(os.environ.get(marker) for marker in CI_MARKERS):
+        return False, None
+    # the full ref name, never `--short`: git shortens `refs/heads/main` to `heads/main` once a tag `main` exists
+    ref = git_or_nothing("symbolic-ref", "-q", "HEAD").decode("utf-8", "surrogateescape").strip()
+    if not ref.startswith("refs/heads/") or not git_or_nothing("rev-parse", "-q", "--verify", "HEAD"):
+        return False, None
+    named, problem = trunk_problem()
+    if problem is not None:
+        return False, problem
+    return ref != "refs/heads/" + named, None
 
 
 def eligible() -> bool:
-    """Whether a stamp may be used at all on this run: not under a CI marker, not on a detached `HEAD`, not on the
-    trunk. Where it may not, a run reads nothing, writes nothing, removes nothing and says nothing — it is the gate as
-    it was. Asked by both verbs, so a `record` that follows a run that could not read writes nothing either."""
-    if any(os.environ.get(marker) for marker in CI_MARKERS):
-        return False
-    # the full ref name, never `--short`: git shortens `refs/heads/main` to `heads/main` once a tag `main` exists
-    ref = git_or_nothing("symbolic-ref", "-q", "HEAD").decode("utf-8", "surrogateescape").strip()
-    return bool(ref) and ref != "refs/heads/" + trunk_name()
+    """Whether a stamp may be used on this run: `standing`'s answer, with no line."""
+    return standing() == (True, None)
 
 
 def forced_reason(options: Options) -> str | None:
@@ -699,7 +739,13 @@ def begin_full_run(note: dict[str, object], token: str, forced: str | None = Non
 
 def reuse(options: Options) -> int:
     try:
-        if idle() or not eligible():
+        if idle():
+            return 1
+        usable, cannot = standing()
+        if cannot is not None:
+            print(CANNOT_LINE.format(reason="cannot tell which branch is the trunk: " + cannot))
+            return 1  # it reads, writes and removes nothing: a stamp that stood stands
+        if not usable:
             return 1
         if ratcheting():
             return 1  # a ratchet run reads, writes and removes nothing (D80): a stamp that stood is for a key that passed
