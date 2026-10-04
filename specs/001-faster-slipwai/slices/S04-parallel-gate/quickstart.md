@@ -15,7 +15,7 @@ make -j verify         # the same checks, together; the same last line
 ```
 
 Expect: both exit 0; under `-j` every check's lines stay together; the sync (`./scripts/verify --install-only`) is
-echoed once, before the checks.
+echoed once, before the first check that runs the service's code.
 Break one check (add an unused import to a file under `apps/service/src`) and run `make -j verify`: non-zero, no
 closing line, a `***` line naming `lint`, and the gate's own last line beginning `verify:` that says where to look: `verify: the gate did not pass; each failed check is named above on a line carrying ***`.
 
@@ -44,8 +44,10 @@ for i in 1 2 3; do /usr/bin/time -f '%e' make verify VERIFY_FORCE=1 >/dev/null; 
 for i in 1 2 3; do /usr/bin/time -f '%e' make -j verify VERIFY_FORCE=1 >/dev/null; done
 ```
 
-The median under `-j` is lower than the serial median, or the demo failed. *Measured:* written here at the demo
-with the machine and its core count.
+The median under `-j` is lower than the serial median, or the demo failed. *Measured* at the demo (2026-10-04, cruise iteration 13, `drive-hand`; Linux x86_64, a 12th Gen Intel Core
+i5-12400, `nproc` 12, GNU Make 4.4.1; project `timed`, warm, branch `work`, every run exit 0): `make verify
+VERIFY_FORCE=1` 3.28 s, 3.28 s, 3.25 s — median 3.28 s; `make -j verify VERIFY_FORCE=1` 1.70 s, 1.72 s, 1.69 s —
+median 1.70 s.
 
 ## 5. The other families (AC-S04-15, -17)
 
@@ -62,7 +64,7 @@ and two targets of the repository's own in a root Makefile that includes the del
 ## 7. A project that exists (AC-S04-56 to -60)
 
 A project generated at the commit before this slice, its first gate run (so an untracked lock is there): `slipwai
-migrate` refuses and names the uncommitted change; with the file deleted, as the fragment's catch-up says, it
+migrate` refuses, saying the project has uncommitted changes; with the file deleted, as the fragment's catch-up says, it
 merges, the lock arrives, and `make check-drawio` passes.
 
 The factory before the slice, for this step: `git archive 3f44288 | tar -x -C <dir>` and that tree's `./slipwai`

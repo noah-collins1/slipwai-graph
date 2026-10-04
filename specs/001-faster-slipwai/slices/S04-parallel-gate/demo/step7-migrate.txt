@@ -1,0 +1,44 @@
+##### old factory (3f44288): first make verify, last line and git status
+verify: all gates passed
+?? scripts/event-model/package-lock.json
+
+##### slipwai migrate with the untracked lock (exit 2)
+usage: slipwai migrate [-h]
+slipwai migrate: error: this project has uncommitted changes; commit or stash them first, so that the merge is the only thing this command leaves behind and `git reset --hard ORIG_HEAD` undoes exactly that
+
+##### after deleting it: slipwai migrate (exit 0)
+migrated older to slipwai 1.6.0.dev0: 6 files changed, 597 insertions(+), 32 deletions(-)
+One commit, fast-forwarded — this project had no changes of its own since the last factory commit.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+
+##### make check-drawio (exit 0)
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 313ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+##### a committed lock identical to the shipped one: migrate (exit 0)
+migrated older to slipwai 1.6.0.dev0: 6 files changed, 597 insertions(+), 32 deletions(-)
+One merge commit. The files this project had changed itself were kept; the rest are what the factory now generates for its answers.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+
+##### a committed lock of another shape: migrate (exit 1)
+migrating older to slipwai 1.6.0.dev0 stopped at 1 conflict(s) — each a file both this project and the factory changed since the last migration, and the project decides:
+  scripts/event-model/package-lock.json
+
+Every other file is merged and staged. For each file above, edit it and `git add` it — or take a side whole: `git checkout --ours -- <file>` keeps this project's version, `--theirs` takes the factory's — then `git commit`. Or `git merge --abort` to walk away from all of it.
+Then: make agents, to re-derive the harness projections from the command and agent files this migration moved — the factory never writes those, so the merge cannot, and `check-agents` fails until they are re-derived.
+Then: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+
+##### own manifest (yaml 2.8.0) and own lock: migrate (exit 1)
+migrating older to slipwai 1.6.0.dev0 stopped at 1 conflict(s) — each a file both this project and the factory changed since the last migration, and the project decides:
+  scripts/event-model/package-lock.json
+
+Every other file is merged and staged. For each file above, edit it and `git add` it — or take a side whole: `git checkout --ours -- <file>` keeps this project's version, `--theirs` takes the factory's — then `git commit`. Or `git merge --abort` to walk away from all of it.
+Then: make agents, to re-derive the harness projections from the command and agent files this migration moved — the factory never writes those, so the merge cannot, and `check-agents` fails until they are re-derived.
+Then: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.

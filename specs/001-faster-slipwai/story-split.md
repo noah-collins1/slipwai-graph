@@ -270,6 +270,14 @@ that cannot delegate takes the earliest ready slice in split order and names the
   (exit 127, the same before S04 — a generated project's gate cannot run there, and the cruise report names it);
   `make -C delivery` on an adopted repository and `make -f` with an absolute path from another directory fail at
   once on recipes relative to the working directory. Each fails loudly; none is green.
+- **What S04's demo left (the hand's notes, cruise iteration 13).** Tasks for the next slice that touches the page
+  or the recipe, not slices: the failed run's line points at *lines carrying `***`*, and make's own last line for
+  `verify` carries them too; under `-j` the check named first on a tree with two failures may differ from the serial
+  run's, which the page could say; an adopted repository's own gate page says nothing of `-j` (the sentence is on its
+  adoption page, and *held serial by `make -f delivery/Makefile -j verify`* reads as if the command did the
+  holding); a maintainer whom `migrate` refuses for the untracked lock reads *commit or stash* from `migrate` and
+  *delete* only in the changelog. Seen, older than the slice: a Go gate leaves `go.work.sum` untracked; `make model`
+  on a fresh project rewrites `README.md`; `make install` ends on npm's audit summary for the root install.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 - **Seen at S24's converge pass (D85; T014 in its `tasks.md`).** `current_branch()` takes `GITHUB_HEAD_REF` whether

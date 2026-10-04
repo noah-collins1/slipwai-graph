@@ -1,0 +1,349 @@
+##### make verify (serial), shop, after make install
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo/s1/shop/packages/api-client/src/schema.ts [12ms]
+./scripts/verify --install-only
+./scripts/verify --lint-only --synced
+All checks passed!
+31 files already formatted
+npm --workspace apps/web run lint
+
+> shop-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 4ms. No fixes applied.
+./scripts/verify --typecheck-only --synced
+Success: no issues found in 29 source files
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (103 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (103 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo/s1/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo/s1/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo/s1/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 1.04s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo/s1/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  10:09:36
+   Duration  920ms (transform 104ms, setup 263ms, import 122ms, tests 278ms, environment 1.46s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+
+real	0m9.993s
+user	0m12.921s
+sys	0m1.307s
+
+##### make -j verify
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (111 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (111 directory entries read)
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/event-model/check.py
+check-model: valid
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+./scripts/verify --install-only
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo/s1/shop/packages/api-client/src/schema.ts [15ms]
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+./scripts/verify --lint-only --synced
+All checks passed!
+31 files already formatted
+npm --workspace apps/web run lint
+
+> shop-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 5ms. No fixes applied.
+./scripts/verify --typecheck-only --synced
+Success: no issues found in 29 source files
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo/s1/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo/s1/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo/s1/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.59s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo/s1/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  10:09:40
+   Duration  908ms (transform 83ms, setup 264ms, import 103ms, tests 267ms, environment 1.47s)
+
+
+verify: all gates passed
+
+real	0m3.141s
+user	0m9.550s
+sys	0m1.225s
+
+##### make -j verify with an unused import appended to apps/service/src/shop/settings.py (exit 2)
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (111 directory entries read)
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (111 directory entries read)
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/event-model/check.py
+check-model: valid
+./scripts/verify --install-only
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo/s1/shop/packages/api-client/src/schema.ts [14ms]
+check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+./scripts/verify --lint-only --synced
+E402 Module level import not at top of file
+   --> apps/service/src/shop/settings.py:110:1
+    |
+108 |         ) from error
+109 |
+110 | import os
+    | ^^^^^^^^^
+help: Move module level imports to top of file
+
+F401 [*] `os` imported but unused
+   --> apps/service/src/shop/settings.py:110:8
+    |
+108 |         ) from error
+109 |
+110 | import os
+    |        ^^
+help: Remove unused import: `os`
+    |
+109 |
+    - import os
+    |
+
+Found 2 errors.
+[*] 1 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+make[1]: *** Waiting for unfinished jobs....
+./scripts/verify --typecheck-only --synced
+Success: no issues found in 29 source files
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo/s1/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo/s1/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo/s1/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.57s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo/s1/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  10:10:09
+   Duration  946ms (transform 114ms, setup 290ms, import 125ms, tests 282ms, environment 1.47s)
+
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+
+##### make verify, serial, a broken file (exit 2), last lines
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2

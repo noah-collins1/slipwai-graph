@@ -1,0 +1,408 @@
+##### go: make install
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 307ms
+cd apps/service && go mod download
+npm ci
+
+added 154 packages, and audited 157 packages in 2s
+
+33 packages are looking for funding
+  run `npm fund` for details
+
+6 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+Spec Kit not initialized; run ./init when ready.
+##### go: make -j verify (fresh)
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (91 directory entries read)
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (91 directory entries read)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.yaml --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.yaml → file:///tmp/s04-demo/s5/fam-go/packages/api-client/src/schema.ts [17ms]
+check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+test -z "$(gofmt -l apps/service)"
+cd apps/service && go vet ./...
+cd apps/service && go tool staticcheck ./...
+npm --workspace apps/web run lint
+
+> fam-go-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+cd apps/service && go test -run '^$' ./...
+ok  	example.com/fam-go/service/adapters/driven/checkpointstorememory	0.013s [no tests to run]
+?   	example.com/fam-go/service/adapters/driven/checkpointstorepostgres	[no test files]
+ok  	example.com/fam-go/service/adapters/driven/eventstorememory	0.004s [no tests to run]
+?   	example.com/fam-go/service/adapters/driven/eventstorepostgres	[no test files]
+ok  	example.com/fam-go/service/adapters/driving/http	0.008s [no tests to run]
+?   	example.com/fam-go/service/application/ports/events	[no test files]
+?   	example.com/fam-go/service/application/ports/readmodels	[no test files]
+?   	example.com/fam-go/service/checkpointstorecontract	[no test files]
+ok  	example.com/fam-go/service/cmd/migrate	0.003s [no tests to run]
+?   	example.com/fam-go/service/cmd/serve	[no test files]
+ok  	example.com/fam-go/service/config	0.002s [no tests to run]
+?   	example.com/fam-go/service/eventstorecontract	[no test files]
+ok  	example.com/fam-go/service/health	0.002s [no tests to run]
+?   	example.com/fam-go/service/migrations	[no test files]
+ok  	example.com/fam-go/service/observability	0.003s [no tests to run]
+ok  	example.com/fam-go/service/projections	0.001s [no tests to run]
+npm --workspace apps/web run typecheck
+
+> fam-go-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+go tool covdata percent -i=. >/dev/null 2>&1 || true
+cd apps/service && go test -coverpkg=./... -coverprofile=coverage.out ./...
+ok  	example.com/fam-go/service/adapters/driven/checkpointstorememory	0.005s	coverage: 16.0% of statements in ./...
+	example.com/fam-go/service/adapters/driven/checkpointstorepostgres		coverage: 0.0% of statements
+ok  	example.com/fam-go/service/adapters/driven/eventstorememory	0.005s	coverage: 40.5% of statements in ./...
+	example.com/fam-go/service/adapters/driven/eventstorepostgres		coverage: 0.0% of statements
+ok  	example.com/fam-go/service/adapters/driving/http	0.009s	coverage: 4.6% of statements in ./...
+	example.com/fam-go/service/application/ports/events		coverage: 0.0% of statements
+?   	example.com/fam-go/service/application/ports/readmodels	[no test files]
+	example.com/fam-go/service/checkpointstorecontract		coverage: 0.0% of statements
+ok  	example.com/fam-go/service/cmd/migrate	0.010s	coverage: 0.5% of statements in ./...
+	example.com/fam-go/service/cmd/serve		coverage: 0.0% of statements
+ok  	example.com/fam-go/service/config	0.007s	coverage: 2.0% of statements in ./...
+	example.com/fam-go/service/eventstorecontract		coverage: 0.0% of statements
+ok  	example.com/fam-go/service/health	0.006s	coverage: 0.1% of statements in ./...
+?   	example.com/fam-go/service/migrations	[no test files]
+ok  	example.com/fam-go/service/observability	0.004s	coverage: 1.5% of statements in ./...
+ok  	example.com/fam-go/service/projections	0.963s	coverage: 10.9% of statements in ./...
+python3 scripts/go-coverage.py apps/service 70
+  example.com/fam-go/service/adapters/driven/checkpointstorememory     100.0%  (11/11 statements)
+  example.com/fam-go/service/adapters/driven/eventstorememory           98.8%  (167/169 statements)
+  example.com/fam-go/service/adapters/driving/http                      94.2%  (81/86 statements)
+  example.com/fam-go/service/application/ports/events                   96.4%  (27/28 statements)
+  example.com/fam-go/service/checkpointstorecontract                    86.9%  (186/214 statements)
+  example.com/fam-go/service/config                                     94.6%  (35/37 statements)
+  example.com/fam-go/service/eventstorecontract                         86.3%  (536/621 statements)
+  example.com/fam-go/service/health                                    100.0%  (1/1 statements)
+  example.com/fam-go/service/observability                              89.7%  (26/29 statements)
+  example.com/fam-go/service/projections                                91.5%  (86/94 statements)
+  example.com/fam-go/service/adapters/driven/checkpointstorepostgres  not counted: tests run under make test-integration
+  example.com/fam-go/service/adapters/driven/eventstorepostgres       not counted: tests run under make test-integration
+  example.com/fam-go/service/cmd/migrate                              not counted: entry point
+  example.com/fam-go/service/cmd/serve                                not counted: entry point
+coverage: 89.6% of 1290 statements, at or above the 70% minimum
+npm --workspace apps/web test
+
+> fam-go-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo/s5/fam-go/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  10:12:34
+   Duration  922ms (transform 115ms, setup 276ms, import 130ms, tests 268ms, environment 1.47s)
+
+
+verify: all gates passed
+##### go: make verify (serial), recipe lines
+npm --workspace apps/web run lint
+npm --workspace apps/web run typecheck
+python3 scripts/check-imports.py
+python3 scripts/check-migrations.py
+python3 scripts/check-slice-scope.py
+python3 scripts/extensions/project.py --check
+python3 scripts/agents/project.py --check
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+python3 scripts/check-speckit.py
+python3 scripts/check-codegraph.py
+python3 scripts/check-ux-gates.py
+python3 scripts/check-constitution.py
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+python3 scripts/check-decisions.py
+go tool covdata percent -i=. >/dev/null 2>&1 || true
+python3 scripts/go-coverage.py apps/service 70
+npm --workspace apps/web test
+python3 scripts/check-styles.py
+python3 scripts/event-model/check.py
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+verify: all gates passed
+
+##### typescript: make install
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 308ms
+npm ci
+
+added 276 packages, and audited 280 packages in 2s
+
+74 packages are looking for funding
+  run `npm fund` for details
+
+7 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+Spec Kit not initialized; run ./init when ready.
+##### typescript: make -j verify (fresh)
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (76 directory entries read)
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/event-model/check.py
+check-model: valid
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (76 directory entries read)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo/s5/fam-typescript/packages/api-client/src/schema.ts [12ms]
+check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+npm --workspace apps/service run lint
+
+> fam-typescript-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 33 files in 32ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> fam-typescript-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 12ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> fam-typescript-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> fam-typescript-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+npm --workspace apps/service test
+
+> fam-typescript-service@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo/s5/fam-typescript/apps/service
+
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  10:12:48
+   Duration  939ms (transform 458ms, setup 0ms, import 1.27s, tests 629ms, environment 1ms)
+
+npm --workspace apps/web test
+
+> fam-typescript-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo/s5/fam-typescript/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  10:12:49
+   Duration  936ms (transform 112ms, setup 289ms, import 121ms, tests 266ms, environment 1.48s)
+
+
+verify: all gates passed
+##### typescript: make verify (serial), recipe lines
+npm --workspace apps/service run lint
+npm --workspace apps/web run lint
+npm --workspace apps/service run typecheck
+npm --workspace apps/web run typecheck
+python3 scripts/check-imports.py
+python3 scripts/check-migrations.py
+python3 scripts/check-slice-scope.py
+python3 scripts/extensions/project.py --check
+python3 scripts/agents/project.py --check
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+python3 scripts/check-speckit.py
+python3 scripts/check-codegraph.py
+python3 scripts/check-ux-gates.py
+python3 scripts/check-constitution.py
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+python3 scripts/check-decisions.py
+npm --workspace apps/service test
+npm --workspace apps/web test
+python3 scripts/check-styles.py
+python3 scripts/event-model/check.py
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+verify: all gates passed
+
+##### java-quarkus: make install
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 309ms
+cd apps/service && ./mvnw -B -q -DskipTests test-compile
+npm ci
+
+added 153 packages, and audited 155 packages in 2s
+
+28 packages are looking for funding
+  run `npm fund` for details
+
+6 high severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+Spec Kit not initialized; run ./init when ready.
+##### java-quarkus: make -j verify (fresh)
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (131 directory entries read)
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/event-model/check.py
+check-model: valid
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (131 directory entries read)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+cd apps/service && ./mvnw -B -q -DskipTests compile checkstyle:check pmd:check spotbugs:check
+npm --workspace apps/web run lint
+
+> fam-java-quarkus-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 7ms. No fixes applied.
+cd apps/service && ./mvnw -B -q -DskipTests test-compile
+npm --workspace apps/web run typecheck
+
+> fam-java-quarkus-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+cd apps/service && ./mvnw -B -q test
+2026-10-04 10:13:31,353 INFO  [io.quarkus] (main) fam-java-quarkus-service 0.1.0-SNAPSHOT on JVM (powered by Quarkus 3.33.3) started in 2.547s. Listening on: http://0.0.0.0:35945
+2026-10-04 10:13:31,353 INFO  [io.quarkus] (main) Profile test activated. 
+2026-10-04 10:13:31,354 INFO  [io.quarkus] (main) Installed features: [agroal, cdi, flyway, jacoco, jdbc-postgresql, narayana-jta, rest, rest-jackson, scheduler, smallrye-context-propagation, smallrye-health, vertx]
+2026-10-04 10:13:32,355 INFO  [io.quarkus] (main) fam-java-quarkus-service stopped in 0.012s
+npm --workspace apps/web test
+
+> fam-java-quarkus-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo/s5/fam-java-quarkus/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  12 passed (12)
+   Start at  10:13:33
+   Duration  937ms (transform 108ms, setup 277ms, import 132ms, tests 278ms, environment 1.48s)
+
+
+verify: all gates passed
+##### java-quarkus: make verify (serial), recipe lines
+npm --workspace apps/web run lint
+npm --workspace apps/web run typecheck
+python3 scripts/check-imports.py
+python3 scripts/check-migrations.py
+python3 scripts/check-slice-scope.py
+python3 scripts/extensions/project.py --check
+python3 scripts/agents/project.py --check
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+python3 scripts/check-speckit.py
+python3 scripts/check-codegraph.py
+python3 scripts/check-ux-gates.py
+python3 scripts/check-constitution.py
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+python3 scripts/check-decisions.py
+npm --workspace apps/web test
+python3 scripts/check-styles.py
+python3 scripts/event-model/check.py
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+verify: all gates passed
+

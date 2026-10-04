@@ -1,0 +1,133 @@
+What ran, as logged by two wrappers put first on PATH for these steps only (each appends its arguments to a
+log and execs the real `uv` or `npm`), and by the stand-ins of step 6. Copied from the terminal as printed.
+
+##### Step 2 — one sync per make run (project: shop, event-modelling profile, Python backend, a browser app)
+
+== ./scripts/verify --lint-only -> exit 0
+   uv sync --project apps/service --locked --quiet
+   uv run --project apps/service --no-sync ruff check apps/service/src apps/service/tests
+   uv run --project apps/service --no-sync ruff format --check apps/service/src apps/service/tests
+== make lint -> exit 0
+   npm --workspace packages/api-client run build --if-present
+   uv sync --project apps/service --locked --quiet
+   uv run --project apps/service --no-sync ruff check apps/service/src apps/service/tests
+   uv run --project apps/service --no-sync ruff format --check apps/service/src apps/service/tests
+   npm --workspace apps/web run lint
+== make lint test -> exit 0
+   npm --workspace packages/api-client run build --if-present
+   uv sync --project apps/service --locked --quiet
+   uv run ... ruff check / ruff format --check
+   npm --workspace apps/web run lint
+   uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+   npm --workspace apps/web test
+== make install test -> exit 0
+   uv sync --project apps/service --locked --quiet
+   npm ci
+   npm --workspace packages/api-client run build --if-present
+   uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+   npm --workspace apps/web test
+== make -j verify -> exit 0
+   npm --workspace packages/api-client run build --if-present
+   uv sync --project apps/service --locked --quiet
+   uv run --project apps/service --no-sync python -m shop.openapi /tmp/tmp.AmUPQmLCci
+   uv run --project apps/service --no-sync ruff check apps/service/src apps/service/tests
+   uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+   uv run --project apps/service --no-sync mypy --config-file apps/service/pyproject.toml ...
+   uv run --project apps/service --no-sync ruff format --check apps/service/src apps/service/tests
+   npm --workspace apps/web run lint
+   npm --workspace apps/web run typecheck
+   npm --workspace apps/web test
+== make verify -> exit 0
+   npm --workspace packages/api-client run build --if-present
+   uv sync --project apps/service --locked --quiet
+   (ruff check, ruff format, web lint, mypy, web typecheck, pytest, web test, shop.openapi — one after another)
+
+make lint, as the terminal showed it:
+   ./scripts/verify --install-only
+   ./scripts/verify --lint-only --synced
+   All checks passed!
+
+make help:
+   sync                   Build each Python service's environment from its committed lock, once per make run
+
+##### Step 3 — the model tooling
+
+== make check-drawio (second time) -> exit 0, no npm line in the log
+check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+== touch scripts/event-model/package.json && make check-drawio -> exit 0
+   LOG npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+added 5 packages in 317ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+== make check-drawio -> exit 0, no npm line; the skip line is back
+== make model -> exit 0, no npm line, no skip line
+git status --porcelain after the gates: empty (after `make model`: README.md, the model block it writes)
+
+A fresh clone, branch `work`, `make install` first:
+== make install          LOG npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+== make verify -> exit 0, no npm for the model tooling
+100:check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+104:verify: all gates passed
+== make verify -> exit 0
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T15:11:03Z (key 945d81b1a91d); VERIFY_FORCE=1 runs it anyway
+== make -j verify -> exit 0
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T15:11:03Z (key 945d81b1a91d); VERIFY_FORCE=1 runs it anyway
+
+A fresh clone, branch `work`, nothing installed:
+== make verify -> exit 0
+   LOG npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+1:verify: the full gate runs and this run records nothing — cannot read apps/service/.venv/pyvenv.cfg (No such file or directory)
+120:verify: all gates passed
+== make verify -> exit 0 (in full, no npm for the model tooling)
+100:check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+104:verify: all gates passed
+== make verify -> exit 0
+1:verify: the full gate did not run; this tree already passed it at 2026-10-04T15:11:24Z (key 945d81b1a91d); VERIFY_FORCE=1 runs it anyway
+
+The manifest edited to yaml 2.8.0 (installed: 2.9.0):
+== make check-drawio -> exit 2 (manifest and lock disagree)
+   LOG npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+npm ERR! ... Run "npm help ci" for more info
+make: *** [Makefile:131: scripts/event-model/node_modules/.installed] Error 1
+git status --porcelain:  M scripts/event-model/package.json   (nothing else changed)
+== npm install --package-lock-only (in scripts/event-model) -> 0; make check-drawio -> exit 0
+   LOG npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+added 5 packages in 313ms          (no skip line; node_modules/yaml is now 2.8.0)
+== make check-drawio -> exit 0, no npm line
+check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled
+
+##### Step 6 — an adopted repository (svc, with recorded lint, typecheck, test = `bin/standin <name>`, each logging
+##### its start, sleeping one second, logging its end)
+
+== make -f delivery/Makefile -j verify -> exit 0 : verify: all gates passed
+start lint; end lint; start typecheck; end typecheck; start test; end test;
+== make -f ./delivery/Makefile -j verify -> exit 0 : verify: all gates passed
+start lint; end lint; start typecheck; end typecheck; start test; end test;
+== make -f /tmp/s04-demo/s6b/legacy/delivery/Makefile -j verify -> exit 0 : verify: all gates passed
+start lint; end lint; start typecheck; end typecheck; start test; end test;
+== serial first run, baseline removed -> exit 0; delivery/baseline.json has the bytes the -j first run wrote;
+   the recipe lines are the same in the same order
+== root Makefile's own two targets, make -j own-a own-b, no include
+start own-a;start own-b;end own-a;end own-b;
+== the same with `-include delivery/Makefile` appended to the root Makefile
+start own-a;start own-b;end own-a;end own-b;
+== root: make -j ratchet-tighten -> exit 0
+start lint; end lint; start typecheck; end typecheck; start test; end test;
+== root: make -j own-a ratchet-tighten -> exit 0; 1.6 s after it started:
+own: start own-a;end own-a;   stand-ins: start lint; end lint; start typecheck;
+   and at the end: start lint; end lint; start typecheck; end typecheck; start test; end test;
+
+##### Step 7, beyond the quickstart — the catch-up's other sentences, followed as written
+
+A lock committed in another shape, manifest untouched: migrate stops on scripts/event-model/package-lock.json;
+`git checkout --theirs scripts/event-model/package-lock.json`, `git add`, commit -> the lock is the factory's byte
+for byte, make check-drawio exit 0, tree clean.
+Own manifest (yaml 2.8.0) with its own lock committed: migrate stops on the lock alone (package.json merged);
+`npm install --package-lock-only` in scripts/event-model, `git add scripts/event-model/package-lock.json`, commit
+-> commit succeeds, make check-drawio exit 0, node_modules/yaml is 2.8.0.
+A teammate at the commit before, with the untracked lock, `git pull`:
+error: The following untracked working tree files would be overwritten by merge:
+	scripts/event-model/package-lock.json
+then `rm` it and `git pull`: fast-forward, 6 files changed, create mode 100644 scripts/event-model/package-lock.json.
