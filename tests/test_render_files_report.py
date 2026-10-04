@@ -1,8 +1,8 @@
 """What a run writes and says (S11-render-once, R5: text files only where they differ; the closing line).
 
 Counts come from the stand-in's log; the closing line is the specification of the report and is asserted
-verbatim. No test waits: a rewrite is seen by the file's own modification time, and where the platform's clock is
-too coarse to show one the example skips, saying so.
+verbatim. No test waits: a rewrite is seen in the run's own `wrote` lines and in the file's modification time, and
+no example skips for a clock (the two runs it compares are whole `make model` runs apart).
 """
 from __future__ import annotations
 
@@ -31,15 +31,6 @@ OPEN = "Open docs/event-model/model.html to browse it."
 FIRST = f"model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. {OPEN}"
 EDIT = f"model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. {OPEN}"
 NOTHING = f"model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; no browser started. {OPEN}"
-
-
-def clock_is_fine(directory: Path) -> bool:
-    """Whether two writes in a row show different modification times here."""
-    probe = directory / "clock-probe"
-    probe.write_text("a")
-    first = probe.stat().st_mtime_ns
-    probe.write_text("b")
-    return probe.stat().st_mtime_ns != first
 
 
 @unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
@@ -147,8 +138,6 @@ class ReportTest(RenderCase):
     def test_e12_a_second_run_on_an_unchanged_tree_writes_nothing_and_says_nothing_was_written(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.project(directory, 16)
-            if not clock_is_fine(Path(directory)):
-                self.skipTest("the platform's file time is too coarse to show a rewrite")
             first = self.run_model(repo)
             self.assertEqual(first.returncode, 0, first.stderr)
             self.assertGreaterEqual(len(wrote(first)), 25 * 2 + 1, "every diagram's two files and the page")
@@ -156,6 +145,8 @@ class ReportTest(RenderCase):
             second = self.run_model(repo)
             self.assertEqual(second.returncode, 0, second.stderr)
             self.assertEqual(wrote(second), [])
+            # The two runs are whole `make model` runs apart, far longer than any file clock's tick: a rewrite would
+            # show here, and `wrote(second) == []` above needs no clock at all.
             self.assertEqual(mtimes(repo), before, "no file moved")
 
     def test_e12_an_edit_writes_exactly_the_files_whose_bytes_differ(self) -> None:
