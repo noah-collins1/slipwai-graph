@@ -69,7 +69,7 @@ Constraints that hold for every task, stated once:
 
 ### T001 — What `make verify` runs, and what a wrapped application's gate says, pinned (host's `/characterise` step)
 
-- [ ] **Pin, no rule, no production change.** The host runs this as the ladder's `/characterise` step before the implement
+- [x] **Pin, no rule, no production change.** The host runs this as the ladder's `/characterise` step before the implement
   stage; the implement stage does not repeat it and starts at T002 with the pin green. Nothing under `assets/` or `src/`
   changes.
 
