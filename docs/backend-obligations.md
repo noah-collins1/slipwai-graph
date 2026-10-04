@@ -90,6 +90,7 @@ degrading, so a missing entry fails generation at a predictable point. Paths are
 | `READY_PATHS` | `probes.py` | backend | always |
 | `dev_command` | `backends.py` | backend | the `http` axis is answered — per service: it takes the service's path and what its package is named after |
 | `COMPOSE_CACHES` | `backends.py` | backend | the `http` axis is answered |
+| `MACHINE_TOOLS` | `backends.py` | backend | always — the tools the machine supplies and no committed file pins, whose versions a verify stamp records |
 | `event_store_directory` | `backends.py` | backend | the `event-store` axis is answered |
 | `backing_service_service_files` | `project/backing_services.py` | backend | any axis is answered |
 | `WRITE_SIDE_FILES` | `project/service_layouts.py` | backend | any axis is answered — which committed asset lands at which path under a service, keyed then by marker feature: the ports, the adapters behind them, the contract suites and the migrations |

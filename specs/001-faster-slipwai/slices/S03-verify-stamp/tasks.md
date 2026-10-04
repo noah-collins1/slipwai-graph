@@ -98,7 +98,7 @@ all edit the script: they run in order. Needs T001.
 
 ### T002 — [US1] A pass is recorded and reused, saying so in one line (R1 · AC-S03-1, -18, -19)
 
-- [ ] **Rule R1.** The first increment of the slice: it introduces the recipe, the script and the fixture. Reads and does
+- [x] **Rule R1.** The first increment of the slice: it introduces the recipe, the script and the fixture. Reads and does
   **research item 6** first: how the toolkit's scripts reach a project (the copier, `migrate`'s file list,
   `tests/test_toolkit.py`, `tests/test_monorepos.py`), and adds `verify-stamp.py` to every list that names the script's
   neighbours; if the toolkit copies `assets/toolkit/scripts/` whole and the list is only a test's expectation, extends
@@ -145,7 +145,7 @@ expected `tests/test_toolkit.py` or `tests/test_monorepos.py`), `changelog.d/ver
 
 ### T003 — [US1] The key is the working files, as they are (R2 · AC-S03-2, -3, -4)
 
-- [ ] **Rule R2.** The key covers raw bytes, the executable bit, a link's target, untracked-not-ignored files and
+- [x] **Rule R2.** The key covers raw bytes, the executable bit, a link's target, untracked-not-ignored files and
   deletions, and the index's entries (names, modes, blob ids, stages) — read on every run, through no filter, and the
   real index is never written. Test module `tests/test_verify_stamp_working.py` (new — the cut from R1's file is made in
   advance).
@@ -174,7 +174,7 @@ Commit (`Level MINOR; VERSION already 1.6.0.dev0`).
 
 ### T004 — [US1] The key is history and position (R3 · AC-S03-5)
 
-- [ ] **Rule R3.** `HEAD`'s commit, the branch name, every ref under `refs/heads` and `refs/remotes`, and the shallow
+- [x] **Rule R3.** `HEAD`'s commit, the branch name, every ref under `refs/heads` and `refs/remotes`, and the shallow
   boundary (the file `git rev-parse --git-path shallow` names) are in the key; an unborn branch is a value, not a
   failure (research item 3). Test module `tests/test_verify_stamp_key.py` (new).
 
@@ -195,7 +195,7 @@ under both namespaces, not the checked-out one; `git rev-parse -q --verify HEAD`
 
 ### T005 — [US1] The key is the gate's scripts (R4 · AC-S03-6)
 
-- [ ] **Rule R4.** The `Makefile` and every covered file under `scripts/` are one named part, `scripts`, of the key and
+- [x] **Rule R4.** The `Makefile` and every covered file under `scripts/` are one named part, `scripts`, of the key and
   of the stamp, beside `tree`. Test module `tests/test_verify_stamp_key.py`.
 
 **RED:**
@@ -218,7 +218,7 @@ named in the report.
 
 ### T006 — [US1] The key is the machine's tools (R5 · AC-S03-14, -15, -16, -17)
 
-- [ ] **Rule R5.** The table of machine-supplied tools per backend, beside `BACKEND_TOOLING` in `src/slipwai/backends.py`
+- [x] **Rule R5.** The table of machine-supplied tools per backend, beside `BACKEND_TOOLING` in `src/slipwai/backends.py`
   (`make`, `git`, `python3` in every project; `uv` for Python; `node` and `npm` for TypeScript or a frontend; `go`; `java`
   for both Java backends; a project with several backends takes the union, each asked once per run). `gate.py` writes
   `VERIFY_STAMP` from it (`--tool uv`, one `--environment` per Python service). The script launches each tool once with
@@ -250,7 +250,7 @@ extend; sweep that the table is the only list of tools and the recipe's `--tool`
 
 ### T007 — [US1] The key is what a check reads that git ignores, and the variables that change an answer (R6 · AC-S03-7, -8, -9)
 
-- [ ] **Rule R6.** The two closed lists beside the checks: the ignored inputs (`.codegraph/codegraph.db` and its
+- [x] **Rule R6.** The two closed lists beside the checks: the ignored inputs (`.codegraph/codegraph.db` and its
   write-ahead file — never `gate-memory.json`; every harness projection directory `gitignore.py` names; `tools/ux-gates/`;
   `skills/ui-ux-pro-max/`; `.env`) by bytes, absence a value; and the variables (`UX_GATES_REQUIRE`, `UX_GATES_SINCE`,
   `UX_GATES_SHARD`, `CODEGRAPH_GATE_NO_SYNC`, `SLIPWAI_NO_INSTALL`, `GITHUB_HEAD_REF`, `CI_COMMIT_REF_NAME`) by value,
