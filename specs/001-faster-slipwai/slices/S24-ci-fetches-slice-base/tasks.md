@@ -464,7 +464,7 @@ in separate deployments; a new flag off) — now held in CI by the fetch, `tests
 
 ### T013 — A comment and a fragment name only the checks the project has (`MEDIUM` · AC-S24-1, -2, -11 · R7)
 
-- [ ] The comment written above the checkout names `check-flags` in every project, and `check-flags.py` ships only
+- [x] *(cd6b0a9; D85)* The comment written above the checkout names `check-flags` in every project, and `check-flags.py` ships only
   with the `aws` and `azure` targets. Seen: generated with target `none` and `existing`, `scripts/check-flags.py`
   absent and not in `verify-checks`, the comment in `verify.yml` names it; every adopted repository's
   `delivery/Makefile` has no `check-flags` target and `verify-delivery.yml` names it. The fragment says the same of
@@ -496,7 +496,7 @@ if the function is shared.
 
 ### T015 — The words about a developer's machine, where a marker is exported (`LOW` · AC-S24-11, -12)
 
-- [ ] `changelog.d/ci-fetches-slice-base.md:25` says *on a developer's machine every answer is what it was*. A local
+- [x] *(6510b05; D85)* `changelog.d/ci-fetches-slice-base.md:25` says *on a developer's machine every answer is what it was*. A local
   shell with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` exported and no base went from exit 0 to exit 1
   (`tests/test_slice_scope_report.py:200` holds it); the sentence gains that clause. `check()`'s docstring
   (`assets/toolkit/scripts/check-slice-scope.py:825`) says the last value is *whether that line is a developer's
@@ -506,7 +506,7 @@ if the function is shared.
 
 ### T016 — What `migrate` does with the step, and the `ux-gates` workflow, are held by a test (`LOW` · AC-S24-1, -10)
 
-- [ ] Tests only. AC-S24-10 was run by this pass and by nothing kept: a generated project whose `verify` job's
+- [x] *(4976faf, all in `tests/test_ci_fetch_migrate.py`; D85)* Tests only. AC-S24-10 was run by this pass and by nothing kept: a generated project whose `verify` job's
   checkout is put back to the bare step and committed as the factory's, then `slipwai migrate` — the key arrives
   where the step is as generated, and the file conflicts where the project wrote its own `with:`. And
   `test_hold_no_other_generated_workflow_fetches_history` does not see the `ux-gates` workflow: one assertion on what
