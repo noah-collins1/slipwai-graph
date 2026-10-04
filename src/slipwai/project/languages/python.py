@@ -172,13 +172,16 @@ fi
 [ "$mode" = --install-only ] && exit 0
 # The project's own word on running its tests across cores, read now and not at generation: only the JSON `true`
 # in the root project.json turns it on, so a missing key, a `false`, a string, a file that cannot be read or a key
-# written twice (the reader cannot tell which copy is meant) is the serial run. One variable, spliced into the three
-# modes that run the default suite and read only in them. `-I` keeps the working directory off `sys.path`, so a
+# written twice (the reader cannot tell which copy is meant) is the serial run. So is every run where `CI`,
+# `GITHUB_ACTIONS` or `GITLAB_CI` is non-empty (`CI=false` included: the stamp's own list and reading), because a
+# parallel run can pass a test that leaks state into another and CI is where the suite runs serially to catch it; and so is
+# `--adversarial-only`, which never reads the mark, because its exit 5 means "no test matched" only in a serial run.
+# One variable, spliced into the two modes that run the default suite and read only in them. `-I` keeps the working directory off `sys.path`, so a
 # `json.py` at a project's root is not the standard library's.
 parallel=
 case "$mode" in
-  --test-only|--adversarial-only|all)
-    if python3 -I -c 'import json,sys; once=lambda pairs: dict(pairs) if [k for k, _ in pairs].count("parallelSafe") < 2 else dict(); sys.exit(0 if json.load(open("project.json", encoding="utf-8"), object_pairs_hook=once).get("parallelSafe") is True else 1)' >/dev/null 2>&1; then
+  --test-only|all)
+    if [ -z "${{CI:-}}${{GITHUB_ACTIONS:-}}${{GITLAB_CI:-}}" ] && python3 -I -c 'import json,sys; once=lambda pairs: dict(pairs) if [k for k, _ in pairs].count("parallelSafe") < 2 else dict(); sys.exit(0 if json.load(open("project.json", encoding="utf-8"), object_pairs_hook=once).get("parallelSafe") is True else 1)' >/dev/null 2>&1; then
       parallel="-n auto --maxprocesses 4"
     fi ;;
 esac

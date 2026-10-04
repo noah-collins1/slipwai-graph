@@ -93,7 +93,7 @@ class MarkReachesPytest(unittest.TestCase):
 
     def test_true_puts_the_flags_on_every_mode_that_takes_them(self):
         self.project()
-        for mode in ("--test-only", "--adversarial-only", "all"):
+        for mode in ("--test-only", "all"):
             with self.subTest(mode=mode):
                 for line in self.pytest_lines(*([mode] if mode != "all" else [])):
                     self.assertIn(f"pytest {FLAGS} ", line)
@@ -141,11 +141,11 @@ class MarkReachesPytest(unittest.TestCase):
         self.assertNotIn("-n ", " ".join(lines))
         self.assertIn("tests/integration", lines[0])
 
-    def test_adversarial_run_with_nothing_selected_still_exits_zero_and_carries_the_flags(self):
+    def test_adversarial_run_with_nothing_selected_still_exits_zero_and_is_serial(self):
         self.project()
         self.mark(True)
         lines = self.pytest_lines("--adversarial-only", pytest_exit="5")
-        self.assertIn(FLAGS, lines[0])
+        self.assertNotIn("-n ", lines[0])
         self.assertIn("-k adversarial", lines[0])
 
     def test_a_failing_pytest_still_fails_the_gate(self):
@@ -155,7 +155,7 @@ class MarkReachesPytest(unittest.TestCase):
 
 
 class TheReaderIsIsolatedAndReadsOnlyWhereTheMarkIsUsed(MarkReachesPytest):
-    """T017 and T014: the read is `python3 -I`, runs in the three modes that splice the flags, and a mark written
+    """T017, T014 and T022: the read is `python3 -I`, runs in the two modes that splice the flags, and a mark written
     twice is not parallel."""
 
     def reads(self, *mode: str) -> list[str]:
@@ -177,13 +177,14 @@ class TheReaderIsIsolatedAndReadsOnlyWhereTheMarkIsUsed(MarkReachesPytest):
         for line in self.pytest_lines("--test-only"):
             self.assertIn(FLAGS, line)
 
-    def test_only_the_three_modes_that_splice_the_flags_read_the_mark_and_each_reads_once_isolated(self) -> None:
+    def test_only_the_two_modes_that_splice_the_flags_read_the_mark_and_each_reads_once_isolated(self) -> None:
         self.project()
         self.mark(True)
-        for mode in ("--lint-only", "--typecheck-only", "--format", "--migrate", "--integration-only"):
+        for mode in ("--lint-only", "--typecheck-only", "--format", "--migrate", "--integration-only",
+                     "--adversarial-only"):
             with self.subTest(mode=mode):
                 self.assertEqual(self.reads(mode), [])
-        for splicing in (["--test-only"], ["--adversarial-only"], []):
+        for splicing in (["--test-only"], []):
             with self.subTest(mode=splicing):
                 reads = self.reads(*splicing)
                 self.assertEqual(len(reads), 1)
