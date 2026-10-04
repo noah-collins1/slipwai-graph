@@ -132,6 +132,11 @@ build-packages: {NODE_DEPS} ## Build every shared package under {PACKAGES}/ that
 # importable by TypeScript and by nothing else, and a native service's integration job runs inside an image
 # that has no node in it.
 {' '.join(consumers(apps, target))}: build-packages
+
+# The UX gates resolve Playwright through the root's installed tree, and nothing in the script says whether a package's
+# build is also read, so they take the larger of the two prerequisites (D96). Not in `consumers`: that is what compiles
+# or runs a package's code, and a native service's integration job never reaches this target.
+check-ux-gates: build-packages
 """
 
 

@@ -154,9 +154,11 @@ def openapi_targets(project_name: str, apps: list[App]) -> str:
     # is the one place this project spells `npm ci` — Make runs it once per invocation and not at all when
     # the marker is newer than the manifests. A project whose exporter is Python's has no npm to install.
     installed = f" {NODE_DEPS}" if node_workspace(apps) else ""
+    # A TypeScript service's exporter runs its own code, which imports the workspace's packages: it waits for their build.
+    checked = " build-packages" if any(service.language == "typescript" for service in services) else installed
     return f"""
 .PHONY: openapi check-openapi
 check-openapi: check-python
 openapi:{installed} ## Write each service's published API document from its own routes, and rebuild the client
-{writes}{client}check-openapi:{installed} ## Fail when a committed API document no longer matches the routes
+{writes}{client}check-openapi:{checked} ## Fail when a committed API document no longer matches the routes
 {checks}"""
