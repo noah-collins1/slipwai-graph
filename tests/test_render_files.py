@@ -29,7 +29,7 @@ NAMES = [f"Do thing {i}" for i in range(1, 17)]
 
 
 PROBE_NAME = """import { temporaryPath } from './render-plan.ts';
-console.log(JSON.stringify([temporaryPath('slice', 'docs/event-model/slices/S1.svg'), process.pid]));
+console.log(JSON.stringify([temporaryPath(), temporaryPath(), process.pid]));
 """
 
 
@@ -134,16 +134,17 @@ class FinishedFilesTest(RenderCase):
                 ["node", str(repo / EVENT_MODEL / "node_modules/tsx/dist/cli.mjs"), str(script)],
                 cwd=repo, text=True, capture_output=True, env=render_env())
             self.assertEqual(done.returncode, 0, done.stderr)
-            path, pid = json.loads(done.stdout)
-            self.assertEqual(Path(path).name, f".tmp-slice-{pid}-S1.svg")
-            self.assertEqual(Path(path).parent.name, "slices")
+            first, second, pid = json.loads(done.stdout)
+            self.assertRegex(Path(first).name, rf"^\.tmp-{pid}-\d+$", "the process id, not the file")
+            self.assertNotEqual(first, second, "a counter per process: no two writes in a run share one")
+            self.assertEqual(Path(first).parent.name, "slices")
 
     def test_e18_hold_a_leftover_temporary_of_any_process_is_removed_before_drawing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.project(directory, 2)
             self.model_log(repo)
             root = repo / MODEL_DIR
-            leftovers = [root / "slices/.tmp-slice-4242-S1.svg", root / "slices/.tmp-global-1-model.png",
+            leftovers = [root / "slices/.tmp-4242-0", root / "slices/.tmp-1-12",
                          root / "slices/.tmp-slice-S9.svg"]
             for leftover in leftovers:
                 leftover.write_text("<svg")

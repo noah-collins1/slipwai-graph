@@ -156,22 +156,26 @@ export function removeOrphans(diagrams: readonly Diagram[]): void {
   }
 }
 
+/** Counts the temporaries this process has named, so no two writes in one run share one. */
+let temporaries = 0;
+
 /**
- * Where a file is written before it is renamed: the name carries this process's id, so two runs in one tree never
- * write the same temporary. `removeOrphans` takes any `.tmp-` entry, whichever process left it.
+ * Where a file is written before it is renamed: `.tmp-<process id>-<n>`, so two runs in one tree never write the same
+ * temporary and a long file name never makes a temporary too long to open. `removeOrphans` takes any `.tmp-` entry,
+ * whichever process left it.
  */
-export function temporaryPath(kind: Diagram['kind'], path: string): string {
-  return join(ROOT, SLICE_DIR, `.tmp-${kind}-${String(process.pid)}-${basename(path)}`);
+export function temporaryPath(): string {
+  temporaries += 1;
+  return join(ROOT, SLICE_DIR, `.tmp-${String(process.pid)}-${String(temporaries)}`);
 }
 
 /**
  * A file reaches its name finished, or not at all: written whole beside it and renamed over it, so nothing that
  * reads the output (the gate, a browser, `git`) ever sees half of one. The temporary sits in `slices/`, which
- * is already ignored and on the same filesystem as every output; its name — a leading dot, a kind, the process id, the
- * file's own name — is one the model never produces, so `removeOrphans` takes one a killed run left behind.
+ * is already ignored and on the same filesystem as every output; its name — a leading dot, the process id, a count — is one the model never produces, so `removeOrphans` takes one a killed run left behind.
  */
-function writeFinished(kind: Diagram['kind'], path: string, bytes: string | Uint8Array): void {
-  const temporary = temporaryPath(kind, path);
+function writeFinished(path: string, bytes: string | Uint8Array): void {
+  const temporary = temporaryPath();
   try {
     clearIrregular(path);
     mkdirSync(dirname(temporary), { recursive: true });
@@ -209,7 +213,7 @@ export async function drawDiagrams(diagrams: readonly Diagram[], session: Render
         return;
       }
       const svg = Buffer.from(result.value).toString('utf8');
-      writeFinished(diagram.kind, diagram.svg, `${sourceStamp(diagram)}\n${rendererStamp(key)}\n${svg}`);
+      writeFinished(diagram.svg, `${sourceStamp(diagram)}\n${rendererStamp(key)}\n${svg}`);
     });
   }
   if (failed.length > 0) {
@@ -226,7 +230,7 @@ export async function drawPng(source: string, session: RenderSession, path: stri
     if (error instanceof BrowserError) throw error;
     throw new Error(`render: could not draw ${path}: ${reasonOf(error)}`);
   }
-  writeFinished('global', path, bytes);
+  writeFinished(path, bytes);
 }
 
 export function readSvg(diagram: Diagram): string {

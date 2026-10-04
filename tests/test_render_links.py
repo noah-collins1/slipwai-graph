@@ -209,6 +209,17 @@ class LinksTest(RenderCase):
             self.assertEqual(done.returncode, 0, done.stderr + done.stdout)
             self.assertTrue(fifo.is_file())
 
+    def test_e22_a_slice_id_as_long_as_a_file_name_allows_is_drawn(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 1)
+            model = repo / MODEL_DIR / "model.yaml"
+            long_id = "S" + "a" * 245
+            model.write_text(model.read_text().replace("id: S1\n", f"id: {long_id}\n"))
+            done = self.run_model(repo)
+            self.assertEqual(done.returncode, 0, done.stderr + done.stdout)
+            self.assertTrue((repo / MODEL_DIR / "slices" / f"{long_id}.svg").is_file())
+            self.assertEqual(list((repo / MODEL_DIR).rglob(".tmp-*")), [])
+
 
 if __name__ == "__main__":
     unittest.main()
