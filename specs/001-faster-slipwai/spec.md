@@ -1447,6 +1447,61 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
   stamp like any other); it says *non-empty* of a CI marker and never *everything the checks answer from*.
   (D73, D81)
 
+Added after the demo by the adversary pass (D83); each is held by a test, and where one differs from a criterion above, it
+holds:
+
+- **AC-S03-32** — Given the key, then it covers every file under the project's directory — tracked, untracked or
+  ignored, whatever makes git ignore it — by AC-S03-3's record, except what matches a closed exempt list beside the
+  checks, each entry with its reason: the gate's own recipe rebuilds it from a committed lock on every run; it is a
+  cache or an output no check reads as an input; or it is a record the gate or the runner writes about itself. An
+  entry may name exceptions that stay in the key (`node_modules` apart from its installed manifest, `.codegraph/`
+  apart from the database and its write-ahead file). An ignored directory nobody listed is hashed whole; one that is
+  itself a repository is AC-S03-12's case. The closed-list test holds that every ignore line the factory generates,
+  for every shape, is covered or exempt with a reason, and that no check script reads under an exempt entry outside
+  its exceptions. An ignored scratch test that does not compile, and a module ignored through `.git/info/exclude`
+  that breaks `check-imports`, each run the full gate. This replaces AC-S03-7's list and AC-S03-8. (A1)
+- **AC-S03-33** — Given a project in a subdirectory of its repository, then the tracked files, the untracked files git
+  does not ignore, the index's entries and AC-S03-12's refusals are taken for the whole repository; ignored files
+  are covered under the project's directory only; the stamp stays one per project. A sibling's uncommitted edit on a
+  `slice/<id>` branch runs the full gate. (A2, T022)
+- **AC-S03-34** — Given the key, then every ref git lists is in it with what it names, tags and replace refs
+  included, and so are the bytes of the repository's own configuration file and of the worktree's where there is
+  one, absence a value. User-level and system git configuration stay unseen, and the page says so. (A3, A4)
+- **AC-S03-35** — Given a run, then its note carries a token only that run's two halves share, stored as a random
+  value or a digest and never a process id, host or path; `record` writes nothing where the note's token is not its
+  own or it was given none, and says one line. Two runs at once in one worktree, the second on an edited tree that
+  fails or is interrupted, leave no stamp for the edited tree; `record` typed by hand after a failed run writes
+  nothing. (B1, B2)
+- **AC-S03-36** — Given git's answer for a path, then it loses exactly one trailing line feed and nothing else: a git
+  directory or a project directory whose name begins or ends in whitespace has its own stamp, inside its own git
+  directory. An empty directory at the note's path is removed as itself and a full one is named as the directory to
+  delete; a file where the factory's directory should be is named as that file. A stamp whose instant is not exactly
+  the UTC-to-the-second shape the reuse line prints is no stamp. Git's reason on a line is its first non-empty line,
+  escaped. (B3, B4, B5, B6, C6)
+- **AC-S03-37** — Given a `HEAD` that names no commit, or that is a symbolic ref outside `refs/heads`, then the run
+  reads, writes and removes no stamp and says nothing. Given a `HEAD` that names a commit where the name the trunk
+  resolves to has no ref, or where `project.json` is missing, unreadable or not an object, or records a `ci.branch`
+  the trunk the gate resolves is not, then the run cannot tell which branch is the trunk: it reads, writes and
+  removes no stamp, and one line before the first check names what to fix (record `ci.branch`, or fetch the trunk).
+  A `ci.branch` simply not recorded, with `main` or `master` present, stamps as before (D81). The questions are
+  asked in this order: a CI marker, the `HEAD` cases (silent), cannot tell (the line), the trunk (silent). (C1, C4,
+  C5)
+- **AC-S03-38** — Given `make ci`, by any route — a goal, a prerequisite of another target, any `MAKECMDGOALS` — then
+  every check runs, no stamp is read, written or removed, and no stamp line is printed: in a stamped project `ci`
+  depends on the checks' own target, not on `verify`. This replaces AC-S03-23. (C3)
+- **AC-S03-39** — Given a make whose path holds a space, then the gate runs, records and reuses. Given `make -f
+  <file> verify` in a project with no file named `Makefile`, then the gate runs and records: the checks are run
+  from the makefile the gate ran from. (C2, C8)
+- **AC-S03-40** — Given a project whose gate is not stamped (a wrapped application, or the delivery material under
+  `delivery/`), then its gates page says nothing of a stamp or `VERIFY_FORCE` and is byte for byte what it was
+  before the slice. (C7)
+- **AC-S03-41** — Given the page and the fragment, then each says that a pipeline which sets none of `CI`,
+  `GITHUB_ACTIONS` or `GITLAB_CI` sets `CI=1` itself, that `make ci` records nothing, and that a `ci.branch` the
+  gate cannot use is said on a line; the page names git's user-level configuration and a file edited by hand inside
+  an installed dependency tree among what a stamp cannot see. Still MINOR. (D83 items 1, 3, 14)
+- **AC-S03-42** — Given SC-001 after these changes, then it is measured again on AC-S03-20's project and the number
+  replaces the one in the quickstart; one second or more is a failed demo. (D83 item 1)
+
 ### S24-ci-fetches-slice-base
 
 **Unblocked 2026-10-03 by the owner (D82): option (a) of D54** — full history is fetched on every run of the generated

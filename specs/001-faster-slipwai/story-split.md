@@ -235,6 +235,14 @@ that cannot delegate takes the earliest ready slice in split order and names the
   Windows run to show the RED. For the cruise report: GNU Make 3.81 read and not run; the TypeScript, both Java
   and the frontend starters not run stamped with their real toolchains; a trunk `project.json` does not record
   reuses a stamp on an unchanged tree until `ci.branch` is recorded.
+- **What S03's adversary pass left (D83).** For `S04-parallel-gate`: `make verify lint` runs `lint` twice (once as
+  a goal, once in the gate's sub-make) — more, never less. Behind the PRD's slices (D39): a tag named like a slice
+  branch switches `check-slice-scope` off, since its `current_branch()` reads a short name (older than S03); and
+  D32's list of CI markers, shared by three scripts, knows none of Jenkins, Azure Pipelines, TeamCity or AWS
+  CodeBuild (believed, not run) — widen it in all three together. For the cruise report: `make verify
+  MAKE=/bin/true` records a stamp for a tree no check judged (declined: a person replacing make gets what they
+  asked for, and the trunk and CI never read it); a file edited by hand inside an installed dependency tree whose
+  manifest did not move is not seen; a pipeline that sets no marker must set `CI=1`.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 

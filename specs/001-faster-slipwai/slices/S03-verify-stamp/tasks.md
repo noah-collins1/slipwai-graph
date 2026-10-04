@@ -662,7 +662,7 @@ it: the moved-key reason names a path that differs where one can be found cheapl
 
 #### T022 — `LOW` — A project in a subdirectory of its repository: a sibling's uncommitted edit is not in the key (D36; **not reproduced as a failing gate**)
 
-- [ ] Evidence: the fixture copied to `proj/` of a new repository beside a tracked `sibling.txt`, branch `topic`: the key
+- [x] *(closed by T036 (D83 item 2: the adversary showed it as a failing gate, A2))* Evidence: the fixture copied to `proj/` of a new repository beside a tracked `sibling.txt`, branch `topic`: the key
   was `bf2b84264d20` before and after an uncommitted edit to `../sibling.txt`, while `git diff --name-status main` run
   from `proj/` — the call `changed_files()` of `check-slice-scope.py` makes — printed `M sibling.txt`. Whether any check's
   verdict moves on that path was not shown; D36 says only changes under the project's directory are looked at.
@@ -919,6 +919,73 @@ T023 is `S04`'s (Parking Lot); G4, G7 and G8 are Parking Lot and cruise-report l
 
 **Files:** `src/slipwai/project/docs.py`, `changelog.d/verify-stamp.md`, `tests/test_verify_stamp_ships.py` (or a new
 `tests/test_verify_stamp_page.py`), `docs/learn-generate.md` if it repeats a corrected sentence.
+
+### Adversary pass (2026-10-04, at `ef66461`; seams A, B, C; placed by D83)
+
+Each task begins with the adversary's reproduction as a failing example at `make verify`'s command line. The criteria are
+AC-S03-32 to -42 in `spec.md`; D83's numbered items are the rules. T022 is closed by T036.
+
+#### T036 — `HIGH` — The key covers every file under the project except a closed exempt list, the whole repository's tracked files, every ref and the repository's configuration (A1, A2, A3, A4 · AC-S03-32, -33, -34; D83 items 1–3)
+
+- [ ] **RED:** the four reproductions — an ignored `scratch_*.py` test that does not compile, a module ignored through
+  `.git/info/exclude` that breaks `check-imports`, a sibling's uncommitted edit beside a subdirectory project on a
+  `slice/<id>` branch, a tag named like the trunk and a replace ref, `core.quotePath` flipped — each reused today.
+  **GREEN (the class):** the list turned round as D83 item 1 says, with the exempt list beside the checks, each entry
+  with one of the three reasons and its named exceptions; the closed-list test rewritten to hold both directions over
+  every shape; the moved-key line names *a file git ignores* as its own part. A2 and A3/A4 as items 2 and 3 say.
+  Report the reuse run's wall time on the fixture before and after (not asserted).
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_inputs.py`, `tests/test_verify_stamp_lists.py`, `tests/test_verify_stamp_scan.py`, `tests/test_verify_stamp_key.py`, `tests/test_verify_stamp_working.py`, `tests/test_verify_stamp_runs.py` (the moved-key line), new `tests/test_verify_stamp_ignored.py` and `tests/test_verify_stamp_repository.py`, `tests/stamp_fixture.py` (additions only).
+
+#### T037 — `HIGH` — A note is bound to the run that wrote it (B1, B2 · AC-S03-35; D83 item 4)
+
+- [ ] **RED:** the adversary's interleaving — run A's checks in flight on a passing tree, an edit that fails lint, run B
+  started and failing (and, second example, interrupted), run A finishing — leaves a stamp for the edited tree today;
+  `record` typed by hand after a failed run writes one. **GREEN:** the token as item 4 says, shared by the recipe's two
+  halves, stored as a random value or a digest; one line where the note is another run's or no token was given.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `src/slipwai/project/gate.py` (the recipe hands both halves the token), `tests/test_verify_stamp_runs.py` or new `tests/test_verify_stamp_two_runs.py`, `tests/stamp_fixture.py` (additions only), `tests/test_verify_stamp_pinned.py` only if the recipe's text is pinned there.
+
+#### T038 — `MEDIUM` — A run that cannot tell which branch is the trunk does not stamp, and says what to fix (C1, C4, C5 · AC-S03-37; D83 items 7, 8, 11)
+
+- [ ] **RED:** an unborn `master`; a `develop` trunk with no `main`, `master` or usable `ci.branch`; each unusable
+  `ci.branch` of C4's table and a missing, unreadable or non-object `project.json`; `HEAD` a symbolic ref outside
+  `refs/heads` — each reads or writes a stamp today. **GREEN:** the order of questions as AC-S03-37 gives it. The
+  examples T035 and T016 left that expect a `develop` trunk with nothing recorded to reuse are brought to the new rule
+  where no `main` or `master` has a ref, and kept where one has (D81 stands there).
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `assets/toolkit/scripts/check-slice-scope.py` (only to expose what the one definition already knows; its own behaviour unchanged), `tests/test_verify_stamp_where.py`, new `tests/test_verify_stamp_trunk.py`, `tests/test_verify_stamp_ships.py` (the `develop` example only).
+
+#### T039 — `LOW` — Paths, notes, instants and git's reason are taken exactly (B3, B4, B5, B6, C6 · AC-S03-36; D83 items 6, 11)
+
+- [ ] **RED:** one example per finding as the adversary wrote it. **GREEN:** as AC-S03-36 says; sweep every place the
+  script strips, prints a stored value, or names a thing to delete.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_file.py`, `tests/test_verify_stamp_cannot.py`, new `tests/test_verify_stamp_exact.py`.
+
+#### T040 — `MEDIUM` — The recipe: a make whose path holds a space, the makefile the gate ran from, and `ci` on the checks' own target (C2, C3, C8 · AC-S03-38, -39; D83 items 9, 10, 13)
+
+- [ ] **RED:** a make reached through a directory with a space fails the gate today; `make -f build.mk verify` with no
+  `Makefile` fails; `release: ci` then `make release` on a stamped tree prints the reuse line. **GREEN:** as the two
+  criteria say; the script stops reading the goals and the forcing goal leaves it; the examples that hold the forced
+  line under `make ci` are brought to AC-S03-38; the pin's helper still reads the gate's prerequisites.
+
+**Files:** `src/slipwai/project/gate.py`, `src/slipwai/project/makefile.py` (the `ci` rule only), `assets/toolkit/scripts/verify-stamp.py` (the goals), `tests/test_verify_stamp_force.py`, new `tests/test_verify_stamp_recipe.py`, `tests/test_verify_stamp_pinned.py` and the tests elsewhere that read `ci: verify` (named in the report).
+
+#### T041 — `LOW` — The page and the fragment after D83; an unstamped project's page is what it was (C7 · AC-S03-40, -41; D83 items 1, 3, 9, 12, 14)
+
+- [ ] **RED:** an adopted repository's gates page speaks of a stamp; the page and the fragment lack the `CI=1` sentence,
+  that `make ci` records nothing, that an unusable `ci.branch` is said on a line, and the two further unseen things; the
+  page's sentence on what the key holds does not say *every file under the project except what the gate rebuilds or
+  never reads*. **GREEN:** each, each instruction followed by a test; the fragment's catch-up gains its three lines;
+  still MINOR.
+
+**Files:** `src/slipwai/project/docs.py`, `changelog.d/verify-stamp.md`, `tests/test_verify_stamp_ships.py` or new `tests/test_verify_stamp_page.py`, `docs/learn-generate.md` if it repeats a corrected sentence.
+
+#### T042 — the host's — Quickstart step 9 corrected and SC-001 measured again (AC-S03-42; D83 items 1, 9)
+
+- [ ] After T036–T041: `quickstart.md` step 9 says what `make ci` now does; `drive-hand` measures the reuse run again
+  on AC-S03-20's project and follows the changed steps; the number replaces the one in the quickstart.
 
 ## Parallel opportunities
 

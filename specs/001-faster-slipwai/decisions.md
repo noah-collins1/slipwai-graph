@@ -1307,3 +1307,105 @@
 - **Confidence:** high · **Would reverse if:** the owner says otherwise.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (the note that opens S24's section); `specs/cruise-checkpoint.md` (S24 is the next slice after S03, re-entered at slice gaps at its open note)
 - **Status:** standing
+
+## D83 — Where does each of the adversary's eighteen findings on S03 go, and how are A1, A2, C3 and C4 closed?
+- **Stage:** Phase 4 (adversary) · **Slice:** S03-verify-stamp · **When:** 2026-10-04T08:40:00Z · **Iteration:** 11
+- **Question:** Three seams attacked the slice at `ef66461` and returned eighteen findings plus one documented limit, none `CRITICAL`.
+  - Seam A: A1 `HIGH` (an ignored file a check reads by walking the tree is in no part of the key), A2 `MEDIUM` (T022: a sibling's edit outside a project in a subdirectory), A3 `MEDIUM` (tags and replace refs), A4 `LOW` (the repository's git configuration).
+  - Seam B: B1 `HIGH` (two runs at once stamp a failing tree), B2 `MEDIUM` (a hand-typed `record`), B3 `MEDIUM` and B4 `LOW` (whitespace stripped from git's paths), B5 `LOW` (wrong kind of file at the note's or the directory's path), B6 `LOW` (the stamp's instant printed as stored).
+  - Seam C: C1 (an unborn `master` stamps), C2 `MEDIUM` (`$(MAKE)` unquoted), C3 `MEDIUM` (`ci` recognised by goals only), C4 `LOW` (an unusable `ci.branch` or unreadable `project.json` still stamps, silently), C5 and C6 `LOW`, C7 `LOW` (the adopted page describes a stamp), C8 `LOW` (three recipe cases).
+  - The limit: a CI system that sets none of the three markers.
+  - Which are fixed in this slice through a failing test, which stated, which a line? What are the rules for A1, A2, C3 and C4? Does C3's amendment of AC-S03-23 or A1's widened key need a person?
+- **Options:**
+  - (a) **The stage's recommendation.** Fix everything new with the slice that a test can show, under D63's rule: A1 by turning the list round, A2 by the whole repository, A3, A4, B1 with B2 by a run token, B3 with B4, B5, B6, C1, C2, C3 by `ci` depending on the checks' own target, C4, C5, C6, C7 and C8's `-f` case. State C8's doubled `lint`. Decline `MAKE=/bin/true`. One sentence and a report line for the unmarked CI systems. The older part of A3 goes to the Parking Lot.
+  - (b) (a) with departures where the constitution, the brief or a standing entry asks for one.
+  - (c) A defect slice behind the PRD's slices (D39).
+- **Decision:** (b). I take the stage's recommendation on every finding's place, with six departures in the rules: items 1, 2, 5, 7, 8 and 14. No finding stays open past the slice, and no person is needed.
+  1. **A1, fixed. The list is turned round (amends D73 rules 1, 5 and 6, and AC-S03-7 and AC-S03-8).**
+     - The key covers every file under the project's directory, tracked, untracked or ignored, by AC-S03-3's record. Why git ignores a file (a committed pattern, `.git/info/exclude`, a user-level excludes file) no longer matters.
+     - The one exception is a closed exempt list beside the checks. **Departure:** its entries are paths or patterns, not only directories, and each carries one of three reasons:
+       - the gate's own recipe rebuilds it from a committed lock on every run (`.venv`);
+       - it is a cache or an output a tool writes and no check reads as an input (`__pycache__`, the linters' and test runners' caches, coverage and build output);
+       - it is a record the gate or the runner writes about itself (`.codegraph/gate-memory.json`, the runner's own files).
+     - An entry may name exceptions that stay in the key: `node_modules` apart from its installed manifest, `.codegraph/` apart from the database and its write-ahead file.
+     - The closed-list test holds two things. Every ignore line the factory generates, for every shape, is either covered or matches an exempt entry with its reason. A check script that reads a path under an exempt entry, outside its named exceptions, fails the test.
+     - An ignored directory nobody listed is hashed whole. An ignored directory that is itself a repository, outside the exempt list, is AC-S03-12's case.
+     - Two examples are owed first, each failing for its own reason: the adversary's `scratch_*.py` under a committed pattern, and the `.git/info/exclude` module that breaks `check-imports`.
+     - The moved-key line names *a file git ignores* as its own part.
+     - **SC-001 is measured again** on AC-S03-20's project after the fixes, and the number replaces the one in the quickstart. One second or more is D75 rule 7's failed demo.
+     - **Residual, stated on the page and in the cruise report:** a file edited by hand inside an installed dependency tree whose manifest did not move. This is the believed half of A1. D73 rule 6 and D75 already accept it, and CI installs afresh.
+  2. **A2, fixed. Closes T022.**
+     - Where `git rev-parse --show-prefix` is not empty, the tracked files, the untracked files git does not ignore, the index entries and AC-S03-12's refusals are taken for the whole repository.
+     - **Departure:** ignored files are covered only under the project's directory. A check walks its own project and asks git about the repository, and git never reports an ignored file.
+     - The stamp stays one per project, and two projects never read each other's.
+     - Example owed: the adversary's sibling edit on a `slice/<id>` branch runs the full gate.
+     - D36 is untouched. It is about where a run writes.
+  3. **A3 and A4, fixed (amends D73 rule 3 and AC-S03-5).**
+     - Every ref git lists joins the key with what it names, tags and replace refs included.
+     - The bytes of the repository's own configuration file join it, and of the worktree's where there is one, with absence a value.
+     - User-level and system git configuration stay in AC-S03-31's residual, and the page names git there.
+     - The older part of A3, a tag that switches `check-slice-scope` off, goes to the Parking Lot behind the PRD's slices (D39).
+  4. **B1 with B2, fixed.**
+     - The note carries a token only that run's two halves share. `record` writes nothing where the note's token is not its own or it was given none, and says one line: another run of the gate started here, or this was not a run of the gate.
+     - The last run to start is the only one that can record, and only for the key its own checks began on.
+     - **Constraint on the mechanism:** what is stored is a random value or a digest, never a process id, host or path as itself (the constitution's persisted-data MUST; T033's precedent).
+     - Examples owed: the adversary's interleaving, with run B failing and with run B interrupted, and a hand-typed `record` after a failed run.
+  5. **`make verify MAKE=/bin/true`, declined, with the consequence named.**
+     - **Departure:** by my reading of the recipe, not run, that command also reaches `record` and writes a stamp for a tree no check judged. The stage's summary did not say this.
+     - Declined on D72's A6 precedent. It takes a person deliberately replacing make, the same person can write the stamp file by hand, forcing or deleting clears it, and the trunk and CI never read it.
+     - It is a line in the cruise report.
+  6. **B3 to B6, fixed.**
+     - B3 with B4: git's answer for a path loses exactly one trailing line feed and nothing else.
+     - B5: by D72's rule, an empty directory at the note's path is removed as itself and a full one is named as the directory to delete. A file where the factory's directory should be is named as that file.
+     - B6: a stamp whose instant is not exactly the UTC-to-the-second shape AC-S03-1 prints is no stamp.
+  7. **C1, fixed. Graded `MEDIUM`.**
+     - It is not `CRITICAL` on the log's scale: no actor's data reaches another and no actor gains a role. It breaks AC-S03-21 on an unchanged tree only, before any commit exists, never in CI.
+     - (a) A `HEAD` that names no commit is not eligible: no stamp before a repository's first commit, and nothing is said.
+     - (b) **Departure, closing the class.** Where `HEAD` names a commit and the name the trunk resolves to has no ref (no usable recorded `ci.branch` with one, no `main`, no `master`), the run cannot tell which branch is the trunk. It reads, writes and removes nothing, and one line before the first check says so and says to record `ci.branch` or fetch the trunk.
+     - (b) amends D81 items 1, 6 and 7 for that case only. A `develop` trunk with no `main` or `master` beside it no longer stamps silently until someone reads the page. Where a stale `main` or `master` has a ref, D81 stands as written.
+     - It adds no second source for the trunk. D30's resolution is used as it is.
+  8. **C4, fixed. Regraded `MEDIUM`.** A team that recorded its trunk wrongly believes it is protected.
+     - **The rule.** Where `project.json` is missing, unreadable or not an object, the run cannot tell which branch is the trunk. The same holds where it records a `ci.branch` and the trunk the gate resolves is not that recorded name, whatever the reason: not a string, not a branch name, a slice branch, another case, no branch here.
+     - Such a run reads, writes and removes no stamp, and one line before the first check names what to fix.
+     - A `ci.branch` that is simply not recorded, with `main` or `master` present, is D81's case and stamps.
+     - Order of the questions: a CI marker, then a detached, unborn or non-branch `HEAD` (all silent), then cannot-tell (the line), then the trunk (silent).
+     - AC-S03-21's *nothing more* gains this one line where the trunk cannot be told. D77's own condition calls that a line added, not a rule changed.
+  9. **C3, fixed (amends AC-S03-23, D74 R6's last sentence and D77's fourth answer).**
+     - In a stamped project `ci` depends on the checks' own target, not on `verify`.
+     - By any route (a goal, a prerequisite of a user's target, any `MAKECMDGOALS`) `make ci` runs every check, reads no stamp, writes none, removes none and prints no stamp line.
+     - The recipe stops reading the goals, and the forcing goal leaves the script.
+     - R6's rule that `make ci` always runs every prerequisite of `verify` stands and is now held by the dependency itself.
+     - Cost: the `make verify` after a green `make ci` runs in full.
+     - The quickstart step that shows the forced line under `make ci` is corrected and run again by the host.
+  10. **C2, fixed.** A make whose path holds a space runs the gate, records and reuses. The example uses a make reached through a directory with a space in the test tree. This is the one finding that reaches the trunk and CI. It fails closed, never green.
+  11. **C5 and C6, fixed.** A `HEAD` that is a symbolic ref outside `refs/heads` is not eligible, silently. Git's reason is its first non-empty line, escaped, and one line everywhere.
+  12. **C7, fixed.** The page of a project whose gate is not stamped says nothing of a stamp or `VERIFY_FORCE`. It is byte for byte what it was before the slice (D78's wording for the rule).
+  13. **C8.**
+     - The `-f` case is fixed: `make -f build.mk verify` in a project with no file named `Makefile` runs the gate and records, the sub-make being given the file the gate ran from.
+     - The doubled `lint` is stated and goes to the Parking Lot for `S04`. It runs more, never less.
+  14. **The CI systems that set no marker.** The stage's recommendation, plus one line.
+     - One sentence on the page and in the fragment's catch-up: a pipeline that sets none of the three sets `CI=1` itself.
+     - A line in the cruise report for a person to review.
+     - **Added:** a Parking Lot line to widen D32's list across the three scripts together, behind the PRD's slices.
+     - `unavailable: a run on Jenkins, Azure Pipelines, TeamCity or AWS CodeBuild showing which variables each sets and whether its checkout is attached`.
+  - **Does anything need a person?** No.
+    - C3 removes no check and changes nothing the merge root or CI runs. `make ci` runs the same checks and stops trusting or leaving a record.
+    - A1, A2, A3, A4, C1 and C4 only make a branch run the full gate more often.
+    - Item 14 is the nearest case. Constitution line 33 holds on its letter there, because every change moves the key and gets a full run. It is listed for a person, as D81 item 7 was.
+  - **Level.** MINOR stands and `VERSION` stays `1.6.0.dev0`. The fragment's catch-up gains three things: `make ci` records nothing, an unusable `ci.branch` is now said, and the `CI=1` sentence.
+  - **Order.** A1, B1 and C2 first, then C1 with C4, then the rest. Each is its own RED, GREEN, REFACTOR.
+  - **Not an ADR.** Every part reverses by a refactor. The stamp and note change shape before any release carries them, and a stamp lacking a field is no stamp.
+- **Why:** The developer has to be able to believe a green that came back in half a second.
+  - A1 and B1 are each a reused green for a tree the gate fails, reached by ordinary work: a scratch file, or a second terminal. Priority 5 calls that wrong, and both are the slice's own machinery.
+  - A looked-for list of ignored paths can never see a walk. A key that covers everything except what is named with a reason fails towards running the gate.
+  - C1 and C4 are the trunk class. D74 would not take an arguable reading of the NON-NEGOTIABLE MUST, so a run that cannot tell which branch is the trunk does not stamp, and says the one thing to fix.
+  - C3 makes the stand-in for CI what priority 5 says CI is, by a dependency no variable can talk round.
+  - C2 gives back a gate that ran before the slice.
+  - The rest are a line or a few lines each in files the fixes already open, which is D63's rule and D53's and D72's practice.
+  - What is declined or parked can never make a trunk or CI run check less.
+  - **Read, not run:** `reuse`, `record`, `eligible`, `stamp_directory` and the two lists in `assets/toolkit/scripts/verify-stamp.py`; the recipe in `src/slipwai/project/gate.py`; the `ci` rule in `src/slipwai/project/makefile.py`; the ignore lines in `src/slipwai/project/gitignore.py`.
+  - **Not verified:** I ran no reproduction. What each exempt entry must be is the plan's to settle from the recipes. The cost of walking ignored files is unmeasured until item 1's re-measurement. The PRD artifact was not consulted.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** item 1's re-measurement puts the reuse run at one second or more on AC-S03-20's project because of the ignored files. A1's rule is then decided again, with D73's fallback record for those files as the first candidate, and every other item stands.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S03's criteria on what the key covers and the exempt list, the whole repository, every ref and the repository's configuration, the run token, the paths' whitespace, the stamp's instant, the unborn and unresolvable trunk, the extended gate, the makefile the gate ran from, and the page's sentences); `specs/001-faster-slipwai/adversary-log.md` (S03's findings table with grades and states); `specs/001-faster-slipwai/slices/S03-verify-stamp/tasks.md` (one task per fixed item, the open subdirectory task closed); `specs/001-faster-slipwai/story-split.md` (the Parking Lot: the doubled lint for the parallel gate, the tag that switches the scope check off, the wider marker list); `specs/001-faster-slipwai/slices/S03-verify-stamp/quickstart.md` (the extended-gate step and the new measurement); `changelog.d/verify-stamp.md` (the catch-up); the cruise report when it is written (the replaced make, the hand-edited dependency, the unmarked CI systems)
+- **Status:** standing
