@@ -797,3 +797,71 @@ checkout under `/tmp`, with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` and `MAKEFLAGS` 
   fixes the line's words. `git checkout` and an editor both date the file now, so ordinary work never meets it, and the Parking
   Lot already places the hand-edited *installed tree*, not the back-dated lock. Either the line is accepted as make's own notion
   of *matches* and AC-S04-55 says so, or it is re-worded to what is known (*not older than*) with AC-S04-48 amended.
+
+## Phase 4: Convergence pass 2 (cruise iteration 13)
+
+Appended by `drive-converge`, pass 2 of 2, over `3f44288..HEAD` at `d2f23fb`. Each reproduction was run on a project made by
+this checkout under `/tmp/s04p2`, with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` and `MAKEFLAGS` unset, on a branch other than
+`main`; GNU Make 4.4.1. Pass 1's four findings are closed as classes (T014: `make format` and `make -j format lint` log one
+sync line; T015: the fragment's sentence is the `-j` one; T016: `VERIFY_ORDER=1 make -n test` prints one Maven line, on the
+command line three, and `$(origin)` answers `command line` in the gate's sub-make and the make below it, `environment` for an
+export; T017: the expression applied to its own output is unchanged for every spelling tried). No `CRITICAL` and no `HIGH`:
+nothing below gives a wrong verdict or loses a check. Levels reached this pass: an adopted repository with the event profile
+(the moved layout), Java Spring under `make -j verify` with its real toolchain, AC-S04-64 and AC-S04-54 by hand on Python,
+AC-S04-57 and -58 by hand against a factory archived at `3f44288`.
+
+### T018 — `MEDIUM` — Every sentence that says what the bare `.NOTPARALLEL:` holds is true of the make it is read by; through `-include` it holds the repository's own targets too
+
+- [ ] **Finding.** `src/slipwai/project/adopted_targets.py:90` writes a bare `.NOTPARALLEL:` into `delivery/Makefile`. `slipwai adopt`
+  ends its report with *add `-include delivery/Makefile` to the root Makefile* (and writes that line itself where there was no
+  root Makefile), and GNU Make applies the directive to the whole run, not to the file it sits in. So after `slipwai migrate`,
+  every target of the adopted repository's own root Makefile runs serially under `make -j`, the build it had before adoption
+  included. The fragment says *An adopted repository's gate is serial whatever `-j` says*, the page (`parallel_gate.PAGE`) says
+  *a bare `.NOTPARALLEL:` holds its own targets*, and D88's R7 says *Nothing else in that Makefile changes*; none says the
+  repository's own targets lose `-j`, and AGENTS.md holds existing code *to nothing it did not have before*. Slower, never a
+  different verdict; experimental path.
+  **Evidence.** A repository adopted with `--profile event-modelling`, two targets of its own in the root Makefile (`own-a`,
+  `own-b`, each `sleep 2`): with `-include delivery/Makefile`, `make -j own-a own-b` takes 4.0 s; with the line taken out, 2.0 s.
+  **GREEN (the class).** Every place a user of an adopted repository reads what is serial — the fragment's body and catch-up,
+  `PAGE`, the comment the Makefile carries above the directive, and the adopt report's `-include` line — says what make does:
+  a root Makefile that includes the delivery one runs every target serially under `-j`, and `make -f delivery/Makefile` leaves
+  the root's own as they were. A test reads the four for that sentence.
+  **A question inside it, for the owner.** Words are the smallest fix and keep D88's R7 as decided. The other answer is a
+  mechanism that holds the gate and leaves the repository's own targets their `-j` — and that is a decision about
+  `baseline.json`'s one writer, not this task's to make: does D88's R7 stand with the sentence corrected, or is the reach
+  through `-include` to be removed?
+  **Sweep performed.** The directive is written in one place (`adopted_targets.SERIAL`; `grep -rn NOTPARALLEL src/slipwai`), and a
+  stamped project's Makefile has none (five read). Paths in the adopted Makefile are spelled for the layout: the marker, the
+  `npm --prefix delivery/scripts/event-model ci` recipe, `install:` naming the marker, and the skip line all say
+  `delivery/scripts/event-model/…`; `make -f delivery/Makefile -j check-drawio model-drawio-test` on a fresh adoption ran one
+  `npm ci`, 38 tests passed, and the next `check-drawio` printed the skip line with the `delivery/` path. A sub-make
+  (`$(MAKE) -C`) of the repository's own is not held, as the page already says.
+  **Answered by D95 — the GREEN is now this, and it replaces the one above.** The directive is written inside a
+  conditional that is true only when the delivery Makefile is the one make was started on (D95's R1), still once,
+  after the pinned `verify` rule, whose bytes do not move; the five places D95's R5 lists say R2 to R4; the adopt
+  report's `-include` line stays as it is. Criteria: AC-S04-24, -26, -27, -60 and -61 as re-worded, AC-S04-67 to -70.
+  **Files:** `src/slipwai/project/adopted_targets.py`, `src/slipwai/project/parallel_gate.py` (`PAGE`),
+  `src/slipwai/project/adopted.py` (at 350 lines: a sentence replaces a sentence, or the text moves to
+  `adopted_targets.py`), `changelog.d/parallel-gate.md`, `tests/test_parallel_gate_adopted.py`,
+  `tests/test_verify_stamp_pinned.py` (the `SERIAL` constant only), `tests/test_parallel_gate_carry.py` and
+  `tests/test_parallel_gate_converge.py` (the sentences they hold), and a new `tests/test_parallel_gate_include.py`
+  for AC-S04-67 to -70.
+
+### T019 — `LOW` — Every family's first unrecorded pass says the line the criterion names; Python's says the stamp's other one
+
+- [x] *(the host amended AC-S04-64: one of the stamp's two lines, with which family says which)* **Finding.** AC-S04-64 and D93 (point 4) name the line of the unrecorded first pass: `verify: this pass was not recorded — a
+  file git ignores changed while the checks ran …`. A Python event-profile clone with nothing installed has no `.venv`, so the
+  stamp cannot build its key and says D73's rule 5 instead, before the first check: `verify: the full gate runs and this run
+  records nothing — cannot read apps/service/.venv/pyvenv.cfg (No such file or directory)`. The line the criterion names is not
+  printed. What the criterion is for holds: the pass installs and is not recorded, the second runs in full, installs nothing
+  and is recorded, the third reuses; and the page's sentence (AC-S04-66) is true of both.
+  **Evidence.** `pyev` (Python, event profile, Postgres), fresh: run 1 exit 0, line 1 the *records nothing* line, `npm --prefix
+  scripts/event-model ci` at line 114, no *was not recorded* line; run 2 exit 0, the skip line, no npm for the model tooling;
+  run 3 the reuse line. `tsev` (TypeScript, event profile) and `jspring` (Java Spring): run 1 ends on the *was not recorded*
+  line, run 2 records, run 3 reuses. AC-S04-54 on a second fresh Python clone: `make install` ran the model tooling's `npm ci`
+  once and left `git status --porcelain` empty, the first `make verify` ran no npm for it and was recorded, the second reused.
+  **GREEN (the class).** AC-S04-64 and its example say *one of the stamp's two lines for a run that records nothing* and name
+  which family says which; the stamp's script is not changed (D73, rule 8). A criterion's wording, so the host amends
+  `spec.md` beside D93 rather than a delegate.
+  **Sweep performed.** The first run's line over three families with their real toolchains (Python, TypeScript, Java Spring);
+  Go not run here — the Parking Lot already places its `go.work.sum`.

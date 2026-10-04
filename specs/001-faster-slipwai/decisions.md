@@ -1664,3 +1664,46 @@
 - **Confidence:** high · **Would reverse if:** a tool in ordinary use is shown to restore a lockfile with an old date — an archive extraction that keeps dates is the one to look at — in which case the line says *is not older than its marker* in place of *matches*.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S04-55); `specs/001-faster-slipwai/slices/S04-parallel-gate/tasks.md` (the question under converge pass 1)
 - **Status:** standing
+
+## D95 — Does D88's R7 stand with its words corrected, or is the bare `.NOTPARALLEL:`'s reach through `-include` into an adopted repository's own targets removed — and how?
+- **Stage:** converge (pass 2, T018, `MEDIUM`) · **Slice:** S04-parallel-gate · **When:** 2026-10-04T14:50:00Z · **Iteration:** 13
+- **Question:** D88's R7 wrote a bare `.NOTPARALLEL:` into the delivery Makefile of a repository that adopted the method and said nothing else in that Makefile changes. GNU Make applies the directive to the whole run, and `slipwai adopt` offers (or writes) `-include delivery/Makefile` at the root. So after `slipwai migrate`, every target of the repository's own runs serially under `make -j`, the build it had before adoption included (two `sleep 2` targets: 4.0 s with the include, 2.0 s without). Does R7 stand with the words corrected, or is the reach removed, and how?
+- **Options:** (a) R7 stands and the four places say that a root which includes the delivery Makefile loses `-j` for every target; (b) the directive goes and the gate is held by a mechanism of its own — prerequisite lines read only when `verify` is a goal, or a lock in the ratchet; (c) the directive stays, written only where the delivery Makefile is the one make was started on, and the criteria name the command that is promised — **the host leans to (c) or (b)**; (d) R7 is withdrawn from S04.
+- **Decision:** (c), within the host's lean. This entry overrides D88's R7 in two places only: where the directive applies, and the sentence *Nothing else in that Makefile changes*. The rest of R7 and of D88 stands. No part is `unavailable`: `make verify` with no `-j` — what CI, the merge root and the ladder's commands type — runs every check it ran, in the order it ran them, so nothing a gate checks changes and no check is removed. As rules a test can hold:
+  - **R1, where the directive is.** `SERIAL` in `src/slipwai/project/adopted_targets.py` writes the bare `.NOTPARALLEL:` inside a conditional that is true only when no other makefile has been read, so the delivery Makefile is the one make was started on. The conditional uses nothing GNU Make 3.81 lacks. The spelling is the plan's: a count of one word in `MAKEFILE_LIST` was run here, and so was first word equals last word. The directive still appears exactly once, with its comment, after the pinned `verify` rule. The rule's bytes and its place do not move (D74, D78).
+  - **R2, the command that is promised.** The gate started on its own Makefile runs serially whatever `-j` says: one recorded command and one ratchet at a time, in the serial gate's order, one writer of `baseline.json`. That is `make -f delivery/Makefile -j verify`, however the path is spelled, or `make -j verify` where the layout is not moved and the Makefile at the root is the delivery one. `ratchet-tighten` is held from every door, because its sub-make starts on the delivery Makefile.
+  - **R3, the root's own.** A root Makefile that includes the delivery one is that repository's make run. The include adds targets and takes nothing: the repository's own targets run under `-j` as they did before adoption.
+  - **R4, the door that is not promised.** `make -j verify` typed at a root that includes the delivery Makefile is what it was before this slice: the checks run as that make runs them, and nothing is promised of it. The page says so and names the command that is held. A repository that wants its whole root serial writes `.NOTPARALLEL:` in its own Makefile, which is its choice and not the factory's.
+  - **R5, the words.** Five places say R2 to R4 in one or two plain sentences, and none says *whatever `-j` says* without naming the command:
+    - the comment above the directive;
+    - `PAGE` in `src/slipwai/project/parallel_gate.py`;
+    - the fragment's body and its catch-up;
+    - the adoption page's `-include` step in `src/slipwai/project/adopted.py`;
+    - the comment in the root Makefile block `adopt` writes.
+
+    The adopt report's `-include` line stays as short as it is: the include no longer changes anything of the repository's own, so there is nothing to warn of at the moment a person acts on it. The catch-up still reads: `slipwai migrate` brings the line and asks nothing else.
+  - **R6, the words in `spec.md`.** FR-002's last sentence becomes: *The gate of a repository that adopted the method, started on its own Makefile, MUST run serially whatever `-j` says, and MUST leave the `-j` of a root Makefile that includes it to that repository's own targets (D88, D95).* The S04 row in `story-split.md` takes the same words.
+  - **R7, parked.** Holding the one-word door (`make -j verify` at an including root) goes on the Parking Lot line that already carries the adopted gate's speed, as a slice of its own behind the PRD's slices. It would be done by prerequisite lines read only when `verify` is a goal, or by the ratchet locking its read and write of `baseline.json`.
+- **Why:**
+  - *The developer who adopted did not ask for a slower build.* The method is offered as an addition, and AGENTS.md holds existing code to nothing it did not have before. Option (a) halves that developer's own `make -j` build, delivered by `migrate` and told in a catch-up they may never read. Correct words do not make that acceptable.
+  - *What R7 protects is kept where it can be held.* The door the method itself uses — CI, the ladder's commands, `ratchet-tighten` — gets one writer of `baseline.json` and one recorded command at a time, in today's order with today's output.
+  - *Why not (b) now.* Either mechanism lets the factory's own checks run beside commands a person recorded, which D88 declined because nobody here can call those commands read-only. The prerequisite lines need `MAKECMDGOALS` and a second branch of generator logic; the lock changes a gate script every adopted repository receives. That is a design with its own examples, not a convergence fix, and the brief's priority 4 asks for smaller slices.
+  - *Why not (d).* The promise is still worth one conditional for the door that can hold it.
+  - *What the unpromised door costs.* It is exactly what existed before S04, so nothing is taken away. The ratchet writes `baseline.json` only on a first run with no entry or under `RATCHET_TIGHTEN`, and `ratchet-tighten` is held from every door. So the exposure is a first run under `-j` at an including root. A lost entry there is re-recorded with a printed line on the next run, and in CI a missing entry fails by name: loud, never a false green (priority 5).
+  - *Nobody has the old line.* S04 is not on `main` and no snapshot carried the bare directive, so no repository needs a second catch-up.
+  - *Verified and not.* Run here on GNU Make 4.4.1 with a toy under `/tmp/d95`, both spellings of the guard, with identical results:
+
+    | Command | Time | Reading |
+    |---|---|---|
+    | `make -j own-a own-b` at an including root | 2.0 s | the root's own targets overlap |
+    | `make -f delivery/Makefile -j verify` (also spelled `./…` and absolute) | 3.0 s | serial |
+    | `make -f delivery/Makefile verify` with `MAKEFLAGS=-j4` | 3.0 s | serial |
+    | `make -j ratchet-tighten` at the root | 3.0 s | serial through the sub-make |
+    | `make -j own-a ratchet-tighten` at the root | 3.0 s | `own-a` runs beside the serial three |
+    | `make -j verify` at the root | 1.0 s | not held, as R4 says |
+
+    Read and not run: GNU Make 3.81 and 4.3; `ifeq`, `words`, `firstword` and `MAKEFILE_LIST` are older than 3.81, `lastword` arrived in it, and `gate.py` already rests on `$(firstword $(MAKEFILE_LIST))`. Not held: a path with a space in it, handed to `-f`, makes the guard false and the run unheld; the delivery Makefile is spelled relative to the root everywhere the method types it. This repository's own root `Makefile` does not include `delivery/Makefile`, so it is not a live case of the reach. The PRD artifact was not consulted.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** a make this Makefile promises (3.81, read and not run) evaluates the guard differently, or a person says the one-word door at an including root must be held. The parked mechanism of R7 then comes forward as its own slice and R4 drops.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (FR-002's last sentence; AC-S04-24, -26, -27, -60 and -61 re-worded; the new criteria below, numbered by the host); `specs/001-faster-slipwai/story-split.md` (the S04 row's words; the Parking Lot line for the adopted gate's speed gains the one-word door); `specs/001-faster-slipwai/slices/S04-parallel-gate/tasks.md` (T018's GREEN becomes R1 to R5); at the task, `src/slipwai/project/adopted_targets.py`, `src/slipwai/project/parallel_gate.py`, `src/slipwai/project/adopted.py`, `changelog.d/parallel-gate.md` and `tests/test_parallel_gate_adopted.py`
+- **Status:** standing

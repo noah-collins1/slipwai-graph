@@ -271,7 +271,8 @@ unchanged either way.
 - **FR-002**: The gate's checks MUST be declared so `make -j verify` runs concurrently every check that writes
   nothing another reads, with the same results as the serial run; a target that writes what another target of the
   gate reads or writes MUST never run beside it, on every GNU Make from 3.81, by being ordered ahead of it as a
-  prerequisite (D88). The gate of a repository that adopted the method MUST run serially whatever `-j` says.
+  prerequisite (D88). The gate of a repository that adopted the method, started on its own Makefile, MUST run serially whatever `-j`
+  says, and MUST leave the `-j` of a root Makefile that includes it to that repository's own targets (D88, D95).
   *Same results* is the same checks, each with the verdict it had, an exit status that is zero exactly when the
   serial run's is, and the closing line on a pass; it is not the order of lines (D88, D89).
 - **FR-003**: `./scripts/verify` MUST sync each toolchain once per invocation; `check-drawio` MUST skip
@@ -1723,14 +1724,19 @@ started with what and exits as the test says — a fake, never a mocking framewo
 
 **An adopted repository's gate (D88; experimental as `AGENTS.md` defines the word)**
 
-- **AC-S04-24** — Given a repository that adopted the method (a wrapped application, or the delivery material
-  moved), when its generated Makefile is read, then it carries a bare `.NOTPARALLEL:` with no prerequisites.
+- **AC-S04-24** — *Re-worded by D95.* Given a repository that adopted the method (a wrapped application, the
+  refusal while nothing is confirmed, or the delivery material moved), when its generated delivery Makefile is
+  read, then it carries a bare `.NOTPARALLEL:` with no prerequisites exactly once, after the `verify` rule, inside
+  a conditional that is true only when no other makefile has been read, written with nothing GNU Make 3.81 lacks,
+  under a comment that says the gate is serial when make is started on this file and that a Makefile which
+  includes it keeps its own `-j`.
 - **AC-S04-25** — Given a generated project with no wrapped application and no moved layout, when its Makefile is
   read, then it carries no `.NOTPARALLEL`.
-- **AC-S04-26** — Given an adopted repository whose recorded `lint`, `typecheck` and `test` are stand-ins, when
-  `make -j verify` runs, then no two of them overlap and they run in the serial gate's order.
-- **AC-S04-27** — Given an adopted repository with no baseline yet, when `make -j verify` runs, then
-  `baseline.json` holds the entries a serial first run records.
+- **AC-S04-26** — *Re-worded by D95.* Given an adopted repository whose recorded `lint`, `typecheck` and `test`
+  are stand-ins, when the gate is started on the delivery Makefile under `-j` (the path spelled relative, with a
+  leading `./`, or absolute), then no two of them overlap and they run in the serial gate's order.
+- **AC-S04-27** — *Re-worded by D95.* Given an adopted repository with no baseline yet, when the gate is started
+  on the delivery Makefile under `-j`, then `baseline.json` holds the entries a serial first run records.
 
 **One sync per run (FR-003; D90)** — a stand-in `uv` logs its arguments; a *sync line* is one whose first argument
 is `sync`, a *run line* one whose first is `run`.
@@ -1824,14 +1830,17 @@ is `sync`, a *run line* one whose first is `run`.
 - **AC-S04-60** — Given the slice's one changelog fragment, when it is read, then its first line is `MINOR` (a new
   generated file; `VERSION` stays `1.6.0.dev0`), and its **Catch-up.** paragraph, standing alone, says what to do
   in each of the three cases (no lock, an untracked lock, a committed lock), that an edited tooling manifest now
-  needs a lock that agrees with it, and — under the experimental label — that an adopted repository's gate now
-  runs serially whatever `-j` says.
+  needs a lock that agrees with it, and — under the experimental label, in the body and in the catch-up — that an
+  adopted repository's gate started on its own Makefile runs serially whatever `-j` says, that a root Makefile
+  which includes it keeps `-j` for its own targets, and that `make -j verify` typed at such a root is not promised;
+  the catch-up still says `slipwai migrate` brings the line and asks nothing else (*re-worded by D95*).
 - **AC-S04-61** — Given the page a project gets about the gate, when it is read, then it says: `make -j verify`
   runs the checks at once, from GNU Make 3.81, and when to use it (when you wait on the gate locally); each
   check's output appears when that check finishes; on a make older than 4.0 lines may interleave; the order of
   lines is not promised; the claim is for `verify` as the only goal, and `make -j ci` is not promised; and an
-  adopted repository's gate runs serially whatever `-j` says, a recorded command that itself calls `make` being
-  that application's own.
+  adopted repository's gate runs serially whatever `-j` says when make is started on the delivery Makefile; a root
+  Makefile that includes it keeps `-j` for its own targets, and `make -j verify` typed there is not promised; a
+  recorded command that itself calls `make` is that application's own (*re-worded by D95*).
 - **AC-S04-62** — Given S04's finished diff, when its files are listed, then `assets/toolkit/scripts/verify-stamp.py`
   is not among them unless `S32-verify-stamp-split` landed first (D91, D92).
 - **AC-S04-63** — Given the suites that pin the gate's order and its recipe (S03's), then they are amended beside
@@ -1839,8 +1848,11 @@ is `sync`, a *run line* one whose first is `run`.
   every starter combination `make starters` materialises passes its own gate (constitution I; SC-007).
 - **AC-S04-64** — *Added by D93.* Given a fresh clone of a generated event-profile project on a branch that is not
   the trunk, on which nothing has been installed, when `make verify` passes for the first time, then the model
-  tooling is installed during the run, the pass is not recorded, and the output carries the stamp's line that the
-  pass was not recorded because a file git ignores changed while the checks ran; when `make verify` runs again on
+  tooling is installed during the run, the pass is not recorded, and the output carries one of the stamp's two lines for a run that
+  records nothing — on a Python project, which has no `.venv` yet, the line before the first check that the full
+  gate runs and this run records nothing because the environment's file cannot be read; on a TypeScript or Java
+  project, the line after the checks that the pass was not recorded because a file git ignores changed while they
+  ran (*amended at converge pass 2, T019*); when `make verify` runs again on
   the unchanged tree, it runs in full, installs nothing and is recorded, and the run after that prints the reuse
   line. The stamp's script is not changed by this slice (D73, rule 8).
 - **AC-S04-65** — *Added by D93.* Given a generated Makefile with the event profile, when it is read, then `install`
@@ -1852,3 +1864,17 @@ is `sync`, a *run line* one whose first is `run`.
   and that `make install` beforehand makes the first one count; given the slice's fragment, then its body says that
   in an event-profile project `make install` now also installs the model tooling from its committed lock, and its
   catch-up asks nothing more for it.
+- **AC-S04-67** — *Added by D95.* Given an adopted repository whose root Makefile includes the delivery one and has
+  two targets of its own that each log a start and wait a bounded while for the other's, when `make -j` is asked
+  for both, then each logs that it met the other (the evidence is the log, never a clock); and with the include
+  line taken out the log is the same.
+- **AC-S04-68** — *Added by D95.* Given that same root Makefile, when `make -j ratchet-tighten` is run at the root,
+  then the three recorded stand-ins run one after another in the gate's order.
+- **AC-S04-69** — *Added by D95.* Given that same root Makefile and one target of its own asked for beside
+  `ratchet-tighten` in one `make -j`, when it runs, then the root's own target is not made to wait for the three
+  stand-ins, and the three do not overlap each other.
+- **AC-S04-70** — *Added by D95.* Given the adoption page's `-include` step and the comment in the root Makefile
+  block `adopt` writes where there was none, when each is read, then it says the include adds the method's targets
+  and leaves the repository's own `-j` alone, and names `make -f <delivery>/Makefile -j verify` as the run that is
+  held serial; and no text the factory writes into an adopted repository says the gate is serial *whatever `-j`
+  says* without naming that command.
