@@ -822,7 +822,8 @@ def not_checked(slice_id: str, trunk: str, note: str = "") -> str:
 
 def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
     """The violations, the one line to print when there are none, what the refusal header ends with, a line
-    for stderr that is neither — printed after any findings — and whether that line is a developer's failure."""
+    for stderr that is neither — printed after any findings — and whether that line is a failure, which it is on a
+    forge's checkout and on a developer's alike."""
     violations = lost_records()
     match = SLICE_BRANCH.match(branch or "")
     problem = checkout_problem()

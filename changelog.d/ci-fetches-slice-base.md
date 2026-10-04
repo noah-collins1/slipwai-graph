@@ -23,8 +23,9 @@ flag `off`. Nothing is newly allowed, and a push to the trunk answers as it did.
 still has no trunk to compare with, or git could not run the comparison, `check-slice-scope` no longer exits 0
 saying the slice was NOT checked: it exits 1 with that line, which names what the job's checkout needs —
 `fetch-depth: 0`, on GitLab `GIT_DEPTH: "0"`, on any other CI a full clone with the trunk's branch fetched. A branch
-that is not `slice/<id>` has nothing to hold, as before; on a developer's machine every answer is what it was; and
-where git cannot read the checkout at all the check still says so and exits 0.
+that is not `slice/<id>` has nothing to hold, as before; on a developer's machine every answer is what it was,
+except that a shell with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` exported and no trunk to compare with now fails as
+CI does; and where git cannot read the checkout at all the check still says so and exits 0.
 
 **Catch-up.** `slipwai migrate` carries the changed workflow into a project that kept it as generated, and replaces
 the two files `adopt` wrote. It does not rewrite a workflow you took over or edited at that step (the merge shows
