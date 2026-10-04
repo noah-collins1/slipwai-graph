@@ -396,25 +396,61 @@ def pending_path() -> str:
     return os.path.join(stamp_directory(), "verify-stamp-" + project_name() + ".pending")
 
 
+def read_own(path: str) -> str | None:
+    """The text of one of this script's own files, or None where it is not there or is anything but a regular file in
+    a real directory: a link is never followed, a directory or a FIFO is never opened (a FIFO would wait for a writer),
+    and a link where the directory should be is no directory. Read through a descriptor opened without following."""
+    try:
+        if os.path.islink(os.path.dirname(path)) or not stat.S_ISREG(os.lstat(path).st_mode):
+            return None
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+    except OSError:
+        return None
+    with os.fdopen(descriptor, "r", encoding="utf-8") as handle:
+        try:
+            return handle.read() if stat.S_ISREG(os.fstat(handle.fileno()).st_mode) else None
+        except (OSError, ValueError):
+            return None
+
+
 def read_stamp(path: str) -> dict[str, object] | None:
     """The stamp, or None where there is none, it cannot be parsed, or it lacks a field."""
+    text = read_own(path)
+    if text is None:
+        return None
     try:
-        with open(path, "r", encoding="utf-8") as handle:
-            stamp = json.load(handle)
-    except (OSError, ValueError):
+        stamp = json.loads(text)
+    except ValueError:
         return None
     if not isinstance(stamp, dict) or any(field not in stamp for field in FIELDS) or stamp["result"] != "pass":
         return None
     return stamp
 
 
+def ensure_directory(directory: str) -> None:
+    """The factory's own directory under the git directory, a real one: a link in its place is removed as itself (what
+    it points to is left alone) and a directory made; anything else that stands there makes `makedirs` fail."""
+    if os.path.islink(directory):
+        os.remove(directory)
+    os.makedirs(directory, exist_ok=True)
+
+
 def write_file(path: str, text: str) -> None:
-    """A finished file or none: written beside its name, then renamed onto it."""
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    temporary = path + "." + str(os.getpid()) + ".tmp"
-    with open(temporary, "w", encoding="utf-8") as handle:
-        handle.write(text)
-    os.replace(temporary, path)
+    """A finished file or none: written to a file of its own beside its name, made new (never an existing path, so a
+    link cannot be written through), then renamed onto it — which replaces a link as itself and never follows it."""
+    directory = os.path.dirname(path)
+    ensure_directory(directory)
+    descriptor, temporary = tempfile.mkstemp(dir=directory, prefix=os.path.basename(path) + ".", suffix=".tmp")
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        os.replace(temporary, path)
+    except BaseException:
+        try:
+            os.remove(temporary)
+        except OSError:
+            pass
+        raise
 
 
 def trunk_name() -> str:
@@ -472,10 +508,17 @@ def declined() -> bool:
 
 def remove_stamp() -> str | None:
     """The stamp, gone before the first check starts, so that after a run that failed or was killed there is none.
-    None where it is gone or was never there; else why it could not be, naming the file to delete."""
+    Whatever stands at its path is removed as itself: a regular file, a link (never what it points to) or a FIFO by
+    unlinking, an empty directory by `rmdir`; a directory with something in it is not emptied, it is named. None where
+    it is gone or was never there; else why it could not be, naming what to delete."""
     path = stamp_path()
+    if os.path.islink(os.path.dirname(path)):
+        return None  # what is behind a link is not ours to remove; `write_file` replaces the link itself
     try:
-        os.remove(path)
+        if stat.S_ISDIR(os.lstat(path).st_mode):
+            os.rmdir(path)
+        else:
+            os.remove(path)
     except FileNotFoundError:
         return None
     except OSError as error:
@@ -538,7 +581,7 @@ def why_no_note() -> str | None:
     if os.path.lexists(stamp_path()):
         return None
     try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        ensure_directory(os.path.dirname(path))
         with tempfile.TemporaryFile(dir=os.path.dirname(path)):
             pass
     except OSError as error:
@@ -553,8 +596,10 @@ def record(options: Options) -> int:
     if declined() or not eligible():
         return 0
     try:
-        with open(pending_path(), "r", encoding="utf-8") as handle:
-            pending = json.load(handle)
+        text = read_own(pending_path())
+        if text is None:
+            raise ValueError("no note")
+        pending = json.loads(text)
         if NOTHING in pending:
             return 0
         pending["key"], pending["tools"]
