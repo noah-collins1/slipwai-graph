@@ -536,7 +536,7 @@ only through the fixture's helper; if it passes an environment of its own, say s
 
 #### T019 — `MEDIUM` — The hold that a second run writes nothing is never run on Linux (found by the host at `dde4317` · AC-S11-12)
 
-- [ ] Evidence: the seven modules report `skipped=1`, and it is
+- [x] *(done at `d50377b`: the guard is gone; teeth: an always-write fails `wrote(second) == []` with 27 paths; no render module skips here.)* Evidence: the seven modules report `skipped=1`, and it is
   `test_e12_a_second_run_on_an_unchanged_tree_writes_nothing_and_says_nothing_was_written`: its guard `clock_is_fine`
   writes a probe twice in a row and skips where the two modification times are equal, which on Linux they are (the
   kernel stamps both within one tick). The two `make model` runs it guards are seconds apart, so the guard asks the
@@ -553,7 +553,7 @@ fires on this machine and say which examples ran. **Verify:** the module reports
 
 #### T020 — `HIGH` — Nothing is removed, read or written through a link, and nothing outside `docs/event-model/` is ever removed (A1, A2, A3, A5 · AC-S11-21)
 
-- [ ] Evidence (seam A, `/tmp/s11-adv-A.md`): `docs/event-model/slices -> <dir>` and `make model` empties `<dir>` at
+- [x] *(done at `c5eb98b`: RED: seven of eight examples, a victim directory emptied and `.git` removed inside the test's own temporary directory; one `lstat` rule; the per-path table is in the adversary log row.)* Evidence (seam A, `/tmp/s11-adv-A.md`): `docs/event-model/slices -> <dir>` and `make model` empties `<dir>` at
   exit 0; committed as `slices -> ../..` it removed `.git`, the `Makefile` and `model.yaml`. A dangling link or a file
   at `slices`, or a directory at `slices/S1.svg` or `S1.mmd`, fails every run; `slices/S2.mmd -> <file>` is written
   through; `mkfifo slices/S1.svg` hangs the run.
@@ -573,7 +573,7 @@ a link).
 
 #### T021 — `LOW` — The temporary's name does not carry the file's name (A4 · AC-S11-22)
 
-- [ ] Evidence: an id of `S` and 245 letters passes the model; `.tmp-slice-<pid>-<id>.svg` passes 255 bytes and the run
+- [x] *(done at `45f1032`: RED: `ENAMETOOLONG` on a 245-letter id; temporaries are `.tmp-<pid>-<n>`.)* Evidence: an id of `S` and 245 letters passes the model; `.tmp-slice-<pid>-<id>.svg` passes 255 bytes and the run
   fails `ENAMETOOLONG`. **RED:** that id is drawn. **GREEN:** `.tmp-<pid>-<n>` with a counter per process, still in
   `docs/event-model/slices/`, still removed as a leftover by any later run; AC-S11-18's example follows the new shape.
 
@@ -581,7 +581,7 @@ a link).
 
 #### T022 — `MEDIUM` — Puppeteer's environment is in the key, and the config is read once (B1, B6 · AC-S11-23)
 
-- [ ] Evidence (seam B, `/tmp/s11-adv-B.md`): `PUPPETEER_EXECUTABLE_PATH=<other browser> make model` → `0 of 25 drawn`;
+- [x] *(done at `b895788`: RED: five steps of the `PUPPETEER_` sweep and the read-once example; the docs sentence was a hold with teeth.)* Evidence (seam B, `/tmp/s11-adv-B.md`): `PUPPETEER_EXECUTABLE_PATH=<other browser> make model` → `0 of 25 drawn`;
   a config swapped between the key and the launch is drawn under the first bytes' key. **RED:** in e6's sweep, a
   `PUPPETEER_` variable set, changed and unset each redraws everything; the stand-in's `launch` receives exactly the
   options the keyed bytes parse to (a config file replaced after the key is computed — through a probe, a fake `open`
@@ -595,7 +595,7 @@ a link).
 
 #### T023 — `LOW` — A browser that stopped is said once, as the browser, and a browser that cannot start says what to do (B4, B3's blame, B2's message, the hand's note 4 · AC-S11-24)
 
-- [ ] Evidence: `kill -9` of the browser mid-window → four `could not draw …: Connection closed.` lines; no sandbox and
+- [x] *(done at `bfb71c5`: RED: four of six; matched on the launch error's text: *No usable sandbox* or `--no-sandbox`, and *Could not find … (ver.*.)* Evidence: `kill -9` of the browser mid-window → four `could not draw …: Connection closed.` lines; no sandbox and
   no config → Chromium's own paragraph, the variable never named unless root; an interrupted install →
   `Could not find chrome-headless-shell` on every run with no word on the prefix. **RED:** the stand-in's browser
   disconnects mid-window (a new fixture variable) → one line saying the browser stopped, no diagram blamed, exit
@@ -609,7 +609,7 @@ a link).
 
 #### T024 — `LOW` — A PNG-only run says the PNG was drawn (the hand's note 1 · AC-S11-25)
 
-- [ ] Evidence (demo): `PNG=1` with nothing else to draw closes `0 of 22 diagrams drawn, 22 unchanged.` though a
+- [x] *(done at `f1d7dae`: RED: four closing lines; `; the PNG was drawn` after the CI clause.)* Evidence (demo): `PNG=1` with nothing else to draw closes `0 of 22 diagrams drawn, 22 unchanged.` though a
   browser ran. **RED:** that run's closing line says the PNG was drawn; AC-S11-13's two lines unchanged without `PNG`.
   **GREEN:** one clause; sweep the closing line's cases (drawn, none, CI, PNG, each with the others).
 
