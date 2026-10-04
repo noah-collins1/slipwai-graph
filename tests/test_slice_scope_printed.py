@@ -107,4 +107,4 @@ class PrintedTest(SliceScopeFixtures):
         repo = self.repo(self.root(), ci={"branch": "main"})
         self.commit(repo, "specs/f/slices/S1/a.md")
         text = self.printed(self.clone(repo, *SHALLOW))
-        self.assertEqual(text.count("git fetch origin main:refs/remotes/origin/main"), 1, text)
+        self.assertEqual(text.count("git fetch origin refs/heads/main:refs/remotes/origin/main"), 1, text)

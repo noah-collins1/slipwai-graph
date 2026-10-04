@@ -93,9 +93,10 @@ pull-request target has only the local promise, and a pull request aimed at anot
 `project.json` reaches.
 
 With no base to compare with, a developer's checkout fails with one line on stderr, of its own and under no
-header, naming the command to run: `git fetch origin <trunk>:refs/remotes/origin/<trunk>` where there is no trunk
-ref (a bare `git fetch origin <trunk>` in a single-branch clone writes only `FETCH_HEAD`, and the check would say
-the same again), `git fetch --unshallow origin` where a shallow clone is too short to reach the branch point. A
+header, naming the command to run: `git fetch origin refs/heads/<trunk>:refs/remotes/origin/<trunk>` where there is
+no trunk ref (a bare `git fetch origin <trunk>` in a single-branch clone writes only `FETCH_HEAD`, and the check
+would say the same again; the branch is named in full so that a tag of the same name is never fetched in its
+place), `git fetch --unshallow origin` where a shallow clone is too short to reach the branch point. A
 header, `a slice branch reaches outside what one slice may touch`, stands only above refused paths and lost
 records, with that line after them. A CI run — a detached pull-request checkout (the branch name in `GITHUB_HEAD_REF` or
 `CI_COMMIT_REF_NAME`, `HEAD` detached) or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — exits 1 and says
@@ -427,11 +428,13 @@ def has_origin() -> bool:
 
 def fetch_command(name: str) -> str | None:
     """The fetch that writes the remote-tracking ref this script looks for: a bare `git fetch origin <name>` in a
-    single-branch clone fetches the commit into `FETCH_HEAD` and no ref, so the gate would say the same again.
+    single-branch clone fetches the commit into `FETCH_HEAD` and no ref, so the gate would say the same again. The
+    source is `refs/heads/<name>`, in full: a short name resolves a tag of the same name before the branch, and the
+    gate would then compare with the tag (D87, F3).
     Printed only for a plain branch name and where a remote called `origin` exists: it is pasted into a shell."""
     if not SAFE_NAME.match(name) or not has_origin():
         return None
-    return f"git fetch origin {name}:refs/remotes/origin/{name}"
+    return f"git fetch origin refs/heads/{name}:refs/remotes/origin/{name}"
 
 
 MASTER_CLAUSE = ("`master` is here too and `project.json` records no trunk — if `master` is the trunk, set "

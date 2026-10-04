@@ -15,7 +15,7 @@ from typing import Any, cast
 import test_slice_scope_base as base_tests
 from test_slice_scope_root import SliceScopeFixtures, git
 
-FETCH = "git fetch origin {0}:refs/remotes/origin/{0}"
+FETCH = "git fetch origin refs/heads/{0}:refs/remotes/origin/{0}"
 FETCH_MAIN = FETCH.format("main")
 LOST = "specs/f/plan.md"
 
@@ -117,7 +117,7 @@ class NoBaseTest(SliceScopeFixtures):
         clone = self.clone(origin, "--no-single-branch", "--branch", "slice/S1")
         git(clone, "update-ref", "-d", "refs/remotes/origin/develop")
         self.assertIn("`ci.branch` names `develop`, which has no branch here", self.run_gate(clone).stdout)
-        self.printed_command(clone, "git fetch origin develop")
+        self.printed_command(clone, "git fetch origin refs/heads/develop")
         after = self.run_gate(clone)
         self.assertEqual(after.returncode, 0, after.stderr)
         self.assertIn("compared with `develop`", after.stdout)

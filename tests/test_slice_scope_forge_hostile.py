@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import subprocess
 import tempfile
 from pathlib import Path
@@ -108,3 +109,25 @@ class SliceScopeForgeHostileTest(SliceScopeFixtures):
         self.addCleanup(directory.cleanup)
         target = "release" if shape == "target older" else "main"
         return pull_request_checkout(origin, "slice/S1", Path(directory.name), base=target), target
+
+    def test_the_printed_fetch_never_takes_a_tag_of_the_trunks_name(self) -> None:
+        """AC-S24-16: the origin has a branch `main` and a tag `main` at the slice's head; the command is run as
+        printed and the gate compares with the branch, so the host change is refused."""
+        origin = self.repo(self.root())
+        self.commit(origin, "Makefile")
+        run(origin, "tag", "main", "slice/S1")
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        clone = Path(directory.name) / "clone"
+        subprocess.run(["git", "clone", "-q", "--single-branch", "--branch", "slice/S1", f"file://{origin}",
+                        str(clone)], check=True, capture_output=True)
+        first = self.run_gate(clone)
+        self.assertEqual(first.returncode, 1, first.stdout + first.stderr)
+        printed = re.search(r"`(git fetch origin [^`]*)`", first.stderr)
+        self.assertIsNotNone(printed, first.stderr)
+        assert printed is not None
+        subprocess.run(shlex.split(printed.group(1)), cwd=clone, check=True, capture_output=True)
+        after = self.run_gate(clone)
+        self.assertEqual(after.returncode, 1, after.stdout + after.stderr)
+        self.assertIn("Makefile", after.stderr)
+        self.assertIn(COMPARED, after.stdout + after.stderr)

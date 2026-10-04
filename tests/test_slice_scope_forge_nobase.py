@@ -155,7 +155,7 @@ class ForgeNoBaseTest(SliceScopeFixtures):
         repo = self.depth_one()
         result = self.run_gate(repo)
         self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertIn("git fetch origin main:refs/remotes/origin/main", result.stderr)
+        self.assertIn("git fetch origin refs/heads/main:refs/remotes/origin/main", result.stderr)
         self.assertNotIn("NOT checked", result.stderr)
         json.loads((repo / "project.json").read_text(encoding="utf-8"))  # the checkout is untouched and readable
         self.assertEqual(subprocess.run(["git", "status", "--porcelain"], cwd=repo, text=True,
