@@ -151,13 +151,13 @@ class RunsTest(StampTestCase):
 
     def test_a_stamp_that_stood_does_not_stand_through_a_run_that_ignores_errors_and_fails(self) -> None:
         """e26 (T019): a stamp for exactly this tree, then `make -i verify` with a check that fails: the checks run, the
-        sub-make exits 0, and no stamp is left for the next plain run to reuse. So for a ratchet run, which judges a
-        tree about to change."""
-        for flags, env in ((["-i"], {}), (["-ik"], {}), (["--ignore-errors"], {}), ([], {"RATCHET_TIGHTEN": "1"})):
-            with self.subTest(" ".join(flags) or "RATCHET_TIGHTEN"):
+        sub-make exits 0, and no stamp is left for the next plain run to reuse. A ratchet run is not among them (D80):
+        it touches nothing, which `RatchetTest` holds."""
+        for flags in (["-i"], ["-ik"], ["--ignore-errors"]):
+            with self.subTest(" ".join(flags)):
                 self.plant_stamp()
                 self.forget_log()
-                run = self.run_gate({"STANDIN_UV_FAIL": "1", **env}, flags)
+                run = self.run_gate({"STANDIN_UV_FAIL": "1"}, flags)
                 self.assertTrue(self.checks(), "the gate did not run: " + run.stdout)
                 self.assertIsNone(self.stamp_path(), "a stamp stood through a run whose check failed")
                 self.forget_log()

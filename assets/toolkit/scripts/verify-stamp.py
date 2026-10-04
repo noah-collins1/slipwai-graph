@@ -507,11 +507,17 @@ def make_flags() -> str:
     return words[0] if words and words[0].isalpha() else ""
 
 
+def ratcheting() -> bool:
+    """Whether this run makes the gate write the tree it judges (`RATCHET_TIGHTEN`): it reads no stamp, writes none and
+    removes none (D80), so a stamp that stood stands."""
+    return bool(os.environ.get(RATCHET_VARIABLE))
+
+
 def declined() -> bool:
-    """Whether this run neither reads nor writes a stamp for what it is, whoever it is run by: under `-n`, `-t` or `-q`
-    the checks do not run, under `-i` a check that fails still lets the run go on and the sub-make exit 0, and a run
-    that makes the gate write the tree it judges (`RATCHET_TIGHTEN`) judges a tree that is about to change."""
-    return bool(os.environ.get(RATCHET_VARIABLE)) or any(letter in make_flags() for letter in DECLINING_FLAGS)
+    """Whether this run writes no stamp for what it is, whoever it is run by: a ratchet run touches nothing (D80); under
+    `-n`, `-t` or `-q` the checks do not run; under `-i` a check that fails still lets the run go on and the sub-make
+    exit 0, so `reuse` removes the stamp that stood, and this run records nothing."""
+    return ratcheting() or any(letter in make_flags() for letter in DECLINING_FLAGS)
 
 
 def idle() -> bool:
@@ -566,9 +572,11 @@ def reuse(options: Options) -> int:
     try:
         if idle() or not eligible():
             return 1
+        if ratcheting():
+            return 1  # a ratchet run reads, writes and removes nothing (D80): a stamp that stood is for a key that passed
         if declined():
-            # `-i` or a ratchet: the checks run and may fail with the run still exiting 0, so no stamp may stand to be
-            # reused afterwards; this run records nothing (`record` declines it too)
+            # `-i`: the checks run and may fail with the run still exiting 0, so no stamp may stand to be reused
+            # afterwards; this run records nothing (`record` declines it too)
             return begin_full_run({NOTHING: True})
         problem = index_problem()
         if problem is not None:
