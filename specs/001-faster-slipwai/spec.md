@@ -1958,3 +1958,51 @@ is `sync`, a *run line* one whose first is `run`.
   and holds its own copy untracked, when `slipwai migrate` runs, then it does not refuse and the file on disk
   afterwards is the factory's — a hold, so the parked question for `migrate` starts from a test it must change;
   held only if the untracked-lock fixture takes an ignore line without a new fixture.
+
+### S33-factory-gate-stamp (method slice)
+
+**Gaps reviewed** 2026-10-04, cruise iteration 14, host (D100, D101): the three examples in `story-split.md` against
+the root `Makefile`, `assets/toolkit/scripts/verify-stamp.py` (its `Options`, `standing()`, `key_parts()`, `ask()`
+and `EXEMPT`), `STAMPED` in `src/slipwai/project/gate.py`, and every reason the factory's suite skips an example.
+Run here, read-only: the script loaded from where it ships answers `standing()` with a stamp allowed on
+`adopt-method` (`project.json` records `ci.branch` `main`), and computes the key over this tree, 204 MB of it
+ignored, in 0.6 s. Found and written back: `make verify TESTS=…` or `SKIP=…` runs a slice of the suite under the
+gate's name, so a stamp written then would let a later full run skip the rest (D100); the suite skips an example
+where `tofu`, `pack`, `docker`, `gh`, `uv`, `node`, `npm`, `go` or `java` is missing, so a stamp keyed on fewer
+tools than the suite looks for could stand after one is installed, and one keyed on a tool this machine lacks is
+never usable (`ask()` cannot ask it) — `pack` and `tofu` are missing here (D100); `sh` answers no version flag
+under dash and is left out (D100); the script runs unchanged from `assets/toolkit/scripts/`, because it finds the
+root through `check-slice-scope.py` beside it and that finds the git top holding `project.json`, so `S32` is not
+owed (D91); the runner's own records are already on the script's exempt list. The root `Makefile` is a control
+the cruise guard refuses an iteration to edit: by D99 the edit is a person's, and the run prepares it as one patch
+a person reads and applies (D101). Not keyed, and said so: whether the npm registry can be reached (four examples
+skip when it cannot), and git's user-level configuration (as S03).
+
+Unless a criterion says otherwise, *the root gate* is `make verify` at this repository's root, *a full run* is one
+in which no stamp is reused, and *a stand-in* is an executable written in the test tree, first on `PATH`, that
+records it was started and exits as the test says.
+
+- **AC-S33-1** — Given a tree the root gate passed, on a branch other than the trunk and with no CI marker set,
+  when `make verify` runs again unchanged, then no check starts, one line says the tree already passed and when,
+  and it exits 0.
+- **AC-S33-2** — Given that pass, when a tracked file, a file git does not ignore, the `Makefile` or a file under
+  `scripts/` changes, then the next `make verify` is a full run.
+- **AC-S33-3** — Given that pass, when `make verify VERIFY_FORCE=1` runs, then every check runs and one line says the
+  run was forced.
+- **AC-S33-4** — Given the trunk checked out, or any of `CI`, `GITHUB_ACTIONS`, `GITLAB_CI` set, when `make verify`
+  runs, then it is a full run and no stamp is read, written or removed.
+- **AC-S33-5** — *Added by D100.* Given `TESTS` or `SKIP` set, when `make verify` runs, then lint, typecheck,
+  check-structure and the named tests run as they do today, and no stamp is read, written or removed.
+- **AC-S33-6** — *Added by D100.* Given a pass, when one of `python3`, `git`, `uv`, `node`, `npm`, `go`, `java`,
+  `docker`, `pack`, `tofu` or `gh` appears on `PATH`, leaves it, or answers another version, or `make` does, then the
+  next `make verify` is a full run; given one of them missing, the stamp is still written and reused.
+- **AC-S33-7** — Given a check that fails, when `make verify` runs, then it exits non-zero, names the failure, writes
+  no stamp, and the next run is a full run.
+- **AC-S33-8** — The root `Makefile` runs `assets/toolkit/scripts/verify-stamp.py` where it ships, unchanged; no copy
+  of it is added to the tree, and nothing a generated project receives changes.
+- **AC-S33-9** — `make lint`, `make typecheck`, `make check-structure`, `make test` and every other target behave as
+  before, `.github/workflows/verify.yml` is unchanged, and `make help` lists `verify` with a line that says a tree
+  that already passed is not judged again.
+- **AC-S33-10** — Each of AC-S33-1 to -7 has an example in the suite that runs the root `Makefile`, copied into a
+  temporary repository with stand-in checks, written as a hold and seen once to have teeth; the factory's own
+  second `make verify` on an unchanged tree is measured at the demo.

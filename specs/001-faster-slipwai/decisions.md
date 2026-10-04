@@ -1917,3 +1917,27 @@
 - **Written to:** `specs/001-faster-slipwai/story-split.md` (the slice's row, its graph row, the order)
 - **Status:** standing
 
+
+## D100 — At S33's gaps stage: what does the factory's stamped gate do with a slice of the suite, and which tools are in its key?
+- **Stage:** 5 slice gaps · **Slice:** S33-factory-gate-stamp · **When:** 2026-10-04T19:00:27Z · **Iteration:** 14
+- **Scope:** S33-factory-gate-stamp
+- **Question:** The root gate takes `TESTS` and `SKIP`, which run a slice of the suite under `make verify`; a stamp written by such a run would let a later full run skip what it never ran. And the factory's suite skips examples where a toolchain is missing, so which tools does the key ask the machine for: every tool the suite looks for (then a machine missing `pack` or `tofu`, as this one is, never reuses), only the ones always present (then installing `tofu` later leaves a pass standing whose skipped examples never ran), or each one the suite looks for that is on `PATH`?
+- **Options:** (a) `TESTS` or `SKIP` set runs the gate as today, reading, writing and removing no stamp; the key asks for each tool the suite looks for that is on `PATH` (`python3`, `git`, `uv`, `node`, `npm`, `go`, `java`, `docker`, `pack`, `tofu`, `gh`) and `make` through `--make`, so a tool arriving or leaving changes the key by its name — **recommended**; (b) key `TESTS` and `SKIP` instead of bypassing, and ask for every tool unconditionally; (c) ask for the tools always present only.
+- **Decision:** (a). `sh` is left out: dash answers no version flag, so asking it would make every run unstampable, and the suite needs a shell to run at all.
+- **Why:** The owner brief's fifth priority — a stamp that could cache a false green is wrong, and tool versions are in its key — and its second: fewer runs of the same check on the same content. (a) is the only option that keeps both on this machine. Keying `TESTS` needs the script's closed variable list to change, which would owe `S32` first (D91) for a run nobody needs stamped.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** the suite starts skipping on a tool not on this list, which then joins it.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S33-5, AC-S33-6)
+- **Status:** standing
+
+## D101 — The root `Makefile` is a control the cruise guard refuses an iteration to edit: how does S33's edit land?
+- **Stage:** 5 slice gaps · **Slice:** S33-factory-gate-stamp · **When:** 2026-10-04T19:00:27Z · **Iteration:** 14
+- **Scope:** S33-factory-gate-stamp
+- **Question:** D99 says the edit to the root `Makefile` is a person's hand or a park naming it, and that the gaps stage asks which without working round the guard. No person is at the wheel to ask now, and `S05-xdist` is ready.
+- **Options:** (a) the run plans the slice and prepares the whole change — the `Makefile`'s lines and the tests that hold them — as one patch under the slice's directory, checked in a scratch worktree, which a person reads and applies with `git apply`; the slice is blocked on that and the run takes `S05-xdist` meanwhile; the next iteration after the patch lands converges, demonstrates and finishes S33 — **recommended**; (b) park the run now on S33 until a person writes the edit; (c) change the guard.
+- **Decision:** (a). The guard and the controls stay as they are; the patch changes nothing in this tree until a person applies it, and applying it is the person's word that the gate may change.
+- **Why:** D99's own terms — the edit is a person's — and the stop table: an input a person must give marks the slice blocked and the run takes the next ready slice, parking only where nothing can move. (b) leaves every ready slice idle; (c) is on the catastrophic list.
+- **Decided by:** host (standing decision D99)
+- **Confidence:** high · **Would reverse if:** the owner would rather write the edit themselves, or have the run wait on S33 before S05.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S33's gaps note); `specs/001-faster-slipwai/story-split.md` (S33's graph row)
+- **Status:** standing
