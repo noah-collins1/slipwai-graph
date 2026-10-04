@@ -42,6 +42,10 @@ class TheGatesPageSaysWhatTheMarkDoes(FactoryTestCase):
             for word in MARK_WORDS:
                 self.assertIn(word, page)
             self.assertIn("`\"parallelSafe\": true`, which every new project has", page)
+            self.assertIn("after the `\"target\"` line", page)
+            self.assertIn("written twice is serial", page)
+            self.assertIn("Only the JSON `true` turns it on", page)
+            self.assertIn("a string `\"true\"` is serial", page)
             for sharing in ("a file", "a port", "a database", "module-level state"):
                 self.assertIn(sharing, page)
 
@@ -95,3 +99,20 @@ class TheFragmentsCatchUpNoteStandsAlone(FactoryTestCase):
         for words in ("-n auto --maxprocesses 4", "pytest-xdist==3.8.0", "integration", "never", "Vitest", "`go test`",
                       "Surefire"):
             self.assertIn(words, text)
+
+    def paragraph(self) -> str:
+        text = (ROOT / "changelog.d/xdist.md").read_text(encoding="utf-8")
+        return squashed([p for p in re.split(r"\n\s*\n", text) if p.startswith("**Catch-up.**")][0])
+
+    def test_the_note_says_where_the_line_goes_and_what_twice_does(self) -> None:
+        """T014: where `generate` writes it, so a later `migrate` meets the same line in the same place."""
+        note = self.paragraph()
+        self.assertIn('right after the `"target"` line', note)
+        self.assertIn("written twice is serial", note)
+
+    def test_the_note_says_what_to_do_when_migrate_stops_on_a_services_lock(self) -> None:
+        """T015: a project with a dependency of its own meets a conflict on `uv.lock`."""
+        note = self.paragraph()
+        for words in ("apps/<service>/uv.lock", "either side", "uv lock --project apps/<service>", "git add",
+                      "commit", "once by hand", "dev dependency of its own"):
+            self.assertIn(words, note)

@@ -15,7 +15,8 @@ MARK = f"""**Tests across cores.** A Python service's gate runs its tests across
 which every new project has, adds `{FLAGS}` (`pytest-xdist`, capped at four workers) to the gate's `pytest` in `make test`,
 `make verify` and the adversarial run, and never to the integration run, whose tests share one database. **A missing mark is serial**,
 and so is `false`, or a file the gate cannot read: a project made before the mark existed has none, and `slipwai migrate` never adds
-one. The gate reads the mark each time it runs, so a change takes effect on the next run with nothing regenerated. Set it `false`
+one. Only the JSON `true` turns it on (a string `"true"` is serial), and a mark written twice is serial, because the gate cannot
+tell which copy is meant: add the line `"parallelSafe": true` once, right after the `"target"` line, where `generate` writes it. The gate reads the mark each time it runs, so a change takes effect on the next run with nothing regenerated. Set it `false`
 when the tests share a file, a port, a database or module-level state, which a second worker would trip over.
 """
 
