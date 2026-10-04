@@ -11,7 +11,7 @@
     "release-constraint": "strong",
     "plan": "strong",
     "tasks": "fast",
-    "implement": "strong",
+    "implement": "fast",
     "converge": "strong",
     "demo": "strong",
     "adversary": "strong",
