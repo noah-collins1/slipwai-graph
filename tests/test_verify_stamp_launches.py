@@ -15,6 +15,8 @@ from pathlib import Path
 from support import FactoryTestCase
 from test_verify_stamp_scan import SHAPES, gate_targets, makefile_rules
 
+from slipwai.assets import ROOT
+
 # Words that are the shell's, not a tool the machine supplies.
 SHELL = {"echo", "cd", "test", "[", "for", "touch", "true", "exit", "continue", "done", "do", "then", "fi", "if"}
 # Launched by a recipe the gate runs and not on the list: the reason is the value.
@@ -47,6 +49,36 @@ def launched(line: str) -> list[str]:
         if parts:
             words.append(parts[0])
     return found + [word for word in words if word not in SHELL and not word.startswith("$") and "=" not in word]
+
+
+# What a shell script a recipe launches reads from the environment — the scan reads Python, not shell, so each such
+# script is named here with its variables, which `Makefile` recipes reach through `./name` (T032, D81).
+# A variable that selects which executable runs, with the tool whose version is asked for it: the stamp must read it.
+SELECTS = {"JAVA_HOME": "java"}
+# A variable that only configures what the script does, with the reason it is no part of the key.
+CONFIGURES = {
+    "MVNW_REPOURL": "where the pinned Maven distribution is downloaded from; its URL and checksum are committed",
+    "MVNW_VERBOSE": "how much the wrapper says",
+    "MVNW_USERNAME": "a credential for that download",
+    "MVNW_PASSWORD": "a credential for that download",
+    "MAVEN_USER_HOME": "where the pinned distribution is cached",
+    "HOME": "where the pinned distribution is cached, by default",
+    "PROCESSOR_ARCHITECTURE": "Windows: whether the pinned distribution is Maven or the Maven daemon",
+    "PROCESSOR_ARCHITEW6432": "Windows: the same",
+}
+# A name the script assigns before it reads, so it is the script's own and the environment selects nothing by it.
+LOCAL = {"TMP_DOWNLOAD_DIR", "MVN_CMD", "JAVACMD", "JAVACCMD", "MAVEN_HOME"}
+READ = re.compile(r"\$\{?([A-Z][A-Z0-9_]*)")
+SHELL_SCRIPT = re.compile(rb"^#!\s*/\S*(?:/env\s+)?(?:ba|da|z)?sh\b")
+
+
+def shell_variables(path: Path) -> set[str]:
+    """The upper-case names a shell script reads."""
+    return set(READ.findall(path.read_text(encoding="utf-8")))
+
+
+def assigned(path: Path, name: str) -> bool:
+    return re.search(rf"(?m)^[ \t]*(?:if\s+|export\s+)?{name}=", path.read_text(encoding="utf-8")) is not None
 
 
 _projects: dict[str, Path] = {}
@@ -94,6 +126,66 @@ class EveryLaunchIsAskedTest(FactoryTestCase):
             self.assertEqual(sorted(self.unasked(project)), ["cargo"])
         finally:
             makefile.write_text(original, encoding="utf-8")
+
+    def shell_scripts(self, project: Path) -> list[Path]:
+        """Every shell script a recipe of the gate launches by path: `./scripts/verify`, `./mvnw` after a `cd`."""
+        rules = makefile_rules((project / "Makefile").read_text(encoding="utf-8"))
+        found: set[Path] = set()
+        for target in gate_targets(rules):
+            for line in rules[target][1]:
+                directories = [project] + [project / cd for cd in CD_TARGET.findall(line)]
+                for word in launched(line):
+                    for directory in directories:
+                        path = directory / word
+                        if word.startswith(("./", "scripts/")) and path.is_file() and SHELL_SCRIPT.match(
+                                path.read_bytes()[:80]):
+                            found.add(path)
+        return sorted(found)
+
+    def unaccounted(self, project: Path, scripts: list[Path]) -> list[str]:
+        """What a shell script reads that is neither a variable that selects the executable, one that only configures
+        it, nor the script's own."""
+        missing = []
+        for path in scripts:
+            for name in sorted(shell_variables(path)):
+                local = name in LOCAL and assigned(path, name)
+                if name not in SELECTS and name not in CONFIGURES and not local:
+                    missing.append(f"{path.relative_to(project).as_posix()}: reads {name}")
+        return missing
+
+    def test_every_shell_script_the_gate_launches_names_the_variables_that_select_what_runs(self) -> None:
+        """T032: the wrapper and each backend's `scripts/verify` do not hold nothing: a variable they read is a choice
+        of executable, which the stamp asks, or a configuration, named with the reason, or the script's own."""
+        selecting: set[str] = set()
+        self.assertTrue(self.shell_scripts(self.project(SHAPES[0])), "the derivation found no shell script")
+        for shape in SHAPES:
+            with self.subTest(shape=shape[0]):
+                project = self.project(shape)
+                scripts = self.shell_scripts(project)
+                self.assertEqual(self.unaccounted(project, scripts), [])
+                for path in scripts:
+                    selecting.update(shell_variables(path) & set(SELECTS))
+                    for name in shell_variables(path) & set(SELECTS):
+                        self.assertIn(SELECTS[name], stamp_tools((project / "Makefile").read_text(encoding="utf-8")))
+        self.assertEqual(sorted(selecting), sorted(SELECTS), "a variable named as selecting that no script reads")
+
+    def test_a_variable_that_selects_what_runs_must_be_read_by_the_stamp(self) -> None:
+        """T032: naming it is not enough; the script that asks the tool reads it."""
+        script = (ROOT / "assets/toolkit/scripts/verify-stamp.py").read_text(encoding="utf-8")
+        for name in SELECTS:
+            self.assertIn(f'os.environ.get("{name}"', script)
+
+    def test_a_variable_a_wrapper_gains_that_selects_what_runs_fails_the_scan(self) -> None:
+        """T032: the derivation has teeth on shell, as `test_a_read_planted_in_each_script` has on Python."""
+        project = self.project(SHAPES[5])
+        wrapper = project / "apps/service/mvnw"
+        original = wrapper.read_text(encoding="utf-8")
+        wrapper.write_text(original + '\n"$JAVA_CMD_OVERRIDE" -version\n', encoding="utf-8")
+        try:
+            found = self.unaccounted(project, self.shell_scripts(project))
+        finally:
+            wrapper.write_text(original, encoding="utf-8")
+        self.assertEqual(found, ["apps/service/mvnw: reads JAVA_CMD_OVERRIDE"])
 
     def test_every_pinned_command_is_still_launched(self) -> None:
         seen: set[str] = set()

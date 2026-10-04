@@ -314,6 +314,17 @@ def history_digest() -> str:
     ])
 
 
+def java_command() -> str:
+    """The JVM the Maven wrapper runs: `JAVA_HOME`'s where that variable is non-empty (the wrapper's own choice, the AIX
+    layout first), else the `java` on `PATH`. The variable's value is a path to a directory and is never in the key or
+    the stamp: what is keyed is the answer the JVM gives."""
+    home = os.environ.get("JAVA_HOME", "")
+    if not home:
+        return "java"
+    aix = os.path.join(home, "jre", "sh", "java")
+    return aix if os.access(aix, os.X_OK) else os.path.join(home, "bin", "java")
+
+
 def ask(tool: str, command: str) -> str:
     """What the key holds of a tool: everything it printed when asked its version, on both streams, as a digest — so a
     notice ahead of the version cannot hide a changed one (D80) — behind the one line a person is shown, the first
@@ -325,7 +336,8 @@ def ask(tool: str, command: str) -> str:
         try:
             child = subprocess.Popen([command, argument], stdin=subprocess.DEVNULL, stdout=out, stderr=err)
         except FileNotFoundError:
-            raise CannotAsk(tool + " is not on PATH")
+            raise CannotAsk(tool + (" is not where JAVA_HOME names it" if tool == "java" and command != tool
+                                    else " is not on PATH"))
         except OSError as error:
             raise CannotAsk(tool + " cannot be started (" + str(error) + ")")
         try:
@@ -366,7 +378,7 @@ def machine_tools(options: Options) -> dict[str, str]:
     The recipe names them; this script holds no list of its own."""
     tools = {}
     for tool in options.tools:
-        tools[tool] = ask(tool, options.make if tool == "make" else tool)
+        tools[tool] = ask(tool, options.make if tool == "make" else java_command() if tool == "java" else tool)
     for environment in options.environments:
         tools["interpreter " + environment] = interpreter(environment)
     return tools

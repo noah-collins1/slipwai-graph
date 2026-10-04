@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 import shutil
 import unittest
+from pathlib import Path
 
 from stamp_fixture import CLOSING, StampTestCase, template
 
@@ -239,3 +240,81 @@ class CannotAskTest(StampTestCase):
         """e17: unreadable as what it must be."""
         (self.repo / "apps/service/.venv/pyvenv.cfg").write_text("home = /usr/bin\n", encoding="utf-8")
         self.cannot("pyvenv.cfg")
+
+
+JAVA = """#!/bin/sh
+printf '%s\\t%s\\n' "{name}" "$*" >> "$STANDIN_LOG"
+echo 'openjdk version "{version}"' >&2
+"""
+
+
+class TheJvmTheWrapperRunsTest(StampTestCase):
+    """T032 (AC-S03-14, -17): `JAVA_HOME`'s JVM where that variable is non-empty, else the `java` on `PATH` — the one
+    the Maven wrapper runs. The fixture is a Python project with `java` added to what its recipe asks."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        makefile = self.repo / "Makefile"
+        text = makefile.read_text(encoding="utf-8").replace("VERIFY_STAMP :=", "VERIFY_STAMP := --tool java", 1)
+        makefile.write_text(text, encoding="utf-8")
+        self.install(self.bin, "path-java", "21.0.1")
+
+    def install(self, directory: Path, name: str, version: str) -> Path:
+        directory.mkdir(parents=True, exist_ok=True)
+        java = directory / "java"
+        java.write_text(JAVA.format(name=name, version=version), encoding="utf-8")
+        java.chmod(0o755)
+        return directory
+
+    def home(self, name: str, version: str) -> str:
+        return str(self.install(self.bin.parent / name / "bin", f"{name}-java", version).parent)
+
+    def asked_java(self) -> list[str]:
+        lines = self.log.read_text(encoding="utf-8").splitlines()
+        return [line.split("\t")[0] for line in lines if line.endswith("\t-version")]
+
+    def test_a_java_home_that_reports_another_version_than_the_one_on_the_path_runs_the_gate(self) -> None:
+        self.assertEqual(self.run_gate().returncode, 0)
+        self.forget_log()
+        self.run_gate()
+        self.assertEqual(self.checks(), [], "the same JVM was not reused")
+        self.forget_log()
+        other = self.home("jdk17", "17.0.9")
+        self.run_gate({"JAVA_HOME": other})
+        self.assertTrue(self.checks(), "a JAVA_HOME naming another JVM was reused")
+        self.assertEqual(self.asked_java(), ["jdk17-java"], "the wrapper's JVM is the one asked, and only it")
+        self.forget_log()
+        self.run_gate({"JAVA_HOME": other})
+        self.assertEqual(self.checks(), [], "the new stamp was not written")
+
+    def test_an_empty_java_home_asks_the_one_on_the_path(self) -> None:
+        self.run_gate({"JAVA_HOME": ""})
+        self.assertEqual(self.asked_java(), ["path-java"])
+
+    def test_the_value_of_java_home_is_in_neither_the_key_nor_the_stamp(self) -> None:
+        """A directory with the same answer from another place is not a change; and no file holds the path."""
+        first, second = self.home("jdk-a", "17.0.9"), self.home("jdk-b", "17.0.9")
+        self.run_gate({"JAVA_HOME": first})
+        key = self.stamp()["key"]
+        self.forget_log()
+        self.run_gate({"JAVA_HOME": second})
+        self.assertEqual(self.checks(), [], "a moved directory with the same JVM ran the gate")
+        self.assertEqual(self.stamp()["key"], key)
+        for path in (self.repo / ".git" / "slipwai").iterdir():
+            text = path.read_text(encoding="utf-8")
+            for home in (first, second):
+                self.assertNotIn(home, text, path.name)
+
+    def test_a_java_home_whose_jvm_cannot_be_launched_is_the_case_of_a_tool_that_cannot_be_asked(self) -> None:
+        """AC-S03-17: the full gate, one line naming java, no stamp — though `java` on `PATH` answers."""
+        nowhere = self.bin.parent / "no-jdk"
+        nowhere.mkdir()
+        run = self.run_gate({"JAVA_HOME": str(nowhere)})
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertTrue(self.checks(), "no check started")
+        lines = self.reuse_lines(run)
+        self.assertEqual(len(lines), 1, run.stdout[:400])
+        self.assertIn("java", lines[0])
+        self.assertIn("records nothing", lines[0])
+        self.assertNotIn(str(nowhere), lines[0])
+        self.assertIsNone(self.stamp_path())

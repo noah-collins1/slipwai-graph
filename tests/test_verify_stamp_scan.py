@@ -34,7 +34,9 @@ NOT_SCANNED = {
     "scripts/event-model/render-drawio.ts": "`check-drawio`: reads docs/event-model/model.yaml and compares the"
     " committed model.drawio, both tracked, and the model tooling whose installed manifest is on the list",
     "scripts/verify": "the shell runner of `lint`, `typecheck` and `test` per backend: it launches the project's"
-    " own tools and syncs `.venv` from the lock on every run, and reads no path a gate script names",
+    " own tools and syncs `.venv` from the lock on every run, and reads no path a gate script names; the variables"
+    " it and the Maven wrapper read are named in `test_verify_stamp_launches`, each deciding which tool is asked or"
+    " configuring one",
 }
 # Launched by a recipe the gate runs, and not an input: the stamp is the thing that reads the lists.
 THE_STAMP = "scripts/verify-stamp.py"
