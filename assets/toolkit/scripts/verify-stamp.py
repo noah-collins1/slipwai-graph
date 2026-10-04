@@ -484,8 +484,9 @@ def eligible() -> bool:
     it was. Asked by both verbs, so a `record` that follows a run that could not read writes nothing either."""
     if any(os.environ.get(marker) for marker in CI_MARKERS):
         return False
-    branch = git_or_nothing("symbolic-ref", "-q", "--short", "HEAD").decode("utf-8", "surrogateescape").strip()
-    return bool(branch) and branch != trunk_name()
+    # the full ref name, never `--short`: git shortens `refs/heads/main` to `heads/main` once a tag `main` exists
+    ref = git_or_nothing("symbolic-ref", "-q", "HEAD").decode("utf-8", "surrogateescape").strip()
+    return bool(ref) and ref != "refs/heads/" + trunk_name()
 
 
 def forced_reason(options: Options) -> str | None:

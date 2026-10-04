@@ -109,6 +109,36 @@ class WhereTest(StampTestCase):
         git(self.repo, "checkout", "-q", "main")
         self.assert_reads()
 
+    def test_a_tag_with_the_trunks_name_does_not_make_the_trunk_a_branch(self) -> None:
+        """e21 (T025, D74 R2): git shortens `refs/heads/main` to `heads/main` once a tag `main` exists; the trunk
+        is read by its full ref name, so it still reads and writes no stamp."""
+        git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "tag", "main")
+        self.assert_untouched()
+
+    def test_a_tag_with_the_name_of_master_as_the_trunk_does_not_make_it_a_branch(self) -> None:
+        """e21 (T025, D33): the same where `master` is the trunk."""
+        git(self.repo, "branch", "-m", "main", "master")
+        git(self.repo, "checkout", "-q", "master")
+        git(self.repo, "tag", "master")
+        self.assert_untouched()
+
+    def test_a_tag_with_the_recorded_trunks_name_does_not_make_it_a_branch(self) -> None:
+        """e21 (T025, D30): the same where `ci.branch` names the trunk."""
+        record = self.repo / "project.json"
+        document = json.loads(record.read_text(encoding="utf-8"))
+        document.setdefault("ci", {})["branch"] = "develop"
+        record.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+        git(self.repo, "checkout", "-q", "-b", "develop")
+        git(self.repo, "tag", "develop")
+        self.assert_untouched()
+
+    def test_a_tag_named_like_a_branch_that_is_not_the_trunk_still_reads_the_stamp(self) -> None:
+        """e22 (T025): a topic branch with a tag of its name is a branch like any other."""
+        git(self.repo, "checkout", "-q", "-b", "fix/y")
+        git(self.repo, "tag", "fix/y")
+        self.assert_reads()
+
     def test_a_detached_head_reads_and_writes_no_stamp(self) -> None:
         """e21: no branch is checked out."""
         git(self.repo, "checkout", "-q", "--detach")
