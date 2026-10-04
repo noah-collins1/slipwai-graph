@@ -24,7 +24,7 @@ at a branch other than the trunk is held only as far as `project.json` reaches.
 **Catch-up.** `slipwai migrate` carries the corrected script; nothing else in a repository changes. Two things you
 may see afterwards. On a developer's machine, a slice branch with no trunk to compare with — no `main` ref, or a
 shallow clone too short to reach the branch point — used to pass as "nothing to hold"; it now fails with a
-single line that names the command to run (`git fetch origin <trunk>:refs/remotes/origin/<trunk>`, or
+single line that names the command to run (`git fetch origin refs/heads/<trunk>:refs/remotes/origin/<trunk>`, or
 `git fetch --unshallow origin`); the longer form is there because a bare `git fetch origin <trunk>` in a
 single-branch clone leaves no ref for the check to find. In any CI run with no trunk to compare with — a
 checkout of one commit, or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — the check says on stderr that
