@@ -352,3 +352,21 @@ Findings: eight, none `CRITICAL` on this log's scale. What held: tags and branch
 | B2 | B | MEDIUM | On a checkout of the branch's own tip, an expand squash-merged to the trunk and its contract on the same branch, not merged with the trunk, is refused (GitLab assumed; not present on GitHub's merge commit) | confirmed in the built checkout; the forge's behaviour assumed | stated in the fragment's catch-up (`bcd66dc`) and held by a test (`4182248`); `S31-gates-read-recorded-trunk` (D87) |
 | B3 | B | LOW | A pull request that restores by `git revert` an expand and its contract removed in one commit is refused as new in the same change | confirmed; older rule, newly red in CI | declined here — Parking Lot (D87) |
 | B4 | B | LOW | `delivery_workflow()` writes the trunk's name unquoted into `branches: [...]`: a trunk named `a,b`, `1.0`, `true` parses to something else, `x]` is a YAML error, and `adopt` exits 0 | confirmed; older than the slice, not in its diff | declined here — Parking Lot (D87, D39) |
+
+## S04 · a7da5f0 · 2026-10-04
+
+Slice `S04-parallel-gate` (cruise iteration 13), diff `3f44288..a7da5f0`: `src/slipwai/project/parallel_gate.py` (new: the
+sync target, `check-python` first, the gate-only order, the page), `gate.py` (the recipe: output grouping, the order
+variable, the failed run's line), `makefile.py`, `languages/python.py` (`--synced`), `backends.py`, `integration.py`,
+`openapi.py`, `shared_packages.py`, `adopted_targets.py` (the guarded serial directive), `model_targets.py` (one file
+target, `npm ci`, the skip line, the recipe's own marker), `assets/toolkit/scripts/event-model/package-lock.json` (new),
+two shipped texts, one fragment, a test helper and nineteen test modules.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | A generated project's `make` goals and flags (`-j`, `-k`, `-n`, `-O`, several goals) as inputs to the gate's recipe in `src/slipwai/project/gate.py`; the second argument of the generated `scripts/verify` (`src/slipwai/project/languages/python.py`). The S03 row attacked the stamp's recipe under make's modes as it then was, serial |
+| driven adapter or the provider types behind one | widened | What the gate asks npm for the model tooling: `npm ci` from a shipped lock behind a file target with a marker of the recipe's own (`src/slipwai/project/model_targets.py`), where it was `npm install` on every run; `slipwai migrate` carrying the lock into a project that has a file there |
+| authorisation decision (who can reach one that already exists) | not present | The diff decides nothing about who may do what |
+| concurrency, idempotency, ordering, retention, or time | widened | The slice's claim: under `-j` the gate gives the serial verdict, a writer never runs beside its reader, each service syncs once, one install serves several goals, a pass under `-j` and a serial pass share one stamp, an adopted gate started on its own Makefile is serial (`src/slipwai/project/parallel_gate.py`, `src/slipwai/project/adopted_targets.py`) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
