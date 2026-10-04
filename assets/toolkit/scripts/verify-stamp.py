@@ -136,6 +136,8 @@ VERSION_WORD = re.compile(r"v?[0-9]+(?:\.[0-9]+)+(?:[-+_]?[A-Za-z]{1,6}[0-9]{0,3
 SHOWN_WORDS = 4
 VERSION_ARGUMENTS = {"go": "version", "java": "-version"}
 CANNOT_LINE = "verify: the full gate runs and this run records nothing — {reason}"
+# The instant of a pass exactly as `record` writes it and the reuse line prints it: UTC, to the second.
+INSTANT = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
 NOTHING = "nothing"
 FORCE_VARIABLE = "VERIFY_FORCE"
 # `make ci` is the extended gate: it runs every check, whatever a stamp says.
@@ -185,15 +187,24 @@ class Options:
                 getattr(self, name).append(value)
 
 
+def reason_of(stderr: bytes) -> str:
+    """Git's reason on a line: the first of its lines that is not empty, with control characters escaped, so that a
+    reason of several lines is one line and a word of git's cannot forge another."""
+    for line in stderr.decode("utf-8", "replace").splitlines():
+        if line.strip():
+            return shown(line)
+    return ""
+
+
 def git(*args: str) -> bytes:
     try:
         done = subprocess.run(["git", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
     except FileNotFoundError:
         raise CannotTell("git is not on PATH")
     except OSError as error:
-        raise CannotTell("git cannot be started (" + str(error) + ")")
+        raise CannotTell("git cannot be started (" + shown(str(error)) + ")")
     if done.returncode != 0:
-        raise CannotTell("git " + " ".join(args) + ": " + done.stderr.decode("utf-8", "replace").strip())
+        raise CannotTell("git " + " ".join(args) + ": " + reason_of(done.stderr))
     return done.stdout
 
 
@@ -205,11 +216,11 @@ def git_or_nothing(*args: str) -> bytes:
     except FileNotFoundError:
         raise CannotTell("git is not on PATH")
     except OSError as error:
-        raise CannotTell("git cannot be started (" + str(error) + ")")
+        raise CannotTell("git cannot be started (" + shown(str(error)) + ")")
     if done.returncode == 1 and not done.stderr:
         return b""
     if done.returncode != 0:
-        raise CannotTell("git " + " ".join(args) + ": " + done.stderr.decode("utf-8", "replace").strip())
+        raise CannotTell("git " + " ".join(args) + ": " + reason_of(done.stderr))
     return done.stdout
 
 
@@ -431,7 +442,7 @@ def ask(tool: str, command: str) -> str:
             raise CannotAsk(tool + (" is not where JAVA_HOME names it" if tool == "java" and command != tool
                                     else " is not on PATH"))
         except OSError as error:
-            raise CannotAsk(tool + " cannot be started (" + str(error) + ")")
+            raise CannotAsk(tool + " cannot be started (" + shown(str(error)) + ")")
         try:
             code = child.wait(timeout=ASK_TIMEOUT)
         except subprocess.TimeoutExpired:
@@ -455,12 +466,12 @@ def interpreter(environment: str) -> str:
         with open(path, "r", encoding="utf-8") as handle:
             lines = handle.read().splitlines()
     except OSError as error:
-        raise CannotAsk("cannot read " + path + " (" + (error.strerror or str(error)) + ")")
+        raise CannotAsk("cannot read " + shown(path) + " (" + (error.strerror or str(error)) + ")")
     for line in lines:
         name, _, value = line.partition("=")
         if name.strip() == "version_info" and value.strip():
             return value.strip()
-    raise CannotAsk(path + " does not record the interpreter's version_info")
+    raise CannotAsk(shown(path) + " does not record the interpreter's version_info")
 
 
 def machine_tools(options: Options) -> dict[str, str]:
@@ -512,13 +523,14 @@ def build_key(tools: dict[str, str]) -> dict[str, object]:
 
 
 def stamp_directory() -> str:
-    return os.path.join(git("rev-parse", "--absolute-git-dir").decode("utf-8").strip(), "slipwai")
+    """Under the git directory, whose name is git's answer with exactly one line feed taken off and nothing else: a name
+    that ends or begins in whitespace is its own."""
+    return os.path.join(os.fsdecode(git("rev-parse", "--absolute-git-dir").removesuffix(b"\n")), "slipwai")
 
 
 def project_name() -> str:
     """Which project of the repository this is: a digest of where it sits, so the file holds no path."""
-    prefix = git("rev-parse", "--show-prefix").decode("utf-8").strip()
-    return hashlib.sha256(prefix.encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(project_prefix()).hexdigest()[:16]
 
 
 def stamp_path() -> str:
@@ -557,6 +569,9 @@ def read_stamp(path: str) -> dict[str, object] | None:
         return None
     if not isinstance(stamp, dict) or any(field not in stamp for field in FIELDS) or stamp["result"] != "pass":
         return None
+    passed = stamp["passed"]
+    if not isinstance(passed, str) or not INSTANT.fullmatch(passed):
+        return None  # a stamp is shown by its instant, so an instant that is not the shape `record` writes is no stamp
     return stamp
 
 
@@ -640,7 +655,7 @@ def standing() -> tuple[bool, str | None]:
     if any(os.environ.get(marker) for marker in CI_MARKERS):
         return False, None
     # the full ref name, never `--short`: git shortens `refs/heads/main` to `heads/main` once a tag `main` exists
-    ref = git_or_nothing("symbolic-ref", "-q", "HEAD").decode("utf-8", "surrogateescape").strip()
+    ref = git_or_nothing("symbolic-ref", "-q", "HEAD").removesuffix(b"\n").decode("utf-8", "surrogateescape")
     if not ref.startswith("refs/heads/") or not git_or_nothing("rev-parse", "-q", "--verify", "HEAD"):
         return False, None
     named, problem = trunk_problem()
@@ -691,14 +706,17 @@ def idle() -> bool:
     return any(letter in make_flags() for letter in IDLE_FLAGS)
 
 
-def remove_stamp() -> str | None:
-    """The stamp, gone before the first check starts, so that after a run that failed or was killed there is none.
-    Whatever stands at its path is removed as itself: a regular file, a link (never what it points to) or a FIFO by
-    unlinking, an empty directory by `rmdir`; a directory with something in it is not emptied, it is named. None where
-    it is gone or was never there; else why it could not be, naming what to delete."""
-    path = stamp_path()
-    if os.path.islink(os.path.dirname(path)):
+def remove_own(path: str) -> str | None:
+    """One of this script's own files, gone before the first check starts, so that after a run that failed or was
+    killed there is none. Whatever stands at its path is removed as itself: a regular file, a link (never what it
+    points to) or a FIFO by unlinking, an empty directory by `rmdir`; a directory with something in it is not emptied,
+    it is named. A file where the factory's directory should be is named as that file. None where it is gone or was
+    never there; else why it could not be, naming what to delete."""
+    directory = os.path.dirname(path)
+    if os.path.islink(directory):
         return None  # what is behind a link is not ours to remove; `write_file` replaces the link itself
+    if os.path.lexists(directory) and not os.path.isdir(directory):
+        return "cannot use " + shown(directory) + " (it is a file, not a directory); delete that file"
     kind = "file"
     try:
         if stat.S_ISDIR(os.lstat(path).st_mode):
@@ -709,8 +727,13 @@ def remove_stamp() -> str | None:
     except FileNotFoundError:
         return None
     except OSError as error:
-        return "cannot remove " + path + " (" + (error.strerror or str(error)) + "); delete that " + kind
+        return "cannot remove " + shown(path) + " (" + (error.strerror or str(error)) + "); delete that " + kind
     return None
+
+
+def remove_stamp() -> str | None:
+    """The stamp, gone before the first check starts (`remove_own`)."""
+    return remove_own(stamp_path())
 
 
 def begin_full_run(note: dict[str, object], token: str, forced: str | None = None, cannot: str | None = None) -> int:
@@ -720,7 +743,7 @@ def begin_full_run(note: dict[str, object], token: str, forced: str | None = Non
     key cannot be built (`cannot`, the run records nothing), the stamp cannot be removed (it names the file to delete,
     and the run records nothing), the run was forced. Exits non-zero, so the recipe runs every check."""
     try:
-        reason = remove_stamp()
+        reason = remove_stamp() or remove_own(pending_path())
     except CannotTell:
         reason = None  # git cannot say where a stamp would be, so there is none to remove and none to write
     if cannot is None and reason is not None:
@@ -801,14 +824,16 @@ def why_no_note() -> str | None:
     """Why `reuse` left no note of the key, found by trying to leave one; None where a stamp that could not be removed
     stands (`reuse` named it already) and where nothing says why."""
     path = pending_path()
-    if os.path.lexists(stamp_path()):
-        return None
+    directory = os.path.dirname(path)
+    if os.path.lexists(stamp_path()) or (os.path.lexists(directory) and not os.path.isdir(directory)) or (
+            os.path.isdir(path) and not os.path.islink(path)):
+        return None  # a stamp or a note that could not be removed, or a file where the directory goes: `reuse` named it
     try:
         ensure_directory(os.path.dirname(path))
         with tempfile.TemporaryFile(dir=os.path.dirname(path)):
             pass
     except OSError as error:
-        return "cannot write " + os.path.dirname(path) + " (" + (error.strerror or str(error)) + ")"
+        return "cannot write " + shown(os.path.dirname(path)) + " (" + (error.strerror or str(error)) + ")"
     return "the key from before the checks was not kept"
 
 
@@ -852,7 +877,7 @@ def record(options: Options) -> int:
     try:
         write_file(stamp_path(), json.dumps(stamp, indent=2, sort_keys=True) + "\n")
     except OSError as error:
-        return not_recorded("cannot write " + stamp_path() + " (" + (error.strerror or str(error)) + ")")
+        return not_recorded("cannot write " + shown(stamp_path()) + " (" + (error.strerror or str(error)) + ")")
     try:
         os.remove(pending_path())
     except OSError:

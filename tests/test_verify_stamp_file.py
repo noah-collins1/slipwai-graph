@@ -196,17 +196,22 @@ class FileTest(StampTestCase):
         self.assertFalse(note.exists() or note.is_symlink(), "the note was left behind")
         self.assertEqual(len([line for line in run.stdout.splitlines() if "not recorded" in line]), 0, run.stdout)
 
-    def test_a_directory_at_the_note_path_is_a_pass_not_recorded(self) -> None:
-        """e28: nothing can be renamed onto it; the run says the pass was not recorded and exits as the gate did."""
+    def test_a_directory_with_something_in_it_at_the_note_path_is_named_and_the_run_records_nothing(self) -> None:
+        """e28, brought to AC-S03-36 (an empty one is removed as itself, `test_verify_stamp_exact`): nothing can be
+        renamed onto it and it is not emptied, so one line names the directory to delete and the gate's exit stands."""
         self.assertEqual(self.gate().returncode, 0)
         path = self.stamp_path()
         assert path is not None
         note = path.with_suffix(".pending")
         note.mkdir()
+        (note / "keep").write_text("", encoding="utf-8")
         (self.repo / "moved.txt").write_text("moved\n", encoding="utf-8")
         run = self.gate()
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
-        self.assertEqual(len([line for line in run.stdout.splitlines() if "not recorded" in line]), 1, run.stdout)
+        lines = [line for line in run.stdout.splitlines() if note.name in line]
+        self.assertEqual(len(lines), 1, run.stdout)
+        self.assertIn("delete that directory", lines[0])
+        self.assertIsNone(self.stamp_path(), "a run that could not leave its note recorded a pass")
 
     def test_a_stamp_of_any_age_is_reused_and_its_instant_shown(self) -> None:
         """e27: ten years old, still reused: the instant is shown and never compared."""
