@@ -15,9 +15,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from parallel_gate import ROOT, ParallelGateTestCase, log_lines, log_text, run_lines, sync_lines
+from parallel_gate import ROOT, SHAPES, ParallelGateTestCase, log_lines, log_text, run_lines, sync_lines
 from test_verify_stamp_pinned import gate_prerequisites
 from test_verify_stamp_scan import makefile_rules
+
+from slipwai.project import model_targets
+from slipwai.project.shared_packages import NODE_DEPS
 
 sys.dont_write_bytecode = True
 
@@ -122,6 +125,71 @@ class SerialOrderTest(FirstTestCase):
         last_script = max(i for i, a in enumerate(lines) if a.startswith("python3 scripts/check-"))
         self.assertLess(order[0], first_script, "lint and typecheck did not run before the check scripts")
         self.assertGreater(order[-1], last_script, "test did not run last")
+
+
+# An npm workspace, a browser app and the event profile: the root's `npm ci` and the model tooling's are in the gate.
+SHAPES["ts-event"] = ("--profile", "event-modelling", "--backend", "typescript", "--frontend", "react-vite")
+# `npm`, as a gate recipe calls it: logged, and leaving the directory a marker would be in.
+NPM = """#!/bin/sh
+printf 'start\\tnpm %s\\n' "$*" >> "$STANDIN_LOG"
+d=.; [ "$1" = --prefix ] && d=$2
+mkdir -p "$d/node_modules"
+"""
+
+
+class InstallWaitsTest(FirstTestCase):
+    """G2 (AC-S04-72, -73): under the gate nothing installs before `check-python` has answered; typed alone, nothing
+    waits for it. `build-packages` builds the shape's `api-client` package, so that its start is a logged `npm` call."""
+
+    SHAPE = "ts-event"
+
+    def setUp(self) -> None:
+        super().setUp()
+        (self.bin / "npm").write_text(NPM, encoding="utf-8")
+
+    def install(self) -> None:
+        """The tree as an earlier install left it: both markers, newer than the manifests they came from."""
+        for marker in (self.repo / NODE_DEPS, self.repo / model_targets.MARKER):
+            marker.parent.mkdir(parents=True, exist_ok=True)
+            marker.touch()
+
+    def npm_starts(self) -> list[str]:
+        return [a for e, a in log_lines(self.log) if e == "start" and a.startswith("npm ")]
+
+    def test_e5_an_older_python_starts_no_npm_beside_check_python_on_a_fresh_tree(self) -> None:
+        """AC-S04-72 (fails before G2): the root's `npm ci`, the model tooling's and `build-packages` wait for it."""
+        done = self.under_older_python("-j", "verify")
+        self.assertNotEqual(done.returncode, 0)
+        self.assertIn("is Python 3.9.6", done.stderr)
+        self.assertEqual(self.npm_starts(), [], log_text(self.log))
+
+    def test_e5_an_older_python_starts_no_build_on_an_installed_tree(self) -> None:
+        """AC-S04-72, installed: `build-packages` is a phony target and would start beside `check-python`."""
+        self.install()
+        done = self.under_older_python("-j", "verify")
+        self.assertNotEqual(done.returncode, 0)
+        self.assertEqual(self.npm_starts(), [], log_text(self.log))
+
+    def test_e6_a_newer_python_on_an_installed_tree_runs_no_npm_ci(self) -> None:
+        """HOLD (AC-S04-73): the order-only prerequisite does not make the markers out of date, serial or `-j`.
+        Teeth: a `check-python` ordinary prerequisite of the marker reinstalls on every run."""
+        self.install()
+        for flags in ((), ("-j",)):
+            with self.subTest(flags=flags):
+                self.forget_log()
+                # Run on through a check the stand-ins cannot satisfy (`-k`): the question is what installed.
+                self.make(*flags, "-k", "verify", env={"VERIFY_FORCE": "1"})
+                self.assertIn("npm --workspace packages/api-client run build --if-present", self.npm_starts())
+                self.assertEqual([a for a in self.npm_starts() if " ci" in a], [], log_text(self.log))
+
+    def test_e6_a_target_typed_alone_does_not_run_check_python(self) -> None:
+        """HOLD (AC-S04-73): `make build-packages` and `make dev-web` name no `check-python`. Teeth: put the line
+        outside the gate's conditional."""
+        for target in ("build-packages", "dev-web"):
+            with self.subTest(target=target):
+                out = self.make("-n", target).stdout
+                self.assertIn("npm", out)
+                self.assertNotIn("sys.version_info", out)
 
 
 class SpecifyTest(FirstTestCase):

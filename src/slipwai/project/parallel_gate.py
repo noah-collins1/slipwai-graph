@@ -18,8 +18,10 @@ import re
 from ..services import App, services_of
 from ..tooling import verify_path
 from .gate import FAILED
+from .model_targets import MARKER as MODEL_MARKER
 from .native_commands import STEP, steps
 from .openapi import exporting
+from .shared_packages import NODE_DEPS, node_workspace
 
 SYNC = "sync"
 FIRST = "check-python"
@@ -106,15 +108,18 @@ def python_first(stamped: bool, dependencies: str) -> str:
     In a serial run nothing moves, because it leads the list already; under `-j` an older `python3` is named before the
     sync or any check starts. `check-openapi`, which is not in `dependencies` (it hangs on the gate inside its
     transport's markers), names it on its own target line (`openapi.openapi_targets`), and `sync` on its own. The
-    root's `npm ci` file target and the model tooling's are not checks and do not: a file target that depended on a
-    phony one would reinstall on every run. Nothing where the gate is not the stamped one — an adopted repository's runs
-    serially whatever `-j` says (D88) and its rule is pinned byte for byte, `ci: verify` following it.
+    root's `npm ci` file target and the model tooling's are not checks and name it differently: after a `|`, as an
+    order-only prerequisite, which makes a file target wait without making it out of date (an ordinary prerequisite on
+    a phony target would reinstall on every run). That line is `gate_order`'s, inside the gate's own conditional, so a
+    marker reached any other way — `make build-packages`, `make dev-web` — is what it was. Nothing where the gate is
+    not the stamped one — an adopted repository's runs serially whatever `-j` says (D88) and its rule is pinned byte
+    for byte, `ci: verify` following it.
     """
     waiting = [word for word in dependencies.split() if word != FIRST]
     return f"{' '.join(waiting)}: {FIRST}\n" if stamped and waiting else ""
 
 
-def gate_order(stamped: bool, apps: list[App]) -> str:
+def gate_order(stamped: bool, apps: list[App], event: bool = False) -> str:
     """The order the gate's own sub-make gives the native checks, only where `VERIFY_ORDER` came from make's command
     line (`$(origin)`, which 3.81 has), so that a target typed alone is what it was whatever a shell exports: only the
     gate's recipe hands its sub-make the variable.
@@ -125,16 +130,24 @@ def gate_order(stamped: bool, apps: list[App]) -> str:
     service `typecheck` and `test` wait for `lint` and run together after it: the order a serial run always had (D96).
     A project with both takes the Java chain, which covers Go.
     Python and TypeScript need neither: after the sync and the root's install their checks write only their own caches.
-    Nothing where the gate is not the stamped one, which is serial.
+    One more line, in the same conditional: the root's install marker, and the model tooling's where the project has the
+    event profile, take `check-python` as an order-only prerequisite (D96), so that under `-j` no `npm ci` and no
+    `build-packages` starts beside a `python3` that is too old. Nothing where the gate is not the stamped one, which is
+    serial.
     """
     languages = {service.language for service in services_of(apps)}
     if not stamped:
         return ""
+    rules = ""
     if "java" in languages:
         rules = "typecheck: lint\ntest: typecheck\n"
     elif "go" in languages:
         rules = "typecheck test: lint\n"
-    else:
+    installs = [name for name, there in ((NODE_DEPS, node_workspace(apps)), (MODEL_MARKER, event)) if there]
+    if installs:
+        rules += f"{' '.join(installs)}: | {FIRST}\n"
+    if not rules:
         return ""
     condition = "ifeq ($(origin VERIFY_ORDER),command line)"
-    return f"# Under the gate the checks that share a build directory run one after another.\n{condition}\n{rules}endif\n"
+    return (f"# Under the gate the checks that share a build directory run one after another, and no install starts "
+            f"before `{FIRST}` has answered.\n{condition}\n{rules}endif\n")

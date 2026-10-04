@@ -330,4 +330,4 @@ audit: ## Run the ecosystem-native dependency vulnerability audit
 
 .PHONY: verify ci
 {verify_target}
-{python_first(gate_name == "verify-checks", verify_dependencies)}{gate_order(gate_name == "verify-checks", apps)}{document_gate}{ci_targets}{production_section}{adoption_targets(apps, layout)}"""
+{python_first(gate_name == "verify-checks", verify_dependencies)}{gate_order(gate_name == "verify-checks", apps, event)}{document_gate}{ci_targets}{production_section}{adoption_targets(apps, layout)}"""
