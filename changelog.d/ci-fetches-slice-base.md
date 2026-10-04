@@ -37,15 +37,13 @@ you the change), or a pipeline of your own. There — in any CI job that runs `m
 history: add `fetch-depth: 0` under the checkout's `with:` (on GitLab, `GIT_DEPTH: "0"` under the job's
 `variables:`). Where `adopt` writes no CI configuration, its report now says the job needs a full clone with the
 trunk's branch fetched. An open pull request that carries an expand with its contract, or a new flag seeded other
-than `off`, goes red on its next run and is fixed as above.
-
-**Where the trunk is not `main` or `master`** and the repository still has a branch of either name — a release
-branch, or one left behind by a rename — `check-migrations`, and `check-flags` where a project has it, compare with
-that branch in CI, as `make verify` already does on a full clone. Everything the trunk has that the old branch does
-not counts as new, on a push to the trunk and on every pull request: an expand and its contract that both landed
-since that branch are refused, and so is a flag declared since it and seeded other than `off`. If the branch is
-left over, delete it on the remote. If it is your release branch, land the contract once the expand has reached it.
-Nothing in `project.json` changes this yet.
-
-A repository with a long history pays the full fetch on that one job, on every run. No setting, flag or file is
-added.
+than `off`, goes red on its next run, because `check-migrations` and `check-flags` now have the trunk to compare
+with in CI: land the expand first and the contract in a later pull request, or seed the new flag `off`. Where the
+trunk is not `main` or `master` and the repository still has a branch of either name — a release branch, or one
+left behind by a rename — `check-migrations`, and `check-flags` where a project has it, compare with that branch in
+CI, as `make verify` already does on a full clone. Everything the trunk has that the old branch does not counts as
+new, on a push to the trunk and on every pull request: an expand and its contract that both landed since that
+branch are refused, and so is a flag declared since it and seeded other than `off`. If the branch is left over,
+delete it on the remote. If it is your release branch, land the contract once the expand has reached it. Nothing in
+`project.json` changes this yet. A repository with a long history pays the full fetch on that one job, on every
+run. No setting, flag or file is added.
