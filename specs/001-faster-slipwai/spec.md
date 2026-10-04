@@ -1362,9 +1362,10 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
   backends. A project with several backends takes the union, each tool asked once per run. The set is one table
   beside `BACKEND_TOOLING` in `src/slipwai/backends.py`, and a test fails when a backend there has no row. (D75)
 - **AC-S03-15** — Given a tool in the set, then it is launched once with its version argument on every run that
-  would read or write a stamp, and the key takes the first non-empty line it prints, whole: a changed line from
-  any one tool runs the full gate and a passing run writes a new stamp. No path, size or modification time of an
-  executable is in the key or the stamp. (D75)
+  would read or write a stamp, and the key takes everything it prints in answer, on both streams (D80): a changed byte from
+  any one tool — on a second line behind a notice included — runs the full gate and a passing run writes a new stamp;
+  the stamp shows the first non-empty line. No path, size or modification time of an
+  executable is in the key or the stamp. (D75, D80)
 - **AC-S03-16** — Given a tool a committed lock pins (ruff, mypy, pytest, everything under `package-lock.json`,
   the Maven wrapper's pin), then it is never asked: a new ruff version is a changed `uv.lock` or `pyproject.toml`,
   which AC-S03-2 holds. A Python service's interpreter is the one thing read from its environment, from

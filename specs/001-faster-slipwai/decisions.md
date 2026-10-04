@@ -1195,3 +1195,14 @@
 - **Confidence:** medium · **Would reverse if:** a check is found whose failure with a broken git is a true failure of an unchanged tree that the same check passes with git working; the stamp's place is then found without git.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S03-13 and AC-S03-26)
 - **Status:** standing
+
+## D80 — What does converge pass 2 change in the rules: a run that tightens the ratchet (T024), and what of a tool's answer enters the key (T026)?
+- **Stage:** converge · **Slice:** S03-verify-stamp · **When:** 2026-10-04T05:50:00Z · **Iteration:** 11
+- **Question:** (1) T019's fix made a run with `RATCHET_TIGHTEN` set remove a standing stamp, against AC-S03-9 and D73's rule 7 (*neither reads nor writes a stamp*), and two examples of the slice's own suite went red: which behaviour stands? (2) D75's rule 4 takes *the first non-empty line a tool prints*; pass 2 showed a tool that prints a notice first hides a changed version on its second line, and the stamp is reused.
+- **Options:** (1a) AC-S03-9 as written: a ratchet run touches nothing — **what the standing entry says**; (1b) a ratchet run removes the stamp as an ignore-errors run does. (2a) the first non-empty line, as D75 wrote it; (2b) the key takes everything the tool printed in answer to the version question, both streams, and the stamp shows a person the first non-empty line of its standard output, or of its standard error where it printed nothing there — **errs towards re-running, which is D75's own reason**.
+- **Decision:** (1a) and (2b). A run with `RATCHET_TIGHTEN` set reads no stamp, writes none and removes none; the code returns to that and T019's example for it is corrected, while the ignore-errors mode keeps T019's removal. A tool's whole answer is in the key; a changed byte anywhere in it runs the gate. This amends D75's rule 4 in that one clause and overrides nothing else.
+- **Why:** The ratchet belongs to the gate of a repository that adopted the method, which never stamps (D74, D78), so the rule is a guard and the plainest guard is to touch nothing; a stamp that stood is for a key that passed. For the tools, a developer must be able to believe a reused green after an upgrade, whatever a tool chooses to print before its version.
+- **Decided by:** host (standing decision D73)
+- **Confidence:** high · **Would reverse if:** a tool's version answer is found to vary from run to run with nothing changed (a timestamp, a random path), so that no stamp is ever reused on a machine; the key then takes the lines that name a version.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S03-15)
+- **Status:** standing

@@ -686,6 +686,124 @@ say why here.
 **Files:** `assets/toolkit/scripts/verify-stamp.py` and whatever beside it the split names; `delivery/.written` is not
 edited by hand.
 
+### Pass 2 (2026-10-04, at `9195588`)
+
+Pass 1's five reproductions were run again as written, on the fixture of `tests/stamp_fixture.py` copied to
+`/tmp/s03p2/fx` with its stand-in tools. T016: on `main` with `release` one commit behind, `GITHUB_BASE_REF=release` and
+`CI_MERGE_REQUEST_TARGET_BRANCH_NAME=release` each ran 24 checks twice, no reuse line, and the stamp of `topic` kept its
+bytes. T017: the key moved when `.delivery-tools/yaml.py` appeared, changed and went, and
+`test_verify_stamp_scan` (five tests, seven shapes, a read planted in every derived script) is green. T018: the page and
+the fragment carry the five, the consequence and the catch. T019: `STANDIN_UV_FAIL=1 make -i verify` on a stamped tree
+left only the `.pending` note; with a `git` that exits 128 the stamp stood and was reused afterwards, which is D79's case.
+T020: the note held `{"nothing": true}` after each cannot-tell run and no file under `.git/slipwai/` held `/tmp` or
+`/home`. What follows is what those fixes left open or opened. The fourteen `test_verify_stamp_*` modules ran 147 tests at
+this tip: 145 pass, two do not (T024).
+
+#### T024 — `CRITICAL` — The slice's own suite is red at this tip: T019's fix changed what a ratchet run does and two T007 tests, the plan and AC-S03-9 still say the opposite (AC-S03-9, AC-S03-26, constitution I and XIV)
+
+- [ ] Evidence: `PYTHONPATH=src:tests python3 -m unittest test_verify_stamp_inputs.RatchetTest` at `9195588` →
+  `ERROR: test_a_run_that_tightens_the_ratchet_reads_no_stamp` (`FileNotFoundError` on the stamp at
+  `tests/test_verify_stamp_inputs.py` 196: the test asserts *the stamp's bytes stand*) and
+  `FAIL: test_a_run_that_tightens_the_ratchet_writes_no_stamp` (`['verify-stamp-e3b0c44298fc1c14.pending'] != []`, line
+  203: *no note is left*); `Ran 2 tests … FAILED (failures=1, errors=1)`, the same twice in the run of all fourteen
+  modules (147 tests). `a761dce` (T019) made `reuse` send a declined run through `begin_full_run`
+  (`verify-stamp.py` 569–572), which removes the stamp and leaves the note, for `-i` *and* for `RATCHET_TIGHTEN`; it
+  touched `tests/test_verify_stamp_runs.py` only. On the fixture: a stamped tree, `RATCHET_TIGHTEN=1 make verify` → 24
+  checks, and `.git/slipwai/` held only `verify-stamp-….pending`. AC-S03-9 says such a run *neither reads nor writes a
+  stamp*, `plan.md` line 40 (e9) *reads and writes nothing* and line 84 *say nothing, touch nothing*; AC-S03-26 names
+  only make's ignore-errors mode as removing. The factory's `make verify` cannot pass with these two tests red, so the
+  slice cannot be pushed as it stands, and which of the two behaviours is right is not written anywhere.
+
+**RED:** it is already red — the two tests above.
+
+**GREEN (the class, not the instance):** one statement of what each declined run does to a stamp that stood — `-i`, and a
+ratchet run — in AC-S03-9, AC-S03-26, the plan's e9 and line 84, the script's docstrings (`declined`, 510–514, still
+says *neither reads nor writes*) and the tests, all saying the same thing. Whether a ratchet run removes the stamp
+(T019's reading: its checks may rewrite the tree) or leaves it (AC-S03-9's words) is the host's to decide; either way no
+test asserts the other. Sweep: run all fourteen `test_verify_stamp_*` modules after every change to
+`verify-stamp.py`, not the module the task names.
+
+**Files:** `tests/test_verify_stamp_inputs.py`, `assets/toolkit/scripts/verify-stamp.py` (if the decision is to leave the
+stamp), `specs/001-faster-slipwai/spec.md` and `plan.md` (the host's).
+
+#### T025 — `CRITICAL` — The trunk reads and writes a stamp where its short name is ambiguous: a tag named `main` (AC-S03-21, D74 R2, constitution I — T016's class, another route)
+
+- [ ] Evidence: `eligible()` (`verify-stamp.py` 487–488) compares `git symbolic-ref -q --short HEAD` with the trunk's
+  name. git shortens a branch only as far as the name stays unambiguous: on the fixture, on `main`, after `git tag main`,
+  `git symbolic-ref -q --short HEAD` prints `heads/main`, which is not `main`. Before the tag, two plain `make verify`
+  runs on `main` ran 24 checks each. After it: the first ran 24 checks, `verify: all gates passed`, and wrote the stamp;
+  the second printed `verify: the full gate did not run; this tree already passed it at 2026-10-04T03:53:37Z (key
+  7f969efa87e7); VERIFY_FORCE=1 runs it anyway`, exit 0, 0 checks. A ref `refs/remotes/main` did not do it (24 checks
+  twice). The reach is a repository that has a tag (or any ref git's shortening rules weigh) with the trunk's name — rare,
+  and git warns of it on every checkout — but it holds for every run on that trunk by everyone who fetched the tag, with
+  no variable set; CI stays behind its markers. Graded as pass 1 graded T016, for the same reason: the merge root does
+  not run the full gate, which is the one place D74 says *never*.
+
+**RED:** in `tests/test_verify_stamp_where.py`: on the trunk with a planted stamp and a tag of the trunk's name, every
+check runs, the planted stamp's bytes are unchanged and no line is added; the same on `master` as the trunk with a tag
+`master`, and where `ci.branch` names the trunk and a tag has that name.
+
+**GREEN (the class):** the branch is read as a full ref name (`git symbolic-ref -q HEAD`, as `history_digest` already
+does at line 308) and compared as `refs/heads/<trunk>`; no answer `eligible()` gives depends on how git abbreviates a
+name. Sweep every `--short`, `--abbrev-ref` and bare branch name the stamp script compares, and say for
+`check-slice-scope.py`'s own reading of the current branch whether the same ambiguity moves it.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_where.py`.
+
+#### T026 — `MEDIUM` — A tool whose first line is not its version: the version is not in the key, and the line persisted can hold a path (AC-S03-15, D75; constitution, *Additional Constraints*: persisted data)
+
+- [ ] Evidence: `ask()` (`verify-stamp.py` 313–339) takes the first non-empty line of standard output and standard error
+  together. On this machine `JAVA_TOOL_OPTIONS=-Djava.io.tmpdir=/home/someone/tmp java -version 2>&1 | head -1` prints
+  `Picked up JAVA_TOOL_OPTIONS: -Djava.io.tmpdir=/home/someone/tmp`; the version (`openjdk version "25.0.4.1" …`) is on a
+  later line. With the stand-in: `STANDIN_UV_VERSION='warning: something\nuv 0.12.20' make verify` stamped, and the next
+  run with `…\nuv 0.99.0` printed the reuse line, exit 0, 0 checks — the stamp's `tools` held `"uv": "warning:
+  something"`. And `STANDIN_UV_VERSION='warning: cache at /home/someone/.cache/uv'` left that line, path and all, in
+  `.git/slipwai/verify-stamp-….json`. So on a Java project whose developer has `JAVA_TOOL_OPTIONS` or `_JAVA_OPTIONS`
+  set, a changed JDK does not move the key — a reused stamp can stand for a gate the new JDK fails — and the stamp
+  carries whatever that variable holds. **Not reproduced through a generated Java project's gate**: the `java` line and
+  the stand-in were each shown, the two together were not.
+
+**RED:** in `tests/test_verify_stamp_tools.py`: a tool that prints a notice line before its version — the version on the
+second line changes, the full gate runs; and no file under `.git/slipwai/` holds a path the tool printed.
+
+**GREEN (the class):** what the key takes from a tool is every line it prints when asked (or a digest of them), so a
+notice ahead of the version cannot hide it; what the stamp *stores* per tool is a fact true on any machine, or a digest.
+D75 rule 4 says *the first non-empty line, whole*, so the change of wording there is the host's. Sweep each tool of
+`MACHINE_TOOLS` for what it prints ahead of its version under a common variable (`JAVA_TOOL_OPTIONS`, npm's `npm warn`
+on an unknown configuration, uv's warnings).
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_tools.py`.
+
+#### T027 — `LOW` — Two more runs that start checks with a stamp left standing, which AC-S03-26 does not name (AC-S03-26, D79)
+
+- [ ] Evidence: AC-S03-26 says *the one case where a stamp that stood is left is AC-S03-13's git that cannot answer*.
+  (a) On a stamped fixture with `scripts/check-slice-scope.py` moved away and `STANDIN_UV_FAIL=1`: `lint` failed, exit 2,
+  no line, and `.git/slipwai/verify-stamp-e3b0c44298fc1c14.json` was still there; with the script back, the next run
+  printed the reuse line, exit 0, 0 checks. `trunk_name()` raises something other than `CannotTell`, `main` calls
+  `remove_after_failure()`, which asks `eligible()` again, which raises again, and nothing is removed (645–652). (b)
+  **Not reproduced**, read from `main` 658–659 and the recipe: a `python3` older than 3.10, or none on `PATH`, sends the
+  run to the checks before anything is asked. In each the stamp left is for a key that passed and the tree that failed
+  was a different one, which is D79's argument and why this is `LOW`.
+
+**RED/GREEN (the class):** every exit of `main` that sends a run to the checks either removes a stamp that stood or is
+named in AC-S03-26 beside git's; where eligibility cannot be told for a reason that is not git's, say which.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_runs.py`; the criterion's sentence is the host's.
+
+#### T028 — `LOW` — The page says how to force and not when (AC-S03-25)
+
+- [ ] Evidence: AC-S03-25 asks the page for the default *and one sentence on when to set it*. The page
+  (`src/slipwai/project/docs.py` 116–126) has *To run the gate anyway, run `make verify VERIFY_FORCE=1`* and, three
+  sentences on, *reused as green until … `VERIFY_FORCE` is given*; `391a91c` took out pass 1's *when a check depends on
+  one, run the gate forced*. `tests/test_verify_stamp_ships.py` 146 pins the *how* sentence. The page also opens *keyed by
+  everything the checks answer from* and then says what the key cannot see, and says a marker *set* where the code means
+  non-empty (`eligible`, 485).
+
+**RED/GREEN (the class):** the page has one sentence that says when — a check that answers from one of the five — and no
+sentence that claims more than the residual allows; the ships test holds it.
+
+**Files:** `src/slipwai/project/docs.py`, `tests/test_verify_stamp_ships.py`.
+
 ---
 
 ## Parallel opportunities
