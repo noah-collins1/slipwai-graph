@@ -86,6 +86,14 @@ def recorded_provenance(record: dict) -> dict[str, str]:
     return dict(provenance)
 
 
+def recorded_parallel_safe(document: dict) -> bool | None:
+    """The project's own `parallelSafe`, as written, for a tool that regenerates its files: a boolean where the
+    key holds one, and None where there is none — which is what keeps a project made before the key serial, since
+    no tool adds the mark (D102). Anything but a boolean is not a mark and is not carried."""
+    mark = document.get("parallelSafe")
+    return mark if isinstance(mark, bool) else None
+
+
 def apps_from_manifest(document: dict, allow_empty: bool = False) -> list[App]:
     """The applications a `project.json` records, refusing a manifest this factory does not understand.
 

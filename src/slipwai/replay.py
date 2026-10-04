@@ -35,7 +35,7 @@ from pathlib import Path
 from .assets import PRUNER, STYLE_CHECKER, VERSION
 from .errors import GenerationError
 from .layout import Layout, layout_of
-from .manifest import apps_from_manifest, check_known, read_manifest, wrote_here
+from .manifest import apps_from_manifest, check_known, read_manifest, recorded_parallel_safe, wrote_here
 from .origin import adoption_of
 from .project.adopted import WRITTEN
 from .project.design_page import DESIGN, existing_design_page
@@ -99,7 +99,10 @@ def replay(
     installed = PRUNER.features_installed(root, services)
     present = PRUNER.features_present(root, services)
 
-    files = project_files(name, document["profile"], document["target"], apps, target, adoption)
+    files = project_files(
+        name, document["profile"], document["target"], apps, target, adoption,
+        parallel_safe=recorded_parallel_safe(document),
+    )
     preserve_project_styles(root, parent, apps, files, target)
     manifest = json.loads(files["project.json"])
     manifest["generator"] = wrote_here(document.get("generator"))

@@ -23,7 +23,7 @@ from .adopt import STRUCTURE_PAGE, SURVEY_PAGE, facts
 from .adopt_report import survey_page
 from .errors import GenerationError
 from .layout import Layout, layout_of
-from .manifest import apps_from_manifest, read_manifest, wrote_here
+from .manifest import apps_from_manifest, read_manifest, recorded_parallel_safe, wrote_here
 from .origin import Adoption, adoption_of
 from .platform import with_platform
 from .programme import expired
@@ -241,8 +241,9 @@ def refresh(root: Path, clean_checked: bool = False) -> Refreshed:
     after_adoption = with_reconciled(root, layout, after_adoption, updated, adoption.convergence, done.refreshed)
 
     arguments = (document["name"], document["profile"], document["target"])
-    before = project_files(*arguments, apps, layout, adoption)
-    after = project_files(*arguments, updated, layout, after_adoption)
+    mark = recorded_parallel_safe(document)
+    before = project_files(*arguments, apps, layout, adoption, parallel_safe=mark)
+    after = project_files(*arguments, updated, layout, after_adoption, parallel_safe=mark)
     executables = {layout.place(path) for path in executable_paths(document["profile"], updated)}
     # A file the factory wrote before, still on disk and no longer listed in `.written`, is the repository's own from
     # then on: taking one over is deleting its line, and the factory leaves it alone and says so.

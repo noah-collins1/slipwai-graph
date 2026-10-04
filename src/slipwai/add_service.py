@@ -41,7 +41,7 @@ from .assets import PRUNER
 from .catalog import CATALOG, axis_options
 from .errors import GenerationError
 from .layout import layout_of
-from .manifest import apps_from_manifest, check_known, read_manifest, wrote_here
+from .manifest import apps_from_manifest, check_known, read_manifest, recorded_parallel_safe, wrote_here
 from .origin import adoption_of
 from .scaffold import project_files
 from .selection import Selection, resolve_selection
@@ -212,8 +212,9 @@ def regenerate(
     ones, and the manifest the revised list generates, for the caller to take its entry from."""
     layout, adoption = layout_of(document), adoption_of(document)
     arguments = (document["name"], document["profile"], document["target"])
-    before = project_files(*arguments, apps, layout, adoption)
-    after = project_files(*arguments, revised, layout, adoption)
+    mark = recorded_parallel_safe(document)
+    before = project_files(*arguments, apps, layout, adoption, parallel_safe=mark)
+    after = project_files(*arguments, revised, layout, adoption, parallel_safe=mark)
     executables = {layout.place(path) for path in executable_paths(document["profile"], revised)}
     added: list[str] = []
     rewritten: list[str] = []

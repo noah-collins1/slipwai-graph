@@ -24,7 +24,7 @@ from pathlib import Path
 from .assets import VERSION
 from .errors import GenerationError
 from .layout import AT_ROOT, Layout, layout_of
-from .manifest import apps_from_manifest, read_manifest
+from .manifest import apps_from_manifest, read_manifest, recorded_parallel_safe
 from .migrate import Refresh, merge_offered, refresh
 from .origin import Adoption, adoption_of
 from .project.adopted import OWN, WRITTEN, agents_block, gitignore_block
@@ -100,7 +100,10 @@ def clashes(root: Path, document: dict, adoption: Adoption, layout: Layout) -> l
     has, and what sits under the delivery directory whose place at the root is taken. The `Makefile` `adopt` wrote
     is the factory's and is replaced; a `Makefile` of the repository's own is a clash, and the usual one."""
     apps = apps_from_manifest(document)
-    generated = project_files(str(document["name"]), document["profile"], document["target"], apps, AT_ROOT, adoption)
+    generated = project_files(
+        str(document["name"]), document["profile"], document["target"], apps, AT_ROOT, adoption,
+        parallel_safe=recorded_parallel_safe(document),
+    )
     listing = root / layout.under(WRITTEN)
     already = set(listing.read_text(encoding="utf-8").split()) if listing.is_file() else set()
     found = []
