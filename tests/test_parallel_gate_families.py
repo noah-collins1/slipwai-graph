@@ -175,6 +175,55 @@ class SerialOrderTest(FamiliesTestCase):
         self.assertEqual(self.kinds("go"), ["typecheck", "lint"])
 
 
+class KeepGoingTest(FamiliesTestCase):
+    """AC-S04-83 (D97 A3), a hold of the stated reading: under `-k` a check that waits for a failed `lint` is not run,
+    and naming the three checks without the gate runs all of them. Teeth: take the `typecheck`/`test` prerequisites on
+    `lint` out of the gate's order, and `make -k verify` starts all three."""
+
+    # The shape, the stand-in tool to make fail in `lint`, the call it fails on, and what `typecheck` and `test` run.
+    FAMILIES = {
+        "go": ("go", "vet", "go test -run", "coverprofile"),
+        "quarkus": ("apps/service/mvnw", "checkstyle", "test-compile", "-q test"),
+    }
+
+    def failing_lint(self, name: str) -> tuple[str, str]:
+        """The stand-in whose `lint` call fails, and what a started `typecheck` and `test` call is told by."""
+        self.use(name)
+        tool, failing, typecheck, test = self.FAMILIES[name]
+        path = self.bin / tool if tool == "go" else self.repo / tool
+        text = path.read_text(encoding="utf-8")
+        hook = 'log native-start "' + ("go" if tool == "go" else "mvnw") + ' $*"\n'
+        self.assertIn(hook, text)
+        path.write_text(text.replace(
+            hook, hook + f'case "$*" in *{failing}*) echo "lint failed (stand-in)" >&2; exit 1 ;; esac\n'),
+            encoding="utf-8")
+        return typecheck, test
+
+    def unrun(self, goals: tuple[str, ...], typecheck: str, test: str) -> subprocess.CompletedProcess[str]:
+        self.forget_log()
+        done = self.make(*goals, env={"VERIFY_FORCE": "1"})
+        self.assertNotEqual(done.returncode, 0, done.stdout)
+        self.assertIn("lint failed (stand-in)", done.stdout + done.stderr)
+        return done
+
+    def test_k_leaves_typecheck_and_test_unrun_after_a_failed_lint_and_the_named_command_runs_all_three(self) -> None:
+        for name in self.FAMILIES:
+            typecheck, test = self.failing_lint(name)
+            for goals in (("-k", "verify"), ("-j", "-k", "verify")):
+                with self.subTest(shape=name, goals=goals):
+                    self.unrun(goals, typecheck, test)
+                    calls = " | ".join(self.started())
+                    self.assertNotIn(typecheck, calls)
+                    self.assertNotIn(test, calls)
+            with self.subTest(shape=name, goals="-k lint typecheck test"):
+                self.forget_log()
+                done = self.make("-k", "lint", "typecheck", "test")
+                self.assertNotEqual(done.returncode, 0)
+                calls = " | ".join(self.started())
+                self.assertIn(typecheck, calls)
+                self.assertIn(test, calls)
+
+
 class OrderIsPrerequisiteTest(FamiliesTestCase):
     """HOLD (AC-S04-16, G8): in a Go and a Java starter the order the gate relies on is a prerequisite, never `.WAIT`.
     Teeth: write the Go rule as `.WAIT`, or take the Java `test: typecheck` line out."""

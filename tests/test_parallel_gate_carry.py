@@ -101,6 +101,19 @@ class AProjectMadeBeforeTheSliceMigratesTest(FactoryTestCase):
                 self.assertEqual(migrate(repo, factory).returncode, 0)
                 self.assertEqual((repo / LOCK).read_bytes(), SHIPPED)
 
+    def test_hold_an_ignored_lock_is_replaced_without_a_refusal(self) -> None:
+        """AC-S04-85 (D97 B4), a hold so the question parked for `migrate` starts from a test it must change: the same
+        untracked lock as above, named in `.git/info/exclude`, is no uncommitted change to git, and the merge
+        replaces it with the factory's."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo, factory = self.old_project(directory, "typescript")
+            (repo / LOCK).write_text('{"from": "an ignored lock"}\n', encoding="utf-8")
+            with (repo / ".git/info/exclude").open("a", encoding="utf-8") as exclude:
+                exclude.write(f"{LOCK}\n")
+            done = migrate(repo, factory)
+            self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+            self.assertEqual((repo / LOCK).read_bytes(), SHIPPED)
+
     def test_hold_a_lock_the_project_committed_stops_the_merge_on_that_file_and_the_catch_up_gets_through(self) -> None:
         """e3. Hold: both sides added the file, so git stops on it. The catch-up's own commands finish the merge."""
         for language in LANGUAGES:
