@@ -121,8 +121,9 @@ def gate_order(stamped: bool, apps: list[App]) -> str:
 
     Two of the families write where the others read. Maven's three checks write one service's `target/`, so with a Java
     service `typecheck` waits for `lint` and `test` for `typecheck`. Go's first `go` command resolves the workspace and
-    writes `go.work.sum` on a fresh clone, and that is `typecheck`'s, so with a Go service `lint` and `test` wait for it
-    (`typecheck` stays first, as it is in the serial run). A project with both takes the Java chain, which covers Go.
+    writes `go.work.sum` on a fresh clone, and `lint` leads the list `verify` hangs its checks on, so with a Go
+    service `typecheck` and `test` wait for `lint` and run together after it: the order a serial run always had (D96).
+    A project with both takes the Java chain, which covers Go.
     Python and TypeScript need neither: after the sync and the root's install their checks write only their own caches.
     Nothing where the gate is not the stamped one, which is serial.
     """
@@ -132,7 +133,7 @@ def gate_order(stamped: bool, apps: list[App]) -> str:
     if "java" in languages:
         rules = "typecheck: lint\ntest: typecheck\n"
     elif "go" in languages:
-        rules = "lint test: typecheck\n"
+        rules = "typecheck test: lint\n"
     else:
         return ""
     condition = "ifeq ($(origin VERIFY_ORDER),command line)"

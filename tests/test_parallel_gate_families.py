@@ -2,7 +2,7 @@
 
 Java's three Maven checks write one service's `target/`, and Go's first `go` command resolves the workspace and writes
 `go.work.sum` on a fresh clone, so under `-j` the gate orders them: with a Java service `typecheck` waits for `lint` and
-`test` for `typecheck`; with a Go service `lint` and `test` wait for `typecheck`; both families take the Java chain.
+`test` for `typecheck`; with a Go service `typecheck` and `test` wait for `lint`; both families take the Java chain.
 The order is the gate's own (`VERIFY_ORDER`, which only its sub-make is given), so a target typed alone starts
 nothing it did not. The native tools are stand-ins that log each call and, between its `start` and its `end`, wait
 for another native call to be in flight; evidence is that log, never a clock. A hold is named so, with its teeth in
@@ -18,6 +18,8 @@ import sys
 from parallel_gate import (
     ParallelGateTestCase,
     barrier_events,
+    log_lines,
+    log_text,
     native_calls,
     native_overlapped,
     shape,
@@ -102,20 +104,28 @@ class JavaChainTest(FamiliesTestCase):
         self.assertEqual([kind_of(a) for a in self.started() if a.startswith("mvnw")], ["lint", "typecheck", "test"])
 
 
+def go_kind(arguments: str) -> str:
+    """Which gate check a `go`, `gofmt` call belongs to: `go test -run` is `typecheck`'s, the formatter, `go vet` and
+    `go tool staticcheck` are `lint`'s, and the rest (the coverage run and what surrounds it) are `test`'s."""
+    if arguments.startswith("go test -run"):
+        return "typecheck"
+    return "lint" if arguments.startswith(("gofmt", "go vet", "go tool staticcheck")) else "test"
+
+
 class GoChainTest(FamiliesTestCase):
-    def test_typecheck_ends_before_the_others_start_under_j(self) -> None:
-        """e2: Go's first `go` command, `typecheck`'s, ends before any other native call of the gate starts."""
-        for name in GO_SHAPES:
+    def test_lint_ends_before_the_others_start_and_those_two_run_together_under_j(self) -> None:
+        """AC-S04-71, G1: every `go` command of `lint` has ended before `typecheck` or `test` starts (lint leads, as in
+        the serial run), and `typecheck` and `test` are running at the same moment."""
+        for name in ("go", "go-web"):
             with self.subTest(shape=name):
                 self.use(name)
                 self.assert_same_verdict(name)
                 calls = native_calls(self.log)
-                first = next(i for i, (e, a) in enumerate(calls) if e == "end" and a.startswith("go test -run"))
-                if name != "java-go":  # the Java chain covers Go: its own ordering is e1's
-                    self.assertEqual(sum(1 for e, a in calls[:first] if e == "start"), 1, calls[: first + 1])
-                later = [a for e, a in calls[first + 1 :] if e == "start"]
-                self.assertGreater(len(later), 0)
-                self.assertFalse(any(a.startswith("go test -run") for a in later))
+                kinds = [(e, go_kind(a)) for e, a in calls]
+                last_lint = max(i for i, (e, k) in enumerate(kinds) if e == "end" and k == "lint")
+                self.assertFalse([k for e, k in kinds[:last_lint] if e == "start" and k != "lint"], calls)
+                self.assertTrue({k for e, k in kinds[last_lint + 1 :] if e == "start"} >= {"typecheck", "test"})
+                self.assertTrue(native_overlapped(self.log), "typecheck and test did not run together\n" + str(calls))
 
     def test_both_families_take_the_java_chain(self) -> None:
         """A project with a Java and a Go service: no two native calls overlap at all."""
@@ -123,6 +133,46 @@ class GoChainTest(FamiliesTestCase):
         self.assert_passed(self.gate("-j"))
         self.assertFalse(native_overlapped(self.log), self.log.read_text(encoding="utf-8"))
         self.assertEqual([kind_of(a) for a in self.started() if a.startswith("mvnw")], ["lint", "typecheck", "test"])
+
+
+class SerialOrderTest(FamiliesTestCase):
+    """AC-S04-1 (G1): in every family's shape a serial full run starts `lint`, `typecheck` and `test` in the gate's own
+    order, compared as it happened and never sorted."""
+
+    NPM = '#!/bin/sh\nprintf \'start\\tnpm %s\\n\' "$*" >> "$STANDIN_LOG"\nmkdir -p node_modules\n'
+
+    def kinds(self, name: str) -> list[str]:
+        """The gate check each logged call of the project's own tools belongs to, in order, runs of one kept as one."""
+        found: list[str] = []
+        for event, arguments in log_lines(self.log):
+            kind = None
+            if event == "native-start":
+                tool, _, rest = arguments.partition(" ")
+                kind = go_kind(arguments) if tool in ("go", "gofmt") else kind_of(rest)
+            elif event == "start" and arguments.startswith("run ") and " ruff " in arguments:
+                kind = "lint"
+            elif event == "start" and arguments.startswith("run ") and " mypy " in arguments:
+                kind = "typecheck"
+            elif event == "start" and arguments.startswith("run ") and "pytest" in arguments:
+                kind = "test"
+            elif event == "start" and arguments.startswith("npm --workspace apps/service"):
+                kind = "test" if arguments.endswith("service test") else arguments.rsplit(" ", 1)[1]
+            if kind in ("lint", "typecheck", "test") and kind not in found[-1:]:
+                found.append(kind)
+        return found
+
+    def test_every_family_starts_lint_then_typecheck_then_test(self) -> None:
+        for name in ("plain", "ts", "go", "go-web", "quarkus", "java-go"):
+            with self.subTest(shape=name):
+                self.use(name)
+                (self.bin / "npm").write_text(self.NPM, encoding="utf-8")
+                self.assert_passed(self.gate())
+                self.assertEqual(self.kinds(name), ["lint", "typecheck", "test"], log_text(self.log))
+
+    def test_a_missing_family_would_be_seen(self) -> None:
+        """The comparison's teeth: a log whose first call is `typecheck`'s reads `typecheck` first."""
+        self.log.write_text("native-start\tgo test -run ^$ ./...\nnative-start\tgofmt -l x\n", encoding="utf-8")
+        self.assertEqual(self.kinds("go"), ["typecheck", "lint"])
 
 
 class StandaloneTest(FamiliesTestCase):
