@@ -508,6 +508,186 @@ If that file nears 350 lines, R13's examples move to `tests/test_verify_stamp_pa
 
 ---
 
+## Phase 4: Convergence passes
+
+*(appended by `drive-converge`)*
+
+### Pass 1 (2026-10-04, at `c53a9ab`)
+
+Every finding below was reproduced on a scratch project under `/tmp/s03c` — the fixture of `tests/stamp_fixture.py` with
+its stand-in tools, or a project generated with `./slipwai generate … --skip-checks` — unless it says otherwise. The 134
+tests of the thirteen `test_verify_stamp_*` modules are green at this tip, and five mutations of
+`assets/toolkit/scripts/verify-stamp.py` (the trunk not excluded, `record` ignoring a moved key, the stamp not removed
+before the checks, `-i` not declining, the `CI` marker dropped) each fail them; the file was restored with
+`git checkout --` after each.
+
+#### T016 — `CRITICAL` — The trunk reads and writes a stamp when a pull-request target variable is set (AC-S03-21, D74 R2, constitution I)
+
+- [ ] Evidence: `trunk_name()` (`verify-stamp.py` 456–470) returns `merge_base().trunk` of `check-slice-scope.py`, and that
+  field is *the name the branch is compared with*, not the trunk: where `GITHUB_BASE_REF` or
+  `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` names a branch whose base is older than the trunk's, `merge_base()` returns
+  `Base(chosen, target[0], …, True)` (`check-slice-scope.py` 365–376, 470–484). Reproduced on the fixture: on `main`, with a
+  branch `release` left one commit behind and no CI marker, plain `make verify` twice ran 7 checks each time and wrote no
+  stamp; `GITHUB_BASE_REF=release make verify` twice printed `verify: all gates passed` and left
+  `.git/slipwai/verify-stamp-e3b0c44298fc1c14.json`, then `verify: the full gate did not run; this tree already passed it
+  at 2026-10-04T03:23:40Z (key 1b9df918d9f9); …`, exit 0, 0 checks. The same with
+  `CI_MERGE_REQUEST_TARGET_BRANCH_NAME=release`. The reach is a run with one of those two variables and none of the three
+  CI markers — a forge's runner sets both, so this is a hand-set variable, a container step handed part of the
+  environment, or a local replay of a pull request — but on that run the merge root does not run the full gate, which is
+  the constitution's MUST (Principle I, line 33) and the one place D74 says *never*.
+
+**RED:** in `tests/test_verify_stamp_where.py`: on the trunk with a planted stamp and each of the two target variables
+naming a branch that exists and is older, every check runs, the planted stamp's bytes are unchanged, no line is added;
+the same where the target shares no history with the branch (`Base(None, target[0], True, …)`), and where it names a
+branch with no ref.
+
+**GREEN (the class, not the instance):** the stamp asks for *the trunk's name* — D30's and D33's resolution with no
+target in it — from one definition `check-slice-scope.py` owns and both callers use, never for the name a comparison was
+made against. Sweep every return of `merge_base()` (there are five) and say for each what `.trunk` holds and which
+example holds the stamp's answer there; sweep `eligible()` for any other answer that an environment variable can move.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `assets/toolkit/scripts/check-slice-scope.py` (if the resolution is
+split out there), `tests/test_verify_stamp_where.py`.
+
+#### T017 — `HIGH` — A check reads an ignored directory that is on no list, and the closed-list test cannot see the script that reads it (AC-S03-7, D73 rule 5)
+
+- [ ] Evidence: (a) `scripts/event-model/check.py` — `check-model`, a prerequisite of `verify-checks` in every
+  event-modelling project — puts `.delivery-tools/` first on `sys.path` and imports `yaml` from it (lines 33, 62–64);
+  `.gitignore` ignores `.delivery-tools/`, the gate installs into it only on an `ImportError`, never from a lock on every
+  run, and `IGNORED_INPUTS` does not name it. On a generated project (event-modelling, TypeScript, react-vite) on branch
+  `topic`: the key was `0868ce020cf0` before and after writing `.delivery-tools/yaml.py`, while `python3
+  scripts/event-model/check.py` went from `check-model: valid`, exit 0, to exit 1; with a stamp planted for the tree as
+  `plant_stamp` writes one, `make verify` printed the reuse line and exited 0 while `make check-model` exited 2. A reused
+  stamp stood for a gate that fails if it runs. (The stamp was planted, not earned: that project's real gate needs
+  `npm ci` from the network.) (b) `tests/test_verify_stamp_lists.py` reads `scripts/check-*.py` only (`unlisted`, the
+  `glob` at its line 88), on one project shape. With `os.environ.get("A_NEW_SWITCH")` and a read of
+  `.pytest_cache/v/cache/lastfailed` appended to six scripts the gate runs — `scripts/extensions/project.py`,
+  `scripts/agents/project.py`, `scripts/agents/code_index.py` (which `check-codegraph.py` imports),
+  `scripts/event-model/check.py`, `scripts/test_benchmark.py`, `scripts/extensions/uipro/init.py` — `unlisted()` returned
+  `[]`. A sweep by hand of every environment read under `assets/` found no variable a stamped gate's check reads that
+  `VARIABLES` lacks today, so (b) is a guard with a hole, and (a) is what came through it.
+
+**RED:** the key moves when a file under `.delivery-tools/` appears, changes or goes (`tests/test_verify_stamp_inputs.py`,
+beside the other ignored inputs); the closed-list test fails on a read planted in each script the gate runs that is not
+named `check-*.py`, on a project that has `check-model`, `check-drawio` and `check-styles`.
+
+**GREEN (the class):** the scan's subject is *every Python script a prerequisite of `verify-checks` runs or imports*, in
+every project shape that adds a prerequisite — derived from the generated `Makefile`'s recipes, not from a file-name
+pattern — plus the targets' and the extensions' check scripts; each ignore line of each shape's `.gitignore` is either on
+`IGNORED_INPUTS`, rebuilt by the recipe on every run, or exempt with its reason in the test. What the scan cannot read (a
+shell script, the `.ts` checks) is listed in the test by name with the reason it holds nothing, so a new one fails it.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py` (the list), `tests/test_verify_stamp_lists.py`,
+`tests/test_verify_stamp_inputs.py`, `tests/stamp_fixture.py` if a second shape is generated.
+
+#### T018 — `HIGH` — The page says three things a stamp cannot see, and AC-S03-31 names five others and a consequence (AC-S03-31, D73 residual)
+
+- [ ] Evidence: the page `src/slipwai/project/docs.py` writes (lines 116–124) says *a tool a recipe fetches at a version of
+  its own, a service outside the checkout, or the network; when a check depends on one, run the gate forced*. AC-S03-31
+  requires the clock, the network, user-level tool configuration, `PATH`, and a variable no gate script names; that a
+  gate failing for one of those alone *is reused as green until a file, a ref or a listed input moves or `VERIFY_FORCE`
+  is given*; and that CI and the trunk are where it is caught. Four of the five are absent, as is the consequence and the
+  catch; `changelog.d/verify-stamp.md` carries the same shorter sentence, and
+  `tests/test_verify_stamp_ships.py` 155–163 pins the shorter sentence, so the suite holds the page to less than the
+  criterion. The blind spot is real and one command away: on a stamped fixture, `STANDIN_UV_FAIL=1 make verify` printed
+  the reuse line, exit 0, 0 checks, and `STANDIN_UV_FAIL=1 make verify VERIFY_FORCE=1` failed at `lint`, exit 2. (The
+  page's *a tool a recipe fetches at a version of its own* is T017's `.delivery-tools/`, which D73 rule 5 puts in the
+  key rather than in the residual.)
+
+**RED:** the ships test asserts each of the five by name, the *reused as green until …* consequence, and CI and the
+trunk as where it is caught — on the generated page, and the fragment's sentence against the same list.
+
+**GREEN (the class):** every place a person reads what a stamp cannot see — the page, the fragment, `docs/learn-generate.md`'s
+pointer — says D73's residual in full or points at the page that does; none carries a shorter list of its own.
+
+**Files:** `src/slipwai/project/docs.py`, `changelog.d/verify-stamp.md`, `tests/test_verify_stamp_ships.py`.
+
+#### T019 — `MEDIUM` — A gate that fails while git cannot answer leaves the earlier stamp, which is then reused (AC-S03-26, AC-S03-10, D73 rule 8)
+
+- [ ] Evidence: on a stamped fixture with a `git` first on `PATH` that exits 128 (`fatal: detected dubious ownership in
+  repository`) and `STANDIN_UV_FAIL=1`: `verify: the full gate runs and this run records nothing — git symbolic-ref -q
+  --short HEAD: fatal: …`, `lint` failed, exit 2, and `.git/slipwai/verify-stamp-e3b0c44298fc1c14.json` was still there;
+  the next plain run printed the reuse line, exit 0, 0 checks. `begin_full_run` (529–549) takes `remove_stamp()` raising
+  `CannotTell` as *nothing to remove*. The same shape under `-i`: `STANDIN_UV_FAIL=1 make -i verify` on a stamped tree
+  ran the checks, and the stamp stood (`declined()` returns before anything is removed). Both leave a stamp only for the
+  key that did pass, so neither vouches for a changed tree — which is why this is not `HIGH` — but AC-S03-26's *after a
+  run that failed … no stamp exists for any key* and D73 rule 8's *`make -i verify` on a failing tree must leave no stamp*
+  are not what happens when a stamp was there first.
+
+**RED:** a stamped tree, git failing, the gate failing: no stamp afterwards (or the criterion's sentence narrowed, by a
+decision, to what a run that cannot find the git directory can do); a stamped tree, `make -i verify` with a failing
+check: no stamp afterwards.
+
+**GREEN (the class):** sweep every return of `reuse` that sends the run on to the checks — declined, not eligible,
+cannot tell, an unexpected exception (`main`'s `except Exception`), forced, no match — and say for each whether a stamp
+that stood is removed, left by D74 R5, or left for a reason a decision names. Where it cannot be removed because git
+cannot say where it is, the question of finding it another way is the host's to decide, not the delegate's.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_runs.py`, `tests/test_verify_stamp_cannot.py`.
+
+#### T020 — `MEDIUM` — The note a full run leaves under the git directory can hold an absolute path (constitution, *Additional Constraints*: persisted data)
+
+- [ ] Evidence: with a non-empty directory at the stamp's path, after `make verify` the file
+  `.git/slipwai/verify-stamp-e3b0c44298fc1c14.pending` held `{"nothing": "cannot remove
+  /tmp/s03c/project/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that file"}` —
+  `begin_full_run` writes the printed reason into the note (line 542). The stamp itself holds none (`project_name()`,
+  385–388, is a digest so that *the file holds no path*), and the constitution's line 480–481 says persisted data MUST
+  NOT carry file paths. git's own reasons (`fatal: not a git repository …: /abs/path`) take the same route. The note is
+  read only for the presence of its `nothing` field.
+
+**RED:** after each cannot-tell run the suite drives (`tests/test_verify_stamp_cannot.py`, `_tools.py`, `_file.py`), no
+file under `.git/slipwai/` contains the scratch directory's path or the reason's text.
+
+**GREEN (the class):** what is written under `.git/slipwai/` is a closed set of fields — the key, the parts, the tools'
+lines, the instant, the result, and a marker that the run records nothing — and no free text; sweep both `write_file`
+calls.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, the three test modules named.
+
+#### T021 — `LOW` — Lines that say something other than what happened
+
+- [ ] Evidence: (a) a Go project generated here (`--backend go --frontend none`), branch `topic`, real toolchain: the first
+  `make verify` ended `verify: all gates passed` / `verify: this pass was not recorded — the tree changed while the checks
+  ran`, and `git status --short` showed `?? go.work.sum`, which the gate's own `go` wrote; the second run recorded and the
+  third was reused. Nobody changed the tree. AC-S03-11 is met; the line sends a person looking for an edit they did not
+  make. (b) A non-empty directory at the stamp's path is named and not removed (AC-S03-26's branch, and the run is full
+  every time until it is deleted — safe), and the line ends *delete that file* for a directory. (c) On the Java backend
+  the key asks the `java` on `PATH`, and `mvnw` runs `JAVA_HOME`'s where it is set: **not reproduced**, read from the
+  wrapper; D75 names `java`, so this is the residual's *a variable no gate script names* and belongs in T018's page.
+
+**RED/GREEN (the class):** each `NOT_RECORDED_LINE` and `CANNOT_LINE` reason, against what a person would do on reading
+it: the moved-key reason names a path that differs where one can be found cheaply; *file* is *file or directory*.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_runs.py`.
+
+#### T022 — `LOW` — A project in a subdirectory of its repository: a sibling's uncommitted edit is not in the key (D36; **not reproduced as a failing gate**)
+
+- [ ] Evidence: the fixture copied to `proj/` of a new repository beside a tracked `sibling.txt`, branch `topic`: the key
+  was `bf2b84264d20` before and after an uncommitted edit to `../sibling.txt`, while `git diff --name-status main` run
+  from `proj/` — the call `changed_files()` of `check-slice-scope.py` makes — printed `M sibling.txt`. Whether any check's
+  verdict moves on that path was not shown; D36 says only changes under the project's directory are looked at.
+
+**RED/GREEN (the class):** decide, from `check-slice-scope.py`, `check-migrations.py` and the targets' `check-flags.py`,
+whether any git question a check asks is answered repository-wide; where one is, the key's tracked-file part covers
+what that question covers, and where none is, a test says so.
+
+**Files:** `tests/test_verify_stamp_file.py` or `_key.py`; the script only if a check is found to read above the project.
+
+#### T023 — `LOW` — `verify-stamp.py` is 643 lines in one file (owner brief, *Taste*)
+
+- [ ] Evidence: `wc -l assets/toolkit/scripts/verify-stamp.py` → 643. It holds four things with their own reasons to
+  change: the two closed lists, the key (git, files, tools), the stamp's file (path, read, write, remove), and the two
+  verbs with make's modes. The lists are what T017's test imports.
+
+**GREEN:** split along that structure only if the script stays one thing `slipwai migrate` delivers and the `Makefile`
+calls by one path, and the closed-list test still imports the lists from where they are defined; otherwise leave it and
+say why here.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py` and whatever beside it the split names; `delivery/.written` is not
+edited by hand.
+
+---
+
 ## Parallel opportunities
 
 - **Nothing here is concurrent.** Every implementation task (T002–T014) writes `assets/toolkit/scripts/verify-stamp.py`
