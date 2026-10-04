@@ -81,6 +81,7 @@ ROOT = project_root(SCRIPT, 2)
 # to start over and the run's fingerprint would read as progress.
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(SCRIPT.parent))
+import bookkeeping  # noqa: E402
 import code_index  # noqa: E402
 # The delivery toolkit this script is part of: `commands/`, `scripts/`, `skills/` beside each other, at the root
 # or under the delivery directory of an adopted repository.
@@ -458,8 +459,13 @@ def prompt_for(harness: dict[str, Any] | None, argument: str | None) -> str:
     return f"Run the /cruise command: read {relative(COMMAND)} and follow it exactly as written{tail}."
 
 
+# The same record for the files under specs/, resting on as many of the four facts as the platform reports (D57).
+SPECS_RECORD = bookkeeping.Record(strict=False)
+
+
 def fingerprint() -> str:
-    """What the tree looks like to the ladder: the commit, the working tree's state, and every file under specs/."""
+    """What the tree looks like to the ladder: the commit, the working tree's state, and every file under specs/ by
+    its path and the SHA-256 of its bytes — each file read once while the record of what it reported stands (D57)."""
     digest = hashlib.sha256()
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True)
     digest.update(head.stdout.encode())
@@ -471,10 +477,13 @@ def fingerprint() -> str:
                 for path in (LOG, CHECKPOINT, PID, RUN_LOG, STREAM, WATCH_CURSOR, LAST_RESPONSE, INBOX, TOLD))
     digest.update("\n".join(line for line in status.stdout.splitlines() if not line.endswith(own)).encode())
     specs = ROOT / "specs"
+    seen: set[str] = set()
     for path in sorted(specs.rglob("*")) if specs.is_dir() else []:
         if path.is_file() and path not in (LOG, CHECKPOINT):
             digest.update(str(path.relative_to(ROOT)).encode())
-            digest.update(path.read_bytes())
+            digest.update(SPECS_RECORD.digest(path).encode())
+            seen.add(str(path))
+    SPECS_RECORD.retain(seen)
     return digest.hexdigest()[:16]
 
 
@@ -484,10 +493,13 @@ def entries() -> list[dict[str, Any]]:
     return [json.loads(line) for line in LOG.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+# The log as the runner left it: what `drive()` asks per iteration, so the whole file is read once per process and
+# again only when it is not what the runner's own append left. The verbs that read it on demand call `entries()`.
+LOGBOOK = bookkeeping.Log(LOG)
+
+
 def record(entry: dict[str, Any]) -> None:
-    LOG.parent.mkdir(parents=True, exist_ok=True)
-    with LOG.open("a", encoding="utf-8", newline="\n") as handle:
-        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    LOGBOOK.append(entry)
 
 
 def child_environment(harness: dict[str, Any] | None) -> dict[str, str]:
@@ -508,19 +520,34 @@ def child_environment(harness: dict[str, Any] | None) -> dict[str, str]:
     return environment
 
 
+# The hook files the registry names, and the hash of the registry they were derived from.
+_HOOKS: tuple[str, list[Path]] | None = None
+
+
 def control_paths() -> list[Path]:
     """Every gate and control the run is held by, present or not: the fixed ones, and the hook file of every harness
-    whose registry row projects one."""
-    paths = list(CONTROL_PATHS)
-    for row in registry().values():
-        projection = (row.get("hooks") or {}).get("projection") if isinstance(row.get("hooks"), dict) else None
-        if isinstance(projection, dict) and projection.get("where"):
-            paths.append(ROOT / str(projection["where"]))
-    return list(dict.fromkeys(paths))
+    whose registry row projects one. The registry is one of the controls, so the hook files are derived again
+    whenever its hash is not the one they were derived from; that hash comes from the control record, which stats
+    the file and opens it only where it cannot vouch for it, so a registry no one touches is not opened (D56)."""
+    global _HOOKS
+    stamp = CONTROL_RECORD.digest(REGISTRY)
+    if _HOOKS is None or _HOOKS[0] != stamp:
+        hooks: list[Path] = []
+        for row in registry().values():
+            projection = (row.get("hooks") or {}).get("projection") if isinstance(row.get("hooks"), dict) else None
+            if isinstance(projection, dict) and projection.get("where"):
+                hooks.append(ROOT / str(projection["where"]))
+        _HOOKS = (stamp, hooks)
+    return list(dict.fromkeys([*CONTROL_PATHS, *_HOOKS[1]]))
+
+
+# What the runner remembers of a control's bytes while its stat facts stand: all four facts, or the file is hashed.
+CONTROL_RECORD = bookkeeping.Record(strict=True)
 
 
 def controls_signature() -> dict[str, str]:
-    """Every file under the controls by its content, taken before an iteration and compared after it."""
+    """Every file under the controls by its content, taken before an iteration and compared after it. Each file's
+    stat is read afresh every time; its bytes only where the record cannot vouch for them (D56)."""
     signature: dict[str, str] = {}
     for control in control_paths():
         if control.is_file():
@@ -535,9 +562,12 @@ def controls_signature() -> dict[str, str]:
         for path in files:
             try:
                 if path.is_file():
-                    signature[path.relative_to(ROOT).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+                    # The registry's hash was just taken to learn the paths: it is that file's entry too.
+                    stamp = _HOOKS[0] if _HOOKS is not None and path == REGISTRY else None
+                    signature[path.relative_to(ROOT).as_posix()] = stamp or CONTROL_RECORD.digest(path)
             except OSError:
                 continue
+    CONTROL_RECORD.retain({str(ROOT / path) for path in signature})
     return signature
 
 
@@ -759,6 +789,29 @@ class Feed:
         return []
 
 
+# What `iterate` wrote the stream's marker as: (iteration, byte offset, the line, the file's identity). One at a time.
+MARKED: list[tuple[int, int, str, tuple[int, int] | None]] = []
+
+
+def stream_use(iteration: int) -> tuple[list[dict[str, Any]] | None, int]:
+    """The entry's `index_use` for `iteration` and the bytes of the stream read for it. Read from the byte the
+    marker was written at where the path is still the file written through and the bytes there are the marker line;
+    otherwise the whole stream, as before. A stream that is gone gives nothing, having read nothing (D58)."""
+    offset = 0
+    if MARKED and MARKED[0][0] == iteration:
+        _, at, marker, identity = MARKED[0]
+        try:
+            status = os.stat(STREAM)
+        except OSError:
+            status = None
+        found = code_index.read_regular(STREAM, at, len(marker.encode("utf-8"))) if status is not None else None
+        if (found == marker.encode("utf-8") and status is not None
+                and (identity is None or identity == (status.st_dev, status.st_ino))):
+            offset = at
+    used, read = code_index.delegate_use_read(STREAM, iteration, offset)
+    return used.get(iteration), read
+
+
 def iterate(template: str, prompt: str, environment: dict[str, str], iteration: int, stream: str | None) -> str | None:
     """Run one iteration, marked as the runner's, rendering what it does into the feed as it happens — the raw
     stream kept beside it — and return its last line."""
@@ -766,10 +819,19 @@ def iterate(template: str, prompt: str, environment: dict[str, str], iteration: 
     command = template.replace("{prompt}", shlex.quote(prompt))
     environment = {**environment, RUNNER_VARIABLE: "1", ITERATION_VARIABLE: str(iteration)}
     feed = Feed(stream)
-    raw = STREAM.open("a", encoding="utf-8", newline="\n") if stream else None
+    try:
+        # Only a regular file is appended to: a FIFO left at the path would wait here for a reader (D63).
+        raw = bookkeeping.append_regular(STREAM) if stream else None
+    except bookkeeping.NotRegular:
+        raw = None
     try:
         if raw is not None:
-            raw.write(f"# iteration {iteration} {now()}\n")
+            # The byte the marker goes at, and the line itself, so the entry's `index_use` is read from there (D58).
+            written = os.fstat(raw.fileno())
+            marker = f"# iteration {iteration} {now()}\n"
+            MARKED[:] = [(iteration, written.st_size, marker, (written.st_dev, written.st_ino) if written.st_ino else None)]
+            raw.write(marker)
+            raw.flush()
         # Its own process group, so ending the iteration ends everything the session started — a dev server, a
         # watcher — and not only the shell that started the session.
         with subprocess.Popen(command, shell=True, cwd=ROOT, text=True, stdout=subprocess.PIPE,
@@ -1194,10 +1256,16 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
     started_run = time.monotonic()
     iterations_this_run = 0
     # An iteration a person ended for a message is not the run failing to move, so it is not in the stuck window.
-    fingerprints = [entry["fingerprint"] for entry in entries() if not entry.get("interrupted")]
+    fingerprints = [entry["fingerprint"] for entry in LOGBOOK.entries() if not entry.get("interrupted")]
     # The fingerprint a stuck run was already given its one unblocking iteration at, so it gets exactly one.
     unblocked_at: str | None = None
     ask, attempt = first, "kick-off" if first != prompt else None
+    # What this process saw of the controls when the last iteration ended, and whether a park has returned since:
+    # the next iteration's before-signature is compared with it, so no control changes between two iterations
+    # silently (D64). Messages taken for an iteration a park put off ride on the one that runs.
+    left_as: dict[str, str] | None = None
+    parked_since = False
+    carried: list[str] = []
     global INTERRUPTED
     while True:
         table = settings_now(table)
@@ -1218,28 +1286,47 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         # A person's message rides on this iteration's argument: after the kick-off on the first, in place of
         # the bosun's `unblock:` — a person's word is the likelier thing to move a stuck run, and the bosun's one
         # iteration is kept for after it — and alone on any other.
-        messages = deliver()
+        taken = deliver()
+        messages, carried = carried + taken, []
         if messages:
             if attempt == "unblock":
                 unblocked_at, attempt = None, None
             ask = prompt_for(harness, " ".join(part for part in (
                 feature, kickoff if attempt == "kick-off" else None, told_argument(messages)) if part))
-            print(f"cruise: iteration {len(entries()) + 1} carries {len(messages)} message(s) from a person", flush=True)
-        iteration = len(entries()) + 1
+            if taken:
+                print(f"cruise: iteration {len(LOGBOOK.entries()) + 1} carries {len(taken)} message(s) from a person", flush=True)
+        iteration = len(LOGBOOK.entries()) + 1
         # The index an iteration starts against is the runner's to make sound, not the iteration's: a corrupt one is
         # moved aside and rebuilt, a stale one synced, and the entry says which — before the clock starts.
         index = code_index.health()
         if index:
             print(f"cruise: code index before iteration {iteration} — {index['state']}: {index['detail']} "
                   f"({index['seconds']}s)", flush=True)
+        controls_before = controls_signature()
+        between = controls_changed(left_as, controls_before) if left_as is not None else []
+        if between and not parked_since:
+            # Nothing parked the run since the last iteration ended, so whatever changed a control did it on its own:
+            # the run parks before this iteration starts, with no entry and the number not consumed.
+            carried, parked_since = messages, True
+            park(f"a gate or a control of the run changed between iterations {iteration - 1} and {iteration} — "
+                 f"{', '.join(between)} — and nothing an iteration starts may change one; revert the change, or keep "
+                 "it on purpose and resume with a message", no_park, poll, fingerprint())
+            continue
+        if between:
+            print(f"cruise: {', '.join(between)} changed while the run was parked; iteration {iteration} starts "
+                  "against them", flush=True)
         started = now()
         LAST_RESPONSE.unlink(missing_ok=True)
         INTERRUPTED = False
         print(f"cruise: iteration {iteration} started {started}, running `{ask}`", flush=True)
         began = time.monotonic()
-        controls_before = controls_signature()
         # The model flag is read with the settings, so `/cruise-settings model=…` holds from the next iteration.
         last = iterate(template + model_flags(harness, table["model"]), ask, environment, iteration, stream)
+        # Before anything that reads a path the iteration could have left unreadable, and so the run could wait on:
+        # a control it changed is compared and named first (D63).
+        left_as = controls_signature()
+        parked_since = False
+        changed = controls_changed(controls_before, left_as)
         if INTERRUPTED:
             last = "interrupted: a person's message"
             cut_off_brackets("the iteration was ended by `tell --now`")
@@ -1256,14 +1343,15 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             entry["attempt"] = attempt
         if index:
             entry["index"] = index
-        use = code_index.delegate_use(STREAM, iteration).get(iteration) if index and stream else None
+        use, stream_read = stream_use(iteration) if index and stream else (None, 0)
         if use:
             entry["index_use"] = use
             for line in code_index.use_lines(iteration, use):
                 print(line, flush=True)
-        changed = controls_changed(controls_before, controls_signature())
         if changed:
             entry["controls_changed"] = changed
+        if between:
+            entry["controls_changed_between"] = between
         given = delivered()
         if given:
             entry["told"] = [str(each["text"]) for each in given]
@@ -1273,7 +1361,14 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             entry["interrupted"] = True
             requeue(given)
         ask, attempt = prompt, None
-        record(entry)
+        entry["bookkeeping"] = {"log_bytes": LOGBOOK.take()}
+        if stream:
+            entry["bookkeeping"]["stream_bytes"] = stream_read
+        unwritten: OSError | None = None
+        try:
+            record(entry)
+        except bookkeeping.NotRegular as error:
+            unwritten = error  # said after the controls, which are named first
         # The boundary `watch` returns on: the iteration, what it ended on, and how long it took.
         print(f"cruise: iteration {iteration} ended — {last or 'no last line'} ({duration(time.monotonic() - began)})",
               flush=True)
@@ -1283,7 +1378,10 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             park(f"iteration {iteration} changed a gate or a control of the run — {', '.join(changed)} — and a gate "
                  "is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and "
                  "resume with a message", no_park, poll, seen)
+            parked_since = True
             continue
+        if unwritten is not None:
+            raise unwritten
         if INTERRUPTED:
             # Ended for a message, not by its own last line: the next iteration is where the message goes, and it
             # starts now — there is nothing to park on and nothing to count.
@@ -1296,6 +1394,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             return
         if last is not None and last.startswith("cruise: parked: "):
             park(last.removeprefix("cruise: parked: "), no_park, poll, seen)
+            parked_since = True
             continue
         window = fingerprints[-table["stuck_after"]:]
         if len(window) == table["stuck_after"] and len(set(window)) == 1:
@@ -1309,6 +1408,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
                 continue
             park(f"no progress since iteration {since}, and the bosun's iteration did not move it"
                  if unblocked_at == seen else f"no progress since iteration {since}", no_park, poll, seen)
+            parked_since = True
 
 
 def start(arguments: list[str]) -> None:

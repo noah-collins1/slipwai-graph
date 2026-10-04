@@ -7,7 +7,7 @@ slices concurrently*). That works only because the files two slices could fight 
 This is the list, and the gate on it. On a branch that is not `slice/<id>` there is nothing to hold, and the
 script says so and exits 0 — which is why `make verify` runs it everywhere.
 
-What a slice's change may contain — everything since the branch left `main`, committed or not:
+What a slice's change may contain — everything since the branch left the trunk, committed or not:
 
 - **its own record**, `specs/<feature>/slices/<id>/**`, and the feature's cumulative artifacts — `spec.md`,
   `story-split.md`, `contracts/`, `checklists/`, `adversary-log.md`, `decisions.md`, `slices/README.md` — which
@@ -25,26 +25,97 @@ What a slice's change may contain — everything since the branch left `main`, c
   is never edited; superseding one is the host's, on `main`;
 - **code and tests of the service that owns it** — `service` in its model block, or any service where the
   model names none — and, where the block names a `context`, nothing under another context's directory in
-  `domain/` or `application/`. A browser app is open to every slice: a white box is one screen;
-- **the context's events module additively**: a line may be added, none removed. It is the contract;
+  `domain/` or `application/`. A browser app is open to every slice: a white box is one screen. A deployable
+  recorded at `.` — an adopted repository's one application — owns every path no other deployable claims, its
+  tests and sibling directories included (where several are recorded at `.`, the slice's own `service` if it is
+  one of them, else the first listed), except the host's surface: `project.json`, the root `Makefile`
+  (`GNUmakefile` and `makefile` too), `.specify/`, CI configuration (`.github/` and its forge siblings, the other
+  CI systems `slipwai adopt` recognises, and `ci.gate`), the harnesses' files and directories as
+  `<delivery>/scripts/agents/registry.json` names them (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`,
+  `.claude/`, `.agents/`, `.kiro/` and the rest; a registry that is missing or unreadable adds nothing), the
+  delivery directory less `survey/pinned.md` and `survey/running.md` (where the delivery directory is the root,
+  `.written`, `baseline.json` and the other survey pages), and every path in `<delivery>/.written`.
+  Git hooks and `.gitignore` are the repository's own. A path is recorded as `x`, `x/` or `./x` alike;
+- **the context's events module additively**: a line may be added, none removed. It is the contract. At the
+  root deployable of an adopted repository the rule applies only where its record says `"layout": "hexagonal"`,
+  as `check-imports` does: `domain/events.py` there may be anything;
 - **new migration files only**, timestamped so two slices never mint the same name: `YYYYMMDDHHMM_<name>`,
   or `V<YYYYMMDDHHMM>__<name>` under Flyway. The shipped numbered ones keep working — the order is lexical
-  either way, and every stamp sorts after every number;
+  either way, and every stamp sorts after every number. Under the root deployable of an adopted repository a
+  new migration carries whatever name the repository's own tool wrote (`0002_add_field.py`, a 14-digit stamp);
+  an existing one is still never edited or deleted, there as everywhere;
 - **the composition root** — one line per use case, the one code file every slice touches, resolved in
   split order at merge and allowed here for that reason.
 
 Refused, each with what to do instead: the canonical slot at the feature root (`specs/<feature>/plan.md`,
 `research.md`, `data-model.md`, `quickstart.md`, `tasks.md` — links into `slices/<id>/`, never committed;
 a regular file there is a record about to be lost, on every branch), another slice's directory or model
-block, another context's code, an edited or deleted migration, a numbered new migration, and anything else
-in the repository — `Makefile`, `project.json`, package manifests and locks, `scripts/`, `skills/`,
-`commands/`, `agents/`, CI, the docs other than the model and its canvas — which is the host's: landed on `main`
+block, another context's code, an edited or deleted migration, a numbered new migration (outside the root
+deployable), and anything else outside every deployable — `Makefile`, `project.json`, package manifests and
+locks, `scripts/`, `skills/`, `commands/`, `agents/`, CI, the docs other than the model and its canvas — which is
+the host's (under a root deployable, the host's surface above is all of it): landed on `main`
 before the fan-out, or handed back as the question it is. A refusal is a hand-back, not something to work around.
 
-The base the branch is compared with is where it left `main`, or last merged it in. Every `main` the checkout
-knows is tried — `main`, `origin/main`, their `master` spellings — and the newest base wins: `origin/main` alone
-goes stale the moment `main` moves locally and is not yet pushed (a migration run there, then merged into the
-slice), and a stale base charges the slice with `main`'s own files.
+Two readings are stated, not coded. A repository whose delivery directory is the root, with a deployable at the
+root too, is a layout neither `generate` nor `adopt` produces: the fixed names and `.written` hold there and
+nothing more is promised. The harness registry's own fields are the source of the host's paths: a name it carries
+only in prose is not read.
+
+The base the branch is compared with is where it left the trunk, or last merged it in, and the trunk is found
+by its full ref name: only `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>` answer, so a tag, or a
+`master` branch made at the slice's head, cannot stand in for it. The trunk is `ci.branch` in `project.json`
+where that is a branch name, not a `slice/<id>` and not `HEAD`, and has a ref in this checkout; else `main`; else
+`master`. A ref that is a symbolic ref, such as `origin/HEAD`, is where a remote's checkout points and never a trunk
+ref. Where
+CI names the pull request's target (`GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`) and it has a ref, it
+is a second candidate, and where the two bases differ the older one wins, so the target can only move the base
+back. Within one name the newer of its local and `origin` base wins: `origin/main` alone goes stale the moment
+`main` moves locally and is not yet pushed, and a stale base charges the slice with `main`'s own files. Where
+there is a base, what was compared is said: the pass line and the refusal header each carry
+`compared with `<trunk>` at <commit>`, with nothing after it but words about a recorded name that was passed over
+or the `master` clause below. Where there is none, the no-base line below says so instead. A recorded name that has
+a ref and shares no history with the branch is passed over for the next name, and said so; a pull-request target
+that does is no base at all. Where the target's base won over the trunk's, the line names the target and says the
+pull request targets it — and it wins as well where the trunk's base and the target's share no history, so on a
+pull request the commit compared with is always the target's base or an ancestor of it.
+
+Where `project.json` records no usable trunk, `main` and `master` both have refs, and `master`'s base is strictly
+newer than `main`'s, the same line and header add that `master` is here too and `project.json` records no trunk,
+and what to do: set `ci.branch` to `master` in `project.json` on it, or delete the stale `main`. That is words
+only: `main` is still the trunk, no base and no exit code changes, and a `master` that is older or level, or a
+recorded name that is usable, adds no such clause.
+
+What is promised differs by where it runs. On a developer's machine nothing the slice commits, and no stray
+`master`, `origin/master` or tag named `main`, moves the base forward; a person who moves refs in their own
+checkout can defeat it, as they can by moving `main` itself. In CI on a pull request against the trunk, nothing the
+branch commits or pushes moves the base forward — given a base to compare with at all. A push pipeline with no
+pull-request target has only the local promise, and a pull request aimed at another branch is held only as far as
+`project.json` reaches.
+
+With no base to compare with, a developer's checkout fails with one line on stderr, of its own and under no
+header, naming the command to run: `git fetch origin refs/heads/<trunk>:refs/remotes/origin/<trunk>` where there is
+no trunk ref (a bare `git fetch origin <trunk>` in a single-branch clone writes only `FETCH_HEAD`, and the check
+would say the same again; the branch is named in full so that a tag of the same name is never fetched in its
+place), `git fetch --unshallow origin` where a shallow clone is too short to reach the branch point. A
+header, `a slice branch reaches outside what one slice may touch`, stands only above refused paths and lost
+records, with that line after them. A CI run — a detached pull-request checkout (the branch name in `GITHUB_HEAD_REF` or
+`CI_COMMIT_REF_NAME`, `HEAD` detached) or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — exits 1 and says
+on stderr that the slice was NOT checked, because that checkout has no history to compare with; the verify job's
+checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`; on any other CI, a full clone with the trunk's
+branch fetched from a remote named `origin`) for the check to hold there. The line names the two refs it looked
+for, `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>`: only those two full names answer, so a clone under
+another remote name has the history and is still told NOT checked. A local shell with one of those
+variables set gets the same NOT-checked line, and one set to `false` still counts: any non-empty value does.
+That line carries no `git fetch`, since nobody can run one on a runner. With a usable base a CI run is held
+as locally, and a lost record still fails it.
+
+A fetch command is printed only for a plain branch name (`[A-Za-z0-9._/-]`) and where a remote named `origin`
+exists, because it is pasted into a shell; otherwise the line says which branch to create or fetch. A recorded value
+that is no usable name is printed with its control characters dropped and cut to 80 characters. Where a base was
+found and a git call after it fails — the diff, `ls-files`, a `show` of a path that is not merely absent — that is
+*could not compare*, never *no changes*: a developer's checkout exits 1 with one line naming the trunk, the base and
+git's own first line, and a forge's says NOT checked with that reason and exits 1 as well. Where git cannot read the checkout
+at all the check says so on stderr and exits 0.
 """
 
 from __future__ import annotations
@@ -55,11 +126,23 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
+from typing import NamedTuple
 
 
 def project_root(script: Path, depth: int) -> Path:
-    for candidate in script.parents:
+    """The repository's root: the git work tree's top where it holds a `project.json` and the script is inside it,
+    else the nearest ancestor above the script's own tree that holds one, else `depth` levels up. A `project.json`
+    a slice plants beside the script or under the delivery directory moves nothing."""
+    try:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=script.parent, text=True,
+                             capture_output=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        top = ""
+    if top and (Path(top).resolve() / "project.json").is_file() and Path(top).resolve() in script.parents:
+        return Path(top).resolve()
+    for candidate in script.parents[1:]:
         if (candidate / "project.json").is_file():
             return candidate
     return script.parents[depth]
@@ -75,6 +158,8 @@ MODEL = DELIVERY / "docs/event-model/model.yaml"
 CANVAS = DELIVERY / "docs/event-model/model.drawio"
 ADRS = (DELIVERY / "docs/adr").as_posix() + "/"
 SLICE_BRANCH = re.compile(r"^slice/(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*)$")
+# A name is held to be a slice's without regard to case: where the filesystem folds case, `Slice/S1` is the ref.
+SLICE_NAME = re.compile(SLICE_BRANCH.pattern, re.IGNORECASE)
 CANONICAL_SLOTS = ("plan.md", "research.md", "data-model.md", "quickstart.md", "tasks.md")
 FEATURE_SHARED = ("spec.md", "story-split.md", "adversary-log.md", "decisions.md")
 FEATURE_SHARED_DIRECTORIES = ("contracts", "checklists")
@@ -83,14 +168,148 @@ MIGRATION_NAME = re.compile(r"^(?:\d+_|V\d+__)")
 MIGRATION_SUFFIXES = {".sql", ".js", ".ts", ".py"}
 STAMPED_MIGRATION = re.compile(r"^(?:\d{12}_|V\d{12}__)")
 LAYERS_BY_CONTEXT = ("domain", "application")
+# The host's surface in a repository whose application is the root: what a slice never writes though the root
+# deployable would otherwise own it. A floor — `<delivery>/.written` only ever adds to it. The two survey pages
+# the ladder has a slice write are the one part of the delivery directory that is not the host's.
+HOST_FILES = ("project.json", "Makefile", "GNUmakefile", "makefile", "AGENTS.md", "CLAUDE.md", ".gitlab-ci.yml",
+              "Jenkinsfile", "azure-pipelines.yml", "bitbucket-pipelines.yml", ".woodpecker.yml", ".drone.yml",
+              ".travis.yml")
+HOST_DIRECTORIES = (".specify", ".github", ".gitea", ".forgejo", ".gitlab", ".circleci", ".claude", ".codex",
+                    ".cursor", ".gemini", ".opencode")
+SLICE_SURVEY_PAGES = ("survey/pinned.md", "survey/running.md")
+
+
+def recorded_path(value: object) -> str | None:
+    """A path as `project.json` records it, in the one spelling git reports paths in: `x/`, `./x` and `.//x` are `x`;
+    `.`, `./` and `./.` are `.`, the whole repository; an empty path, or none, owns nothing."""
+    if not isinstance(value, str):
+        return None
+    if not value.strip("/"):
+        return ""
+    return "/".join(part for part in value.split("/") if part not in ("", ".")) or "."
+
+
+# The most the gate reads of any one file in the working tree: a real `project.json`, model, registry or `.written`
+# is kilobytes. A file a slice committed as a link to a device, a pipe or something enormous reads as absent.
+MAX_READ = 8 * 1024 * 1024
+
+
+def read_text(path: Path) -> str | None:
+    """A file the gate reads, or None: one that is absent, unreadable, not UTF-8, not a regular file (a link to a
+    device or a pipe would never end) or larger than `MAX_READ` adds nothing and ends nothing. Every read of the
+    working tree goes through here."""
+    try:
+        if not path.is_file():
+            return None
+        with path.open("rb") as handle:
+            data = handle.read(MAX_READ + 1)
+        return None if len(data) > MAX_READ else data.decode("utf-8")
+    except (OSError, ValueError):  # UnicodeDecodeError is a ValueError
+        return None
+
+
+def read_json(path: Path) -> object:
+    """A JSON file the gate reads, or None where it is absent, unreadable, undecodable, malformed or nested past
+    the parser's recursion limit."""
+    text = read_text(path)
+    if text is None:
+        return None
+    try:
+        return json.loads(text)
+    except (ValueError, RecursionError):
+        return None
+
+
+def harness_paths(registry: Path) -> tuple[set[str], set[str]]:
+    """The files and the directories the harness registry names as the host's, read as `<delivery>/scripts/agents/
+    registry.json` lists them: every row's `contextFile`, `skillsDir`, `commandsDir`, `agentFile.dir`,
+    `hooks.projection.where` and `projectMcp.file`. A path with more than one segment makes its first segment the
+    host's whole, as `.claude/` is; one segment is that file. A path outside the repository (`~/…`, `/…`) is not
+    here, a row of the wrong shape adds nothing, and a registry that is absent, unreadable or not JSON adds
+    nothing at all: the fixed names still answer."""
+    document = read_json(registry)
+    harnesses = document.get("harnesses") if isinstance(document, dict) else None
+    files: set[str] = set()
+    directories: set[str] = set()
+    for row in harnesses if isinstance(harnesses, list) else []:
+        found = row_paths(row)
+        for value in found:
+            parts = [part for part in value.split("/") if part not in ("", ".")]
+            if not value.startswith(("~", "/")) and parts:
+                (directories if len(parts) > 1 else files).add(parts[0])
+    return files, directories
+
+
+def row_paths(row: object) -> list[str]:
+    """The paths one registry row names, or none where the row is not shaped as the registry's rows are."""
+    if not isinstance(row, dict):
+        return []
+    found: list[object] = []
+    for keys in (("contextFile",), ("skillsDir",), ("commandsDir",), ("agentFile", "dir"),
+                 ("hooks", "projection", "where"), ("projectMcp", "file")):
+        value: object = row
+        for key in keys:
+            if value is None:
+                break  # a harness that has no such thing
+            if not isinstance(value, dict):
+                return []
+            value = value.get(key)
+        found.append(value)
+    return [] if any(value is not None and not isinstance(value, str) for value in found) else [
+        value for value in found if value]
+
+
+def run_git(*arguments: str) -> tuple[str | None, str]:
+    """git's stdout, or None where it failed, and git's own first line of stderr — empty where it printed none."""
+    try:
+        completed = subprocess.run(["git", *arguments], cwd=ROOT, text=True, errors="surrogateescape", capture_output=True)
+    except (OSError, ValueError) as error:  # a NUL or a lone surrogate in an argument is a ValueError
+        return None, str(error)
+    if completed.returncode:
+        lines = completed.stderr.strip().splitlines()
+        return None, lines[0] if lines else f"git exited with status {completed.returncode}"
+    return completed.stdout, ""
 
 
 def git(*arguments: str) -> str | None:
+    return run_git(*arguments)[0]
+
+
+class CouldNotCompare(Exception):
+    """A git call between the base and the verdict failed: the answer is *could not compare*, never *no changes*."""
+
+
+def git_must(*arguments: str) -> str:
+    """Like `git`, but a failure is `CouldNotCompare` with git's first line, so it cannot read as an empty answer."""
+    out, reason = run_git(*arguments)
+    if out is None:
+        raise CouldNotCompare(reason)
+    return out
+
+
+ABSENT = ("does not exist in", "exists on disk, but not in")
+
+
+def git_show(base: str, path: str) -> str | None:
+    """`git show <base>:<path>`: None where the path is absent at the base — an answer — and `CouldNotCompare`
+    where git failed for any other reason."""
+    out, reason = run_git("show", f"{base}:{path}")
+    if out is None and not any(words in reason for words in ABSENT):
+        raise CouldNotCompare(reason)
+    return out
+
+
+def checkout_problem() -> str | None:
+    """Why git cannot read this checkout at all — its own first line — or None where `git rev-parse --git-dir` works."""
     try:
-        completed = subprocess.run(["git", *arguments], cwd=ROOT, text=True, capture_output=True, check=True)
-    except (OSError, subprocess.CalledProcessError):
+        completed = subprocess.run(["git", "rev-parse", "--git-dir"], cwd=ROOT, text=True, errors="surrogateescape",
+                                   capture_output=True)
+    except (OSError, ValueError) as error:
+        return str(error)
+    if completed.returncode == 0:
         return None
-    return completed.stdout
+    lines = completed.stderr.strip().splitlines()
+    return lines[0] if lines else f"git exited with status {completed.returncode}"
 
 
 def current_branch() -> str | None:
@@ -106,54 +325,220 @@ def current_branch() -> str | None:
     return None if name == "HEAD" else name
 
 
-def merge_base() -> str | None:
-    """Where the branch left `main`, or last merged it in: the newest base among every `main` the checkout has.
-    Trying `origin/main` alone is wrong on a machine where `main` has moved and not been pushed — the base is then
-    older than the merge the slice took, and `main`'s own files land in the slice's diff."""
+class Base(NamedTuple):
+    """What the trunk answered: the commit the branch is compared with (None where there is none), the trunk's
+    name, and whether any ref of that name exists in this checkout."""
+
+    commit: str | None
+    trunk: str
+    has_ref: bool
+    passed_over: str = ""  # the report words where `ci.branch` named something that was not used; else empty
+    bare: str = ""  # the same words with no `git fetch` command in them: what a forge's output may carry
+    targeted: bool = False  # the pull request's target, not the trunk's own base, is what the branch is compared with
+    named: str = ""  # the trunk's name by D30 and D33 alone, with no pull-request target in it: what `trunk` is not
+
+
+def bases_of(name: str) -> tuple[bool, str | None]:
+    """Whether `refs/heads/<name>` or `refs/remotes/origin/<name>` exists, and the newest base the branch shares
+    with either. Only the full ref names answer — a short name resolves to a tag first, and a tag, like a stray
+    branch, is not a trunk. A local `main` moved past `origin/main` and merged into the slice is the newer base:
+    trying `origin/main` alone would put `main`'s own files in the slice's diff."""
+    exists = False
     bases: list[str] = []
-    for name in ("main", "origin/main", "master", "origin/master"):
-        found = git("merge-base", "HEAD", name)
+    for ref in (f"refs/heads/{name}", f"refs/remotes/origin/{name}"):
+        if git("rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}") is None:
+            continue
+        if git("symbolic-ref", "-q", ref) is not None:
+            continue  # `origin/HEAD` and any alias: where the remote's checkout points, not a trunk
+        exists = True
+        found = git("merge-base", "HEAD", ref)
         if found and found.strip() not in bases:
             bases.append(found.strip())
     if not bases:
-        return None
+        return exists, None
     newest = bases[0]
     for candidate in bases[1:]:
-        # `--is-ancestor` exits 0, with nothing printed, when the first commit is an ancestor of the second.
-        if git("merge-base", "--is-ancestor", newest, candidate) is not None:
+        if is_ancestor(newest, candidate):
             newest = candidate
-    return newest
+    return exists, newest
+
+
+def is_ancestor(older: str, newer: str) -> bool:
+    """`--is-ancestor` exits 0, with nothing printed, when the first commit is an ancestor of the second."""
+    return git("merge-base", "--is-ancestor", older, newer) is not None
+
+
+def target_base(trunk: str) -> tuple[str, str | None] | None:
+    """The name CI says the pull request targets (`GITHUB_BASE_REF`; GitLab's `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`)
+    and the base under it: the first of the two that is usable, has a ref, and is not the trunk's own name. A
+    branch can push what it likes but cannot change its target."""
+    for variable in ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"):
+        name = usable(os.environ.get(variable))
+        if name and name != trunk:
+            exists, base = bases_of(name)
+            if exists:
+                return name, base
+    return None
+
+
+def target_name() -> str | None:
+    """The pull request's target where CI gives a usable one, ref or no ref."""
+    return next(filter(None, (usable(os.environ.get(v)) for v in ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"))), None)
+
+
+def older_of(first: str, second: str | None) -> str:
+    """Across two names the older base: the one that is an ancestor of the other, else where the two histories
+    meet, else the second — the pull request's target, which the branch did not choose. The target can only move
+    the base back, so the commit compared with is always the target's base or an ancestor of it (D87, F1): where
+    a name the branch chose shares no history with the target, the target's base stands."""
+    if second is None or second == first or is_ancestor(first, second):
+        return first
+    if is_ancestor(second, first):
+        return second
+    found = git("merge-base", first, second)
+    return found.strip() if found and found.strip() else second
+
+
+def usable(value: object) -> str | None:
+    """A branch name a record may name: a string, stripped, `refs/heads/` taken off, one git accepts as a branch,
+    and neither `HEAD` nor a `slice/<id>` in any case — a slice branch is never the trunk. Anything else is None, never an exception."""
+    if not isinstance(value, str):
+        return None
+    name = value.strip()
+    name = name[len("refs/heads/"):] if name.startswith("refs/heads/") else name
+    if not name or name.startswith(("-", "refs/")) or name.upper() == "HEAD" or SLICE_NAME.match(name):
+        return None
+    if git("check-ref-format", f"refs/heads/{name}") is None:
+        return None
+    return name
+
+
+SAFE_NAME = re.compile(r"^[A-Za-z0-9._/-]+$")
+
+
+def printable(value: str) -> str:
+    """A name the gate did not choose, as it may be printed: control and line-separating characters dropped, a
+    backtick made an apostrophe, cut to 80 characters — so it can forge no line and end no span early."""
+    kept = "".join("'" if char == "`" else char for char in value
+                   if unicodedata.category(char)[0] != "C" and unicodedata.category(char) not in ("Zl", "Zp"))
+    return kept[:80]
+
+
+def has_origin() -> bool:
+    return "origin" in (git("remote") or "").split()
+
+
+def fetch_command(name: str) -> str | None:
+    """The fetch that writes the remote-tracking ref this script looks for: a bare `git fetch origin <name>` in a
+    single-branch clone fetches the commit into `FETCH_HEAD` and no ref, so the gate would say the same again. The
+    source is `refs/heads/<name>`, in full: a short name resolves a tag of the same name before the branch, and the
+    gate would then compare with the tag (D87, F3).
+    Printed only for a plain branch name and where a remote called `origin` exists: it is pasted into a shell."""
+    if not SAFE_NAME.match(name) or not has_origin():
+        return None
+    return f"git fetch origin refs/heads/{name}:refs/remotes/origin/{name}"
+
+
+MASTER_CLAUSE = ("`master` is here too and `project.json` records no trunk — if `master` is the trunk, set "
+                 "`ci.branch` to `master` in `project.json` on it, or delete the stale `main`")
+
+
+def newer_master(main_base: str) -> bool:
+    """Whether `master` has a ref and a base strictly newer than `main`'s (D33): words only, never the base."""
+    exists, base = bases_of("master")
+    return exists and base is not None and base != main_base and is_ancestor(main_base, base)
+
+
+def merge_base() -> Base:
+    """Where the branch left the trunk: the name `ci.branch` of the working tree's `project.json` records where it
+    is usable and has a ref, else `main` where it has one, else `master` — so `master` counts only as the recorded
+    name or where no `main` exists, and a minted `master` cannot move the base. A recorded name passed over is
+    said in `passed_over`."""
+    record = read_json(ROOT / "project.json")
+    ci = record.get("ci") if isinstance(record, dict) else None
+    value = ci.get("branch") if isinstance(ci, dict) else None
+    recorded = usable(value)
+    names = [recorded] if recorded else []
+    names += [name for name in ("main", "master") if name not in names]
+    passed_over = bare = ""
+    if isinstance(value, str) and value.strip():
+        stripped = value.strip()
+        if recorded is None and SLICE_NAME.match(stripped.removeprefix("refs/heads/")):
+            passed_over = bare = f"`ci.branch` names `{printable(stripped)}`, a slice branch, which is never the trunk"
+        elif recorded is None:
+            passed_over = bare = f"`ci.branch` names `{printable(stripped)}`, which is not a branch name"
+        elif not bases_of(recorded)[0]:
+            bare = f"`ci.branch` names `{printable(recorded)}`, which has no branch here"
+            command = fetch_command(recorded)
+            passed_over = f"{bare} — `{command}` would bring it" if command else bare
+    elif value is not None and not isinstance(value, str):
+        passed_over = bare = "`ci.branch` is not a string, so it was passed over"
+    skipped: list[str] = []  # names with a ref and no history in common with this branch: passed over, not the end
+    for name in names:
+        exists, base = bases_of(name)
+        if exists and base is None:
+            skipped.append(name)
+            continue
+        if exists:
+            if skipped:
+                said = "; ".join(f"`{other}` has a ref here but shares no history with this branch" for other in skipped)
+                passed_over = "; ".join(filter(None, (passed_over, said)))
+                bare = "; ".join(filter(None, (bare, said)))
+            if recorded is None and name == "main" and base and newer_master(base):
+                passed_over = "; ".join(filter(None, (passed_over, MASTER_CLAUSE)))
+                bare = "; ".join(filter(None, (bare, MASTER_CLAUSE)))
+            target = target_base(name)
+            if target and target[1] is None:
+                return Base(None, target[0], True, passed_over, bare, False, name)  # a target with no history in common is no base
+            chosen = older_of(base, target[1] if target else None)
+            if target and chosen != base:  # the target's base won: say so, and name the target, not the trunk
+                return Base(chosen, target[0], True, passed_over, bare, True, name)
+            return Base(chosen, name, True, passed_over, bare, False, name)
+    target = target_base(names[0])
+    if target:
+        return Base(target[1], target[0], True, passed_over, bare, True, names[0])
+    if skipped:
+        return Base(None, skipped[0], True, passed_over, bare, False, skipped[0])
+    return Base(None, target_name() or names[0], False, passed_over, bare, False, names[0])
 
 
 def changed_files(base: str) -> dict[str, str]:
     """Every path that differs from the base, with its status: `A` added, `M` modified, `D` deleted. The working
-    tree is compared, not the last commit, so an uncommitted edit is held the same as a committed one."""
+    tree is compared, not the last commit, so an uncommitted edit is held the same as a committed one. Paths are
+    read NUL-separated (`-z`): git quotes a name with a non-ASCII byte, a tab or a quote otherwise, and a quoted
+    path matches no rule."""
     changes: dict[str, str] = {}
-    for line in (git("diff", "--name-status", "--no-renames", base) or "").splitlines():
-        status, _, path = line.partition("\t")
+    fields = git_must("diff", "--name-status", "-z", "--no-renames", base).split("\0")
+    for status, path in zip(fields[0::2], fields[1::2]):
         if path:
             changes[path] = status[:1]
-    for path in (git("ls-files", "--others", "--exclude-standard") or "").splitlines():
+    for path in git_must("ls-files", "-z", "--others", "--exclude-standard").split("\0"):
         if path:
             changes[path] = "A"
     return changes
 
 
 def deletions(base: str, path: str) -> int:
-    numstat = git("diff", "--numstat", base, "--", path) or ""
-    for line in numstat.splitlines():
-        parts = line.split("\t")
+    for record in git_must("diff", "--numstat", "-z", base, "--", path).split("\0"):
+        parts = record.split("\t")
         if len(parts) >= 2 and parts[1].isdigit():
             return int(parts[1])
     return 0
 
 
-def deployables() -> dict[str, dict]:
+def project_document(base: str) -> dict:
+    """`project.json` as the base commit has it — never the branch's own, which a slice could rewrite to hand itself
+    ownership of the host's paths. A base with no `project.json` (or an unreadable one) records nothing."""
+    text = git_show(base, "./project.json")
     try:
-        document = json.loads((ROOT / "project.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        document = json.loads(text) if text is not None else None
+    except (ValueError, RecursionError):
         return {}
-    listed = document.get("deployables") if isinstance(document, dict) else None
+    return document if isinstance(document, dict) else {}
+
+
+def deployables(base: str) -> dict[str, dict]:
+    listed = project_document(base).get("deployables")
     return {name: record for name, record in listed.items() if isinstance(record, dict)} if isinstance(listed, dict) else {}
 
 
@@ -191,8 +576,9 @@ class Scope:
     def __init__(self, slice_id: str, base: str) -> None:
         self.slice_id = slice_id
         self.base = base
-        self.apps = deployables()
-        model_text = (ROOT / MODEL).read_text(encoding="utf-8") if (ROOT / MODEL).is_file() else None
+        self.apps = deployables(base)
+        self.host: tuple[set[str], set[str], set[str]] | None = None
+        model_text = read_text(ROOT / MODEL)
         self.model = load_model(model_text) if model_text is not None else None
         own = slices_of(self.model).get(slice_id, {})
         self.service = own.get("service") if isinstance(own.get("service"), str) else None
@@ -200,8 +586,7 @@ class Scope:
 
     def service_path(self, name: str) -> str | None:
         record = self.apps.get(name)
-        path = record.get("path") if record else None
-        return path.strip("/") if isinstance(path, str) else None
+        return recorded_path(record.get("path") if record else None)
 
     def other_contexts(self) -> list[str]:
         if self.service is None or self.context is None:
@@ -211,12 +596,49 @@ class Scope:
         return [str(context) for context in contexts if str(context) != self.context]
 
     def owning_app(self, path: str) -> str | None:
-        """The deployable a path sits under, by its recorded `path`, or None for a path outside every app."""
+        """The deployable a path sits under, by its recorded `path`, or None for a path outside every app.
+        A deployable at `.` (or `./`) is the whole repository, so it is asked last: it owns what no deployable
+        in a subdirectory claims. Where several are recorded at `.`, the slice's own `service` owns the path if it
+        is one of them, else the first listed."""
+        roots = []
         for name in self.apps:
             app_path = self.service_path(name)
-            if app_path and (path == app_path or path.startswith(app_path + "/")):
+            if app_path == ".":
+                roots.append(name)
+            elif app_path and (path == app_path or path.startswith(app_path + "/")):
                 return name
-        return None
+        if self.service in roots:
+            return self.service
+        return roots[0] if roots else None
+
+    def host_surface(self, path: str) -> bool:
+        """Whether a path is the host's where the root deployable would own it: the fixed names, the delivery
+        directory (unless it is the root) less the slice's two survey pages, the recorded CI gate, and every path
+        the factory wrote under `<delivery>/.written`."""
+        files, directories, written = self.host_names()
+        if path in files or path.split("/")[0] in directories or path in written:
+            return True
+        slice_pages = [(DELIVERY / page).as_posix() for page in SLICE_SURVEY_PAGES]
+        if DELIVERY == Path("."):
+            # The repository is the delivery directory, so the code is the slice's; only the delivery's own
+            # ledger and survey stay the host's.
+            return path in (".written", "baseline.json") or (path.startswith("survey/") and path not in slice_pages)
+        return Path(path).is_relative_to(DELIVERY) and path not in slice_pages
+
+    def host_names(self) -> tuple[set[str], set[str], set[str]]:
+        """The host's files, directories and exact paths, read once for the run: the fixed names, the harness
+        registry, `ci.gate`, and `<delivery>/.written`."""
+        if self.host is None:
+            files, directories = harness_paths(ROOT / DELIVERY / "scripts/agents/registry.json")
+            files |= set(HOST_FILES)
+            directories |= set(HOST_DIRECTORIES)
+            ci = project_document(self.base).get("ci")
+            gate = ci.get("gate") if isinstance(ci, dict) else None
+            exact = {recorded_path(gate)} if isinstance(gate, str) else set()
+            ledger = read_text(ROOT / DELIVERY / ".written")
+            exact |= {line.strip() for line in (ledger or "").splitlines() if line.strip()}
+            self.host = files, directories, exact
+        return self.host
 
     def spec_violation(self, path: str) -> str | None:
         parts = path.split("/")
@@ -250,7 +672,7 @@ class Scope:
         """Every other slice's block must read as it does on the base."""
         if self.model is None:
             return []
-        base_text = git("show", f"{self.base}:{MODEL.as_posix()}")
+        base_text = git_show(self.base, MODEL.as_posix())
         if base_text is None:
             return []
         base_slices, head_slices = slices_of(load_model(base_text)), slices_of(self.model)
@@ -270,8 +692,22 @@ class Scope:
                 )
         return violations
 
+    def root_owned(self, path: str) -> bool:
+        """Whether the path is the root deployable's own code: its owner is recorded at `.` and it is not the
+        host's. Where it is, the repository's own tools name migrations and its own layout is not the factory's."""
+        app = self.owning_app(path)
+        return app is not None and self.service_path(app) == "." and not self.host_surface(path)
+
     def migration_violation(self, path: str, status: str) -> str | None:
         name = Path(path).name
+        if self.root_owned(path):
+            if status == "A":
+                return None  # whatever name the repository's own tool wrote
+            return (
+                f"{path}: an existing migration was {'deleted' if status == 'D' else 'edited'}. A slice adds "
+                f"migrations and never changes one that shipped — the release running against the database "
+                f"already applied it. Add a new migration with the repository's own tool instead."
+            )
         if status != "A":
             return (
                 f"{path}: an existing migration was {'deleted' if status == 'D' else 'edited'}. A slice adds "
@@ -289,6 +725,8 @@ class Scope:
 
     def code_violation(self, path: str, status: str) -> str | None:
         app = self.owning_app(path)
+        if app is not None and self.service_path(app) == "." and self.host_surface(path):
+            app = None
         if app is None:
             return (
                 f"{path}: outside every deployable and not a slice's to write — shared configuration, tooling and "
@@ -311,7 +749,10 @@ class Scope:
                         f"(`context: {self.context}`). One context per slice; a change there is another slice's."
                     )
         stem = Path(path).stem
-        if "domain" in parts and stem.lower().endswith("events") and status != "A" and deletions(self.base, path):
+        # An adopted application's `domain/events.py` may be anything: at the root the events rule is opt-in, as
+        # `check-imports` makes its layer rules, by the record's `"layout": "hexagonal"`.
+        generic = self.service_path(app) == "." and record.get("layout") != "hexagonal"
+        if not generic and "domain" in parts and stem.lower().endswith("events") and status != "A" and deletions(self.base, path):
             return (
                 f"{path}: the events module is the contract and grows additively — a line was removed. Add the new "
                 f"shape beside the old; retiring one is the host's, once nothing folds it."
@@ -353,7 +794,7 @@ def lost_records() -> list[str]:
     specs = ROOT / "specs"
     if not specs.is_dir():
         return findings
-    tracked = set((git("ls-files", "specs") or "").splitlines())
+    tracked = set((git("ls-files", "-z", "specs") or "").split("\0"))
     for feature in sorted(specs.iterdir()):
         for slot in CANONICAL_SLOTS:
             candidate = feature / slot
@@ -366,35 +807,102 @@ def lost_records() -> list[str]:
     return findings
 
 
-def check(branch: str | None) -> tuple[list[str], str]:
-    """The violations, and the one line to print when there are none."""
+def forge_checkout() -> bool:
+    """A forge's checkout, by either route (D31, D32): the branch name came from a variable and `HEAD` is detached,
+    or the environment says the run is CI — `GITHUB_ACTIONS`, `GITLAB_CI` or `CI` non-empty. Anything else is a
+    developer's."""
+    if any(os.environ.get(v) for v in ("GITHUB_ACTIONS", "GITLAB_CI", "CI")):
+        return True
+    named = any(os.environ.get(v) for v in ("GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME"))
+    return named and git("symbolic-ref", "-q", "HEAD") is None
+
+
+def not_checked(slice_id: str, trunk: str, note: str = "") -> str:
+    """The forge's answer where there is no base: a failure, said on stderr, since a gate that could not look
+    must not read as one that looked (D31, S24). It names no `git fetch`: the fix there is the job's checkout,
+    not a command a person runs. It names the two refs it looked for, `refs/heads/<trunk>` and
+    `refs/remotes/origin/<trunk>`, and that the remote is called `origin`: a clone under another remote name has
+    the history and is still told so (D87, F4)."""
+    said = f"; {note}" if note else ""
+    return (f"check-slice-scope: slice/{slice_id} was NOT checked — this CI checkout has no `{trunk}` history to "
+            f"compare with (it looked for `refs/heads/{trunk}` and `refs/remotes/origin/{trunk}`). The check holds on "
+            "a developer's machine; for it to hold here the verify job's "
+            "checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: \"0\"`; on any other CI, a full clone with the "
+            f"trunk's branch fetched from a remote named `origin`){said}.")
+
+
+def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
+    """The violations, the one line to print when there are none, what the refusal header ends with, a line
+    for stderr that is neither — printed after any findings — and whether that line is a failure, which it is on a
+    forge's checkout and on a developer's alike."""
     violations = lost_records()
     match = SLICE_BRANCH.match(branch or "")
+    problem = checkout_problem()
+    unreadable = f"check-slice-scope: git could not read this checkout — {problem}" if problem else ""
     if match is None:
         where = f"on `{branch}`" if branch else "on a detached checkout"
-        return violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold"
+        return (violations, f"check-slice-scope: {where}, not a `slice/<id>` branch — nothing to hold", "", unreadable,
+                False)
+    if problem:
+        return violations, "", "", unreadable, False  # exit 0 as before the slice: there is nothing to compare with
     slice_id = match.group("id")
-    base = merge_base()
+    found_base = merge_base()
+    base = found_base.commit
+    note = f"; {found_base.passed_over}" if found_base.passed_over else ""
     if base is None:
-        return violations, f"check-slice-scope: slice/{slice_id} has no `main` to compare with — nothing to hold"
-    scope = Scope(slice_id, base)
-    for path, status in sorted(changed_files(base).items()):
-        found = scope.violation(path, status)
-        if found:
-            violations.append(found)
-    violations.extend(scope.model_violations())
-    return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may"
+        if forge_checkout():
+            return violations, "", "", not_checked(slice_id, found_base.trunk, found_base.bare), True
+        trunk = printable(found_base.trunk)
+        command = fetch_command(found_base.trunk)
+        if not found_base.has_ref:
+            line = f"slice/{slice_id} has no `{trunk}` to compare with, so nothing can be held"
+            if command is None:
+                line += f" — create or fetch a local `{trunk}` branch"
+            elif f"`{command}`" not in found_base.passed_over:  # the note below may have said it already
+                line += f" — run `{command}`"
+        elif (git("rev-parse", "--is-shallow-repository") or "").strip() == "true":
+            line = f"slice/{slice_id} shares no history with `{trunk}` at this depth — " + (
+                "run `git fetch --unshallow origin`" if has_origin() else "fetch the missing history")
+        else:
+            line = f"slice/{slice_id} shares no history with `{trunk}` — a slice branch is cut from `{trunk}`"
+        return violations, "", "", f"check-slice-scope: {line}{note}", True
+    short = (git("rev-parse", "--short", base) or base).strip()
+    compared = f"compared with `{printable(found_base.trunk)}` at {short}"
+    if found_base.targeted:
+        compared += f", which the pull request targets"
+    try:
+        scope = Scope(slice_id, base)
+        for path, status in sorted(changed_files(base).items()):
+            found = scope.violation(path, status)
+            if found:
+                violations.append(found)
+        violations.extend(scope.model_violations())
+    except CouldNotCompare as error:  # D31, D32: the diff did not run, so there is nothing to say passed
+        why = str(error) or "git gave no reason"
+        if forge_checkout():
+            return violations, "", "", (f"check-slice-scope: slice/{slice_id} was NOT checked — git could not compare it "
+                                        f"with `{found_base.trunk}` at {short}: {why}"), True
+        return violations, "", "", (f"check-slice-scope: slice/{slice_id} could not be compared with "
+                                    f"`{found_base.trunk}` at {short} — {why}"), True
+    return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may ({compared}){note}", \
+        f" — {compared}{note}", "", False
 
 
 def main() -> int:
-    violations, report = check(current_branch())
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(errors="backslashreplace")  # a recorded name with a lone surrogate must not end the run
+    violations, report, note, notice, failed = check(current_branch())
     if violations:
-        print("check-slice-scope: a slice branch reaches outside what one slice may touch\n", file=sys.stderr)
+        print(f"check-slice-scope: a slice branch reaches outside what one slice may touch{note}\n", file=sys.stderr)
         for violation in violations:
             print(f"  {violation}", file=sys.stderr)
         print(file=sys.stderr)
+    if notice:
+        print(notice, file=sys.stderr)
+    if violations or failed:
         return 1
-    print(report)
+    if report:
+        print(report)
     return 0
 
 

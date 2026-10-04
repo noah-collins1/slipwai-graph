@@ -1,12 +1,12 @@
-<!-- convergence: a1d090a058dac6e2 -->
+<!-- convergence: 79960088dac2c00f -->
 # Where `slipwai-graph` stands
 
 > **Experimental.** Brownfield adoption is new and will change shape while real repositories teach it what it got wrong: the files under the delivery directory, the facts `project.json` records and the questions `adopt` asks may change in a MINOR release, and `slipwai migrate` brings each change here with a note saying what to do. Every place this reaches you says so until it stops being true. What surprised you — a detection that was wrong, a gate that went red, a sentence this page should have had — belongs on the public issue tracker.
 
 A generated project starts at the top of every ladder below and the method keeps it there. This repository
 started wherever it was; this page says where that is, axis by axis, and the loop climbs one rung per slice
-until nothing here differs from a generated project — at which point `slipwai converge` makes it one. **2** of
-9 axes are at their target, **6** below it, **1** unrecorded.
+until nothing here differs from a generated project — at which point `slipwai converge` makes it one. **3** of
+9 axes are at their target, **5** below it, **1** unrecorded.
 
 Every row is a fact `project.json` holds under `convergence`, with where it came from: `detected` from the tree,
 `confirmed` or `overridden` by a person, `unrecorded` where nothing has said. Nothing is a default. To move a
@@ -19,13 +19,13 @@ first slice and offers the next unplanned row as a method slice beside the produ
 |---|---|---|---|---|---|
 | Path to production | `scripted` | `pipeline-decides` | pipeline: .github/workflows/package.yml; pipeline: .github/workflows/publish-package.yml; pipeline: .github/workflows/release.yml; pipeline: .github/workflows/verify.yml; scripted: assets/targets/aws/scripts/deploy.py; scripted: assets/targets/azure/scripts/deploy.py; scripted: tests/fixtures/adopt/converging/deploy.sh; scripted: tests/fixtures/adopt/javascript-gitlab/deploy.sh; scripted: Makefile | *not yet* | `overridden` |
 | Integration | `unknown` | `continuous` | CI on github, gate .github/workflows/verify-delivery.yml | *not yet* | `unrecorded` |
-| Safety net | `tests-exist` | `mutation-measured` | test recorded for slipwai-graph | *not yet* | `detected` |
-| Structure | `as-found` | `typed` | slipwai-graph: application; role not established for slipwai-graph | *not yet* | `detected` |
+| Safety net | `tests-pass` | `mutation-measured` | make verify and make -f delivery/Makefile verify green at 030ad00 with CRUISE_RUNNER=1 CRUISE_ITERATION=2 set: 830 unittest tests, OK (skipped=9, equal to the pre-slice baseline), no ratchet quarantine; established by cruise iteration 2 of 001-faster-slipwai (slice S00-run-path, D11) — no person has read the gate | *not yet* | `confirmed` |
+| Structure | `named` | `typed` | slipwai-graph: tool; not under apps/: . | *not yet* | `detected` |
 | Platform | `supported` | `audited` | in support on 2026-10-02: Python 3.11; no audit command recorded for slipwai-graph | *not yet* | `detected` |
 | Constitution | `template` | `in-full` | .specify/memory/constitution.md | *not yet* | `detected` |
 | Data | `settled` | `settled` | schema: none | *not yet* | `overridden` |
 | Infrastructure | `settled` | `settled` | home: none | *not yet* | `overridden` |
-| Strategy | `recommended` | `done` | why: Make the delivery loop faster without weakening its gates: tree-shaped merges, scoped and memoised gates, incremental event-model rendering, routing by difficulty and role (PRD: Faster Slipwai); recommended: leave-it | *not yet* | `detected` |
+| Strategy | `done` | `done` | ADR delivery/docs/adr/0002-change-strategy.md: leave-it | *not yet* | `detected` |
 
 ## The ladders
 

@@ -630,9 +630,10 @@ def done_slices(feature: Path) -> set[str]:
         for line in register.read_text(encoding="utf-8").splitlines():
             if line.strip().startswith("|"):
                 first = line.strip().strip("|").split("|")[0].strip().strip("`")
-                found = re.match(r"([A-Za-z]+\d+)\b", first)
+                # the released head (letters, digits, a word boundary), then a slug after `-` or `.` that ends on a letter or digit
+                found = re.match(r"[A-Za-z]+\d+(?![A-Za-z0-9_])(?:[.-][A-Za-z0-9._-]*[A-Za-z0-9])?", first)
                 if found:
-                    done.add(found.group(1))
+                    done.add(found.group(0))
     for ident, named in implemented():
         if named == feature.name or (named is None and (feature / "slices" / ident).is_dir()):
             done.add(ident)
@@ -665,8 +666,14 @@ def check() -> list[str]:
             continue
         done = done_slices(feature)
         for ident in sorted(done):
+            # The record is at `slices/<whole id>/`, or at `slices/<prefix>/` where it was opened before the id was
+            # read whole; with neither, the finding names the whole id's path.
+            # An id with no letters-then-digits head has no prefix and is looked up whole.
+            head = re.match(r"[A-Za-z]+\d+", ident)
             record_path = feature / "slices" / ident / RECORD
-            where = f"specs/{feature.name}/slices/{ident}"
+            if head and not record_path.is_file() and (feature / "slices" / head.group(0) / RECORD).is_file():
+                record_path = feature / "slices" / head.group(0) / RECORD
+            where = f"specs/{feature.name}/slices/{record_path.parent.name if record_path.is_file() else ident}"
             if not record_path.is_file():
                 findings.append(f"{where} is done but has no {RECORD}: no stage of it was bracketed "
                                 "(commands/drive.md, *What each stage costs*)")

@@ -19,7 +19,7 @@ seam, one row in `delivery/retirement.md`. It is the Slice stage of adopting the
   those are lower rungs on `delivery/docs/change-strategy.md`'s ladder and cheaper with a green gate; the strangler is
   the architecture rung and comes after them unless the capability itself is the trigger.
 - **No decision, no strangling.** `project.json`'s `strategy.decided` must read `strangler-fig`. Today it
-  reads `null` — recommended `leave-it`, decided nothing. A recommendation is not a decision, and neither is this command's argument:
+  reads `leave-it` (decided by `delivery/docs/adr/0002-change-strategy.md`). A recommendation is not a decision, and neither is this command's argument:
   where `decided` is `null` or names another strategy, stop, say what is recorded, and point at the way to
   decide — an accepted ADR under `delivery/docs/adr/` with a `Strategy: strangler-fig` line, then `/survey`
   (`delivery/docs/change-strategy.md`, *Recommended for this repository*). Going beyond the recorded decision is how a

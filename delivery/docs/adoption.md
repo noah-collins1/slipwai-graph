@@ -12,20 +12,23 @@ written over, and `project.json` records every fact with where it came from: `de
 
 ## What was wrapped
 
-### `.` — `slipwai-graph`, an application whose role is not recorded in python (python, python 3.11)
+### `.` — `slipwai-graph`, a tool in python (python, python 3.11)
 
-Provenance: language `detected`, commands `detected`, kind `unrecorded`.
+The slipwai factory itself: the CLI that generates and adopts product repositories, the assets it copies into them, and the delivery method (/drive, /cruise, the gate) those repositories run
+
+Provenance: language `detected`, commands `confirmed`, kind `confirmed`, purpose `confirmed`.
 
 | Target | Command |
 |---|---|
-| `install` | `python3 -m pip install -e .` |
-| `typecheck` | `python3 -m mypy .` |
-| `lint` | `python3 -m ruff check .` |
-| `test` | `python3 -m pytest` |
+| `install` | `make install` |
+| `typecheck` | `make typecheck` |
+| `lint` | `make lint` |
+| `test` | `make test` |
 | `integration` | *none recorded — a written no; the target passes and says so* |
 | `adversarial` | *none recorded — a written no; the target passes and says so* |
 | `audit` | *none recorded — a written no; the target passes and says so* |
 | `mutation` | *none recorded — a written no; the target passes and says so* |
+| `smoke` | `./slipwai --version` |
 
 `python` is a language this factory generates, so `add-service --language python` can put a generated service beside the existing one, with every axis and gate a generated service has.
 
@@ -86,7 +89,7 @@ has a target of its own. The same `verify` runs in CI from `.github/workflows/ve
    `make -f delivery/Makefile ratchet-tighten` quarantines it once you have read the failures. Anything else not green is the
    repository's own command failing, and `project.json` is where to correct what the survey got wrong.
 4. Offer the targets as the repository's own: add `-include delivery/Makefile` to the root `Makefile`,
-   and `make verify` is one word again.
+   and `make verify` is one word again. The include adds the method's targets and leaves your own `-j` alone; the gate is held serial by `make -f delivery/Makefile -j verify`.
 5. Read `delivery/docs/convergence.md`: where this repository stands on every ladder a generated project
    sits at the top of, what is planned to move each row, and what nobody has established yet; and
    `delivery/survey/structure.md`, the architecture view — where anything starts, what depends on what,

@@ -20,11 +20,10 @@ Before anything architectural is worth starting, the map says these have to hold
 
 - a pipeline that deploys on a passing `verify` — the path to production is `scripted`
 - a green suite in the gate — the safety net is `tests-exist`
-- every application's role recorded — the structure is `as-found`
 
 It stops now, as far as the architecture goes.
 
-**Nothing is decided yet.** A recommendation is the factory's reading; the decision is a person's, written as an accepted ADR under `delivery/docs/adr/` (Nygard's five sections, as `0001` shows) carrying one line `Strategy: <leave-it | in-place | modular-monolith | strangler-fig | rewrite>`. `/survey` reads it, the map's Strategy row moves to `decided`, and `/strangle` will not move a capability until that line says `strangler-fig`. *Leave it* is a decision like any other and finishes the axis; rewrite is never recommended here, and an ADR that chooses it says why the other two cannot work. The word `Accepted` is the person's: an agent drafts the ADR at `Proposed`, puts the five strategies and this recommendation to them as a question, and changes the Status only after they have said, of that text, that they accept it.
+**Decided: `leave-it`**, by `delivery/docs/adr/0002-change-strategy.md` — the row on the map reads `done`. A different strategy is a new ADR that supersedes it.
 
 ### The programme
 
@@ -52,8 +51,7 @@ is ticked off by hand: `/survey` derives this again from the tree and the record
 | 9 | no lockfile beside `package.json` (package-lock.json / yarn.lock) — install once and commit the lockfile the package manager writes; without it every build resolves versions afresh and no two are the same | `quick-win` | now — a slice of its own whatever the strategy; a secret in the tree today | `tests/fixtures/adopt/converging/apps/shop/package.json` |
 | 10 | no lockfile beside `package.json` (package-lock.json / yarn.lock) — install once and commit the lockfile the package manager writes; without it every build resolves versions afresh and no two are the same | `quick-win` | now — a slice of its own whatever the strategy; a secret in the tree today | `tests/fixtures/adopt/javascript-gitlab/package.json` |
 | 11 | no lockfile beside `package.json` (package-lock.json / yarn.lock) — install once and commit the lockfile the package manager writes; without it every build resolves versions afresh and no two are the same | `quick-win` | now — a slice of its own whatever the strategy; a secret in the tree today | `tests/fixtures/adopt/javascript-service/package.json` |
-| 12 | `slipwai-graph`: how it starts is not proven — run it once the way the README, container file or CI config says, write what was proven (the command, the port, the seed, the runtime it needs and the ones it cannot run on) in `survey/running.md`, and record the one command that starts it and proves it answers as `commands.smoke` in `project.json` (`null` is a written no, with the reason there); `make smoke` and the gate's smoke job run it from then on | `run` | next, after the build and before any slice changes code that was here, whatever the strategy: a change to an application nothing has started is a change nobody has seen run, and a suite that never builds the context cannot tell a constructor the container can call from one it cannot | `commands.smoke: unrecorded for .` |
-| 13 | `slipwai-graph`: no `audit` command is recorded; the ecosystem has pip-audit | `tooling` | over time, whatever the strategy: one tool, one slice, green through the ratchet before it is recorded as a command — the method never adds one uninvited | `commands.audit: null` |
+| 12 | `slipwai-graph`: no `audit` command is recorded; the ecosystem has pip-audit | `tooling` | over time, whatever the strategy: one tool, one slice, green through the ratchet before it is recorded as a command — the method never adds one uninvited | `commands.audit: null` |
 
 ## Three strategies, not two
 

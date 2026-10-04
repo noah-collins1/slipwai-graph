@@ -56,6 +56,7 @@ decides, so two decided at once never share one:
 ```markdown
 ## D<n> — <the question, in one line>
 - **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
+- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
 - **Question:** <as the stage raised it>
 - **Options:** <each, marking the one the stage recommended>
 - **Decision:** <one>

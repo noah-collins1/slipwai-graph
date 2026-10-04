@@ -5,6 +5,7 @@ service — without assuming one language."""
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -36,17 +37,116 @@ OUTER_LAYER_FROM_APPLICATION = re.compile(
 )
 
 
+PRUNED = {".venv", "node_modules", "__pycache__", ".git"}
+listings: dict[Path, list[Path]] = {}
+members: dict[Path, frozenset[Path]] = {}
+entries_read = 0
+_recorded: tuple[set[str], set[str]] | None = None
+
+
+def relative(path: Path) -> str | None:
+    """`path` below the root, as POSIX, or None where it is not below it."""
+    try:
+        return Path(os.path.normpath(path)).relative_to(os.path.normpath(ROOT)).as_posix()
+    except ValueError:
+        return None
+
+
+def recorded() -> tuple[set[str], set[str]]:
+    """What `project.json` says about where deployables are: every recorded `path`, and the paths recorded as Java
+    (`language` the string `java`), each as `x` whether recorded as `x`, `x/` or `./x`. A record that is not there,
+    is unreadable, is not an object, or whose `path` or `language` is not a string says nothing."""
+    global _recorded
+    if _recorded is None:
+        paths: set[str] = set()
+        java: set[str] = set()
+        try:
+            records = manifest().get("deployables", {}) if isinstance(manifest(), dict) else {}
+        except (OSError, ValueError):
+            records = {}
+        for record in records.values() if isinstance(records, dict) else []:
+            if isinstance(record, dict) and isinstance(record.get("path"), str):
+                path = os.path.normpath(record["path"])
+                if path != ".":
+                    paths.add(Path(path).as_posix())
+                if record.get("language") == "java":
+                    java.add(Path(path).as_posix())
+        _recorded = (paths, java)
+    return _recorded
+
+
+def skipped(directory: Path, name: str) -> bool:
+    """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own, or
+    Maven's `target` at the root of a Java deployable `project.json` records, beside that deployable's `pom.xml`.
+    The record decides, never a file the tree holds: elsewhere `target` is a source directory. A directory that is a
+    recorded deployable's path, or on the way to one, is read whatever it is called."""
+    parent = relative(directory)
+    if parent is None:
+        return name in PRUNED
+    here = name if parent == "." else f"{parent}/{name}"
+    paths, java = recorded()
+    if any(path == here or path.startswith(f"{here}/") for path in paths):
+        return False
+    return name in PRUNED or (name == "target" and parent in java and (directory / "pom.xml").is_file())
+
+
+def listing(top: Path) -> list[Path]:
+    """Every path under `top`, files and directories, in `Path` order — listed once, links not followed.
+
+    The count of names every listing returned is what the pass line reports: a measurement, not a limit.
+    """
+    global entries_read
+    if top not in listings:
+        found: list[Path] = []
+        for current, directories, files in os.walk(top):
+            entries_read += len(directories) + len(files)
+            directory = Path(current)
+            directories[:] = [name for name in directories if not skipped(directory, name)]
+            found.extend(directory / name for name in directories + files)
+        listings[top] = sorted(found)
+        members[top] = frozenset(found)
+    return listings[top]
+
+
+def under(directory: Path) -> list[Path]:
+    """Every path under `directory`: filtered from a listing already taken only where that listing holds the
+    directory as one of its own entries, spelled as it is spelled here, and not a link — then its files are
+    exactly those the directory's own listing would give. Anything else (a `..` or a link in the spelling, a
+    directory that is itself a link, one the listing pruned) is listed on its own, pruned and counted."""
+    for top, paths in listings.items():
+        if top in directory.parents and directory in members[top] and not directory.is_symlink():
+            return [path for path in paths if directory in path.parents]
+    return listing(directory)
+
+
+_manifest: dict | Exception | None = None
+
+
+def manifest() -> dict:
+    """`project.json` read once per run — an empty record where there is none. A record that cannot be read
+    raises, as it always has, and keeps raising the same error without being opened again."""
+    global _manifest
+    if _manifest is None:
+        try:
+            _manifest = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.is_file() else {}
+        except (OSError, ValueError) as error:
+            _manifest = error
+    if isinstance(_manifest, Exception):
+        raise _manifest
+    return _manifest
+
+
 def deployables(kind: str) -> list[dict]:
     """Every application record of one kind, from `project.json` — the one list this repository keeps.
 
     The hexagonal rules below need no list: they apply inside every directory under `apps/` and `packages/`
-    whatever it is called. The frontend rule has to know which directories are *services* and which are
+    whatever it is called — bar the five nobody reads: `.venv`, `node_modules`, `__pycache__`, `.git` and the `target`
+    at the root of a Java deployable `project.json` records, beside its `pom.xml`, which are never descended — and
+    never a directory that is a recorded deployable's path or on the way to one. The frontend rule has to know which directories are *services* and which are
     *browser apps*, because it forbids each of the latter to import from any of the former; the context rule
     has to know which bounded contexts each service says it holds.
     """
-    if not MANIFEST.is_file():
-        return []
-    records = json.loads(MANIFEST.read_text(encoding="utf-8")).get("deployables", {})
+    records = manifest().get("deployables", {})
     return [
         record
         for record in records.values()
@@ -62,9 +162,7 @@ def unruled() -> list[str]:
     """The applications that existed before the method did (`"generated": false`) and do not declare the
     hexagonal layout — code the rules below were not written for, and pass over — whatever they are recorded
     as: a service, a library, a tool, a test suite, or an application whose role nobody has established."""
-    if not MANIFEST.is_file():
-        return []
-    records = json.loads(MANIFEST.read_text(encoding="utf-8")).get("deployables", {}).values()
+    records = manifest().get("deployables", {}).values()
     return [
         record["path"] for record in records
         if isinstance(record, dict) and isinstance(record.get("path"), str)
@@ -186,7 +284,7 @@ def source_files(layer: str) -> list[Path]:
     for source_root in (ROOT / "apps", ROOT / "packages"):
         if not source_root.exists():
             continue
-        for path in sorted(source_root.rglob("*")):
+        for path in listing(source_root):
             relative = path.relative_to(source_root)
             if (
                 path.is_file() and path.suffix in SOURCE_SUFFIXES and layer in relative.parts
@@ -260,7 +358,7 @@ def main() -> int:
     for web in (ROOT / relative for relative in app_paths("web")):
         if not web.is_dir():
             continue
-        for path in sorted(web.rglob("*")):
+        for path in under(web):
             if not path.is_file() or path.suffix not in {".ts", ".tsx"}:
                 continue
             for number, line in enumerate(path.read_text(errors="replace", encoding="utf-8").splitlines(), start=1):
@@ -277,7 +375,7 @@ def main() -> int:
     #    code that lives in no context is where the contexts meet, and is not checked.
     for service_path, contexts in context_holders().items():
         service = ROOT / service_path
-        for path in sorted(service.rglob("*")) if service.is_dir() else []:
+        for path in under(service) if service.is_dir() else []:
             if not path.is_file() or path.suffix not in SOURCE_SUFFIXES:
                 continue
             directories = path.relative_to(service).parts[:-1]
@@ -299,7 +397,7 @@ def main() -> int:
     if violations:
         print("\n".join(sorted(set(violations))), file=sys.stderr)
         return 1
-    print("check-imports: inward dependency rule holds")
+    print(f"check-imports: inward dependency rule holds ({entries_read} directory entries read)")
     return 0
 
 

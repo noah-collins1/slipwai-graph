@@ -9,7 +9,7 @@ help: ## Show the available targets
 
 .PHONY: install
 install: ## Install native dependencies; refresh agent projections after init
-	python3 -m pip install -e .
+	make install
 	@if [ -f .specify/integration.json ]; then $(MAKE) -f delivery/Makefile --no-print-directory agents; else echo 'Spec Kit not initialized; run ./delivery/init when ready.'; fi
 
 .PHONY: check-python agents agents-list check-extensions check-agents models check-benchmark benchmark cruise cruise-watch cruise-status cruise-stop cruise-tell check-decisions
@@ -46,9 +46,9 @@ check-decisions: ## Fail when a decision log or demo log /cruise wrote has lost 
 
 .PHONY: typecheck lint check-imports check-migrations check-slice-scope check-speckit check-codegraph check-ux-gates check-constitution constitution-requirements
 typecheck: ## Run the native compiler or static type check
-	python3 delivery/scripts/ratchet.py slipwai-graph typecheck -- 'python3 -m mypy .'
+	python3 delivery/scripts/ratchet.py slipwai-graph typecheck -- 'make typecheck'
 lint: ## Run the native formatting and static-analysis gate
-	python3 delivery/scripts/ratchet.py slipwai-graph lint -- 'python3 -m ruff check .'
+	python3 delivery/scripts/ratchet.py slipwai-graph lint -- 'make lint'
 
 check-imports: ## Fail when domain code imports an outer architecture layer
 	python3 delivery/scripts/check-imports.py
@@ -70,7 +70,7 @@ constitution-requirements: ## Print the normative text the constitution must cov
 
 .PHONY: test test-integration adversarial mutation audit
 test: ## Run the complete native test suite
-	python3 delivery/scripts/ratchet.py slipwai-graph test -- 'python3 -m pytest'
+	python3 delivery/scripts/ratchet.py slipwai-graph test -- 'make test'
 test-integration: ## Run native integration tests (an empty integration suite is valid initially)
 	$(INTEGRATION_TEST)
 adversarial: ## Re-run tests named or tagged adversarial
@@ -84,6 +84,12 @@ audit: ## Run the ecosystem-native dependency vulnerability audit
 verify: check-python lint typecheck check-imports check-migrations check-slice-scope check-extensions check-agents check-speckit check-codegraph check-ux-gates check-constitution check-benchmark check-decisions test check-convergence ## Full deterministic pre-commit gate
 	@echo
 	@echo 'verify: all gates passed'
+
+# Serial under -j when make is started on this file (`make -f delivery/Makefile -j verify`): the gate is not stamped, and
+# its ratchet runs share one baseline.json. A Makefile that includes this one keeps its own -j.
+ifeq ($(words $(MAKEFILE_LIST)),1)
+.NOTPARALLEL:
+endif
 ci: verify audit test-integration smoke ## Local equivalent of the extended CI gate
 
 .PHONY: check-convergence
@@ -96,4 +102,4 @@ ratchet-tighten: ## Re-record the lint, typecheck and test baselines from the cu
 
 .PHONY: smoke
 smoke: ## Start each application by its recorded smoke command and prove it answers (ci runs it; verify does not)
-	@echo 'slipwai-graph: no smoke command is recorded — nobody has proved how it starts (delivery/survey/running.md). /ground asks for the command that starts it and proves it answers, recorded as commands.smoke'
+	./slipwai --version
