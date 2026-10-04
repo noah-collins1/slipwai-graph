@@ -12,6 +12,7 @@ asks nothing of an existing project; and a project generated before the stamp is
 """
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import tempfile
@@ -167,11 +168,44 @@ class ThePageSaysWhatTheStampDoesTest(StampTestCase):
     def test_the_page_names_what_a_stamp_cannot_see_and_where_it_is_never_used(self) -> None:
         page = self.page()
         never_read = (
-            "The trunk and CI (`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set) always run the full gate and neither "
-            "read nor write a stamp, and `make ci` always runs it."
+            "The trunk and CI (`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set to a non-empty value) always run the full "
+            "gate and neither read nor write a stamp, and `make ci` always runs it."
         )
         for sentence in (SEES_NOT, REUSED_AS_GREEN, CAUGHT_IN_CI, never_read):
             self.assertIn(sentence, page)
+
+    def test_the_page_says_when_to_force_how_the_trunk_is_recognised_and_what_another_trunk_name_does(self) -> None:
+        page = self.page()
+        for sentence in (
+            f"When a check answers from one of those things, run {FORCING}.",
+            "set to a non-empty value) always run the full gate",
+            "The trunk is the branch `project.json` records as `ci.branch`, else `main`, else `master`.",
+            "A team whose trunk has another name sets `ci.branch` in `project.json` to it; "
+            "until then that branch reuses a stamp like any other.",
+        ):
+            self.assertIn(sentence, page)
+        self.assertNotIn("everything the checks answer from", page)
+        self.assertNotRegex(page, r"GITLAB_CI` set\)")
+
+    def test_following_the_page_a_trunk_named_develop_reuses_a_stamp_until_ci_branch_is_recorded(self) -> None:
+        git(self.repo, "branch", "-m", "main", "develop")
+        git(self.repo, "checkout", "-q", "develop")
+        self.plant_stamp()
+        self.assertEqual(self.run_gate().returncode, 0)
+        self.assertEqual(self.checks(), [], "until `ci.branch` is recorded, develop is a branch like any other")
+        # the page's sentence: set `ci.branch` in `project.json` to the trunk's name
+        record = self.repo / "project.json"
+        document = json.loads(record.read_text(encoding="utf-8"))
+        document.setdefault("ci", {})["branch"] = "develop"
+        record.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+        planted = self.plant_stamp()
+        for _ in range(2):
+            self.forget_log()
+            self.assertEqual(self.run_gate().returncode, 0)
+            self.assertTrue(self.checks(), "once recorded, develop is the trunk and runs every check")
+        stamp = self.stamp_path()
+        assert stamp is not None
+        self.assertEqual(stamp.read_bytes(), planted)
 
     def test_the_fragment_says_the_same_list_and_the_consequence_in_its_own_words(self) -> None:
         fragment = " ".join((ROOT / "changelog.d/verify-stamp.md").read_text(encoding="utf-8").split())
@@ -221,6 +255,11 @@ class TheFragmentTest(FactoryTestCase):
         self.assertIn("`slipwai migrate` brings the new `Makefile` and `scripts/verify-stamp.py`", text)
         self.assertIn("the first `make verify` runs in full", text)
         self.assertIn("`.gitignore` is not touched", text)
+        self.assertIn("the tools the machine supplies that the gate launches", text)
+        self.assertIn("The trunk — the branch `project.json` records as `ci.branch`, else `main`, else `master` — "
+                      "and CI", text)
+        self.assertIn("a repository whose trunk is named neither `main` nor `master` and whose `project.json` records "
+                      "no `ci.branch` records it, so that its trunk always runs the full gate", text)
         # a hold: the arithmetic `test_changelog` checks, seen here as the number the claim is made against
         self.assertEqual((ROOT / "VERSION").read_text(encoding="utf-8").strip(), "1.6.0.dev0")
 
