@@ -178,6 +178,18 @@ class TheFragmentIsTrueAndStandsAloneTest(FactoryTestCase):
         self.assertNotIn("above", text, "a paragraph copied into a note cannot point at the body above it")
         self.assertEqual(len(OWED.findall(FRAGMENT.read_text(encoding="utf-8"))), 1, "one paragraph")
 
+    def test_the_body_says_what_the_serial_run_is_except_under_k_and_the_catch_up_says_what_an_ignored_lock_gets(
+        self,
+    ) -> None:
+        """AC-S04-83, -60 (D97 items 3, 9)."""
+        body = squashed(OWED.sub("", FRAGMENT.read_text(encoding="utf-8")))
+        self.assertIn("`make verify` is the serial run it was, except under `-k`, where a check that waits for a "
+                      "failed one is not run (`make -k lint typecheck test` runs all three)", body)
+        self.assertIn("a teammate who ran the earlier gate before pulling has the same untracked lock: delete it, "
+                      "then pull. If the project's `.gitignore` or `.git/info/exclude` names that lock, git treats "
+                      "the copy on disk as disposable, and the merge — and a teammate's pull — replaces it with the "
+                      "factory's without refusing: move it aside first if it is wanted.", catch_up())
+
     def test_the_body_says_make_install_installs_the_model_tooling_and_that_the_catch_up_asks_nothing_more_for_it(
         self,
     ) -> None:
@@ -275,6 +287,20 @@ class TheGatesPageIsTrueTest(FactoryTestCase):
         page, _ = self.pages()
         self.assertIn("A passing run that installed dependencies as it went is not recorded, the next run on the "
                       "unchanged tree is, and `make install` beforehand makes the first one count.", page)
+
+    def test_it_says_what_k_leaves_unrun_what_synced_in_a_recipe_is_and_that_one_make_runs_at_a_time(self) -> None:
+        """AC-S04-83, -84 (D97 items 3, 5, 6): three sentences, each said once, on a stamped project's page."""
+        page, moved = self.pages()
+        for said in (
+            "Under `-k` a check that waits for a failed one is not run: in a project with a Go or Java service a "
+            "failed `lint` leaves `typecheck` and `test` unrun until it passes, and `make -k lint typecheck test` "
+            "runs all three.",
+            "`--synced` in a recipe make echoes is the Makefile's own, passed after it has synced; a mode typed by "
+            "hand takes none.",
+            "One `make` at a time in a tree: two started together can each install over the other.",
+        ):
+            self.assertEqual(page.count(said), 1, said)
+            self.assertNotIn(said, moved)
 
     def test_hold_a_moved_layouts_page_claims_nothing_of_parallel_because_its_gate_is_serial(self) -> None:
         _, moved = self.pages()

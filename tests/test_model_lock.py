@@ -72,6 +72,17 @@ class WhatTheTextsSayTest(unittest.TestCase):
         self.assertIn("Installed from its committed lock", description)
 
 
+    def test_e18_the_readme_gives_the_way_out_of_a_broken_or_date_kept_install(self) -> None:
+        """AC-S04-84 (D97 items 6, 7): delete the installed tree and run the gate again."""
+        repo = shape("db")
+        readme = " ".join((repo / "docs/event-model/README.md").read_text(encoding="utf-8").split())
+        self.assertIn(
+            "Where a run says the tooling was not reinstalled and then cannot find a module, or where a lock "
+            "arrived with an old date (`cp -p`, `rsync -a`, `tar` and a restored backup all keep a file's date), "
+            "delete `scripts/event-model/node_modules` (under `delivery/` in an adopted repository) and run the "
+            "gate again: it installs from the lock.", readme)
+
+
 class DescriptionLeavesTheLockTest(unittest.TestCase):
     def test_e17_npm_ci_accepts_the_shipped_lock_and_a_regenerated_lock_is_the_shipped_one(self) -> None:
         """AC-S04-79: the description is not in the lock, so changing it changes nothing npm checks (real npm)."""

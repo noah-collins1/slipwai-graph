@@ -38,7 +38,10 @@ promised either way. A failed run ends on `{FAILED}`, then make's own last line.
 unchanged tree is, and `make install` beforehand makes the first one count. An adopted repository's gate runs serially
 whatever `-j` says when make is started on its Makefile, `make -f delivery/Makefile -j verify`; a root Makefile that includes
 it keeps `-j` for its own targets, and `make -j verify` typed there is not promised. A recorded command that itself calls
-`make` is that application's own.
+`make` is that application's own. Under `-k` a check that waits for a failed one is not run: in a project with a Go or
+Java service a failed `lint` leaves `typecheck` and `test` unrun until it passes, and `make -k lint typecheck test` runs
+all three. `--synced` in a recipe make echoes is the Makefile's own, passed after it has synced; a mode typed by hand
+takes none. One `make` at a time in a tree: two started together can each install over the other.
 
 """
 

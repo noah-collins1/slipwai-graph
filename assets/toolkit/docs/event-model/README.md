@@ -593,7 +593,10 @@ not a project devDependency, so `npm install` stays fast and `make check-model` 
 the rendering, so `make verify` in an event-profile project installs `scripts/event-model`'s three
 dependencies from its committed lock, with `npm ci`, and only when a manifest is newer than what is
 installed — about a second on a fresh clone — whichever language the services are written in. CI is
-given a Node for it where the project has none of its own.
+given a Node for it where the project has none of its own. Where a run says the tooling was not reinstalled and then
+cannot find a module, or where a lock arrived with an old date (`cp -p`, `rsync -a`, `tar` and a restored backup all keep
+a file's date), delete `scripts/event-model/node_modules` (under `delivery/` in an adopted repository) and run the gate
+again: it installs from the lock.
 
 **That download does not exist on linux/arm64.** Google ships no Chrome build for it, so on an ARM
 sandbox or container `make model` fails at the browser fetch. Nothing gates on this — `check-model` needs
