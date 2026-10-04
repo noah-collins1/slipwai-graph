@@ -151,6 +151,18 @@ class TheFragmentIsTrueAndStandsAloneTest(FactoryTestCase):
         ):
             self.assertIn(needed, text)
 
+    def test_the_catch_up_adds_before_it_commits_in_the_regenerate_branch_and_names_both_layouts_paths(self) -> None:
+        """AC-S04-60 (D96, G10 to G12): `git add` follows the regenerate command, one clause names the adopted paths,
+        and one sentence is for a teammate who ran the earlier gate before pulling."""
+        text = catch_up()
+        regenerate = text[text.index("npm install --package-lock-only"):]
+        self.assertRegex(regenerate[:200], rf"then `git add {LOCK}` and commit")
+        self.assertIn("in an adopted repository both files are under `delivery/`, as `delivery/" + LOCK
+                      + "` and `delivery/scripts/event-model/package.json`", text)
+        self.assertEqual(text.count("a teammate who ran the earlier gate before pulling"), 1)
+        self.assertIn("a teammate who ran the earlier gate before pulling has the same untracked lock: delete it, "
+                      "then pull", text)
+
     def test_the_catch_up_stands_alone_and_says_what_an_edited_manifest_and_an_adopted_gate_now_need(self) -> None:
         text = catch_up()
         self.assertTrue(text.startswith("The model tooling's lockfile"), "it names its subject first")
@@ -180,6 +192,43 @@ class TheFragmentIsTrueAndStandsAloneTest(FactoryTestCase):
         for family in ("Go", "TypeScript", "Java (Quarkus)", "Python", "Spring", "GNU Make 3.81"):
             self.assertIn(family, body)
         self.assertNotRegex(body, r"\d+(\.\d+)? ?s\b", "no measured number: the host writes them after the demo")
+
+
+class TheCatchUpsRegenerateBranchRunsTest(FactoryTestCase):
+    def test_a_manifest_edit_with_a_committed_lock_is_finished_by_the_catch_ups_commands_with_real_npm(self) -> None:
+        """AC-S04-80 (G14): regenerate, `git add`, commit — as the catch-up words them — and `check-drawio` passes."""
+        for tool in ("npm", "node"):
+            if shutil.which(tool) is None:
+                self.skipTest(f"{tool} is not installed here")
+        if subprocess.run(["npm", "ping", "--registry", "https://registry.npmjs.org/"], capture_output=True,
+                          timeout=60).returncode != 0:
+            self.skipTest("the npm registry cannot be reached from here")
+        text = catch_up()
+        prefix = "scripts/event-model"
+        for command in ("npm install --package-lock-only", f"`git add {LOCK}`"):
+            self.assertIn(command, text)
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "old-typescript", "event-modelling", "typescript")
+            made_before_the_slice(repo)
+            factory = newer_factory(Path(directory) / "typescript", CHANGE)
+            manifest = repo / prefix / "package.json"
+            manifest.write_text(manifest.read_text(encoding="utf-8").replace('"yaml": "2.9.0"', '"yaml": "2.8.0"'),
+                                encoding="utf-8")
+            subprocess.run(["npm", "--prefix", prefix, "install", "--package-lock-only", "--no-audit", "--no-fund",
+                            "--loglevel=error"], cwd=repo, check=True, capture_output=True, timeout=180)
+            commit_all(repo, "The project's own manifest and lock")
+            stopped = migrate(repo, factory)
+            self.assertEqual(stopped.returncode, 1, stopped.stdout + stopped.stderr)
+            self.assertEqual(git(repo, "diff", "--name-only", "--diff-filter=U").stdout.split(), [LOCK])
+            done = subprocess.run(["npm", "install", "--package-lock-only", "--no-audit", "--no-fund",
+                                   "--loglevel=error"], cwd=repo / prefix, text=True, capture_output=True, timeout=180)
+            self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+            git(repo, "add", LOCK)
+            git(repo, "-c", "user.name=t", "-c", "user.email=t@local", "commit", "-q", "--no-edit")
+            self.assertFalse((repo / ".git/MERGE_HEAD").exists())
+            self.assertIn('"2.8.0"', (repo / LOCK).read_text(encoding="utf-8").split('"node_modules/yaml"')[1][:200])
+            run = subprocess.run(["make", "check-drawio"], cwd=repo, text=True, capture_output=True, timeout=180)
+            self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
 
 
 class TheGatesPageIsTrueTest(FactoryTestCase):
