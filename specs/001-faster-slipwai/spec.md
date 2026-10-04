@@ -28,8 +28,8 @@ re-parses `model.yaml` five times.
 makes every later story's acceptance faster to run.
 
 **Independent Test**: On a generated Python project, on a branch other than the trunk with no CI marker set
-(D74), run `make verify` twice; the second run exits 0 in under a second and says it reused the stamp. `make -j verify` passes with the same set of check outputs as the serial
-run. `check-imports` enumerates at most 100 entries on the skeleton.
+(D74), run `make verify` twice; the second run exits 0 in under a second and says it reused the stamp. `make -j verify` passes with the same set of checks as the serial
+run, each with the verdict it had (D89). `check-imports` enumerates at most 100 entries on the skeleton.
 
 **Acceptance Scenarios**:
 
@@ -41,7 +41,7 @@ run. `check-imports` enumerates at most 100 entries on the skeleton.
 4. **Given** a changed `scripts/check-*.py`, **When** `make verify` runs, **Then** the stamp is invalid and the
    full gate runs.
 5. **Given** the skeleton, **When** `make -j verify` runs, **Then** every check that ran serially runs, in any
-   order, and the exit code matches.
+   order after `check-python` and the syncs, and the exit status is zero exactly when the serial run's is (D89).
 
 ---
 
@@ -252,7 +252,9 @@ unchanged either way.
 - A stamped tree whose toolchain changed (new ruff, new mypy): the gate re-runs. A tool a committed lock pins
   moves the key through the lock, a tracked file; the recorded tool versions are those of the tools the machine
   supplies (D75).
-- `make -j` on a target that writes `.specify/`: such targets are declared `.NOTPARALLEL` locally.
+- `make -j` and a target that writes `.specify/`: no target of the gate writes there, and a test holds it;
+  `agents` and `install`, which do, are not in the gate, and running them beside it in one `make -j` is not
+  promised (D88).
 - A merge-tree node where both sides changed the events module additively: the rebase succeeds; the scoped gate
   on the union runs contract tests of both.
 - A model with one slice: `make model` launches one browser and renders three diagrams, as today.
@@ -266,10 +268,16 @@ unchanged either way.
 
 - **FR-001**: `make verify` MUST record a success stamp keyed by git tree hash, gate script hash and recorded
   tool versions, reuse it on an unchanged tree, and honour `VERIFY_FORCE=1`.
-- **FR-002**: The gate's read-only checks MUST be declared so `make -j verify` runs them concurrently with the
-  same results as the serial run; writers MUST be `.NOTPARALLEL` locally.
+- **FR-002**: The gate's checks MUST be declared so `make -j verify` runs concurrently every check that writes
+  nothing another reads, with the same results as the serial run; a target that writes what another target of the
+  gate reads or writes MUST never run beside it, on every GNU Make from 3.81, by being ordered ahead of it as a
+  prerequisite (D88). The gate of a repository that adopted the method MUST run serially whatever `-j` says.
+  *Same results* is the same checks, each with the verdict it had, an exit status that is zero exactly when the
+  serial run's is, and the closing line on a pass; it is not the order of lines (D88, D89).
 - **FR-003**: `./scripts/verify` MUST sync each toolchain once per invocation; `check-drawio` MUST skip
-  `npm install` when the installed tree matches a committed lockfile.
+  `npm install` when the installed tree matches a committed lockfile. *The invocation* is one `make` run, and a
+  mode of the script reached any other way syncs first (D90); the lockfile is one the factory ships beside the
+  model tooling's manifest, and *matches* is the root's rule, a marker newer than both manifests (D91).
 - **FR-004**: `check-imports` and `check-migrations` MUST prune `.venv`, `node_modules`, `target/`,
   `__pycache__` and `.git` before descending, and read `project.json` once.
 - **FR-005**: `model.yaml` MUST be parsed once per verify into a sidecar every consumer reads.
@@ -1427,10 +1435,15 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
   per worktree, the last passing key, replaced by the rename of a complete file; two projects in one repository
   (D36) never read each other's; worktrees of one repository never share one. A stamp path that is not a regular
   file is removed as itself, never read or written through. (D76)
-- **AC-S03-29** — Given a full run, then every check that ran before this slice runs, in the order and with the
-  output it had, ending `verify: all gates passed`: the per-transport `verify: check-openapi` line still gates and
+- **AC-S03-29** — Given a full run, then every check that ran before this slice runs and the run ends `verify: all
+  gates passed`. Without `-j` the checks run in the order they had among themselves, `check-python` first, each
+  printing what it printed. What `S04-parallel-gate` changes, and nothing else: each toolchain's sync or install
+  runs once, after `check-python` and ahead of the checks that need it, where it ran inside each of them; and
+  `check-drawio` prints a line saying it skipped its install where it did. Under `make -j verify` the same checks
+  run, in any order after `check-python` and the syncs, and the closing line is still the last line of a passing
+  run (*amended by D89*): the per-transport `verify: check-openapi` line still gates and
   is still cut out with its transport by `./init`, a project with several services or language families has one
-  gate and one stamp, the recipe uses nothing newer than GNU Make 3.81 documents (read, not run: an assumption, D81), and every starter combination `make starters`
+  gate and one stamp, the recipe gives a GNU Make 3.81 nothing it does not document, the one newer option, output grouping, being passed only to a make that lists it among its features (*amended by D89*; read, not run: an assumption, D81), and every starter combination `make starters`
   materialises passes its own gate. (constitution I; D74)
 - **AC-S03-30** — Given a project generated before this release, then the change asks nothing of it: `slipwai
   migrate` brings the new `Makefile`, the first `make verify` runs in full, and its `.gitignore` is not touched — with one exception the fragment's
@@ -1626,3 +1639,198 @@ non-empty), the trunk is `main`, and the branch is `slice/S1`.
   is `git fetch origin refs/heads/<name>:refs/remotes/origin/<name>`; given a remote with a branch `main` and a tag
   `main` at the slice's head, when the printed command is run and the gate re-run, then the slice is compared with
   the branch, not the tag.
+
+### S04-parallel-gate
+
+**Gaps reviewed** 2026-10-04, cruise iteration 13, host with `drive-skipper` for D88 to D91 and the host's own
+D92: the three examples in `story-split.md` against `stamped_gate()` in `src/slipwai/project/gate.py`, `makefile()`
+in `src/slipwai/project/makefile.py`, the model targets in `src/slipwai/project/model_targets.py`, `GATE` in
+`src/slipwai/project/adopted_targets.py` and each backend's `scripts/verify` under `src/slipwai/project/languages/`.
+Run on a project generated for the purpose (event-modelling profile, Python backend, a browser app; GNU Make 4.4.1):
+warm, the serial gate took 6.2 s and `make -j verify` 3.2 s, three times, each exit 0 with the serial run's 106
+lines in another order and one test-progress line cut in two by another check's output. Found and written back:
+FR-002's *writers `.NOTPARALLEL` locally* names a directive that keeps no target from running beside another on
+any GNU Make — before 4.4 it serialises the whole makefile, from 4.4 the named target's own prerequisites (make's
+NEWS, and a run here) — so the requirement is re-worded to what is held, a writer ordered ahead as a prerequisite,
+and the writers are named (D88); `check-python` is *Fail, first* and is not first under `-j` (D88); an adopted
+repository's gate runs commands nobody here can call read-only, three of them through one `baseline.json` (D88);
+nothing said who gets the parallel gate, what a parallel run prints, what a failed one ends on, or what is measured
+(D89); FR-003's *once per invocation* was already true of one call of the script, and the cost is three calls per
+gate, each syncing, under `-j` at one moment on one `.venv` (D90); the third example's *committed lockfile* does
+not exist — a generated project ships the model tooling's `package.json` alone, and the first gate writes an
+untracked lock beside it, which is also why a first stamped pass is not recorded (D91); the split of
+`verify-stamp.py` the Parking Lot handed this slice is another capability and becomes `S32-verify-stamp-split`
+(D91). No target of the gate was found writing under `.specify/`. Not run here, and said so in the plan: GNU Make
+3.81 and 4.3 (none on this machine); the TypeScript, Go and Java gates under `-j` before the plan's own runs;
+Windows under Git Bash, which the matrix tests hold before release (Edge Cases).
+
+Unless a criterion says otherwise, the project is one the factory generated (no wrapped application, its layout not
+moved), *a full run* is one in which no stamp is reused, *serial* is `make verify` with no `-j` and no `MAKEFLAGS`,
+and *a stand-in* is an executable written in the test tree and put first on `PATH`, which records when it was
+started with what and exits as the test says — a fake, never a mocking framework.
+
+**The parallel run (FR-002; D88, D89, D92)**
+
+- **AC-S04-1** — Given a serial full run, then no two checks run at the same time, and the checks run in the order
+  they had among themselves with `check-python` first (AC-S03-29 as amended).
+- **AC-S04-2** — Given a tree the serial run passes, when `make -j verify` runs in full, then the set of check
+  commands started equals the set the serial run of the same Makefile starts on the same tree.
+- **AC-S04-3** — Given that run, then it exits 0 and its last line is `verify: all gates passed`.
+- **AC-S04-4** — Given `make -j verify` in full on a tree the serial run passes, then at least two checks are
+  running at the same moment (held with stand-ins, no clock).
+- **AC-S04-5** — Given a Python project with a browser app, freshly generated, with no `.venv` and no
+  `node_modules`, when `make -j verify` runs with the real toolchain, then it exits 0 and ends `verify: all gates
+  passed`.
+- **AC-S04-6** — Given a tree on which one check fails, when `make -j verify` runs, then it exits non-zero and
+  prints no `verify: all gates passed`.
+- **AC-S04-7** — Given that failed run, then no stamp exists afterwards.
+- **AC-S04-8** — Given a tree on which two checks that both start fail, when `make -j verify` runs, then each is
+  named on a line of make's own carrying `***` and the check's target name, as the running make prints it (D92).
+- **AC-S04-9** — Given a run that did not pass, with `-j` or without, then the last line of the gate's own begins
+  `verify:`, says the gate did not pass, and says the failed checks are named above on the lines carrying `***`.
+- **AC-S04-10** — Given a make that lists `output-sync` among its features, when `make -j verify` runs, then each
+  check's output lines are contiguous, with no other check's line between them.
+- **AC-S04-11** — Given a make that does not list `output-sync`, when `make -j verify` runs, then the option is not
+  passed to it and the run completes (read on 3.81, not run: the guard is held by a test that reads the recipe).
+- **AC-S04-12** — Given a serial run on a make that lists `output-sync`, then a check's lines appear as the check
+  produces them, not held until it ends.
+- **AC-S04-13** — Given a `python3` on `PATH` older than 3.10, when `make verify` or `make -j verify` runs, then
+  `check-python`'s line is printed, no sync and no other check has started, and the exit code is non-zero.
+- **AC-S04-14** — Given a Python project with an HTTP transport and no `.venv`, when `make -j check-openapi lint`
+  runs, then the sync has finished before either starts and both pass.
+- **AC-S04-15** — Given a project with a Java service, when `make -j verify` runs, then no two Maven runs over one
+  service's `target/` overlap, and the gate's verdict equals the serial run's.
+- **AC-S04-16** — Given the Makefile of every starter combination `make starters` materialises, when it is read,
+  then it contains no `.WAIT` and no `.NOTPARALLEL` with a prerequisite, every order the gate relies on is a
+  prerequisite, and the one construct newer than GNU Make 3.81 documents is output grouping, named only behind a
+  test of the running make's own feature list (D92).
+- **AC-S04-17** — Given one starter of each backend family, freshly materialised, with its real toolchain where
+  this machine has it, when `make -j verify` runs, then it passes with the checks and verdicts of its serial run;
+  the plan and the fragment say which families were run and which only read.
+- **AC-S04-18** — Given a generated project, when `make -j verify` runs in full, then every file under `.specify/`
+  has the bytes it had before.
+- **AC-S04-19** — Given a tree that passed under `make -j verify`, on a branch other than the trunk with no CI
+  marker, when `make verify` runs with no change, then it reuses the stamp.
+- **AC-S04-20** — Given a tree that passed under `make verify`, on such a branch, when `make -j verify` runs with
+  no change, then it reuses the stamp.
+- **AC-S04-21** — Given the generated CI workflow and the ladder's commands after this slice, then the gate
+  command each types is `make verify`, unchanged (D89; whether the ladder types `-j` is `S06-scoped-gate`'s).
+- **AC-S04-22** — Given AC-S03-20's project, warm, on a branch other than the trunk with no CI marker, when
+  `VERIFY_FORCE=1 make verify` and `VERIFY_FORCE=1 make -j verify` are each run three times at the demo, then the
+  median under `-j` is lower than the serial median; otherwise the demo failed and the criterion is not revised.
+- **AC-S04-23** — Given that demo, then both sets of numbers are written into the slice's quickstart and the
+  fragment with the command, the machine and its core count.
+
+**An adopted repository's gate (D88; experimental as `AGENTS.md` defines the word)**
+
+- **AC-S04-24** — Given a repository that adopted the method (a wrapped application, or the delivery material
+  moved), when its generated Makefile is read, then it carries a bare `.NOTPARALLEL:` with no prerequisites.
+- **AC-S04-25** — Given a generated project with no wrapped application and no moved layout, when its Makefile is
+  read, then it carries no `.NOTPARALLEL`.
+- **AC-S04-26** — Given an adopted repository whose recorded `lint`, `typecheck` and `test` are stand-ins, when
+  `make -j verify` runs, then no two of them overlap and they run in the serial gate's order.
+- **AC-S04-27** — Given an adopted repository with no baseline yet, when `make -j verify` runs, then
+  `baseline.json` holds the entries a serial first run records.
+
+**One sync per run (FR-003; D90)** — a stand-in `uv` logs its arguments; a *sync line* is one whose first argument
+is `sync`, a *run line* one whose first is `run`.
+
+- **AC-S04-28** — Given a Python project with one service, when `make verify` runs in full, then the log holds
+  exactly one sync line for that service's `--project`.
+- **AC-S04-29** — Given the same project, when `make -j verify` runs in full, then the log holds exactly one sync
+  line per service, and every sync line precedes the first run line.
+- **AC-S04-30** — Given a Python project with two services, when `make verify` runs in full, then the log holds
+  exactly two sync lines, one per service's `--project`.
+- **AC-S04-31** — Given the one-service project, when `make lint test` runs as one command, then the log holds
+  exactly one sync line.
+- **AC-S04-32** — Given the one-service project, when `make lint`, `make typecheck` or `make test` runs alone, then
+  the log holds exactly one sync line, before the first run line.
+- **AC-S04-33** — Given the one-service project, when `./scripts/verify` is run directly — with `--lint-only`,
+  `--typecheck-only`, `--test-only`, or no argument — then the log holds exactly one sync line, before the first
+  run line: a mode reached any way but the Makefile's own recipes syncs first, as today.
+- **AC-S04-34** — Given the one-service project, when `make ci` runs with its database targets, then the log holds
+  exactly one sync line.
+- **AC-S04-35** — Given a Python project with Postgres, when `make migrate` runs, then the log holds exactly one
+  sync line, before the migration's run line.
+- **AC-S04-36** — Given a Python project with an HTTP transport, when `make dev` runs against the stand-in, then
+  the log holds exactly one sync line, before the service's run line.
+- **AC-S04-37** — Given the one-service project, when `make install test` runs as one command, then the log holds
+  exactly one sync line.
+- **AC-S04-38** — Given a stand-in `uv` whose `sync` exits non-zero, when `make verify` or `make -j verify` runs,
+  then make exits non-zero and the log holds no run line.
+- **AC-S04-39** — Given a generated Python project, when its CI workflow, the commands `native_commands.py`
+  records for it and its pages are read, then none names the non-syncing spelling: it is an argument only the
+  Makefile's recipes pass.
+- **AC-S04-40** — Given the non-syncing argument absent and any environment variable set to any value, when
+  `./scripts/verify --test-only` runs, then it still syncs first: the script reads no variable to skip the sync.
+- **AC-S04-41** — Given a generated Python project, when `make verify` runs, then the script prints nothing about
+  the sync it did not print before; the one new line is make's echo of the sync target's recipe, once.
+- **AC-S04-42** — Given a generated TypeScript project, when its Makefile is read, then every gate target reaches
+  `npm ci` only through the file target `node_modules/.package-lock.json` (holds already; pinned, not changed).
+- **AC-S04-43** — Given a generated Go or Java project, when its gate targets `lint`, `typecheck` and `test` are
+  read, then none carries a dependency-install step: FR-003's sync is a step that builds a service's environment
+  from its committed lock before a mode runs, and it is not applicable there (D90).
+- **AC-S04-44** — Given `make verify lint` on a Python project, when the gate runs in full, then the log holds at
+  most two sync lines per service: two make processes, as D83 left `lint` running twice there — more, never less.
+
+**The model tooling's install (FR-003; D91)**
+
+- **AC-S04-45** — Given a newly generated project with the event profile, when its tree is listed, then
+  `scripts/event-model/package-lock.json` is a tracked file whose root entry names exactly the dependencies and
+  versions `scripts/event-model/package.json` pins.
+- **AC-S04-46** — Given the shipped lock, when it is read, then its `lockfileVersion` is 3, every `resolved`
+  address begins `https://registry.npmjs.org/`, and it lists a package for every platform esbuild publishes one
+  for. It is made by npm against that registry, never by hand; where the registry cannot be reached when it is
+  made, the slice parks on that (D91).
+- **AC-S04-47** — Given a fresh clone of a generated event-profile project, when `make check-drawio` runs, then
+  the model tooling is installed with `npm ci` and `git status --porcelain` is empty afterwards.
+- **AC-S04-48** — Given an installed `scripts/event-model/node_modules` whose marker is newer than both manifests,
+  when `make check-drawio` runs, then no npm command runs and the output carries the line `check-drawio: the model
+  tooling matches scripts/event-model/package-lock.json; not reinstalled`.
+- **AC-S04-49** — Given that installed tree, when `scripts/event-model/package-lock.json` or
+  `scripts/event-model/package.json` is modified and `make check-drawio` runs, then `npm ci` runs again and the
+  skip line is not printed.
+- **AC-S04-50** — Given a `scripts/event-model/package.json` that disagrees with the committed lock, when `make
+  check-drawio` runs, then it exits non-zero with npm's refusal and no tracked file is changed.
+- **AC-S04-51** — Given an installed tree that matches, when `make model`, `make model-drawio` or `make
+  model-drawio-test` runs, then no npm install runs for the model tooling and no skip line is printed.
+- **AC-S04-52** — Given a fresh clone, when two or more of the four model targets are goals of one `make -j`
+  invocation, then `npm ci` for the model tooling runs once and finishes before any of them starts.
+- **AC-S04-53** — Given a generated Makefile with the event profile, when it is read, then `npm` is spelled for
+  `scripts/event-model` in exactly one recipe and that recipe is `npm ci`.
+- **AC-S04-54** — Given a fresh clone of a generated event-profile project on a branch that is not the trunk, when
+  `make verify` passes for the first time, then the pass is recorded and the next `make verify` on the unchanged
+  tree prints the reuse line.
+- **AC-S04-55** — Given the skip line of AC-S04-48, then it is said only where it is true in that make invocation,
+  by a mechanism GNU Make 3.81 has; where the plan finds none, the line is said only where it can be said
+  truthfully and this criterion and the example are re-worded — a line that could be wrong is not shipped (D91).
+
+**Carrying it to a project that exists (constitution I; D88, D91, D92)**
+
+- **AC-S04-56** — Given a project made by an earlier factory with no lock under `scripts/event-model/`, when
+  `slipwai migrate` runs on a clean tree, then the merge adds the lock and the project's `make check-drawio`
+  passes.
+- **AC-S04-57** — Given a project made by an earlier factory with an untracked
+  `scripts/event-model/package-lock.json`, when `slipwai migrate` runs, then it refuses as it does for any
+  uncommitted change, and the untracked file is left as it was.
+- **AC-S04-58** — Given a project that committed a lock of its own which differs from the shipped one, when
+  `slipwai migrate` runs, then the merge is left in progress naming `scripts/event-model/package-lock.json` as the
+  conflicting file.
+- **AC-S04-59** — Given a project generated or adopted before this release, when `slipwai migrate` runs, then
+  beyond AC-S04-56 to AC-S04-58 it brings the new Makefile and `scripts/verify` and asks nothing else.
+- **AC-S04-60** — Given the slice's one changelog fragment, when it is read, then its first line is `MINOR` (a new
+  generated file; `VERSION` stays `1.6.0.dev0`), and its **Catch-up.** paragraph, standing alone, says what to do
+  in each of the three cases (no lock, an untracked lock, a committed lock), that an edited tooling manifest now
+  needs a lock that agrees with it, and — under the experimental label — that an adopted repository's gate now
+  runs serially whatever `-j` says.
+- **AC-S04-61** — Given the page a project gets about the gate, when it is read, then it says: `make -j verify`
+  runs the checks at once, from GNU Make 3.81, and when to use it (when you wait on the gate locally); each
+  check's output appears when that check finishes; on a make older than 4.0 lines may interleave; the order of
+  lines is not promised; the claim is for `verify` as the only goal, and `make -j ci` is not promised; and an
+  adopted repository's gate runs serially whatever `-j` says, a recorded command that itself calls `make` being
+  that application's own.
+- **AC-S04-62** — Given S04's finished diff, when its files are listed, then `assets/toolkit/scripts/verify-stamp.py`
+  is not among them unless `S32-verify-stamp-split` landed first (D91, D92).
+- **AC-S04-63** — Given the suites that pin the gate's order and its recipe (S03's), then they are amended beside
+  AC-S03-29 for the sync phase and the failed run's closing line, every other S03 suite passes unchanged, and
+  every starter combination `make starters` materialises passes its own gate (constitution I; SC-007).

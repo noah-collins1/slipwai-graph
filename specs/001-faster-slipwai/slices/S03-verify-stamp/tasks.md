@@ -675,7 +675,7 @@ what that question covers, and where none is, a test says so.
 
 #### T023 — `LOW` — `verify-stamp.py` is 643 lines in one file (owner brief, *Taste*)
 
-- [x] *(placed by D81: `S04`, the first slice to change the script next, splits it (Parking Lot); not done here)* Evidence: `wc -l assets/toolkit/scripts/verify-stamp.py` → 643. It holds four things with their own reasons to
+- [x] *(placed by D81 on `S04`; moved by D91 to `S32-verify-stamp-split`, which lands before the next slice that names the script (Parking Lot); not done here)* Evidence: `wc -l assets/toolkit/scripts/verify-stamp.py` → 643. It holds four things with their own reasons to
   change: the two closed lists, the key (git, files, tools), the stamp's file (path, read, write, remove), and the two
   verbs with make's modes. The lists are what T017's test imports.
 
