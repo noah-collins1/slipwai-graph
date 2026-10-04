@@ -370,7 +370,7 @@ Two `HIGH`: both are the catch-up a project made before this release is told to 
 
 ### T014 — `HIGH` — A mark a person adds by hand comes out of `migrate` once; the documented catch-up can leave it twice, and the gate obeys the last
 
-- [ ] **Finding.** The **Catch-up.** paragraph (`changelog.d/xdist.md:5`) and the gates page (`src/slipwai/project/parallel_tests.py:14-19`)
+- [x] **Finding.** The **Catch-up.** paragraph (`changelog.d/xdist.md:5`) and the gates page (`src/slipwai/project/parallel_tests.py:14-19`)
   say *add the line `"parallelSafe": true`* and nowhere say where. Replay reads the project's current `project.json`
   (`replay.py:74`, `recorded_parallel_safe`) and `metadata()` writes the key at one place, after `"target"`
   (`metadata.py:65`). The merge then sees the base without the key, the project adding it at line *m*, and the factory
@@ -396,7 +396,7 @@ Two `HIGH`: both are the catch-up a project made before this release is told to 
 
 ### T015 — `HIGH` — A project that changed its own Python dependencies meets a conflict on `uv.lock` that no catch-up note mentions
 
-- [ ] **Finding.** The slice adds `pytest-xdist` and `execnet` to every service's `pyproject.toml` and committed lock
+- [x] **Finding.** The slice adds `pytest-xdist` and `execnet` to every service's `pyproject.toml` and committed lock
   (`python.py:49`, the four `assets/languages/python/locks/*.lock`). A project that ever ran `uv add` has a lock of its own,
   so `migrate` stops on `apps/<service>/uv.lock`, and either side taken whole fails the gate's `uv sync --locked`
   (`python.py:170`). Constitution I: *`slipwai migrate` MUST leave a catch-up note for every change it cannot complete* —
@@ -418,7 +418,7 @@ Two `HIGH`: both are the catch-up a project made before this release is told to 
 
 ### T016 — `MEDIUM` — `migrate` deletes a mark that is not a boolean when it sits in the base, and keeps it when it was added later
 
-- [ ] **Finding.** `recorded_parallel_safe` (`manifest.py:89-95`) carries only a boolean, so replay offers no key where the
+- [x] **Finding.** `recorded_parallel_safe` (`manifest.py:89-95`) carries only a boolean, so replay offers no key where the
   project wrote `"yes"`, `1`, `"true"` or `null`. D102 rule 3 says replay *writes the project's own value* and *never adds
   the key and never flips it*; deleting it is neither, and it is not even consistent: the merge deletes the line when the
   value was in the base, and keeps it when the person added it after. The gate's behaviour is the same before and after
@@ -436,7 +436,7 @@ Two `HIGH`: both are the catch-up a project made before this release is told to 
 
 ### T017 — `LOW` — The mark is read by every mode, by an interpreter that imports from the project's root
 
-- [ ] **Finding.** The read (`python.py:176-179`) runs before the loop for every mode — `--lint-only`, `--typecheck-only`,
+- [x] **Finding.** The read (`python.py:176-179`) runs before the loop for every mode — `--lint-only`, `--typecheck-only`,
   `--format`, `--migrate`, `--integration-only` — none of which uses `$parallel`; under `make -j verify` that is three
   interpreter starts for one answer (≈17 ms each here). And `python3 -c` puts the working directory first on `sys.path`, so a
   `json.py` (or `json/`) at a project's root makes the import fail and the gate silently serial.
