@@ -139,7 +139,7 @@ No other task touches it. The host commits T002 before any other task, whatever 
 
 ### T001 — Pin what each mode of the Python `scripts/verify` runs first, what `install`, `migrate` and `dev` do, and what the four model targets run (host task)
 
-- [ ] **Host task — not delegated; no story.** The host runs `/characterise` before T002 and commits it alone. Named,
+- [x] *(c225d78: five tests, green before any change, teeth seen on `python.py`, `backends.py` and `model_targets.py`; written by a `drive-implement` delegate from this task's wording, the ledger row by the host)* **Host task; no story.** The host runs `/characterise` before T002 and commits it alone. Named,
   **not re-pinned** (the 2026-10-04 rows from S03 hold them, and their suites are the ones AC-S04-63 amends): what a
   generated project's `make verify` runs, in order, with its closing line, and the adopted repository's `verify` rule byte
   for byte (`tests/test_verify_stamp_pinned.py`). **Pinned, new, each green before any change and written to survive the
