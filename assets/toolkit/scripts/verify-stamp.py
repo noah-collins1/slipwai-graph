@@ -168,8 +168,10 @@ class Options:
 def git(*args: str) -> bytes:
     try:
         done = subprocess.run(["git", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    except FileNotFoundError:
+        raise CannotTell("git is not on PATH")
     except OSError as error:
-        raise CannotTell("git: " + str(error))
+        raise CannotTell("git cannot be started (" + str(error) + ")")
     if done.returncode != 0:
         raise CannotTell("git " + " ".join(args) + ": " + done.stderr.decode("utf-8", "replace").strip())
     return done.stdout
@@ -180,8 +182,10 @@ def git_or_nothing(*args: str) -> bytes:
     branch and an unborn branch no commit, and neither is a failure."""
     try:
         done = subprocess.run(["git", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    except FileNotFoundError:
+        raise CannotTell("git is not on PATH")
     except OSError as error:
-        raise CannotTell("git: " + str(error))
+        raise CannotTell("git cannot be started (" + str(error) + ")")
     if done.returncode == 1 and not done.stderr:
         return b""
     if done.returncode != 0:
@@ -197,10 +201,41 @@ def digest(parts: list[bytes]) -> str:
     return whole.hexdigest()
 
 
+def shown(path: bytes | str) -> str:
+    """A path as a line may carry it: control characters escaped, so a name cannot forge a line."""
+    text = os.fsdecode(path)
+    return "".join(char if char.isprintable() else char.encode("unicode_escape").decode("ascii") for char in text)
+
+
 def covered_files() -> list[bytes]:
-    """Every file the gate judges: tracked, and untracked where git does not ignore it, under this directory."""
+    """Every file the gate judges: tracked, and untracked where git does not ignore it, under this directory. An
+    untracked directory that is itself a repository is listed as one entry ending in `/`, and the files in it are
+    not listed: the key cannot vouch for them."""
     listed = git("ls-files", "-z", "--cached", "--others", "--exclude-standard")
-    return sorted(set(path for path in listed.split(b"\0") if path))
+    paths = sorted(set(path for path in listed.split(b"\0") if path))
+    for path in paths:
+        if path.endswith(b"/"):
+            raise CannotTell(shown(path) + " is an untracked directory that is itself a repository")
+    return paths
+
+
+def index_problem() -> str | None:
+    """Why the index cannot vouch for the working tree, or None: an entry marked `assume-unchanged` (git does not look
+    at it) or `skip-worktree`, or a submodule (an entry of mode 160000, a repository the key does not read). `ls-files
+    -v` tags an `assume-unchanged` entry with a lower-case letter and a `skip-worktree` one with `S`; both it and
+    `--stage` read the index and never write it."""
+    marks = [(record[:1].decode("ascii", "replace"), record[2:]) for record in git("ls-files", "-v", "-z").split(b"\0")
+             if record]
+    for tag, path in marks:
+        if tag.islower():
+            return shown(path) + " is marked assume-unchanged, so git does not look at it"
+    for tag, path in marks:
+        if tag == "S":
+            return shown(path) + " is marked skip-worktree, so git does not look at it"
+    for record in index_entries().split(b"\0"):
+        if record.startswith(b"160000 "):
+            return shown(record.partition(b"\t")[2]) + " is a submodule (an index entry of mode 160000)"
+    return None
 
 
 def file_record(path: bytes) -> bytes:
@@ -209,14 +244,16 @@ def file_record(path: bytes) -> bytes:
     `lstat` and `open`, through none of git's filters and none of its stat shortcuts."""
     try:
         status = os.lstat(path)
+        if stat.S_ISLNK(status.st_mode):
+            return path + b"\0link\0" + os.readlink(path)
+        if not stat.S_ISREG(status.st_mode):
+            raise CannotTell(shown(path) + " is neither a file nor a link")
+        with open(path, "rb") as handle:
+            content = hashlib.sha256(handle.read()).hexdigest().encode("ascii")
     except FileNotFoundError:
         return path + b"\0missing"
-    if stat.S_ISLNK(status.st_mode):
-        return path + b"\0link\0" + os.readlink(path)
-    if not stat.S_ISREG(status.st_mode):
-        raise CannotTell(os.fsdecode(path) + " is neither a file nor a link")
-    with open(path, "rb") as handle:
-        content = hashlib.sha256(handle.read()).hexdigest().encode("ascii")
+    except OSError as error:
+        raise CannotTell("cannot read " + shown(path) + " (" + (error.strerror or str(error)) + ")")
     return path + b"\0" + (b"exec" if status.st_mode & stat.S_IXUSR else b"file") + b"\0" + content
 
 
@@ -231,7 +268,11 @@ def ignored_records(entry: str) -> list[bytes]:
         return [file_record(os.fsencode(path))]
     if not os.path.isdir(path):
         return []
-    return [record for name in sorted(os.listdir(path)) for record in ignored_records(os.path.join(path, name))]
+    try:
+        names = sorted(os.listdir(path))
+    except OSError as error:
+        raise CannotTell("cannot read " + shown(path) + " (" + (error.strerror or str(error)) + ")")
+    return [record for name in names for record in ignored_records(os.path.join(path, name))]
 
 
 def variable_record(name: str) -> bytes:
@@ -442,41 +483,46 @@ def remove_stamp() -> str | None:
     return None
 
 
-def begin_full_run(note: dict[str, object], forced: str | None = None) -> int:
+def begin_full_run(note: dict[str, object], forced: str | None = None, cannot: str | None = None) -> int:
     """Every full run of a stamp that may be used starts here: the stamp is removed, one line is said where there is
-    something to act on (the run was forced, or the stamp cannot be removed, in which case it names the file and the
-    run records nothing), and the note of what the run began with is left for `record`. Exits non-zero, so the
-    recipe runs every check."""
-    reason = remove_stamp()
-    if reason is not None:
-        print(CANNOT_LINE.format(reason=reason))
-        note = {NOTHING: reason}
+    something to act on, and the note of what the run began with is left for `record`. The line is the first of: the
+    key cannot be built (`cannot`, the run records nothing), the stamp cannot be removed (it names the file to delete,
+    and the run records nothing), the run was forced. Exits non-zero, so the recipe runs every check."""
+    try:
+        reason = remove_stamp()
+    except CannotTell:
+        reason = None  # git cannot say where a stamp would be, so there is none to remove and none to write
+    if cannot is None and reason is not None:
+        cannot = reason
+    if cannot is not None:
+        print(CANNOT_LINE.format(reason=cannot))
+        note = {NOTHING: cannot}
     elif forced is not None:
         print(FORCED_LINE.format(reason=forced))
     try:
         write_file(pending_path(), json.dumps(note) + "\n")
-    except OSError:
+    except (OSError, CannotTell):
         pass  # `record` finds no note and says why it records nothing
     return 1
 
 
 def reuse(options: Options) -> int:
-    if declined() or not eligible():
-        return 1
     try:
-        tools = machine_tools(options)
-    except CannotAsk as reason:
-        print(CANNOT_LINE.format(reason=reason))
-        write_file(pending_path(), json.dumps({NOTHING: str(reason)}) + "\n")
-        return 1
-    key = build_key(tools)
+        if declined() or not eligible():
+            return 1
+        problem = index_problem()
+        if problem is not None:
+            raise CannotTell(problem)
+        key = build_key(machine_tools(options))
+    except CannotTell as reason:
+        return begin_full_run({}, cannot=str(reason))
     forced = forced_reason(options)
     if forced is None:
         stamp = read_stamp(stamp_path())
         if stamp is not None and stamp["key"] == key["key"]:
             print(REUSE_LINE.format(passed=stamp["passed"], abbreviated=str(key["key"])[:12]))
             return 0
-    return begin_full_run({"key": key["key"], "tools": tools}, forced)
+    return begin_full_run({"key": key["key"], "tools": key["tools"]}, forced)
 
 
 def not_recorded(reason: str) -> int:
