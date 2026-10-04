@@ -2,7 +2,17 @@
  * What `make model` draws, and how it reaches disk: the diagrams the model produces, in order, and the draw of
  * those through a `RenderSession`.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
 import { extractHash, renderGlobalMermaid, renderSegmentMermaid, renderSliceMermaid } from './mermaid.ts';
@@ -11,6 +21,7 @@ import { BrowserError, reasonOf, type RenderSession } from './render-session.ts'
 import {
   MODEL_MERMAID,
   MODEL_SVG,
+  README,
   ROOT,
   SEGMENT_DIR,
   segmentArtifact,
@@ -59,6 +70,35 @@ const CI_MARKERS = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI'];
 /** Whether a CI marker is set, to a value; under one every diagram is drawn, and the closing line says so. */
 export const underCiMarker = (): boolean => CI_MARKERS.some((name) => (process.env[name] ?? '') !== '');
 
+/** What is at a path, asked of the entry itself: a link is a link, never the file or directory it names. */
+function kindAt(path: string): 'absent' | 'directory' | 'file' | 'other' {
+  try {
+    const stat = lstatSync(join(ROOT, path));
+    return stat.isDirectory() ? 'directory' : stat.isFile() ? 'file' : 'other';
+  } catch {
+    return 'absent';
+  }
+}
+
+/**
+ * Removes the entry at `path` as itself: a real directory with what is in it, anything else (a link, a file, a FIFO)
+ * by unlinking it, so what a link names is never touched. Says `removed <path>` unless `quiet`.
+ */
+export function removeAsItself(path: string, quiet = false): void {
+  const kind = kindAt(path);
+  if (kind === 'absent') return;
+  const absolute = join(ROOT, path);
+  if (kind === 'directory') rmSync(absolute, { recursive: true });
+  else unlinkSync(absolute);
+  if (!quiet) console.log(`  removed ${path.replaceAll('\\', '/')}`);
+}
+
+/** A name the run is about to read or write must be a regular file or nothing: anything else is removed first. */
+export function clearIrregular(path: string): void {
+  const kind = kindAt(path);
+  if (kind === 'directory' || kind === 'other') removeAsItself(path);
+}
+
 const sourceStamp = (diagram: Diagram): string => {
   const hash = extractHash(diagram.source);
   if (hash === undefined) {
@@ -75,7 +115,7 @@ const rendererStamp = (key: string): string => `<!-- em-renderer-sha256: ${key} 
  * is not a CI run. Anything else, an absent or torn file included, is drawn.
  */
 export function isCurrent(diagram: Diagram, key: string): boolean {
-  if (underCiMarker()) return false;
+  if (underCiMarker() || kindAt(diagram.svg) !== 'file') return false;
   let text: string;
   try {
     text = readFileSync(join(ROOT, diagram.svg), 'utf8');
@@ -86,11 +126,17 @@ export function isCurrent(diagram: Diagram, key: string): boolean {
   return first === sourceStamp(diagram) && second === rendererStamp(key) && text.trimEnd().endsWith('</svg>');
 }
 
-/** What the model no longer produces, in `segments/` and `slices/`, is removed by name — never what it still does. */
+/**
+ * What the model no longer produces, in `segments/` and `slices/`, is removed by name — never what it still does.
+ * Both must be real directories: a link or anything else there is removed as itself and a directory made, so nothing
+ * a link names is listed, emptied or descended. A name the model does produce that is not a regular file is removed
+ * too, to be drawn or written afresh. Each removal is said.
+ */
 export function removeOrphans(diagrams: readonly Diagram[]): void {
   const slashed = (path: string): string => path.replaceAll('\\', '/');
   for (const dir of [SEGMENT_DIR, SLICE_DIR]) {
     try {
+      if (kindAt(dir) !== 'directory') removeAsItself(dir);
       mkdirSync(join(ROOT, dir), { recursive: true });
       const produced = new Set(
         diagrams
@@ -98,12 +144,15 @@ export function removeOrphans(diagrams: readonly Diagram[]): void {
           .filter((path) => slashed(dirname(path)) === slashed(dir))
           .map((path) => basename(path)),
       );
-      for (const entry of readdirSync(join(ROOT, dir))) {
-        if (!produced.has(entry)) rmSync(join(ROOT, dir, entry), { force: true, recursive: true });
+      for (const entry of readdirSync(join(ROOT, dir)).sort()) {
+        if (!produced.has(entry)) removeAsItself(join(dir, entry));
       }
     } catch (error) {
       throw new Error(`render: could not clear ${dir}: ${reasonOf(error)}`);
     }
+  }
+  for (const diagram of diagrams) {
+    for (const path of [diagram.mmd, diagram.svg]) clearIrregular(path);
   }
 }
 
@@ -124,8 +173,9 @@ export function temporaryPath(kind: Diagram['kind'], path: string): string {
 function writeFinished(kind: Diagram['kind'], path: string, bytes: string | Uint8Array): void {
   const temporary = temporaryPath(kind, path);
   try {
+    clearIrregular(path);
     mkdirSync(dirname(temporary), { recursive: true });
-    writeFileSync(temporary, bytes);
+    writeFileSync(temporary, bytes, { flag: 'wx' });
     renameSync(temporary, join(ROOT, path));
   } catch (error) {
     try {
@@ -195,7 +245,10 @@ export function readSvg(diagram: Diagram): string {
 export function writeIfDifferent(path: string, contents: string, label: string = path): boolean {
   const absolute = join(ROOT, path);
   try {
-    if (existsSync(absolute) && readFileSync(absolute, 'utf8') === contents) return false;
+    // The README is the project's own and may be a link of its own making: it is read and written as it was.
+    if (path !== README) clearIrregular(path);
+    const present = path === README ? existsSync(absolute) : kindAt(path) === 'file';
+    if (present && readFileSync(absolute, 'utf8') === contents) return false;
     mkdirSync(dirname(absolute), { recursive: true });
     writeFileSync(absolute, contents, 'utf8');
   } catch (error) {

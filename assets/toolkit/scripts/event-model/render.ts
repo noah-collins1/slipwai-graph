@@ -9,7 +9,7 @@
  * the one browser a run draws through). `render-plan.ts` owns which diagrams there are and how they reach disk.
  * `make check-model` needs no browser at all, which is why *it* is the gate that runs in CI.
  */
-import { readFileSync, rmSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -19,6 +19,7 @@ import {
   isCurrent,
   planDiagrams,
   readSvg,
+  removeAsItself,
   removeOrphans,
   underCiMarker,
   writeIfDifferent,
@@ -75,11 +76,9 @@ async function main(): Promise<void> {
     // placeholder slice would be inventing a domain model.
     console.log(`${MODEL_SOURCE} has no slices yet — nothing to render.`);
     console.log('Model your first workflow with the `event-modeling` skill, then run this again.');
-    for (const artifact of [MODEL_MERMAID, MODEL_SVG, MODEL_PNG, MODEL_HTML]) {
-      rmSync(join(ROOT, artifact), { force: true });
-    }
-    for (const dir of [SLICE_DIR, SEGMENT_DIR]) {
-      rmSync(join(ROOT, dir), { force: true, recursive: true });
+    // Each removed as itself, so a link is unlinked and what it names is never touched.
+    for (const artifact of [MODEL_MERMAID, MODEL_SVG, MODEL_PNG, MODEL_HTML, SLICE_DIR, SEGMENT_DIR]) {
+      removeAsItself(artifact, true);
     }
     updateReadme(model);
     return;

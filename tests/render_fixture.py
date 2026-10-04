@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import re
+import signal
 import stat
 import subprocess
 from collections.abc import Mapping
@@ -236,6 +237,24 @@ def make_model(
     return subprocess.run(
         ["make", "model"], cwd=project, text=True, capture_output=True, env=render_env(**env)
     )
+
+
+def make_model_within(project: Path, seconds: float, log: Path) -> subprocess.CompletedProcess[str] | None:
+    """`make model` in a process group of its own, killed whole after `seconds`; `None` when it had to be.
+
+    For a run that may hang (a FIFO where a file is read): a failing example ends, it does not stall the suite."""
+    log.unlink(missing_ok=True)
+    process = subprocess.Popen(
+        ["make", "model"], cwd=project, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        env=render_env(**{LOG_VARIABLE: str(log)}), start_new_session=True,
+    )
+    try:
+        out, err = process.communicate(timeout=seconds)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.communicate()
+        return None
+    return subprocess.CompletedProcess(process.args, process.returncode, out, err)
 
 
 def sha256_of(path: Path) -> str:
