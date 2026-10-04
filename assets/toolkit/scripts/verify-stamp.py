@@ -123,6 +123,10 @@ ASK_TIMEOUT = 5
 VERSION_ARGUMENTS = {"go": "version", "java": "-version"}
 CANNOT_LINE = "verify: the full gate runs and this run records nothing — {reason}"
 NOTHING = "nothing"
+FORCE_VARIABLE = "VERIFY_FORCE"
+# `make ci` is the extended gate: it runs every check, whatever a stamp says.
+FORCING_GOAL = "ci"
+FORCED_LINE = "verify: the full gate runs, forced by {reason}"
 REUSE_LINE = (
     "verify: the full gate did not run; this tree already passed it at {passed} (key {abbreviated}); "
     "VERIFY_FORCE=1 runs it anyway"
@@ -144,13 +148,16 @@ class Options:
 
     def __init__(self, argv: list[str]) -> None:
         self.make = "make"
+        self.goals: list[str] = []
         self.tools: list[str] = []
         self.environments: list[str] = []
-        pairs = {"--make": "make", "--tool": "tools", "--environment": "environments"}
+        pairs = {"--make": "make", "--goals": "goals", "--tool": "tools", "--environment": "environments"}
         for flag, value in zip(argv, argv[1:]):
             name = pairs.get(flag)
             if name == "make":
                 self.make = value or "make"
+            elif name == "goals":
+                self.goals = value.split()
             elif name is not None:
                 getattr(self, name).append(value)
 
@@ -393,6 +400,26 @@ def eligible() -> bool:
     return bool(branch) and branch != trunk_name()
 
 
+def forced_reason(options: Options) -> str | None:
+    """Why this run is forced, or None: `VERIFY_FORCE` set to anything but empty or `0`, whether it came on make's
+    command line (which make exports to the recipe) or in the environment, or `ci` among the goals. The value is
+    printed with its control characters escaped and cut short, so it cannot forge a line."""
+    value = os.environ.get(FORCE_VARIABLE)
+    if value not in (None, "", "0"):
+        return FORCE_VARIABLE + "=" + str(value).encode("unicode_escape").decode("ascii")[:80]
+    if FORCING_GOAL in options.goals:
+        return "the goal " + FORCING_GOAL + ", which always runs every check"
+    return None
+
+
+def remove_stamp() -> None:
+    """The stamp, gone before the first check starts: after a run that failed or was killed there is none."""
+    try:
+        os.remove(stamp_path())
+    except FileNotFoundError:
+        pass
+
+
 def reuse(options: Options) -> int:
     if os.environ.get(RATCHET_VARIABLE) or not eligible():
         return 1
@@ -403,6 +430,12 @@ def reuse(options: Options) -> int:
         write_file(pending_path(), json.dumps({NOTHING: str(reason)}) + "\n")
         return 1
     key = build_key(tools)
+    forced = forced_reason(options)
+    if forced is not None:
+        print(FORCED_LINE.format(reason=forced))
+        remove_stamp()
+        write_file(pending_path(), json.dumps({"key": key["key"], "tools": tools}) + "\n")
+        return 1
     stamp = read_stamp(stamp_path())
     if stamp is not None and stamp["key"] == key["key"]:
         print(REUSE_LINE.format(passed=stamp["passed"], abbreviated=str(key["key"])[:12]))
