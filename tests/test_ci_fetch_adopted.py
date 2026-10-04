@@ -13,6 +13,7 @@ from pathlib import Path
 
 from support import FactoryTestCase
 from test_adopt import repository, slipwai
+from test_ci_fetch_generated import checks_named, verify_chain
 from test_replay import git
 
 ACTIONS = ".github/workflows/verify-delivery.yml"
@@ -24,8 +25,8 @@ FILES = {
     "test/a.test.js": 'require("node:test")("a", () => {});\n',
 }
 FULL_HISTORY = (
-    "      # Full history: `check-slice-scope`, `check-migrations` and `check-flags` compare this change with the\n"
-    "      # trunk, and a checkout of one commit gives them nothing to compare with.\n"
+    "      # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,\n"
+    "      # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.\n"
     "      - uses: actions/checkout@v6\n        with:\n          fetch-depth: 0\n"
 )
 GIT_DEPTH = (
@@ -94,6 +95,18 @@ class AdoptedGateFetchesHistory(FactoryTestCase):
                             self.assertIn(GIT_DEPTH, gitlab_job_text(text, "verify-delivery"))
                             self.assertEqual(text.count("GIT_DEPTH"), 1)
                             self.assertNotIn("rules:", text)
+
+    def test_every_check_the_comment_names_without_a_clause_is_in_the_verify_chain_beside_it(self) -> None:
+        """T013: an adopted repository has no `check-flags`, so the comment names it only where the project has one."""
+        with tempfile.TemporaryDirectory() as directory:
+            for forge in ("github", "gitea"):
+                with self.subTest(forge=forge):
+                    repo = adopted(Path(directory), forge, forge, smoke=False)
+                    named = checks_named((repo / ACTIONS).read_text())
+                    chain = verify_chain((repo / "delivery/Makefile").read_text())
+                    self.assertIn("check-slice-scope", named)
+                    self.assertTrue(named <= chain, named - chain)
+            self.assertNotIn("check-flags", verify_chain((repo / "delivery/Makefile").read_text()))
 
     def test_a_refresh_writes_the_file_adopt_first_wrote(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

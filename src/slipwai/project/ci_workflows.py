@@ -266,8 +266,8 @@ permissions:
   verify:
     runs-on: ubuntu-latest
     steps:
-      # Full history: `check-slice-scope`, `check-migrations` and `check-flags` compare this change with the
-      # trunk, and a checkout of one commit gives them nothing to compare with.
+      # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,
+      # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0

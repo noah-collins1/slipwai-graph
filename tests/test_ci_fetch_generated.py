@@ -31,6 +31,24 @@ def jobs_of(workflow: str) -> dict[str, str]:
     return {parts[i]: parts[i + 1] for i in range(1, len(parts), 2)}
 
 
+def verify_chain(makefile: str) -> set[str]:
+    """Every prerequisite of `verify` and `verify-checks`, the two rules the gate's checks hang from."""
+    chain: set[str] = set()
+    for line in makefile.splitlines():
+        if line.startswith(("verify:", "verify-checks:")):
+            chain |= set(line.split(":", 1)[1].split("##")[0].split())
+    return chain
+
+
+def checks_named(workflow: str) -> set[str]:
+    """The `check-*` names the comment above the checkout gives unconditionally: the clause *where the project has
+    one* is taken out first, since it says the name is not every project's."""
+    lines = workflow.split("      - uses: actions/checkout@v6\n", 1)[0].splitlines()
+    comment = " ".join(line.strip().lstrip("# ") for line in lines if line.startswith("      #"))
+    comment = re.sub(r"`check-[a-z-]+` where the project has one", "", comment)
+    return set(re.findall(r"`(check-[a-z-]+)`", comment))
+
+
 class CiFetchGeneratedTest(FactoryTestCase):
     def test_the_verify_job_checks_out_with_full_history_and_says_which_checks_need_it(self) -> None:
         for backend in CATALOG["backends"]:
@@ -45,8 +63,20 @@ class CiFetchGeneratedTest(FactoryTestCase):
                     at = lines.index("      - uses: actions/checkout@v6")
                     self.assertNotIn("${{", "\n".join(lines[at : at + 3]), "written unconditionally")
                     comment = "\n".join(lines[max(0, at - 3) : at])
-                    for check in ("check-slice-scope", "check-migrations", "check-flags"):
+                    for check in ("check-slice-scope", "check-migrations"):
                         self.assertIn(check, comment)
+
+    def test_every_check_the_comment_names_without_a_clause_is_one_the_projects_gate_runs(self) -> None:
+        """The class (T013): `check-flags` ships with the `aws` and `azure` targets only, so the comment may name it
+        only as `where the project has one`; every other name is in the `verify` chain of the Makefile beside it."""
+        for backend in CATALOG["backends"]:
+            for target in CATALOG["targets"]:
+                with self.subTest(backend=backend, target=target):
+                    files = generated(backend, target)
+                    comment = checks_named(files[VERIFY])
+                    self.assertIn("check-slice-scope", comment)
+                    chain = verify_chain(files["Makefile"])
+                    self.assertTrue(comment <= chain, comment - chain)
 
     def test_hold_the_integration_jobs_keep_their_depth_one_fetch_and_carry_no_fetch_depth(self) -> None:
         """A hold: green before the change, and it has to stay green."""

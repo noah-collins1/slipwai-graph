@@ -69,10 +69,10 @@ def setup_steps(apps: list[App]) -> str:
     return steps
 
 
-# `check-slice-scope`, `check-migrations` and `check-flags` compare a change with the trunk, so the gate's checkout
-# asks for history; the same sentence is said once for each forge's way of asking.
-FULL_HISTORY_STEP = """      # Full history: `check-slice-scope`, `check-migrations` and `check-flags` compare this change with the
-      # trunk, and a checkout of one commit gives them nothing to compare with.
+# `check-slice-scope` and `check-migrations`, and `check-flags` where a project has one, compare a change with the
+# trunk, so the gate's checkout asks for history; the same sentence is said once for each forge's way of asking.
+FULL_HISTORY_STEP = """      # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,
+      # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0

@@ -3,19 +3,20 @@ PATCH
 **CI's `verify` job now fetches full history, so a pull request is held in CI to what `make verify` already holds
 on a developer's machine.** The job's checkout carries `fetch-depth: 0`, written unconditionally and the same on
 `push` and on `pull_request`, in a generated project's `.github/workflows/verify.yml` and in the
-`verify-delivery.yml` that `slipwai adopt` writes (experimental: brownfield adoption); the GitLab job `adopt` writes,
-`verify-delivery`, carries `GIT_DEPTH: "0"`. Before, that checkout was one commit with no trunk in it, so the three
-checks that compare a change with the trunk — `check-slice-scope`, `check-migrations` and `check-flags` — had
-nothing to compare with and let the pull request through. No other job fetches differently: the integration jobs,
-the smoke jobs, and the event-model, deploy and `ux-gates` workflows are as they were.
+`verify-delivery.yml` that `slipwai adopt` writes (experimental: brownfield adoption); the GitLab job `adopt`
+writes, `verify-delivery`, carries `GIT_DEPTH: "0"`. Before, that checkout was one commit with no trunk in it, so
+the checks that compare a change with the trunk — `check-slice-scope` and `check-migrations` in every project, and
+`check-flags` in a project with a production target of `aws` or `azure`, the only ones that have it — had nothing
+to compare with and let the pull request through. No other job fetches differently: the integration jobs, the smoke
+jobs, and the event-model, deploy and `ux-gates` workflows are as they were.
 
-**`check-migrations` and `check-flags` now run their *new in this change* rules in CI, on every pull request.**
-They already held them on a developer's machine; CI now gives the same answer. So a pull request that was green
-before `slipwai migrate` can be red after it, and this is why. Two refusals are new in CI: `check-migrations`
-refuses a contracting migration whose `contract:` names an expand added in the same pull request, and `check-flags`
-refuses a flag declared in the pull request and seeded anything but `off`. To clear one, land the expand first and
-the contract in a later pull request, or seed the new flag `off`. Nothing is newly allowed, and a push to the trunk
-answers as it did.
+**`check-migrations`, and `check-flags` where a project has it, now run their *new in this change* rules in CI, on
+every pull request.** They already held them on a developer's machine; CI now gives the same answer. So a pull
+request that was green before `slipwai migrate` can be red after it, and this is why. Two refusals are new in CI:
+`check-migrations` refuses a contracting migration whose `contract:` names an expand added in the same pull
+request, and `check-flags` (in a project that has it) refuses a flag declared in the pull request and seeded
+anything but `off`. To clear one, land the expand first and the contract in a later pull request, or seed the new
+flag `off`. Nothing is newly allowed, and a push to the trunk answers as it did.
 
 **A slice pull request is held to its scope in CI, and *NOT checked* is now a failure.** With history, a
 `slice/<id>` pull request that touches what one slice may not is refused in CI as it is locally. Where a CI run
