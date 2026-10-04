@@ -1,0 +1,9 @@
+# Demo 2 — /tmp/s24-demo2/old-factory at 838a3b0 generated /tmp/s24-demo2/proj/shop (python, aws); this checkout's slipwai at 39953de migrated it.
+migrated shop to slipwai 1.6.0.dev0: 2 files changed, 18 insertions(+), 10 deletions(-)
+One commit, fast-forwarded — this project had no changes of its own since the last factory commit.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+migrate exit 0
+9744950 Replay shop with slipwai 1.6.0.dev0
+11aab08 Scaffold shop

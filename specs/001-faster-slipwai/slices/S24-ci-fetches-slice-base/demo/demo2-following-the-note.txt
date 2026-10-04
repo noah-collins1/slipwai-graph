@@ -1,0 +1,278 @@
+# Demo 2 — the note's instructions followed with the migrated project's own scripts/check-migrations.py and scripts/check-flags.py.
+# Each checkout is built with git in the shape the forge documents (nothing is pushed). The script that made this is at the end.
+
+##### PART 2 — trunk main. An open pull request with an expand and its contract together
+
+##### 2a. the job as it was before migrate (one commit)
+[checkout of refs/pull/1/merge, shallow; refs: ci/head ; commits: 1]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries 
+read)
+check-flags: exit 0
+    check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+
+##### 2b. the job after migrate (fetch-depth: 0) — the note says: goes red on its next run
+[checkout of refs/pull/1/merge, full; refs: ci/head origin/main origin/orders ; commits: 4]
+check-migrations: exit 1
+    check-migrations: a schema change does not follow expand/contract
+    
+      apps/service/migrations/202610020900_events_drop_state.sql: drops a column, and `202610010900_events_add_status` is new in this same change. Expand and 
+contract ship in separate deployments: land `202610010900_events_add_status` first, then this one.
+check-flags: exit 0
+    check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+
+##### 2c. the note's fix, followed: land the expand first (its own pull request), the contract in a later one
+-- the expand's pull request:
+[checkout of refs/pull/2/merge, full; refs: ci/head origin/main origin/orders origin/orders-expand ; commits: 4]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (84 directory entries 
+read)
+check-flags: exit 0
+    check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+-- a push to main with the expand landed:
+[checkout of refs/heads/main, full; refs: main ci/head origin/main origin/orders origin/orders-expand ; commits: 3]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (84 directory entries 
+read)
+check-flags: exit 0
+    check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+-- the contract's later pull request:
+[checkout of refs/pull/3/merge, full; refs: ci/head origin/main origin/orders origin/orders-contract origin/orders-expand ; commits: 5]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries 
+read)
+check-flags: exit 0
+    check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+
+##### PART 2 — trunk main. An open pull request with a new flag seeded on
+
+##### 2d. before migrate (one commit)
+[checkout of refs/pull/4/merge, shallow; refs: ci/head ; commits: 1]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (86 directory entries 
+read)
+check-flags: exit 0
+    check-flags: 1 flag(s) declared, read, and tested on both paths
+
+##### 2e. after migrate (full history) — the note says: goes red
+[checkout of refs/pull/4/merge, full; refs: ci/head origin/checkout-v2 origin/main origin/orders origin/orders-contract origin/orders-expand ; commits: 5]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (86 directory entries 
+read)
+check-flags: exit 1
+    check-flags: a feature flag is not held back the way it has to be
+    
+      service/checkout-v2: new in this change and seeded "on". The seed is what a *new* environment starts at, and a flag being introduced is not released yet 
+— seed it "off" and flip it with `make flag`, which is the only thing that can flip it: the stack never touches a parameter after creating it.
+
+##### 2f. the note's fix, followed: seed the new flag off
+[checkout of refs/pull/4/merge, full; refs: ci/head origin/checkout-v2 origin/main origin/orders origin/orders-contract origin/orders-expand ; commits: 6]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (86 directory entries 
+read)
+check-flags: exit 0
+    check-flags: 1 flag(s) declared, read, and tested on both paths
+
+##### PART 3 — trunk develop, a master left behind by a rename
+
+##### 3a. expand and contract landed on develop in two separate changes, as the rule asks; flag declared off, then flipped in the seed later
+-- a push to develop, as before migrate (one commit):
+[checkout of refs/heads/develop, shallow; refs: develop ci/head origin/develop ; commits: 1]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (87 directory entries 
+read)
+check-flags: exit 0
+    check-flags: 1 flag(s) declared, read, and tested on both paths
+-- a push to develop after migrate (full history) — the note says: refused:
+[checkout of refs/heads/develop, full; refs: develop ci/head origin/develop origin/master ; commits: 6]
+check-migrations: exit 1
+    check-migrations: a schema change does not follow expand/contract
+    
+      apps/service/migrations/202610020900_events_drop_state.sql: drops a column, and `202610010900_events_add_status` is new in this same change. Expand and 
+contract ship in separate deployments: land `202610010900_events_add_status` first, then this one.
+check-flags: exit 1
+    check-flags: a feature flag is not held back the way it has to be
+    
+      service/checkout-v2: new in this change and seeded "on". The seed is what a *new* environment starts at, and a flag being introduced is not released yet 
+— seed it "off" and flip it with `make flag`, which is the only thing that can flip it: the stack never touches a parameter after creating it.
+-- a pull request that touches only the README — the note says: on every pull request:
+[checkout of refs/pull/1/merge, full; refs: ci/head origin/develop origin/master origin/readme ; commits: 8]
+check-migrations: exit 1
+    check-migrations: a schema change does not follow expand/contract
+    
+      apps/service/migrations/202610020900_events_drop_state.sql: drops a column, and `202610010900_events_add_status` is new in this same change. Expand and 
+contract ship in separate deployments: land `202610010900_events_add_status` first, then this one.
+check-flags: exit 1
+    check-flags: a feature flag is not held back the way it has to be
+    
+      service/checkout-v2: new in this change and seeded "on". The seed is what a *new* environment starts at, and a flag being introduced is not released yet 
+— seed it "off" and flip it with `make flag`, which is the only thing that can flip it: the stack never touches a parameter after creating it.
+
+##### 3b. the note's first instruction, followed: the branch is left over — delete it on the remote
+remote branches now: develop readme 
+-- the same push to develop:
+[checkout of refs/heads/develop, full; refs: develop ci/head origin/develop origin/readme ; commits: 6]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (87 directory entries 
+read)
+check-flags: exit 0
+    check-flags: 1 flag(s) declared, read, and tested on both paths
+-- the same README pull request:
+[checkout of refs/pull/1/merge, full; refs: ci/head origin/develop origin/readme ; commits: 8]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (87 directory entries 
+read)
+check-flags: exit 0
+    check-flags: 1 flag(s) declared, read, and tested on both paths
+
+##### PART 3 — trunk develop, master is the release branch
+
+##### 3c. the expand is on develop, not yet on the release branch; the contract's pull request
+[checkout of refs/pull/1/merge, full; refs: ci/head origin/develop origin/drop-state origin/master ; commits: 5]
+check-migrations: exit 1
+    check-migrations: a schema change does not follow expand/contract
+    
+      apps/service/migrations/202610020900_events_drop_state.sql: drops a column, and `202610010900_events_add_status` is new in this same change. Expand and 
+contract ship in separate deployments: land `202610010900_events_add_status` first, then this one.
+check-flags: exit 0
+    check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+
+##### 3d. the note's second instruction, followed: land the contract once the expand has reached the release branch
+master now at develop's expand: dbcfbbb = dbcfbbb
+-- the same contract pull request, re-run:
+[checkout of refs/pull/1/merge, full; refs: ci/head origin/develop origin/drop-state origin/master ; commits: 5]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries 
+read)
+check-flags: exit 0
+    check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+-- the push to develop that lands it:
+[checkout of refs/heads/develop, full; refs: develop ci/head origin/develop origin/drop-state origin/master ; commits: 4]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (85 directory entries 
+read)
+check-flags: exit 0
+    check-flags: no flag is declared yet (infra/service/flags.auto.tfvars is where the first one goes)
+
+##### 3e. a flag declared on develop since the release branch, seeded off, then on
+-- seeded off:
+[checkout of refs/heads/develop, full; refs: develop ci/head origin/develop origin/drop-state origin/master ; commits: 5]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (87 directory entries 
+read)
+check-flags: exit 0
+    check-flags: 1 flag(s) declared, read, and tested on both paths
+-- seeded on, release branch has no such flag — the note says: refused:
+[checkout of refs/heads/develop, full; refs: develop ci/head origin/develop origin/drop-state origin/master ; commits: 6]
+check-migrations: exit 0
+    check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (87 directory entries 
+read)
+check-flags: exit 1
+    check-flags: a feature flag is not held back the way it has to be
+    
+      service/checkout-v2: new in this change and seeded "on". The seed is what a *new* environment starts at, and a flag being introduced is not released yet 
+— seed it "off" and flip it with `make flag`, which is the only thing that can flip it: the stack never touches a parameter after creating it.
+
+
+##### the script
+#!/usr/bin/env bash
+# Demo 2, S24: follow the catch-up note's instructions (2) and (3) with the migrated project's own gates.
+set -u
+S=/tmp/s24-demo2; P=$S/proj/shop; W=$S/w
+export GIT_AUTHOR_NAME=demo GIT_AUTHOR_EMAIL=demo@example.invalid GIT_COMMITTER_NAME=demo GIT_COMMITTER_EMAIL=demo@example.invalid
+say() { printf '\n##### %s\n' "$*"; }
+n=0
+# ci <remote> <ref> full|shallow [localbranch]  -> a checkout in the shape the forge documents; runs both gates
+ci() {
+  remote=$1; ref=$2; depth=$3; local_branch=${4:-}; n=$((n+1)); d=$W/ci$n; rm -rf "$d"; git init -q "$d"
+  git -C "$d" remote add origin "file://$remote"
+  if [ "$depth" = full ]; then
+    git -C "$d" fetch -q origin '+refs/heads/*:refs/remotes/origin/*'
+    git -C "$d" fetch -q origin "+$ref:refs/remotes/ci/head"
+  else
+    git -C "$d" fetch -q --depth=1 origin "+$ref:refs/remotes/ci/head"
+  fi
+  if [ -n "$local_branch" ]; then git -C "$d" checkout -q -B "$local_branch" refs/remotes/ci/head
+  else git -C "$d" checkout -q --detach refs/remotes/ci/head; fi
+  echo "[checkout of $ref, $depth; refs: $(git -C "$d" for-each-ref --format='%(refname:short)' | tr '\n' ' '); commits: $(git -C "$d" rev-list --count HEAD)]"
+  for gate in check-migrations check-flags; do
+    out=$(cd "$d" && CI=true GITHUB_ACTIONS=true python3 scripts/$gate.py 2>&1); code=$?
+    echo "$gate: exit $code"; echo "$out" | sed 's/^/    /' | fold -s -w 160
+  done
+}
+commit() { git -C "$1" add -A && git -C "$1" commit -q -m "$2"; }
+expand() { printf 'ALTER TABLE events ADD COLUMN status text;\n' > "$1/apps/service/migrations/202610010900_events_add_status.sql"; }
+contract() { printf -- '-- contract: 202610010900_events_add_status\nALTER TABLE events DROP COLUMN state;\n' > "$1/apps/service/migrations/202610020900_events_drop_state.sql"; }
+flag() { # flag <dir> <seed>: declare checkout-v2 and read it through the reader
+  python3 - "$1" "$2" <<'PY'
+import sys, pathlib
+root, seed = pathlib.Path(sys.argv[1]), sys.argv[2]
+f = root / "infra/service/flags.auto.tfvars"
+t = f.read_text()
+head = t[: t.index("flags = {")]
+f.write_text(head + 'flags = {\n  service = {\n    checkout-v2 = "%s"\n  }\n}\n' % seed)
+(root / "apps/service/src/shop/checkout.py").write_text(
+    'from shop.flags import FlagSource, flag_enabled\n\n\ndef checkout_version(source: FlagSource | None = None) -> int:\n    return 2 if flag_enabled("checkout-v2", source) else 1\n')
+(root / "apps/service/tests/test_checkout.py").write_text(
+    'from shop.checkout import checkout_version\nfrom shop.flags import fixed_source\n\n\n'
+    'def test_checkout_v2_on() -> None:\n    assert checkout_version(fixed_source({"checkout-v2": "on"})) == 2\n\n\n'
+    'def test_checkout_v2_off() -> None:\n    assert checkout_version(fixed_source({"checkout-v2": "off"})) == 1\n')
+PY
+}
+pr() { # pr <work> <remote> <branch> <trunk> <number>: push the branch and the forge's merge ref
+  git -C "$1" push -q origin "$3"
+  git -C "$1" checkout -q --detach "origin/$4" && git -C "$1" merge -q --no-ff -m "Merge $3 into $4" "$3" \
+    && git -C "$1" push -q -f origin "HEAD:refs/pull/$5/merge"; git -C "$1" checkout -q "$3"
+}
+
+say "PART 2 — trunk main. An open pull request with an expand and its contract together"
+R=$W/r-main.git; rm -rf "$R" "$W/dev1"; git clone -q --bare "$P" "$R"; git clone -q "$R" "$W/dev1"; D=$W/dev1
+git -C $D checkout -q -b orders; expand $D; contract $D; commit $D "orders: add status, drop state"; pr $D $R orders main 1
+say "2a. the job as it was before migrate (one commit)"; ci $R refs/pull/1/merge shallow
+say "2b. the job after migrate (fetch-depth: 0) — the note says: goes red on its next run"; ci $R refs/pull/1/merge full
+say "2c. the note's fix, followed: land the expand first (its own pull request), the contract in a later one"
+git -C $D checkout -q main; git -C $D checkout -q -b orders-expand; expand $D; commit $D "orders: add status (expand)"; pr $D $R orders-expand main 2
+echo "-- the expand's pull request:"; ci $R refs/pull/2/merge full
+git -C $D checkout -q main; git -C $D merge -q --ff-only orders-expand; git -C $D push -q origin main
+echo "-- a push to main with the expand landed:"; ci $R refs/heads/main full main
+git -C $D checkout -q -b orders-contract; contract $D; commit $D "orders: drop state (contract)"; pr $D $R orders-contract main 3
+echo "-- the contract's later pull request:"; ci $R refs/pull/3/merge full
+
+say "PART 2 — trunk main. An open pull request with a new flag seeded on"
+git -C $D checkout -q main; git -C $D checkout -q -b checkout-v2; flag $D on; commit $D "checkout-v2 behind a flag, seeded on"; pr $D $R checkout-v2 main 4
+say "2d. before migrate (one commit)"; ci $R refs/pull/4/merge shallow
+say "2e. after migrate (full history) — the note says: goes red"; ci $R refs/pull/4/merge full
+say "2f. the note's fix, followed: seed the new flag off"
+flag $D off; commit $D "seed checkout-v2 off"; pr $D $R checkout-v2 main 4; ci $R refs/pull/4/merge full
+
+say "PART 3 — trunk develop, a master left behind by a rename"
+R=$W/r-develop.git; rm -rf "$R" "$W/dev2"; git clone -q --bare "$P" "$R"; git -C "$R" branch -m main master; git -C "$R" branch develop master
+git -C "$R" symbolic-ref HEAD refs/heads/develop; git clone -q "$R" "$W/dev2"; D=$W/dev2
+say "3a. expand and contract landed on develop in two separate changes, as the rule asks; flag declared off, then flipped in the seed later"
+expand $D; commit $D "expand"; flag $D off; commit $D "flag declared, off"; contract $D; commit $D "contract, a later change"; flag $D on; commit $D "seed flipped to on, later still"
+git -C $D push -q origin develop
+echo "-- a push to develop, as before migrate (one commit):"; ci $R refs/heads/develop shallow develop
+echo "-- a push to develop after migrate (full history) — the note says: refused:"; ci $R refs/heads/develop full develop
+git -C $D checkout -q -b readme; echo "a line" >> $D/README.md; commit $D "readme only"; pr $D $R readme develop 1
+echo "-- a pull request that touches only the README — the note says: on every pull request:"; ci $R refs/pull/1/merge full
+say "3b. the note's first instruction, followed: the branch is left over — delete it on the remote"
+git -C $D push -q origin --delete master; echo "remote branches now: $(git -C $R for-each-ref --format='%(refname:short)' refs/heads | tr '\n' ' ')"
+echo "-- the same push to develop:"; ci $R refs/heads/develop full develop
+echo "-- the same README pull request:"; ci $R refs/pull/1/merge full
+
+say "PART 3 — trunk develop, master is the release branch"
+R=$W/r-release.git; rm -rf "$R" "$W/dev3"; git clone -q --bare "$P" "$R"; git -C "$R" branch -m main master; git -C "$R" branch develop master
+git -C "$R" symbolic-ref HEAD refs/heads/develop; git clone -q "$R" "$W/dev3"; D=$W/dev3
+expand $D; commit $D "expand"; git -C $D push -q origin develop
+git -C $D checkout -q -b drop-state; contract $D; commit $D "contract"; pr $D $R drop-state develop 1
+say "3c. the expand is on develop, not yet on the release branch; the contract's pull request"; ci $R refs/pull/1/merge full
+say "3d. the note's second instruction, followed: land the contract once the expand has reached the release branch"
+git -C $D push -q origin origin/develop:refs/heads/master; echo "master now at develop's expand: $(git -C $R rev-parse --short master) = $(git -C $R rev-parse --short develop)"
+echo "-- the same contract pull request, re-run:"; ci $R refs/pull/1/merge full
+git -C $D checkout -q develop; git -C $D merge -q --ff-only drop-state; git -C $D push -q origin develop
+echo "-- the push to develop that lands it:"; ci $R refs/heads/develop full develop
+say "3e. a flag declared on develop since the release branch, seeded off, then on"
+flag $D off; commit $D "flag declared, off"; git -C $D push -q origin develop
+echo "-- seeded off:"; ci $R refs/heads/develop full develop
+flag $D on; commit $D "seed flipped to on"; git -C $D push -q origin develop
+echo "-- seeded on, release branch has no such flag — the note says: refused:"; ci $R refs/heads/develop full develop
