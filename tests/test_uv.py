@@ -56,7 +56,7 @@ class UvTest(FactoryTestCase):
             # And what only the gate needs. `httpx` is here rather than above because it is what
             # `TestClient` drives the app with; a running service never imports it.
             self.assertEqual(
-                ["httpx==0.28.1", "mypy==2.3.1", "pytest==9.1.1", "ruff==0.16.3"],
+                ["httpx==0.28.1", "mypy==2.3.1", "pytest-xdist==3.8.0", "pytest==9.1.1", "ruff==0.16.3"],
                 document["dependency-groups"]["dev"],
             )
             # Not a package: the code reaches the interpreter through PYTHONPATH, so `uv sync` must not
@@ -83,7 +83,8 @@ class UvTest(FactoryTestCase):
             document = manifest(repo)
             self.assertEqual([], document["project"]["dependencies"])
             self.assertEqual(
-                ["mypy==2.3.1", "pytest==9.1.1", "ruff==0.16.3"], document["dependency-groups"]["dev"]
+                ["mypy==2.3.1", "pytest-xdist==3.8.0", "pytest==9.1.1", "ruff==0.16.3"],
+                document["dependency-groups"]["dev"],
             )
 
     def test_the_gate_installs_from_the_lock_and_never_resolves(self) -> None:

@@ -46,7 +46,7 @@ def service_files(event: bool, selection: Selection, target: str = "none") -> di
 # the factory holds itself to — the factory should not be checked by a stricter tool than the one it hands
 # its own output. mypy beside pytest and ruff, because `typecheck` is a type check: `compileall` only
 # proves the files parse.
-BASE_DEVELOPMENT = ("mypy==2.3.1", "pytest==9.1.1", "ruff==0.16.3")
+BASE_DEVELOPMENT = ("mypy==2.3.1", "pytest==9.1.1", "pytest-xdist==3.8.0", "ruff==0.16.3")
 
 # What each feature pins, split by where it belongs: `runtime` is what the service imports when it is
 # running and is therefore what the production image carries, `development` what only the gate needs. One
