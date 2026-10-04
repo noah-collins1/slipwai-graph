@@ -54,7 +54,7 @@ configuration is written **for the forge found** — `.github/workflows/verify-d
 (which run the same workflows), setting up the toolchains the wrapped applications recorded;
 `delivery/ci/verify-delivery.gitlab-ci.yml` for GitLab, a job to `include:` from their own `.gitlab-ci.yml`;
 nothing at all for Jenkins, Azure, Bitbucket or another (`other`), or where the repository has no CI (`none`),
-and the report says to have that CI run `make -f delivery/Makefile verify`. Never a GitHub workflow into a
+and the report says to have that CI run `make -f delivery/Makefile verify` on a full clone with the trunk's branch fetched. Never a GitHub workflow into a
 repository whose CI is somewhere else — beside whatever CI the repository already has, never in its place. Three root files are the repository's
 own and are never written over: `README.md` is left alone, and `AGENTS.md` and `.gitignore` each receive a
 marked block, appended once. `.claude/settings.json` is written only where there is none. The whole

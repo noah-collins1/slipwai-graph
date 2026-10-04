@@ -120,3 +120,19 @@ class AdoptedGateFetchesHistory(FactoryTestCase):
                     refreshed = slipwai(repo, "adopt", "--refresh")
                     self.assertEqual(refreshed.returncode, 0, refreshed.stderr)
                     self.assertEqual((repo / path).read_text(), first)
+
+
+class AdoptedReportSaysWhatACiOfYourOwnNeeds(FactoryTestCase):
+    """T017 (D86): where `adopt` writes no CI, the report says the job needs the trunk's branch to compare with."""
+
+    def test_the_ci_line_for_other_and_for_none_ends_on_a_full_clone_with_the_trunks_branch_fetched(self) -> None:
+        tail = "on a full clone with the trunk's branch fetched."
+        with tempfile.TemporaryDirectory() as directory:
+            for forge in ("other", "none"):
+                with self.subTest(forge=forge):
+                    repo = repository(Path(directory) / forge, "shop", FILES)
+                    result = slipwai(repo, "adopt", "--yes", "--forge", forge)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    line = next(row for row in result.stdout.splitlines() if row.startswith("CI:"))
+                    self.assertIn("`make -f delivery/Makefile verify` " + tail, line)
+                    self.assertTrue(line.endswith(tail), line)
