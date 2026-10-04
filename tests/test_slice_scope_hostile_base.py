@@ -76,7 +76,7 @@ class HostileBaseTest(SliceScopeFixtures):
         repo = self.orphan_slice()
         self.fails_with(repo, "shares no history with `main`", env=target)
         result = self.run_gate(repo, {**target, **MARKER})
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 1, result.stderr)
         self.assertNotIn("touches only what one slice may", result.stdout)
         self.assertIn("NOT checked", result.stderr)
 
@@ -176,7 +176,7 @@ class CouldNotCompareTest(SliceScopeFixtures):
         for env in (MARKER, DETACHED):
             with self.subTest(env=env):
                 result = self.run_gate(self.blind_clone(), env)
-                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.returncode, 1, result.stderr)
                 self.assertNotIn("touches only what one slice may", result.stdout + result.stderr)
                 self.assertIn("NOT checked", result.stderr)
                 self.assertIn("fatal:", result.stderr)

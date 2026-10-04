@@ -97,9 +97,10 @@ ref (a bare `git fetch origin <trunk>` in a single-branch clone writes only `FET
 the same again), `git fetch --unshallow origin` where a shallow clone is too short to reach the branch point. A
 header, `a slice branch reaches outside what one slice may touch`, stands only above refused paths and lost
 records, with that line after them. A CI run — a detached pull-request checkout (the branch name in `GITHUB_HEAD_REF` or
-`CI_COMMIT_REF_NAME`, `HEAD` detached) or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — exits 0 and says
-on stderr that the slice was NOT checked, because that checkout is depth 1; the verify job's checkout needs
-`fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`) for the check to hold there. A local shell with one of those
+`CI_COMMIT_REF_NAME`, `HEAD` detached) or any run with `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set — exits 1 and says
+on stderr that the slice was NOT checked, because that checkout has no history to compare with; the verify job's
+checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: "0"`; on any other CI, a full clone with the trunk's
+branch fetched) for the check to hold there. A local shell with one of those
 variables set gets the same NOT-checked line, and one set to `false` still counts: any non-empty value does.
 That line carries no `git fetch`, since nobody can run one on a runner. With a usable base a CI run is held
 as locally, and a lost record still fails it.
@@ -109,7 +110,7 @@ exists, because it is pasted into a shell; otherwise the line says which branch 
 that is no usable name is printed with its control characters dropped and cut to 80 characters. Where a base was
 found and a git call after it fails — the diff, `ls-files`, a `show` of a path that is not merely absent — that is
 *could not compare*, never *no changes*: a developer's checkout exits 1 with one line naming the trunk, the base and
-git's own first line, and a forge's says NOT checked with that reason and exits 0. Where git cannot read the checkout
+git's own first line, and a forge's says NOT checked with that reason and exits 1 as well. Where git cannot read the checkout
 at all the check says so on stderr and exits 0.
 """
 
@@ -809,12 +810,14 @@ def forge_checkout() -> bool:
 
 
 def not_checked(slice_id: str, trunk: str, note: str = "") -> str:
-    """The forge's answer where there is no base: not a pass, not a failure, and said on stderr (D31). It names
-    no `git fetch`: the fix there is the job's checkout, not a command a person runs."""
+    """The forge's answer where there is no base: a failure, said on stderr, since a gate that could not look
+    must not read as one that looked (D31, S24). It names no `git fetch`: the fix there is the job's checkout,
+    not a command a person runs."""
     said = f"; {note}" if note else ""
     return (f"check-slice-scope: slice/{slice_id} was NOT checked — this CI checkout has no `{trunk}` history to "
             "compare with. The check holds on a developer's machine; for it to hold here the verify job's "
-            f"checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: \"0\"`){said}.")
+            "checkout needs `fetch-depth: 0` (on GitLab, `GIT_DEPTH: \"0\"`; on any other CI, a full clone with the "
+            f"trunk's branch fetched){said}.")
 
 
 def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
@@ -836,7 +839,7 @@ def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
     note = f"; {found_base.passed_over}" if found_base.passed_over else ""
     if base is None:
         if forge_checkout():
-            return violations, "", "", not_checked(slice_id, found_base.trunk, found_base.bare), False
+            return violations, "", "", not_checked(slice_id, found_base.trunk, found_base.bare), True
         trunk = printable(found_base.trunk)
         command = fetch_command(found_base.trunk)
         if not found_base.has_ref:
@@ -866,7 +869,7 @@ def check(branch: str | None) -> tuple[list[str], str, str, str, bool]:
         why = str(error) or "git gave no reason"
         if forge_checkout():
             return violations, "", "", (f"check-slice-scope: slice/{slice_id} was NOT checked — git could not compare it "
-                                        f"with `{found_base.trunk}` at {short}: {why}"), False
+                                        f"with `{found_base.trunk}` at {short}: {why}"), True
         return violations, "", "", (f"check-slice-scope: slice/{slice_id} could not be compared with "
                                     f"`{found_base.trunk}` at {short} — {why}"), True
     return violations, f"check-slice-scope: slice/{slice_id} touches only what one slice may ({compared}){note}", \

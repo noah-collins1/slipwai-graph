@@ -177,7 +177,7 @@ class NoBaseReportTest(SliceScopeBaseTest):
                 self.assertIn("was NOT checked", result.stderr)
                 self.assertIn("`ci.branch` names `develop`, which has no branch here", result.stderr)
                 self.assertNotIn("git fetch", result.stdout + result.stderr)
-                self.assertEqual(result.returncode, 1 if lost else 0)
+                self.assertEqual(result.returncode, 1)  # S24: NOT checked is a failure, lost record or none
 
     def test_a_lost_record_in_the_unrelated_trunk_state_fails_attached_and_under_a_marker(self) -> None:
         """D32/AC-S22-19: `HEAD` attached, a trunk sharing no history; the findings come first, whoever runs it."""
@@ -197,7 +197,7 @@ class NoBaseReportTest(SliceScopeBaseTest):
         for marker in ("CI", "GITHUB_ACTIONS", "GITLAB_CI"):
             with self.subTest(marker=marker):
                 result = self.run_gate(self.no_trunk(), {marker: "false"})
-                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.returncode, 1, result.stderr)  # S24: the forge's no-base answer fails
                 self.assertEqual(result.stdout, "")
                 self.assertIn("was NOT checked", result.stderr)
 
