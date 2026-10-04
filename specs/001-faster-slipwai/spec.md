@@ -1449,6 +1449,10 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
 
 ### S24-ci-fetches-slice-base
 
+**Unblocked 2026-10-03 by the owner (D82): option (a) of D54** — full history is fetched on every run of the generated
+`verify` job, `check-migrations` and `check-flags` hold their rules in CI on every pull request, and the fragment says
+so plainly. The slice re-enters at the gaps note below, as the next slice after `S03-verify-stamp`.
+
 **Gaps review open — blocked on a person's approval (D54)**, 2026-10-03, cruise iteration 8, host with `drive-skipper`
 for D54: the three examples in `story-split.md` against `workflow()` in `src/slipwai/project/ci_workflows.py`,
 `delivery_workflow()` and `gitlab_job()` in `src/slipwai/project/adopted_ci.py`, and `forge_checkout()`,
