@@ -42,6 +42,8 @@ PYVENV_CFG = "home = /usr/bin\nversion_info = 3.14.4\nuv = 0.12.20\n"
 _UV = """#!/bin/sh
 printf 'uv\\t%s\\n' "$*" >> "$STANDIN_LOG"
 if [ -n "$STANDIN_UV_FAIL" ] && [ "$1" = run ]; then echo "uv: a check failed (stand-in)" >&2; exit 1; fi
+if [ -n "$STANDIN_UV_HANG" ] && [ "$1" = run ]; then echo "uv: waiting (stand-in)"; exec sleep 600; fi
+if [ -n "$STANDIN_EDIT" ] && [ "$1" = run ]; then echo "edited by a check" >> "$STANDIN_EDIT"; fi
 case "$1" in
   --version)
     case "$STANDIN_UV_MODE" in

@@ -127,6 +127,9 @@ FORCE_VARIABLE = "VERIFY_FORCE"
 # `make ci` is the extended gate: it runs every check, whatever a stamp says.
 FORCING_GOAL = "ci"
 FORCED_LINE = "verify: the full gate runs, forced by {reason}"
+NOT_RECORDED_LINE = "verify: this pass was not recorded — {reason}"
+# make's flags that stop a run from reading or writing a stamp: `-n`, `-t` and `-q` run no check, `-i` lets one fail.
+DECLINING_FLAGS = "ntqi"
 REUSE_LINE = (
     "verify: the full gate did not run; this tree already passed it at {passed} (key {abbreviated}); "
     "VERIFY_FORCE=1 runs it anyway"
@@ -412,16 +415,53 @@ def forced_reason(options: Options) -> str | None:
     return None
 
 
-def remove_stamp() -> None:
-    """The stamp, gone before the first check starts: after a run that failed or was killed there is none."""
+def make_flags() -> str:
+    """The single-letter flags make was run with, which it hands a recipe as the first word of `MAKEFLAGS` — the word
+    only where it is made of letters (`i`, `ik`; a leading space, `-j4` or `--no-print-directory` is none)."""
+    words = os.environ.get("MAKEFLAGS", "").split()
+    return words[0] if words and words[0].isalpha() else ""
+
+
+def declined() -> bool:
+    """Whether this run neither reads nor writes a stamp for what it is, whoever it is run by: under `-n`, `-t` or `-q`
+    the checks do not run, under `-i` a check that fails still lets the run go on and the sub-make exit 0, and a run
+    that makes the gate write the tree it judges (`RATCHET_TIGHTEN`) judges a tree that is about to change."""
+    return bool(os.environ.get(RATCHET_VARIABLE)) or any(letter in make_flags() for letter in DECLINING_FLAGS)
+
+
+def remove_stamp() -> str | None:
+    """The stamp, gone before the first check starts, so that after a run that failed or was killed there is none.
+    None where it is gone or was never there; else why it could not be, naming the file to delete."""
+    path = stamp_path()
     try:
-        os.remove(stamp_path())
+        os.remove(path)
     except FileNotFoundError:
-        pass
+        return None
+    except OSError as error:
+        return "cannot remove " + path + " (" + (error.strerror or str(error)) + "); delete that file"
+    return None
+
+
+def begin_full_run(note: dict[str, object], forced: str | None = None) -> int:
+    """Every full run of a stamp that may be used starts here: the stamp is removed, one line is said where there is
+    something to act on (the run was forced, or the stamp cannot be removed, in which case it names the file and the
+    run records nothing), and the note of what the run began with is left for `record`. Exits non-zero, so the
+    recipe runs every check."""
+    reason = remove_stamp()
+    if reason is not None:
+        print(CANNOT_LINE.format(reason=reason))
+        note = {NOTHING: reason}
+    elif forced is not None:
+        print(FORCED_LINE.format(reason=forced))
+    try:
+        write_file(pending_path(), json.dumps(note) + "\n")
+    except OSError:
+        pass  # `record` finds no note and says why it records nothing
+    return 1
 
 
 def reuse(options: Options) -> int:
-    if os.environ.get(RATCHET_VARIABLE) or not eligible():
+    if declined() or not eligible():
         return 1
     try:
         tools = machine_tools(options)
@@ -431,35 +471,66 @@ def reuse(options: Options) -> int:
         return 1
     key = build_key(tools)
     forced = forced_reason(options)
-    if forced is not None:
-        print(FORCED_LINE.format(reason=forced))
-        remove_stamp()
-        write_file(pending_path(), json.dumps({"key": key["key"], "tools": tools}) + "\n")
-        return 1
-    stamp = read_stamp(stamp_path())
-    if stamp is not None and stamp["key"] == key["key"]:
-        print(REUSE_LINE.format(passed=stamp["passed"], abbreviated=str(key["key"])[:12]))
-        return 0
-    write_file(pending_path(), json.dumps({"key": key["key"], "tools": tools}) + "\n")
-    return 1
+    if forced is None:
+        stamp = read_stamp(stamp_path())
+        if stamp is not None and stamp["key"] == key["key"]:
+            print(REUSE_LINE.format(passed=stamp["passed"], abbreviated=str(key["key"])[:12]))
+            return 0
+    return begin_full_run({"key": key["key"], "tools": tools}, forced)
+
+
+def not_recorded(reason: str) -> int:
+    """A pass that was not recorded, and why: one line, and the gate's own exit code stands."""
+    print(NOT_RECORDED_LINE.format(reason=reason))
+    return 0
+
+
+def why_no_note() -> str | None:
+    """Why `reuse` left no note of the key, found by trying to leave one; None where a stamp that could not be removed
+    stands (`reuse` named it already) and where nothing says why."""
+    path = pending_path()
+    if os.path.lexists(stamp_path()):
+        return None
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with tempfile.TemporaryFile(dir=os.path.dirname(path)):
+            pass
+    except OSError as error:
+        return "cannot write " + os.path.dirname(path) + " (" + (error.strerror or str(error)) + ")"
+    return "the key from before the checks was not kept"
 
 
 def record(options: Options) -> int:
     """After the last check: the stamp, if the key is the one the run began with. The tools are the ones the run began
-    with too — they are asked once — and the note that says this run records nothing records nothing."""
-    if os.environ.get(RATCHET_VARIABLE) or not eligible():
+    with too — they are asked once — and the note that says this run records nothing records nothing. A pass that
+    cannot be recorded — the tree moved while the checks ran, or the stamp cannot be written — says so in one line."""
+    if declined() or not eligible():
         return 0
-    with open(pending_path(), "r", encoding="utf-8") as handle:
-        pending = json.load(handle)
-    if NOTHING in pending:
-        return 0
-    key = build_key(pending["tools"])
+    try:
+        with open(pending_path(), "r", encoding="utf-8") as handle:
+            pending = json.load(handle)
+        if NOTHING in pending:
+            return 0
+        pending["key"], pending["tools"]
+    except (OSError, ValueError, KeyError, TypeError):
+        reason = why_no_note()
+        return 0 if reason is None else not_recorded(reason)
+    try:
+        key = build_key(pending["tools"])
+    except CannotTell as reason:
+        return not_recorded(str(reason))
     if key["key"] != pending["key"]:
-        return 0
+        return not_recorded("the tree changed while the checks ran")
     passed = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     stamp = dict(key, passed=passed, result="pass")
-    write_file(stamp_path(), json.dumps(stamp, indent=2, sort_keys=True) + "\n")
-    os.remove(pending_path())
+    try:
+        write_file(stamp_path(), json.dumps(stamp, indent=2, sort_keys=True) + "\n")
+    except OSError as error:
+        return not_recorded("cannot write " + stamp_path() + " (" + (error.strerror or str(error)) + ")")
+    try:
+        os.remove(pending_path())
+    except OSError:
+        pass  # a note left behind is overwritten by the next run
     return 0
 
 
