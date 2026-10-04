@@ -1766,9 +1766,10 @@ is `sync`, a *run line* one whose first is `run`.
   exactly one sync line.
 - **AC-S04-38** — Given a stand-in `uv` whose `sync` exits non-zero, when `make verify` or `make -j verify` runs,
   then make exits non-zero and the log holds no run line.
-- **AC-S04-39** — Given a generated Python project, when its CI workflow, the commands `native_commands.py`
-  records for it and its pages are read, then none names the non-syncing spelling: it is an argument only the
-  Makefile's recipes pass.
+- **AC-S04-39** — *Re-worded by D98.* Given a generated Python project, when its CI workflow, the commands
+  `native_commands.py` records for it and its pages are read, then none names the non-syncing spelling as a thing
+  to type: it is an argument only the Makefile's recipes pass, and the gate's page names it once, in the sentence
+  that says so (D97).
 - **AC-S04-40** — Given the non-syncing argument absent and any environment variable set to any value, when
   `./scripts/verify --test-only` runs, then it still syncs first: the script reads no variable to skip the sync.
 - **AC-S04-41** — Given a generated Python project, when `make verify` runs, then the script prints nothing about

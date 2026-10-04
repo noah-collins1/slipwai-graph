@@ -1,0 +1,1125 @@
+2026-10-04T16:07:40Z
+$ sed -i '1i import os' apps/service/src/shop/settings.py  (unused import)
+ M apps/service/src/shop/settings.py
+./.git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+
+$ make -j verify VERIFY_GROUP=-i
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (111 directory entries read)
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (111 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `work`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/event-model/check.py
+check-model: valid
+./scripts/verify --install-only
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [19ms]
+./scripts/verify --typecheck-only --synced
+*** Error compiling 'apps/service/src/shop/settings.py'...
+  File "apps/service/src/shop/settings.py", line 31
+    from __future__ import annotations
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: from __future__ imports must occur at the beginning of the file
+
+make[1]: *** [Makefile:99: typecheck] Error 1
+make[1]: *** Waiting for unfinished jobs....
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+./scripts/verify --lint-only --synced
+I001 [*] Import block is un-sorted or un-formatted
+ --> apps/service/src/shop/settings.py:1:1
+  |
+1 | import os
+  | ^^^^^^^^^
+2 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+help: Organize imports
+  |
+1 | import os
+2 +
+3 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+
+F401 [*] `os` imported but unused
+ --> apps/service/src/shop/settings.py:1:8
+  |
+1 | import os
+  |        ^^
+2 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+help: Remove unused import: `os`
+  |
+  - import os
+1 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+
+F404 `from __future__` imports must occur at the beginning of the file
+  --> apps/service/src/shop/settings.py:31:1
+   |
+29 | """
+30 |
+31 | from __future__ import annotations
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:31:1
+   |
+29 | """
+30 |
+31 | from __future__ import annotations
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:33:1
+   |
+31 | from __future__ import annotations
+32 |
+33 | from pydantic import Field, ValidationError
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 | from pydantic_settings import BaseSettings, SettingsConfigDict
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:34:1
+   |
+33 | from pydantic import Field, ValidationError
+34 | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Move module level imports to top of file
+
+Found 6 errors.
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo2/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 80 items / 1 error
+
+==================================== ERRORS ====================================
+___________________ ERROR collecting tests/test_settings.py ____________________
+apps/service/.venv/lib/python3.14/site-packages/_pytest/python.py:508: in importtestmodule
+    mod = import_path(
+apps/service/.venv/lib/python3.14/site-packages/_pytest/pathlib.py:596: in import_path
+    importlib.import_module(module_name)
+/usr/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1342: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:938: in _load_unlocked
+    ???
+apps/service/.venv/lib/python3.14/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+apps/service/tests/test_settings.py:14: in <module>
+    from shop.settings import (
+E     File "/tmp/s04-demo2/shop/apps/service/src/shop/settings.py", line 31
+E       from __future__ import annotations
+E       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   SyntaxError: from __future__ imports must occur at the beginning of the file
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR apps/service/tests/test_settings.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+========================= 2 warnings, 1 error in 0.85s =========================
+make[1]: *** [Makefile:219: test] Error 2
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+exit 2
+
+$ make verify   # after the first
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [15ms]
+./scripts/verify --install-only
+./scripts/verify --lint-only --synced
+I001 [*] Import block is un-sorted or un-formatted
+ --> apps/service/src/shop/settings.py:1:1
+  |
+1 | import os
+  | ^^^^^^^^^
+2 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+help: Organize imports
+  |
+1 | import os
+2 +
+3 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+
+F401 [*] `os` imported but unused
+ --> apps/service/src/shop/settings.py:1:8
+  |
+1 | import os
+  |        ^^
+2 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+help: Remove unused import: `os`
+  |
+  - import os
+1 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+
+F404 `from __future__` imports must occur at the beginning of the file
+  --> apps/service/src/shop/settings.py:31:1
+   |
+29 | """
+30 |
+31 | from __future__ import annotations
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:31:1
+   |
+29 | """
+30 |
+31 | from __future__ import annotations
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:33:1
+   |
+31 | from __future__ import annotations
+32 |
+33 | from pydantic import Field, ValidationError
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 | from pydantic_settings import BaseSettings, SettingsConfigDict
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:34:1
+   |
+33 | from pydantic import Field, ValidationError
+34 | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Move module level imports to top of file
+
+Found 6 errors.
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+exit 2
+
+$ VERIFY_GROUP=-i make -e -j verify
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `work`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (112 directory entries read)
+python3 scripts/event-model/check.py
+check-model: valid
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (112 directory entries read)
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+./scripts/verify --install-only
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [17ms]
+./scripts/verify --typecheck-only --synced
+*** Error compiling 'apps/service/src/shop/settings.py'...
+  File "apps/service/src/shop/settings.py", line 31
+    from __future__ import annotations
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: from __future__ imports must occur at the beginning of the file
+
+make[1]: *** [Makefile:99: typecheck] Error 1
+make[1]: *** Waiting for unfinished jobs....
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+./scripts/verify --lint-only --synced
+I001 [*] Import block is un-sorted or un-formatted
+ --> apps/service/src/shop/settings.py:1:1
+  |
+1 | import os
+  | ^^^^^^^^^
+2 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+help: Organize imports
+  |
+1 | import os
+2 +
+3 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+
+F401 [*] `os` imported but unused
+ --> apps/service/src/shop/settings.py:1:8
+  |
+1 | import os
+  |        ^^
+2 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+help: Remove unused import: `os`
+  |
+  - import os
+1 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+
+F404 `from __future__` imports must occur at the beginning of the file
+  --> apps/service/src/shop/settings.py:31:1
+   |
+29 | """
+30 |
+31 | from __future__ import annotations
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:31:1
+   |
+29 | """
+30 |
+31 | from __future__ import annotations
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:33:1
+   |
+31 | from __future__ import annotations
+32 |
+33 | from pydantic import Field, ValidationError
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 | from pydantic_settings import BaseSettings, SettingsConfigDict
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:34:1
+   |
+33 | from pydantic import Field, ValidationError
+34 | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Move module level imports to top of file
+
+Found 6 errors.
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo2/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 80 items / 1 error
+
+==================================== ERRORS ====================================
+___________________ ERROR collecting tests/test_settings.py ____________________
+apps/service/.venv/lib/python3.14/site-packages/_pytest/python.py:508: in importtestmodule
+    mod = import_path(
+apps/service/.venv/lib/python3.14/site-packages/_pytest/pathlib.py:596: in import_path
+    importlib.import_module(module_name)
+/usr/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1406: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1371: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1342: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:938: in _load_unlocked
+    ???
+apps/service/.venv/lib/python3.14/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+apps/service/tests/test_settings.py:14: in <module>
+    from shop.settings import (
+E     File "/tmp/s04-demo2/shop/apps/service/src/shop/settings.py", line 31
+E       from __future__ import annotations
+E       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   SyntaxError: from __future__ imports must occur at the beginning of the file
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR apps/service/tests/test_settings.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+========================= 2 warnings, 1 error in 0.83s =========================
+make[1]: *** [Makefile:219: test] Error 2
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+exit 2
+
+$ make verify   # after the second
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [15ms]
+./scripts/verify --install-only
+./scripts/verify --lint-only --synced
+I001 [*] Import block is un-sorted or un-formatted
+ --> apps/service/src/shop/settings.py:1:1
+  |
+1 | import os
+  | ^^^^^^^^^
+2 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+help: Organize imports
+  |
+1 | import os
+2 +
+3 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+
+F401 [*] `os` imported but unused
+ --> apps/service/src/shop/settings.py:1:8
+  |
+1 | import os
+  |        ^^
+2 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+help: Remove unused import: `os`
+  |
+  - import os
+1 | """This process's configuration: one model over the environment, checked before it starts.
+  |
+
+F404 `from __future__` imports must occur at the beginning of the file
+  --> apps/service/src/shop/settings.py:31:1
+   |
+29 | """
+30 |
+31 | from __future__ import annotations
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:31:1
+   |
+29 | """
+30 |
+31 | from __future__ import annotations
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:33:1
+   |
+31 | from __future__ import annotations
+32 |
+33 | from pydantic import Field, ValidationError
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 | from pydantic_settings import BaseSettings, SettingsConfigDict
+   |
+help: Move module level imports to top of file
+
+E402 Module level import not at top of file
+  --> apps/service/src/shop/settings.py:34:1
+   |
+33 | from pydantic import Field, ValidationError
+34 | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Move module level imports to top of file
+
+Found 6 errors.
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+exit 2
+
+$ git checkout -- apps/service/src/shop/settings.py
+
+$ make verify   # restored
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [15ms]
+./scripts/verify --install-only
+./scripts/verify --lint-only --synced
+All checks passed!
+31 files already formatted
+npm --workspace apps/web run lint
+
+> shop-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+./scripts/verify --typecheck-only --synced
+Success: no issues found in 29 source files
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (112 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (112 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `work`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo2/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 1.21s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo2/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  11:07:55
+   Duration  1.13s (transform 146ms, setup 338ms, import 149ms, tests 336ms, environment 1.82s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+exit 0
+
+===== again, with the import placed after 'from __future__' so that lint alone fails =====
+$ make verify   # green tree, before the break: reused?
+verify: the full gate did not run; this tree already passed it at 2026-10-04T16:07:58Z (key 1cc9d5fd9632); VERIFY_FORCE=1 runs it anyway
+exit 0
+ apps/service/src/shop/settings.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+$ make -j verify VERIFY_GROUP=-i
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (112 directory entries read)
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `work`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (112 directory entries read)
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/event-model/check.py
+check-model: valid
+./scripts/verify --install-only
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [16ms]
+check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+./scripts/verify --lint-only --synced
+I001 [*] Import block is un-sorted or un-formatted
+  --> apps/service/src/shop/settings.py:30:1
+   |
+28 |   """
+29 |
+30 | / from __future__ import annotations
+31 | | import os
+32 | |
+33 | | from pydantic import Field, ValidationError
+34 | | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | |______________________________________________________________^
+help: Organize imports
+   |
+30 | from __future__ import annotations
+31 +
+32 | import os
+   |
+
+F401 [*] `os` imported but unused
+  --> apps/service/src/shop/settings.py:31:8
+   |
+30 | from __future__ import annotations
+31 | import os
+   |        ^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+help: Remove unused import: `os`
+   |
+30 | from __future__ import annotations
+   - import os
+31 |
+   |
+
+Found 2 errors.
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+make[1]: *** Waiting for unfinished jobs....
+./scripts/verify --typecheck-only --synced
+Success: no issues found in 29 source files
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo2/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 1.25s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo2/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  11:08:14
+   Duration  1.11s (transform 72ms, setup 320ms, import 119ms, tests 327ms, environment 1.79s)
+
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+exit 2
+
+$ make verify   # after the first
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [15ms]
+./scripts/verify --install-only
+./scripts/verify --lint-only --synced
+I001 [*] Import block is un-sorted or un-formatted
+  --> apps/service/src/shop/settings.py:30:1
+   |
+28 |   """
+29 |
+30 | / from __future__ import annotations
+31 | | import os
+32 | |
+33 | | from pydantic import Field, ValidationError
+34 | | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | |______________________________________________________________^
+help: Organize imports
+   |
+30 | from __future__ import annotations
+31 +
+32 | import os
+   |
+
+F401 [*] `os` imported but unused
+  --> apps/service/src/shop/settings.py:31:8
+   |
+30 | from __future__ import annotations
+31 | import os
+   |        ^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+help: Remove unused import: `os`
+   |
+30 | from __future__ import annotations
+   - import os
+31 |
+   |
+
+Found 2 errors.
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+exit 2
+
+$ VERIFY_GROUP=-i make -e -j verify
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (112 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `work`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (112 directory entries read)
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/event-model/check.py
+check-model: valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+./scripts/verify --install-only
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [15ms]
+check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+./scripts/verify --lint-only --synced
+I001 [*] Import block is un-sorted or un-formatted
+  --> apps/service/src/shop/settings.py:30:1
+   |
+28 |   """
+29 |
+30 | / from __future__ import annotations
+31 | | import os
+32 | |
+33 | | from pydantic import Field, ValidationError
+34 | | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | |______________________________________________________________^
+help: Organize imports
+   |
+30 | from __future__ import annotations
+31 +
+32 | import os
+   |
+
+F401 [*] `os` imported but unused
+  --> apps/service/src/shop/settings.py:31:8
+   |
+30 | from __future__ import annotations
+31 | import os
+   |        ^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+help: Remove unused import: `os`
+   |
+30 | from __future__ import annotations
+   - import os
+31 |
+   |
+
+Found 2 errors.
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+make[1]: *** Waiting for unfinished jobs....
+./scripts/verify --typecheck-only --synced
+Success: no issues found in 29 source files
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo2/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 1.26s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo2/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  11:08:20
+   Duration  1.15s (transform 107ms, setup 371ms, import 127ms, tests 300ms, environment 1.86s)
+
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+exit 2
+
+$ make verify   # after the second
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [14ms]
+./scripts/verify --install-only
+./scripts/verify --lint-only --synced
+I001 [*] Import block is un-sorted or un-formatted
+  --> apps/service/src/shop/settings.py:30:1
+   |
+28 |   """
+29 |
+30 | / from __future__ import annotations
+31 | | import os
+32 | |
+33 | | from pydantic import Field, ValidationError
+34 | | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | |______________________________________________________________^
+help: Organize imports
+   |
+30 | from __future__ import annotations
+31 +
+32 | import os
+   |
+
+F401 [*] `os` imported but unused
+  --> apps/service/src/shop/settings.py:31:8
+   |
+30 | from __future__ import annotations
+31 | import os
+   |        ^^
+32 |
+33 | from pydantic import Field, ValidationError
+   |
+help: Remove unused import: `os`
+   |
+30 | from __future__ import annotations
+   - import os
+31 |
+   |
+
+Found 2 errors.
+[*] 2 fixable with the `--fix` option.
+make[1]: *** [Makefile:102: lint] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2
+exit 2
+
+$ git checkout -- apps/service/src/shop/settings.py
+
+$ make verify   # restored
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s04-demo2/shop/packages/api-client/src/schema.ts [14ms]
+./scripts/verify --install-only
+./scripts/verify --lint-only --synced
+All checks passed!
+31 files already formatted
+npm --workspace apps/web run lint
+
+> shop-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 5ms. No fixes applied.
+./scripts/verify --typecheck-only --synced
+Success: no issues found in 29 source files
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (112 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (112 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `work`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s04-demo2/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s04-demo2/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 1.20s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s04-demo2/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  11:08:29
+   Duration  1.12s (transform 98ms, setup 335ms, import 113ms, tests 306ms, environment 1.83s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+exit 0

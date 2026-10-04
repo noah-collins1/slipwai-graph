@@ -1,0 +1,70 @@
+$ old/slipwai generate legacy --profile event-modelling --backend python --output /tmp/s04-demo2/p5 --no-init --no-install --skip-checks   (factory at 3f44288)
+created: /tmp/s04-demo2/p5/legacy
+exit 0
+
+$ git branch --show-current
+main
+$ ls package-lock.json scripts/event-model/package-lock.json
+ls: cannot access 'scripts/event-model/package-lock.json': No such file or directory
+package-lock.json
+
+$ (cd scripts/event-model && npm install --package-lock-only)   # the project's own lock, written by npm from the old manifest
+
+up to date in 428ms
+e8c4848419d97fbdcf3c0230ededc9bebd872bbe8d1d26d35e5c3d2ad4e2170b  scripts/event-model/package-lock.json
+
+$ echo scripts/event-model/package-lock.json >> .gitignore && git commit -am 'ignore the model lock'
+8b4a4fb ignore the model lock
+38fc97f Scaffold legacy
+$ git status --porcelain --ignored | grep event-model
+!! scripts/event-model/package-lock.json
+
+$ slipwai migrate   (this checkout)
+migrated legacy to slipwai 1.6.0.dev0: 6 files changed, 603 insertions(+), 32 deletions(-)
+One merge commit. The files this project had changed itself were kept; the rest are what the factory now generates for its answers.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+exit 0
+
+$ git status --porcelain
+$ git log --oneline | head -3
+2afa645 Migrate legacy to slipwai 1.6.0.dev0
+b3504c9 Replay legacy with slipwai 1.6.0.dev0
+8b4a4fb ignore the model lock
+$ sha256sum scripts/event-model/package-lock.json   # on disk after
+79ab8f28fce2352a83643f45653dd2c6fc330b57d20d9aac592a53bb4985d06c  scripts/event-model/package-lock.json
+$ git ls-files scripts/event-model/package-lock.json
+scripts/event-model/package-lock.json
+$ grep -c demo2Marker scripts/event-model/package-lock.json
+0
+$ git show HEAD:scripts/event-model/package-lock.json | sha256sum
+79ab8f28fce2352a83643f45653dd2c6fc330b57d20d9aac592a53bb4985d06c  -
+$ sha256sum of the lock this checkout's generate ships (from /tmp/s04-demo2/shop)
+79ab8f28fce2352a83643f45653dd2c6fc330b57d20d9aac592a53bb4985d06c  /tmp/s04-demo2/shop/scripts/event-model/package-lock.json
+
+$ grep -c 'move it aside first if it is wanted' .slipwai/catch-up.md   (in legacy, after the migrate above)
+1
+
+===== again on a second project from the old factory, moving the lock aside first =====
+$ old/slipwai generate legacy2 ... --output /tmp/s04-demo2/p5b
+created: /tmp/s04-demo2/p5b/legacy2
+exit 0
+$ cp /tmp/s04-demo2/mine.lock scripts/event-model/package-lock.json; echo scripts/event-model/package-lock.json >> .gitignore; git commit
+!! scripts/event-model/package-lock.json
+e8c4848419d97fbdcf3c0230ededc9bebd872bbe8d1d26d35e5c3d2ad4e2170b  scripts/event-model/package-lock.json
+
+$ mv scripts/event-model/package-lock.json /tmp/s04-demo2/kept-aside.lock
+$ slipwai migrate
+migrated legacy2 to slipwai 1.6.0.dev0: 6 files changed, 603 insertions(+), 32 deletions(-)
+One merge commit. The files this project had changed itself were kept; the rest are what the factory now generates for its answers.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+exit 0
+$ sha256sum scripts/event-model/package-lock.json /tmp/s04-demo2/kept-aside.lock
+79ab8f28fce2352a83643f45653dd2c6fc330b57d20d9aac592a53bb4985d06c  scripts/event-model/package-lock.json
+e8c4848419d97fbdcf3c0230ededc9bebd872bbe8d1d26d35e5c3d2ad4e2170b  /tmp/s04-demo2/kept-aside.lock
+$ grep -c demo2Marker /tmp/s04-demo2/kept-aside.lock
+1
+$ git status --porcelain
