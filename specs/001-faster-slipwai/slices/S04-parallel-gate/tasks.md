@@ -254,7 +254,7 @@ the rewrite cannot be applied from `makefile.py`), `changelog.d/parallel-gate.md
 
 ### T003 — [P] [US1] `check-python` is first, serial and parallel (R2 · AC-S04-13, -1, -18)
 
-- [ ] **Rule R2.** Needs T002 (its helper, and the `sync` target that already names `check-python`). Disjoint from
+- [x] *(b5429f5: the line follows the gate's rule and is emitted only where the gate is the stamped one; `check-openapi: check-python` in `openapi.py`; e2 and the sweep red first, e1, e3, e4 holds with teeth)* **Rule R2.** Needs T002 (its helper, and the `sync` target that already names `check-python`). Disjoint from
   T004, T005, T007 and T008 by manifest.
 
 **RED** (new `tests/test_parallel_gate_first.py`; the old `python3` is **the `sitecustomize` stand-in of
@@ -295,7 +295,7 @@ T002's).
 
 ### T004 — [P] [US1] A parallel run is the serial run's verdict, and a failed one ends on the gate's own line (R3 · AC-S04-2 to -9, -19, -20)
 
-- [ ] **Rule R3.** Needs T002 (the helper). **Mostly holds**: the plan's map lists e1, e2, e7 and e8 as holding today;
+- [x] *(bfe8c2a: the failed run ends on `verify: the gate did not pass; each failed check is named above on a line carrying ***`; the last group passes the sub-make's status through and is silent on 1, so `make -q verify` says nothing; e6 red first, the rest holds with teeth)* **Rule R3.** Needs T002 (the helper). **Mostly holds**: the plan's map lists e1, e2, e7 and e8 as holding today;
   research R-2 and R-6 show e3, e4 and e5 hold as well (the checks already run together by luck, make prints a `***` line per
   failed target, a failed gate exits non-zero) — each is **observed first**, written as a hold if it passes, and a
   RED with its own GREEN named in the report if it does not. **The one rule-changing example is e6**, so the GREEN is not
@@ -342,7 +342,7 @@ level line (MINOR, fragment T002's).
 
 ### T005 — [P] [US1] Each check's output stays together where the make can (R4 · AC-S04-10 to -12, -16)
 
-- [ ] **Rule R4.** Follows T004 (same `gate.py`, same helper). Disjoint from T003, T007, T008 by manifest.
+- [x] *(c1a67ab: `VERIFY_GROUP` behind the feature test; e1, e2 red first; e3's teeth are a `MAKEFLAGS` line, the option alone does not hold a serial sub-make's output on 4.4.1; e4 over 40 starters)* **Rule R4.** Follows T004 (same `gate.py`, same helper). Disjoint from T003, T007, T008 by manifest.
 
 **RED** (new `tests/test_parallel_gate_output.py`; GNU Make 4.4.1 on this machine lists `output-sync`, so the examples
 that need the feature skip, saying so, on a make that does not):
@@ -427,7 +427,7 @@ check-structure`. Commit by path; level line (MINOR, fragment T002's).
 
 ### T007 — [P] [US1] An adopted repository's gate is serial (R6 · AC-S04-24 to -27)
 
-- [ ] **Rule R6.** Needs T002 (the helper, unedited here). Disjoint from every other task's manifest — it is the plan's
+- [x] *(b0edd4a: the directive follows the `verify` rule, the refusal and the moved layout included; e1, e3 and the `ratchet-tighten` sweep red first; e2, e4 holds)* **Rule R6.** Needs T002 (the helper, unedited here). Disjoint from every other task's manifest — it is the plan's
   second group, and it shares no file with the first.
 
 **RED** (new `tests/test_parallel_gate_adopted.py`; an adopted repository is made through the CLI with `adopted()` and
