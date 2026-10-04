@@ -78,3 +78,62 @@ class HistoryTest(StampTestCase):
         self.forget_log()
         self.run_gate()
         self.assertEqual(self.checks(), [], "the unborn branch's stamp was not reused")
+
+
+class ScriptsTest(StampTestCase):
+    """R4 (AC-S03-6): the `Makefile` and every covered file under `scripts/` are one named part, beside `tree`."""
+
+    def comment_added_to(self, name: str) -> None:
+        self.assertEqual(self.run_gate().returncode, 0)
+        before = self.stamp()
+        self.forget_log()
+        path = self.repo / name
+        path.write_text(path.read_text(encoding="utf-8") + "\n# a comment\n", encoding="utf-8")
+        run = self.run_gate()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertTrue(self.checks(), "no check started: the stamp was reused")
+        after = self.stamp()
+        self.assertNotEqual(after["scripts"], before["scripts"], "the scripts part did not move")
+        self.assertNotEqual(after["tree"], before["tree"], "a covered file moved and the tree part did not")
+        self.assertNotEqual(after["key"], before["key"])
+
+    def test_a_comment_in_a_gate_script_runs_the_gate(self) -> None:
+        """e6: a check script."""
+        self.comment_added_to("scripts/check-imports.py")
+
+    def test_a_comment_in_the_makefile_runs_the_gate(self) -> None:
+        """e6: the file the gate ran from."""
+        self.comment_added_to("Makefile")
+
+    def test_a_script_deeper_under_scripts_is_in_the_part(self) -> None:
+        """e6: at any depth."""
+        self.comment_added_to("scripts/agents/project.py")
+
+    def test_a_new_file_under_scripts_is_in_the_part(self) -> None:
+        """e6: untracked, not ignored, so covered."""
+        self.assertEqual(self.run_gate().returncode, 0)
+        before = self.stamp()
+        (self.repo / "scripts" / "added.py").write_text("print(1)\n", encoding="utf-8")
+        self.assertEqual(self.run_gate().returncode, 0)
+        self.assertNotEqual(self.stamp()["scripts"], before["scripts"])
+
+    def test_a_file_elsewhere_moves_the_tree_and_not_the_scripts(self) -> None:
+        """e6: hold — the part is its own digest and holds nothing but its own files."""
+        self.assertEqual(self.run_gate().returncode, 0)
+        before = self.stamp()
+        (self.repo / "README.md").write_text("changed\n", encoding="utf-8")
+        self.assertEqual(self.run_gate().returncode, 0)
+        after = self.stamp()
+        self.assertEqual(after["scripts"], before["scripts"])
+        self.assertNotEqual(after["tree"], before["tree"])
+
+    def test_an_ignored_file_under_scripts_is_not_covered(self) -> None:
+        """e6: hold — what git ignores is not a covered file."""
+        self.assertEqual(self.run_gate().returncode, 0)
+        ignored = self.repo / "scripts" / "__pycache__"
+        ignored.mkdir(exist_ok=True)
+        (ignored / "x.pyc").write_bytes(b"\0")
+        self.assertEqual(git(self.repo, "status", "--porcelain", "--", "scripts").strip(), "")
+        self.forget_log()
+        self.run_gate()
+        self.assertEqual(self.checks(), [])

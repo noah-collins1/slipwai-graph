@@ -9,9 +9,9 @@ here can fail the gate: `reuse` exits 0 only after printing its line, and `recor
 
 The key is one SHA-256 over named parts, each a digest of its own so the stamp can show them apart. It starts the
 way a tree is judged — every file git tracks and every file it does not ignore, by raw bytes, executable bit and a
-link's target, read from the working tree through no filter, and the index's entries — and where the checkout stands
-in its repository: `HEAD`, every branch and remote ref, the shallow boundary. The parts a later rule adds are named
-where they join.
+link's target, read from the working tree through no filter, and the index's entries — where the checkout stands
+in its repository: `HEAD`, every branch and remote ref, the shallow boundary — and, as a part of its own, the
+`Makefile` and the scripts the gate runs from. The parts a later rule adds are named where they join.
 
 Starts on any `python3`: nothing here is newer than the syntax the gate's `check-python` message is printed from,
 and an interpreter older than 3.10 answers "no stamp" before it reads anything.
@@ -29,7 +29,6 @@ import time
 # The stamp's fields: the key a later run compares, the three parts it is made of, the instant of the pass, and
 # the result, which is only ever a pass.
 FIELDS = ("key", "tree", "scripts", "tools", "passed", "result")
-EMPTY = hashlib.sha256(b"").hexdigest()
 REUSE_LINE = (
     "verify: the full gate did not run; this tree already passed it at {passed} (key {abbreviated}); "
     "VERIFY_FORCE=1 runs it anyway"
@@ -117,15 +116,18 @@ def history_digest() -> str:
     ])
 
 
-def tree_digest() -> str:
-    parts = [history_digest().encode("ascii"), index_entries()]
-    return digest(parts + [file_record(path) for path in covered_files()])
+def is_gate_script(path: bytes) -> bool:
+    """The `Makefile` and everything covered under `scripts/`, at any depth: what the gate runs from."""
+    return path == b"Makefile" or path.startswith(b"scripts/")
 
 
 def build_key() -> dict[str, object]:
-    """The parts and the key they make. `scripts` and `tools` join the key when their rules are written."""
-    tree = tree_digest()
-    scripts = EMPTY
+    """The parts and the key they make. Each part is a digest of its own, so the stamp shows them apart: `tree` is
+    every covered file, the index and the history; `scripts` is the covered files the gate runs from, which `tree`
+    holds as well. Each covered file is read once. `tools` joins the key when its rule is written."""
+    records = [(path, file_record(path)) for path in covered_files()]
+    tree = digest([history_digest().encode("ascii"), index_entries()] + [record for _, record in records])
+    scripts = digest([record for path, record in records if is_gate_script(path)])
     tools: dict[str, str] = {}
     key = digest([tree.encode("ascii"), scripts.encode("ascii"), json.dumps(tools, sort_keys=True).encode("utf-8")])
     return {"key": key, "tree": tree, "scripts": scripts, "tools": tools}
