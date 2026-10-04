@@ -245,6 +245,15 @@ that cannot delegate takes the earliest ready slice in split order and names the
   manifest did not move is not seen; a pipeline that sets no marker must set `CI=1`.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
+- **Seen at S24's converge pass (D85; T014 in its `tasks.md`).** `current_branch()` takes `GITHUB_HEAD_REF` whether
+  or not `HEAD` is detached, and a test that runs a whole generated or adopted gate inherits the environment, so the
+  factory's own suite, run on a pull request from a `slice/<id>` branch, fails
+  `test_adopt_facts…test_the_gate_holds_the_map_to_the_tree_and_the_page_to_the_record` — at the commit before S24
+  as after it. Under D12 this repository has no such pull request yet; the day it has, every test that runs
+  `make verify` in a temporary repository must clear the seven forge variables (`tests/test_ci_history_gates.py`
+  has the function). Not run under those variables: `test_matrix`, `test_add_service`, the `test_verify_stamp_*`
+  modules. For the completion audit to place, and for the person who opens this repository's first slice pull
+  request.
 
 ## Warnings
 
