@@ -255,6 +255,11 @@ that cannot delegate takes the earliest ready slice in split order and names the
   comes back as its own question if ever proposed (D89). `make -j verify lint` and every goal but `verify` alone
   under `-j` are not claimed. For the cruise report: GNU Make 3.81 and 4.3 read, not run (none on this machine);
   a file edited by hand inside the model tooling's installed tree is not seen, as D83 says of the root's.
+- **Seen at S04's implementation (D93).** *S04's lock-matching install settles* the untracked lock, not the first
+  pass: a first gate that installs as it goes is not recorded (D73, rule 8), for the model tooling's marker and,
+  since S03, the root's; `make install` beforehand makes the first pass count. A slice of its own for the host to
+  place behind the PRD's slices: the installs ordered ahead of the stamp's first key, so a fresh worktree's first
+  pass is recorded without touching rule 8 — it changes AC-S03-29's order and S03's shipped behaviour for the root.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 - **Seen at S24's converge pass (D85; T014 in its `tasks.md`).** `current_branch()` takes `GITHUB_HEAD_REF` whether

@@ -1798,8 +1798,9 @@ is `sync`, a *run line* one whose first is `run`.
   invocation, then `npm ci` for the model tooling runs once and finishes before any of them starts.
 - **AC-S04-53** — Given a generated Makefile with the event profile, when it is read, then `npm` is spelled for
   `scripts/event-model` in exactly one recipe and that recipe is `npm ci`.
-- **AC-S04-54** — Given a fresh clone of a generated event-profile project on a branch that is not the trunk, when
-  `make verify` passes for the first time, then the pass is recorded and the next `make verify` on the unchanged
+- **AC-S04-54** — *Re-worded by D93.* Given a fresh clone of a generated event-profile project on a branch that is
+  not the trunk, on which `make install` has completed, when `make verify` passes for the first time, then no npm
+  command runs for the model tooling during it, the pass is recorded, and the next `make verify` on the unchanged
   tree prints the reuse line.
 - **AC-S04-55** — Given the skip line of AC-S04-48, then it is said only where it is true in that make invocation,
   by a mechanism GNU Make 3.81 has; where the plan finds none, the line is said only where it can be said
@@ -1834,3 +1835,18 @@ is `sync`, a *run line* one whose first is `run`.
 - **AC-S04-63** — Given the suites that pin the gate's order and its recipe (S03's), then they are amended beside
   AC-S03-29 for the sync phase and the failed run's closing line, every other S03 suite passes unchanged, and
   every starter combination `make starters` materialises passes its own gate (constitution I; SC-007).
+- **AC-S04-64** — *Added by D93.* Given a fresh clone of a generated event-profile project on a branch that is not
+  the trunk, on which nothing has been installed, when `make verify` passes for the first time, then the model
+  tooling is installed during the run, the pass is not recorded, and the output carries the stamp's line that the
+  pass was not recorded because a file git ignores changed while the checks ran; when `make verify` runs again on
+  the unchanged tree, it runs in full, installs nothing and is recorded, and the run after that prints the reuse
+  line. The stamp's script is not changed by this slice (D73, rule 8).
+- **AC-S04-65** — *Added by D93.* Given a generated Makefile with the event profile, when it is read, then `install`
+  names the model tooling's marker `scripts/event-model/node_modules/.package-lock.json` as a prerequisite, and
+  `npm` is still spelled for `scripts/event-model` in exactly one recipe; given one without the event profile, then
+  `install` is what it was before this slice's model-tooling change.
+- **AC-S04-66** — *Added by D93.* Given the page that describes the gate, then it says in one sentence that a
+  passing run which installed dependencies as it went is not recorded, that the next run on the unchanged tree is,
+  and that `make install` beforehand makes the first one count; given the slice's fragment, then its body says that
+  in an event-profile project `make install` now also installs the model tooling from its committed lock, and its
+  catch-up asks nothing more for it.
