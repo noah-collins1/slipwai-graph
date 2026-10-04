@@ -111,8 +111,9 @@ def python_first(stamped: bool, dependencies: str) -> str:
 
 
 def gate_order(stamped: bool, apps: list[App]) -> str:
-    """The order the gate's own sub-make gives the native checks, inside `ifdef VERIFY_ORDER` (3.80) so that a target typed
-    alone is what it was: only the gate's recipe hands its sub-make the variable.
+    """The order the gate's own sub-make gives the native checks, only where `VERIFY_ORDER` came from make's command
+    line (`$(origin)`, which 3.81 has), so that a target typed alone is what it was whatever a shell exports: only the
+    gate's recipe hands its sub-make the variable.
 
     Two of the families write where the others read. Maven's three checks write one service's `target/`, so with a Java
     service `typecheck` waits for `lint` and `test` for `typecheck`. Go's first `go` command resolves the workspace and
@@ -130,4 +131,5 @@ def gate_order(stamped: bool, apps: list[App]) -> str:
         rules = "lint test: typecheck\n"
     else:
         return ""
-    return f"# Under the gate the checks that share a build directory run one after another.\nifdef VERIFY_ORDER\n{rules}endif\n"
+    condition = "ifeq ($(origin VERIFY_ORDER),command line)"
+    return f"# Under the gate the checks that share a build directory run one after another.\n{condition}\n{rules}endif\n"

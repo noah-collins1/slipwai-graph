@@ -134,11 +134,24 @@ class StandaloneTest(FamiliesTestCase):
             with self.subTest(shape=name):
                 self.use(name)
                 for target in JAVA:
-                    out = subprocess.run(["make", "-n", target], cwd=self.repo, env=self.environment(), text=True,
-                                         capture_output=True, timeout=180).stdout
+                    out = self.printed(target)
                     for table in families:
                         for other, word in table.items():
                             self.assertEqual(word.replace("$$", "$") in out, other == target, (name, target, out))
+
+    def printed(self, target: str, extra: dict[str, str | None] | None = None) -> str:
+        """What `make -n <target>` prints, with `extra` added to the environment."""
+        return subprocess.run(["make", "-n", target], cwd=self.repo, env=self.environment(extra), text=True,
+                              capture_output=True, timeout=180).stdout
+
+    def test_the_order_is_read_only_from_make_s_command_line(self) -> None:
+        """T016: `VERIFY_ORDER` exported in a developer's shell leaves every target typed alone what it was; only the
+        gate's sub-make, which is handed it as an argument, orders the chain."""
+        for name in ("quarkus", "go", "java-go"):
+            with self.subTest(shape=name):
+                self.use(name)
+                for target in JAVA:
+                    self.assertEqual(self.printed(target, {"VERIFY_ORDER": "1"}), self.printed(target), (name, target))
 
 
 class InstallFreeTest(FamiliesTestCase):
