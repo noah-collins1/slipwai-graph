@@ -10,5 +10,5 @@
   "max_iterations": 10,
   "max_hours": null,
   "poll_minutes": 10,
-  "model": null
+  "model": "claude-opus-5-5"
 }
