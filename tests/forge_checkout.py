@@ -60,3 +60,20 @@ def pull_request_checkout(origin: Path, head: str, workdir: Path, *, base: str =
     for branch in run(clone, "for-each-ref", "--format=%(refname)", "refs/heads").splitlines():
         run(clone, "update-ref", "-d", branch)
     return clone
+
+
+def source_tip_checkout(origin: Path, head: str, workdir: Path) -> Path:
+    """A full-history checkout detached at the tip of `head` itself, not at a merge with the base.
+
+    Every branch and tag of the origin is fetched under `refs/remotes/origin/` and `refs/tags/`, and no local
+    branch is left, as in `pull_request_checkout` at full history. It is what a pipeline that checks out the
+    source branch's own commit sees; whether a given forge does is not asserted here."""
+    clone = workdir / "tip"
+    clone.mkdir()
+    run(clone, "init", "-q")
+    run(clone, "remote", "add", "origin", f"file://{origin}")
+    run(clone, "fetch", "-q", "origin", "+refs/heads/*:refs/remotes/origin/*", "+refs/tags/*:refs/tags/*")
+    run(clone, "checkout", "-q", "--detach", f"origin/{head}")
+    for branch in run(clone, "for-each-ref", "--format=%(refname)", "refs/heads").splitlines():
+        run(clone, "update-ref", "-d", branch)
+    return clone

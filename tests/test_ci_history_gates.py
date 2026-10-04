@@ -17,7 +17,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from forge_checkout import pull_request_checkout, run
+from forge_checkout import pull_request_checkout, run, source_tip_checkout
 
 from slipwai.assets import ROOT
 
@@ -198,6 +198,50 @@ class CiHistoryGatesTest(unittest.TestCase):
         clone = pull_request_checkout(origin, "feature/x", self.scratch, base="develop")
         result = self.migrations_gate(clone)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_hold_s31_pull_request_to_a_release_branch_is_refused_though_its_expand_landed_there(self):
+        """Holds a reading `S31-gates-read-recorded-trunk` will weigh (D87, B1, AC-S24-8): both gates compare with
+        the trunk, so on a pull request to `release/1` the expand an earlier pull request landed there counts as new
+        in this change, and the contract that follows it is refused. Clears once the trunk carries the expand."""
+        origin = self.origin("aws")
+        run(origin, "checkout", "-q", "-b", "release/1")
+        write(origin, "apps/service/migrations/202610010900_orders_add_status.sql", EXPAND)
+        commit(origin, "the expand, landed on release/1 by an earlier pull request", "apps/service")
+        run(origin, "checkout", "-q", "-b", "feature/x")
+        write(origin, "apps/service/migrations/202610011000_orders_drop_legacy.sql", CONTRACT)
+        commit(origin, "the contract", "apps/service")
+        run(origin, "checkout", "-q", "main")
+        clone = pull_request_checkout(origin, "feature/x", self.scratch, base="release/1")
+        result = self.migrations_gate(clone)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("is new in this same change", result.stderr)
+
+    def squashed_expand_then_contract(self) -> Path:
+        """`feature/x` carries the expand and the contract; `main` carries the expand alone, squash-merged (the same
+        file in a new commit), and `feature/x` never merges `main` back."""
+        origin = self.origin("aws")
+        run(origin, "checkout", "-q", "-b", "feature/x")
+        write(origin, "apps/service/migrations/202610010900_orders_add_status.sql", EXPAND)
+        commit(origin, "the expand", "apps/service")
+        run(origin, "checkout", "-q", "main")
+        write(origin, "apps/service/migrations/202610010900_orders_add_status.sql", EXPAND)
+        commit(origin, "the expand, squash-merged", "apps/service")
+        run(origin, "checkout", "-q", "feature/x")
+        write(origin, "apps/service/migrations/202610011000_orders_drop_legacy.sql", CONTRACT)
+        commit(origin, "the contract", "apps/service")
+        run(origin, "checkout", "-q", "main")
+        return origin
+
+    def test_hold_s31_squash_merged_expand_then_contract_is_refused_at_the_source_tip_and_passes_on_the_merge(self):
+        """Holds a reading `S31-gates-read-recorded-trunk` will weigh (D87, B2, AC-S24-8): where CI checks out the
+        branch's own tip, its copy of an expand `main` already took by squash is new in it, so the contract is
+        refused; the merge commit the pull-request checkout makes passes. Merging `main` into the branch clears it."""
+        origin = self.squashed_expand_then_contract()
+        tip = self.migrations_gate(source_tip_checkout(origin, "feature/x", self.scratch))
+        self.assertEqual(tip.returncode, 1, tip.stdout + tip.stderr)
+        self.assertIn("is new in this same change", tip.stderr)
+        merge = self.migrations_gate(pull_request_checkout(origin, "feature/x", self.scratch))
+        self.assertEqual(merge.returncode, 0, merge.stdout + merge.stderr)
 
 
 if __name__ == "__main__":
