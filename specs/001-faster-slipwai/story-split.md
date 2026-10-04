@@ -114,6 +114,8 @@ that cannot delegate takes the earliest ready slice in split order and names the
 
 ## Parking Lot
 
+- **Seen at S05's second converge pass (older than S05):** in an adopted repository, `slipwai add-service` writes the generated service's verify script as `delivery/scripts/verify`, while `delivery/Makefile` calls `./scripts/verify`, so `make -f delivery/Makefile test` fails with error 127; the factory at `8b0d103` does the same. A candidate slice for the pool, behind the PRD's slices (D39); it also keeps the gates page's sentence about the parallel mark from being true there.
+
 - **FR-021 is every slice's.** Each user-visible slice adds its `changelog.d/` fragment in the commit that makes the
   change; `S02-runner-bookkeeping` is the first MINOR and raises `VERSION` to `1.6.0.dev0` (D60; `S03-verify-stamp` finds it
   there); nothing here is MAJOR.
