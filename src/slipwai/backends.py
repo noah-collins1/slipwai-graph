@@ -188,6 +188,32 @@ BACKEND_TOOLING: dict[str, Tooling] = {
 }
 
 
+# The tools a machine supplies and no committed file pins — the ones a verify stamp's key asks the version of
+# (`project/gate.py` writes them into the `Makefile`, `scripts/verify-stamp.py` asks them). A tool a committed lock pins
+# (ruff, mypy, pytest, everything under `package-lock.json`, the Maven wrapper's pin) is never here: a new one is a
+# changed lock, which the key already holds. One row per backend, which a test holds against `BACKEND_TOOLING`.
+MACHINE_TOOLS_EVERYWHERE = ("make", "git", "python3")
+MACHINE_TOOLS_WITH_A_FRONTEND = ("node", "npm")
+MACHINE_TOOLS: dict[str, tuple[str, ...]] = {
+    "typescript": ("node", "npm"),
+    "python": ("uv",),
+    "go": ("go",),
+    "java-quarkus": ("java",),
+    "java-spring": ("java",),
+}
+
+
+def machine_tools(backends: list[str], web: bool) -> list[str]:
+    """What a project with these backends, and a browser app or not, asks the machine for: the tools every project
+    has, then each backend's, then a frontend's — in order of first appearance, each once."""
+    tools = list(MACHINE_TOOLS_EVERYWHERE)
+    for backend in backends:
+        tools += MACHINE_TOOLS[backend]
+    if web:
+        tools += MACHINE_TOOLS_WITH_A_FRONTEND
+    return list(dict.fromkeys(tools))
+
+
 # What one *feature* spells differently from the language it runs inside. `migrate` and `integration` above
 # are the language's answers to operations only a backing service asks for, and they are therefore the
 # default for whichever feature declared it needs them: a per-language default with a per-(language,

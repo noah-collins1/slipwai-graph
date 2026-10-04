@@ -38,7 +38,14 @@ PYVENV_CFG = "home = /usr/bin\nversion_info = 3.14.4\nuv = 0.12.20\n"
 _UV = """#!/bin/sh
 printf 'uv\\t%s\\n' "$*" >> "$STANDIN_LOG"
 case "$1" in
-  --version) echo "uv 0.12.20 (stand-in)"; exit 0;;
+  --version)
+    case "$STANDIN_UV_MODE" in
+      fail) echo "uv: broken" >&2; exit 3;;
+      silent) printf '\\n\\n'; exit 0;;
+      hang) exec sleep 60;;
+    esac
+    printf '%b\\n' "${STANDIN_UV_VERSION:-uv 0.12.20 (stand-in)}"
+    exit 0;;
   sync)
     while [ $# -gt 0 ]; do
       if [ "$1" = --project ]; then dir=$2; fi
@@ -51,9 +58,11 @@ case "$1" in
 esac
 exit 0
 """
-_PASS_THROUGH = """#!/bin/sh
+# `make` is run under the name it was found by, so that `$(MAKE)` is `make` and the version question the recipe hands
+# the script comes back through the stand-in, as it does on a machine whose `make` is on `PATH`.
+_PASS_THROUGH = """#!/bin/bash
 printf '%s\\t%s\\n' "{name}" "$*" >> "$STANDIN_LOG"
-exec "{real}" "$@"
+exec -a {name} "{real}" "$@"
 """
 
 _template: Path | None = None

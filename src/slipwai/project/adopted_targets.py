@@ -85,4 +85,4 @@ def gate_target(apps: list[App], dependencies: str) -> str:
     refusal that stands in for it while nothing is confirmed."""
     if not apps:
         return NOTHING_CONFIRMED
-    return stamped_gate(dependencies) if stamped(apps) else GATE.format(dependencies=dependencies)
+    return stamped_gate(apps, dependencies) if stamped(apps) else GATE.format(dependencies=dependencies)

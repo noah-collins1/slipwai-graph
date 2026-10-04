@@ -11,11 +11,12 @@ frontend, nothing wrapped; every other project keeps `adopted_targets.GATE` as i
 """
 from __future__ import annotations
 
-from ..services import App, services_of, transports_of, web_apps, wrapped_of
+from ..backends import machine_tools
+from ..services import App, backends_of, services_of, transports_of, web_apps, wrapped_of
 
 STAMP_SCRIPT = "scripts/verify-stamp.py"
 
-STAMPED = """VERIFY_STAMP :=
+STAMPED = """VERIFY_STAMP := {arguments}
 verify: ## Full deterministic pre-commit gate (a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway)
 \t@python3 {script} reuse --goals "$(MAKECMDGOALS)" --make "$(MAKE)" $(VERIFY_STAMP) || {{ $(MAKE) --no-print-directory verify-checks && python3 {script} record --make "$(MAKE)" $(VERIFY_STAMP); }}
 .PHONY: verify-checks
@@ -33,6 +34,14 @@ def stamped(apps: list[App]) -> bool:
     )
 
 
-def stamped_gate(dependencies: str) -> str:
+def stamp_arguments(apps: list[App]) -> str:
+    """What `VERIFY_STAMP` hands the script: a `--tool` per tool the table asks the machine for, and an
+    `--environment` per Python service, whose interpreter is read from where `uv sync` wrote it."""
+    tools = machine_tools(backends_of(apps), bool(web_apps(apps)))
+    environments = [f"{service.path}/.venv" for service in services_of(apps) if service.backend == "python"]
+    return " ".join([f"--tool {tool}" for tool in tools] + [f"--environment {path}" for path in environments])
+
+
+def stamped_gate(apps: list[App], dependencies: str) -> str:
     """The `verify` rule and the `verify-checks` rule that carries the gate's prerequisites."""
-    return STAMPED.format(script=STAMP_SCRIPT, dependencies=dependencies)
+    return STAMPED.format(script=STAMP_SCRIPT, dependencies=dependencies, arguments=stamp_arguments(apps))

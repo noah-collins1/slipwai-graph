@@ -24,11 +24,18 @@ import os
 import stat
 import subprocess
 import sys
+import tempfile
 import time
 
 # The stamp's fields: the key a later run compares, the three parts it is made of, the instant of the pass, and
 # the result, which is only ever a pass.
 FIELDS = ("key", "tree", "scripts", "tools", "passed", "result")
+# How long a version question may take, and the one argument that is not `--version` for the tools that spell it
+# otherwise (`java -version` answers on standard error, which the answer is read from too).
+ASK_TIMEOUT = 5
+VERSION_ARGUMENTS = {"go": "version", "java": "-version"}
+CANNOT_LINE = "verify: the full gate runs and this run records nothing — {reason}"
+NOTHING = "nothing"
 REUSE_LINE = (
     "verify: the full gate did not run; this tree already passed it at {passed} (key {abbreviated}); "
     "VERIFY_FORCE=1 runs it anyway"
@@ -37,6 +44,28 @@ REUSE_LINE = (
 
 class CannotTell(Exception):
     """The key cannot be built; the full gate runs."""
+
+
+class CannotAsk(CannotTell):
+    """A part of the key that is read from the machine cannot be: the full gate runs, one line says why, and the run
+    records nothing."""
+
+
+class Options:
+    """What the recipe hands the script: the command `make` was run as, each tool to ask the version of, and each
+    Python environment whose interpreter is read from where `uv sync` wrote it."""
+
+    def __init__(self, argv: list[str]) -> None:
+        self.make = "make"
+        self.tools: list[str] = []
+        self.environments: list[str] = []
+        pairs = {"--make": "make", "--tool": "tools", "--environment": "environments"}
+        for flag, value in zip(argv, argv[1:]):
+            name = pairs.get(flag)
+            if name == "make":
+                self.make = value or "make"
+            elif name is not None:
+                getattr(self, name).append(value)
 
 
 def git(*args: str) -> bytes:
@@ -116,19 +145,73 @@ def history_digest() -> str:
     ])
 
 
+def ask(tool: str, command: str) -> str:
+    """The first non-empty line `command` prints when asked its version, whole. Launched once, with no standard input,
+    its output read from a file so that nothing it leaves running can hold this script."""
+    argument = VERSION_ARGUMENTS.get(tool, "--version")
+    with tempfile.TemporaryFile() as output:
+        try:
+            child = subprocess.Popen(
+                [command, argument], stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
+            )
+        except FileNotFoundError:
+            raise CannotAsk(tool + " is not on PATH")
+        except OSError as error:
+            raise CannotAsk(tool + " cannot be started (" + str(error) + ")")
+        try:
+            code = child.wait(timeout=ASK_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            child.kill()
+            child.wait()
+            raise CannotAsk(tool + " did not answer within " + str(ASK_TIMEOUT) + " seconds when asked its version")
+        output.seek(0)
+        text = output.read().decode("utf-8", "replace")
+    if code != 0:
+        raise CannotAsk(tool + " exited " + str(code) + " when asked its version")
+    for line in text.splitlines():
+        if line.strip():
+            return line.strip()
+    raise CannotAsk(tool + " printed nothing when asked its version")
+
+
+def interpreter(environment: str) -> str:
+    """The Python an environment was made with, as `pyvenv.cfg` records it, read without launching anything."""
+    path = os.path.join(environment, "pyvenv.cfg")
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except OSError as error:
+        raise CannotAsk("cannot read " + path + " (" + (error.strerror or str(error)) + ")")
+    for line in lines:
+        name, _, value = line.partition("=")
+        if name.strip() == "version_info" and value.strip():
+            return value.strip()
+    raise CannotAsk(path + " does not record the interpreter's version_info")
+
+
+def machine_tools(options: Options) -> dict[str, str]:
+    """Every tool the machine supplies that the key holds, by the line it reported, and each environment's interpreter.
+    The recipe names them; this script holds no list of its own."""
+    tools = {}
+    for tool in options.tools:
+        tools[tool] = ask(tool, options.make if tool == "make" else tool)
+    for environment in options.environments:
+        tools["interpreter " + environment] = interpreter(environment)
+    return tools
+
+
 def is_gate_script(path: bytes) -> bool:
     """The `Makefile` and everything covered under `scripts/`, at any depth: what the gate runs from."""
     return path == b"Makefile" or path.startswith(b"scripts/")
 
 
-def build_key() -> dict[str, object]:
+def build_key(tools: dict[str, str]) -> dict[str, object]:
     """The parts and the key they make. Each part is a digest of its own, so the stamp shows them apart: `tree` is
     every covered file, the index and the history; `scripts` is the covered files the gate runs from, which `tree`
-    holds as well. Each covered file is read once. `tools` joins the key when its rule is written."""
+    holds as well. Each covered file is read once. `tools` is what the machine reported, asked once per run."""
     records = [(path, file_record(path)) for path in covered_files()]
     tree = digest([history_digest().encode("ascii"), index_entries()] + [record for _, record in records])
     scripts = digest([record for path, record in records if is_gate_script(path)])
-    tools: dict[str, str] = {}
     key = digest([tree.encode("ascii"), scripts.encode("ascii"), json.dumps(tools, sort_keys=True).encode("utf-8")])
     return {"key": key, "tree": tree, "scripts": scripts, "tools": tools}
 
@@ -172,21 +255,31 @@ def write_file(path: str, text: str) -> None:
     os.replace(temporary, path)
 
 
-def reuse() -> int:
-    key = build_key()
+def reuse(options: Options) -> int:
+    try:
+        tools = machine_tools(options)
+    except CannotAsk as reason:
+        print(CANNOT_LINE.format(reason=reason))
+        write_file(pending_path(), json.dumps({NOTHING: str(reason)}) + "\n")
+        return 1
+    key = build_key(tools)
     stamp = read_stamp(stamp_path())
     if stamp is not None and stamp["key"] == key["key"]:
         print(REUSE_LINE.format(passed=stamp["passed"], abbreviated=str(key["key"])[:12]))
         return 0
-    write_file(pending_path(), str(key["key"]))
+    write_file(pending_path(), json.dumps({"key": key["key"], "tools": tools}) + "\n")
     return 1
 
 
-def record() -> int:
+def record(options: Options) -> int:
+    """After the last check: the stamp, if the key is the one the run began with. The tools are the ones the run began
+    with too — they are asked once — and the note that says this run records nothing records nothing."""
     with open(pending_path(), "r", encoding="utf-8") as handle:
-        pending = handle.read()
-    key = build_key()
-    if key["key"] != pending:
+        pending = json.load(handle)
+    if NOTHING in pending:
+        return 0
+    key = build_key(pending["tools"])
+    if key["key"] != pending["key"]:
         return 0
     passed = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     stamp = dict(key, passed=passed, result="pass")
@@ -201,9 +294,9 @@ def main(argv: list[str]) -> int:
         if sys.version_info < (3, 10):
             return 0 if verb == "record" else 1
         if verb == "reuse":
-            return reuse()
+            return reuse(Options(argv[1:]))
         if verb == "record":
-            return record()
+            return record(Options(argv[1:]))
     except Exception:
         pass
     return 0 if verb == "record" else 1
