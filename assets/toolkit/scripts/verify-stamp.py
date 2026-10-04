@@ -18,6 +18,7 @@ and an interpreter older than 3.10 answers "no stamp" before it reads anything.
 """
 from __future__ import annotations
 
+import glob
 import hashlib
 import json
 import os
@@ -30,6 +31,87 @@ import time
 # The stamp's fields: the key a later run compares, the three parts it is made of, the instant of the pass, and
 # the result, which is only ever a pass.
 FIELDS = ("key", "tree", "scripts", "tools", "passed", "result")
+# The two closed lists. What a check reads that git ignores and the gate does not rebuild from the tree, by its bytes
+# (absence is a value); and the variables a check reads that can change its answer, by value (unset is not empty).
+# A test fails when a `scripts/check-*.py` reads an ignored path or a variable that is on neither list. A directory
+# is every file under it; a `*` is one level of names.
+IGNORED_INPUTS: tuple[str, ...] = (
+    # the code index `check-codegraph` opens, and the write-ahead file beside it — never `gate-memory.json`, which is
+    # that check's memo of itself and is written by every pass
+    ".codegraph/codegraph.db",
+    ".codegraph/codegraph.db-wal",
+    # the installed UX-gates kit and the installed ui-ux-pro-max skill: ignored, pinned by the extension that
+    # installs them, and read by `check-ux-gates` and `check-speckit`
+    "tools/ux-gates/",
+    "skills/ui-ux-pro-max/",
+    # a project's tests may read it, though no gate script does
+    ".env",
+    # the slots a Spec Kit command writes through, which `check-slice-scope` refuses a regular file at
+    "specs/*/plan.md",
+    "specs/*/research.md",
+    "specs/*/data-model.md",
+    "specs/*/quickstart.md",
+    "specs/*/tasks.md",
+    # what npm says is installed, where the recipe installs only when the lock is newer (`node_modules`) or with
+    # `npm install` (the model tooling) rather than from the lock on every run; Python's `uv sync --locked` runs on
+    # every run, so `.venv` is outside, with its interpreter's version in the tools
+    "node_modules/.package-lock.json",
+    "scripts/event-model/node_modules/.package-lock.json",
+) + (
+    # every harness projection directory `scripts/agents/registry.json` names, which `check-agents` and
+    # `check-speckit` compare with their sources
+    ".agents/skills/",
+    ".alquimia/skills/",
+    ".agents/commands/",
+    ".augment/commands/",
+    ".bob/skills/",
+    ".bob/commands/",
+    ".claude/skills/",
+    ".claude/commands/",
+    ".claude/agents/",
+    ".clinerules/workflows/",
+    ".codebuddy/commands/",
+    ".codex/agents/",
+    ".github/skills/",
+    ".github/agents/",
+    ".cursor/skills/",
+    ".cursor/agents/",
+    ".devin/skills/",
+    ".factory/skills/",
+    ".firebender/commands/",
+    ".forge/commands/",
+    ".gemini/commands/",
+    ".gemini/agents/",
+    ".goose/recipes/",
+    ".grok/skills/",
+    ".junie/commands/",
+    ".kilo/commands/",
+    ".kimi-code/skills/",
+    ".kiro/prompts/",
+    ".lingma/skills/",
+    ".omp/commands/",
+    ".opencode/commands/",
+    ".opencode/agents/",
+    ".pi/prompts/",
+    ".qoder/commands/",
+    ".qwen/commands/",
+    ".rovodev/skills/",
+    ".shai/commands/",
+    ".tabnine/agent/commands/",
+    ".trae/skills/",
+    ".vibe/skills/",
+    ".zcode/skills/",
+)
+VARIABLES: tuple[str, ...] = (
+    "UX_GATES_REQUIRE", "UX_GATES_SINCE", "UX_GATES_SHARD", "CODEGRAPH_GATE_NO_SYNC", "SLIPWAI_NO_INSTALL",
+    "GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME",
+    # `check-slice-scope`'s pull-request target, and the harness the extensions' projections are compared for
+    "GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME", "SLIPWAI_INTEGRATION",
+)
+# Read by a check and not in the key: how many run at once is not what they say.
+UNKEYED_VARIABLES = ("UX_GATES_JOBS",)
+RATCHET_VARIABLE = "RATCHET_TIGHTEN"
+
 # How long a version question may take, and the one argument that is not `--version` for the tools that spell it
 # otherwise (`java -version` answers on standard error, which the answer is read from too).
 ASK_TIMEOUT = 5
@@ -123,6 +205,26 @@ def file_record(path: bytes) -> bytes:
     return path + b"\0" + (b"exec" if status.st_mode & stat.S_IXUSR else b"file") + b"\0" + content
 
 
+def ignored_records(entry: str) -> list[bytes]:
+    """What an `IGNORED_INPUTS` entry holds now: a name with a `*` by every path it matches; a directory (an entry that
+    ends in `/`) by every file and link under it, none where it is absent; anything else as one file, where missing is
+    a record of its own. Nothing is followed, so a link is its target."""
+    if "*" in entry:
+        return [record for path in sorted(glob.glob(entry)) for record in ignored_records(path)]
+    path = entry.rstrip("/")
+    if os.path.islink(path) or (not entry.endswith("/") and not os.path.isdir(path)):
+        return [file_record(os.fsencode(path))]
+    if not os.path.isdir(path):
+        return []
+    return [record for name in sorted(os.listdir(path)) for record in ignored_records(os.path.join(path, name))]
+
+
+def variable_record(name: str) -> bytes:
+    """A variable by its value, with unset told from empty."""
+    value = os.environ.get(name)
+    return name.encode("utf-8") + (b"\0unset" if value is None else b"\0set\0" + os.fsencode(value))
+
+
 def index_entries() -> bytes:
     """The index's entries — mode, blob id, stage, name — as `ls-files --stage` lists them, which reads the index
     and never writes it."""
@@ -207,10 +309,14 @@ def is_gate_script(path: bytes) -> bool:
 
 def build_key(tools: dict[str, str]) -> dict[str, object]:
     """The parts and the key they make. Each part is a digest of its own, so the stamp shows them apart: `tree` is
-    every covered file, the index and the history; `scripts` is the covered files the gate runs from, which `tree`
+    every covered file, the index, the history, the ignored inputs and the variables; `scripts` is the covered files the gate runs from, which `tree`
     holds as well. Each covered file is read once. `tools` is what the machine reported, asked once per run."""
     records = [(path, file_record(path)) for path in covered_files()]
-    tree = digest([history_digest().encode("ascii"), index_entries()] + [record for _, record in records])
+    ignored = [record for entry in IGNORED_INPUTS for record in [entry.encode("utf-8")] + ignored_records(entry)]
+    variables = [variable_record(name) for name in VARIABLES]
+    tree = digest(
+        [history_digest().encode("ascii"), index_entries(), digest(ignored).encode("ascii"),
+         digest(variables).encode("ascii")] + [record for _, record in records])
     scripts = digest([record for path, record in records if is_gate_script(path)])
     key = digest([tree.encode("ascii"), scripts.encode("ascii"), json.dumps(tools, sort_keys=True).encode("utf-8")])
     return {"key": key, "tree": tree, "scripts": scripts, "tools": tools}
@@ -256,6 +362,8 @@ def write_file(path: str, text: str) -> None:
 
 
 def reuse(options: Options) -> int:
+    if os.environ.get(RATCHET_VARIABLE):
+        return 1
     try:
         tools = machine_tools(options)
     except CannotAsk as reason:
@@ -274,6 +382,8 @@ def reuse(options: Options) -> int:
 def record(options: Options) -> int:
     """After the last check: the stamp, if the key is the one the run began with. The tools are the ones the run began
     with too — they are asked once — and the note that says this run records nothing records nothing."""
+    if os.environ.get(RATCHET_VARIABLE):
+        return 0
     with open(pending_path(), "r", encoding="utf-8") as handle:
         pending = json.load(handle)
     if NOTHING in pending:

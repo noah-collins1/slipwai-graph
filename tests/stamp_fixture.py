@@ -10,6 +10,8 @@ never from what the run printed (AC-S03-19).
 from __future__ import annotations
 
 import atexit
+import contextlib
+import importlib.util
 import json
 import os
 import re
@@ -18,7 +20,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from collections.abc import Iterator
 from pathlib import Path
+from types import ModuleType
 
 from slipwai.assets import ROOT
 
@@ -188,3 +192,49 @@ class StampTestCase(unittest.TestCase):
 
 
 INSTANT = re.compile(r"\b\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\b")
+
+
+def load_script(repo: Path) -> ModuleType:
+    """The project's own `scripts/verify-stamp.py`, loaded as a module so a test can read its lists and build its
+    key without a gate run. Nothing is written beside it."""
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location("verify_stamp_under_test", repo / "scripts" / "verify-stamp.py")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class KeyTestCase(StampTestCase):
+    """Examples that hold the key itself: it is built in this process, in the project's directory, for the tree and
+    the environment as they stand — the same function a `reuse` run calls, with no tool to ask."""
+
+    @contextlib.contextmanager
+    def in_project(self) -> Iterator[None]:
+        was = Path.cwd()
+        os.chdir(self.repo)
+        try:
+            yield
+        finally:
+            os.chdir(was)
+
+    def key(self) -> str:
+        module = load_script(self.repo)
+        with self.in_project():
+            return str(module.build_key({})["key"])
+
+    @contextlib.contextmanager
+    def variable(self, name: str, value: str | None) -> Iterator[None]:
+        """`name` set to `value` (unset for None) for the length of the block, as it was afterwards."""
+        was = os.environ.get(name)
+        if value is None:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = value
+        try:
+            yield
+        finally:
+            if was is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = was
