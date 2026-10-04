@@ -1173,3 +1173,14 @@
 - **Confidence:** high · **Would reverse if:** a person wants every unstamped run to say why, the trunk included; that is a line added, and no rule about when a stamp is read changes.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (S03's criteria on the lines a full run says, the trunk and CI, a fresh clone's first gate, and the extended gate)
 - **Status:** standing
+
+## D78 — Does a project the factory generated under a moved layout (the delivery material under `delivery/`, no wrapped application) take the stamped gate?
+- **Stage:** implement · **Slice:** S03-verify-stamp · **When:** 2026-10-04T04:10:00Z · **Iteration:** 11
+- **Question:** D74's R7 withholds the stamp *where the project has a wrapped application*. T013 found a third shape: a layout whose delivery material sits under `delivery/` with no application wrapped yet, where the stamped recipe as written cannot run (the script's path and the sub-make do not follow the layout). Stamp there, by teaching the recipe the layout, or leave that gate as it is?
+- **Options:** (a) leave it as it is: the stamped rule is chosen only where no application is wrapped and the layout is not moved — **what the delegate built, and the reading R7's reason gives**; (b) carry the layout through the recipe so a moved layout with nothing wrapped stamps.
+- **Decision:** (a). A moved layout is the layout of a repository that adopted the method, and R7's reason — commands a person recorded for code the factory did not write may read anything — holds for it as soon as one application is confirmed; a gate that stamped until then and stopped afterwards would change under the developer for no saving worth it. The `verify` rule there stays byte for byte today's.
+- **Why:** The developer in an adopted repository sees one gate that always runs, whatever stage of adoption the repository is at; the experimental path may differ from the generated one (D74), and adding the stamp there later is additive.
+- **Decided by:** host (standing decision D74)
+- **Confidence:** high · **Would reverse if:** a person asks for stamps in adopted repositories (D74's own condition); the recipe then carries the layout.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S03-24, and what *where a stamp may be used* means)
+- **Status:** standing

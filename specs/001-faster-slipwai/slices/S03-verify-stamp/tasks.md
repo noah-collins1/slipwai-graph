@@ -420,7 +420,7 @@ Needs US2 whole. T013 edits `gate.py` and `makefile.py`; T014 the page and the f
 
 ### T013 — [US3] The full gate is the gate it was, for every project the factory generates (R12 · AC-S03-29)
 
-- [ ] **Rule R12.** T002 chose the stamped rule only for the fixture's shape; this task widens `gate_target` to every
+- [x] **Rule R12.** T002 chose the stamped rule only for the fixture's shape; this task widens `gate_target` to every
   generated project without a wrapped application. The per-transport line becomes `verify-checks: check-openapi` inside
   the same markers (`makefile.py`: the line and `.PHONY` only — 326 of 350 lines today), `./init --http none` cuts it,
   several services are one gate with one `--environment` each, and every starter passes its own gate. Test module
@@ -450,7 +450,7 @@ whatever the sweep names in `src/slipwai/` (each in the report), `tests/stamp_fi
 
 ### T014 — [US3] The page and the fragment say it (R13 · AC-S03-25, -30, -31)
 
-- [ ] **Rule R13.** Carries **research item 7**: finds the page a generated project gets about its gate (search for
+- [x] **Rule R13.** Carries **research item 7**: finds the page a generated project gets about its gate (search for
   *Full deterministic* and `make verify` under `src/slipwai/project/` — `readme`, `rules`, the toolkit's `docs/` — and
   `docs/learn-generate.md` where the reuse line belongs) and writes there: `VERIFY_FORCE`'s default and the one sentence
   on how to run the gate anyway; what a stamp cannot see (a tool a recipe pins, a service outside the checkout, the
@@ -486,7 +486,11 @@ If that file nears 350 lines, R13's examples move to `tests/test_verify_stamp_pa
 
 ### T015 — The slice's neighbouring suites, then the lint, type and structure gates (closing task before convergence)
 
-- [ ] `make test TESTS="test_toolkit test_monorepos test_changelog test_migrate test_init test_check_slice_scope"` and the
+- [x] *(Run by the host at `dc02731`, cruise iteration 11: the thirteen `test_verify_stamp_*` modules with `test_toolkit`,
+  `test_utf8_io`, `test_changelog`, `test_migrate`, `test_backend_obligations`, `test_monorepos` and `test_layout` — 179 tests, OK,
+  one skip in `test_changelog` that is not this slice's; `test_init` and `test_check_slice_scope` do not exist, `test_layout` and,
+  inside T008, `test_slice_scope_base` and `test_slice_scope_root` stood in; `make lint typecheck check-structure` green; no change
+  required.)* `make test TESTS="test_toolkit test_monorepos test_changelog test_migrate test_init test_check_slice_scope"` and the
   nine `test_verify_stamp_*` modules green, then `make lint typecheck check-structure`. No file over 350 lines under
   `src/` or `tests/`; `verify-stamp.py` is wholly the owner of the key and the stamp (no second copy of the lists in
   `gate.py` or a test). If any of this fails, the delegate stops and reports which task's change broke it; it does not

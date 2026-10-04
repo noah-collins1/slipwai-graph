@@ -296,21 +296,74 @@
         "start": {
           "open": 15,
           "done": 0
+        },
+        "end": {
+          "open": 0,
+          "done": 15
         }
       },
-      "cursor": {
-        "source": "claude",
-        "session": "3a77752f-2709-4af1-ae28-bbb911334437",
-        "files": {
-          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437.jsonl": 1349276
-        },
-        "subagents": {
+      "ended": "2026-10-04T03:19:51Z",
+      "seconds": 5003,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437.jsonl": 1349276,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-a33f557eebec3dc16.jsonl": 279453,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-a7d4453be38be0cdd.jsonl": 299374,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-aa9554d5fcb4f95e4.jsonl": 349490,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-ad22fc8a917609645.jsonl": 300415,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-afadd24610909b5e3.jsonl": 392326
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437.jsonl": 1629192,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-a0c38db8218545995.jsonl": 1377667,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-a33f557eebec3dc16.jsonl": 279453,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-a7d4453be38be0cdd.jsonl": 299374,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-aa9554d5fcb4f95e4.jsonl": 349490,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-ad22fc8a917609645.jsonl": 300415,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-ad46214dc80571a22.jsonl": 796827,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-ad4c5e9ffd9958e9f.jsonl": 362852,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-af91256860905c9c7.jsonl": 1020921,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/3a77752f-2709-4af1-ae28-bbb911334437/subagents/agent-afadd24610909b5e3.jsonl": 392326
         }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "3a77752f-2709-4af1-ae28-bbb911334437",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-fable-5-1": {
+            "input": 28,
+            "output": 19391,
+            "cache_read": 3220980,
+            "cache_creation": 39149
+          }
+        },
+        "subagents": {
+          "claude-sonnet-5-5": {
+            "input": 466,
+            "output": 31666,
+            "cache_read": 30888729,
+            "cache_creation": 863318
+          }
+        },
+        "agents": [
+          "drive-implement"
+        ]
+      },
+      "ran": [
+        "claude-fable-5-1",
+        "claude-sonnet-5-5"
+      ],
+      "agents": [
+        "drive-implement"
+      ],
+      "delegated": true,
+      "signals": {
+        "verify_failures": 18,
+        "delegate": "story",
+        "cycle": "rule",
+        "split": 0,
+        "driver": "cruise"
       }
     }
   ]

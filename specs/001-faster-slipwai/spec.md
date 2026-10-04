@@ -1300,7 +1300,8 @@ generated project starts on `main`, where the second run is a full run by design
 slice is built on. A run that writes under `specs/` between two gates — a decision, a benchmark record — moves the
 key honestly, so `/cruise` reuses fewer stamps than a developer does; narrowing that is `S07`'s per-check stamps.
 
-*Where a stamp may be used* below means: a generated project (no wrapped application), on a branch that is not the
+*Where a stamp may be used* below means: a generated project (no wrapped application, and its layout not moved
+under `delivery/`: D78), on a branch that is not the
 trunk, `HEAD` attached, no CI marker set, the run not forced.
 
 - **AC-S03-1** — Given a tree that just passed the full gate where a stamp may be used, when `make verify` runs
@@ -1392,9 +1393,10 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
 - **AC-S03-23** — Given `make ci` on a stamped tree, on any branch, then every prerequisite of `verify` runs: it
   is a forced run, says so in the forced line, and writes what a forced pass writes where AC-S03-21 does not
   apply. (D74, D77)
-- **AC-S03-24** — Given a project with a wrapped application (the gate of a repository that adopted the method),
+- **AC-S03-24** — Given a project with a wrapped application, or one whose delivery material sits under `delivery/`
+  (the gate of a repository that adopted the method; D78),
   then its `verify` rule neither reads nor writes a stamp and two consecutive runs both run every prerequisite;
-  the refusal that stands in for the gate while nothing is confirmed is unchanged. (D74)
+  the refusal that stands in for the gate while nothing is confirmed is unchanged. (D74, D78)
 - **AC-S03-25** — Given `VERIFY_FORCE`, then unset, empty or `0` does not force and any other value does, read
   from the make command line or the environment. A forced run reads no stamp, runs every check, prints one line
   before the first check naming `VERIFY_FORCE` and its value, and on passing writes a stamp like any other full
