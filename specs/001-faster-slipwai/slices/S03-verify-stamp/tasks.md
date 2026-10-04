@@ -804,6 +804,58 @@ sentence that claims more than the residual allows; the ships test holds it.
 
 **Files:** `src/slipwai/project/docs.py`, `tests/test_verify_stamp_ships.py`.
 
+### Pass 3 (2026-10-04, at `0c78c0c`)
+
+Pass 2's three reproductions were run again as written, on the fixture of `tests/stamp_fixture.py` copied to
+`/tmp/s03p3/` with its stand-in tools. **T024:** the fourteen `test_verify_stamp_*` modules through `make test TESTS=…`
+→ `Ran 155 tests … OK`; on a stamped tree `RATCHET_TIGHTEN=1 make verify` (and `make verify RATCHET_TIGHTEN=1`) ran 24
+checks, printed no line, left the stamp's bytes as they were (same SHA-256 before and after) and no `.pending`, and the
+next plain run printed the reuse line; with no stamp, two ratchet runs left `.git/slipwai/` absent. **T025:** on `main`
+with a tag `main` (`git symbolic-ref -q --short HEAD` → `heads/main`), two plain runs ran 24 checks each and wrote
+nothing; a stamp planted valid for that tree kept its bytes and was not reused. The same with `master` as the trunk and
+a tag `master`, with `ci.branch` naming `develop` and a tag `develop`, with `ci.branch` spelled `refs/heads/develop`,
+under each of `CI=false`, `GITHUB_ACTIONS=true`, `GITLAB_CI=1` and `make verify CI=1`, and on a detached `HEAD`: 24
+checks, no line, the planted stamp's bytes unchanged. `eligible()` (`verify-stamp.py` 488–496) compares the full ref
+with `refs/heads/<named>`; `merge_base()` in `check-slice-scope.py` (443–493) answers from `bases_of` (336–358), full
+ref names only, and never calls `current_branch()`. **T026:** `STANDIN_UV_VERSION='warning: something\nuv 0.12.20'`
+stamped and was reused; with `…\nuv 0.99.0` the run ran 24 checks and wrote a new stamp (`[answer 10e5cfba…]` became
+`[answer 19a9b3a8…]`); a notice on standard error that changed did the same; `'warning: cache at
+/home/someone/.cache/uv'` is stored as `warning: cache at <path> [answer 1dd79d6911fbbee7]` and no file under
+`.git/slipwai/` holds `/home`, `/tmp` or `someone`. The regression look: with the real `uv` 0.12.20, `git` 2.53.0 and GNU
+Make 4.4.1 the fixture's gate passed and stamped, and the two runs after it each printed the reuse line for one key
+(`91feb4e7a4da`); `make -i verify` left only the `{"nothing": true}` note. No `CRITICAL` and no `HIGH`: what follows
+is Phase 4's.
+
+#### T029 — `LOW` — A ratchet run under make's ignore-errors mode leaves the stamp, which AC-S03-26 says such a run removes (AC-S03-26, D80)
+
+- [ ] Evidence: `reuse` asks `ratcheting()` before `declined()` (`verify-stamp.py` 583–588), so with both set the
+  ratchet rule wins. On a stamped fixture, `RATCHET_TIGHTEN=1 STANDIN_UV_FAIL=1 make -i verify` → exit 0, 23 checks,
+  `verify: all gates passed`, the stamp still there; the next plain run printed the reuse line, 0 checks. AC-S03-26 says
+  *a run under make's ignore-errors mode removes the stamp too*; D80 says a ratchet run *removes none*; neither names
+  the run that is both. The stamp left is for a key that passed, which is D79's and D80's own argument, and a ratchet
+  run that fails without `-i` leaves it the same way — so `LOW`, a sentence to settle, not a wrong green.
+
+**RED/GREEN (the class):** one sentence, in AC-S03-26 or D80, says which rule holds where a run is both, and one example
+in `tests/test_verify_stamp_inputs.py` holds it.
+
+**Files:** `tests/test_verify_stamp_inputs.py`, `assets/toolkit/scripts/verify-stamp.py` (only if `-i` is to win); the
+criterion's sentence is the host's.
+
+#### T030 — `LOW` — What the stamp stores of a tool is still a line the tool chose, with paths taken out by a pattern (AC-S03-18; constitution, *Additional Constraints*: persisted data)
+
+- [ ] Evidence: `ask()` stores `PATH_LIKE.sub("<path>", line)` and sixteen hex digits of the answer (`verify-stamp.py`
+  131, 342–345). The pattern, asked directly: `cache at C:\Program Files\uv\cache` → `cache at <path> Files\uv\cache`;
+  `home=~noah/.cache` and `config,/home/noah/x` come back unchanged; a host name, a user name or a process id in the
+  line is not a path and stays. None of the tools of `MACHINE_TOOLS` was seen to print such a first line (the real
+  `uv`, `git`, `make`, `python3` and `java` lines here hold none), and T026's own case (`JAVA_TOOL_OPTIONS`) is elided —
+  so `LOW`. The stored value also ends ` [answer <digest>]`, where AC-S03-18 says *the line it reported*.
+
+**RED/GREEN (the class):** what is stored per tool cannot carry runtime context whatever the tool prints — the digest
+alone with a version read by a pattern that admits only version-like words, or the line printed and not stored — and
+AC-S03-18's words say what the field holds.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_tools.py`; the criterion's sentence is the host's.
+
 ---
 
 ## Parallel opportunities
@@ -824,4 +876,49 @@ No screen in this slice
 
 ## Convergence
 
-*(the verdict comes later)*
+**Converged at `0c78c0c` (code tip `c304510`), after three passes** (`drive-converge`, host model, fresh context each).
+The bound is two; the third ran only because pass 2 left an open `CRITICAL`, which is the one thing the bound does
+not hold against. Pass 1 at `c53a9ab` found one `CRITICAL` (T016: a pull-request target variable let the trunk read
+and write a stamp), two `HIGH` (T017: an ignored directory a check reads was on no list and the closed-list test
+scanned only `check-*.py`; T018: the page against AC-S03-31), two `MEDIUM` (T019, T020) and three `LOW` (T021–T023).
+Pass 2 at `9195588` re-ran those reproductions, found T017, T018 and T020 closed, and found two `CRITICAL` — T024,
+the slice's own suite red because T019's fix contradicted AC-S03-9 on a ratchet run (D80 settled it), and T025, a
+tag named like the trunk — with one `MEDIUM` (T026) and two `LOW` (T027, T028). Pass 3 re-ran T024–T026's
+reproductions, found all three closed, ran the gate twice with the real `uv`, `git` and `make` (one key, the reuse
+line twice, 0.31 s), and left two `LOW` (T029, T030). T016–T020 and T024–T026 are done; the seven `LOW` are Phase
+4's and do not re-open the loop. The tree was clean after each pass (`git status`: this file and the run's own
+records).
+
+**Sweeps performed.** Every route by which the trunk, a run under a CI marker or a detached `HEAD` could read,
+write or remove a stamp: the three markers, both target variables, a target with no ref or no shared history, a tag
+and a remote ref named like the trunk, `ci.branch` in both spellings (T016, T025). Every script a prerequisite of
+the gate launches, derived from the generated `Makefile` of seven project shapes and followed through imports, with
+a read planted in each (T017). Every return of `reuse` and `main` that leads to checks, against what it leaves of a
+stamp: idle modes, not eligible, ignore-errors, ratchet, cannot tell, unforeseen exception, forced, no match (T019,
+T024; D79 leaves one on purpose). Every write under the git directory and every field in it (T020, T026). Five
+mutations of the script, each killed by the suite and restored (pass 1).
+
+**Principles the diff touches.**
+- **I, a memoised gate MUST be additive; the merge root and CI run the full gate; no check removed:**
+  `assets/toolkit/scripts/verify-stamp.py` 488–496 (`eligible()`: the CI markers at 492, the trunk by its full ref
+  at 495–496), asked by `reuse` at 581 and `record` at 629; the prerequisites unchanged on `verify-checks` at
+  `src/slipwai/project/gate.py` 22–28; held by `tests/test_verify_stamp_where.py` 112–136 and the pin. No file of a
+  project's is touched: the stamp's place is `project_name()` at 399–402 under the git directory.
+- **V, acceptance-driven:** fourteen `tests/test_verify_stamp_*.py` modules, 155 examples, at `make verify`'s
+  command line through stand-in executables (`tests/stamp_fixture.py` 38–73); no mocking framework.
+- **VIII, versioning:** `changelog.d/verify-stamp.md` line 1 (`MINOR`); `VERSION` `1.6.0.dev0`; a stamp lacking a
+  field is no stamp (`verify-stamp.py`, `FIELDS` and its reader).
+- **XIII, fast feedback:** the reuse path at `verify-stamp.py` 583–600 starts no check; no clock in the suite; the
+  second is the demo's (AC-S03-20).
+- **XIV, the same bar:** increment commits with their tests; the full gates run on the final tip in Phase 4.
+- **Additional Constraints, persisted data:** the note holds a marker, never a reason (569); a tool's line is stored
+  with path-like words replaced (131, 345); the instant is UTC (648). Residual: T030.
+
+**The map.** `make -f delivery/Makefile check-convergence`: 3 of 9 axes at target, unchanged — this slice reaches no
+rung: it changes what the factory generates, and this repository's own gate (an adopted one, D74 and D78) does not
+stamp.
+
+**Open, graded, for Phase 4:** T021 (lines that say other than what happened), T022 (a sibling's edit in a
+subdirectory project), T023 (the script's length), T027 (two more runs that leave a stamp for a key that passed),
+T028 (the page says how to force and not when), T029 (a run that is both ratchet and ignore-errors), T030 (the
+stored tool line is free text).
