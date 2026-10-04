@@ -1,0 +1,390 @@
+# Tasks: S24-ci-fetches-slice-base — a slice pull request's CI holds the slice to its scope instead of saying it could not look
+
+**Input**: [plan.md](plan.md) (*The example map* R1–R7 is what the tasks cut on; *Design*; *Pin*; *Project
+Structure*), [research.md](research.md), [data-model.md](data-model.md), [quickstart.md](quickstart.md); acceptance
+criteria AC-S24-1 … AC-S24-13 in `specs/001-faster-slipwai/spec.md` under `### S24-ci-fetches-slice-base`;
+decisions D12, D31, D32, D35, D54, D82, D84 in `specs/001-faster-slipwai/decisions.md`. No `examples.md`: a method
+slice with no screen and no event model.
+
+**Branch**: `adopt-method` (D12). No `slice/` branch, no push, no claim. One commit per task.
+
+**Delegation** (`.specify/drive.json`: `delegate: story`, `cycle: rule`): these tasks carry no user-story tag, so
+they are delegated **per rule**, one delegate per implementation task, each its own RED-GREEN-REFACTOR increment and
+its own commit. The "Files" line of a task is its manifest: the only files that delegate may write. Nobody but the
+host writes `tasks.md`. A delegate that finds it needs a file outside its manifest — a test elsewhere that pins the
+text it changes, a page that still says the old thing (AC-S24-12) — stops and names the file; the host adds it.
+
+**Constraints that hold for every task** (plan.md *Constraints*): `PATCH` — no setting, flag or file added to a
+generated project; `check-migrations.py` and both `check-flags.py` do not change by a byte; nothing under
+`delivery/scripts/`, `tools/`, the `Makefile`, this repository's own CI or hook settings changes (the installed
+`delivery/scripts/check-slice-scope.py` and `.github/workflows/verify-delivery.yml` here arrive by `slipwai migrate`,
+a person's — D9); `VERSION` stays `1.6.0.dev0`; every file under `src/` and `tests/` stays within the 350 lines
+`make check-structure` holds (`tests/test_slice_scope_no_base.py` is at 343: what R4 adds goes in a new file, and an
+edit to that file may not grow it past 350); every `read_text`/`open` in a toolkit script names `encoding="utf-8"`;
+standard library only, no mocking framework — a fake is a class or function in the test tree, and the checkouts are
+built with git itself. Added for this slice:
+
+- A test that runs a script's command line builds its environment with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI`,
+  `GITHUB_HEAD_REF`, `GITHUB_BASE_REF`, `CI_COMMIT_REF_NAME` and `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` **removed**
+  unless the test sets that one, so the suite is the same on a runner that sets `CI=true` and on a laptop (AC-S24-13).
+- A test that loads a toolkit script as a module sets `sys.dont_write_bytecode = True` first.
+- Commit by path — `git commit -m … -- <the task's files>` — never `git add -A`, never `git commit -a`. A new file is
+  `git add`ed by its exact path first.
+- Before changing a generator, search `tests/` for helpers that rebuild an old workflow or Makefile by regex and for
+  tests pinning the whole text of a generated workflow (`grep -rn "verify.yml\|verify-delivery\|checkout@v6" tests`);
+  the sweep at planning found none that pins a whole file (`tests/test_ci_caches.py` asserts fragments;
+  `tests/test_ratchet.py:236–250` and `tests/test_adopt.py:166,295` use `assertIn`/`assertNotIn`), and the delegate
+  repeats it and reports any it finds rather than editing it.
+
+**Quick test and pre-commit.** The quick test of an increment is `make test TESTS="<modules>"`, the modules each task
+names. Before each commit run `make lint typecheck check-structure` as well.
+
+**Versioning, on every commit** (`AGENTS.md`, *Versioning is not optional*): a commit that changes `src/slipwai/`,
+`assets/` or the fragment says `Level PATCH; VERSION is not raised because it already carries the MINOR (1.6.0.dev0)
+the number needed and the fragment claims PATCH` and names the reason (the same answers, generated better). A commit
+that changes only `tests/` says it reaches no user and so does not raise the number. `VERSION` and anything under
+`release/` are never edited. **The fragment `changelog.d/ci-fetches-slice-base.md` lands in T002**, the first commit
+that changes a user-visible tree (`src/slipwai/project/ci_workflows.py`); the host commits T002 before T003 and T004,
+whatever order the delegates finish in. T002 writes it whole as a first draft (the four things, both refusals, the
+catch-up, the cost of the fetch); T008 completes the wording against what T003 and T004 landed. T003 and T004 do not
+touch it.
+
+**Observing a RED, and the "seen failing" rule.** Each RED is observed failing for its stated reason before the
+production edit. A hold is written as a hold, saying so in the test's name or comment, and is **seen to have teeth**
+before it is committed: invert one assertion, or remove the history the fixture gives, and observe the failure; then
+restore. The sanctioned route for a production file is change it, run the test, restore with
+`git checkout -- <exact path>`; confirm `git status` shows only the task's own files. The tree is clean of the
+reversal on every exit path, including a stop.
+
+**The Pin stage** (`/characterise`, plan.md *Pin*) is a host task, T001, before any implementation.
+
+## Format: `[ID] [P?] Description` — each task is one increment, one commit
+
+`[P]` marks a task whose files are disjoint from every sibling's it could run beside; see *Parallel opportunities*.
+
+---
+
+## Phase 1: Pin (host)
+
+### T001 — Pin how the three files check the code out, and what the check answers in a forge's checkout today (host task)
+
+- [x] **Host task — not delegated.** The host appends rows to `delivery/survey/pinned.md` before T002 and commits them
+  alone: (1) what `check-slice-scope` answers in a forge's checkout with no base — already pinned by
+  `tests/test_slice_scope_no_base.py` and `tests/test_slice_scope_hostile_base.py` (the 2026-10-03 row), named, not
+  re-pinned; (2) how the generated `verify` job, the adopted `verify` job and the GitLab `verify-delivery` job check
+  the code out today (a bare `actions/checkout@v6`, no `variables:`) — `/characterise` records it if no test holds it.
+  Not pinned, because the slice changes it on purpose: the two answers above. Pinned tests run green here. The commit
+  says no user-visible tree changed, so the number is not raised.
+
+**Files:** `delivery/survey/pinned.md` (the only file under `delivery/` this slice changes).
+
+---
+
+## Phase 2: Implementation stage
+
+Each implementation task starts from the green committed suite at the commit that closes T001. T002, T003, T004 and
+T005 are disjoint by manifest and may run together (*Parallel opportunities*); T006 follows T005; T007 follows T004;
+T008 follows T002, T003 and T004.
+
+### T002 — [P] A generated project's `verify` job fetches history, and nothing else does (R1 · AC-S24-1)
+
+- [ ] **Rule R1.** **The first commit that changes a user-visible tree, so the fragment lands in it.**
+
+**RED** (new `tests/test_ci_fetch_generated.py`; generate through the same entry points the neighbouring generator
+tests use, and read the files back; never edit an existing test). Each fails today because the `verify` job's checkout
+is a bare `actions/checkout@v6`:
+- e1 the `verify` job's `actions/checkout@v6` step in `.github/workflows/verify.yml` carries `with:` and
+  `fetch-depth: 0`, the line has no `${{`, and the comment above it names `check-slice-scope`, `check-migrations`
+  and `check-flags`.
+- e2 a project with an integration job: `CONTAINER_CHECKOUT` still fetches `--depth 1` and neither it nor the
+  integration job's checkout carries `fetch-depth`. **A hold — green today; seen to have teeth by writing the key
+  into `CONTAINER_CHECKOUT` in the working tree and watching it fail, then restoring.**
+- e3 the event-model workflow, the deploy workflows and the `ux-gates` workflow are byte for byte what the commit
+  before the slice generates. **A hold, written against a recorded expectation: compare with the text generated from
+  `git show <T001 commit>:<file>` of the three generators, loaded to a temporary directory, or assert on the one
+  property that matters — none of those files contains `fetch-depth` — if the three generators cannot be loaded from
+  an old commit without an edit. Teeth: add the key to one in the working tree, observe the failure, restore.**
+- **The sweep that closes the class:** the examples run over every backend and every target the catalog offers (the
+  loop the neighbouring generator tests already make), so no combination keeps a bare checkout on its `verify` job and
+  none gains the key on another job.
+
+**GREEN** — in `workflow()` (`src/slipwai/project/ci_workflows.py`) the `verify` job's step becomes the one in plan.md
+*Design* R1, with its two-line comment; nothing else in the module changes. Add `changelog.d/ci-fetches-slice-base.md`,
+first line `PATCH`, written whole: the `verify` job now fetches full history, a slice pull request is held to its scope
+in CI, *NOT checked* in CI is a failure, and `check-migrations` and `check-flags` now hold their *new in this change*
+rules on every pull request, naming both refusals (an expand and its contract together; a flag seeded anything but
+`off`), what a maintainer does about a red pull request (land the expand first; seed `off`), the catch-up (a workflow a
+project took over, or a pipeline of its own that sets a CI marker on a shallow clone, is not rewritten by `migrate`:
+add `fetch-depth: 0`, on GitLab `GIT_DEPTH: "0"`), and that a long history pays the full fetch on that one job.
+
+**REFACTOR:** none expected.
+
+**Verify:** `make test TESTS="test_ci_fetch_generated test_ci_caches test_pins test_renovate test_changelog"` green,
+then `make lint typecheck check-structure`. `VERSION` untouched. Commit by path, level line as above.
+
+**Files:** `src/slipwai/project/ci_workflows.py`, `tests/test_ci_fetch_generated.py` (new),
+`changelog.d/ci-fetches-slice-base.md` (new).
+
+### T003 — [P] The adopted gate fetches history, on both forges (R2 · AC-S24-2, -3)
+
+- [ ] **Rule R2.** Disjoint from T002 and T004 by manifest; its commit lands after T002's.
+
+**RED** (new `tests/test_ci_fetch_adopted.py`; adopt a temporary git repository through the CLI, with the helpers
+`tests/test_adopt.py` already has — `repository()` and `slipwai()` — or a local copy; no import of another test
+module's test class). Each fails today:
+- e1 an adopted repository on GitHub: the `verify` job of `.github/workflows/verify-delivery.yml` carries
+  `fetch-depth: 0` under its comment; with a `smoke` command recorded the `smoke` job's checkout carries none.
+  **The `smoke` half is a hold — green today; teeth by writing the key into `smoke_job()` in the working tree,
+  observing the failure, restoring.**
+- e2 an adopted repository on GitLab: `delivery/ci/verify-delivery.gitlab-ci.yml`'s `verify-delivery` carries
+  `variables:` with `GIT_DEPTH: "0"` after `stage: test`; `smoke-delivery` has no `variables:`; the file has no
+  `rules:`. The `smoke-delivery` and no-`rules:` halves are holds, with teeth seen the same way.
+- **The sweep that closes the class:** both forges, with and without a `smoke` command recorded (four states), and
+  Gitea/Forgejo, which take the GitHub file (`tests/test_adopt_facts.py:103`); and the file `delivery_workflow()`
+  writes when a refresh regenerates it equals the one `adopt` first wrote.
+
+**GREEN** — in `src/slipwai/project/adopted_ci.py`: the same step and comment on `delivery_workflow()`'s `verify` job;
+`gitlab_job()`'s `verify-delivery` gains the `variables:` block of plan.md *Design* R2. `smoke_job()` and
+`smoke-delivery` are not edited. No `rules:`.
+
+**REFACTOR:** if the two forges' comments repeat a sentence, one constant in the module, on green.
+
+**Verify:** `make test TESTS="test_ci_fetch_adopted test_adopt test_adopt_facts test_ratchet test_pin"` green, then
+`make lint typecheck check-structure`. Commit by path; level line (PATCH, `VERSION` not raised), the fragment being
+T002's.
+
+**Files:** `src/slipwai/project/adopted_ci.py`, `tests/test_ci_fetch_adopted.py` (new).
+
+### T004 — [P] In a forge's checkout, no base is a failure (R4, with R6 and the docstring of R7 · AC-S24-5, -6, -7, -9, -12, -13)
+
+- [ ] **Rule R4.** R6 (a developer's checkout is untouched; the suite is green under CI's markers) is **folded in
+  here**: its proofs are behaviour this task changes and guards, and a task of their own would write tests that pass
+  the moment they are written. The docstring of `check-slice-scope.py` (R7e3) is folded in because it is the same
+  file as the change. Disjoint from T002, T003 and T005 by manifest.
+
+**RED** — first the two existing suites. In `tests/test_slice_scope_no_base.py` and
+`tests/test_slice_scope_hostile_base.py` change **only** the assertions that say exit 0 (and *NOT checked*, stderr
+only) under a forge marker or the detached route to exit 1, still with empty stdout and the same line; do not touch
+a test that clears the markers (a developer's answer, AC-S22-24). Run them: they fail, for the reason that the script
+still returns exit 0. The edit may not grow `test_slice_scope_no_base.py` past 350 lines; if it would, move the
+changed test into the new file below, byte for byte but for the assertion.
+
+Then new `tests/test_slice_scope_forge_nobase.py` (a `SliceScopeFixtures` subclass from
+`tests/test_slice_scope_root.py`; **it builds its depth-1 and detached checkouts with its own small local helper and
+does not use `tests/forge_checkout.py`**, so it needs nothing from T005). Examples e1–e3 and e5 fail today (exit 0):
+- e1 a depth-1 single-branch clone of `slice/S1` with `GITHUB_ACTIONS=true`, separately `GITLAB_CI=true`, separately
+  `CI=true` → exit 1, stdout empty, one stderr line with *NOT checked*, `` `main` ``, `fetch-depth: 0`,
+  `GIT_DEPTH: "0"` and *a full clone with the trunk's branch fetched*; no `git fetch`, no *nothing to hold*.
+- e2 the detached pull-request route (the name in `GITHUB_HEAD_REF`, then `CI_COMMIT_REF_NAME`, no marker) at depth 1
+  → the same.
+- e3 a trunk ref with no common ancestor at this depth, an unrelated trunk, and a pull-request target with no history
+  in common (`GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`), each under a marker → the same, with the
+  passed-over words (AC-S22-28, AC-S22-32) kept.
+- e5 a base exists and `git diff` fails, under a marker → exit 1 with *NOT checked — git could not compare*. The
+  failure is made with git, not a fake: the `CouldNotCompare` fixture the existing suites use, or a corrupt object.
+- **Holds, written as holds and seen to have teeth** — e4 a lost record at a canonical slot under a marker with no
+  base → exit 1 with the record and the line (teeth: turn the record's assertion over); e6 a checkout git cannot
+  read, under a marker → exit 0 and the *could not read* line (teeth: expect exit 1); e7 a branch that is not
+  `slice/<id>` under a marker, with history and without → *nothing to hold*, exit 0 (teeth: expect the line). Also a
+  hold for AC-S24-7's last clause: with a usable base the slice is held exactly as on a developer's machine, with the
+  marker set and without.
+- **The sweep that closes the class:** the table of no-base states × the forge's two routes × the markers
+  (`GITHUB_ACTIONS`, `GITLAB_CI`, `CI`, and each branch-name variable with `HEAD` detached), looped so every cell is
+  asserted — the same assertions as e1 in each — not three hand-picked ones; and both forges' variables.
+
+**GREEN** — in `assets/toolkit/scripts/check-slice-scope.py`: the two returns of `check()` taken where
+`forge_checkout()` is true — no base, and `CouldNotCompare` — return `True` for *failed* where they return `False`;
+`not_checked()` keeps its sentence and adds, after the two keys, *on any other CI, a full clone with the trunk's
+branch fetched*, and its docstring stops saying *not a pass, not a failure*; the `problem` arm is not edited. The
+module docstring's paragraph on a CI run says exit 1 and drops *because that checkout is depth 1* for *because that
+checkout has no history to compare with*. Search `assets/`, `src/slipwai/` and `docs/` for *NOT checked*,
+`fetch-depth` and *depth 1* and report any other page that still says the old answer (AC-S24-12); do not edit it.
+The docstrings of `check-migrations.py` and `check-flags.py` stand.
+
+**REFACTOR:** none expected.
+
+**Verify (R6 folded in):** `make test TESTS="test_slice_scope_forge_nobase test_slice_scope_no_base
+test_slice_scope_hostile_base test_slice_scope_base test_slice_scope_root test_slice_scope_report
+test_slice_scope_printed test_slice_scope_hostile_branch test_slice_scope_adopted_rules"` green; then **again with
+`CI=true GITHUB_ACTIONS=true` exported** — green, which is R6e2 and AC-S24-13; then `git diff` over this task shows no
+assertion changed in a test that clears the markers (R6e1, AC-S24-9). Then `make lint typecheck check-structure`.
+Commit by path; level line (PATCH, `VERSION` not raised, the same answers generated better), the fragment being
+T002's.
+
+**Files:** `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_forge_nobase.py` (new),
+`tests/test_slice_scope_no_base.py`, `tests/test_slice_scope_hostile_base.py`.
+
+### T005 — [P] On the checkout the workflow now makes, a slice is held (R3, and the helper · AC-S24-4)
+
+- [ ] **Rule R3.** This task **owns `tests/forge_checkout.py`** — it is the first and only task to write it; T006 uses
+  it and comes after. A hold: every example is green today, since the slice changes no line R3 reads. Disjoint from
+  T002, T003 and T004 by manifest. The plan's `tests/test_slice_scope_forge.py` held R3 and R4 together; it is split
+  — R3 here as `tests/test_slice_scope_forge.py`, R4's examples in T004's `tests/test_slice_scope_forge_nobase.py` —
+  so the two tasks share no file.
+
+**Tests** (new `tests/forge_checkout.py`, new `tests/test_slice_scope_forge.py`, each ≤ 350 lines). The helper builds
+the pull-request checkout with git as plan.md *Design* describes: from an origin holding `main` and a head branch,
+the merge of the head into `main` under `refs/pull/1/merge`; a `file://` clone; fetch
+`+refs/heads/*:refs/remotes/origin/*` and the merge ref; check the merge commit out detached; delete the local branch
+the clone made, so the only refs are `refs/remotes/origin/*`. The depth-1 form fetches only the merge ref at
+`--depth 1`. It returns the path; the caller supplies the variables; `sys.dont_write_bytecode` is not needed (it loads
+no script). Then:
+- e1 a host-surface change on `slice/S1`, the pull-request checkout with GitHub's variables (`GITHUB_ACTIONS`, `CI`,
+  `GITHUB_HEAD_REF=slice/S1`, `GITHUB_BASE_REF=main`) → exit 1 naming the path, *compared with `main` at*.
+- e2 the same with GitLab's (`GITLAB_CI`, `CI_COMMIT_REF_NAME`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`).
+- e3 a slice inside its scope → exit 0 with the *compared with* line, on both.
+- The helper's own shape is asserted once, so a later change cannot quietly turn it into a full clone: the only refs
+  are `refs/remotes/origin/*`, `HEAD` is detached, `main` is among the remote refs at full history and absent at
+  depth 1.
+- **The sweep that closes the class:** each of e1–e3 on both forges' variables and on the route with no marker (the
+  branch name alone with `HEAD` detached), with and without `GITHUB_BASE_REF`/the target given.
+
+All are holds, written as holds in the test names. **Teeth, seen before commit:** invert each assertion in turn; and
+remove the history from the fixture (use the depth-1 form) and observe the e1 assertion fail (the script then says
+*NOT checked*, whichever of T004's behaviours is in the tree), restore.
+
+**GREEN:** none in `src/` or `assets/`. If a hold fails, stop and report: the checkout the plan assumes is not what
+the script reads.
+
+**REFACTOR:** none.
+
+**Verify:** `make test TESTS="test_slice_scope_forge"` green, then `make lint typecheck check-structure`. Commit by
+path; level line (tests only: reaches no user, number not raised).
+
+**Files:** `tests/forge_checkout.py` (new), `tests/test_slice_scope_forge.py` (new).
+
+### T006 — [P] With history, the two other gates answer as on a full clone (R5 · AC-S24-8)
+
+- [ ] **Rule R5.** **Uses `tests/forge_checkout.py`, so it needs T005 committed first.** All holds: the slice changes
+  no line of the three scripts. Disjoint from T002, T003 and T004 by manifest (it runs the shipped scripts and does
+  not write them), so it may run beside them once T005 is in.
+
+**Tests** (new `tests/test_ci_history_gates.py`, the shipped `check-migrations.py` and both targets' `check-flags.py`
+run through their command lines in a project generated into a temporary directory, with `sys.dont_write_bytecode`
+where a script is loaded as a module):
+- e1 a pull request from `feature/x` carrying an expand and its contract together → `check-migrations` exits 1 on the
+  pull-request checkout, 0 on the depth-1 checkout with no trunk ref.
+- e2 a pull request declaring a flag seeded `on` → `check-flags` (aws; azure) exits 1 on the pull-request checkout,
+  0 at depth 1.
+- e3 the same commits pushed to the trunk → both exit 0 at either depth.
+- e4 on the pull-request checkout from `feature/x`, `check-slice-scope` says *nothing to hold*, exit 0.
+- **The sweep that closes the class:** every target that ships a `check-flags.py` (aws and azure — the delegate lists
+  `assets/targets/*/scripts/` and covers each), and both forges' variables, for e1–e3.
+
+**Teeth:** all four are holds written as holds; each seen with its fixture's history removed (the depth-1 form where
+the test expects exit 1) and with one assertion inverted, observed failing, restored; the tree clean afterwards.
+`git diff` over this task shows none of the three scripts changed.
+
+**GREEN:** none. If a hold fails, stop and report; do not edit a script.
+
+**REFACTOR:** none.
+
+**Verify:** `make test TESTS="test_ci_history_gates test_slice_scope_forge"` green, then
+`make lint typecheck check-structure`. Commit by path; level line (tests only).
+
+**Files:** `tests/test_ci_history_gates.py` (new). Reads `tests/forge_checkout.py` (T005's), writes nothing else.
+
+### T007 — The sweep for the old words is finished (R7e3, AC-S24-12) — host decision, delegate only if T004 reports a page
+
+- [ ] **Not a task unless T004's report names a page outside its manifest** that still says a CI checkout is depth 1,
+  that the slice is not checked there, or that a maintainer adds the key by hand. If it does, the host adds that page
+  to this task's manifest, and the increment is: the page says what is true (RED: a `grep`-style assertion in the
+  page's own test where one exists, otherwise by search); if it does not, the host ticks this task on T004's report
+  and it has no commit. Numbered here so the dependency order of T008 is plain.
+
+**Files:** none until T004 reports.
+
+### T008 — The release says what it is (R7 · AC-S24-10, -11)
+
+- [ ] **Rule R7.** Needs T002, T003, T004 (it states what they landed). The fragment began in T002; this task
+  completes its wording against the final behaviour and edits the second fragment.
+
+**RED:** `tests/test_changelog.py` is in the suite and passes from T002. The checks, written as checks:
+e1 `changelog.d/ci-fetches-slice-base.md` has first line `PATCH`; says the `verify` job fetches full history, a slice
+pull request is held to its scope, *NOT checked* in CI is now a failure, and — plainly — that `check-migrations` and
+`check-flags` now hold their *new in this change* rules in CI on every pull request, naming both refusals; its
+catch-up says a workflow the project took over and a pipeline of its own that sets a CI marker on a shallow clone are
+not rewritten by `migrate` and turn red on a slice branch until the job fetches history, with the key to add
+(`fetch-depth: 0`; `GIT_DEPTH: "0"`), that an open pull request carrying either pattern goes red and is fixed by
+landing the expand first or seeding `off`, and that a long history pays the full fetch on that one job. e2
+`changelog.d/slice-scope-base.md` no longer says a CI run with nothing to compare with exits 0 or that a maintainer
+adds the key by hand — its *Catch-up* and last paragraph — checked by `grep -n "exits 0\|still exits\|adds \`fetch-depth"`
+over that file, empty. e3 the docstring of `check-slice-scope.py` says a forge's checkout with no base fails — T004's,
+re-read. e4 the catch-up paragraph, **followed as written** on a project generated at the commit before the slice
+(workflow without the key) in a scratch directory under `/tmp`: add the key, build the pull-request checkout, the
+slice is held; the host or the delegate records that run in its report. `VERSION` unchanged. `make test
+TESTS="test_changelog"` green.
+
+**GREEN** — edit the two fragments as e1 and e2 say; nothing else.
+
+**REFACTOR:** none.
+
+**Verify:** `make test TESTS="test_changelog"` green, then `make lint typecheck check-structure`; `git diff --stat`
+over the slice shows `VERSION` unchanged and no change to the three scripts but `check-slice-scope.py`. Commit by
+path; level line (PATCH, `VERSION` not raised because it already carries the MINOR).
+
+**Files:** `changelog.d/ci-fetches-slice-base.md`, `changelog.d/slice-scope-base.md`.
+
+---
+
+## Phase 3: Gates and closing (host)
+
+### T009 — Both full gates on the final tip, then the demo (host task)
+
+- [ ] **Host task — not delegated.** Run `make verify` and `make -f delivery/Makefile verify` on the tree after T008;
+  both green (Principle XIV), once with `CI=true GITHUB_ACTIONS=true` exported (AC-S24-13). Confirm the slice's diff
+  touches under `delivery/` only `delivery/survey/pinned.md`, `VERSION` is `1.6.0.dev0`, none of `check-migrations.py`
+  or either `check-flags.py` changed, and nothing under `tools/`, the `Makefile` or this repository's CI did. Then the
+  demo from [quickstart.md](quickstart.md), run as the actor with this checkout's `./slipwai`. **Not run, and said so
+  on the board:** a real runner on a real forge.
+
+### T010 — The adversary pass (host task)
+
+- [ ] **Host task.** `drive-adversary` over the no-base states and both routes of `forge_checkout()` through the
+  script's command line; any confirmed finding is a regression test at the owning layer, appended as a task below.
+
+### T011 — Mutation (host task)
+
+- [ ] **Host task.** `drive-mutation` over `check()`/`not_checked()` and the three generator changes, the report
+  recorded; the tree clean afterwards. Survivors append tasks.
+
+### T012 — Register row and benchmark (host task)
+
+- [ ] **Host task.** The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in
+  this slice's own pull request (`AGENTS.md`).
+
+---
+
+## Parallel opportunities
+
+By manifest (each task's "Files" line):
+
+| Task | Writes | Reads of another task's file |
+|---|---|---|
+| T002 | `src/slipwai/project/ci_workflows.py`, `tests/test_ci_fetch_generated.py`, `changelog.d/ci-fetches-slice-base.md` | none |
+| T003 | `src/slipwai/project/adopted_ci.py`, `tests/test_ci_fetch_adopted.py` | none |
+| T004 | `assets/toolkit/scripts/check-slice-scope.py`, `tests/test_slice_scope_forge_nobase.py`, `tests/test_slice_scope_no_base.py`, `tests/test_slice_scope_hostile_base.py` | none (no `forge_checkout.py`) |
+| T005 | `tests/forge_checkout.py`, `tests/test_slice_scope_forge.py` | runs `check-slice-scope.py` |
+| T006 | `tests/test_ci_history_gates.py` | `tests/forge_checkout.py` (T005); runs the three scripts |
+| T008 | `changelog.d/ci-fetches-slice-base.md`, `changelog.d/slice-scope-base.md` | — |
+
+- **May run together:** T002, T003, T004 and T005 — four disjoint manifests. T006 joins as soon as T005 is
+  committed, beside whichever of T002–T004 is still running. Most delegates at once: **four**.
+- **May not:** T006 before T005 (it imports the helper T005 owns). T008 beside T002 (both write
+  `changelog.d/ci-fetches-slice-base.md`), and before T003 and T004 (it states what they landed). T007, if it becomes
+  a task, after T004. Nobody beside T009.
+- **Shared-tree caution.** T004's teeth and RED reversals change `check-slice-scope.py` in the working tree, and T005
+  and T006 run that script; T002 and T003 reverse their own generators, which nobody else reads. So run each
+  concurrent delegate in a worktree of its own off the commit that closes T001 (`isolation: worktree`), or run T004
+  alone of the four while T005/T006's quick tests run. The host commits by path in order — T002, then T003, T004,
+  T005, T006 — and the first user-visible commit is T002's.
+- **Host tasks:** T001 precedes T002 (it records what T002–T004 change); T009 runs alone after T008, reading the
+  whole tree; T010 – T012 follow, in order.
+
+## Design review
+
+No screen in this slice
+
+## Convergence
+
+To be written by the converge pass.
