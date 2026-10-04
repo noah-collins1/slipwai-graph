@@ -1905,3 +1905,15 @@
 - **Confidence:** high · **Would reverse if:** a person would rather the page never spelled the argument at all; the sentence then loses its first clause and the hold its exception.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S04-39); `tests/test_parallel_gate_sync_ways.py`; `tests/stamp_fixture.py`
 - **Status:** standing
+
+## D99 — The owner adds a method slice: the factory's own gate takes the verify stamp, right after `S04-parallel-gate` and before `S05-xdist`
+- **Stage:** Phase 4 (slice done; message queued through `/cruise-tell` during iteration 13) · **Slice:** S33-factory-gate-stamp · **When:** 2026-10-04T18:13:48Z · **Iteration:** 13
+- **Question:** A person told the run: a method slice for this repository only — the factory's own root Makefile gets the verify stamp S03 gave generated projects (the gate asks the stamp first and runs lint, typecheck, check-structure and test only when the tree, the gate's scripts or the tool versions changed; a force variable runs everything; the trunk and CI never read a stamp; S03's key rules), reusing the shipped stamp script rather than copying it; taken immediately after S04 and before S05, because every later iteration pays this gate several times; PATCH or no bump, since it reaches no user. They also said that after the iteration in flight ends they will run the migration here themselves (E8; D9's person step) and restart the runner, so the next iteration finds the delivery tree regenerated. The message named the slice with an id the split already uses for another slice.
+- **Options:** (a) as the owner said, under the next free id — **the owner's instruction**; there is no other option to weigh.
+- **Decision:** (a). The slice is `S33-factory-gate-stamp` (S31 and S32 are taken: the trunk the history gates read, and the split of the stamp's script). It is next in order, ahead of `S05-xdist`, overriding D39's order for this one slice. Two things the next iteration must meet rather than discover: the root Makefile is one of the files the cruise guard refuses an iteration to edit and the runner parks on any change to (the gate is never repaired in the gate), so the edit to that file is a person's hand or a park naming it — the slice's gaps stage asks which, it does not work round the guard; and D91 makes `S32-verify-stamp-split` land before a slice that changes the stamp's script, so a plan that reuses the script unchanged does not owe it, and one that must change it does. The delivery tree after the owner's migration is read fresh by the next iteration: the adopted gate there will carry S04's guarded serial line and the model tooling's lock.
+- **Why:** The owner's own words: every later iteration pays this gate several times — about thirty-five minutes a run here, twice a slice.
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** the owner withdraws it, or says the root Makefile's edit is not theirs to make and the guard is not to be changed, in which case the slice parks at its implementation.
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (the slice's row, its graph row, the order)
+- **Status:** standing
+
