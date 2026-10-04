@@ -26,6 +26,7 @@ import importlib.util
 import json
 import os
 import re
+import secrets
 import stat
 import subprocess
 import sys
@@ -165,14 +166,18 @@ class Options:
 
     def __init__(self, argv: list[str]) -> None:
         self.make = "make"
+        self.token = ""
         self.goals: list[str] = []
         self.tools: list[str] = []
         self.environments: list[str] = []
-        pairs = {"--make": "make", "--goals": "goals", "--tool": "tools", "--environment": "environments"}
+        pairs = {"--make": "make", "--goals": "goals", "--tool": "tools", "--environment": "environments",
+                 "--token": "token"}
         for flag, value in zip(argv, argv[1:]):
             name = pairs.get(flag)
             if name == "make":
                 self.make = value or "make"
+            elif name == "token":
+                self.token = value
             elif name == "goals":
                 self.goals = value.split()
             elif name is not None:
@@ -668,9 +673,10 @@ def remove_stamp() -> str | None:
     return None
 
 
-def begin_full_run(note: dict[str, object], forced: str | None = None, cannot: str | None = None) -> int:
+def begin_full_run(note: dict[str, object], token: str, forced: str | None = None, cannot: str | None = None) -> int:
     """Every full run of a stamp that may be used starts here: the stamp is removed, one line is said where there is
-    something to act on, and the note of what the run began with is left for `record`. The line is the first of: the
+    something to act on, and the note of what the run began with — and the run's token, which only this run's `record` holds — is left for
+    `record`. The line is the first of: the
     key cannot be built (`cannot`, the run records nothing), the stamp cannot be removed (it names the file to delete,
     and the run records nothing), the run was forced. Exits non-zero, so the recipe runs every check."""
     try:
@@ -685,7 +691,7 @@ def begin_full_run(note: dict[str, object], forced: str | None = None, cannot: s
     elif forced is not None:
         print(FORCED_LINE.format(reason=forced))
     try:
-        write_file(pending_path(), json.dumps(note) + "\n")
+        write_file(pending_path(), json.dumps(dict(note, token=token)) + "\n")
     except (OSError, CannotTell):
         pass  # `record` finds no note and says why it records nothing
     return 1
@@ -700,20 +706,20 @@ def reuse(options: Options) -> int:
         if declined():
             # `-i`: the checks run and may fail with the run still exiting 0, so no stamp may stand to be reused
             # afterwards; this run records nothing (`record` declines it too)
-            return begin_full_run({NOTHING: True})
+            return begin_full_run({NOTHING: True}, options.token)
         problem = index_problem(top_level())
         if problem is not None:
             raise CannotTell(problem)
         key, parts = key_parts(machine_tools(options))
     except CannotTell as reason:
-        return begin_full_run({}, cannot=str(reason))
+        return begin_full_run({}, options.token, cannot=str(reason))
     forced = forced_reason(options)
     if forced is None:
         stamp = read_stamp(stamp_path())
         if stamp is not None and stamp["key"] == key["key"]:
             print(REUSE_LINE.format(passed=stamp["passed"], abbreviated=str(key["key"])[:12]))
             return 0
-    return begin_full_run({"key": key["key"], "tools": key["tools"], "parts": parts}, forced)
+    return begin_full_run({"key": key["key"], "tools": key["tools"], "parts": parts}, options.token, forced)
 
 
 def not_recorded(reason: str) -> int:
@@ -760,21 +766,33 @@ def why_no_note() -> str | None:
     return "the key from before the checks was not kept"
 
 
+def new_token() -> int:
+    """A random value for one run of the gate, which the recipe hands that run's two halves: never a process id, a host
+    or a path."""
+    print(secrets.token_hex(16))
+    return 0
+
+
 def record(options: Options) -> int:
-    """After the last check: the stamp, if the key is the one the run began with. The tools are the ones the run began
-    with too — they are asked once — and the note that says this run records nothing records nothing. A pass that
-    cannot be recorded — the tree moved while the checks ran, or the stamp cannot be written — says so in one line."""
+    """After the last check: the stamp, if the note is this run's and the key is the one the run began with. The tools
+    are the ones the run began with too — they are asked once — and the note that says this run records nothing records
+    nothing. A pass that cannot be recorded — the tree moved while the checks ran, another run of the gate started here
+    after this one, this was no run of the gate, or the stamp cannot be written — says so in one line."""
     if declined() or not eligible():
         return 0
+    if not options.token:
+        return not_recorded("this was not a run of the gate: no run token was given")
     try:
         text = read_own(pending_path())
         if text is None:
             raise ValueError("no note")
         pending = json.loads(text)
+        if pending.get("token") != options.token:
+            return not_recorded("another run of the gate started here after this one began, so only that run may record")
         if NOTHING in pending:
             return 0
         pending["key"], pending["tools"]
-    except (OSError, ValueError, KeyError, TypeError):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
         reason = why_no_note()
         return 0 if reason is None else not_recorded(reason)
     try:
@@ -815,6 +833,8 @@ def main(argv: list[str]) -> int:
             return reuse(Options(argv[1:]))
         if verb == "record":
             return record(Options(argv[1:]))
+        if verb == "token":
+            return new_token()
     except Exception:
         if verb == "reuse":
             remove_after_failure()

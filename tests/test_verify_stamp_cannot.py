@@ -49,7 +49,7 @@ class CannotTellTest(StampTestCase):
 
     def assert_nothing_local(self, run: subprocess.CompletedProcess[str]) -> None:
         """T020: whatever the run left under the git directory holds no path of this machine and none of the words it
-        printed for a person: a note is the marker that the run records nothing, and nothing else."""
+        printed for a person: a note is the marker that the run records nothing and the run's token, nothing else."""
         directory = self.repo / ".git" / "slipwai"
         for found in sorted(directory.iterdir()) if directory.is_dir() else []:
             if found.is_file():
@@ -59,7 +59,9 @@ class CannotTellTest(StampTestCase):
                 for line in self.reuse_lines(run):
                     self.assertNotIn(line.partition(" — ")[2][:20], text, f"{found.name} holds the printed reason")
                 if found.suffix == ".pending":
-                    self.assertEqual(json.loads(text), {"nothing": True}, found.name)
+                    note = json.loads(text)
+                    self.assertRegex(str(note.pop("token", "")), r"^[0-9a-f]{32}$", "the note holds its run's token")
+                    self.assertEqual(note, {"nothing": True}, found.name)
 
     def unreadable(self, name: str) -> None:
         """`name` is there, a stamp stands for the tree with it, and then nothing may read it."""

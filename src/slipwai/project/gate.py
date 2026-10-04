@@ -22,7 +22,7 @@ STAMP_SCRIPT = "scripts/verify-stamp.py"
 
 STAMPED = """VERIFY_STAMP := {arguments}
 verify: ## Full deterministic pre-commit gate (a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway)
-\t@python3 {script} reuse --goals "$(MAKECMDGOALS)" --make "$(MAKE)" $(VERIFY_STAMP) || {{ $(MAKE) --no-print-directory verify-checks && python3 {script} record --make "$(MAKE)" $(VERIFY_STAMP); }}
+\t@run=$$(python3 {script} token); python3 {script} reuse --token "$$run" --goals "$(MAKECMDGOALS)" --make "$(MAKE)" $(VERIFY_STAMP) || {{ $(MAKE) --no-print-directory verify-checks && python3 {script} record --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP); }}
 .PHONY: verify-checks
 verify-checks: {dependencies}
 \t@echo
