@@ -233,7 +233,7 @@ class AxesTest(FactoryTestCase):
             # copy of the recipe that a subtractive prune could never restore.
             self.assertIn("test-integration:", makefile)
             self.assertIn("INTEGRATION_TEST ?=", makefile)
-            self.assertIn("ci: verify audit $(CI_DATABASE) test-integration", makefile)
+            self.assertIn("ci: verify-checks audit $(CI_DATABASE) test-integration", makefile)
 
             service = json.loads((repo / "apps/service/package.json").read_text())
             self.assertNotIn("pg", service.get("dependencies", {}))

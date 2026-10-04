@@ -4,7 +4,10 @@
 blank line and the closing line exactly as `verify` did. The recipe asks `scripts/verify-stamp.py reuse` first: it
 exits 0 only after printing the one line that says this tree already passed, and any other answer sends the run on
 to the checks, after which `record` writes the stamp. Nothing the script meets can fail the gate (`reuse` exits
-non-zero for any other reason, `record` always exits 0), and a run that did not pass never reaches `record`.
+non-zero for any other reason, `record` always exits 0), and a run that did not pass never reaches `record`. The sub-make
+is quoted, so a make whose path holds a space runs it, and is given the makefile the gate ran from, so a project whose
+makefile is not named `Makefile` runs it too. `ci` hangs on `verify-checks`, not on `verify`: the extended gate never
+asks about a stamp, by whatever route it is reached, and the recipe reads no goals.
 
 Every generated project takes it, whatever its backends, transports and browser apps; the one exception is a
 project of an adopted repository (a wrapped application, or the delivery material moved under a directory, where
@@ -22,11 +25,16 @@ STAMP_SCRIPT = "scripts/verify-stamp.py"
 
 STAMPED = """VERIFY_STAMP := {arguments}
 verify: ## Full deterministic pre-commit gate (a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway)
-\t@run=$$(python3 {script} token); python3 {script} reuse --token "$$run" --goals "$(MAKECMDGOALS)" --make "$(MAKE)" $(VERIFY_STAMP) || {{ $(MAKE) --no-print-directory verify-checks && python3 {script} record --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP); }}
+\t@run=$$(python3 {script} token); python3 {script} reuse --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP) || {{ "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 {script} record --token "$$run" --make "$(MAKE)" $(VERIFY_STAMP); }}
 .PHONY: verify-checks
 verify-checks: {dependencies}
 \t@echo
 \t@echo 'verify: all gates passed'"""
+
+
+def ci_gate(apps: list[App], layout: Layout) -> str:
+    """The target `ci` depends on for the checks: `verify-checks` where `verify` is stamped, `verify` where it is not."""
+    return "verify-checks" if stamped(apps, layout) else "verify"
 
 
 def stamped(apps: list[App], layout: Layout) -> bool:

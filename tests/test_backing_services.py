@@ -206,7 +206,7 @@ class BackingServicesTest(FactoryTestCase):
             for target in ("services-up:", "services-down:", "migrate:"):
                 self.assertIn(target, makefile)
             self.assertIn("DATABASE_URL ?= postgres://app:app@localhost:5433/app", makefile)
-            self.assertIn("ci: verify audit $(CI_DATABASE) test-integration", makefile)
+            self.assertIn("ci: verify-checks audit $(CI_DATABASE) test-integration", makefile)
             self.assertIn("CI_DATABASE := migrate", makefile)
             # One recipe per target, whichever way the services are later pruned.
             self.assertEqual(makefile.count("\ntest-integration:"), 1)

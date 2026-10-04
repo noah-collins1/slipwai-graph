@@ -18,7 +18,7 @@ from .adopted_targets import adoption_targets, gate_target
 from .agent_targets import agent_targets
 from .compose import composed
 from .flags import flag_gate, flag_gate_dependency
-from .gate import stamped
+from .gate import ci_gate, stamped
 from .integration import integration_targets, integration_variables
 from .model_targets import MODEL_GATES, model_targets
 from .mutation import mutation_notes
@@ -262,9 +262,9 @@ demo-down: ## Stop the demo, keeping any volume
     # answer — is the extended gate's too, and never `verify`'s: it needs what the application needs.
     adoption = " smoke" if wrapped_of(apps) else ""
     ci_targets = (
-        f"ci: verify audit $(CI_DATABASE) test-integration{production}{adoption} ## Local equivalent of the extended CI gate\n"
+        f"ci: {ci_gate(apps, layout)} audit $(CI_DATABASE) test-integration{production}{adoption} ## Local equivalent of the extended CI gate\n"
         if integrating
-        else f"ci: verify audit test-integration{production}{adoption} ## Local equivalent of the extended CI gate\n"
+        else f"ci: {ci_gate(apps, layout)} audit test-integration{production}{adoption} ## Local equivalent of the extended CI gate\n"
     )
     production_section = production_targets(project_name, apps, target) if managed(CATALOG, target) else ""
     # The published document's gate, as a prerequisite line per transport rather than a word on `verify`'s

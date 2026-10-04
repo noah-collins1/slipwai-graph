@@ -127,6 +127,21 @@ def write_stand_ins(directory: Path) -> None:
         path.chmod(0o755)
 
 
+def write_spaced_make(parent: Path) -> Path:
+    """A `make` that logs the call and hands it to the real one, reached through a directory whose name holds a space,
+    and run under its own full path, so that `$(MAKE)` is that path with the space in it. Returns the executable."""
+    real = shutil.which("make")
+    if real is None:
+        raise unittest.SkipTest("make is not on PATH")
+    directory = parent / "a directory with a space"
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / "make"
+    path.write_text(_PASS_THROUGH.replace("exec -a {name}", 'exec -a "$0"').format(name="make", real=real),
+                    encoding="utf-8")
+    path.chmod(0o755)
+    return path
+
+
 def checks_started(log: Path) -> list[str]:
     """What the stand-ins saw that is a check starting: a sync, a linter, a type checker or a test runner through
     `uv`, or a `python3` that is neither a version question nor the stamp script. Read from the log only — never

@@ -1,4 +1,4 @@
-"""R8 (AC-S03-23, -25): `VERIFY_FORCE` runs the gate anyway, and `make ci` always does.
+"""R8 (AC-S03-25): `VERIFY_FORCE` runs the gate anyway; `make ci` runs every check with no stamp in it (AC-S03-38).
 
 Every example plants a stamp that a run allowed to read it would reuse (`plant_stamp`), so a run that starts every
 check is a run that was forced. What ran is read from the stand-ins' log, never from the run's own line.
@@ -67,13 +67,13 @@ class ForceTest(StampTestCase):
         self.assertNotEqual(run.returncode, 0, run.stdout)
         self.assertIsNone(self.stamp_path(), "a stamp stood through a forced run that failed")
 
-    def test_make_ci_runs_every_prerequisite_and_says_why(self) -> None:
-        """e23: on a stamped tree, `make ci` runs the gate's checks, the audit and the integration tests, and the
-        one line names `ci`."""
+    def test_make_ci_runs_every_prerequisite_and_reads_writes_and_removes_no_stamp(self) -> None:
+        """AC-S03-38 (replaces e23): on a stamped tree, `make ci` runs the gate's checks, the audit and the integration
+        tests, prints no stamp line, and leaves the stamp exactly as it stood."""
         audit = self.bin / "pip-audit"
         audit.write_text(PIP_AUDIT, encoding="utf-8")
         audit.chmod(0o755)
-        self.plant_stamp()
+        planted = self.plant_stamp()
         self.forget_log()
         run = subprocess.run(["make", "ci"], cwd=self.repo, env=self.environment(), text=True, capture_output=True,
                              timeout=180)
@@ -81,11 +81,11 @@ class ForceTest(StampTestCase):
         self.assertTrue(self.checks(), "no check of the gate started under `make ci`")
         self.assertIn("pip-audit\t", self.log.read_text(encoding="utf-8"), "the audit did not run")
         self.assertIn("test-integration:", run.stdout, "the integration tests did not run")
-        lines = self.reuse_lines(run)
-        self.assertEqual(len(lines), 1, run.stdout)
-        self.assertRegex(lines[0], r"\bci\b")
-        self.assertNotIn("did not run", lines[0])
-        self.assertNotEqual(self.stamp()["passed"], PLANTED_AT)
+        self.assertEqual(self.reuse_lines(run), [], run.stdout)
+        path = self.stamp_path()
+        self.assertIsNotNone(path)
+        assert path is not None
+        self.assertEqual(path.read_bytes(), planted)
 
     def test_a_forced_pass_writes_a_stamp_the_next_run_reuses(self) -> None:
         """e25: forced once, left alone, the next run reads what the forced pass wrote."""

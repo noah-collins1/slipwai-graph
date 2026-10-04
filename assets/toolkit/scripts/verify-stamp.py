@@ -140,8 +140,6 @@ CANNOT_LINE = "verify: the full gate runs and this run records nothing — {reas
 INSTANT = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")
 NOTHING = "nothing"
 FORCE_VARIABLE = "VERIFY_FORCE"
-# `make ci` is the extended gate: it runs every check, whatever a stamp says.
-FORCING_GOAL = "ci"
 FORCED_LINE = "verify: the full gate runs, forced by {reason}"
 NOT_RECORDED_LINE = "verify: this pass was not recorded — {reason}"
 # make's flags under which no check starts: nothing is read, written or removed. `-i` is not among them: it starts
@@ -170,10 +168,9 @@ class Options:
     def __init__(self, argv: list[str]) -> None:
         self.make = "make"
         self.token = ""
-        self.goals: list[str] = []
         self.tools: list[str] = []
         self.environments: list[str] = []
-        pairs = {"--make": "make", "--goals": "goals", "--tool": "tools", "--environment": "environments",
+        pairs = {"--make": "make", "--tool": "tools", "--environment": "environments",
                  "--token": "token"}
         for flag, value in zip(argv, argv[1:]):
             name = pairs.get(flag)
@@ -181,8 +178,6 @@ class Options:
                 self.make = value or "make"
             elif name == "token":
                 self.token = value
-            elif name == "goals":
-                self.goals = value.split()
             elif name is not None:
                 getattr(self, name).append(value)
 
@@ -671,13 +666,12 @@ def eligible() -> bool:
 
 def forced_reason(options: Options) -> str | None:
     """Why this run is forced, or None: `VERIFY_FORCE` set to anything but empty or `0`, whether it came on make's
-    command line (which make exports to the recipe) or in the environment, or `ci` among the goals. The value is
+    command line (which make exports to the recipe) or in the environment. `make ci` is not read here: it depends on the
+    checks' own target and never reaches this script. The value is
     printed with its control characters escaped and cut short, so it cannot forge a line."""
     value = os.environ.get(FORCE_VARIABLE)
     if value not in (None, "", "0"):
         return FORCE_VARIABLE + "=" + str(value).encode("unicode_escape").decode("ascii")[:80]
-    if FORCING_GOAL in options.goals:
-        return "the goal " + FORCING_GOAL + ", which always runs every check"
     return None
 
 
