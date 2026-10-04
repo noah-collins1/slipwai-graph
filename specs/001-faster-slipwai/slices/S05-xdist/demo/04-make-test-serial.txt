@@ -1,0 +1,57 @@
+$ sed -i s/"parallelSafe": true/"parallelSafe": false/ project.json
+13:  "parallelSafe": false,
+ M project.json
+$ make test
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s05demo/new.5fC5/shop/packages/api-client/src/schema.ts [12ms]
+./scripts/verify --install-only
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s05demo/new.5fC5/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1, xdist-3.8.0
+collected 87 items
+
+apps/service/tests/contract/test_checkpoint_store_memory.py ............ [ 13%]
+                                                                         [ 13%]
+apps/service/tests/contract/test_event_store_memory.py ................. [ 33%]
+...........                                                              [ 45%]
+apps/service/tests/contract/test_projections.py .............            [ 60%]
+apps/service/tests/contract/test_projections_lifespan.py ..              [ 63%]
+apps/service/tests/edge/test_http_app.py ...............                 [ 80%]
+apps/service/tests/test_health.py .                                      [ 81%]
+apps/service/tests/test_logging_setup.py .....                           [ 87%]
+apps/service/tests/test_settings.py .......                              [ 95%]
+apps/service/tests/test_tracing.py ....                                  [100%]
+
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s05demo/new.5fC5/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s05demo/new.5fC5/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 2 warnings in 0.53s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s05demo/new.5fC5/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  15:36:38
+   Duration  942ms (transform 106ms, setup 279ms, import 123ms, tests 277ms, environment 1.48s)
+
+exit=0

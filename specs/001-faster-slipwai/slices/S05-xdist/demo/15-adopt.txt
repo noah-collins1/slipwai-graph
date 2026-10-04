@@ -1,0 +1,56 @@
+$ slipwai adopt --yes --no-init --no-install
+adopted app with slipwai 1.6.0.dev0 — experimental: this path is new, its shape may change in a MINOR, and what surprised you belongs on the public issue tracker
+297 files written under delivery/ and beside it; nothing of the repository's own was written over. One commit by the factory; `git reset --hard HEAD^` undoes all of it.
+  app: . (python; what it is for is not recorded), 2 of 8 targets have a command; the rest are written no's
+  Nobody has looked at it: every fact above is the survey's own reading, recorded `detected`. /ground asks, and `/survey` refreshes what stays the tree's word.
+CI: none found in this repository, so nothing was written; when there is one, have it run `make -f delivery/Makefile verify` on a full clone with the trunk's branch fetched.
+exit=0
+$ grep -rn parallelSafe (record and every file adopt wrote)
+record: project.json
+parallelSafe in record: 0
+$ git diff --stat HEAD -- Makefile pyproject.toml
+On branch main
+nothing to commit, working tree clean
+On branch main
+nothing to commit, working tree clean
+$ slipwai adopt --refresh --yes
+re-surveyed (experimental): what the tree says, against what project.json records
+  refreshed: nothing; every detected fact stands
+
+parallelSafe in record after refresh: 0
+(empty diff = application files unchanged)
+$ git diff --stat $(git rev-list --max-parents=0 HEAD) HEAD -- Makefile pyproject.toml src tests
+(empty = unchanged)
+$ recorded test command
+{
+"schema": 2,
+"generator": {
+"name": "slipwai",
+"generatedWith": "1.6.0.dev0",
+"updatedWith": "1.6.0.dev0"
+},
+"speckitSource": "git+https://github.com/github/spec-kit.git@v1.0.8",
+"origin": "adopted",
+"name": "app",
+"profile": "standard",
+"frontend": "none",
+"target": "existing",
+"capabilities": [
+"continuous-delivery"
+],
+"deployables": {
+"app": {
+"kind": "application",
+"generated": false,
+"path"
+(no -n in delivery scripts above = none)
+{
+ "install": "python3 -m pip install -e .",
+ "typecheck": null,
+ "lint": null,
+ "test": "python3 -m pytest",
+ "integration": null,
+ "adversarial": null,
+ "audit": null,
+ "mutation": null
+}

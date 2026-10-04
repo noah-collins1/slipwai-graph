@@ -1,0 +1,36 @@
+### typescript: diff -r old (8b0d103) new, excluding project.json generator lines
+diff -r -x project.json -x .git /tmp/s05demo/old-backends/p-typescript/docs/gates.md /tmp/s05demo/backends/p-typescript/docs/gates.md
+55a56,59
+> `project.json` carries `"parallelSafe": true`: it runs a Python service's tests across cores. It changes nothing until a Python service is added.
+> 
+> Each runner here needs no mark and runs as it always has. TypeScript: Vitest runs test files in parallel, by file.
+> 
+12a13
+>   "parallelSafe": true,
+### go: diff -r old (8b0d103) new, excluding project.json generator lines
+diff -r -x project.json -x .git /tmp/s05demo/old-backends/p-go/docs/gates.md /tmp/s05demo/backends/p-go/docs/gates.md
+55a56,59
+> `project.json` carries `"parallelSafe": true`: it runs a Python service's tests across cores. It changes nothing until a Python service is added.
+> 
+> Each runner here needs no mark and runs as it always has. Go: `go test` runs packages in parallel, by package.
+> 
+12a13
+>   "parallelSafe": true,
+### java-quarkus: diff -r old (8b0d103) new, excluding project.json generator lines
+diff -r -x project.json -x .git /tmp/s05demo/old-backends/p-java-quarkus/docs/gates.md /tmp/s05demo/backends/p-java-quarkus/docs/gates.md
+55a56,59
+> `project.json` carries `"parallelSafe": true`: it runs a Python service's tests across cores. It changes nothing until a Python service is added.
+> 
+> Each runner here needs no mark and runs as it always has. Java: Maven's Surefire runs tests one at a time, as configured here.
+> 
+12a13
+>   "parallelSafe": true,
+### java-spring: diff -r old (8b0d103) new, excluding project.json generator lines
+diff -r -x project.json -x .git /tmp/s05demo/old-backends/p-java-spring/docs/gates.md /tmp/s05demo/backends/p-java-spring/docs/gates.md
+55a56,59
+> `project.json` carries `"parallelSafe": true`: it runs a Python service's tests across cores. It changes nothing until a Python service is added.
+> 
+> Each runner here needs no mark and runs as it always has. Java: Maven's Surefire runs tests one at a time, as configured here.
+> 
+12a13
+>   "parallelSafe": true,

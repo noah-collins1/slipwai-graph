@@ -1,0 +1,20 @@
+## The catch-up note, followed literally: add the line `"parallelSafe": true` right after the "target" line
+  "frontend": "react-vite",
+  "target": "none",
+  "parallelSafe": true
+  "capabilities": [
+$ python3 -m json.tool project.json
+Expecting ',' delimiter: line 14 column 3 (char 324)
+json exit=1
+$ make test
+collected 87 items
+======================== 87 passed, 2 warnings in 0.53s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+$ make verify (literal line)
+make verify exit=2
+> biome check --error-on-warnings
+json.decoder.JSONDecodeError: Expecting ',' delimiter: line 14 column 3 (char 324)
+make[1]: *** [Makefile:112: check-imports] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make: *** [Makefile:236: verify] Error 2

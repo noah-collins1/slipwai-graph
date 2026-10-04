@@ -1,0 +1,76 @@
+$ docker compose -p s05demo-shop up -d --wait postgres; make migrate; make test-integration
+migrate: applied 003_projection_checkpoints
+migrate: applied 004_event_tags
+migrate: up to date
+./scripts/verify --install-only
+./scripts/verify --integration-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s05demo/new.5fC5/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1, xdist-3.8.0
+collected 47 items
+
+apps/service/tests/integration/test_checkpoint_store_postgres.py ....... [ 14%]
+.......                                                                  [ 29%]
+apps/service/tests/integration/test_event_store_postgres.py ............ [ 55%]
+...................F.                                                    [100%]
+
+=================================== FAILURES ===================================
+_ test_a_conditional_append_is_refused_by_an_event_in_flight_when_the_boundary_was_read _
+
+    def test_a_conditional_append_is_refused_by_an_event_in_flight_when_the_boundary_was_read() -> None:
+        """The same gap as the replay's, on the write path, where it breaks the constraint instead of a
+        view — and this is the case the whole tag boundary rests on.
+    
+        Two appends take 5 and 6; 6 commits first. A decision reading a head of 6 while 5 is still
+        invisible would be guarded from *after* 6 — and 5, the very event that should refuse it, sits
+        below its own boundary where the guard never looks. The append is allowed, the seat is claimed
+        twice, and the log looks perfectly correct afterwards.
+    
+        So a boundary is only ever a settled position: `head` waits for the appends in flight, which
+        makes the read that follows see the event as well. The claim below is therefore refused, and it
+        is refused by the *condition* rather than by chance.
+        """
+        slow, fast, decider = (
+            create_postgres_event_store(_connect(), _tags),
+            create_postgres_event_store(_connect(), _tags),
+            create_postgres_event_store(_connect(), _tags),
+        )
+        seat = f"seat-{uuid.uuid4()}"
+        query = TagQuery((TagFilter(tags=(f"seat:{seat}",)),))
+    
+        decided: dict[str, object] = {}
+        read = threading.Event()
+    
+        def decide() -> None:
+            # A decision, drawn the way every DCB caller draws one: pin the boundary, then read it.
+            boundary = decider.head()
+            decided["boundary"] = boundary
+            decided["events"] = decider.read_tagged(query, until=boundary).events
+            read.set()
+    
+        with slow.unit_of_work():
+            first = f"claim-{seat}-1"
+            slow.append(first, NO_STREAM, [_event(first, "SeatClaimed", {"seatId": seat})])
+            # Its position is taken; its commit is not. This one takes the next position and commits.
+            fast.append(f"other-{uuid.uuid4()}", NO_STREAM, [_event("other", "Unrelated")])
+    
+            threading.Thread(target=decide, daemon=True).start()
+            assert not read.wait(timeout=1.0), (
+                f"a boundary was drawn while an append was in flight, at {decided.get('boundary')}"
+            )
+    
+        assert read.wait(timeout=10), "a boundary was never drawn after the append committed"
+        # The decision now knows about the claim, which is the whole point of waiting.
+        found = decided["events"]
+>       assert isinstance(found, list)
+E       AssertionError: assert False
+E        +  where False = isinstance((CommittedEvent(type='SeatClaimed', schema_version=1, stream_id='claim-seat-80ff74f4-09d5-4a21-b010-3963470b543e-1', p...906-e32cd257e718'), version=0, global_position=58, recorded_at='2026-10-04T20:36:14.468832+00:00', causation_id=None),), list)
+
+apps/service/tests/integration/test_event_store_postgres.py:286: AssertionError
+=========================== short test summary info ============================
+FAILED apps/service/tests/integration/test_event_store_postgres.py::test_a_conditional_append_is_refused_by_an_event_in_flight_when_the_boundary_was_read
+========================= 1 failed, 46 passed in 2.86s =========================
+make: *** [Makefile:222: test-integration] Error 1
+exit=2

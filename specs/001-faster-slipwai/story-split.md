@@ -114,6 +114,8 @@ that cannot delegate takes the earliest ready slice in split order and names the
 
 ## Parking Lot
 
+- **Seen at S05's demo (older than S05):** a generated project's Postgres-backed integration test `test_a_conditional_append_is_refused_by_an_event_in_flight_when_the_boundary_was_read` fails against a real Postgres — a tuple comes back where a list is expected — with or without xdist, and the same in a project made at `8b0d103` (`slices/S05-xdist/demo/18-integration-before-slice.txt`). A candidate PATCH slice for the pool. And: on a `slice/*` branch `check-slice-scope` refuses an edit to `project.json`, so the one-line opt-out lands on the trunk first — the gates page does not say so.
+
 - **Seen at S05's second converge pass (older than S05):** in an adopted repository, `slipwai add-service` writes the generated service's verify script as `delivery/scripts/verify`, while `delivery/Makefile` calls `./scripts/verify`, so `make -f delivery/Makefile test` fails with error 127; the factory at `8b0d103` does the same. A candidate slice for the pool, behind the PRD's slices (D39); it also keeps the gates page's sentence about the parallel mark from being true there.
 
 - **FR-021 is every slice's.** Each user-visible slice adds its `changelog.d/` fragment in the commit that makes the

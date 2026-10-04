@@ -1,0 +1,24 @@
+$ grep -n -i -E "parallel|xdist|vitest|core" docs/gates.md
+58:**Tests across cores.** A Python service's gate runs its tests across cores where `project.json` says it may: `"parallelSafe": true`,
+59:which every new project has, adds `-n auto --maxprocesses 4` (`pytest-xdist`, capped at four workers) to the gate's `pytest` in `make test`,
+63:tell which copy is meant: add the line `"parallelSafe": true` once, right after the `"target"` line, where `generate` writes it. The gate reads the mark each time it runs, so a change takes effect on the next run with nothing regenerated. Set it `false`
+64:when the tests share a file, a port, a database or module-level state, which a second worker would trip over. The mark needs `pytest-xdist`
+
+$ grep -n -E "addopts|xdist|pytest" apps/service/pyproject.toml
+27:  "pytest-xdist==3.8.0",
+28:  "pytest==9.1.1",
+38:[tool.pytest.ini_options]
+39:addopts = "--strict-config --strict-markers"
+$ grep -n -A1 "name = \"pytest-xdist\"" apps/service/uv.lock
+307:    { name = "pytest-xdist" },
+308-    { name = "ruff" },
+--
+328:    { name = "pytest-xdist", specifier = "==3.8.0" },
+329-    { name = "ruff", specifier = "==0.16.3" },
+--
+1014:name = "pytest-xdist"
+1015-version = "3.8.0"
+$ uv sync --project apps/service --locked
+Resolved 53 packages in 0.91ms
+Checked 50 packages in 0.33ms
+exit=0

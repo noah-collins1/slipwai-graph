@@ -1,0 +1,3 @@
+parallel outcomes: 88; serial outcomes: 88
+$ diff (sorted -rA outcome lines, parallel vs serial)
+identical

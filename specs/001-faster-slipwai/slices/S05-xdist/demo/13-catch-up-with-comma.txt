@@ -1,0 +1,17 @@
+## The same line with the comma JSON needs mid-object: "parallelSafe": true,
+  "frontend": "react-vite",
+  "target": "none",
+  "parallelSafe": true,
+  "capabilities": [
+$ make test
+created: 4/4 workers
+4 workers [87 items]
+======================== 87 passed, 8 warnings in 0.96s ========================
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+$ make verify
+make verify exit=0
+4 workers [87 items]
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed

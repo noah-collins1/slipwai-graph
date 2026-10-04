@@ -1,0 +1,19 @@
+$ grep -n parallelSafe project.json
+12-  "target": "none",
+13:  "parallelSafe": true,
+$ head project.json
+{
+  "schema": 2,
+  "generator": {
+    "name": "slipwai",
+    "generatedWith": "1.6.0.dev0",
+    "updatedWith": "1.6.0.dev0"
+  },
+  "speckitSource": "git+https://github.com/github/spec-kit.git@v1.0.8",
+  "name": "shop",
+  "profile": "event-modelling",
+  "frontend": "react-vite",
+  "target": "none",
+  "parallelSafe": true,
+  "capabilities": [
+    "continuous-delivery",

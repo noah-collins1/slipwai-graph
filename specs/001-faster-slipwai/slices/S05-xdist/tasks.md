@@ -507,6 +507,22 @@ checkout, and on a scratch repository `adopt`ed by this checkout. No production 
 
 **Verify:** `make test TESTS="test_xdist_page test_xdist_gate test_changelog"`, then `make lint typecheck check-structure`.
 
+### T021 — `HIGH` — The line the catch-up note and the gates page tell a person to add breaks `project.json` (demo 1, `implementation`)
+
+- [ ] **Demo feedback, before demo 2.** Demo 1 followed the fragment's **Catch-up.** paragraph literally: `"parallelSafe": true`
+  pasted after the `"target"` line, as the note and the page at `src/slipwai/project/parallel_tests.py` say, leaves
+  `project.json` invalid (the line needs its trailing comma there) — the gate goes serial silently and `make verify`
+  fails in `check-imports` (`demo/12-catch-up-literal.txt`). RED first in `tests/test_xdist_page.py`: the line both the
+  note and the page name, pasted after a generated project's `"target"` line exactly as written, leaves JSON that
+  parses with `parallelSafe` true. Sweep: every place a person is told to type or edit the mark — the page's opt-in,
+  its `false` sentence, the note — held the same way. Also, from the demo: the page carries D103's rule 6 sentence
+  (on a small suite the workers cost a fraction of a second; they pay once the suite takes several seconds), and the
+  fragment carries AC-S05-13's measurement from `demo/17-timings.tsv` (medians of three on a 12-core i5-12400, a fresh
+  Python starter, 87 tests: `./scripts/verify --test-only` 1.36 s with the mark, 0.99 s without; `make verify` 3.70 s
+  and 3.30 s; `make -j verify` 2.11 s and 1.72 s), as S04's fragment carries its own.
+
+**Verify:** `make test TESTS="test_xdist_page test_xdist_gate test_changelog"`, then `make lint typecheck check-structure`.
+
 ## Convergence
 
 **Not converged — pass 1 of 2 (cruise iteration 14, `drive-converge`, host model, fresh context): two `HIGH` open, T014

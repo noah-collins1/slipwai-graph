@@ -1,0 +1,31 @@
+# AC-S05-13 measurement — 2026-10-04T20:42:00Z
+# machine: 12th Gen Intel(R) Core(TM) i5-12400, nproc 12, Linux 7.0.0-31-generic
+# project: ./slipwai generate shop --backend python --frontend none (event-modelling, FastAPI, Postgres store, target none), warm, branch demo-measure, no CI marker; 87 tests; pytest 9.1.1, pytest-xdist 3.8.0, Python 3.14.4
+# commands: ./scripts/verify --test-only ; VERIFY_FORCE=1 make verify ; VERIFY_FORCE=1 make -j verify  (wall seconds, exit code); script: 17-measure.sh
+# step	mark	run	seconds	exit
+test-only	true	1	1.35	0
+make verify	true	1	3.73	0
+make -j verify	true	1	2.11	0
+test-only	false	1	1.01	0
+make verify	false	1	3.25	0
+make -j verify	false	1	1.75	0
+test-only	true	2	1.36	0
+make verify	true	2	3.62	0
+make -j verify	true	2	2.11	0
+test-only	false	2	0.99	0
+make verify	false	2	3.30	0
+make -j verify	false	2	1.67	0
+test-only	true	3	1.36	0
+make verify	true	3	3.70	0
+make -j verify	true	3	2.08	0
+test-only	false	3	0.97	0
+make verify	false	3	3.30	0
+make -j verify	false	3	1.72	0
+
+# pytest's own lines per test-only run:
+  # created: 4/4 workers; ======================== 87 passed, 8 warnings in 0.98s ========================
+  # serial; ======================== 87 passed, 2 warnings in 0.53s ========================
+  # created: 4/4 workers; ======================== 87 passed, 8 warnings in 0.97s ========================
+  # serial; ======================== 87 passed, 2 warnings in 0.54s ========================
+  # created: 4/4 workers; ======================== 87 passed, 8 warnings in 0.97s ========================
+  # serial; ======================== 87 passed, 2 warnings in 0.52s ========================

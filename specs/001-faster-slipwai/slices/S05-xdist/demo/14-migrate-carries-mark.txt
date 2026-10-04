@@ -1,0 +1,6 @@
+### older project with "parallelSafe": false committed before migrate
+migrated shop to slipwai 1.6.0.dev0: 5 files changed, 50 insertions(+), 3 deletions(-)
+after migrate: 1 line(s):   "parallelSafe": false,
+### older project with "parallelSafe": true committed before migrate
+migrated shop to slipwai 1.6.0.dev0: 5 files changed, 50 insertions(+), 3 deletions(-)
+after migrate: 1 line(s):   "parallelSafe": true,

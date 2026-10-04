@@ -1,0 +1,64 @@
+$ make test
+npm ci
+
+added 154 packages, and audited 157 packages in 2s
+
+33 packages are looking for funding
+  run `npm fund` for details
+
+6 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s05demo/new.5fC5/shop/packages/api-client/src/schema.ts [12ms]
+./scripts/verify --install-only
+./scripts/verify --test-only --synced
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/s05demo/new.5fC5/shop/apps/service
+configfile: pyproject.toml
+plugins: anyio-4.15.1, xdist-3.8.0
+created: 4/4 workers
+4 workers [87 items]
+
+........................................................................ [ 82%]
+...............                                                          [100%]
+=============================== warnings summary ===============================
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  /tmp/s05demo/new.5fC5/shop/apps/service/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53
+  /tmp/s05demo/new.5fC5/shop/apps/service/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 87 passed, 8 warnings in 1.41s ========================
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s05demo/new.5fC5/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  15:35:51
+   Duration  937ms (transform 105ms, setup 272ms, import 132ms, tests 274ms, environment 1.49s)
+
+exit=0
