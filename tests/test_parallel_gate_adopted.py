@@ -98,6 +98,13 @@ class AdoptedMakefileTest(FactoryTestCase):
                 makefile = project_files("held", "event-modelling", "none", apps)["Makefile"]
                 self.assertNotIn(".NOTPARALLEL", makefile)
 
+    def test_a_go_and_a_java_starter_carry_none_either(self) -> None:
+        """HOLD (AC-S04-25, G8): the same for a Go and a Java project (teeth: emit the line always)."""
+        for backend in ("go", "java-quarkus", "java-spring"):
+            with self.subTest(backend=backend):
+                apps = default_apps(backend, "none", Selection({"http": "none"}))
+                self.assertNotIn(".NOTPARALLEL", project_files("held", "standard", "none", apps)["Makefile"])
+
 
 class AdoptedRunTest(FactoryTestCase):
     def setUp(self) -> None:
@@ -125,6 +132,19 @@ class AdoptedRunTest(FactoryTestCase):
         done = self.make(self.repo, log, 40, "-j", "verify")
         self.assertEqual(done.returncode, 0, done.stdout[-3000:] + done.stderr[-3000:])
         self.assert_serial(log)
+
+    def test_the_three_spellings_of_the_delivery_makefile_are_each_serial_under_j(self) -> None:
+        """HOLD (AC-S04-26, G5): `delivery/Makefile`, `./delivery/Makefile` and the absolute path each start the gate
+        serially. Teeth: the guard compares `$(firstword $(MAKEFILE_LIST))` with the one spelling."""
+        for number, spelling in enumerate(("delivery/Makefile", "./delivery/Makefile", None)):
+            with self.subTest(spelling=spelling or "absolute"):
+                repo = self.scratch / f"spelled{number}"
+                shutil.copytree(self.repo, repo, symlinks=True)
+                log = self.scratch / f"spelled{number}.log"
+                env = gate_environment(self.scratch / "bin", log, {"STANDIN_TICKS": "40", "RATCHET_TIGHTEN": None})
+                done = run_make(repo, env, "-f", spelling or str(repo / "delivery/Makefile"), "-j", "verify")
+                self.assertEqual(done.returncode, 0, done.stdout[-3000:] + done.stderr[-3000:])
+                self.assert_serial(log)
 
     def test_ratchet_tighten_runs_its_three_targets_one_after_another(self) -> None:
         """`ratchet-tighten`'s sub-make reads the same Makefile, so `-j` does not make its three targets overlap."""

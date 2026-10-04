@@ -71,6 +71,13 @@ class TwoServicesTest(ParallelGateTestCase):
         self.assert_passed(self.make("verify"))
         self.assertEqual(sorted(synced_projects(self.log)), ["apps/second", "apps/service"], sync_lines(self.log))
 
+    def test_e3_two_services_under_j_sync_once_each_and_before_any_run(self) -> None:
+        """HOLD (AC-S04-29, G7): `make -j verify` on two services leaves one sync line per `--project`, all before the
+        first run line. Teeth: drop `lint` and `typecheck` from the sync's dependents."""
+        self.assert_passed(self.make("-j", "verify"))
+        self.assertEqual(sorted(synced_projects(self.log)), ["apps/second", "apps/service"], sync_lines(self.log))
+        self.assertTrue(syncs_precede_runs(self.log), log_text(self.log))
+
 
 if __name__ == "__main__":
     unittest.main()

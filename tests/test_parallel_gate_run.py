@@ -11,6 +11,7 @@ import sys
 import unittest
 
 from parallel_gate import ParallelGateTestCase, barrier_events, log_text, run_lines, sync_lines
+from test_parallel_gate_first import OLDER
 
 sys.dont_write_bytecode = True
 
@@ -102,6 +103,23 @@ class FailingRunTest(ParallelGateTestCase):
                 self.forget_log()
                 _, lines = self.make_merged(*flags, "verify", env=FORCE)
                 self.assertFalse([line for line in lines if "did not pass" in line], "\n".join(lines))
+
+    def test_e6_a_failed_sync_and_a_failed_check_python_end_on_the_same_line(self) -> None:
+        """HOLD (AC-S04-9, G6): the two failures that stop the gate before any check ends on the gate's own line too.
+        Teeth: take the `did not pass` echo out of the `verify` recipe."""
+        older = self.bin.parent / "older"
+        older.mkdir()
+        (older / "sitecustomize.py").write_text(OLDER, encoding="utf-8")
+        states = {"a failed sync": {"STANDIN_SYNC_FAIL": "1"}, "a failed check-python": {"PYTHONPATH": str(older)}}
+        for state, extra in states.items():
+            for flags in ((), ("-j",)):
+                with self.subTest(state=state, flags=flags):
+                    self.forget_log()
+                    code, lines = self.make_merged(*flags, "verify", env={**FORCE, **extra})
+                    self.assertNotEqual(code, 0, "\n".join(lines))
+                    last, after = gate_line(lines)
+                    self.assertRegex(last, FAILED, "\n".join(lines))
+                    self.assertTrue(after and any("***" in line for line in lines), "\n".join(lines))
 
     def test_e6_a_script_of_the_project_failing_ends_on_the_same_line(self) -> None:
         """AC-S04-9 for a `python3` check that fails, serial and `-j`."""

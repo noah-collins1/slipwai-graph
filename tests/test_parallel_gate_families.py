@@ -175,6 +175,22 @@ class SerialOrderTest(FamiliesTestCase):
         self.assertEqual(self.kinds("go"), ["typecheck", "lint"])
 
 
+class OrderIsPrerequisiteTest(FamiliesTestCase):
+    """HOLD (AC-S04-16, G8): in a Go and a Java starter the order the gate relies on is a prerequisite, never `.WAIT`.
+    Teeth: write the Go rule as `.WAIT`, or take the Java `test: typecheck` line out."""
+
+    def test_the_orders_are_prerequisites(self) -> None:
+        chains = {"go": [("typecheck", "lint"), ("test", "lint")],
+                  "quarkus": [("typecheck", "lint"), ("test", "typecheck")]}
+        for name, pairs in chains.items():
+            with self.subTest(shape=name):
+                makefile = (shape(name) / "Makefile").read_text(encoding="utf-8")
+                self.assertNotIn(".WAIT", makefile)
+                rules = makefile_rules(makefile)
+                for target, before in pairs:
+                    self.assertIn(before, rules[target][0], (name, target))
+
+
 class StandaloneTest(FamiliesTestCase):
     def test_a_target_typed_alone_starts_only_its_own_commands(self) -> None:
         """e3, a hold: `make test` starts no `lint` command and `make lint` no `typecheck`, in every family; read from
