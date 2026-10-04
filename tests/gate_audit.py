@@ -34,8 +34,9 @@ class Audited:
 
     def __init__(self, repo: Path, script: str, env: dict[str, str] | None = None) -> None:
         record = repo.parent / f"audit-{Path(script).stem}.json"
+        # `env`, where given, is the whole environment: a caller that cleared the CI markers must not get them back.
         self.result = subprocess.run(["python3", "-c", WRAPPER, script, str(record)], cwd=repo, text=True,
-                                     capture_output=True, env={**os.environ, **(env or {})})
+                                     capture_output=True, env=env)
         events = json.loads(record.read_text()) if record.is_file() else []
         record.unlink(missing_ok=True)
         root = repo.resolve()
