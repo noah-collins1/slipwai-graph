@@ -187,6 +187,16 @@ class TheFragmentIsTrueAndStandsAloneTest(FactoryTestCase):
         self.assertNotIn("First draft", body)
         self.assertNotIn("when that part lands", body)
 
+    def test_the_body_says_the_migration_of_projects_made_before_the_slice_was_run_by_hand_and_the_catch_up_does_not(
+        self,
+    ) -> None:
+        """AC-S04-56, -59 (D96, G15, G16): the sentence is in the run-and-read paragraph, never the catch-up."""
+        body = squashed(OWED.sub("", FRAGMENT.read_text(encoding="utf-8")))
+        self.assertIn("was run by hand against a factory archived at the commit before it", body)
+        self.assertIn("generated, adopted, and with the layout moved", body)
+        self.assertIn("a shallow CI clone", body)
+        self.assertNotIn("run by hand", catch_up())
+
     def test_the_body_says_which_toolchains_ran_and_leaves_out_the_measurement_the_demo_writes(self) -> None:
         body = squashed(OWED.sub("", FRAGMENT.read_text(encoding="utf-8")))
         for family in ("Go", "TypeScript", "Java (Quarkus)", "Python", "Spring", "GNU Make 3.81"):

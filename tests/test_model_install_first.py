@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 
-from stamp_fixture import CLOSING, REUSE_PREFIX
+from stamp_fixture import BRANCH, CLOSING, REUSE_PREFIX, git
 from test_model_install import PREFIX, ModelCase
 
 sys.dont_write_bytecode = True
@@ -66,3 +66,22 @@ class FirstGateTest(ModelCase):
         third = self.make("verify")
         self.assert_passed(third)
         self.assertEqual(len(self.reused(third)), 1, third.stdout)
+
+
+class TypeScriptFirstGateTest(FirstGateTest):
+    """AC-S04-54 and -64 hold on a TypeScript project too (D96, G17): every example above, with its toolchain real.
+
+    A hold: the behaviour was there, so none of these is red for its own reason first. Its teeth were shown once by
+    replacing the recipe's `@touch` of the marker in `model_targets.py` with `@true`, which failed both examples here
+    and in the Python class, and restoring the file.
+    """
+
+    LANGUAGE = "typescript"
+    VENV = False
+
+    def setUp(self) -> None:
+        super().setUp()
+        # The starter is on the trunk, where no pass is recorded; a developer's branch is where these examples live.
+        git(self.repo, "checkout", "-q", "-b", BRANCH)
+        for key, value in (("user.name", "t"), ("user.email", "t@local"), ("commit.gpgsign", "false")):
+            git(self.repo, "config", key, value)
