@@ -591,8 +591,9 @@ not a project devDependency, so `npm install` stays fast and `make check-model` 
 
 **`check-drawio` needs Node and no browser.** It runs the same TypeScript pipeline `make model` does, minus
 the rendering, so `make verify` in an event-profile project installs `scripts/event-model`'s three
-dependencies on first run — about a second once the tree is there — whichever language the services are
-written in. CI is given a Node for it where the project has none of its own.
+dependencies from its committed lock, with `npm ci`, and only when a manifest is newer than what is
+installed — about a second on a fresh clone — whichever language the services are written in. CI is
+given a Node for it where the project has none of its own.
 
 **That download does not exist on linux/arm64.** Google ships no Chrome build for it, so on an ARM
 sandbox or container `make model` fails at the browser fetch. Nothing gates on this — `check-model` needs

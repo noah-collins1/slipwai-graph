@@ -6,8 +6,10 @@ manifest alone — is a fact of the commit that added it; what is held here is w
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -51,6 +53,52 @@ class ModelLockTest(unittest.TestCase):
         self.assertGreaterEqual(len(platforms), 20)
         for platform in platforms:
             self.assertIn(f"node_modules/{platform}", packages, platform)
+
+
+class WhatTheTextsSayTest(unittest.TestCase):
+    def test_e16_neither_the_readme_nor_the_manifest_says_the_gate_runs_npm_install_or_that_make_model_installs(
+        self,
+    ) -> None:
+        """AC-S04-79 (D96, G13): both say the tooling installs from its committed lock."""
+        repo = shape("db")
+        readme = " ".join((repo / "docs/event-model/README.md").read_text(encoding="utf-8").split())
+        description = read(repo / MANIFEST)["description"]
+        for text in (readme, description):
+            self.assertNotIn("Installed by `make model`", text)
+            self.assertNotIn("on first run", text)
+            self.assertNotIn("installs the renderer", text)
+        self.assertIn("installs `scripts/event-model`'s three dependencies from its committed lock", readme)
+        self.assertIn("only when a manifest is newer than what is installed", readme)
+        self.assertIn("Installed from its committed lock", description)
+
+
+class DescriptionLeavesTheLockTest(unittest.TestCase):
+    def test_e17_npm_ci_accepts_the_shipped_lock_and_a_regenerated_lock_is_the_shipped_one(self) -> None:
+        """AC-S04-79: the description is not in the lock, so changing it changes nothing npm checks (real npm)."""
+        for tool in ("npm", "node"):
+            if shutil.which(tool) is None:
+                self.skipTest(f"{tool} is not installed here")
+        repo = shape("db")
+        with tempfile.TemporaryDirectory(prefix="model-lock-") as directory:
+            work = Path(directory)
+            for name in ("package.json", "package-lock.json"):
+                shutil.copy(repo / "scripts/event-model" / name, work / name)
+            ping = subprocess.run(["npm", "ping", "--registry", "https://registry.npmjs.org/"], capture_output=True,
+                                  timeout=60)
+            if ping.returncode != 0:
+                self.skipTest("the npm registry cannot be reached from here")
+            shipped = (work / "package-lock.json").read_bytes()
+            quiet = ["--no-audit", "--no-fund", "--loglevel=error"]
+            done = subprocess.run(["npm", "ci", *quiet], cwd=work, text=True, capture_output=True, timeout=180)
+            self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+            self.assertEqual((work / "package-lock.json").read_bytes(), shipped)
+            (work / "package-lock.json").unlink()
+            shutil.rmtree(work / "node_modules")
+            done = subprocess.run(["npm", "install", "--package-lock-only", *quiet], cwd=work, text=True,
+                                  capture_output=True, timeout=180)
+            self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+            self.assertEqual((work / "package-lock.json").read_bytes(), shipped)
+            self.assertNotIn("description", read(work / "package-lock.json")["packages"][""])
 
 
 if __name__ == "__main__":
