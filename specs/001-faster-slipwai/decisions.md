@@ -1206,3 +1206,93 @@
 - **Confidence:** high · **Would reverse if:** a tool's version answer is found to vary from run to run with nothing changed (a timestamp, a random path), so that no stamp is ever reused on a machine; the key then takes the lines that name a version.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S03-15)
 - **Status:** standing
+
+## D81 — What does each open finding on S03 become before the demo (T021–T023, T027–T030, G1–G8): code now, a stated reading in the criterion, or a line for a later slice or the cruise report?
+- **Stage:** gaps (after converge) · **Slice:** S03-verify-stamp · **When:** 2026-10-04T06:35:00Z · **Iteration:** 11
+- **Question:** The slice converged after three passes with seven `LOW` tasks open (T021, T022, T023, T027, T028, T029, T030), and the after-converge gaps pass returned G1–G8, none above `MEDIUM`.
+  - G1: an event-modelling project's gate launches `npm` and `node`, and the tool list asks them only for a TypeScript backend or a frontend.
+  - G2: the Maven wrapper runs `JAVA_HOME`'s JVM where that is set, and the key asks the `java` on `PATH`.
+  - G3: a trunk named neither `main` nor `master`, with no `ci.branch` recorded, reads and writes a stamp, and no page says how the trunk is recognised.
+  - G4: on Windows `npm` is `npm.cmd`, which a launch without a shell is believed not to find; not run.
+  - G5, G6: four quickstart steps are worded so the hand will misread them.
+  - G7: what `S04-parallel-gate` inherits is written nowhere.
+  - G8: two clauses of AC-S03-29 have no example that would fail.
+  - Which become code before the demo, which a stated reading, which a line? Is G3's `ci.branch` a catch-up note, and does it move the level?
+- **Options:**
+  - (a) **The stage's recommendation, finding by finding.**
+    - Code: G1, G2 (with `JAVA_HOME` keyed), G4, T021, T028 with G3.
+    - A stated reading: T027, T029, T030, and G8's Make clause.
+    - A line: G7, T022, T023, and G8's starters clause.
+  - (b) (a) with departures wherever the constitution or a standing entry does not allow the recommendation.
+  - (c) Park everything behind the PRD's slices.
+- **Decision:** (b). I take the stage's recommendation except in four places: T030, G4, G2's keying and T022. No finding needs a person before the demo.
+  1. **Code before the demo, each through a failing example first.**
+     - **G1, taken.** The rule in AC-S03-14 becomes *every tool the machine supplies that a recipe of the gate launches*.
+       - The model tooling's `node` and `npm` join the list wherever the gate has the model's checks, as a row of the one table, not a special case in the recipe.
+       - A test holds it over the generated `Makefile` of every shape the scan already generates. The command each recipe line reachable from the gate launches must be on that project's tool list, a file of the project, or named in the test with the reason it is pinned.
+       - This is D75's own reversal condition met (*a machine-supplied tool the gate launches that the table does not name*), so nothing is overridden.
+     - **G2, taken in part.** The JVM asked is the one the wrapper would run: `JAVA_HOME`'s where that variable is non-empty, else the `java` on `PATH`.
+       - Where `JAVA_HOME` is set and its JVM cannot be launched, that is AC-S03-17's case: no stamp, the full gate, one line.
+       - **Departure:** `JAVA_HOME`'s value is not keyed. It is the path of an executable's directory, and AC-S03-15 keeps every such path out of the key and the stamp. The JVM's whole answer already moves the key when the JDK changes. A moved directory holding the same JDK is not a change the gate can see.
+       - The closed-list test stops saying the wrapper and each backend's verify script *hold nothing*. Each shell script the scan cannot read is named with the variables that select which executable runs. Such a variable either decides which tool is asked or fails the test.
+       - A variable that only configures a tool (`MAVEN_OPTS` and its kind) stays in AC-S03-31's residual, which the page already carries.
+     - **T021, taken.** A line says what happened and what to do.
+       - The moved-key line names which part of the key moved. Where it is the files, it says a check may have written one, that `git status` shows it, and that the next run records. It never implies an edit by the person.
+       - No path is found by keeping a list of files between the two halves of a run: that would persist paths.
+       - A stamp path that is a directory is called a directory.
+       - T021's third item is G2's.
+     - **T028 with G3, taken.** The page a project gets says three things, and the ships test holds each.
+       - *When to force:* a check answers from one of the five things a stamp cannot see.
+       - *How the trunk is recognised:* the branch `project.json` records as `ci.branch`, else `main`, else `master`.
+       - *What a team with another trunk name does:* record `ci.branch`; until then that branch is treated as any other and reuses a stamp.
+       - The page stops saying *everything the checks answer from*, and says *non-empty* where it said *set* of a CI marker.
+     - **T030, departure: code, not a reading.** The constitution's persisted-data MUST forbids file paths, host names and process ids in what is stored. T030 shows the pattern letting a Windows path with a space, a `~user` path and a path after a comma through. A sentence in the criterion cannot make a MUST hold.
+       - The stamp stores, per tool, its name, the version-shaped words of its answer (digits and dots with a short suffix; nothing else is admitted) and the digest of the whole answer. Where no such word is found, it stores the digest alone.
+       - The key is unchanged: it still takes the whole answer (D80).
+       - AC-S03-18 says what the field holds.
+       - A test plants each of T030's lines and a host name, and finds none of them in any file under the stamp's directory.
+  2. **A stated reading in the criterion, with one example each that pins what the code already does.**
+     - **T029, taken.** A run that both tightens the ratchet and ignores errors touches nothing: the ratchet rule is asked first and wins (D80).
+     - **T027, taken.** AC-S03-26 names, beside git that cannot answer, the two further runs that leave a stamp for a key that passed.
+       - One is a run where the trunk cannot be resolved for a reason that is not git's.
+       - The other is a run where no `python3` able to run the stamp script is on `PATH`.
+       - Neither can tell whether it is on the trunk, where nothing may be removed (D74 R5). So neither removes anything.
+     - **G8, the Make 3.81 clause, taken.** AC-S03-29 says the recipe uses nothing newer than GNU Make 3.81 documents, read and not run. `unavailable: a run of the generated gate under GNU Make 3.81` (the stock make on macOS). It does not hold the demo; it is a named line in the cruise report.
+  3. **Departure on G4: no code now.**
+     - On every platform this run can reach, resolving the tool before launching it changes no behaviour. No example can be seen failing for its own reason, and the constitution refuses both a test written after the code and a RED made up for a change that preserves behaviour.
+     - `unavailable: a run on Windows showing what a TypeScript, frontend or event-modelling project's gate prints there.`
+     - It becomes a Parking Lot line beside the Windows edge case, fixed where the matrix has a Windows run to show the RED.
+     - The slice's research names the assumption.
+     - The cruise report says that on Windows such a project is believed to run the full gate every time with a line that is untrue. G1 widens that to every event-modelling project. It is slower there, never a false green.
+  4. **Departure on T022: to the adversary, not to a later slice.** The host names *a project in a subdirectory of its repository* as a seam of this slice's adversary pass: a sibling's edit, committed and uncommitted, against every check that asks git a question.
+     - Shown to move a verdict, it is fixed in this slice by D63's rule.
+     - Shown not to, the adversary log says so and T022 closes.
+     - A possible false green is not left unexamined behind the PRD's slices (priority 5).
+  5. **Lines.**
+     - **G7, taken.** One Parking Lot line for `S04-parallel-gate`.
+       - *In the order and with the output it had* is what `-j` breaks, so `S04` re-words that clause.
+       - The checks hang on the target the stamp calls.
+       - A check that writes a covered file makes a pass unrecorded. The model tooling's first run writes an untracked lock, and Go's first run writes `go.work.sum`; `S04`'s lock-matching install is where that is settled.
+     - **T023, taken.** The script is not split before the demo unless the structure gate refuses it on the final tip. `S04` splits it along the four parts T023 names, as the first slice to change it next.
+     - **G8, the starters clause, taken.** The constitution's MUST is met as worded: the matrix runs every starter's full gate through the new recipe. What is unproven is the reuse path with each real toolchain.
+       - The demo runs the Python starter of AC-S03-20.
+       - The cruise report names the TypeScript, both Java and the frontend starters as not run stamped. Go was seen recording and reusing in pass 1.
+     - **G5, G6.** These are the host's quickstart corrections. I see no product question in them.
+  6. **G3: catch-up and level.**
+     - Yes, it is a catch-up line. The fragment's *Catch-up* keeps *nothing is asked*, with one exception stated: a repository whose trunk is named neither `main` nor `master` and whose `project.json` records no `ci.branch` records it, so that its trunk always runs the full gate.
+     - AC-S03-30 is reworded to match.
+     - The level stays MINOR. No answer a project gave stops being answerable, and nothing is removed or renamed. `VERSION` stays `1.6.0.dev0`.
+  7. **No person is needed, and one residual is theirs to review.** D74 R2 already defines the trunk by D30 and D33, and this entry adds words, not a rule. On an unrecorded trunk every new commit still moves the key and runs the full gate; only an unchanged tree is reused. The cruise report lists that for a person.
+  - **Not an ADR.** Every part reverses by a refactor. The stamp's stored field changes before any release carries it, and a stamp lacking a field is no stamp, so the next run is a full one.
+- **Why:** The developer has to be able to believe a green that came back in under a second.
+  - G1 and G2 are the two places where the key asked the wrong tool or no tool. A changed Node or JDK could leave a reused green standing for a gate that would fail, which priority 5 calls wrong and D75 said would reverse it.
+  - T021, T028 and G3 are each one line a person acts on. A team on `develop` cannot record what no page tells them is read.
+  - T030 and G4 depart for the same reason from opposite sides: the constitution decides both. One MUST cannot be met by wording. The other fix cannot be shown failing here, and a line that claims Windows is fixed without a run would be the kind of statement this slice exists to stop.
+  - The readings (T027, T029) each leave a stamp only for a key every check passed on, which is D79's and D80's argument unchanged.
+  - Nothing here changes what the trunk or CI checks.
+  - **Read, not run:** the wrapper's lines 46–54, the tool table in `src/slipwai/backends.py`, the model tooling's recipes in `src/slipwai/project/model_targets.py`, `ask()` and the keyed variables in `assets/toolkit/scripts/verify-stamp.py`, and the page in `src/slipwai/project/docs.py`.
+  - **Not verified:** no reproduction was run by me. The Windows behaviour is from memory. The PRD artifact was not consulted. This tree has no code index, so text search answered every symbol question.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** a person says a trunk that `project.json` does not record must never reuse a stamp. Recognising the trunk then needs a second source beside D30's, which changes what a merge root is taken to be and is theirs alone to say; item 6's catch-up line then goes.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S03's criteria on the tool set, the JVM asked, what the stamp stores of a tool, the runs that leave a stamp, the ratchet with ignore-errors, the page's sentences, the Make clause as an assumption, and what is asked of an existing project); `specs/001-faster-slipwai/slices/S03-verify-stamp/tasks.md` (the tasks for item 1, the examples for item 2, and the open tasks closed or placed); `specs/001-faster-slipwai/story-split.md` (the Parking Lot: Windows, what the parallel gate inherits, the script's split); `specs/001-faster-slipwai/slices/S03-verify-stamp/research.md` (the Windows assumption); `specs/001-faster-slipwai/slices/S03-verify-stamp/quickstart.md` (the host's corrections); the adversary's brief (the subdirectory seam); the cruise report when it is written (Make 3.81, Windows, the starters not run stamped, the unrecorded trunk)
+- **Status:** standing

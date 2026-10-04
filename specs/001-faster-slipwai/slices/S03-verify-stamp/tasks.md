@@ -646,7 +646,7 @@ calls.
 
 #### T021 — `LOW` — Lines that say something other than what happened
 
-- [ ] Evidence: (a) a Go project generated here (`--backend go --frontend none`), branch `topic`, real toolchain: the first
+- [x] *(closed by T034 and T032 (D81))* Evidence: (a) a Go project generated here (`--backend go --frontend none`), branch `topic`, real toolchain: the first
   `make verify` ended `verify: all gates passed` / `verify: this pass was not recorded — the tree changed while the checks
   ran`, and `git status --short` showed `?? go.work.sum`, which the gate's own `go` wrote; the second run recorded and the
   third was reused. Nobody changed the tree. AC-S03-11 is met; the line sends a person looking for an edit they did not
@@ -776,7 +776,7 @@ on an unknown configuration, uv's warnings).
 
 #### T027 — `LOW` — Two more runs that start checks with a stamp left standing, which AC-S03-26 does not name (AC-S03-26, D79)
 
-- [ ] Evidence: AC-S03-26 says *the one case where a stamp that stood is left is AC-S03-13's git that cannot answer*.
+- [x] *(closed by T034's holds and AC-S03-26's reading (D81))* Evidence: AC-S03-26 says *the one case where a stamp that stood is left is AC-S03-13's git that cannot answer*.
   (a) On a stamped fixture with `scripts/check-slice-scope.py` moved away and `STANDIN_UV_FAIL=1`: `lint` failed, exit 2,
   no line, and `.git/slipwai/verify-stamp-e3b0c44298fc1c14.json` was still there; with the script back, the next run
   printed the reuse line, exit 0, 0 checks. `trunk_name()` raises something other than `CannotTell`, `main` calls
@@ -792,7 +792,7 @@ named in AC-S03-26 beside git's; where eligibility cannot be told for a reason t
 
 #### T028 — `LOW` — The page says how to force and not when (AC-S03-25)
 
-- [ ] Evidence: AC-S03-25 asks the page for the default *and one sentence on when to set it*. The page
+- [x] *(closed by T035 (D81))* Evidence: AC-S03-25 asks the page for the default *and one sentence on when to set it*. The page
   (`src/slipwai/project/docs.py` 116–126) has *To run the gate anyway, run `make verify VERIFY_FORCE=1`* and, three
   sentences on, *reused as green until … `VERIFY_FORCE` is given*; `391a91c` took out pass 1's *when a check depends on
   one, run the gate forced*. `tests/test_verify_stamp_ships.py` 146 pins the *how* sentence. The page also opens *keyed by
@@ -828,7 +828,7 @@ is Phase 4's.
 
 #### T029 — `LOW` — A ratchet run under make's ignore-errors mode leaves the stamp, which AC-S03-26 says such a run removes (AC-S03-26, D80)
 
-- [ ] Evidence: `reuse` asks `ratcheting()` before `declined()` (`verify-stamp.py` 583–588), so with both set the
+- [x] *(closed by T034's hold and AC-S03-26's reading (D81))* Evidence: `reuse` asks `ratcheting()` before `declined()` (`verify-stamp.py` 583–588), so with both set the
   ratchet rule wins. On a stamped fixture, `RATCHET_TIGHTEN=1 STANDIN_UV_FAIL=1 make -i verify` → exit 0, 23 checks,
   `verify: all gates passed`, the stamp still there; the next plain run printed the reuse line, 0 checks. AC-S03-26 says
   *a run under make's ignore-errors mode removes the stamp too*; D80 says a ratchet run *removes none*; neither names
@@ -843,7 +843,7 @@ criterion's sentence is the host's.
 
 #### T030 — `LOW` — What the stamp stores of a tool is still a line the tool chose, with paths taken out by a pattern (AC-S03-18; constitution, *Additional Constraints*: persisted data)
 
-- [ ] Evidence: `ask()` stores `PATH_LIKE.sub("<path>", line)` and sixteen hex digits of the answer (`verify-stamp.py`
+- [x] *(closed by T033 (D81))* Evidence: `ask()` stores `PATH_LIKE.sub("<path>", line)` and sixteen hex digits of the answer (`verify-stamp.py`
   131, 342–345). The pattern, asked directly: `cache at C:\Program Files\uv\cache` → `cache at <path> Files\uv\cache`;
   `home=~noah/.cache` and `config,/home/noah/x` come back unchanged; a host name, a user name or a process id in the
   line is not a path and stays. None of the tools of `MACHINE_TOOLS` was seen to print such a first line (the real
@@ -857,6 +857,68 @@ AC-S03-18's words say what the field holds.
 **Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_tools.py`; the criterion's sentence is the host's.
 
 ---
+
+### After-converge gaps (2026-10-04, at `0d222de`; `drive-gaps` G1–G8, placed by D81)
+
+Placed without code by D81: T022 goes to the adversary pass as a seam (a project in a subdirectory of its repository);
+T023 is `S04`'s (Parking Lot); G4, G7 and G8 are Parking Lot and cruise-report lines; G5 and G6 are corrected in
+[quickstart.md](quickstart.md). T021, T027, T028, T029 and T030 are closed by the tasks below.
+
+#### T031 — `MEDIUM` — Every machine-supplied tool a recipe of the gate launches is asked (G1 · AC-S03-14, D81)
+
+- [ ] **RED:** an event-modelling project's `VERIFY_STAMP` asks neither `node` nor `npm`, though `check-drawio`'s recipe
+  launches both; and a test over the generated `Makefile` of every shape `tests/test_verify_stamp_scan.py` generates —
+  the command each recipe line reachable from the gate launches is on that project's tool list, a file of the project,
+  or named in the test with the reason it is pinned — fails today on those two. **GREEN (the class):** a row of the one
+  table in `src/slipwai/backends.py`, not a special case in the recipe; the test derives the commands from the recipes,
+  so a recipe that later launches another machine tool fails it.
+
+**Files:** `src/slipwai/backends.py`, `src/slipwai/project/gate.py`, `tests/test_verify_stamp_tools.py` or a new
+`tests/test_verify_stamp_launches.py`, `tests/test_verify_stamp_ships.py`, `docs/backend-obligations.md` if the table's row changes.
+
+#### T032 — `MEDIUM` — The JVM asked is the one the wrapper would run (G2, T021's third item · AC-S03-14, -17, D81)
+
+- [ ] **RED:** with `JAVA_HOME` naming a JVM that reports another version than the `java` on `PATH`, a stamped Java
+  project is reused today. **GREEN:** `JAVA_HOME`'s `bin/java` is asked where the variable is non-empty, else the one on
+  `PATH`; one that cannot be launched is AC-S03-17's case; the variable's value is in neither key nor stamp. The
+  closed-list test stops saying the wrapper and each backend's `scripts/verify` *hold nothing*: each shell script the
+  scan cannot read is named with the variables that select which executable runs, and such a variable either decides
+  which tool is asked or fails the test.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_tools.py`, `tests/test_verify_stamp_scan.py`, `tests/stamp_fixture.py` (additions only).
+
+#### T033 — `LOW`, a MUST — What the stamp stores of a tool's answer (T030 · AC-S03-18, D81; constitution, persisted data)
+
+- [ ] **RED:** each of T030's lines (a Windows path with a space, a `~user` path, a path after a comma) and a host name,
+  printed by a stand-in tool, is found in a file under the stamp's directory today. **GREEN:** per tool the stamp stores
+  its name, the version-shaped words of its answer and the digest of the whole answer — the digest alone where no such
+  word is found; the key is unchanged (D80). Closes T030.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_tools.py`.
+
+#### T034 — `LOW` — Each line says what happened, and the two readings are pinned (T021, T027, T029 · AC-S03-11, -26, D81)
+
+- [ ] **RED:** the *not recorded* line does not say which part of the key moved, nor — where it is the files — that a
+  check may have written one, that `git status` shows it and that the next run records; a directory at the stamp's path
+  is told *delete that file*. **GREEN:** both, with no list of files kept between the two halves of a run. **Holds,
+  pinning what the code already does, each shown to have teeth:** a run that both tightens the ratchet and ignores
+  errors touches nothing (T029); a run where the trunk cannot be resolved for a reason that is not git's, and a run
+  with no `python3` able to run the script, each leave a stamp that stood (T027). Closes T021, T027, T029.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `tests/test_verify_stamp_runs.py`, `tests/test_verify_stamp_cannot.py`.
+
+#### T035 — `LOW` — The page and the fragment say when to force and how the trunk is recognised (T028, G3 · AC-S03-25, -30, -31, D81)
+
+- [ ] **RED:** the page has no sentence on when to force, none on how the trunk is recognised or what a team with another
+  trunk name does, says *everything the checks answer from* and *set* of a CI marker; the fragment's catch-up says nothing
+  is asked. **GREEN:** the page's three sentences as AC-S03-31 now reads, *non-empty*, and no *everything*; the fragment's
+  tool wording (*the tools the machine supplies that the gate launches*), its trunk sentence and its catch-up exception
+  (a trunk named neither `main` nor `master` with no `ci.branch` recorded: record it); still MINOR. Each sentence that
+  tells a developer to do something is followed by a test — recording `ci.branch` on a `develop` trunk stops the reuse.
+  Closes T028.
+
+**Files:** `src/slipwai/project/docs.py`, `changelog.d/verify-stamp.md`, `tests/test_verify_stamp_ships.py` (or a new
+`tests/test_verify_stamp_page.py`), `docs/learn-generate.md` if it repeats a corrected sentence.
 
 ## Parallel opportunities
 

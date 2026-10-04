@@ -58,3 +58,7 @@ Each item says what it was read from. *Assumed* means nobody read it yet, and na
    installed under `tools/ux-gates/` consists of and which file pins it; whether any gate step reads `.env` — it
    joins the list by its bytes either way, since a test suite may. Variables: `check-ux-gates.py` and
    `check-codegraph.py` for the five, `check-slice-scope.py` for `GITHUB_HEAD_REF` and `CI_COMMIT_REF_NAME`.
+9. **Windows.** *Assumed, not run* (no Windows here; D81): a tool is launched without a shell, which on Windows is
+   believed not to find `npm.cmd`; such a project would run the full gate every time and say `npm` is not on
+   `PATH`. Nothing false is recorded. The story split's Parking Lot carries the line.
+

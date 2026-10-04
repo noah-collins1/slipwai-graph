@@ -1346,7 +1346,8 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
   (D73)
 - **AC-S03-11** — Given a full run that passed and whose key moved during the run, or whose stamp could not be
   written, then it exits 0, prints `verify: all gates passed`, and adds one line saying the pass was not recorded
-  and why. A stamp never changes the gate's exit code. (D76)
+  and why: which part of the key moved and, where it is the files, that a check may have written one, that
+  `git status` shows it and that the next run records (D81). A stamp never changes the gate's exit code. (D76)
 - **AC-S03-12** — Given a checkout where any index entry is marked `assume-unchanged` or `skip-worktree`, or is a
   submodule, or an untracked directory is itself a repository, then no stamp is read or written, the full gate
   runs, and one line before the first check says which. (D73, D77)
@@ -1356,10 +1357,13 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
   and never passes on less. Where git cannot answer, a stamp that stood before is left where it is, since its place
   cannot be asked; it is for a key that passed, and only a later run with git answering can match it. (D73, D76,
   D77, D79)
-- **AC-S03-14** — Given the key's tool versions, then they are those of the tools the machine supplies and no
-  committed file pins: `make`, `git` and the `python3` on `PATH` in every project; `uv` for a Python backend;
+- **AC-S03-14** — Given the key's tool versions, then they are those of every tool the machine supplies that a
+  recipe of the gate launches and no committed file pins (D81) — `node` and `npm` too wherever the gate has the
+  model's checks, and a test over the generated recipes of every shape fails when a recipe launches a command that
+  is neither on the project's tool list, a file of the project, nor named with the reason it is pinned: `make`, `git` and the `python3` on `PATH` in every project; `uv` for a Python backend;
   `node` and `npm` for a TypeScript backend or any project with a frontend; `go` for Go; `java` for both Java
-  backends. A project with several backends takes the union, each tool asked once per run. The set is one table
+  backends — the JVM the wrapper would run: `JAVA_HOME`'s where that variable is non-empty, else the one on `PATH`;
+  the variable's value is never in the key (D81). A project with several backends takes the union, each tool asked once per run. The set is one table
   beside `BACKEND_TOOLING` in `src/slipwai/backends.py`, and a test fails when a backend there has no row. (D75)
 - **AC-S03-15** — Given a tool in the set, then it is launched once with its version argument on every run that
   would read or write a stamp, and the key takes everything it prints in answer, on both streams (D80): a changed byte from
@@ -1377,7 +1381,9 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
   The run never fails for this reason alone. (D75, D76, D77)
 - **AC-S03-18** — Given a stamp, then it holds the entity's five fields — the tree's hash, the gate-script hash,
   each tool's name with the line it reported, the instant of the pass, and the result, which is only ever a pass —
-  as plain text a person can read; one that cannot be parsed or lacks any of the five is no stamp. (D75, D76)
+  as plain text a person can read; of a tool's answer it stores the tool's name, the version-shaped words of the
+  answer (digits and dots with a short suffix, nothing else) and a digest of the whole answer, never a path, a host
+  name or any other word of the tool's (D81); one that cannot be parsed or lacks any of the five is no stamp. (D75, D76)
 - **AC-S03-19** — Given a reuse run, then the only processes it starts are git's and the version questions of
   AC-S03-14: no sync, no check script, no linter, type checker or test runner. The suite holds this with stand-in
   executables written in the test tree and put on `PATH`, each recording its calls, and holds no clock. (D75)
@@ -1409,7 +1415,10 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
   removed before the first check starts and written only after the last check passed: after a run that failed,
   was interrupted or was killed, no stamp exists for any key. Where the stamp cannot be removed, one line names
   the file to delete and the run writes no stamp. A run under make's ignore-errors mode removes the stamp too and
-  writes none; the one case where a stamp that stood is left is AC-S03-13's git that cannot answer. (D76, D79)
+  writes none; a stamp that stood is left in three cases only, each for a key every check passed on: AC-S03-13's git that
+  cannot answer, a run where the trunk cannot be resolved for a reason that is not git's, and a run with no
+  `python3` on `PATH` able to run the stamp script (D79, D81). A run that both tightens the ratchet and ignores
+  errors touches nothing: the ratchet rule is asked first. (D76, D79, D80, D81)
 - **AC-S03-27** — Given a stamp of any age, then it is reused where the key matches: its instant is shown, never
   compared, and there is no setting. Deleting the stamp is always safe and has the effect of forcing. (D76)
 - **AC-S03-28** — Given a run that writes a stamp, then the file is in a directory of the factory's own under the
@@ -1421,16 +1430,22 @@ trunk, `HEAD` attached, no CI marker set, the run not forced.
 - **AC-S03-29** — Given a full run, then every check that ran before this slice runs, in the order and with the
   output it had, ending `verify: all gates passed`: the per-transport `verify: check-openapi` line still gates and
   is still cut out with its transport by `./init`, a project with several services or language families has one
-  gate and one stamp, the recipe runs under GNU Make 3.81, and every starter combination `make starters`
+  gate and one stamp, the recipe uses nothing newer than GNU Make 3.81 documents (read, not run: an assumption, D81), and every starter combination `make starters`
   materialises passes its own gate. (constitution I; D74)
 - **AC-S03-30** — Given a project generated before this release, then the change asks nothing of it: `slipwai
-  migrate` brings the new `Makefile`, the first `make verify` runs in full, and its `.gitignore` is not touched.
+  migrate` brings the new `Makefile`, the first `make verify` runs in full, and its `.gitignore` is not touched — with one exception the fragment's
+  catch-up states: a repository whose trunk is named neither `main` nor `master` and whose `project.json` records
+  no `ci.branch` records it, so that its trunk always runs the full gate (D81).
   The `changelog.d/` fragment says so and claims MINOR; `VERSION` is already `1.6.0.dev0`. (D76)
 - **AC-S03-31** — Given the page that describes the gate, then it says what a stamp cannot see: what a project's
   own tests or tools read from outside the repository — the clock, the network, user-level tool configuration,
   `PATH`, a variable no gate script names — so a gate that would now fail for one of those alone is reused as
   green until a file, a ref or a listed input moves or `VERIFY_FORCE` is given, and CI and the trunk, which never
-  read a stamp, are where it is caught. (D73)
+  read a stamp, are where it is caught. The page also says when to force (a check answers from one of those
+  things), how the trunk is recognised (the branch `project.json` records as `ci.branch`, else `main`, else
+  `master`) and what a team with another trunk name does (record `ci.branch`; until then that branch reuses a
+  stamp like any other); it says *non-empty* of a CI marker and never *everything the checks answer from*.
+  (D73, D81)
 
 ### S24-ci-fetches-slice-base
 

@@ -224,6 +224,17 @@ that cannot delegate takes the earliest ready slice in split order and names the
   checks there is a per-check stamp, `S07`'s to weigh. Sharing a stamp between worktrees is the merge tree's
   question (D76). For the cruise report: what a stamp cannot see (AC-S03-31), and that a run writing under
   `specs/` between gates reuses fewer stamps than the story's two of three (D73).
+- **What `S04-parallel-gate` inherits from the stamp (D81, G7).** AC-S03-29's *in the order and with the output it
+  had* is what `-j` breaks, so `S04` re-words that clause and the suite that pins it; the checks hang on the
+  `verify-checks` target the stamp's recipe calls; a check that writes a covered file makes a pass unrecorded (the
+  model tooling's first run writes an untracked lock, Go's first run writes `go.work.sum`), which `S04`'s
+  lock-matching install settles; and `S04`, the first slice to change `verify-stamp.py` next, splits it along the
+  four parts T023 names. **Windows and the stamp (D81, G4):** on Windows a TypeScript, frontend or event-modelling
+  project is believed to run the full gate every time with a line that says `npm` is not on `PATH` (a launch
+  without a shell does not find `npm.cmd`) — slower there, never a false green; fixed where the matrix has a
+  Windows run to show the RED. For the cruise report: GNU Make 3.81 read and not run; the TypeScript, both Java
+  and the frontend starters not run stamped with their real toolchains; a trunk `project.json` does not record
+  reuses a stamp on an unchanged tree until `ci.branch` is recorded.
 - **Windows under Git Bash** (edge case): worktree fan-out and `-j` are held by the matrix tests before release;
   `S04` and `S09` name that in their plans rather than opening a slice.
 
