@@ -88,6 +88,18 @@ case "$1" in
       : > "$STANDIN_LOG.$tool.$1.done"
       log "barrier-$seen" "$tool $1"
     }
+    # One line out, then a bounded wait for the test to have read it from the pipe: `line-seen` if it came,
+    # `line-held` if the line was still in make's hands when the ceiling was reached.
+    if [ "$tool" = ruff ] && [ -n "$STANDIN_WAIT_FILE" ]; then
+      echo "ruff line 1"
+      n=0; seen=held
+      while [ "$n" -lt 100 ]; do
+        if [ -e "$STANDIN_WAIT_FILE" ]; then seen=seen; break; fi
+        sleep 0.05; n=$((n + 1))
+      done
+      log "line-$seen" ruff
+      echo "ruff line 2"
+    fi
     if [ -n "$peer" ]; then
       if [ -n "$STANDIN_BARRIER" ]; then rendezvous 0; fi
       i=1
@@ -221,6 +233,18 @@ def sync_ended_before_any_run(log: Path) -> bool:
 def barrier_events(log: Path) -> list[str]:
     """Each barrier verdict a stand-in logged, `met` or `alone`, in the order written."""
     return [e.removeprefix("barrier-") for e, _ in log_lines(log) if e.startswith("barrier-")]
+
+
+def line_events(log: Path) -> list[str]:
+    """What a held-line stand-in logged: `seen` where its first line reached the reader first, else `held`."""
+    return [e.removeprefix("line-") for e, _ in log_lines(log) if e.startswith("line-")]
+
+
+def has_output_sync() -> bool:
+    """Whether the `make` on this machine lists `output-sync` among its features."""
+    done = subprocess.run(["make", "-f", "-"], input="$(info $(.FEATURES))\n.PHONY: x\nx:;@:\n", text=True,
+                          capture_output=True, timeout=60)
+    return "output-sync" in done.stdout.split()
 
 
 def overlapped(log: Path) -> bool:

@@ -101,7 +101,7 @@ class EveryStampedShapeTakesTheRecipeTest(FactoryTestCase):
         self.assertNotIn("verify", [word for word in ci.group(1).split() if word != "verify-checks"])
         recipe = re.search(r"^verify:.*\n((?:\t.*\n)+)", makefile, re.M)
         assert recipe is not None
-        self.assertIn('"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks',
+        self.assertIn('"$(MAKE)" $(VERIFY_GROUP) --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks',
                       recipe.group(1))
         self.assertNotIn("--goals", recipe.group(1))
         self.assertNotIn("MAKECMDGOALS", recipe.group(1))
