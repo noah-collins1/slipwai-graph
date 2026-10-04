@@ -123,6 +123,56 @@
         "gaps": 63,
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "plan",
+      "started": "2026-10-04T11:22:18Z",
+      "planned": "plan: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": null,
+        "end": null
+      },
+      "ended": "2026-10-04T11:26:07Z",
+      "seconds": 229,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230.jsonl": 1399017,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230/subagents/agent-a12b54bf233af9011.jsonl": 320346,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230/subagents/agent-a655e75aca3acc5bd.jsonl": 343801,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230/subagents/agent-ac5fb6c91071ede1c.jsonl": 372712,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230/subagents/agent-acaa747e9bcd4a360.jsonl": 390602
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230.jsonl": 1600437,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230/subagents/agent-a12b54bf233af9011.jsonl": 320346,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230/subagents/agent-a655e75aca3acc5bd.jsonl": 343801,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230/subagents/agent-ac5fb6c91071ede1c.jsonl": 372712,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d0506da5-55be-4c67-a549-28552fd90230/subagents/agent-acaa747e9bcd4a360.jsonl": 390602
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "d0506da5-55be-4c67-a549-28552fd90230",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-fable-5-1": {
+            "input": 12,
+            "output": 21512,
+            "cache_read": 1410976,
+            "cache_creation": 18523
+          }
+        },
+        "subagents": {},
+        "agents": []
+      },
+      "ran": [
+        "claude-fable-5-1"
+      ],
+      "agents": null,
+      "delegated": false,
+      "signals": {
+        "driver": "cruise"
+      }
     }
   ]
 }
