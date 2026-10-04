@@ -126,9 +126,11 @@ SLICE_SCOPE = "check-slice-scope.py"
 # How long a version question may take, and the one argument that is not `--version` for the tools that spell it
 # otherwise (`java -version` answers on standard error, which the answer is read from too).
 ASK_TIMEOUT = 5
-# What reads as a path in a line a tool printed: an absolute, home-relative or relative one, or a drive's, starting a word
-# or following `=`, `:`, a quote or a bracket (so `linux/amd64` stays).
-PATH_LIKE = re.compile(r"(?:(?<=[=:\s'\"(\[])|^)(?:~|\.{1,2}|[A-Za-z]:)?[/\\][^\s'\")\]]*")
+# What of a tool's answer is stored: the words that are version-shaped — digits and dots, with at most a short suffix
+# (`2.43.0`, `v20.11.0`, `1.0-rc1`) — and nothing else. A path, a host name, a user name and a process id are words of
+# the tool's own, and the stamp is shared state a person may copy: it holds none (the constitution's persisted data).
+VERSION_WORD = re.compile(r"v?[0-9]+(?:\.[0-9]+)+(?:[-+_]?[A-Za-z]{1,6}[0-9]{0,3})?")
+SHOWN_WORDS = 4
 VERSION_ARGUMENTS = {"go": "version", "java": "-version"}
 CANNOT_LINE = "verify: the full gate runs and this run records nothing — {reason}"
 NOTHING = "nothing"
@@ -325,12 +327,24 @@ def java_command() -> str:
     return aix if os.access(aix, os.X_OK) else os.path.join(home, "bin", "java")
 
 
+def stored_answer(printed: list[bytes]) -> str:
+    """What the stamp stores of a tool's answer: the version-shaped words, as the tool printed them on either stream
+    (the first few, each once), then the digest of the whole answer; the digest alone where there is no such word. The
+    key holds the digest, so nothing narrowed here narrows what moves it (D80)."""
+    words: list[str] = []
+    for stream in printed:
+        for word in stream.decode("utf-8", "replace").split():
+            word = word.strip("\"'()[]<>;:")
+            if VERSION_WORD.fullmatch(word) and word not in words:
+                words.append(word)
+    return " ".join(words[:SHOWN_WORDS] + ["[answer " + digest(printed)[:16] + "]"])
+
+
 def ask(tool: str, command: str) -> str:
-    """What the key holds of a tool: everything it printed when asked its version, on both streams, as a digest — so a
-    notice ahead of the version cannot hide a changed one (D80) — behind the one line a person is shown, the first
-    non-empty line of standard output, or of standard error where it printed none there, with anything that looks like
-    a path elided: what is stored is a fact true on any machine. Launched once, with no standard input, its output
-    read from files so that nothing it leaves running can hold this script."""
+    """What the key holds of a tool: the digest of everything it printed when asked its version, on both streams, so a
+    notice ahead of the version cannot hide a changed one (D80), behind the version-shaped words a person is shown
+    (`stored_answer`); no other word of the answer is kept. Launched once, with no standard input, its output read from
+    files so that nothing it leaves running can hold this script."""
     argument = VERSION_ARGUMENTS.get(tool, "--version")
     with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
         try:
@@ -351,10 +365,8 @@ def ask(tool: str, command: str) -> str:
         printed = [out.read(), err.read()]
     if code != 0:
         raise CannotAsk(tool + " exited " + str(code) + " when asked its version")
-    for stream in printed:
-        for line in stream.decode("utf-8", "replace").splitlines():
-            if line.strip():
-                return PATH_LIKE.sub("<path>", line.strip()) + " [answer " + digest(printed)[:16] + "]"
+    if any(line.strip() for stream in printed for line in stream.decode("utf-8", "replace").splitlines()):
+        return stored_answer(printed)
     raise CannotAsk(tool + " printed nothing when asked its version")
 
 

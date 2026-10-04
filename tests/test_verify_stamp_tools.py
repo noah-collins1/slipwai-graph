@@ -73,7 +73,7 @@ class AskedTest(StampTestCase):
         assert isinstance(tools, dict)
         for name in ASKED:
             self.assertTrue(str(tools[name]).strip(), name)
-        self.assertRegex(str(tools["uv"]), r"^uv 0\.12\.20 \(stand-in\) \[answer [0-9a-f]{16}\]$")
+        self.assertRegex(str(tools["uv"]), r"^0\.12\.20 \[answer [0-9a-f]{16}\]$")
         self.assertIn("interpreter apps/service/.venv", tools)
         self.assertEqual(tools["interpreter apps/service/.venv"], "3.14.4")
         self.forget_log()
@@ -92,7 +92,7 @@ class AskedTest(StampTestCase):
         stamp = self.stamp()
         tools = stamp["tools"]
         assert isinstance(tools, dict)
-        self.assertTrue(str(tools["uv"]).startswith("uv 0.13.0 (another build) [answer "), tools["uv"])
+        self.assertTrue(str(tools["uv"]).startswith("0.13.0 [answer "), tools["uv"])
         self.assertNotEqual(stamp["key"], before)
         self.forget_log()
         self.run_gate({"STANDIN_UV_VERSION": "\\n\\nuv 0.13.0 (another build)\\nsecond line"})
@@ -125,13 +125,12 @@ class AskedTest(StampTestCase):
         self.run_gate({"STANDIN_UV_VERSION": "uv 0.12.20\\nbuild 2"})
         self.assertTrue(self.checks(), "a changed second line was reused")
 
-    def test_the_stamp_shows_the_first_line_of_standard_output_or_of_standard_error_where_it_printed_none(self) -> None:
-        """e15 (T026, D80): one line per tool, for a person."""
-        self.run_gate({"STANDIN_UV_NOTICE": "warning: something"})
+    def test_the_stamp_shows_the_version_words_of_either_stream_and_no_other_word(self) -> None:
+        """e15 (T026, T033, D80): one line per tool, for a person: the version-shaped words, on either stream."""
+        self.run_gate({"STANDIN_UV_NOTICE": "warning: something 9.9"})
         tools = self.stamp()["tools"]
         assert isinstance(tools, dict)
-        self.assertTrue(str(tools["uv"]).startswith("uv 0.12.20 (stand-in)"), tools["uv"])
-        self.assertNotIn("\n", str(tools["uv"]))
+        self.assertRegex(str(tools["uv"]), r"^0\.12\.20 9\.9 \[answer [0-9a-f]{16}\]$")
         self.assertNotIn("warning", str(tools["uv"]))
 
     def test_no_file_under_the_git_directory_holds_a_path_a_tool_printed(self) -> None:
