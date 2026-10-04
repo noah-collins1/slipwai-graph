@@ -35,7 +35,9 @@ class SaysItTest(unittest.TestCase):
         text = flat(README)
         self.assertIn(f"there is no setting and no flag: delete a diagram, or {REMEDY}", text)
         self.assertIn("the installed mermaid-cli, Mermaid and Puppeteer versions", text)
-        self.assertIn(f"a browser upgraded behind an `executablePath` that config names is not noticed, and deleting "
+        self.assertIn("every `PUPPETEER_` environment variable, name and value", text)
+        self.assertIn(f"a browser upgraded behind an `executablePath` that config names, and a Puppeteer rc file "
+                      f"(`.puppeteerrc.*` or `puppeteer.config.*`), are not noticed, and deleting "
                       f"{REMEDY} is the remedy", text)
         self.assertNotIn("or `segments/` and `slices/`", text)
 
@@ -65,6 +67,12 @@ class SaysItTest(unittest.TestCase):
         self.assertIn("its first `make model` redraws every diagram once, and since the output is ignored nothing "
                       "committed changes", prose)
         self.assertIn("removed the ignore lines and commits its diagrams sees the second comment line in each SVG",
+                      prose)
+
+    def test_e23_the_fragment_names_the_puppeteer_variables_in_the_key_and_what_the_key_does_not_notice(self) -> None:
+        prose = flat(FRAGMENT)
+        self.assertIn("every `PUPPETEER_` environment variable", prose)
+        self.assertIn("not a browser upgraded behind an `executablePath` the config names, nor a Puppeteer rc file",
                       prose)
 
     def test_e17_the_version_stays_and_the_changelog_arithmetic_holds(self) -> None:

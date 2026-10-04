@@ -497,8 +497,9 @@ whose source or renderer changed since the SVG on disk was drawn; a run with not
 under a CI marker (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`) every diagram is drawn. To force a redraw there is no
 setting and no flag: delete a diagram, or `docs/event-model/model.svg`, `segments/` and `slices/`, and the next `make model` draws what is
 missing. What counts as a change of renderer is the installed mermaid-cli, Mermaid and Puppeteer versions, the
-drawing scripts and your Puppeteer config's bytes; a browser upgraded behind an `executablePath` that config names
-is not noticed, and deleting `docs/event-model/model.svg`, `segments/` and `slices/` is the remedy.
+drawing scripts, your Puppeteer config's bytes and every `PUPPETEER_` environment variable, name and value; a browser
+upgraded behind an `executablePath` that config names, and a Puppeteer rc file (`.puppeteerrc.*` or
+`puppeteer.config.*`), are not noticed, and deleting `docs/event-model/model.svg`, `segments/` and `slices/` is the remedy.
 Run `make model` once per tree at a time: a second run in the same tree may remove the first's temporary file as a
 leftover, and that run then fails naming the file; the next run draws it.
 

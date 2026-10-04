@@ -26,7 +26,15 @@ import {
   type Diagram,
 } from './render-plan.ts';
 import { patchInstalledMermaid } from './patch-mermaid-swimlanes.ts';
-import { CLI_PREFIX, installRenderer, lazySession, reasonOf, rendererKey } from './render-session.ts';
+import {
+  CLI_PREFIX,
+  installRenderer,
+  launch,
+  lazySession,
+  readPuppeteerConfig,
+  reasonOf,
+  rendererKey,
+} from './render-session.ts';
 import { renderPage } from './page.ts';
 import { renderReadmeSection, withReadmeSection } from './readme.ts';
 import type { Model } from './model.ts';
@@ -90,9 +98,10 @@ async function main(): Promise<void> {
 
   installRenderer();
   patchInstalledMermaid(CLI_PREFIX); // before the first draw: the swimlane fix lives in the tree we own
-  const key = rendererKey();
+  const config = readPuppeteerConfig(); // once: the bytes keyed are the bytes the browser is launched with
+  const key = rendererKey(config);
   const stale = diagrams.filter((diagram) => !isCurrent(diagram, key));
-  const session = lazySession();
+  const session = lazySession(() => launch(config));
   // A browser that will not close must not hide the failure the run already had: both are said, the first first.
   let failure: unknown;
   try {

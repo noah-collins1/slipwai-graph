@@ -28,6 +28,9 @@ PNG_FAILS_VARIABLE = "STAND_IN_PNG_FAILS"
 """Set this and every PNG draw throws `png refused`, whatever the source; an SVG draws as always."""
 CLOSE_FAILS_VARIABLE = "STAND_IN_CLOSE_FAILS"
 """Set this and the browser's `close` throws, as a browser that will not shut down does."""
+REWRITE_CONFIG_VARIABLE = "STAND_IN_REWRITE_CONFIG"
+"""Set this to some text and loading the stand-in's mermaid-cli, which a run does after it has keyed the Puppeteer
+config and before it launches, overwrites the file `MERMAID_PUPPETEER_CONFIG` names with that text."""
 FAIL_MARKER = "STAND-IN-DRAW-FAILS"
 """Put this in a slice's name and the draw of every diagram whose source carries it throws."""
 
@@ -93,6 +96,9 @@ _MODULE_EXPORTS = {"type": "module", "exports": {".": {"default": "./src/index.j
 MERMAID_CLI_MODULE = """import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 """ + _LOG_AND_DRAW + """
+if (process.env.__REWRITE__ && process.env.MERMAID_PUPPETEER_CONFIG) {
+  fs.writeFileSync(process.env.MERMAID_PUPPETEER_CONFIG, process.env.__REWRITE__);
+}
 export async function renderMermaid(browser, definition, outputFormat, opts = {}) {
   log({ event: 'draw', via: 'module', format: outputFormat, source_sha256: sha(definition),
     width: opts.viewport && opts.viewport.width, background: opts.backgroundColor });
@@ -101,7 +107,7 @@ export async function renderMermaid(browser, definition, outputFormat, opts = {}
 export async function run() { throw new Error('stand-in: run is not provided'); }
 export async function cli() { throw new Error('stand-in: cli is not provided'); }
 export function error() { throw new Error('stand-in: error is not provided'); }
-"""
+""".replace("__REWRITE__", REWRITE_CONFIG_VARIABLE)
 
 PUPPETEER_MODULE = """import fs from 'node:fs';
 function chunkFixed() {
@@ -220,10 +226,12 @@ def read_log(path: Path) -> RendererLog:
 
 
 def render_env(**env: str) -> dict[str, str]:
-    """The environment a render test's subprocess gets: the suite's own, without the CI markers it may run under.
+    """The environment a render test's subprocess gets: the suite's own, without the CI markers it may run under
+    and without any `PUPPETEER_` variable the machine sets (the renderer key reads them).
 
-    A marker the test names in `env` is kept, so a test that wants one sets it and no other leaks in."""
-    base = {key: value for key, value in os.environ.items() if key not in CI_MARKERS}
+    A variable the test names in `env` is kept, so a test that wants one sets it and no other leaks in."""
+    base = {key: value for key, value in os.environ.items()
+            if key not in CI_MARKERS and not key.startswith("PUPPETEER_")}
     return {**base, **env}
 
 

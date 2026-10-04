@@ -12,7 +12,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from render_fixture import EVENT_MODEL, IS_WINDOWS, MODEL_DIR, WINDOWS_SKIP, RenderCase, sha256_of
+from render_fixture import (
+    EVENT_MODEL,
+    IS_WINDOWS,
+    MODEL_DIR,
+    REWRITE_CONFIG_VARIABLE,
+    WINDOWS_SKIP,
+    RenderCase,
+    render_env,
+    sha256_of,
+)
 
 SOURCE_LINE = re.compile(r"<!-- em-source-sha256: [0-9a-f]{64} -->")
 RENDERER_LINE = re.compile(r"<!-- em-renderer-sha256: ([0-9a-f]{64}) -->")
@@ -100,7 +109,7 @@ class CurrentTest(RenderCase):
             self.spoil(repo, lambda svg, lines: svg.write_text(
                 "\n".join([lines[0], lines[1], f"<!-- em-source-sha256: {ZEROS} -->", lines[2]])))
             self.assertEqual(self.model_log(repo).draws, 0, "left")
-            gate = subprocess.run(["make", "check-model"], cwd=repo, text=True, capture_output=True)
+            gate = subprocess.run(["make", "check-model"], cwd=repo, text=True, capture_output=True, env=render_env())
             self.assertEqual(gate.returncode, 0, gate.stdout + gate.stderr)
 
     def test_e5_each_ci_marker_redraws_every_diagram_and_an_empty_one_is_no_marker(self) -> None:
@@ -151,12 +160,44 @@ class CurrentTest(RenderCase):
                 self.assertEqual(self.model_log(repo).draws, 3)
                 self.assertEqual(self.model_log(repo).draws, 0)
 
+    def test_e23_every_puppeteer_variable_is_in_the_key_set_changed_and_unset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.one_slice(directory)
+            steps = [
+                ("set", {"PUPPETEER_EXECUTABLE_PATH": "/opt/one"}, 3),
+                ("kept", {"PUPPETEER_EXECUTABLE_PATH": "/opt/one"}, 0),
+                ("changed", {"PUPPETEER_EXECUTABLE_PATH": "/opt/two"}, 3),
+                ("a second one", {"PUPPETEER_EXECUTABLE_PATH": "/opt/two", "PUPPETEER_CACHE_DIR": "/c"}, 3),
+                ("kept", {"PUPPETEER_EXECUTABLE_PATH": "/opt/two", "PUPPETEER_CACHE_DIR": "/c"}, 0),
+                ("one unset", {"PUPPETEER_CACHE_DIR": "/c"}, 3),
+                ("unset", {}, 3),
+                ("kept unset", {}, 0),
+            ]
+            for name, env, draws in steps:
+                with self.subTest(step=name):
+                    self.assertEqual(self.model_log(repo, **env).draws, draws)
+            with self.subTest(step="a name that does not begin PUPPETEER_"):
+                self.assertEqual(self.model_log(repo, NOT_PUPPETEER_X="1").draws, 0)
+
+    def test_e23_the_config_is_read_once_and_the_bytes_keyed_are_the_bytes_launched_with(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.one_slice(directory)
+            config = Path(directory) / "puppeteer.json"
+            first, second = '{"args": ["--first"]}', '{"args": ["--second"]}'
+            config.write_text(first)
+            # loading mermaid-cli, which the launch does after the key is computed, replaces the config on disk
+            log = self.model_log(repo, MERMAID_PUPPETEER_CONFIG=str(config), **{REWRITE_CONFIG_VARIABLE: second})
+            self.assertEqual(log.launch_options, [{"headless": "shell", "args": ["--first"]}])
+            config.write_text(first)
+            self.assertEqual(self.model_log(repo, MERMAID_PUPPETEER_CONFIG=str(config)).draws, 0,
+                             "the key the run drew under is the key of the bytes it launched with")
+
     def probe(self, repo: Path, body: str) -> str:
         script = repo / EVENT_MODEL / "probe-stamp.mts"
         script.write_text(body)
         done = subprocess.run(
             ["node", str(repo / EVENT_MODEL / "node_modules/tsx/dist/cli.mjs"), str(script)],
-            cwd=repo, text=True, capture_output=True,
+            cwd=repo, text=True, capture_output=True, env=render_env(),
         )
         self.assertEqual(done.returncode, 0, done.stderr)
         return done.stdout.strip()

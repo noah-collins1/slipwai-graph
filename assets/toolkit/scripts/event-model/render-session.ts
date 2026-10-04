@@ -52,10 +52,21 @@ export function reasonOf(error: unknown): string {
  */
 export class BrowserError extends Error {}
 
-/** The Puppeteer config's bytes; a path that cannot be read is named with the variable that gave it. */
-function readConfig(path: string): Buffer {
+/**
+ * The Puppeteer config as the run reads it, once: the bytes the renderer key covers are the bytes the browser is
+ * launched with, whatever happens to the file after. Absent where `MERMAID_PUPPETEER_CONFIG` is unset. A path that
+ * cannot be read is named with the variable that gave it.
+ */
+export interface PuppeteerConfig {
+  path: string;
+  bytes: Buffer;
+}
+
+export function readPuppeteerConfig(): PuppeteerConfig | undefined {
+  const path = puppeteerConfigPath();
+  if (path === undefined) return undefined;
   try {
-    return readFileSync(path);
+    return { path, bytes: readFileSync(path) };
   } catch (error) {
     throw new BrowserError(`render: could not read MERMAID_PUPPETEER_CONFIG (${path}): ${reasonOf(error)}`);
   }
@@ -110,21 +121,26 @@ const DRAWING_SCRIPTS = ['render.ts', 'render-plan.ts', 'render-session.ts', 'pa
 
 /**
  * Names the renderer that drew a diagram: SHA-256 over the installed mermaid-cli, mermaid and Puppeteer versions
- * (in that order), the drawing scripts' bytes, and the Puppeteer config's bytes (a fixed word when none is set).
- * That is the closed set, and it is every package `launch` loads from the prefix (`entryOf`: mermaid-cli and
- * Puppeteer) and the mermaid beneath them. A browser a config names by `executablePath` is covered only as far as
- * the config's bytes: an upgrade behind that path is not noticed. Computed once per run, after the install and the
- * patch and before any comparison. Every part is length-prefixed, so two inputs cannot run together into a third
- * that reads the same.
+ * (in that order), the drawing scripts' bytes, the Puppeteer config's bytes (a fixed word when none is set), and
+ * every environment variable whose name begins `PUPPETEER_`, as name and value in name order: Puppeteer reads those
+ * itself, and one of them can name another browser. That is the closed set of what the launch takes from outside the
+ * scripts, less two things it does not notice: a browser behind an `executablePath` the config names, whose upgrade
+ * changes no byte here, and a Puppeteer rc file, which Puppeteer reads from the project and this does not.
+ * Computed once per run, after the install and the patch and before any comparison. Every part is length-prefixed,
+ * so two inputs cannot run together into a third that reads the same.
  */
-export function rendererKey(): string {
-  const configPath = puppeteerConfigPath();
+export function rendererKey(config: PuppeteerConfig | undefined): string {
+  const environment = Object.keys(process.env)
+    .filter((name) => name.startsWith('PUPPETEER_'))
+    .sort()
+    .flatMap((name) => [name, process.env[name] ?? '']);
   const parts: (Buffer | string)[] = [
     versionOf(join(CLI_PREFIX, 'node_modules', '@mermaid-js', 'mermaid-cli', 'package.json')),
     mermaidManifests().map(versionOf).join(','),
     versionOf(join(CLI_PREFIX, 'node_modules', 'puppeteer', 'package.json')),
     ...DRAWING_SCRIPTS.map((name) => readFileSync(join(SCRIPT_DIR, name))),
-    configPath === undefined ? 'no-puppeteer-config' : readConfig(configPath),
+    config === undefined ? 'no-puppeteer-config' : config.bytes,
+    ...environment,
   ];
   const hash = createHash('sha256');
   for (const part of parts) {
@@ -178,12 +194,13 @@ function browserFailure(error: unknown): BrowserError {
   return new BrowserError(`render: could not start the browser: ${reasonOf(error)}`);
 }
 
-function parseConfig(path: string): object {
+function parseConfig(config: PuppeteerConfig): object {
   try {
-    return JSON.parse(readConfig(path).toString('utf8')) as object;
+    return JSON.parse(config.bytes.toString('utf8')) as object;
   } catch (error) {
-    if (error instanceof BrowserError) throw error;
-    throw new BrowserError(`render: MERMAID_PUPPETEER_CONFIG (${path}) is not valid JSON: ${reasonOf(error)}`);
+    throw new BrowserError(
+      `render: MERMAID_PUPPETEER_CONFIG (${config.path}) is not valid JSON: ${reasonOf(error)}`,
+    );
   }
 }
 
@@ -196,16 +213,16 @@ async function load<T>(packageName: string): Promise<T> {
   }
 }
 
-async function launch(): Promise<RenderSession> {
+/** Opens the browser with the config the run already read, and the options its bytes parse to. */
+export async function launch(config: PuppeteerConfig | undefined): Promise<RenderSession> {
   const cli = await load<MermaidCli>('@mermaid-js/mermaid-cli');
   const loaded = await load<{
     default?: { launch(options: object): Promise<Browser> };
     launch?: (options: object) => Promise<Browser>;
   }>('puppeteer');
   const puppeteer = loaded.default ?? (loaded as { launch(options: object): Promise<Browser> });
-  const configPath = puppeteerConfigPath();
-  const config = configPath === undefined ? {} : parseConfig(configPath);
-  const browser = await puppeteer.launch({ headless: 'shell', ...config });
+  const options = config === undefined ? {} : parseConfig(config);
+  const browser = await puppeteer.launch({ headless: 'shell', ...options });
   return {
     async draw(source, format) {
       return (await cli.renderMermaid(browser, source, format, DRAW_OPTIONS)).data;
@@ -221,7 +238,7 @@ async function launch(): Promise<RenderSession> {
 }
 
 /** A session that opens its browser on the first `draw`, once, however many are in flight; closing one never opened is a no-op. */
-export function lazySession(open: () => Promise<RenderSession> = launch): RenderSession & { readonly opened: boolean } {
+export function lazySession(open: () => Promise<RenderSession>): RenderSession & { readonly opened: boolean } {
   let session: Promise<RenderSession> | undefined;
   return {
     get opened(): boolean {
