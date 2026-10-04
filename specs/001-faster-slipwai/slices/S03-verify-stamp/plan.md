@@ -125,7 +125,7 @@ installed manifest joins the ignored-inputs list (`node_modules/.package-lock.js
 | XIV. Agent-generated change meets the same bar (NON-NEGOTIABLE) | Yes | Increment commits with the quickest relevant tests green; both full gates on the final tip; the hand runs the demo as the actor with the real toolchain. |
 | II, IV, VI, VII, IX, X, XI, XII, XV | No | No retry path, domain code, contract, telemetry, secret, pipeline or type changes. |
 
-D75's rule 10 (no path of an executable in the key or the stamp) is held by e15; the constitution has no principle of that name, and the plan rests on the decision, not on one. **Gate result:** no violation; *Complexity Tracking* stays empty. **Post-design re-check:** unchanged.
+*Additional Constraints* — persisted data records facts true on any machine, never a file path: the stamp holds digests, tool names with the lines they reported, an instant and a result, and e15 holds that no path is in it (D75's rule 10). **Gate result:** no violation; *Complexity Tracking* stays empty. **Post-design re-check:** unchanged.
 
 ## Project Structure
 
