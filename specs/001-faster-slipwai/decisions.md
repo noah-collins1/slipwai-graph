@@ -975,3 +975,201 @@
 - **Confidence:** medium · **Would reverse if:** the owner wants a bound on the browser in this slice, or wants a body hash in the record after all.
 - **Written to:** `specs/001-faster-slipwai/adversary-log.md` (the row under S11); `specs/001-faster-slipwai/spec.md` (AC-S11-6 and AC-S11-21 to -25); `specs/001-faster-slipwai/slices/S11-render-once/tasks.md` (T020 to T024); `specs/001-faster-slipwai/story-split.md` (the Parking Lot)
 - **Status:** standing
+
+## D73 — What is *the tree* a verify stamp vouches for, and what joins its key beyond FR-001's three, so that a reused stamp never stands for a gate that would fail if it ran now?
+- **Stage:** slice gaps · **Slice:** S03-verify-stamp · **When:** 2026-10-04T01:42:22Z · **Iteration:** 11
+- **Question:** FR-001 keys the stamp by git tree hash, gate-script hash and recorded tool versions. `make verify` judges working files, not a commit. Some checks answer from things no tree hash holds: history and position (`check-slice-scope`, `check-migrations`, `check-flags`), files git ignores (`.codegraph/`, the harness projections, an installed extension kit), and environment variables (`UX_GATES_REQUIRE`, `UX_GATES_SINCE`, `UX_GATES_SHARD`, `CODEGRAPH_GATE_NO_SYNC`, `SLIPWAI_NO_INSTALL`). What is the tree, what else is in the key, what is deliberately left out, and what does the gate do when it cannot tell?
+- **Options:** (a) FR-001's letter: `HEAD`'s tree, script hash, tool versions, stamped only on a clean working tree; (b) the working files as git would add them, plus the `HEAD` commit, branch name and trunk commit, plus a hash of the ignored inputs a check reads, variables in the key or the run unstamped, and the full gate with no stamp where the key cannot be built — **the stage's recommendation**; (c) as (b), but a tree with uncommitted changes is never stamped; (d) another line.
+- **Decision:** (b), the stage's recommendation, strengthened in four places (rules 1, 2, 3 and 8). Each numbered rule is one a test can hold.
+  1. **The tree is raw bytes.** The key covers every file git tracks and every untracked file git does not ignore, as they are on disk now.
+     - For each file it covers the path, the raw bytes, the executable bit, and a symlink's target.
+     - The bytes are read on every run. A file is never taken as unchanged on git's stat cache, its modification time, or git's own comparison.
+     - This departs from "as `git add -A` would see it", because D49 found that comparison normalises changes away. Two examples are owed: a file rewritten with CRLF under `* text=auto eol=lf`, and a same-size rewrite with its modification time restored. Each must run the full gate.
+     - The real index is never written.
+  2. **What is tracked joins the key.** The key holds the real index's entries (names, modes, blob ids, stages). A file that went from untracked to tracked has the same bytes, but `check-codegraph` answers differently for it.
+  3. **History and position.** The key holds four things:
+     - what `HEAD` is: the branch name, or detached;
+     - the commit `HEAD` names;
+     - every ref under `refs/heads` and `refs/remotes` with the commit it names;
+     - whether the checkout is shallow, and its boundary.
+     
+     This is wider than the stage's "the trunk ref". `check-migrations` and `check-flags` each try `main`, `origin/main`, `master` and `origin/master`, and `check-slice-scope` reads `ci.branch` and whether `origin` exists. All refs is the one set that cannot fall behind them.
+  4. **Gate scripts.** FR-001's gate-script hash stays as a named part of the key. It is redundant under rule 1 wherever the scripts sit inside the covered files; it costs one hash and keeps FR-001's words and scenario 4 testable on their own. It covers the `Makefile` the gate ran from and everything under the project's `scripts/`.
+  5. **Ignored inputs, in one closed list beside the checks.** Each entry names a path git ignores and the check that reads it. The key covers each by its bytes, or by the installed manifest that pins it where it is an installed dependency tree (D68's "what is installed, not the constant"). Absence is a value, so an extension installed after the stamp moves the key.
+     - The list holds at least: the code index's database and its write-ahead file; every harness projection directory the registry names; the installed UX-gates kit; the installed `skills/ui-ux-pro-max/`; and `.env`, where a gate step reads it.
+     - A test holds the list against the checks. A check that reads an ignored path not on the list fails that test.
+  6. **Installed environments.** `.venv` and `node_modules` are outside the key only where the gate's own recipe rebuilds them from a committed lock on every run. The lock is in rule 1. Where a backend's recipe does not rebuild one, it is a rule 5 entry, covered by its installed manifest. The plan settles this per backend.
+  7. **Variables.** Every environment variable a check reads that can change an answer joins the key by value, with unset distinct from empty.
+     - At least: `UX_GATES_REQUIRE`, `UX_GATES_SINCE`, `UX_GATES_SHARD`, `CODEGRAPH_GATE_NO_SYNC`, `SLIPWAI_NO_INSTALL`, `GITHUB_HEAD_REF`, `CI_COMMIT_REF_NAME`.
+     - `UX_GATES_JOBS` is not in the key: it changes how many run at once, never what is answered.
+     - A run that makes the gate write the tree it judges (`RATCHET_TIGHTEN`) neither reads nor writes a stamp.
+     - The same closed-list test as rule 5 holds the variables.
+  8. **Written only by a pass that ran everything.** A stamp is written only by a run in which every prerequisite of `verify` ran and exited 0.
+     - A run under make's ignore-errors, dry-run, touch or question modes neither reads nor writes one. `make -i verify` on a failing tree must leave no stamp.
+     - The key is computed before the checks start and again after they pass. The stamp is written only where the two are equal, so a file edited or an index repaired during the run is never vouched for.
+     - A stamp is never written after a failure, a skip or a reuse.
+  9. **Never stamped.** A checkout is unstamped where any index entry is marked `assume-unchanged` or `skip-worktree` (D46 rule 4), where any entry is a submodule, or where an untracked directory is itself a repository. The key cannot see inside any of these.
+  10. **Cannot tell.** The full gate runs, no stamp is read or written, and one line says why. The run never fails for that reason alone and never passes on less. This covers:
+      - no git on `PATH`, not a repository, or git failing;
+      - a file in the key that cannot be read;
+      - an unreadable or malformed stamp;
+      - a stamp whose key differs in any part.
+  11. **(a) and (c) are refused.** A developer and every delegate run the gate on uncommitted work. A clean-tree-only stamp would vouch by a commit's name for files the gate never judged in that state, and would remove few of the repeated runs the story counts.
+  - **Deliberately not in the key, and why none caches a false green on the tree's own content:**
+    - Tool caches (`.ruff_cache`, `.pytest_cache`, `__pycache__`, `target/`): the full gate reads the same caches, so a stamp is no weaker than a run.
+    - The stamp file itself: it depends on D76 placing it where git ignores it.
+    - Tool versions: D75's.
+  - **Residual for the cruise report:** what a project's own tests or tools read from outside the repository is not seen by the key. That means the clock, the network, user-level tool configuration, `PATH`, and variables no gate script names. A gate that would now fail for one of those reasons alone is reused as green until any file, ref or listed input moves, or `VERIFY_FORCE` is given.
+  - **Dependencies on siblings, not decided here:** the residual's catch is the full gate in CI and at the merge root, which depends on D74 keeping stamps unread there. Rule 10's line and the stamp's location are D76's wording and place. Whether rule 1's read of every file fits SC-001 on a large repository is D75's measurement.
+  - **No constitution MUST is broken and no person is needed.** The stamp is additive and nothing CI or the merge root checks changes, given D74.
+- **Why:** The developer sees two things: how long a slice takes, and whether a green gate can be believed. A stamp that says *passed* for a tree the gate would now fail is the one outcome the owner brief calls pointless, and priority 5 says such a cache is wrong. The key therefore holds everything a check answers from, not a commit's name.
+  - **Raw bytes are affordable.** Run by the skipper on this repository, read-only: hashing every tracked and untracked-not-ignored file with filters off took 60 ms, and hashing the index's entries took 2 ms. D49's stat-based residual therefore need not be accepted here at all.
+  - **The refs were read, not run.** `check-migrations.py` and the aws `check-flags.py` each walk four candidate trunk names, in different orders. A key holding one trunk commit would miss a fetch that moves `origin/main`.
+  - **The ignored inputs were read, not run.** `catalog.json` gives the three extension ignore lines; `src/slipwai/project/gitignore.py` gives the projection directories; `check-ux-gates.py` and `check-codegraph.py` give the five variables.
+  - **Not verified:** that every backend's verify script re-syncs its environment on each run, which is why rule 6 is conditional; the size of a real code index database, since this checkout has none; Windows.
+  - **One cost the host should place.** The files a run writes under `specs/` between gate runs (the decision log, the benchmark records, the untracked `specs/cruise-log.jsonl` here) are inputs of `check-decisions` and `check-benchmark`. They move the key honestly, so a cruise run reuses fewer stamps than the story's *two of three*. Narrowing that is per-check stamps (S07), not a hole to cut in this key.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** D75's measurement shows reading every covered file cannot meet SC-001 on the reference project. Rule 1 then falls back to D49's record (size, modification time, change time and identity per file, hashed where any differs) with D49's residual named, and every other rule stands.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S03's criteria for rules 1 to 11, the Verify stamp entity's fields, and the residual); `specs/001-faster-slipwai/story-split.md` (S03's row: the CRLF, restored-mtime, moved-ref, ignore-errors and newly-tracked examples)
+- **Status:** standing
+
+## D74 — Where is a verify stamp never read, and may an adopted repository's gate stamp at all?
+- **Stage:** slice gaps · **Slice:** S03-verify-stamp · **When:** 2026-10-04T01:42:22Z · **Iteration:** 11
+- **Question:** The row says *Given `CI=true`, then no stamp is read* and owner priority 5 says a stamp is never trusted in CI. Three things it leaves open. (1) Which runs count as CI, and does a CI run write a stamp nobody reads? (2) Does the trunk reuse a stamp, given the constitution's *the merge root and CI run the full gate on every change* and the owner's *Always ask a person* on anything that changes what the merge root checks? (3) Does `make ci` reuse a stamp for its `verify` part, and does the gate of a repository that adopted the method stamp at all?
+- **Options:**
+  - (1) `CI=true` alone; or D32's list (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI` non-empty).
+  - (2a) Only CI markers stop a read, so the trunk reuses a stamp like any branch.
+  - (2b) No read on the trunk (D30's name), under a CI marker, or on a detached `HEAD`; every other branch reads. **Recommended by the stage.**
+  - (2c) D46's line: read only on `slice/<id>`.
+  - (2d) Another line.
+  - (3, `make ci`) Reuse the stamp; or always run `verify` in full. **The stage recommends always run.**
+  - (3, adopted gate) Stamp under the same rule; stamp only the factory's own checks; or never stamp. No stage recommendation.
+- **Decision:** (1) D32's list; (2b), the stage's recommendation, taken; `make ci` always runs in full, the stage's recommendation, taken; the adopted gate never stamps in this slice. As rules a test can hold:
+  - **R1, CI.** A run is CI when any of `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` is non-empty. This is D32's list, read the way `check-codegraph.py` and `check-slice-scope.py` read it, so `CI=false` counts as CI. Such a run reads no stamp and runs every prerequisite of `verify`.
+  - **R2, the trunk.** A run reads no stamp when the checked-out branch is the trunk as D30 and D33 resolve it: a usable `ci.branch` from `project.json` that has a ref, else `main` where it has a ref, else `master`. The tests reuse D30's resolution and do not redefine it.
+  - **R3, detached `HEAD`.** A run on a detached `HEAD` reads no stamp.
+  - **R4, every other branch reads.** `slice/<id>`, a topic branch and this run's `adopt-method` (D12) read a stamp when the key matches.
+  - **R5, no read means no write.** A run that R1, R2 or R3 stops from reading writes no stamp and leaves any existing stamp file untouched. After a green gate in CI or on the trunk, the tree holds no stamp that run wrote.
+  - **R6, `make ci`.** `make ci` on a stamped tree runs every prerequisite of `verify`, on any branch. It is a forced run; what a forced run writes is D76's to say, and R5 still holds where R1 to R3 apply.
+  - **R7, the adopted gate.** Where the project has a wrapped application (the case in which `makefile()` adds `check-convergence`), the generated `verify` rule neither reads nor writes a stamp. Two consecutive runs there both run every prerequisite. `NOTHING_CONFIRMED` is unchanged.
+  - **R8, later merge nodes.** Any slice that makes a branch other than the trunk a place slices merge into (the merge tree) adds that branch shape to R2 in the same slice.
+  - **Does the trunk need a person?** No. Under R2 the merge root and CI run exactly what they run today, so nothing they check changes. Option (2a), reading a stamp on the trunk, is **not available to this run**: D46 already read the constitution's MUST as forbidding a narrowed local trunk run, and the owner's *Always ask a person* covers it. It stays a person's call.
+  - **What the host must also change.** User Story 1's Independent Test and acceptance scenario 1 need the words *on a branch other than the trunk, with no CI marker set*. A generated project starts on `main`, where the second run is now a full run by design. SC-001 is measured on such a branch.
+  - **Dependence on D73.** If the key carries the branch name, a stamp never crosses branches and R5 costs nothing. If it does not, R5 is what stops a trunk run from vouching for a branch.
+- **Why:** The developer sees two things: how long a slice takes, and whether the gate can still be believed.
+  - *Speed is where the repeats are.* User Story 1's repeated runs happen on the branch the slice is built on, and R4 gives them back there, for a `/drive` slice and for a developer on a `fix/…` branch alike. Option (2c) would withhold that from every topic branch and from this run for no gain in safety.
+  - *Why R4 is wider than D46.* D46 narrowed a check over changed content, which can miss something. A stamp is written only by a full passing gate and matches only byte-identical content, so reuse on a branch checks nothing less.
+  - *Why the trunk is excluded anyway.* Whether a reused stamp counts as "the merge root ran the full gate" is arguable, and an arguable reading of a NON-NEGOTIABLE MUST is not one the run takes. FR-023 already writes the shape: *always on `main` and in CI*.
+  - *The cost on `adopt-method`.* While the adoption is unmerged, this branch is where slices land and it will read a stamp. That is accepted: every change there still gets a full run, because no stamp can exist for content that has not passed one. R8 keeps the merge tree from inheriting the gap silently.
+  - *`make ci`.* It is documented as the local equivalent of the extended CI gate. A stand-in for CI that trusts a stamp is not one (priority 5).
+  - *The adopted gate.* Its `lint`, `typecheck` and `test` are commands a person recorded for code the factory did not write. They are held to nothing the architecture rules promise, so they may read a database, a sibling directory or an ignored file. A whole-gate stamp keyed on the tree could then cache a false green, which priority 5 calls wrong.
+  - *Why not the middle option.* Stamping only the factory's own checks is a per-check stamp, which the row sends to S07.
+  - *Why never-stamp is cheap.* Priority 3 puts the generated project first, the brownfield path is experimental so it may differ, adding the stamp later is additive, and this repository takes nothing until a person runs `migrate` (D9).
+  - Not verified: no reproduction was run, the PRD artifact was not consulted, and that a `make` variable set on `ci` reaches the `verify` prerequisite under GNU Make 3.81 is from the skipper's memory. The mechanism is the plan's.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** a person says in writing that a reused stamp on the trunk is the full gate having run (R2 then drops and SC-002 can be met by the stamp alone), or that an adopted repository's recorded commands may be treated as reading only the tree (R7 then drops). Either is theirs alone to say.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (User Story 1's Independent Test and scenario 1 qualified, and the criteria for R1 to R8, numbered by the host); `specs/001-faster-slipwai/story-split.md` (the S03 row's last example widened to R1 to R3, and a Parking Lot line for R8 and for per-check stamps in the adopted gate under S07)
+- **Status:** standing
+
+## D75 — Which tools' versions join the verify stamp's key, how are they read, what does *recorded* mean, and what does SC-001's *under 1 second* measure, on what, held by what?
+- **Stage:** slice gaps · **Slice:** S03-verify-stamp · **When:** 2026-10-04T01:42:22Z · **Iteration:** 11
+- **Question:** FR-001 keys the stamp by *recorded tool versions* and the row's fourth example names *a new ruff version*. Unstated: which tools, how each version is read, and what *recorded* means. SC-001 gives the reuse run one second; unstated: what the second times, on which project, and whether a test or a demo holds it. Asking uv, python3, node, git and make together took 0.10 s on this machine; a JVM takes a few tenths.
+- **Options:** (a) ask every tool every recipe launches, in-environment ones included, on every run; (b) the key holds what each machine-supplied tool reports, from one table beside the backend tooling table plus make and git, with lock-pinned tools covered by the tree hash and the installed environment's record, and a tool that cannot be asked meaning no stamp is read or written — **the stage's recommendation**; (c) no launches, each tool identified by its executable's resolved path, size and modification time; (d) another line. For SC-001 the stage recommends the wall time of `make verify` on a stamped, unchanged generated Python skeleton, measured at the demo, with the suite holding the mechanism rather than a clock.
+- **Decision:** (b), the stage's recommendation, with one departure in rule 3; and the stage's reading of SC-001.
+  1. **The set.** The key's tool versions are those of the tools the machine supplies and no committed file pins.
+     - Every project: `make`, `git` and the `python3` on PATH that runs the gate's check scripts.
+     - Python backend: `uv`.
+     - TypeScript backend, or any project with a frontend: `node` and `npm`.
+     - Go backend: `go`.
+     - Both Java backends: `java` only; Maven comes through the committed `./mvnw` wrapper, whose pin is a tracked file.
+     - A project with several backends takes the union, each tool asked once per run.
+  2. **One table.** The set lives in one table beside `BACKEND_TOOLING` in `src/slipwai/backends.py`, keyed by the same backend names. A test fails when a key of `BACKEND_TOOLING` has no row, so a new backend cannot ship without saying what its machine supplies.
+  3. **Lock-pinned tools are not asked and not read.** This covers ruff, mypy, pytest, staticcheck through `go tool`, the Maven plugins and everything under `package-lock.json`. Their versions move only when a tracked file moves, and the tree hash holds that. The row's *new ruff version* is therefore a changed `uv.lock` or `pyproject.toml`, and the example is tested that way. Here I depart from the stage: the installed ruff is not read even where it costs no launch. One thing is read from the environment without a launch: the interpreter version in a Python service's `.venv/pyvenv.cfg`, because no lock pins that patch level and it is what mypy and pytest run under.
+  4. **How a version is read.** On every run that would read or write a stamp, each tool in the set is launched once with its version argument. The key takes the first non-empty line it prints, whole and unparsed, so a vendor or build change moves the key as a number change does. Launches may run concurrently. No path, size or modification time of an executable enters the key or the stamp.
+  5. **A tool that cannot be asked.** If a tool is not on PATH, exits non-zero, prints nothing or does not answer within a fixed timeout, or a `pyvenv.cfg` that rule 3 names is missing or unreadable, the run reads no stamp and runs the full gate. A stamp is written only if every part can be read after the gate passed. The run never fails for this reason alone and never passes on a partial key. Whether it says so, and in what words, belongs with the reuse line (D76).
+  6. **Recorded.** The stamp holds, beside the key, each tool's name and the line it reported, as plain text a person can read. A stamp whose recorded versions do not all equal this run's is not reused.
+  7. **SC-001's second.** It is the wall time of the whole `make verify` recipe as the developer types it. The project is one generated with the Python backend, no frontend and target `none` (the Independent Test's project). The tree has just passed the full gate and is unchanged, and the run is local with no CI marker. It is measured at the demo on the demo's machine and written into the slice's quickstart with the command, the machine and the number, as D69 did for SC-004. A demo measuring one second or more is a failed demo, not a revised number.
+  8. **What the suite holds.** There is no timing assertion. Stand-in executables written in the test tree are put on PATH and record every call. On a reuse run the only processes started are the version questions of rule 1; no sync, no check script, no linter, type checker or test runner starts. The suite also holds that a changed line from any one tool, and a changed lock, each cause the full gate to run and a new stamp to be written.
+  9. **Other backends.** They carry the same mechanism and no time claim. The quickstart names the Java backends as the residual: a JVM's start-up is inside the budget on this machine by estimate only. No backend's toolchain is dropped from the key to meet the second.
+  10. **(c) is not available as written.** A stamp holding resolved executable paths breaks the constitution's rule that persisted data carries no file paths. It is also wrong on this machine: `uv` resolves to `/snap/bin/uv`, a launcher whose path does not change when the tool behind it does.
+  11. **Unavailable:** nothing is decided on a missing fact. The reuse run's time is unmeasured until the demo. Not verified here: the exact name of the version line uv writes into `pyvenv.cfg`, and that `uv sync --locked` restores a hand-altered environment exactly; the plan confirms both before relying on them.
+  12. **Dependency:** this rests on D73's tree hash covering the working files, locks and wrapper pins included; if D73 covers only the committed tree, a lock or pin with uncommitted changes must make the stamp unusable.
+- **Why:** The developer wants two of three gate runs back, and must still be able to believe a green. A stamp says *this tree passed the gate*, and the gate's first act is to sync each environment to its lock. So the verdict a full run would give depends on the tree and on the tools the machine supplies, not on what happens to sit in `.venv` between runs. Asking in-environment tools (a) costs a launch each through `uv run` on every reuse run and spends the second on answers the tree hash already gives. Reading the installed ruff would invalidate stamps for a state the next full run erases. The interpreter is different: it is machine-supplied, uv keeps a compatible environment as it is, and a new patch release can change what mypy or pytest say, so priority 5 puts it in the key at the cost of one file read. Taking the whole reported line rather than a parsed number errs towards re-running. Never reading or writing a stamp on a partial key is the same priority: a stamp that could cache a false green is wrong. For SC-001, the recipe is what the developer waits on. A clock in the suite would be flaky or too loose to mean anything, as D69 found, and the constitution's deterministic-suite rule excludes it. The count of processes started is the deterministic cause; the demo measures the effect. Nothing is added to the project's dependencies and no setting is introduced.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** a full gate run can pass or fail differently on the same tree because of a tool this set leaves out — a sync that does not restore a hand-changed environment to the lock, or a machine-supplied tool the gate launches that the table does not name. That tool then joins the key by the cheapest read that is true, and the second is re-measured.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (FR-001, SC-001, User Story 1's Independent Test, the first Edge Case, the Verify stamp entity, S03's criteria); `specs/001-faster-slipwai/story-split.md` (S03's row, the fourth example read as a changed lock); the slice's plan and quickstart when they are written (the table, the demo's measurement with machine and command)
+- **Status:** standing
+
+## D76 — What does a person see and control on a stamped gate: the reuse line, `VERIFY_FORCE`, a failed gate, a stamp's age, and where the stamp is kept?
+- **Stage:** slice gaps · **Slice:** S03-verify-stamp · **When:** 2026-10-04T01:42:22Z · **Iteration:** 11
+- **Question:** S03's row says a reuse run *prints the stamp it reused and exits 0* and that `VERIFY_FORCE=1` runs the full gate. Unstated: (1) what the one line says, and what a full run that could reuse nothing says; (2) which values of `VERIFY_FORCE` force, and whether a forced pass writes a stamp; (3) what a failing gate does to a stamp; (4) whether a stamp expires; (5) where the stamp lives, how many are kept, and whether worktrees share one.
+- **Options:**
+  - *Line:* one plain line carrying that the gate did not run, that this tree passed, when, an abbreviated key and how to run it anyway; on a full run, one extra line only where the reason is one a person can act on — **the stage's recommendation**.
+  - *Force:* only `1`; or any non-empty value other than `0`. A forced pass writes a stamp — **recommended**.
+  - *Failure:* a failing run writes nothing and removes the stamp for the key it failed on — **recommended**.
+  - *Age:* (a) no expiry, the pass's instant on the line — **recommended**; (b) a fixed bound; (c) a setting.
+  - *Where:* an ignored file in the working tree; or the git directory, one stamp per worktree, no setting, not shared between worktrees — **recommended**.
+- **Decision:** The stage's recommendation on all five, with rule 3 made stricter and four additions. Each rule is one a test can hold.
+  1. **The reuse line.**
+     - A reuse run prints exactly one line of its own on standard output, runs no check, and exits 0.
+     - The line begins `verify:` and carries five facts:
+       - the full gate did not run;
+       - this tree already passed it;
+       - the instant of that pass, read from the stamp, in UTC to the second;
+       - an abbreviation of the stamp's key, at least seven hexadecimal characters;
+       - the words `VERIFY_FORCE=1` as the way to run the gate anyway.
+     - A reuse run never prints `verify: all gates passed`. That line stays byte for byte the closing line of a full passing run and of nothing else.
+  2. **What a full run adds.** Nothing where there was no stamp or the key differs: that is the ordinary case. Exactly one line, before the first check, where:
+     - the run was forced — the line names `VERIFY_FORCE` and its value;
+     - git is absent or cannot read this checkout — the line carries git's reason;
+     - a tool whose version the key needs cannot be asked — the line names the tool.
+
+     In the last two cases the full gate runs and no stamp is written.
+  3. **When a pass is not recorded.** A full run that passed but could not write its stamp, or found the key after the last check different from the key before the first, still exits 0 and prints the closing line. It adds one line saying the pass was not recorded and why. A stamp never changes the gate's exit code.
+  4. **`VERIFY_FORCE`.**
+     - Unset, empty or `0` does not force. Any other value forces.
+     - It is read from the make command line or the environment.
+     - A forced run reads no stamp and runs every check.
+     - A forced passing run writes a stamp like any other full pass.
+     - The page a project gets that describes the gate carries its default (unset) and one sentence on when to set it: when you want the checks run again on a tree that already passed.
+  5. **A gate that does not pass.**
+     - Every full run removes this project's stamp before its first check starts.
+     - A stamp is written only after the last check passed.
+     - So after a run that failed, was interrupted or was killed, no stamp exists, for any key.
+     - This is stricter than the recommendation and overrides it: make stops at the first failing prerequisite, so a rule that acts on failure has nowhere to run.
+     - Where the stamp cannot be removed, the run prints one line naming the file to delete and writes no stamp.
+  6. **Age.** (a). A stamp never expires and there is no setting. Its timestamp is shown, never compared. Deleting the stamp is always safe and has the same effect as forcing.
+  7. **Where it lives.**
+     - In a directory of the factory's own under the directory `git rev-parse --git-dir` answers for this checkout. It is never a file git itself owns and never anywhere in the working tree.
+     - No ignore line is added. After any run, `git status` reports nothing the stamp left.
+     - One stamp per project per worktree: the last passing key, replaced by a rename of a complete file.
+     - Two projects in one repository (D36) never read each other's stamp.
+     - A stamp path that is not a regular file is removed as itself, never read or written through (D72's rule).
+     - A stamp that cannot be parsed, or lacks any of the entity's five fields, is no stamp.
+  8. **Worktrees.** A stamp is never shared between worktrees of one repository at this slice. Sharing is a later slice's question, with the merge tree.
+  9. **What it asks of an existing project.** Nothing. `slipwai migrate` brings the new Makefile, the first `make verify` runs in full, and the project's `.gitignore` is not touched. The fragment says so. The level stays MINOR as the row names it; the *new file the gate writes* is one a person never sees in `git status`.
+  - **Depends on:** D73 for what the key is (rules 1 and 3 need it reduced to one digest), D74 for where no stamp is read or written (rules 2 to 5 apply only where D74 allows a stamp), and D75 for which tools are asked.
+  - **Unavailable:** nothing.
+- **Why:**
+  - The developer has to believe a gate that returns in under a second. The line tells them it did not run, when the tree last passed, and how to make it run, which is the brief's *one line a person can act on*.
+  - Keeping `all gates passed` for a real run means a log never claims checks that did not happen. Only tests and two `docs/` pages read that line today, so nothing breaks.
+  - Treating every value but empty and `0` as force errs towards running the gate. The forced line makes a `VERIFY_FORCE` exported by mistake visible rather than a silent loss of the saving.
+  - Removing the stamp before the run is the only form of the failure rule that holds under make and under a kill. It costs one full run after reverting to an earlier passing tree, which is the safe side of owner priority 5.
+  - The second key check keeps an edit made mid-run from being vouched for by checks that read the older bytes.
+  - An expiry would not make a date-reading test deterministic. It would only add a number nobody chose. CI and the merge root run in full and are where such a test is caught.
+  - D46 kept its memory in `.codegraph/` because that directory was already there and already ignored. No such directory is guaranteed here, and a new ignore line would touch a file the project owns (constitution I). The git directory needs none.
+- **Decided by:** drive-skipper (claude-fable-5-1)
+- **Confidence:** medium · **Would reverse if:** the plan finds a supported checkout where the gate cannot write under the git directory though git works there (a read-only or shared git directory in a container). The stamp then moves to an ignored path in the working tree under D46's rule — written only where git already ignores it — with a `migrate` catch-up note for the ignore line.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S03's criteria for rules 1 to 9; User Story 1 scenario 1 and the Verify stamp entity's result field, which is only ever a pass); `specs/001-faster-slipwai/story-split.md` (S03's row: the file is under the git directory, and a run that does not pass leaves no stamp)
+- **Status:** standing
+
+## D77 — Where D73, D74, D75 and D76 differ at their borders, which wording holds: which full runs say a line, what a run that may not read a stamp does to one, and whether a pass with a key it could not build beforehand is recorded?
+- **Stage:** slice gaps · **Slice:** S03-verify-stamp · **When:** 2026-10-04T01:58:00Z · **Iteration:** 11
+- **Question:** Four delegates decided at once and none saw the others. (1) D73's rule 10 has *one line says why* for every case it cannot tell, a differing key and a malformed stamp among them; D76's rule 2 prints nothing where there is no stamp or the key differs, and a line in three named cases only. (2) D76's rule 5 removes the stamp before every full run; D74's R5 leaves any stamp untouched on the trunk, in CI and on a detached `HEAD`, and says nothing of what such a run prints. (3) D75's rule 5 writes a stamp where every part can be read after the gate passed; D76's rule 2 writes none where a tool could not be asked; D73's rule 8 writes only where the key before equals the key after. (4) D74's R6 makes `make ci` a forced run without saying what it prints.
+- **Options:** (a) each entry's own words where it owns the matter, as the entries themselves assign it — D73 gives the line's wording and the stamp's place to D76, D76 applies its rules 2 to 5 only where D74 allows a stamp, D76's note gives the timing of the key to D73 — **the reading the entries recommend**; (b) send the four borders to a fifth delegate.
+- **Decision:** (a). (1) A full run says one line before its first check only where a person can act on the reason: it was forced; git is absent or cannot read the checkout; a tool or a file the key needs cannot be asked or read; or the checkout is one D73's rule 9 never stamps, the line saying which. No stamp, a differing key, and a stamp that cannot be parsed are the ordinary case and say nothing. (2) On the trunk, under a CI marker and on a detached `HEAD`, a run reads nothing, writes nothing, removes nothing, and prints what it prints today and nothing more; D76's removal before the first check applies where a stamp may be used, and to a forced run there. (3) A run that could not build the whole key before its first check writes no stamp even if it passes, since there is no earlier key for D73's rule 8 to compare: the first gate of a fresh clone records nothing and the second does. (4) `make ci` prints the forced line and writes what a forced pass writes, except where (2) applies.
+- **Why:** A developer reads one line and acts on it, so a line appears only where there is something to do, and the merge root and CI say exactly what they said before this slice, which is the plainest proof nothing they check changed. Losing one stamp on a fresh clone costs one full run and can never record a pass for files the checks did not all see.
+- **Decided by:** host (standing decision D76)
+- **Confidence:** high · **Would reverse if:** a person wants every unstamped run to say why, the trunk included; that is a line added, and no rule about when a stamp is read changes.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S03's criteria on the lines a full run says, the trunk and CI, a fresh clone's first gate, and the extended gate)
+- **Status:** standing
