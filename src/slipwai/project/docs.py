@@ -19,6 +19,7 @@ from .existing import production_included_line
 from .flags import FLAG_GATE_NOTE
 from .gate import stamped
 from .parallel_gate import PAGE as PARALLEL_PAGE
+from .parallel_tests import parallel_tests_page
 from .pins import pin_list
 from .skills_page import skills_page
 
@@ -152,7 +153,7 @@ The runner's check before an iteration narrows the same way, on any branch outsi
 hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
 changed while its size, times and identity all read as before — it cannot see either; and deleting that file makes
 its next comparison whole.
-{style_gate}{production_gate}
+{style_gate}{production_gate}{parallel_tests_page(apps)}
 `make check-constitution` is the one gate that reads a document rather than code, and it waits for the
 document: `./init` installs the constitution *template*, and while that file is still the untouched template
 the gate reports that nothing has been drafted and passes, so the commit `./init` pushes goes through

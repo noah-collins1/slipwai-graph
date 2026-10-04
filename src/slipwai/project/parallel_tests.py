@@ -1,0 +1,40 @@
+"""What the gates page says about running tests across cores: the project's mark, and what each runner already does.
+
+The mark is `parallelSafe` at the top of `project.json`. A Python service's `scripts/verify` reads it each time it
+runs (`languages/python.py`), so the page says what the script does and not what a project once asked for. The other
+backends' commands are unchanged by it, and the page records what their runners do by themselves — the sentence a
+person reaches for when asking whether the gate is parallel — for the backends the project has and no others.
+"""
+from __future__ import annotations
+
+from ..services import App, backends_of
+
+FLAGS = "-n auto --maxprocesses 4"
+
+MARK = f"""**Tests across cores.** A Python service's gate runs its tests across cores where `project.json` says it may: `"parallelSafe": true`,
+which every new project has, adds `{FLAGS}` (`pytest-xdist`, capped at four workers) to the gate's `pytest` in `make test`,
+`make verify` and the adversarial run, and never to the integration run, whose tests share one database. **A missing mark is serial**,
+and so is `false`, or a file the gate cannot read: a project made before the mark existed has none, and `slipwai migrate` never adds
+one. The gate reads the mark each time it runs, so a change takes effect on the next run with nothing regenerated. Set it `false`
+when the tests share a file, a port, a database or module-level state, which a second worker would trip over.
+"""
+
+# What each family's runner does with the tests the gate hands it, whatever the mark says: no backend's command changes.
+RUNNERS = {
+    "typescript": "TypeScript: Vitest runs test files in parallel, by file.",
+    "go": "Go: `go test` runs packages in parallel, by package.",
+    "java-quarkus": "Java: Maven's Surefire runs tests one at a time, as configured here.",
+    "java-spring": "Java: Maven's Surefire runs tests one at a time, as configured here.",
+}
+
+
+def parallel_tests_page(apps: list[App]) -> str:
+    """The paragraphs for `docs/gates.md`: the mark where there is a Python service, one runner sentence for each
+    backend that is not Python (once each, though two Java backends say the same), and nothing for a project that has
+    none of them — an adopted repository's applications are not the factory's, so its page gains nothing."""
+    backends = backends_of(apps)
+    runners = list(dict.fromkeys(RUNNERS[backend] for backend in backends if backend in RUNNERS))
+    parts = ([MARK] if "python" in backends else []) + (
+        ["The other runners need no mark and run as they always have. " + " ".join(runners) + "\n"] if runners else []
+    )
+    return "\n" + "\n".join(parts) if parts else ""
