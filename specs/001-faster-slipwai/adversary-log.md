@@ -388,3 +388,37 @@ Findings: nine, none `CRITICAL`, none `HIGH`. What held: on a red tree every spe
 | B3 | B | LOW | An npm command or `make -t` that moves the tree or the marker without a manifest is not seen. New | Parking Lot and the cruise report (D97) | parked |
 | B4 | B | LOW | The merge `migrate` makes replaces a lock the project ignores, without a refusal; older | One sentence in the catch-up, a hold where cheap; whether `migrate` should refuse is parked (D97) | fixed at T023 (AC-S04-60, -85); question parked |
 
+
+## S05 · 8c7e4cd · 2026-10-04
+
+Slice `S05-xdist` (cruise iterations 14–15), diff `9acded6^..8c7e4cd` plus `c971759`: `src/slipwai/project/languages/python.py`
+(the mark's reader in the generated `scripts/verify`, the flags spliced into the default suite only),
+`src/slipwai/project/parallel_tests.py` (new: the gates page's paragraph), `src/slipwai/project/metadata.py`,
+`src/slipwai/manifest.py` (`recorded_parallel_safe`), `replay.py`, `add_service.py`, `converge.py`, `resurvey.py`,
+`scaffold.py`, `cli.py`, `docs.py`, the four committed Python locks (`pytest-xdist`, `execnet`), one fragment and five
+test modules.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | The generated `scripts/verify` now reads `project.json` and its modes splice `-n auto --maxprocesses 4` (`src/slipwai/project/languages/python.py`); `generate`, `migrate`, `add-service`, `adopt --refresh` and `converge` carry a new key (`src/slipwai/manifest.py`, `src/slipwai/replay.py`) |
+| driven adapter or the provider types behind one | widened | A new dependency the gate drives, `pytest-xdist` with `execnet`, in every Python service's lock (`assets/languages/python/locks/uv.lock` and its three siblings) |
+| authorisation decision (who can reach one that already exists) | not present | The diff decides nothing about who may do what |
+| concurrency, idempotency, ordering, retention, or time | widened | The slice's claim: the parallel default suite gives the serial run's pass/fail set; the database-backed suite stays serial; the mark is read fresh on every run, so the stamp never answers a stale mark (`src/slipwai/project/languages/python.py`, `assets/toolkit/scripts/verify-stamp.py` unchanged) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
+
+Spawned: seam A — the generated gate with the mark on: a green, or a stamp, on a tree whose serial run is red; a verdict that differs from the serial one without a word · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `src/slipwai/project/languages/python.py`, `src/slipwai/project/parallel_tests.py`, `src/slipwai/project/metadata.py`, `assets/toolkit/scripts/verify-stamp.py` (read), `assets/languages/python/locks/uv.lock`, `changelog.d/xdist.md`, `tests/test_xdist_gate.py`, `tests/test_xdist_plugin.py`, `tests/test_xdist_page.py`
+Spawned: seam B — the mark through `generate`, `migrate`, `add-service`, `describe-service`, `adopt --refresh` and `converge`: a person's mark deleted, flipped, added or duplicated, or `project.json` corrupted · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `src/slipwai/manifest.py`, `src/slipwai/replay.py`, `src/slipwai/add_service.py`, `src/slipwai/converge.py`, `src/slipwai/resurvey.py`, `src/slipwai/scaffold.py`, `src/slipwai/project/metadata.py`, `src/slipwai/migrate.py` (read), `changelog.d/xdist.md`, `src/slipwai/project/parallel_tests.py`, `tests/test_xdist_carry.py`, `tests/test_xdist_mark.py`
+Omitted: what converge passes 1 and 2 already ran — the reader on a directory, a list, a BOM, a symlink and duplicate keys; a root `json.py` (T017, T019); Windows quoting; the integration run; make's modes against the stamp (the S04 row). `converge`'s own move and a mark nested under `deployables` were read, not run (time). Windows and macOS
+Findings: eight — one `HIGH`, three `MEDIUM` counting T018's class, four `LOW`. What held: a session fixture failing at teardown, a worker crashing mid-run, a collection that differs between workers, an import error, a `-k` matching nothing in `--test-only`, `PYTEST_XDIST_AUTO_NUM_WORKERS` and `PYTEST_ADDOPTS=-n0`, `--sw`, `-x`, `--maxfail`, `--lf` — all give the serial verdict; `migrate` twice is idempotent; odd spacing, an escaped key name, an object value and a reformatted file conflict loudly; CRLF merges clean with one copy; `add-service` and `describe-service` never add or flip a single mark; `adopt` writes no key.
+
+| # | Seam | Severity | Finding | Triage | State |
+|---|---|---|---|---|---|
+| A1 | A | HIGH | Tests that share module-level state, or a `pytest_sessionfinish` hook that sets the exit status, are red serially and green in parallel; the generated CI runs `make verify` with the mark on, so no gate runs the suite serially. New | D106; T022 | open |
+| A2 | A | MEDIUM | `--adversarial-only` reads every worker crashing at collection (exit 5) as no adversarial tests and passes. New | D106; T022 | open |
+| A3 | A | LOW | `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` or `PYTEST_ADDOPTS="-p no:xdist"` fails the gate on a bare usage error. New | D108; T024 | open |
+| A4 | A | LOW | The stamp keys on no pytest variable: `PYTEST_ADDOPTS=--co make verify` would stamp a tree whose tests never ran (read, not run). Older (S03) | D108 part 5: a method slice behind S32 (Parking Lot), and the cruise report | parked |
+| B1 | B | MEDIUM | `add-service`, `describe-service` and `adopt --refresh` collapse a mark written twice to the last copy's value, flipping a person's `false` (serial) to `true`. New | D107; T023, closing T018 | open |
+| B2 | B | LOW | A project with no Python service has a page sentence saying `project.json` carries the mark `true`, whatever it carries. New | D108; T024 | open |
+| B3 | B | LOW | A mark `1e400` is rewritten as `Infinity`, which is not JSON. Older mechanism, newly reachable | D108; T024 | open |
+| A5 | A | LOW | With the mark `false` a test that calls `os._exit(0)` ends the serial run green part way; parallel is red. Older; S05 makes it stricter | Declined: not this slice's; the cruise report | declined |

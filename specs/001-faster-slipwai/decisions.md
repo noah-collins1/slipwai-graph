@@ -2023,3 +2023,139 @@
 - **Confidence:** high · **Would reverse if:** the owner would rather a project with no Python service carried no key at all.
 - **Written to:** `specs/001-faster-slipwai/slices/S05-xdist/tasks.md` (T020)
 - **Status:** standing
+
+## D106 — After S05's adversary pass: a parallel run passes a test that leaks state into another, and `--adversarial-only` passes when every worker crashes. Where does the parallel run stand?
+- **Stage:** Phase 4 adversary triage · **Slice:** S05-xdist · **When:** 2026-10-04T22:20:26Z · **Iteration:** 15
+- **Scope:** S05-xdist
+- **Question:** The adversary confirmed two findings on a generated Python project with the mark `true`, on 12 cores. **A-F1 (HIGH):** two tests share module-level state. The serial run fails; the parallel run passes 5 times out of 5 because the tests land on different workers. A `pytest_sessionfinish` hook that sets `exitstatus = 1` is also ignored under xdist. The generated CI job runs `make verify` with the mark on, so no gate runs the suite serially any more: a leak passes locally, gets stamped, and passes CI. **A-F2 (MEDIUM):** when every worker crashes at collection, xdist ends with exit 5. `--adversarial-only` reads 5 as "no adversarial tests" (D104), so `make adversarial` passes where the serial run exits 1. Taking the restart budget of 48 takes about 53 s.
+- **Options:** (a) where any CI marker is set, pytest runs serially whatever the mark says; `--adversarial-only` never takes the flags; the page warns that a parallel run can hide a leak; AC-S05-2 and AC-S05-5 are rewritten. **Recommended by the host.** (b) parallel everywhere with `--dist loadfile`, plus the warning. (c) park S05's close for a person, because it changes what CI checks.
+- **Decision:** (a), with these rules:
+  1. **CI is serial.** In `scripts/verify`, `parallel` stays empty whenever `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` is non-empty, whatever `project.json` says. `CI=false` counts as set. This is the stamp's list and reading (`verify-stamp.py`'s `CI_MARKERS`, D32), so "a CI run" means one thing across the gate. In CI, `--test-only` and `all` run the exact pytest command the last release ran.
+  2. **`--adversarial-only` is always serial.** It drops out of the modes that read the mark, and serial is the only run under which its exit-5 acceptance (D104) means "no test matched". `--test-only` and `all` keep the flags outside CI (D103, D104).
+  3. **The page.** The gates page adds one sentence to the mark's paragraph: a parallel run can also hide a test that depends on another test's leftovers, because the two may run on different workers, so CI runs the suite serially to catch it, and a test that passes locally but fails in CI is the first thing to look for. The changelog fragment carries the same fact in one line.
+  4. **AC-S05-2, rewritten.** "Given the Python project with the mark `true` and no CI marker set, when `make verify` or `make test` runs, then its pytest command carries `-n auto --maxprocesses 4`, and every test that fails in the parallel run also fails in the serial run on the same tree. The parallel run does not promise to fail every test the serial run fails: a test that depends on another test's state may pass in it, and rule 1 is what catches that."
+  5. **AC-S05-5, rewritten.** "Given the mark `true`, when `--adversarial-only` runs, then pytest runs with no `-n`, and a `-k` that matches no test passes as it does today (exit 5)."
+  6. **New criteria, for the host to number:**
+     - Given the mark `true` and any one of `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set (including to `false`), when `make verify` runs, then pytest runs with no `-n`.
+     - Given the mark `true` and A-F1's two tests sharing module-level state, when `make verify` runs with `CI=true`, then the gate fails. This is a regression test at the gate's owning layer.
+     - Given the mark `true` and a test module whose import crashes the interpreter, when `--adversarial-only` runs, then it fails.
+  7. **`--dist loadfile` is not added.** It closes only the same-file case. Rule 1 closes the whole finding, so it would be a second mechanism with no remaining job.
+  8. **Not closed: a local merge root.** A merge root that runs `make verify` locally with the mark on still runs in parallel and can pass a leak. A leak still cannot reach `main` without a serial run, because the generated workflow runs on `pull_request` (`src/slipwai/project/ci_workflows.py:260`) and on every push.
+- **Why:** The owner said the one thing that would make this work pointless is "a faster loop that lets through what today's gate catches", and A-F1 is exactly that. The constitution says no check is removed anywhere to make the loop faster (lines 33–34). FR-009 read as "parallel in CI too" removes one: the serial run's detection of order-dependent state. So FR-009 is read here as the developer's local gate, and the constitution decides CI. (a) is the only option that puts CI's verdict back where the last release had it:
+  - (b) leaves cross-file leaks passing in CI, which breaks the same MUST.
+  - (c) parks a slice over a question the constitution and the brief already answer.
+
+  For the developer, (a) keeps the local speed FR-009 asked for, and CI is the backstop that says plainly which test leaked. A-F2 goes away with no new exit-code reading, which fits the owner's preference for plain rules over clever ones (priority 5, taste).
+
+  **Not a person's question.** "Always ask a person: anything that changes what the merge root or CI checks" guards CI's checks against change. Under (a), CI's pytest command is byte-for-byte the last release's (1.5.1). The only thing narrowed is what this unreleased slice was about to change in CI, and that change is the one the brief lists as out of scope ("Changing what the gate … check at the merge root and in CI"). Asking a person whether to keep CI as it was released would turn the guard around.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the owner says FR-009 means CI must run in parallel too. That would need a serial-order check of its own in CI before the flags could go on there, and it would be the owner's call.
+- **Written to:** `src/slipwai/project/languages/python.py` (the parallel reader and the modes it covers); `src/slipwai/project/parallel_tests.py` (the page's sentence); the S05 `changelog.d/` fragment; `specs/001-faster-slipwai/spec.md` (AC-S05-2 and AC-S05-5 rewritten, new criteria from rule 6)
+- **Status:** standing
+
+## D107 — `"parallelSafe"` written twice in `project.json`: `migrate` makes a duplicate without a word, and `add-service`, `describe-service` and `adopt --refresh` merge the two copies into one, which can turn a person's serial setting into parallel. Detect it, refuse it, or collapse it?
+- **Stage:** 4 adversary triage and converge-left (T018, adversary B1) · **Slice:** S05-xdist · **When:** 2026-10-04T22:20:36Z · **Iteration:** 15
+- **Scope:** S05-xdist
+- **Question:** The gate treats a key written twice as serial (`python.py:181`, T014's fix). Two routes still get around that without telling anyone.
+  - **T018 (MEDIUM).** A person adds the mark anywhere except right after `"target"`. `migrate`'s text merge then puts the factory's copy beside theirs, exits 0 and says nothing. Their opt-in no longer does anything.
+  - **B1 (MEDIUM).** `add-service`, `describe-service` and `adopt --refresh` read the file with plain `json.loads`, where the last copy wins. They write it back with `json.dumps`, which leaves one key, at the first copy's place, with the last copy's value. A person's `false` after `"name"` plus the generated `true` after `"target"` becomes a single `true`: the gate goes from serial to parallel because of an unrelated command, and the person is not told. (Reproduced through `describe-service`, `add-service billing --language go` and `adopt --refresh`, which also reports "refreshed: nothing".)
+  - Does the same rule cover `ci.branch`, and every other key?
+- **Options:** (a) every command that reads `project.json` detects a key written more than once and refuses before writing anything. `migrate`, whose merge has already happened by the time a duplicate can exist, prints one line after the merge instead. **Recommended by the host.** (b) The writers collapse a duplicate to `false`, which is how the gate reads it. (c) The offered side writes the key where the project already has it, so `migrate` never creates a duplicate, plus (a)'s refusal for the other commands.
+- **Decision:** (a), the host's recommendation, with three changes: the check covers every key at every depth, `migrate` checks before its merge as well as after, and its after-merge line also goes into the catch-up note. Rules:
+  1. **One reader.** Every factory command that reads a project's `project.json` reads it through one function: `read_manifest` in `manifest.py`, or a sibling that shares its duplicate check. The check is a `json` `object_pairs_hook` from the standard library, with no new dependency. This covers `migrate` (and `replay`), `add-service`, `describe-service`, `add-frontend`, `confirm`, `adopt --refresh` (`resurvey`), `survey`'s `written_by_factory` and `cli_init`'s agent writer. No command reads the file with plain `json.loads`, so no command can merge two copies into one.
+  2. **The rule covers every key, at every depth.** It is not limited to the keys the factory writes. The factory reads every key in this file. RFC 8259 leaves a duplicate's meaning undefined. And a rule limited to "keys the factory writes" would need a list, which drifts out of date. Because of this, `ci.branch`, `parallelSafe`, `generator`, and every key in `deployables` and `convergence` are covered by the same rule, with no separate rule for each.
+  3. **Refuse before writing.** The command refuses before it writes any file or makes any commit, and exits non-zero. The message is one line that names the file, the key path and what to do, for example: `project.json has "parallelSafe" twice (lines 10 and 14); keep one copy and run this again`. Give line numbers where the reader can get them cheaply; otherwise give just the key path.
+  4. **`migrate` before its merge.** `migrate` reads the project through rule 1. A file that already has a duplicate is refused before the replay. Nothing is merged, and the message is the same line.
+  5. **`migrate` after its merge.** The duplicate T018 describes only appears once the text merge has happened. After a clean merge, `migrate` reads the merged `project.json` with the same hook. If a key now appears more than once, `migrate` prints one line, exits 0 and keeps the merge. The line names the file and the key, says the gate reads the key as serial, and says "keep one copy". The same sentence goes into `.slipwai/catch-up.md` under this release. (Constitution: `migrate` MUST leave a catch-up note for every change it cannot complete.) `migrate` does not undo the merge, because the merge commit is the person's to read and `git reset --hard ORIG_HEAD` is already the documented undo. It does not edit the duplicate either; see rule 7. A merge that stopped at a conflict says nothing extra, because the person is already editing the file.
+  6. **The page stays as it is.** The sentence in `parallel_tests.py` ("a mark written twice is serial … add the line once … right after the `"target"` line") stands. The published way of adding the line produces one copy, and `TheLineTheCatchUpTellsAPersonToAddComesOutOnce` keeps holding.
+  7. **Option (b) is rejected.** Collapsing a duplicate to `false` writes a value the person did not ask for. Rule 3 asks the person instead. It costs one command run again, and the answer stays theirs (D102 rule 3: the project's own value is never added or flipped).
+  8. **Option (c) is set aside.** Writing the key where the project already has it would make the replay copy the project's key order. That is more machinery, and it does not stop a duplicate that a person pastes in by hand, so rules 1–5 would be needed anyway. See *Would reverse if*.
+  9. **Carry examples.** These are added in a commit after the root, as T018 asks. Each one checks two things: the text has one key, or the line is printed; and the gate reads it the way the line says.
+     - For `migrate`, one example per place the line was added: after `"name"`, at the end, after `"target"`. After `"target"` gives one key and no line. The other two give the line, the catch-up sentence, exit 0, and a serial gate.
+     - For `add-service`, `describe-service` and `adopt --refresh`: the reproduced B1 file (`false` after `"name"`, `true` after `"target"`). The command refuses, `project.json` is unchanged byte for byte, the gate is still serial, and nothing is committed.
+     - For `ci.branch`: the same `migrate` example with the key placed by hand somewhere other than where the factory writes it, and one refusal example through `add-service`.
+  10. **Fragment.** This does not change the release level: it is a fix inside S05's MINOR. The fragment adds one sentence: a `project.json` with a key written twice is now refused by every command except `migrate`, which says so after its merge, and the fix is to keep one copy.
+- **Why:**
+  - **B1 is a gate quietly changing its answer.** A developer sets the mark to `false` because their tests share a SQLite file. An unrelated command (`describe-service --purpose`) then turns their gate parallel without telling them. The first sign is flaky test runs. That goes against the brief's fifth priority (deterministic over fast) and the reason the brief gives for this work existing (a faster loop must not let through what today's gate catches). It also goes against D102 rule 3: a factory command must never flip the project's own value.
+  - **Why refuse rather than resolve.** Refusing before writing is the only answer that leaves the file as the person wrote it and puts the choice back with them, in one line they can act on, as the brief's taste asks.
+  - **Why T018 gets only a line.** T018 fails safe, so it needs to be said, not prevented. Rule 5 is the cheapest way to make the inert opt-in visible where the person will look: `migrate`'s output and the catch-up note.
+  - **Why every key.** Limiting the check to "keys the factory writes" would turn the sweep into a list that has to be maintained, and a list falls behind the next key that some release's notes tell a person to add by hand. Checking every key needs no list and answers the sweep, `ci.branch` included, with the same rule.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** a later release's notes tell a person to add another `project.json` key by hand where the factory also writes it, and that route's carry examples show the after-merge line firing on the published route. Then the prevention in (c), with the replay copying the project's key order, is added on top of rules 1–5.
+- **Written to:** `specs/001-faster-slipwai/slices/S05-xdist/tasks.md` (T018's GREEN, widened to cover B1: rules 1–5 and 9); `specs/001-faster-slipwai/spec.md` (S05's criteria: the refusal, the after-merge line and its catch-up sentence, the sweep); `changelog.d/` S05 fragment (rule 10)
+- **Status:** standing
+
+## D108 — S05's adversary triage and T019's converge pass. What happens to the root module a worker imports, the plugin that never loads, the fixed sentence on a project with no Python service, and the infinite mark? Is the older pytest-variable hole in the stamp a task or a cruise-report line?
+- **Stage:** Phase 4 (adversary triage; converge-left task T019) · **Slice:** S05-xdist · **When:** 2026-10-04T22:20:47Z · **Iteration:** 15
+- **Scope:** S05-xdist
+- **Question:** Four LOW findings on S05, plus one older finding outside it.
+  - **(1) T019.** A module at the project's root named like a module the xdist workers import (a `json.py`) crashes every worker. The output is `maximum crashed workers reached`, exit 5. The serial run passes on the same tree.
+  - **(2) A-F3.** Two settings make the gate fail with nothing but pytest's usage error `unrecognized arguments: -n --maxprocesses`, where before this release it passed serially. One is `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`, a common CI hardening. The other is `PYTEST_ADDOPTS="-p no:xdist"`.
+  - **(3) B2.** A project with no Python service gets the fixed sentence ``"`project.json` carries `"parallelSafe": true`"`` (`NO_PYTHON`) even when its file has no mark or says `false`.
+  - **(4) B3.** A mark of `1e400` is read as infinity. A factory rewrite (`describe-service`, replay through `json.dumps`) then writes `Infinity`, which is not JSON.
+  - **(5) Older, from S03's mechanism.** The verify stamp's key holds no pytest environment variable. So `PYTEST_ADDOPTS=--co make verify` would stamp a tree whose tests never ran. This is inferred from the code and was not run end to end.
+- **Options:**
+  - (1) (a) the page's sentence on when to set the mark `false` names a root-level module that shadows a standard-library name; (b) run the parallel pytest so the workers' import path does not start at the root.
+  - (2) (a) load the plugin explicitly in the gate's flags; (b) one sentence on the page; (c) both.
+  - (3) (a) reword as a conditional and never read the file at page time; (b) the page reads the mark.
+  - (4) (a) park for the cruise report; (b) refuse a non-finite number with a one-line message.
+  - (5) park beside D83's `MAKE=/bin/true`, or a task now.
+- **Decision:**
+  1. **T019: (a), the page sentence.** Code fixes nothing here.
+     - The page's sentence on when to set the mark `false` gains a clause. It says that a Python module at the project's root named like a standard-library module (a `json.py`, say) crashes every worker with *maximum crashed workers reached*. The remedy is to rename the module, or to set the mark `false`.
+     - AC-S05-2 gains the matching exception: the pass/fail set equals the serial run's on a tree with no root-level module named like a standard-library one.
+     - A `tests/test_xdist_gate.py` example holds the page sentence, as T019's GREEN requires. T019 is ticked against it.
+     - The gate's command does not change.
+  2. **A-F3: (c), both.**
+     - **The flag.** Where the mark is `true`, the gate's flags load the plugin explicitly, so a run with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` still runs across cores.
+       - The spelling is whichever one the implement stage proves by example under both settings: autoload on (no "already registered" error) and autoload off (the workers start). The likely candidates are `-p xdist` and `-p xdist.plugin`.
+       - `FLAGS` in `parallel_tests.py` and the script's `parallel=` line carry the same words.
+       - D103 rule 1 and AC-S05-2's quoted flags are amended to match.
+     - **The page sentence.** The page's existing sentence on the plugin ("a service that removed it fails on an argument error") is extended to name `-p no:xdist` in `PYTEST_ADDOPTS` as the same case. That person asked for no xdist while the mark asks for it, so they set the mark `false`.
+     - **If no spelling passes both settings:** the sentence lands alone, also naming `PYTEST_DISABLE_PLUGIN_AUTOLOAD`. That is (b), and it comes back as no new question.
+  3. **B2: (a).** `NO_PYTHON` becomes: "Where `project.json` carries `"parallelSafe": true`, a Python service's tests run across cores; it changes nothing until a Python service is added." The page stays a pure function of the services and never reads the mark. This refines D105's sentence and overrides nothing in it.
+  4. **B3: (b), refuse.**
+     - **Where.** `recorded_parallel_safe` (`src/slipwai/manifest.py`) is the one reader every factory rewrite of `project.json` goes through.
+     - **What it refuses.** A mark that is a non-finite number: infinity, minus infinity or NaN, as Python's `json` reads `1e400`, `-1e400`, `Infinity` or `NaN`.
+     - **How.** One line naming the file, the key and the value as written, and saying to set it to `true` or `false`. The exit code is non-zero and nothing is written.
+     - **What does not change.** The gate itself already reads such a value as serial.
+     - **Examples owed:** `1e400` and `NaN`, each with `project.json` byte-identical afterwards.
+  5. **The stamp and pytest's variables: a task, owed but not in S05, and not declined.**
+     - **What is added:** a Parking Lot row for a method slice right behind `S32-verify-stamp-split`. It adds `PYTEST_ADDOPTS`, `PYTEST_PLUGINS` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD` to `VARIABLES` in `assets/toolkit/scripts/verify-stamp.py`.
+     - **Its first example reproduces the finding:** a run under `PYTEST_ADDOPTS=--co` writes no stamp that a plain run later reuses.
+     - **Why not now:** changing that closed list owes `S32` first (D91, D100).
+     - **Cruise report:** it also goes in the cruise report as an open item, not as a declined one.
+  - **Level:** none of the five raises `VERSION`. 1–4 ride in S05's MINOR fragment. Its lines name the flag, the refusal and the reworded sentence. No catch-up is asked of an existing project.
+  - **Unavailable:** nothing.
+  - **Not verified:** which `-p` spelling registers cleanly with autoload on. This machine has no pytest-xdist installed, so I could not run it. Rule 2's fallback covers it.
+- **Why:**
+  - **(1)**
+    - The failure is loud, never a false green, and needs a root-level `.py` that no generated project ships. The owner's one fear, a faster loop letting through what today's gate catches, is not reached.
+    - Option (b) would add a hidden change to how the workers' import path is built (an environment variable or a changed working directory). Its interaction with `PYTHONPATH="$app/src"` and pytest's rootdir has not been measured, all to serve a contrived name.
+    - One clause on the sentence a person already reads when choosing the mark is the owner's taste: one sentence on when to change a setting. Naming the actual crash text lets a person match the page to what they see.
+  - **(2)**
+    - Turning plugin autoload off is ordinary CI hardening, not sabotage. With this release that setting turns a passing gate red with a message that names no cause. That breaks "a gate says why it failed in one line a person can act on", and breaks AGENTS.md's promise that an existing answer keeps its meaning.
+    - Loading the plugin explicitly is what pytest's own documentation tells autoload-off users to do. It adds no dependency.
+    - `-p no:xdist` is a direct contradiction of the mark. It stays loud, and the sentence names it.
+  - **(3)**
+    - The fixed sentence states something about the file that may be untrue: a migrated project without the mark, or one that says `false`.
+    - The conditional is true in every case and keeps the page free of runtime reads. That matters because D104 made the script, not the page, the place the mark is read each run.
+  - **(4)**
+    - D63's rule decides it: fix in the slice what is new with it and a test can show. The mechanism (`json.dumps`'s default `allow_nan`) is older, but S05's D102 is what made an arbitrary project value reach it.
+    - Leaving it would let the factory write a `project.json` that strict JSON readers (`jq`, a schema check) reject. That breaks the constitution's rule that a generated project passes its own gate.
+    - The fix is a few lines in the one function that already owns the value.
+  - **(5)**
+    - This is not D83's `MAKE=/bin/true`. That case needed a person deliberately replacing make, and the same person could just as easily write the stamp file by hand. A `PYTEST_ADDOPTS=-k something` exported in a developer's shell for an unrelated reason is ordinary. It would cache a false green on a feature branch.
+    - The owner's fifth priority calls such a stamp wrong, and D100 already refused to stamp a partial run for the same reason.
+    - The trunk and CI never read the stamp, so priority 1 holds meanwhile. That, and D91's ordering, is why it waits behind S32 rather than entering S05's PR (one pull request per slice).
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium. Parts 3–5 are high. Part 2 is medium, because the spelling is unverified here.
+- **Would reverse if:** a name that a generated project, or a common tool, puts at the project's root is shown to crash the workers. Part 1 would then become (b), the import path, because the case would no longer be contrived.
+- **Written to:**
+  - `specs/001-faster-slipwai/spec.md`: AC-S05-2's exception and its flags; D103 rule 1's flags.
+  - `specs/001-faster-slipwai/slices/S05-xdist/tasks.md`: T019 closed by the page clause; new tasks for A-F3, B2 and B3.
+  - `specs/001-faster-slipwai/adversary-log.md`: A-F3, B2 and B3 states.
+  - `specs/001-faster-slipwai/story-split.md`: the Parking Lot row behind S32.
+  - The cruise report when it is written: the pytest variables missing from the stamp's key.
+  - S05's `changelog.d/` fragment.
+- **Status:** standing

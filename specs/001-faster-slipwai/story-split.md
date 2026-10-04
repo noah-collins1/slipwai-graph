@@ -434,6 +434,14 @@ that cannot delegate takes the earliest ready slice in split order and names the
   root; a nested Maven module's `target` in an adopted repository is still walked, and tracked files force-added
   under a recorded Java deployable's `target/` are not read (D52's residual).
 
+- **What S05's adversary pass left for the stamp (D108 part 5), a method slice right behind `S32-verify-stamp-split`.**
+  The verify stamp's key carries no pytest variable, so `PYTEST_ADDOPTS=--co make verify` (or a `-k` exported for
+  something else) would stamp a tree whose tests never ran, and a later plain `make verify` reuses it. The slice adds
+  `PYTEST_ADDOPTS`, `PYTEST_PLUGINS` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD` to the closed list of variables in
+  `assets/toolkit/scripts/verify-stamp.py`; its first example is that a run under `PYTEST_ADDOPTS=--co` writes no
+  stamp a plain run reuses. Behind S32, because that closed list owes the split first (D91, D100). Older (S03's
+  mechanism), read and not run end to end; the trunk and CI never read a stamp meanwhile.
+
 ## Next Step
 
 Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,

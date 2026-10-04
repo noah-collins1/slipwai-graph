@@ -523,6 +523,73 @@ checkout, and on a scratch repository `adopt`ed by this checkout. No production 
 
 **Verify:** `make test TESTS="test_xdist_page test_xdist_gate test_changelog"`, then `make lint typecheck check-structure`.
 
+
+## Phase 4: Adversary pass (cruise iteration 15)
+
+Appended by the host after the adversary pass (`adversary-log.md`, row `S05 · 8c7e4cd`) and its triage, D106–D108.
+T022 and T023 have disjoint manifests and run concurrently; T024 follows both (it shares `python.py`,
+`parallel_tests.py` with T022 and `manifest.py` with T023). The host writes the fragment's lines for all three.
+
+### T022 — `HIGH` — A parallel run passes a test that leaks state into another, and CI runs it in parallel (A1, A2; D106)
+
+- [ ] **RED first**, in a new `tests/test_xdist_ci.py` (the gate's existing stand-in harness in `tests/test_xdist_gate.py`
+  is the model; keep both files under 350 lines): (1) with the mark `true` and each of `CI`, `GITHUB_ACTIONS`,
+  `GITLAB_CI` set alone — to `true` and to `false` — the generated `scripts/verify --test-only` and `all` run pytest
+  with no `-n`; with none set, the flags are there; (2) with the mark `true`, `--adversarial-only` runs pytest with no
+  `-n`, whatever the environment; (3) the page's mark paragraph carries one sentence that a parallel run can also hide
+  a test that depends on another test's leftovers, because the two may run on different workers, so CI runs the suite
+  serially to catch it. **GREEN** in `src/slipwai/project/languages/python.py` (the `parallel` reader's `case`: drop
+  `--adversarial-only`; leave `parallel` empty when any of the three markers is non-empty — the stamp's own list and
+  reading, `assets/toolkit/scripts/verify-stamp.py`) and `src/slipwai/project/parallel_tests.py` (the sentence; the page's
+  existing words on which runs take the flags corrected to drop the adversarial run). Every existing test that reads the
+  flags in a generated gate, or the page, keeps passing or is corrected to the new reading — search `tests/` for
+  `maxprocesses` and `adversarial`. Tests that run a generated command build their environment with the three CI
+  markers removed unless they set one. AC-S05-2, -5, -14.
+
+**Verify:** `make test TESTS="test_xdist_ci test_xdist_gate test_xdist_page test_xdist_plugin"`, then
+`make lint typecheck check-structure`.
+
+### T023 — `MEDIUM` — A key written twice in `project.json` is collapsed by `add-service`, `describe-service` and `adopt --refresh`, and `migrate` makes one without a word (B1, T018; D107)
+
+- [ ] **RED first**, in a new `tests/test_manifest_duplicates.py`: the B1 file (`"parallelSafe": false,` after `"name"`,
+  the generated `true` after `"target"`) through `add-service`, `describe-service` and `adopt --refresh` (an adopted
+  scratch repository) — each exits non-zero with one line naming `project.json`, the key and "keep one copy";
+  `project.json` byte-for-byte unchanged; nothing committed. A duplicate nested in `deployables` refused the same way.
+  `migrate` over a project whose `project.json` already holds a duplicate refuses before the replay. `migrate` over a
+  project made at the commit before the slice with the mark added (in a commit after the root) after `"name"`, and at
+  the end: exit 0, the merge kept, one line saying the key is twice, the gate reads it serial, keep one copy — and the
+  same sentence in `.slipwai/catch-up.md`; after `"target"`: one key, no line. `ci.branch` placed by hand away from
+  where the factory writes it: the same `migrate` line, and a refusal through `add-service`. **GREEN**: one reader
+  with a standard-library `object_pairs_hook` that refuses a key written twice at any depth — in `src/slipwai/manifest.py`
+  (`read_manifest` or a sibling sharing its check) — and every factory read of a project's `project.json` goes through it
+  (`grep -rn 'project.json' src/slipwai` and every `json.loads` near it: `add_service.py`, `resurvey.py`, `replay.py`,
+  `migrate.py`, `confirm`, `add-frontend`, `survey`, `cli_init`); `migrate` reads the merged file after a clean merge
+  and says the line. This closes T018. AC-S05-15. Do not touch `changelog.d/` (the host writes the fragment's line),
+  `src/slipwai/project/languages/python.py` or `src/slipwai/project/parallel_tests.py`.
+
+**Verify:** `make test TESTS="test_manifest_duplicates test_xdist_carry test_xdist_mark"` and every module that tests
+`migrate`, `add-service`, `describe-service`, `adopt` or `confirm` (`ls tests | grep -E 'migrate|add_service|describe|adopt|confirm|resurvey|replay|manifest'`),
+then `make lint typecheck check-structure`.
+
+### T024 — `LOW` — The plugin with autoload off, the words on a root module and `-p no:xdist`, the page of a project with no Python, and a non-finite mark (A3, B2, B3, T019; D108)
+
+- [ ] **RED first**, in a new `tests/test_xdist_words.py`: (1) with the mark `true` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`,
+  a generated Python project's real `./scripts/verify --test-only` starts its workers (`created:`), and without it no
+  "already registered" error — the spelling (`-p xdist` or `-p xdist.plugin`) is the one that passes both; `FLAGS` in
+  `parallel_tests.py` and the script carry the same words; (2) the page's sentence on when to set the mark `false` names a
+  module at the project's root named like a standard-library one (a `json.py`) as crashing every worker with
+  *maximum crashed workers reached*, and the plugin sentence names `-p no:xdist` in `PYTEST_ADDOPTS` as the same case as a
+  service that removed the plugin; (3) a project with no Python service gets "Where `project.json` carries
+  `"parallelSafe": true`, a Python service's tests run across cores; it changes nothing until a Python service is
+  added."; (4) a mark `1e400` and one `NaN`, through `describe-service` and `migrate`, are refused with one line naming
+  the file, the key and the value and saying to set `true` or `false`, `project.json` byte-identical. **GREEN** in
+  `src/slipwai/project/languages/python.py`, `src/slipwai/project/parallel_tests.py`, `src/slipwai/manifest.py`
+  (`recorded_parallel_safe`). If no `-p` spelling passes both settings, the page sentence names
+  `PYTEST_DISABLE_PLUGIN_AUTOLOAD` instead and the flags stay (D108 part 2's fallback). This closes T019. AC-S05-16.
+
+**Verify:** `make test TESTS="test_xdist_words test_xdist_ci test_xdist_gate test_xdist_page test_xdist_carry"`, then
+`make lint typecheck check-structure`.
+
 ## Convergence
 
 **Not converged — pass 1 of 2 (cruise iteration 14, `drive-converge`, host model, fresh context): two `HIGH` open, T014

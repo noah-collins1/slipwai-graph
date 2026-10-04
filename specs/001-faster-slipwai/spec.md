@@ -2029,15 +2029,19 @@ Unless a criterion says otherwise, *the Python project* is a project generated w
 mark* is `parallelSafe` at the top level of the project's `project.json`.
 
 - **AC-S05-1** — *D102.* Given `slipwai generate` with any backend, then `project.json` carries `"parallelSafe": true`.
-- **AC-S05-2** — *D103, D104.* Given the Python project, when `make verify` runs (and `make test`, and
-  `./scripts/verify --adversarial-only`), then its pytest command carries `-n auto --maxprocesses 4`, and the set of
-  tests that passed and failed equals the serial run's on the same tree.
+- **AC-S05-2** — *D103, D104, D106, D108.* Given the Python project with the mark `true` and no CI marker set (`CI`,
+  `GITHUB_ACTIONS`, `GITLAB_CI`), when `make verify` or `make test` runs, then its pytest command carries the parallel
+  flags (`-n auto --maxprocesses 4`, with the plugin loaded explicitly — D108 part 2), and every test that fails in the
+  parallel run also fails in the serial run on the same tree, where no module at the project's root is named like a
+  standard-library one. The parallel run does not promise to fail every test the serial run fails: a test that depends
+  on another test's state may pass in it, and AC-S05-14 is what catches that.
 - **AC-S05-3** — *D104.* Given the mark set to `false`, removed, or any value but the JSON `true`, or `project.json`
   unreadable, when the gate runs, then pytest runs with no `-n` and every other word of the command as today; the
   change takes effect on the next run with nothing regenerated.
 - **AC-S05-4** — *D104.* Given the mark `true`, when `make test-integration` runs, then pytest runs with no `-n`.
-- **AC-S05-5** — *D104.* Given the mark `true` and a `-k` that matches no test, when `--adversarial-only` runs, then
-  it passes as it does today (exit 5 read as no adversarial tests).
+- **AC-S05-5** — *D104, D106.* Given the mark `true`, when `--adversarial-only` runs, then pytest runs with no `-n`,
+  and a `-k` that matches no test passes as it does today (exit 5); a test module whose import crashes the
+  interpreter fails it.
 - **AC-S05-6** — *D103.* The service `pyproject.toml` template's `addopts` is unchanged: a person's own `pytest` run
   is serial.
 - **AC-S05-7** — *D104.* `pytest-xdist==3.8.0` is in every generated Python service's development dependencies and
@@ -2057,3 +2061,18 @@ mark* is `parallelSafe` at the top level of the project's `project.json`.
 - **AC-S05-13** — *D103.* The demo records, in the quickstart and the fragment, serial and parallel test times on a
   fresh starter with the command, the machine and its core count, and `make -j verify`'s median against the serial
   gate's (D89's criterion still holds).
+- **AC-S05-14** — *D106.* Given the mark `true` and any one of `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set (to anything,
+  `false` included), when `make verify` runs, then pytest runs with no `-n`; given two tests that share module-level
+  state, so the serial run fails, then the gate run with `CI=true` fails. The gates page says in one sentence that a
+  parallel run can hide a test that depends on another's leftovers, and that CI runs serially to catch it.
+- **AC-S05-15** — *D107.* Given a `project.json` with any key written twice, at any depth, when `add-service`,
+  `describe-service`, `add-frontend`, `confirm`, `adopt --refresh` or `migrate` runs, then it refuses before writing
+  anything, in one line naming the file, the key and "keep one copy", and `project.json` is byte-for-byte unchanged;
+  given a mark a person added anywhere but after `"target"`, when `migrate`'s merge leaves it twice, then `migrate`
+  exits 0, keeps the merge, and says in one line (and in the catch-up note) that the gate reads it serial and to keep
+  one copy. `ci.branch` is held by the same rule.
+- **AC-S05-16** — *D108.* `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` leaves the parallel run starting its workers; the gates
+  page names `-p no:xdist` in `PYTEST_ADDOPTS` as the case that fails on an argument error, and names a root module
+  named like a standard-library one (a `json.py`) as crashing every worker; a project with no Python service gets the
+  sentence "Where `project.json` carries `"parallelSafe": true`, …"; a mark that is a non-finite number (`1e400`,
+  `NaN`) is refused by every factory rewrite of `project.json` with one line and nothing written.
