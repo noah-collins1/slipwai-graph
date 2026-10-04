@@ -460,6 +460,42 @@ command line; holds are named holds. **VIII** — `PATCH` with what a generated 
 in separate deployments; a new flag off) — now held in CI by the fetch, `tests/test_ci_history_gates.py:118–133`.
 **XIV** — both full gates are T009's, not run by this pass. No money, time or identity in the diff.
 
+**Pass 2 — converged** (2026-10-04, cruise iteration 12, `drive-converge`, host model, fresh context) at `f133c7f`,
+over `ac781ca..f133c7f` (`4976faf`, `cd6b0a9`, `6510b05`): T013, T015 and T016 are closed, no new finding, no task
+appended. Not a second full reading: the three commits, the fragment whole, and what they could have broken. Inside
+its budget and complete. No `.codegraph/` in this tree; where `check-flags` ships was found by text search
+(`src/slipwai/project/flags.py:125`, `managed(CATALOG, target)`). Scratch was `/tmp/s24-converge2`; no file in the
+tree was mutated. *T013* — one wording in both Actions generators (`ci_workflows.py:269–270`,
+`adopted_ci.py:74–75`): the two checks every gate runs, *and `check-flags` where the project has one*, as D85
+decided; the GitLab job's comment (`adopted_ci.py:151`) names no check (*the gate's checks*). Generated here with
+`./slipwai` for each target: `none` and `existing` have no `scripts/check-flags.py` and no `check-flags` in
+`verify-checks`; `aws` and `azure` have both; all four carry the same comment. Adopted on `github` and on `gitlab`:
+`verify` runs `check-slice-scope` and `check-migrations`, there is no `check-flags` rule or script, and the comment
+or variable is as above. Held by `test_every_check_the_comment_names_without_a_clause_is_one_the_projects_gate_runs`
+(every backend × target) and `…_is_in_the_verify_chain_beside_it` (adopted, `github` and `gitea`); the helper has
+teeth — `checks_named()` given pass 1's wording returns `check-flags`, which the subset assertion refuses wherever
+the chain lacks it. *T015* — the fragment's clause (`ci-fetches-slice-base.md:26–28`) run on a generated project with
+its `main` deleted, on `slice/S1`: no marker → exit 1 with the fetch command, as before the slice; `CI=true` and
+`GITLAB_CI=true` → exit 1 with *NOT checked* and the three needs; `GIT_DIR` unreadable under `CI` → exit 0;
+`main` present → exit 0 with or without a marker. `check()`'s docstring (`check-slice-scope.py:824–826`) says a
+failure on either checkout, and the generated copy carries it; a docstring only, no behaviour in that commit.
+*T016* — `tests/test_ci_fetch_migrate.py`, three holds, green: the key arrives by merge on a project put back to the
+bare step; a project's own `with:` conflicts on that one file with both sides present and an abort restores it;
+the `ux-gates` job's checkout as `./init --extension ux-gates` writes it carries the key. *Published contract* —
+the fragment read once more, each sentence against the runs above: `PATCH` (`:1`); *in every project* and *the
+only ones that have it* (`:8–9`) true of the four targets and of both adopted repositories; the second paragraph
+qualifies `check-flags` each time it is named (`:13`, `:17`); the *Catch-up* is as pass 1 read it and is not in the
+diff. *Constitution* — **I** and **VIII**: words and tests only; no check, exit code, key or variable changed
+(`git diff ac781ca..HEAD -- src assets` is two comments and a docstring), `VERSION` unchanged, the same `PATCH`
+fragment. **III**: one sentence for every project, no branch on the target in either generator. **V**: the new
+tests enter through the generator's output and `migrate`'s command line, with fakes on `PATH`, no mocking
+framework. Run: `make test TESTS="test_ci_fetch_generated test_ci_fetch_adopted test_ci_fetch_migrate
+test_changelog test_slice_scope_report"` — 76 tests, OK, one skipped (no release tag fetched here). **Not run:** the
+whole suite, `make verify`, the delivery gate, a real runner. Seen and not a finding: `.PHONY` names `check-flags`
+in a project with target `existing` and in an adopted `delivery/Makefile`, where there is no such rule
+(`src/slipwai/project/makefile.py:292`, `target != 'none'`) — older than the slice, inert, and no comment or
+fragment sentence rests on it.
+
 ## Phase 4: Convergence pass 1 (appended 2026-10-04; converge delegate)
 
 ### T013 — A comment and a fragment name only the checks the project has (`MEDIUM` · AC-S24-1, -2, -11 · R7)
