@@ -680,6 +680,33 @@ No screen in this slice
 
 ## Convergence
 
+**Converged at `9938fe9`, at the loop's bound of two passes; no `CRITICAL` and no `HIGH` in either** (cruise iteration 13;
+`drive-converge`, host model, delegated, fresh context, both passes). Pass 1 accounted for every level — the ten
+generators, what they generate over nine shapes (each family alone and mixed, a transport, a browser app, the event
+profile, a production target, several services, an adopted repository, a project pruned by its backing-services script),
+the generated projects' own `make` with the real Python, TypeScript, Go and Java toolchains, the published words, and the
+carry through `slipwai migrate` from a factory archived at `3f44288` — and appended T014 (`MEDIUM`), T015 to T017 (`LOW`)
+and one question (D94). Pass 2 re-ran each reproduction and found the four closed as classes, reached what pass 1 had
+not (a moved layout with the event profile, Java Spring under `make -j verify`, AC-S04-54 and -64 by hand, AC-S04-57 and
+-58 by hand) and appended T018 (`MEDIUM`, answered by D95 and fixed at `9938fe9`) and T019 (`LOW`, AC-S04-64 amended).
+Nothing is left unchecked below. The tree was clean after each pass.
+
+| Principle | Where the diff satisfies it |
+|---|---|
+| I. A generated project owns its files and passes its own gate | `verify-checks` and `ci` carry the same prerequisites before and after `migrate`; `python_first` and `gate_order` in `src/slipwai/project/parallel_gate.py` only add order; the model tooling installs with `npm … ci` (`src/slipwai/project/model_targets.py`), so no gate writes a lock; the adopted directive is confined to make started on the delivery Makefile (`src/slipwai/project/adopted_targets.py`, D95), so existing code keeps what it had; the fragment's catch-up says the three lock cases. Every starter's own gate is T010's |
+| III. Simplicity | One phony `sync` and one prerequisite line; one file target in the root's pattern; one guarded directive; no new script, setting or content comparison |
+| V. Acceptance-driven development | Each rule a cycle through a generated project's own `make`; holds seen to have teeth; the criteria run by hand in the passes held |
+| VIII. Versioning | `VERSION` untouched at `1.6.0.dev0`; `changelog.d/parallel-gate.md` opens `MINOR` (a new generated file, D91); the adopted lines carry the experimental label |
+| XI. Dependencies are locked | `assets/toolkit/scripts/event-model/package-lock.json`, made by npm, installed with `ci` |
+| XIV. Agent-generated change meets the same bar | `assets/toolkit/scripts/verify-stamp.py` is not in the diff (AC-S04-62); `--synced` is an argument, never a default or a variable (`src/slipwai/project/languages/python.py`) |
+
+Not run by either pass, and carried to the board: GNU Make 3.81 and 4.3 (`.FEATURES`, `$(eval)`, `ifeq`, `$(origin)`,
+`$(words)` and `MAKEFILE_LIST` read or assumed, not run); Go's first run on a fresh clone; `migrate` carrying the
+guarded directive into an already-adopted repository; the `make starters` matrix and the full gates (T010).
+
+The map: `make check-convergence` is run with the delivery gate at T010; this slice reached no new rung (no row of
+`project.json`'s `convergence` moves — the factory's own gate is unchanged until a person migrates, D9).
+
 ## Differences from plan.md
 
 Written for the host to correct the plan; none changes a requirement or a decision.
@@ -812,7 +839,7 @@ AC-S04-57 and -58 by hand against a factory archived at `3f44288`.
 
 ### T018 — `MEDIUM` — Every sentence that says what the bare `.NOTPARALLEL:` holds is true of the make it is read by; through `-include` it holds the repository's own targets too
 
-- [ ] **Finding.** `src/slipwai/project/adopted_targets.py:90` writes a bare `.NOTPARALLEL:` into `delivery/Makefile`. `slipwai adopt`
+- [x] *(9938fe9: `ifeq ($(words $(MAKEFILE_LIST)),1)` around the directive; the five places re-worded; AC-S04-67 to -70 in `tests/test_parallel_gate_include.py`)* **Finding.** `src/slipwai/project/adopted_targets.py:90` writes a bare `.NOTPARALLEL:` into `delivery/Makefile`. `slipwai adopt`
   ends its report with *add `-include delivery/Makefile` to the root Makefile* (and writes that line itself where there was no
   root Makefile), and GNU Make applies the directive to the whole run, not to the file it sits in. So after `slipwai migrate`,
   every target of the adopted repository's own root Makefile runs serially under `make -j`, the build it had before adoption
