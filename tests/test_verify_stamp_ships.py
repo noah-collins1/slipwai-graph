@@ -36,6 +36,18 @@ TOOLS = {
 }
 
 
+UNSEEN = ("the clock", "the network", "user-level tool configuration", "`PATH`", "a variable no gate script names")
+SEES_NOT = (
+    "A stamp cannot see what a project's own tests or tools read from outside the repository: the clock, the network, "
+    "user-level tool configuration, `PATH`, or a variable no gate script names."
+)
+REUSED_AS_GREEN = (
+    "A gate that would now fail for one of those alone is reused as green until a file, a ref or a listed input moves "
+    "or `VERIFY_FORCE` is given."
+)
+CAUGHT_IN_CI = "CI and the trunk, which never read a stamp, are where it is caught."
+
+
 def stamp_variable(makefile: str) -> list[str]:
     match = re.search(r"^VERIFY_STAMP := (.*)$", makefile, re.M)
     assert match, "no VERIFY_STAMP in the Makefile"
@@ -154,13 +166,21 @@ class ThePageSaysWhatTheStampDoesTest(StampTestCase):
 
     def test_the_page_names_what_a_stamp_cannot_see_and_where_it_is_never_used(self) -> None:
         page = self.page()
-        for sentence in (
-            "A stamp cannot see a tool a recipe fetches at a version of its own, a service outside the checkout, "
-            "or the network; when a check depends on one, run the gate forced.",
+        never_read = (
             "The trunk and CI (`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set) always run the full gate and neither "
-            "read nor write a stamp, and `make ci` always runs it.",
-        ):
+            "read nor write a stamp, and `make ci` always runs it."
+        )
+        for sentence in (SEES_NOT, REUSED_AS_GREEN, CAUGHT_IN_CI, never_read):
             self.assertIn(sentence, page)
+
+    def test_the_fragment_says_the_same_list_and_the_consequence_in_its_own_words(self) -> None:
+        fragment = " ".join((ROOT / "changelog.d/verify-stamp.md").read_text(encoding="utf-8").split())
+        for thing in UNSEEN:
+            self.assertIn(thing, fragment)
+        self.assertIn("is reused as green until a file, a ref or a listed input moves or `VERIFY_FORCE` is given",
+                      fragment)
+        self.assertIn("CI and the trunk", fragment)
+        self.assertNotIn("a tool a recipe fetches", fragment)
 
     def test_the_tutorial_says_the_same_in_its_own_words(self) -> None:
         tutorial = " ".join((ROOT / "docs/learn-generate.md").read_text(encoding="utf-8").split())

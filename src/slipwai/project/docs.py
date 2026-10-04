@@ -119,8 +119,10 @@ everything the checks answer from: the files' bytes, the index, `HEAD` and the r
 versions of the tools the machine supplies, and the variables a check reads. The next run on the same tree prints one
 line, `verify: the full gate did not run; this tree already passed it …`, starts no check and exits 0. `VERIFY_FORCE` is
 unset by default; anything but empty or `0` forces it, on the command line or in the environment. To run the gate anyway,
-run `make verify VERIFY_FORCE=1`. A stamp cannot see a tool a recipe fetches at a version of its own, a service outside
-the checkout, or the network; when a check depends on one, run the gate forced. The trunk and CI (`CI`, `GITHUB_ACTIONS` or
+run `make verify VERIFY_FORCE=1`. A stamp cannot see what a project's own tests or tools read from outside the repository: the clock, the network,
+user-level tool configuration, `PATH`, or a variable no gate script names. A gate that would now fail for one of those
+alone is reused as green until a file, a ref or a listed input moves or `VERIFY_FORCE` is given. CI and the trunk, which
+never read a stamp, are where it is caught. The trunk and CI (`CI`, `GITHUB_ACTIONS` or
 `GITLAB_CI` set) always run the full gate and neither read nor write a stamp, and `make ci` always runs it.
 
 `make check-codegraph` is in the gate for a project that has adopted a code index and a no-op for one that
