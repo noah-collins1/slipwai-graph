@@ -141,6 +141,7 @@ async function main(): Promise<void> {
     unchanged: diagrams.length - stale.length,
     sessionOpened: session.opened,
     underCi: underCiMarker(),
+    png: wantPng,
   };
   console.log(closingLine(report, MODEL_HTML.replaceAll('\\', '/')));
 }

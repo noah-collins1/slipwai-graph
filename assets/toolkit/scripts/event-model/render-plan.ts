@@ -271,6 +271,8 @@ export interface Report {
   sessionOpened: boolean;
   /** A CI marker is set: everything was drawn for that reason, and the line says so. */
   underCi?: boolean;
+  /** The raster copy was asked for and drawn; the diagrams counted above are the SVGs alone. */
+  png?: boolean;
 }
 
 export function closingLine(report: Report, pagePath: string): string {
@@ -278,5 +280,6 @@ export function closingLine(report: Report, pagePath: string): string {
   const counts = `${noun(report.slices, 'slice')}, ${String(report.drawn)} of ${noun(report.diagrams, 'diagram')} drawn, ${String(report.unchanged)} unchanged`;
   const browser = report.sessionOpened ? '' : '; no browser started';
   const ci = report.underCi === true ? '; everything was drawn because a CI marker is set' : '';
-  return `model: ${counts}${browser}${ci}. Open ${pagePath} to browse it.`;
+  const png = report.png === true ? '; the PNG was drawn' : '';
+  return `model: ${counts}${browser}${ci}${png}. Open ${pagePath} to browse it.`;
 }

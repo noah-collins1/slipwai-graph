@@ -60,12 +60,37 @@ class ReportTest(RenderCase):
             self.assertEqual(self.closing(repo), NOTHING)
             self.assertEqual((self.model_log_of(repo).sessions, self.model_log_of(repo).draws), (0, 0))
 
-    def test_e13_a_run_that_drew_only_the_png_opened_a_browser(self) -> None:
+    def test_e13_a_run_that_drew_only_the_png_says_the_png_was_drawn(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.project(directory, 16)
             self.closing(repo)
-            png = f"model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged. {OPEN}"
-            self.assertEqual(self.closing(repo, PNG="1"), png)
+            self.assertEqual(self.closing(repo, PNG="1"),
+                             f"model: 16 slices, 0 of 25 diagrams drawn, 25 unchanged; the PNG was drawn. {OPEN}")
+            self.assertEqual(self.model_log_of(repo).png_draws, 1)
+
+    def test_e25_the_closing_line_in_each_case_of_drawn_none_ci_and_png_alone_and_together(self) -> None:
+        ci = "; everything was drawn because a CI marker is set"
+        png = "; the PNG was drawn"
+        cases = [
+            ("edit", {}, f"3 of 25 diagrams drawn, 22 unchanged. {OPEN}"),
+            ("edit and png", {"PNG": "1"}, f"3 of 25 diagrams drawn, 22 unchanged{png}. {OPEN}"),
+            ("nothing", {}, f"0 of 25 diagrams drawn, 25 unchanged; no browser started. {OPEN}"),
+            ("png", {"PNG": "1"}, f"0 of 25 diagrams drawn, 25 unchanged{png}. {OPEN}"),
+            ("ci", {"CI": "true"}, f"25 of 25 diagrams drawn, 0 unchanged{ci}. {OPEN}"),
+            ("ci and png", {"CI": "true", "PNG": "1"}, f"25 of 25 diagrams drawn, 0 unchanged{ci}{png}. {OPEN}"),
+            ("png set to something else", {"PNG": "0"}, f"0 of 25 diagrams drawn, 25 unchanged; no browser started. "
+                                                        f"{OPEN}"),
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.project(directory, 16)
+            self.closing(repo)
+            for name, env, tail in cases:
+                with self.subTest(case=name):
+                    if name.startswith("edit"):
+                        rename_frame(repo, "Do7" if name == "edit" else "Do7b", "Do7b" if name == "edit" else "Do7c")
+                    elif name == "nothing":
+                        self.closing(repo)
+                    self.assertEqual(self.closing(repo, **env), f"model: 16 slices, {tail}")
 
     def test_e19_under_a_ci_marker_the_closing_line_says_one_clause_why_everything_was_drawn(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
