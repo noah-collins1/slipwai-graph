@@ -293,7 +293,7 @@ Needs US1 whole. Edits the same script and recipe.
 
 ### T008 — [US2] Never on the trunk, in CI, detached or adopted (R7 · AC-S03-21, -22, -24)
 
-- [ ] **Rule R7.** Step (2) of `reuse`, and `record`'s: a CI marker, a detached `HEAD` or the trunk — no read, no write,
+- [x] **Rule R7.** Step (2) of `reuse`, and `record`'s: a CI marker, a detached `HEAD` or the trunk — no read, no write,
   no removal, today's output. The trunk is one definition with `check-slice-scope.py`'s (D30, D33; research item 3): the
   script loads that function, or a test holds the two answers equal over D30's and D33's cases. A project with a wrapped
   application has no stamp step. Test module `tests/test_verify_stamp_where.py` (new).
@@ -319,7 +319,7 @@ then `make lint typecheck check-structure`. Commit (`Level MINOR; VERSION alread
 
 ### T009 — [US2] `VERIFY_FORCE` runs the gate anyway, and `make ci` always does (R8 · AC-S03-23, -25)
 
-- [ ] **Rule R8.** Step (4): forced — `VERIFY_FORCE` set to anything other than empty or `0`, on the command line or in the
+- [x] **Rule R8.** Step (4): forced — `VERIFY_FORCE` set to anything other than empty or `0`, on the command line or in the
   environment, or `ci` among `MAKECMDGOALS`: one line naming it and the value, the stamp removed, every check runs, and a
   passing run writes a new stamp. Test module `tests/test_verify_stamp_force.py` (new).
 
@@ -340,7 +340,7 @@ then `make lint typecheck check-structure`. Commit (`Level MINOR; VERSION alread
 
 ### T010 — [US2] A stamp is written only by a run in which everything ran and passed (R9 · AC-S03-10, -11, -26)
 
-- [ ] **Rule R9.** Removed before the first check; `record` writes it after the last, by rename, only where the key is
+- [x] **Rule R9.** Removed before the first check; `record` writes it after the last, by rename, only where the key is
   equal to the pending one; `make -i`, `-n`, `-t`, `-q` leave none and reuse none; a key that moved during the run, or a
   stamp that cannot be written or removed, exits 0 with the closing line and one line *not recorded* with its reason.
   Test module `tests/test_verify_stamp_runs.py` (new).
@@ -367,7 +367,7 @@ code.
 
 ### T011 — [US2] When it cannot tell, it runs the gate and never stamps (R10 · AC-S03-12, -13)
 
-- [ ] **Rule R10.** Step (3): one line before the first check, the stamp removed, a pending note saying this run records
+- [x] **Rule R10.** Step (3): one line before the first check, the stamp removed, a pending note saying this run records
   nothing, the full gate, the gate's own exit code. Test module `tests/test_verify_stamp_cannot.py` (new).
 
 **RED:**
@@ -390,7 +390,7 @@ anywhere in the covered set; "never passes on less" is held by a check that the 
 
 ### T012 — [US2] Where it lives and how long (R11 · AC-S03-27, -28)
 
-- [ ] **Rule R11.** Under the git directory (`git rev-parse --absolute-git-dir`), one file per project per worktree
+- [x] **Rule R11.** Under the git directory (`git rev-parse --absolute-git-dir`), one file per project per worktree
   (`<project>` the digest of `--show-prefix`), a rename of a finished file, never through a link; no expiry. Test module
   `tests/test_verify_stamp_file.py` (new).
 
