@@ -26,7 +26,7 @@ def can_link(directory: Path) -> bool:
 
 
 class WorkingFilesTest(StampTestCase):
-    def changes_the_key(self, change: Callable[[], None]) -> None:
+    def changes_the_key(self, change: Callable[[], object]) -> None:
         """Stamp the tree, apply `change`, and hold: the full gate runs, a new stamp is written for the new tree."""
         self.assertEqual(self.run_gate().returncode, 0)
         before = self.stamp()["key"]
@@ -97,7 +97,7 @@ class WorkingFilesTest(StampTestCase):
 
 
 class FiltersAndStatsTest(StampTestCase):
-    def runs_in_full(self, change: Callable[[], None]) -> None:
+    def runs_in_full(self, change: Callable[[], object]) -> None:
         self.assertEqual(self.run_gate().returncode, 0)
         self.forget_log()
         change()
@@ -151,7 +151,7 @@ class IndexEntriesTest(StampTestCase):
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertTrue(self.checks(), "no check started: the entry in the index was not in the key")
 
-    def runs_in_full(self, change: Callable[[], None]) -> None:
+    def runs_in_full(self, change: Callable[[], object]) -> None:
         self.assertEqual(self.run_gate().returncode, 0)
         self.forget_log()
         change()
