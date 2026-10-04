@@ -1504,35 +1504,92 @@ holds:
 
 ### S24-ci-fetches-slice-base
 
-**Unblocked 2026-10-03 by the owner (D82): option (a) of D54** — full history is fetched on every run of the generated
-`verify` job, `check-migrations` and `check-flags` hold their rules in CI on every pull request, and the fragment says
-so plainly. The slice re-enters at the gaps note below, as the next slice after `S03-verify-stamp`.
+**Gaps reviewed** 2026-10-04, cruise iteration 12, host (resumed from the note iteration 8 left open; the owner
+answered D54 with its option (a), D82; D84 records what the standing decisions make of it): the three examples in
+`story-split.md` against `workflow()` in `src/slipwai/project/ci_workflows.py`, `delivery_workflow()` and
+`gitlab_job()` in `src/slipwai/project/adopted_ci.py`, and `forge_checkout()`, `not_checked()` and `check()` in
+`assets/toolkit/scripts/check-slice-scope.py`. Found and written back: which jobs fetch and in what words, and
+which do not (D54; AC-S24-1 to AC-S24-3); the first example had no checkout it could be shown on without a forge
+(AC-S24-4); which no-base answers become failures in a forge's checkout, what the line says where the CI is neither
+GitHub nor GitLab, and which answer keeps its exit 0 (D31, D32, D35; AC-S24-5 to AC-S24-7); the third example,
+*every answer is today's*, was untrue under any fetch and is rewritten as the owner approved it (D54, D82;
+AC-S24-8); a developer's checkout had no measurement (AC-S24-9); what `migrate` does with a workflow the project
+took over, and what a maintainer reads afterwards (AC-S24-10, AC-S24-11); the suites and the words that still say
+CI does not check (AC-S24-12, AC-S24-13). Swept for the same consequence — a check in the `verify` job whose answer
+changes once history is there — over every script under `assets/toolkit/scripts/` and `assets/targets/*/scripts/`
+that asks git for a merge base or a ref: `check-migrations.py` and both `check-flags.py` (D54, approved in D82), and
+no other. `check-codegraph.py` runs whole under a CI marker whatever the history (D46), a verify stamp is never read
+in CI (D74), and `check-ux-gates.py` reads history only under `UX_GATES_SINCE`, in a workflow of its own that
+already fetches it. Not run here, and said so in the plan with the page it was read from: what a real forge's
+runner leaves in the checkout — this run pushes nothing (D12), so the checkout is built with git in the shape the
+forge's documentation gives.
 
-**Gaps review open — blocked on a person's approval (D54)**, 2026-10-03, cruise iteration 8, host with `drive-skipper`
-for D54: the three examples in `story-split.md` against `workflow()` in `src/slipwai/project/ci_workflows.py`,
-`delivery_workflow()` and `gitlab_job()` in `src/slipwai/project/adopted_ci.py`, and `forge_checkout()`,
-`not_checked()` and `check()` in `assets/toolkit/scripts/check-slice-scope.py`. No criterion is written yet, and this
-note is not a *Gaps reviewed* mark: the stage is re-entered here when a person answers D54. What the review found,
-for whoever resumes it:
+Unless a criterion says otherwise, *a forge's checkout* is one by either of D31's and D32's routes (the branch name
+in `GITHUB_HEAD_REF` or `CI_COMMIT_REF_NAME` with `HEAD` detached, or `CI`, `GITHUB_ACTIONS` or `GITLAB_CI`
+non-empty), the trunk is `main`, and the branch is `slice/S1`.
 
-- **Needs the person (D54).** `check-migrations` and `check-flags` run in the same `verify` job and choose a base
-  from the same refs. With history fetched they hold their *new in this change* rules on every pull request — a
-  contract whose expand is new in the same pull request, and a new flag seeded other than `off`, are refused in CI
-  as they already are on a developer's machine. The slice's third example (*every answer is today's*) is untrue
-  under any fetch, and the owner's approval (D39) was given on a description that said the opposite.
-- **Answered by standing decisions once D54 is, to be written as criteria then.** Which jobs fetch: the generated
-  `verify` job, the adopted `verify` job and the adopted GitLab `verify-delivery` job; never the smoke jobs, the
-  container jobs (`CONTAINER_CHECKOUT`), the event-model, deploy or `ux-gates` workflows, none of which runs the
-  check (the split's *Defers*). Which answers become exit 1 in a forge's checkout: no base (D31 answer 3, D32's
-  arm) and *could not compare* (D35, T026, which took its exit from those two); *git could not read this checkout*
-  keeps exit 0 (D35: a person's, in CI). What the failing line says where the CI is neither GitHub nor GitLab
-  (D20's other forges): the same line, with words for *a full clone with the trunk's branch fetched*. The catch-up
-  note: a workflow the project took over, and a pipeline of the project's own with a CI marker set and a shallow
-  clone, are not rewritten by `migrate` and turn red on a slice branch until the job fetches history.
-- **For the plan's research, each with its citation or marked assumed.** What `actions/checkout@v6` leaves under
-  `refs/remotes/origin/` at `fetch-depth: 0` on a `pull_request` run; that a GitLab runner with `GIT_DEPTH: "0"`
-  fetches every branch; that Gitea's and Forgejo's runners do the same with the action.
-- **The slice's own leftovers.** The unreleased fragment `changelog.d/slice-scope-base.md` says a CI run with
-  nothing to compare with keeps exit 0; released together with this slice's fragment the entry would say both, so
-  the plan amends that sentence. The suites that assert *NOT checked*, exit 0, under a CI marker change with the
-  checker (`tests/test_slice_scope_no_base.py`, `tests/test_slice_scope_hostile_base.py`).
+- **AC-S24-1** — Given a project `slipwai generate` wrote, of any backend and target, then the `verify` job of
+  `.github/workflows/verify.yml` checks out with `actions/checkout@v6` and `fetch-depth: 0`, written
+  unconditionally — no expression, the same on `push` and on `pull_request` — with a comment saying which checks
+  need the history; and every other job in that file (the integration jobs and their `CONTAINER_CHECKOUT`) and every
+  other generated workflow (the event model's, the deploy workflows, the `ux-gates` extension's) is what it was,
+  byte for byte (D54, D82).
+- **AC-S24-2** — Given a repository `slipwai adopt` wrote a GitHub workflow for, then the `verify` job of
+  `verify-delivery.yml` carries the same key the same way, and its `smoke` job is unchanged.
+- **AC-S24-3** — Given a repository `slipwai adopt` wrote a GitLab job for, then `verify-delivery` carries
+  `variables:` with `GIT_DEPTH: "0"`, `smoke-delivery` is unchanged, and no `rules:` is added: when the job runs is
+  still the repository's own configuration's to say.
+- **AC-S24-4** — *The first example.* Given a checkout in the shape the forge makes with that key for a pull
+  request from `slice/S1` — full history, every branch under `refs/remotes/origin/`, `HEAD` detached on the pull
+  request's merge commit, the branch name in `GITHUB_HEAD_REF` and the target in `GITHUB_BASE_REF` (on GitLab
+  `CI_COMMIT_REF_NAME` and `CI_MERGE_REQUEST_TARGET_BRANCH_NAME`), the CI markers set — and a host-surface change in
+  the slice's commits, when `check-slice-scope` runs, then it exits 1 naming the path, *compared with `main` at*
+  the commit; and the same checkout of a slice that stays inside its scope passes with that *compared with* line.
+  This is AC-S22-23's rule on the checkout the workflow now makes.
+- **AC-S24-5** — *The second example.* Given a `slice/<id>` branch in a forge's checkout with no usable base —
+  no trunk ref; a trunk ref with no common ancestor at this depth; an unrelated trunk; a pull-request target with
+  no history in common — when the check runs, then it exits 1 with nothing on stdout and one line on stderr that
+  says the slice was NOT checked, names the trunk, and says what the job's checkout needs: `fetch-depth: 0`, on
+  GitLab `GIT_DEPTH: "0"`, and on any other CI a full clone with the trunk's branch fetched. The line carries no
+  `git fetch` command and no *nothing to hold*, and it keeps the words about a recorded name that was passed over
+  (AC-S22-28, AC-S22-32). A lost record at a canonical slot is still printed beside it. This replaces the exit 0 of
+  AC-S22-22 and of D31's answer 3, on both routes, as D31 and D32 said it would once a person approved.
+- **AC-S24-6** — Given a base and a comparison git could not run (AC-S22-31) in a forge's checkout, then the check
+  exits 1 with the *NOT checked — git could not compare* line it prints today; it took its exit 0 from the two
+  answers above (D35) and follows them.
+- **AC-S24-7** — What does not change in a forge's checkout: where git cannot read the checkout at all, the check
+  says so and exits 0 (D35: whether that fails in CI is a person's, and nobody has said); a branch that is not
+  `slice/<id>`, or a detached `HEAD` no variable names, answers *nothing to hold*, exit 0, with history or without;
+  with a usable base the slice is held exactly as on a developer's machine.
+- **AC-S24-8** — *The third example, rewritten (D54, D82).* Given a pull request from a branch that is not
+  `slice/<id>`, in the checkout of AC-S24-4, then `check-slice-scope`'s answer is today's, and `check-migrations`
+  and `check-flags` (aws and azure) answer as they do on a developer's full clone: a contracting migration whose
+  `contract:` names an expand added in the same pull request is refused, and so is a flag declared in the pull
+  request and seeded anything but `off`; the same change at depth 1 with no trunk ref passes both, as it did before
+  the slice; and a push to the trunk passes both at either depth. None of the three scripts changes by a byte: the
+  slice gives them the history, and tests that run the shipped scripts on those checkouts hold what they then say.
+- **AC-S24-9** — Given a developer's checkout (no CI marker, and no branch-name variable with a detached `HEAD`),
+  then every exit code and every line of `check-slice-scope` is what it was before the slice.
+- **AC-S24-10** — Given a project made by the factory before this change, when `slipwai migrate` runs, then each of
+  the three files is carried forward or left alone exactly as `migrate` treats a file of its kind today — the slice
+  changes nothing about what `migrate` owns — and the catch-up paragraph of the fragment is true to that: followed
+  as written on a project whose workflow `migrate` did not rewrite, it ends with the key in the job and the slice
+  held.
+- **AC-S24-11** — Given the slice's diff, then it carries one fragment under `changelog.d/` claiming PATCH with
+  `VERSION` unchanged (D54), which says: CI's `verify` job now fetches full history; a slice pull request is held to
+  its scope in CI; *NOT checked* in CI is now a failure; and, plainly, that `check-migrations` and `check-flags` now
+  hold their *new in this change* rules in CI on every pull request, naming both refusals, so a maintainer who sees
+  a red pull request after `slipwai migrate` knows why (D82). Its catch-up paragraph says a workflow the project
+  took over, and a pipeline of the project's own that sets a CI marker on a shallow clone, are not rewritten by
+  `migrate` and turn red on a slice branch until the job fetches history, with the key to add; that an open pull
+  request carrying either pattern goes red and is fixed by landing the expand first or seeding `off`; and that a
+  repository with a long history pays the full fetch on that one job. The unreleased `changelog.d/slice-scope-base.md`
+  no longer says a CI run with nothing to compare with exits 0, so the release's entry does not say both.
+- **AC-S24-12** — Given the words that describe the old answer — the docstring of `check-slice-scope.py`, and any
+  page or message under `assets/`, `src/slipwai/` or `docs/` that says a CI checkout is depth 1, that the slice is
+  not checked there, or that a maintainer adds the key by hand — then each says what is now true; the docstrings of
+  `check-migrations.py` and `check-flags.py` stand, since what they say of a shallow checkout is still so of one.
+- **AC-S24-13** — Given the factory's suite run with `CI=true GITHUB_ACTIONS=true` in its environment, then it is
+  green: the suites that asserted *NOT checked*, exit 0, under a CI marker (`tests/test_slice_scope_no_base.py`,
+  `tests/test_slice_scope_hostile_base.py`, and any other the sweep finds) assert the failure, and every test of a
+  developer's answer still clears the markers (AC-S22-24).
