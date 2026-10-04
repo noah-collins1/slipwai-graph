@@ -1,0 +1,89 @@
+Quickstart steps 7 to 9, 2026-10-04T05:13:59Z
+
+### step 7: CI=true on a stamped tree
+$ env CI=true make verify
+exit=0  wall=3.146104392s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+stamp unchanged by the CI run: same bytes
+
+### step 7b: CI=false (non-empty) also runs in full
+$ env CI=false make verify
+exit=0  wall=3.161147444s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 7c: GITHUB_ACTIONS=true
+$ env GITHUB_ACTIONS=true make verify
+exit=0  wall=3.177773077s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 7d: GITLAB_CI=1
+$ env GITLAB_CI=1 make verify
+exit=0  wall=3.153345420s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 7e: CI= (empty) is no marker - reused
+$ env CI= make verify
+exit=0  wall=.508989683s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:58Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:58Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+stamp still the same bytes: same
+
+$ git checkout main
+Switched to branch 'main'
+?? scripts/event-model/package-lock.json
+
+### step 8: on the trunk, run 1
+$ make verify
+exit=0  wall=3.288389527s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 8: on the trunk, run 2
+$ make verify
+exit=0  wall=3.289681189s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+stamp left untouched on the trunk: same bytes
+
+$ git checkout topic
+Switched to branch 'topic'
+
+### back on topic: reused (same key as before leaving)
+$ make verify
+exit=0  wall=.518821180s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:58Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:58Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 

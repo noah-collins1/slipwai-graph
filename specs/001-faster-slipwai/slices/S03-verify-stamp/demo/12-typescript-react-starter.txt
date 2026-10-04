@@ -1,0 +1,74 @@
+A second starter: TypeScript backend with the React frontend. 2026-10-04T05:15:27Z
+$ slipwai generate tsweb --backend typescript --frontend react-vite --output /tmp/s03-demo   (this checkout's ./slipwai)
+created: /tmp/s03-demo/tsweb
+Switched to a new branch 'topic'
+213:VERIFY_STAMP := --tool make --tool git --tool python3 --tool node --tool npm
+
+$ time make verify   # run 1
+exit=0  lines=112
+first line: npm ci
+verify: all gates passed
+verify: this pass was not recorded — the Makefile or a script under scripts/, an ignored input changed while the checks ran — a check may have written one; `git status` shows it, and the next run records
+real	0m10.826s
+git status: ?? scripts/event-model/package-lock.json;
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+$ time make verify   # run 2
+exit=0  lines=98
+first line: 
+verify: all gates passed
+real	0m7.959s
+git status: ?? scripts/event-model/package-lock.json;
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ time make verify   # run 3
+exit=0  lines=5
+first line: verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:46Z (key 1436a1eb460a); VERIFY_FORCE=1 runs it anyway
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:46Z (key 1436a1eb460a); VERIFY_FORCE=1 runs it anyway
+real	0m0.365s
+git status: ?? scripts/event-model/package-lock.json;
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ time make verify   # run 4
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:46Z (key 1436a1eb460a); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.366s
+user	0m0.315s
+sys	0m0.056s
+exit=0
+
+$ time make verify   # run 5
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:46Z (key 1436a1eb460a); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.365s
+user	0m0.333s
+sys	0m0.040s
+exit=0
+
+$ time make verify   # run 6
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:46Z (key 1436a1eb460a); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.365s
+user	0m0.325s
+sys	0m0.047s
+exit=0
+
+{
+  "key": "1436a1eb460a05501e058ebb5899823b2b95e9400984c69a57b1b9c55521ecf5",
+  "passed": "2026-10-04T05:15:46Z",
+  "result": "pass",
+  "scripts": "531c468d3d9f24bb125fb6c847adc5f431c662ca9bf0a17dfd0b3f55595caa7e",
+  "tools": {
+    "git": "2.53.0 [answer 46b31b17db8e684a]",
+    "make": "4.4.1 [answer 268cdd1fee3838e9]",
+    "node": "v22.22.1 [answer b58f2d61bbad34ff]",
+    "npm": "9.2.0 [answer a99c8ff469e946de]",
+    "python3": "3.14.4 [answer d629b9bbeb3eb13f]"
+  },
+  "tree": "4046ef10d57779345646b3aa11d602aa8d6258e390d90541398aa889b458c1aa"
+}
+
+$ git status --short --ignored | grep -v node_modules
+?? scripts/event-model/package-lock.json
+!! apps/service/.build/
+!! packages/api-client/src/schema.ts

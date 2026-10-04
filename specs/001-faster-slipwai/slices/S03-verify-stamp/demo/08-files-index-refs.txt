@@ -1,0 +1,316 @@
+Beyond the script: files, index, refs. branch topic, 2026-10-04T05:15:43Z
+
+### baseline: reused
+$ make verify
+exit=0  wall=.482080914s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:14:54Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:14:54Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ echo hello > notes.txt   (new untracked file)
+
+### AC-2: a new untracked file
+$ make verify
+exit=0  wall=3.896624571s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### then reused
+$ make verify
+exit=0  wall=.490590278s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:47Z (key c5eaf7830548); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:47Z (key c5eaf7830548); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ git add notes.txt
+
+### AC-4: git add of it, same bytes
+$ make verify
+exit=0  wall=3.731001953s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### then reused
+$ make verify
+exit=0  wall=.528111355s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:51Z (key 65a881b82a01); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:51Z (key 65a881b82a01); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ git commit -m notes
+ad2a9a6 notes
+813ac84 Scaffold stamped
+
+### AC-5: committed (HEAD names another commit; same files)
+$ make verify
+exit=0  wall=3.721228864s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### then reused
+$ make verify
+exit=0  wall=.516108191s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:56Z (key 2ae557c0cfcf); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:15:56Z (key 2ae557c0cfcf); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ git commit --allow-empty -m empty
+
+### AC-5: an empty commit
+$ make verify
+exit=0  wall=3.702642897s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### then reused
+$ make verify
+exit=0  wall=.515665762s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:00Z (key 320f7dd11190); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:00Z (key 320f7dd11190); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ sed -i "s/$/\r/" LICENSE  (CRLF endings; .gitattributes says * text=auto eol=lf)
+git status --short: [ M LICENSE;?? scripts/event-model/package-lock.json;]
+LICENSE: Unicode text, UTF-8 text, with CRLF line terminators
+
+### AC-3: a file rewritten with CRLF endings
+$ make verify
+exit=0  wall=3.646484462s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### then reused with CRLF kept
+$ make verify
+exit=0  wall=.522005326s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:04Z (key 5c03b279b700); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:04Z (key 5c03b279b700); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+LICENSE: Unicode text, UTF-8 text
+git status: [?? scripts/event-model/package-lock.json;]
+
+### CRLF undone
+$ make verify
+exit=0  wall=3.750569165s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+same size, mtime restored: s/listens/listenz/ in apps/service/src/stamped/main.py, touch -r
+7262 2026-10-04 00:13:55.032699631 -0500
+7262 2026-10-04 00:13:55.032699631 -0500
+
+### AC-3: same size, modification time restored
+$ make verify
+exit=0  wall=3.693190256s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### undone
+$ make verify
+exit=0  wall=3.776460308s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ chmod +x README.md
+git status: [ M README.md;?? scripts/event-model/package-lock.json;]
+
+### AC-2: executable bit of a tracked file
+$ make verify
+exit=0  wall=3.738732784s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### undone
+$ make verify
+exit=0  wall=3.700009402s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ rm notes.txt (a covered file deleted)
+
+### AC-2: a covered file deleted
+$ make verify
+exit=0  wall=3.687352522s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### restored
+$ make verify
+exit=0  wall=3.756444670s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ ln -s README.md link; then retarget to LICENSE
+
+### a link appears
+$ make verify
+exit=0  wall=3.712240436s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-2: the link's target changes
+$ make verify
+exit=0  wall=3.770307255s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### link removed
+$ make verify
+exit=0  wall=3.723429108s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.511792213s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:42Z (key 320f7dd11190); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:42Z (key 320f7dd11190); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ git branch other-branch   (a new ref under refs/heads, HEAD unchanged)
+
+### AC-5: a ref under refs/heads appears
+$ make verify
+exit=0  wall=3.722786824s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### a remote added, nothing fetched (config only)
+$ make verify
+exit=0  wall=.521966832s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:47Z (key f7b2d905a628); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:47Z (key f7b2d905a628); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+$ git fetch origin
+5b413eb2bd390ddf187f517ae96c36e95b9be6a3 commit	refs/remotes/origin/HEAD
+813ac84b466bcc048fe1d874d37c3b0ca7473f6d commit	refs/remotes/origin/main
+5b413eb2bd390ddf187f517ae96c36e95b9be6a3 commit	refs/remotes/origin/other-branch
+
+### AC-5: a fetch (refs/remotes appear)
+$ make verify
+exit=0  wall=3.665822988s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.517625388s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:51Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:51Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ git checkout other-branch (another branch, same files)
+
+### AC-5: another branch with the same files
+$ make verify
+exit=0  wall=3.678892390s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused on other-branch
+$ make verify
+exit=0  wall=.508108868s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:55Z (key 253fe1248829); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:55Z (key 253fe1248829); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### back on topic
+$ make verify
+exit=0  wall=3.725518114s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 

@@ -1,0 +1,112 @@
+Quickstart steps 9 to 11, 2026-10-04T05:14:26Z
+
+### step 9: make ci on a stamped tree
+$ timeout 420 make ci
+exit=2  wall=3.711969293s  lines=75  recipe-lines(checks started)=18
+first 2 lines:
+verify: the full gate runs, forced by the goal ci, which always runs every check
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs, forced by the goal ci, which always runs every check
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+last 12 lines of make ci:
+======================== 87 passed, 2 warnings in 0.53s ========================
+python3 scripts/event-model/check.py
+check-model: valid
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+
+up to date in 67ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+install pip-audit to run dependency audit
+make: *** [Makefile:165: audit] Error 2
+?? scripts/event-model/package-lock.json
+(make ci stopped at its audit step - pip-audit is not installed here; the quickstart says its exit code is not the evidence)
+
+### after make ci: the forced pass recorded, so reuse
+$ make verify
+exit=0  wall=.512070587s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:14:29Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:14:29Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+break a test: apps/service/tests/test_logging_setup.py line 27 'info' -> 'inf0'
+ apps/service/tests/test_logging_setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+### step 10a: a broken test
+$ make verify
+exit=2  wall=2.672794655s  lines=86  recipe-lines(checks started)=15
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+the failure:
+64:E       AssertionError: assert 'info' == 'inf0'
+71:apps/service/tests/test_logging_setup.py:27: AssertionError
+83:FAILED apps/service/tests/test_logging_setup.py::test_the_default_line_is_one_json_object_carrying_what_the_caller_passed
+85:make[1]: *** [Makefile:157: test] Error 1
+86:make: *** [Makefile:170: verify] Error 2
+
+### step 10a again: still failing, still full
+$ make verify
+exit=2  wall=2.647603595s  lines=86  recipe-lines(checks started)=15
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+fixed back: git checkout -- apps/service/tests/test_logging_setup.py
+?? scripts/event-model/package-lock.json
+
+### step 10b: fixed - every check runs (no stamp survived the failure)
+$ make verify
+exit=0  wall=3.749038140s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 10c: reused
+$ make verify
+exit=0  wall=.516593672s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:14:54Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:14:54Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 11
+$ git status --short --ignored
+?? scripts/event-model/package-lock.json
+!! .mypy_cache/
+!! .ruff_cache/
+!! apps/service/.pytest_cache/
+!! apps/service/.ruff_cache/
+!! apps/service/.venv/
+!! apps/service/src/stamped/__pycache__/
+!! apps/service/src/stamped/adapters/driven/__pycache__/
+!! apps/service/src/stamped/adapters/driving/http/__pycache__/
+!! apps/service/src/stamped/application/ports/__pycache__/
+!! apps/service/tests/__pycache__/
+!! apps/service/tests/contract/__pycache__/
+!! apps/service/tests/edge/__pycache__/
+!! apps/service/tests/integration/__pycache__/
+!! scripts/event-model/node_modules/
+$ ls -la "$(git rev-parse --git-dir)/slipwai"
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:14 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 00:14 ..
+-rw------- 1 noahc noahc 648 Oct  4 00:14 verify-stamp-e3b0c44298fc1c14.json
+$ git diff --stat .gitignore; grep -n slipwai .gitignore .git/info/exclude
+.gitignore:19:.slipwai/catch-up.md
+(end)

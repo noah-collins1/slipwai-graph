@@ -1,0 +1,149 @@
+Quickstart steps 4 to 6, project /tmp/s03-demo/stamped, branch topic, 2026-10-04T05:13:18Z
+
+### step 4 baseline: stamped tree
+$ make verify
+exit=0  wall=.519346405s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:07Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:07Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+edit: append one comment character-word to apps/service/src/stamped/logging_setup.py
+ M apps/service/src/stamped/logging_setup.py
+?? scripts/event-model/package-lock.json
+
+### step 4a: one tracked source file changed
+$ make verify
+exit=2  wall=.831165278s  lines=14  recipe-lines(checks started)=1
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+undone: git checkout -- apps/service/src/stamped/logging_setup.py
+?? scripts/event-model/package-lock.json
+
+### step 4b: undone - every check again (earlier stamp was removed)
+$ make verify
+exit=0  wall=3.742574009s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 4c: the run after that is reused
+$ make verify
+exit=0  wall=.501087862s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 5: forced on the command line
+$ make verify VERIFY_FORCE=1
+exit=0  wall=3.732969241s  lines=73  recipe-lines(checks started)=18
+first 2 lines:
+verify: the full gate runs, forced by VERIFY_FORCE=1
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs, forced by VERIFY_FORCE=1
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 5 after: reuse again
+$ make verify
+exit=0  wall=.515371421s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:27Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:27Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+edit: add a comment to scripts/check-imports.py
+
+### step 6: a gate script changed
+$ make verify
+exit=0  wall=3.738931031s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 6 again with the comment kept (should be reused: it passed)
+$ make verify
+exit=0  wall=.512195729s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:31Z (key ca6cde2061e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:31Z (key ca6cde2061e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+undone
+
+### step 6 undone
+$ make verify
+exit=0  wall=3.748458768s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### then reuse
+$ make verify
+exit=0  wall=.523369693s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:36Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:36Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+---- step 4 repeated as the quickstart words it (a word inside a docstring; my first edit above was a trailing comment the formatter refused, so that run stopped at lint)
+ apps/service/src/stamped/main.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+### step 4a': one word in a docstring changed
+$ make verify
+exit=0  wall=3.769950296s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 4a'': same edit again - reused (it passed with the edit)
+$ make verify
+exit=0  wall=.513755746s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:54Z (key 915decb37fc6); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:54Z (key 915decb37fc6); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+undone: git checkout -- apps/service/src/stamped/main.py
+
+### step 4b': undone - every check runs
+$ make verify
+exit=0  wall=3.762839544s  lines=72  recipe-lines(checks started)=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### step 4c': reused
+$ make verify
+exit=0  wall=.520278163s  lines=1  recipe-lines(checks started)=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:58Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:13:58Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 

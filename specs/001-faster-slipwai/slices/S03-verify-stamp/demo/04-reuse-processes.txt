@@ -1,0 +1,145 @@
+$ strace -f -e trace=execve -o /tmp/s03-demo/exec.log make verify
+verify: the full gate runs and this run records nothing — uv exited 1 when asked its version
+./scripts/verify --lint-only
+snap-confine is packaged without necessary permissions and cannot continue
+required permitted capability cap_dac_override not found in current capabilities:
+  =
+make[1]: *** [Makefile:64: lint] Error 1
+make: *** [Makefile:170: verify] Error 2
+exit=2
+programs executed (successful execve), counted:
+      3 execve("/bin/bash"
+      1 execve("./scripts/verify"
+      2 execve("/snap/bin/uv"
+      2 execve("/snap/snapd/28254/usr/lib/snapd/snap-confine"
+      2 execve("/snap/snapd/28254/usr/lib/snapd/snap-seccomp"
+      2 execve("/snap/snapd/current/usr/bin/snap"
+      6 execve("/usr/bin/getent"
+     15 execve("/usr/bin/git"
+      3 execve("/usr/bin/make"
+      3 execve("/usr/bin/python3"
+
+argv of each:
+execve("/usr/bin/make", ["make", "verify"]
+execve("/bin/bash", ["/bin/bash", "-c", "python3 scripts/verify-stamp.py "...]
+execve("/usr/bin/python3", ["python3", "scripts/verify-stamp.py", "reuse", "--goals", "verify", "--make", "make", "--tool", "make", "--tool", "git", "--tool", "python3", "--tool", "uv", "--tool", "node", "--tool", "npm", "--environment", "apps/service/.venv"]
+execve("/usr/bin/git", ["git", "symbolic-ref", "-q", "HEAD"]
+execve("/usr/bin/git", ["git", "rev-parse", "--show-toplevel"]
+execve("/usr/bin/git", ["git", "rev-parse", "--verify", "--quiet", "refs/heads/main^{commit}"]
+execve("/usr/bin/git", ["git", "symbolic-ref", "-q", "refs/heads/main"]
+execve("/usr/bin/git", ["git", "merge-base", "HEAD", "refs/heads/main"]
+execve("/usr/bin/git", ["git", "rev-parse", "--verify", "--quiet", "refs/remotes/origin/main^{commit"...]
+execve("/usr/bin/git", ["git", "rev-parse", "--verify", "--quiet", "refs/heads/master^{commit}"]
+execve("/usr/bin/git", ["git", "rev-parse", "--verify", "--quiet", "refs/remotes/origin/master^{comm"...]
+execve("/usr/bin/git", ["git", "ls-files", "-v", "-z"]
+execve("/usr/bin/git", ["git", "ls-files", "-z", "--stage"]
+execve("/usr/bin/make", ["make", "--version"]
+execve("/usr/bin/git", ["git", "--version"]
+execve("/usr/bin/python3", ["python3", "--version"]
+execve("/snap/bin/uv", ["uv", "--version"]
+execve("/snap/snapd/current/usr/bin/snap", ["uv", "--version"]
+execve("/snap/snapd/28254/usr/lib/snapd/snap-seccomp", ["/snap/snapd/28254/usr/lib/snapd/"..., "version-info"]
+execve("/usr/bin/getent", ["/usr/bin/getent", "passwd", "1000"]
+execve("/usr/bin/getent", ["/usr/bin/getent", "passwd", "1000"]
+execve("/usr/bin/getent", ["/usr/bin/getent", "passwd", "1000"]
+execve("/snap/snapd/28254/usr/lib/snapd/snap-confine", ["/snap/snapd/28254/usr/lib/snapd/"..., "--classic", "--base", "core24", "snap.astral-uv.uv", "/snap/snapd/28254/usr/lib/snapd/"..., "astral-uv.uv", "--version"]
+execve("/usr/bin/git", ["git", "rev-parse", "--absolute-git-dir"]
+execve("/usr/bin/git", ["git", "rev-parse", "--show-prefix"]
+execve("/usr/bin/git", ["git", "rev-parse", "--absolute-git-dir"]
+execve("/usr/bin/git", ["git", "rev-parse", "--show-prefix"]
+execve("/usr/bin/make", ["make", "--no-print-directory", "verify-checks"]
+execve("/bin/bash", ["/bin/bash", "-c", "python3 -c \"import sys; sys.exit"...]
+execve("/usr/bin/python3", ["python3", "-c", "import sys; sys.exit(0 if sys.ve"...]
+execve("/bin/bash", ["/bin/bash", "-c", "./scripts/verify --lint-only"]
+execve("./scripts/verify", ["./scripts/verify", "--lint-only"]
+execve("/snap/bin/uv", ["uv", "sync", "--project", "apps/service", "--locked", "--quiet"]
+execve("/snap/snapd/current/usr/bin/snap", ["uv", "sync", "--project", "apps/service", "--locked", "--quiet"]
+execve("/snap/snapd/28254/usr/lib/snapd/snap-seccomp", ["/snap/snapd/28254/usr/lib/snapd/"..., "version-info"]
+execve("/usr/bin/getent", ["/usr/bin/getent", "passwd", "1000"]
+execve("/usr/bin/getent", ["/usr/bin/getent", "passwd", "1000"]
+execve("/usr/bin/getent", ["/usr/bin/getent", "passwd", "1000"]
+execve("/snap/snapd/28254/usr/lib/snapd/snap-confine", ["/snap/snapd/28254/usr/lib/snapd/"..., "--classic", "--base", "core24", "snap.astral-uv.uv", "/snap/snapd/28254/usr/lib/snapd/"..., "astral-uv.uv", "sync", "--project", "apps/service", "--locked", "--quiet"]
+
+NOTE (the hand): the run above is strace's artefact - uv on this machine is a snap, and snap-confine refuses to run under ptrace. It is kept as an unplanned example of AC-S03-17 (a tool that exits non-zero: full gate, one line naming the tool, nothing recorded). Stamp directory afterwards:
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:12 .
+drwxrwxr-x 8 noahc noahc 260 Oct  4 00:12 ..
+-rw------- 1 noahc noahc  18 Oct  4 00:12 verify-stamp-e3b0c44298fc1c14.pending
+The hand's instrument: logging wrappers for git, uv, node, npm, python3 in /tmp/s03-demo/shim, first on PATH; each appends its argv to a log and execs the real tool. (PATH changing is itself a test: no path is in the key.)
+$ PATH=/tmp/s03-demo/shim:$PATH make verify   # stamped tree
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:54Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+exit=0
+--- every launch the wrappers saw (25):
+python3 scripts/verify-stamp.py reuse --goals verify --make make --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv
+git symbolic-ref -q HEAD
+git rev-parse --show-toplevel
+git rev-parse --verify --quiet refs/heads/main^{commit}
+git symbolic-ref -q refs/heads/main
+git merge-base HEAD refs/heads/main
+git rev-parse --verify --quiet refs/remotes/origin/main^{commit}
+git rev-parse --verify --quiet refs/heads/master^{commit}
+git rev-parse --verify --quiet refs/remotes/origin/master^{commit}
+git ls-files -v -z
+git ls-files -z --stage
+git --version
+python3 --version
+uv --version
+node --version
+npm --version
+node /usr/bin/npm --version
+git ls-files -z --cached --others --exclude-standard
+git ls-files -z --stage
+git for-each-ref --format=%(objectname) %(refname) refs/heads refs/remotes
+git rev-parse --git-path shallow
+git symbolic-ref -q HEAD
+git rev-parse -q --verify HEAD
+git rev-parse --absolute-git-dir
+git rev-parse --show-prefix
+
+$ PATH=/tmp/s03-demo/shim:$PATH make verify VERIFY_FORCE=1 > /dev/null  # for contrast
+exit=0
+verify: the full gate runs, forced by VERIFY_FORCE=1
+verify: all gates passed
+--- launches by tool:
+     51 git
+      4 node
+      2 npm
+     21 python3
+      9 uv
+--- non-git launches:
+python3 scripts/verify-stamp.py reuse --goals verify --make make --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv
+python3 --version
+uv --version
+node --version
+npm --version
+node /usr/bin/npm --version
+python3 -c import sys; sys.exit(0 if sys.version_info >= (3, 10) else 'check-python: ' + sys.executable + ' is Python ' + sys.version.split()[0] + ', and the gate scripts need 3.10 or newer; put a newer python3 first on PATH (a non-interactive macOS shell finds /usr/bin/python3, which is 3.9, before Homebrew)')
+uv sync --project apps/service --locked --quiet
+uv run --project apps/service --no-sync ruff check apps/service/src apps/service/tests
+uv run --project apps/service --no-sync ruff format --check apps/service/src apps/service/tests
+uv sync --project apps/service --locked --quiet
+python3 -m compileall -q apps/service/src apps/service/tests
+uv run --project apps/service --no-sync mypy --config-file apps/service/pyproject.toml apps/service/src apps/service/tests
+python3 scripts/check-imports.py
+python3 scripts/check-migrations.py
+python3 scripts/check-slice-scope.py
+python3 scripts/extensions/project.py --check
+python3 scripts/agents/project.py --check
+python3 scripts/agents/models.py --check
+python3 scripts/agents/drive.py --check
+python3 scripts/agents/cruise.py --check
+python3 scripts/check-speckit.py
+python3 scripts/check-codegraph.py
+python3 scripts/check-ux-gates.py
+python3 scripts/check-constitution.py
+python3 scripts/test_benchmark.py
+python3 scripts/agents/benchmark.py check
+python3 scripts/check-decisions.py
+uv sync --project apps/service --locked --quiet
+uv run --project apps/service --no-sync pytest apps/service/tests --ignore=apps/service/tests/integration
+python3 scripts/event-model/check.py
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+node /usr/bin/npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+uv run --project apps/service --no-sync python -m stamped.openapi /tmp/tmp.zBikDH6x0f
+python3 scripts/verify-stamp.py record --make make --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv

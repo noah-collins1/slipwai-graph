@@ -1,0 +1,404 @@
+Beyond the script: variables, tools, the environment, git states. 2026-10-04T05:20:48Z
+
+### baseline reused
+$ make verify
+exit=0  wall=.522633959s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:20:22Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:20:22Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-9: CODEGRAPH_GATE_NO_SYNC=1 set
+$ env CODEGRAPH_GATE_NO_SYNC=1 make verify
+exit=0  wall=3.734837781s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### same variable again: reused
+$ env CODEGRAPH_GATE_NO_SYNC=1 make verify
+exit=0  wall=.522149605s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:20:52Z (key 120a1fe29199); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:20:52Z (key 120a1fe29199); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-9: set but empty is distinct from unset and from 1
+$ env CODEGRAPH_GATE_NO_SYNC= make verify
+exit=0  wall=3.722556553s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### unset again
+$ make verify
+exit=0  wall=3.727654673s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.519384707s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:00Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:00Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-9: UX_GATES_JOBS is not in the key
+$ env UX_GATES_JOBS=7 make verify
+exit=0  wall=.537129101s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:00Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:00Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-9: GITHUB_HEAD_REF set
+$ env GITHUB_HEAD_REF=slice/x make verify
+exit=2  wall=1.310037427s  lines=17  checks-started=5
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+### unset again
+$ make verify
+exit=0  wall=3.679812412s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### a variable no gate script names (FOO=1): reused, as the page says
+$ env FOO=1 make verify
+exit=0  wall=.528679452s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:07Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:07Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-9: RATCHET_TIGHTEN=1 neither reads nor writes
+$ env RATCHET_TIGHTEN=1 make verify
+exit=0  wall=3.171262672s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+stamp: same bytes as before
+git status: [?? scripts/event-model/package-lock.json;]
+
+### after it: reused
+$ make verify
+exit=0  wall=.530799319s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:07Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:07Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+tools: a uv first on PATH that prints a notice on a second line of --version
+
+### AC-15: one tool's answer gains a second line
+$ env PATH=/tmp/s03-demo/shim2:/home/noahc/.local/bin:/home/noahc/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin make verify
+exit=0  wall=3.757216013s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+stamp's uv line:     "uv": "0.12.20 [answer d1c1cce381ef7f30]"
+
+### same PATH again: reused
+$ env PATH=/tmp/s03-demo/shim2:/home/noahc/.local/bin:/home/noahc/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin make verify
+exit=0  wall=.528467361s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:15Z (key 18fb9ae2f441); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:15Z (key 18fb9ae2f441); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### the real uv again
+$ make verify
+exit=0  wall=3.707466314s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+the same tool at another path (pass-through wrappers first on PATH): no path in the key
+
+### AC-15: PATH changed, answers the same: reused
+$ env PATH=/tmp/s03-demo/shim:/home/noahc/.local/bin:/home/noahc/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin make verify
+exit=0  wall=.525429780s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:19Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:19Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+a node that exits 1 when asked its version
+
+### AC-17: a tool exits non-zero
+$ env PATH=/tmp/s03-demo/shim3:/home/noahc/.local/bin:/home/noahc/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin make verify
+exit=0  wall=3.442590377s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — node exited 1 when asked its version
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — node exited 1 when asked its version
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+### after it with the real node (that run recorded nothing and removed the stamp?)
+$ make verify
+exit=0  wall=3.759689173s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.515247551s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:27Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:27Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-17: a tool prints nothing
+$ env PATH=/tmp/s03-demo/shim3:/home/noahc/.local/bin:/home/noahc/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin make verify
+exit=0  wall=3.363275373s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — node printed nothing when asked its version
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — node printed nothing when asked its version
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+### AC-17: a tool does not answer (sleeps 60 s)
+$ env PATH=/tmp/s03-demo/shim3:/home/noahc/.local/bin:/home/noahc/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin make verify
+exit=0  wall=8.386582341s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — node did not answer within 5 seconds when asked its version
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — node did not answer within 5 seconds when asked its version
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+### restamp
+$ make verify
+exit=0  wall=3.695653797s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.516029507s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:43Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:43Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+pyvenv.cfg:
+home = /usr/bin
+implementation = CPython
+uv = 0.12.20
+version_info = 3.14.4
+include-system-site-packages = false
+prompt = stamped-service
+
+### AC-16: the environment's interpreter version changes in pyvenv.cfg
+$ make verify
+exit=0  wall=4.646530631s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+    "interpreter apps/service/.venv": "3.13.0",
+version_info = 3.14.4
+
+### AC-17: pyvenv.cfg missing
+$ make verify
+exit=2  wall=1.098648759s  lines=11  checks-started=2
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot read apps/service/.venv/pyvenv.cfg (No such file or directory)
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot read apps/service/.venv/pyvenv.cfg (No such file or directory)
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+ls: cannot access 'apps/service/.venv/pyvenv.cfg': No such file or directory
+
+### restamp
+$ make verify
+exit=0  wall=3.759033372s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.497668617s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:53Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:21:53Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ git update-index --assume-unchanged README.md
+
+### AC-12: an assume-unchanged entry
+$ make verify
+exit=0  wall=3.269507814s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — README.md is marked assume-unchanged, so git does not look at it
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — README.md is marked assume-unchanged, so git does not look at it
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+### again
+$ make verify
+exit=0  wall=3.236698939s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — README.md is marked assume-unchanged, so git does not look at it
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — README.md is marked assume-unchanged, so git does not look at it
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+$ git update-index --skip-worktree README.md
+
+### AC-12: a skip-worktree entry
+$ make verify
+exit=0  wall=3.251756705s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — README.md is marked skip-worktree, so git does not look at it
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — README.md is marked skip-worktree, so git does not look at it
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+$ git init -q nested   (an untracked directory that is itself a repository)
+
+### AC-12: an untracked directory that is a repository
+$ make verify
+exit=0  wall=3.657843324s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — nested/ is an untracked directory that is itself a repository
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — nested/ is an untracked directory that is itself a repository
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+### restamp
+$ make verify
+exit=0  wall=3.716807683s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.520215210s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:22:11Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:22:11Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ echo SECRET=1 > .env
+git status: [!! .env]
+
+### AC-7: .env appears
+$ make verify
+exit=0  wall=3.718978805s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### .env gone
+$ make verify
+exit=0  wall=3.705737366s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ chmod 000 notes.txt (a covered file that cannot be read)
+
+### AC-13: a covered file cannot be read
+$ make verify
+exit=0  wall=3.692950854s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot read notes.txt (Permission denied)
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot read notes.txt (Permission denied)
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+### restamp
+$ make verify
+exit=0  wall=3.752853534s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.522732550s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:22:26Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:22:26Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 

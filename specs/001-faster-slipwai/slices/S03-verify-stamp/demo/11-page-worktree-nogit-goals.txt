@@ -1,0 +1,376 @@
+Beyond the script: what docs/gates.md of the project says, followed; a second worktree; no git; several goals. 2026-10-04T05:22:56Z
+
+--- the page's paragraph (docs/gates.md lines 10 to 23 of /tmp/s03-demo/stamped):
+A tree that already passed `make verify` is not judged again. A full passing run on a branch that is not the trunk
+records a stamp under the git directory, never in the working tree, so `git status` shows nothing of it. It is keyed by
+what the stamp can see of the checks: the files' bytes, the index, `HEAD` and the refs, `Makefile` and `scripts/`, the
+versions of the tools the machine supplies, and the variables a check reads. The next run on the same tree prints one
+line, `verify: the full gate did not run; this tree already passed it …`, starts no check and exits 0. `VERIFY_FORCE` is
+unset by default; anything but empty or `0` forces it, on the command line or in the environment. To run the gate anyway,
+run `make verify VERIFY_FORCE=1`. A stamp cannot see what a project's own tests or tools read from outside the repository: the clock, the network,
+user-level tool configuration, `PATH`, or a variable no gate script names. A gate that would now fail for one of those
+alone is reused as green until a file, a ref or a listed input moves or `VERIFY_FORCE` is given. CI and the trunk, which
+never read a stamp, are where it is caught. When a check answers from one of those things, run `make verify
+VERIFY_FORCE=1`. The trunk and CI (`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set to a non-empty value) always run the full
+gate and neither read nor write a stamp, and `make ci` always runs it. The trunk is the branch `project.json` records as
+`ci.branch`, else `main`, else `master`. A team whose trunk has another name sets `ci.branch` in `project.json` to it;
+until then that branch reuses a stamp like any other.
+
+--- 'A team whose trunk has another name sets ci.branch in project.json to it; until then that branch reuses a stamp like any other.'
+$ git checkout -b develop
+
+### develop, no ci.branch recorded, run 1
+$ make verify
+exit=0  wall=3.708960259s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### develop, no ci.branch recorded, run 2: reuses like any other
+$ make verify
+exit=0  wall=.520569261s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:00Z (key 0d9b1a938b5f); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:00Z (key 0d9b1a938b5f); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+record it: project.json gains "ci": {"branch": "develop"}
+ project.json | 3 +++
+ 1 file changed, 3 insertions(+)
+
+### develop is now the trunk, run 1
+$ make verify
+exit=0  wall=3.240279039s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### develop is now the trunk, run 2: full again
+$ make verify
+exit=0  wall=3.230462868s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+$ git commit; git checkout topic; git merge develop
+
+### topic (not the trunk) with ci.branch=develop, run 1
+$ make verify
+exit=0  wall=3.709820408s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### topic, run 2: reused
+$ make verify
+exit=0  wall=.504160993s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:11Z (key 416a40125452); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:11Z (key 416a40125452); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+$ git checkout main; git merge develop  (main is no longer the recorded trunk)
+
+### main with ci.branch=develop, run 1
+$ make verify
+exit=0  wall=3.719236626s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### main with ci.branch=develop, run 2
+$ make verify
+exit=0  wall=.513176756s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:15Z (key 2621384af735); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:15Z (key 2621384af735); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### topic again
+$ make verify
+exit=0  wall=3.717562473s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### topic again: reused
+$ make verify
+exit=0  wall=.522912589s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:19Z (key ebf89dc50584); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:19Z (key ebf89dc50584); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+--- a second worktree
+$ git worktree add /tmp/s03-demo/wt -b wt-branch
+
+### first worktree after the new branch appeared (a ref moved)
+$ make verify
+exit=0  wall=3.748970646s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### first worktree: reused
+$ make verify
+exit=0  wall=.529110274s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### second worktree, run 1 (no environment yet)
+$ make verify
+exit=0  wall=8.662503983s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot read apps/service/.venv/pyvenv.cfg (No such file or directory)
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot read apps/service/.venv/pyvenv.cfg (No such file or directory)
+verify: all gates passed
+stamp dir: ls: cannot access '.git/slipwai': Not a directory 
+
+### second worktree, run 2
+$ make verify
+exit=0  wall=3.671992389s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: ls: cannot access '.git/slipwai': Not a directory 
+
+### second worktree, run 3
+$ make verify
+exit=0  wall=.523203503s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:37Z (key fbc5ddc321d2); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:37Z (key fbc5ddc321d2); VERIFY_FORCE=1 runs it anyway
+stamp dir: ls: cannot access '.git/slipwai': Not a directory 
+
+### second worktree, run 4
+$ make verify
+exit=0  wall=.535857441s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:37Z (key fbc5ddc321d2); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:37Z (key fbc5ddc321d2); VERIFY_FORCE=1 runs it anyway
+stamp dir: ls: cannot access '.git/slipwai': Not a directory 
+git status in the second worktree: [?? scripts/event-model/package-lock.json;]
+$ git rev-parse --git-dir
+/tmp/s03-demo/stamped/.git/worktrees/wt
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:23 .
+drwxrwxr-x 5 noahc noahc 200 Oct  4 00:23 ..
+-rw------- 1 noahc noahc 648 Oct  4 00:23 verify-stamp-e3b0c44298fc1c14.json
+first worktree's stamp dir:
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:23 .
+drwxrwxr-x 9 noahc noahc 320 Oct  4 00:23 ..
+-rw------- 1 noahc noahc 648 Oct  4 00:23 verify-stamp-e3b0c44298fc1c14.json
+first worktree's stamp: same bytes as before the second worktree ran
+
+### first worktree: still reused
+$ make verify
+exit=0  wall=.522001959s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+--- several goals, -j, -C, on a stamped tree
+
+### make lint verify
+$ make lint verify
+exit=0  wall=.786130424s  lines=4  checks-started=1
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+./scripts/verify --lint-only
+All checks passed!
+31 files already formatted
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+
+### make verify lint
+$ make verify lint
+exit=0  wall=.821068769s  lines=4  checks-started=1
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+./scripts/verify --lint-only
+All checks passed!
+31 files already formatted
+
+### make verify (alone again)
+$ make verify
+exit=0  wall=.537827956s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### make -j4 verify on a stamped tree
+$ make -j4 verify
+exit=0  wall=.537319243s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### make -C /tmp/s03-demo/stamped verify from /tmp
+$ make -C /tmp/s03-demo/stamped verify
+exit=0  wall=.522461385s  lines=3  checks-started=0
+first 2 lines:
+make: Entering directory '/tmp/s03-demo/stamped'
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### make -s verify
+$ make -s verify
+exit=0  wall=.528232030s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### make verify-checks (the inner target, typed by hand)
+$ make verify-checks
+exit=0  wall=3.102060051s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### after it
+$ make verify
+exit=0  wall=.514075900s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+--- no git on PATH: a PATH holding everything the gate needs but git
+
+### AC-13: no git on PATH
+$ env PATH=/tmp/s03-demo/nogitbin make verify
+exit=0  wall=3.184846990s  lines=74  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — git is not on PATH
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — git is not on PATH
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+the stamp that stood: left, same bytes
+
+### git back: reused (the stamp was left)
+$ make verify
+exit=0  wall=.489371597s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+--- a directory that is no repository: a copy of the project without .git
+
+### AC-13: not a repository, run 1
+$ env GIT_CEILING_DIRECTORIES=/tmp/s03-demo make verify
+exit=0  wall=3.286227909s  lines=74  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — git symbolic-ref -q HEAD: fatal: not a git repository (or any of the parent directories): .git
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — git symbolic-ref -q HEAD: fatal: not a git repository (or any of the parent directories): .git
+verify: all gates passed
+stamp dir: ls: cannot access '.git/slipwai': No such file or directory 
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+
+### AC-13: not a repository, run 2
+$ env GIT_CEILING_DIRECTORIES=/tmp/s03-demo make verify
+exit=0  wall=3.155007792s  lines=74  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — git symbolic-ref -q HEAD: fatal: not a git repository (or any of the parent directories): .git
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — git symbolic-ref -q HEAD: fatal: not a git repository (or any of the parent directories): .git
+verify: all gates passed
+stamp dir: ls: cannot access '.git/slipwai': No such file or directory 
+
+--- at the end of all of it
+$ git status --short --ignored   (first worktree, branch topic)
+?? scripts/event-model/package-lock.json
+!! .mypy_cache/
+!! .ruff_cache/
+!! apps/service/.pytest_cache/
+!! apps/service/.ruff_cache/
+!! apps/service/.venv/
+!! apps/service/src/stamped/__pycache__/
+!! apps/service/src/stamped/adapters/driven/__pycache__/
+!! apps/service/src/stamped/adapters/driving/http/__pycache__/
+!! apps/service/src/stamped/application/ports/__pycache__/
+!! apps/service/tests/__pycache__/
+!! apps/service/tests/contract/__pycache__/
+!! apps/service/tests/edge/__pycache__/
+!! apps/service/tests/integration/__pycache__/
+!! scripts/event-model/node_modules/
+$ ls -la "$(git rev-parse --git-dir)/slipwai"
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:23 .
+drwxrwxr-x 9 noahc noahc 320 Oct  4 00:24 ..
+-rw------- 1 noahc noahc 648 Oct  4 00:23 verify-stamp-e3b0c44298fc1c14.json
+$ git diff main -- .gitignore | wc -l
+0
+$ git worktree list
+/tmp/s03-demo/stamped 87c1c66 [topic]
+/tmp/s03-demo/wt      87c1c66 [wt-branch]
+$ find . -name "*stamp*" -not -path "./.git/*" -not -path "*/node_modules/*" -not -path "*/.venv/*"
+./scripts/verify-stamp.py
+./apps/service/src/stamped

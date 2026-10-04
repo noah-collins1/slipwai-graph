@@ -1,0 +1,662 @@
+Beyond the script: make's modes, forcing, deleting the stamp, detached HEAD. 2026-10-04T05:17:25Z
+
+### baseline
+$ make verify
+exit=0  wall=.499532643s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:59Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:59Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### baseline reused
+$ make verify
+exit=0  wall=.533833468s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:59Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:59Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### make -n verify on a stamped tree
+$ make -n verify
+exit=0  wall=.078072763s  lines=27  checks-started=19
+first 2 lines:
+python3 scripts/verify-stamp.py reuse --goals "verify" --make "make" --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv || { make --no-print-directory verify-checks && python3 scripts/verify-stamp.py record --make "make" --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv; }
+python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 'check-python: ' + sys.executable + ' is Python ' + sys.version.split()[0] + ', and the gate scripts need 3.10 or newer; put a newer python3 first on PATH (a non-interactive macOS shell finds /usr/bin/python3, which is 3.9, before Homebrew)')"
+every verify: line:
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+full output:
+python3 scripts/verify-stamp.py reuse --goals "verify" --make "make" --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv || { make --no-print-directory verify-checks && python3 scripts/verify-stamp.py record --make "make" --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv; }
+python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 'check-python: ' + sys.executable + ' is Python ' + sys.version.split()[0] + ', and the gate scripts need 3.10 or newer; put a newer python3 first on PATH (a non-interactive macOS shell finds /usr/bin/python3, which is 3.9, before Homebrew)')"
+./scripts/verify --lint-only
+./scripts/verify --typecheck-only
+python3 scripts/check-imports.py
+python3 scripts/check-migrations.py
+python3 scripts/check-slice-scope.py
+python3 scripts/extensions/project.py --check
+python3 scripts/agents/project.py --check
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+python3 scripts/check-speckit.py
+python3 scripts/check-codegraph.py
+python3 scripts/check-ux-gates.py
+python3 scripts/check-constitution.py
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+python3 scripts/check-decisions.py
+./scripts/verify --test-only
+python3 scripts/event-model/check.py
+npm --prefix scripts/event-model install --no-audit --no-fund --loglevel=error
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+out=$(mktemp); PYTHONPATH=apps/service/src uv run --project apps/service --no-sync python -m stamped.openapi "$out"; \
+	if ! diff -q apps/service/openapi.json "$out" > /dev/null; then \
+		echo 'check-openapi: apps/service/openapi.json no longer matches the routes; run `make openapi`'; \
+		diff -u apps/service/openapi.json "$out" || true; rm -f "$out"; exit 1; \
+	fi; rm -f "$out"
+echo
+echo 'verify: all gates passed'
+stamp: same bytes as before
+
+### make -q verify
+$ make -q verify
+exit=1  wall=.034449265s  lines=0  checks-started=0
+first 2 lines:
+every verify: line:
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+stamp: same bytes as before
+
+### make -t verify
+$ make -t verify
+exit=0  wall=.063465857s  lines=1  checks-started=0
+first 2 lines:
+make[1]: Nothing to be done for 'verify-checks'.
+every verify: line:
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+make[1]: Nothing to be done for 'verify-checks'.
+stamp: same bytes as before
+git status: [?? scripts/event-model/package-lock.json;]
+
+### after -n/-q/-t: still reused
+$ make verify
+exit=0  wall=.520369196s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:59Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:16:59Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### make -i verify on a stamped tree
+$ make -i verify
+exit=0  wall=3.247993666s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+stamp: CHANGED or gone
+
+### after -i
+$ make verify
+exit=0  wall=3.751226138s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### then
+$ make verify
+exit=0  wall=.514803395s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:17:34Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:17:34Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-10: make -i verify on a failing tree
+$ make -i verify
+exit=0  wall=3.214466603s  lines=94  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+
+### AC-10: plain run after it (must not be reused)
+$ make verify
+exit=2  wall=2.648862255s  lines=86  checks-started=15
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+
+### fixed
+$ make verify
+exit=0  wall=3.713033326s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.515438594s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:17:44Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:17:44Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-25: VERIFY_FORCE=1 from the environment
+$ env VERIFY_FORCE=1 make verify
+exit=0  wall=3.712119419s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs, forced by VERIFY_FORCE=1
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs, forced by VERIFY_FORCE=1
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-25: VERIFY_FORCE=0
+$ make verify VERIFY_FORCE=0
+exit=0  wall=.513649782s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:17:49Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:17:49Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-25: VERIFY_FORCE= (empty)
+$ make verify VERIFY_FORCE=
+exit=0  wall=.524785958s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:17:49Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:17:49Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-25: VERIFY_FORCE=yes
+$ make verify VERIFY_FORCE=yes
+exit=0  wall=3.640572506s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs, forced by VERIFY_FORCE=yes
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs, forced by VERIFY_FORCE=yes
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-25: VERIFY_FORCE=false (any other value forces)
+$ make verify VERIFY_FORCE=false
+exit=0  wall=3.689590406s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs, forced by VERIFY_FORCE=false
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs, forced by VERIFY_FORCE=false
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ rm .git/slipwai/verify-stamp-*.json
+
+### AC-27: stamp deleted
+$ make verify
+exit=0  wall=3.686608589s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.523055036s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:18:01Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:18:01Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+age: rewrite the stamp's instant to 2020-01-01T00:00:00Z
+
+### AC-27: a stamp of any age is reused, its instant shown
+$ make verify
+exit=0  wall=.530700740s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2020-01-01T00:00:00Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2020-01-01T00:00:00Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+garbage in the stamp
+
+### AC-18: an unparseable stamp is no stamp
+$ make verify
+exit=0  wall=3.765879857s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+a stamp lacking a field (result removed)
+
+### AC-18: a stamp lacking one of the five
+$ make verify
+exit=0  wall=3.758760804s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+a directory at the stamp's path
+
+### AC-28: the stamp path is a directory
+$ make verify
+exit=0  wall=3.697319011s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+total 4
+drwxrwxr-x 3 noahc noahc  80 Oct  4 00:18 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:18 ..
+drwxrwxr-x 3 noahc noahc  60 Oct  4 00:18 verify-stamp-e3b0c44298fc1c14.json
+-rw------- 1 noahc noahc  18 Oct  4 00:18 verify-stamp-e3b0c44298fc1c14.pending
+
+### after it
+$ make verify
+exit=0  wall=3.666791920s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+total 4
+drwxrwxr-x 3 noahc noahc  80 Oct  4 00:18 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:18 ..
+drwxrwxr-x 3 noahc noahc  60 Oct  4 00:18 verify-stamp-e3b0c44298fc1c14.json
+-rw------- 1 noahc noahc  18 Oct  4 00:18 verify-stamp-e3b0c44298fc1c14.pending
+
+### reused
+$ make verify
+exit=0  wall=3.755411308s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+cp: -r not specified; omitting directory '.git/slipwai/verify-stamp-e3b0c44298fc1c14.json'
+
+$ git checkout --detach
+
+### AC-21: detached HEAD, run 1
+$ make verify
+exit=0  wall=3.194925412s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+
+### AC-21: detached HEAD, run 2
+$ make verify
+exit=0  wall=3.154669684s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+cmp: .git/slipwai/verify-stamp-e3b0c44298fc1c14.json: Is a directory
+stamp: CHANGED or gone
+
+### attached again: reused
+$ make verify
+exit=0  wall=3.722790195s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+
+interrupt: make verify VERIFY_FORCE=1 & ; kill -INT after 1.5 s
+/bin/bash: line 45: kill: (-1580111) - No such process
+exit=0
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+total 4
+drwxrwxr-x 3 noahc noahc  80 Oct  4 00:18 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:18 ..
+drwxrwxr-x 3 noahc noahc  60 Oct  4 00:18 verify-stamp-e3b0c44298fc1c14.json
+-rw------- 1 noahc noahc  18 Oct  4 00:18 verify-stamp-e3b0c44298fc1c14.pending
+
+### AC-26: after an interrupted run
+$ make verify
+exit=0  wall=3.678169324s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+
+### reused
+$ make verify
+exit=0  wall=3.649417606s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+
+kill -9 mid-run
+/bin/bash: line 48: kill: (-1581818) - No such process
+exit=0
+total 4
+drwxrwxr-x 3 noahc noahc  80 Oct  4 00:18 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:18 ..
+drwxrwxr-x 3 noahc noahc  60 Oct  4 00:18 verify-stamp-e3b0c44298fc1c14.json
+-rw------- 1 noahc noahc  18 Oct  4 00:18 verify-stamp-e3b0c44298fc1c14.pending
+
+### AC-26: after a killed run
+$ make verify
+exit=0  wall=3.692520657s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+
+### reused
+$ make verify
+exit=0  wall=3.711058360s  lines=73  checks-started=18
+first 2 lines:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs and this run records nothing — cannot remove /tmp/s03-demo/stamped/.git/slipwai/verify-stamp-e3b0c44298fc1c14.json (Directory not empty); delete that directory
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json verify-stamp-e3b0c44298fc1c14.pending 
+
+======== NOTE (the hand): the directory I put at the stamp's path was not empty, so from 'AC-28' above to the end of this file every run said 'cannot remove ... delete that directory' and recorded nothing - as AC-S03-26 words it. The examples after it (detached HEAD, interrupt, kill) are therefore repeated below, after doing what the line says.
+$ rm -r .git/slipwai/verify-stamp-e3b0c44298fc1c14.json   (the line said: delete that directory)
+
+### after deleting the directory as told
+$ make verify
+exit=0  wall=3.748945362s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.529439610s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:12Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:12Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+an EMPTY directory at the stamp's path
+
+### AC-28: the stamp path is an empty directory
+$ make verify
+exit=0  wall=3.677382083s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:19 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:19 ..
+-rw------- 1 noahc noahc 648 Oct  4 00:19 verify-stamp-e3b0c44298fc1c14.json
+
+### reused
+$ make verify
+exit=0  wall=.526963526s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:17Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:17Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+$ git checkout --detach
+
+### AC-21: detached HEAD, run 1
+$ make verify
+exit=0  wall=3.209206880s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### AC-21: detached HEAD, run 2
+$ make verify
+exit=0  wall=3.252359421s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+stamp: same bytes as before
+
+### attached again: reused
+$ make verify
+exit=0  wall=.513316565s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:17Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:17Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+interrupt: make verify VERIFY_FORCE=1 & ; kill -INT the process group after 1.5 s
+/bin/bash: line 17: kill: (-1586430) - No such process
+exit=0
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:19 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:19 ..
+-rw------- 1 noahc noahc 878 Oct  4 00:19 verify-stamp-e3b0c44298fc1c14.pending
+
+### AC-26: after an interrupted run
+$ make verify
+exit=0  wall=3.695280239s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.516708862s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:28Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:28Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+kill -9 the process group mid-run
+/bin/bash: line 20: kill: (-1587678) - No such process
+exit=0
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:19 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:19 ..
+-rw------- 1 noahc noahc 878 Oct  4 00:19 verify-stamp-e3b0c44298fc1c14.pending
+
+### AC-26: after a killed run
+$ make verify
+exit=0  wall=3.659898638s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.519037728s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:34Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:34Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+======== NOTE (the hand): the two kills above reached nothing ('No such process' - setsid had forked, so the run went on while the next one started). Repeated with timeout(1), which signals the run's whole process group:
+
+### baseline reused
+$ make verify
+exit=0  wall=.517044694s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:34Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:34Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### interrupt: SIGINT after 1.5 s
+$ timeout -s INT 1.5 make verify VERIFY_FORCE=1
+exit=124  wall=1.509686702s  lines=27  checks-started=10
+first 2 lines:
+verify: the full gate runs, forced by VERIFY_FORCE=1
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs, forced by VERIFY_FORCE=1
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+make[1]: *** Waiting for unfinished jobs....
+make[1]: *** wait: No child processes.  Stop.
+make: *** [Makefile:170: verify] Error 2
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:19 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:19 ..
+-rw------- 1 noahc noahc 878 Oct  4 00:19 verify-stamp-e3b0c44298fc1c14.pending
+{"key": "0dd2b2a3368ed966b108a20c96a58f81f7634cd3101185e215b6002359785c4f", "tools": {"make": "4.4.1 [answer 268cdd1fee3838e9]", "git": "2.53.0 [answer 46b31b17db8e684a]", "python3": "3.14.4 [answer d629b9bbeb3eb13f]", "uv": "0.12.20 [answer 259c9ceedc36130a]", "node": "v22.22.1 [answer b58f2d61bbad34ff]", "npm": "9.2.0 [answer a99c8ff469e946de]", "interpreter apps/service/.venv": "3.14.4"}, "parts": {"history": "29e58166256479770e45f1ebf84f5b54a030a9a3d2ad364babe9608a8d81b1c0", "index": "97f29125062b26195ba28704ca38ad8d624e8b0185e89615a14789551890fbf8", "ignored": "4c68995b2333dcb4da4f5a964c5643f9c4d51a2b8be1bad8c6899fad2a1fa916", "variables": "7e3f9bbbdfaa3f441c009225c5d1d359ff755ce5e3ffdbc968e9ba8399f6c6ff", "files": "b60d3c950e56da7245bf675a9191cccf80e544ee42e0202a4d134465add75423", "scripts": "e81671aa4d557a1ea4416704c61794b9cfd96d688aa6443e5939f6c83dacd4dc"}}
+
+### AC-26: after an interrupted run
+$ make verify
+exit=0  wall=3.720226667s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.519510139s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:55Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:19:55Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### kill: SIGKILL after 1.5 s
+$ timeout -s KILL 1.5 make verify VERIFY_FORCE=1
+exit=124  wall=1.514344883s  lines=29  checks-started=13
+first 2 lines:
+verify: the full gate runs, forced by VERIFY_FORCE=1
+./scripts/verify --lint-only
+every verify: line:
+verify: the full gate runs, forced by VERIFY_FORCE=1
+stamp dir: verify-stamp-e3b0c44298fc1c14.pending 
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:19 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:19 ..
+-rw------- 1 noahc noahc 878 Oct  4 00:19 verify-stamp-e3b0c44298fc1c14.pending
+1589119 /bin/bash -c source /home/noahc/.claude/shell-snapshots/snapshot-bash-1791077986342-oqsh9c.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'D=/home/noahc/math/slipwai-graph/specs/001-faster-slipwai/slices/S03-verify-stamp/demo; unset CI GITHUB_ACTIONS GITLAB_CI; cd /tmp/s03-demo/stamped; sleep 0; pgrep -fa "verify-checks" | head -3 run() { local label="$1"; shift; echo; echo "### $label"; echo "\$ $*"; local s=$(date +%s.%N); "$@" > /tmp/s03-demo/last.txt 2>&1; local rc=$?; local e=$(date +%s.%N); echo "exit=$rc  wall=$(echo "$e - $s" | bc)s  lines=$(wc -l < /tmp/s03-demo/last.txt)  checks-started=$(grep -c '"'"'^python3 scripts/\|^\./scripts/verify\|^npm \|^node '"'"' /tmp/s03-demo/last.txt)"; echo "first 2 lines:"; head -2 /tmp/s03-demo/last.txt | cut -c1-500; echo "every verify: line:"; grep '"'"'^verify:'"'"' /tmp/s03-demo/last.txt | cut -c1-700; echo "stamp dir: $(ls .git/slipwai 2>&1 | tr '"'"'\n'"'"' '"'"' '"'"')"; } { echo; echo "======== NOTE (the hand): the two kills above reached nothing ('"'"'No such process'"'"' - setsid had forked, so the run went on while the next one started). Repeated with timeout(1), which signals the run'"'"'s whole process group:"; run "baseline reused" make verify run "interrupt: SIGINT after 1.5 s" timeout -s INT 1.5 make verify VERIFY_FORCE=1; tail -3 /tmp/s03-demo/last.txt | cut -c1-200; ls -la .git/slipwai; cat .git/slipwai/*.pending 2>/dev/null | head -5 run "AC-26: after an interrupted run" make verify run "reused" make verify run "kill: SIGKILL after 1.5 s" timeout -s KILL 1.5 make verify VERIFY_FORCE=1; ls -la .git/slipwai; sleep 1; pgrep -fa "scripts/verify|verify-checks" | head run "AC-26: after a killed run" make verify run "reused" make verify } >> $D/09-make-modes-force-stamp-file.txt 2>&1; sed -n '"'"'/the two kills above/,$p'"'"' $D/09-make-modes-force-stamp-file.txt | grep -v "^first 2\|^every verify\|^\$ make verify$" | cut -c1-300' && pwd -P >| /tmp/claude-47b7-cwd
+1590316 /bin/bash -c python3 scripts/verify-stamp.py reuse --goals "verify" --make "make" --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv || { make --no-print-directory verify-checks && python3 scripts/verify-stamp.py record --make "make" --tool make --tool git --tool python3 --tool uv --tool node --tool npm --environment apps/service/.venv; }
+1590410 make --no-print-directory verify-checks
+1590691 /bin/sh ./scripts/verify --test-only
+
+### AC-26: after a killed run
+$ make verify
+exit=0  wall=3.659173234s  lines=81  checks-started=21
+first 2 lines:
+python3 scripts/event-model/check.py
+check-model: valid
+every verify: line:
+verify: all gates passed
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.511911712s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:20:00Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:20:00Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+======== NOTE (the hand): timeout -s KILL killed only the top make; its recipe's shell lived on as an orphan, finished every check and passed while the next run was also running (hence two 'all gates passed' lines in one capture). Both runs passed on the same tree, so the stamp that resulted is for a tree every check passed on. Repeated once more killing the whole process group:
+/bin/bash: line 4: 1591816 Killed                     make verify VERIFY_FORCE=1 > /tmp/s03-demo/kill.txt 2>&1
+kill -KILL -- -1591816 ; exit=137
+left running: [2 processes]
+1591815 /bin/bash -c source /home/noahc/.claude/shell-snapshots/snapshot-bash-1791077986342-oqsh9c.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'D=/home/noahc/math/slipwai-graph/specs/001-faster-slipwai/slices/S03-verify-stamp/demo; unset CI GITHUB_ACTIONS GITLAB_CI; cd /tmp/s03-demo/stamped;  run() { local label="$1"; shift; echo; echo "### $label"; echo "\$ $*"; local s=$(date +%s.%N); "$@" > /tmp/s03-demo/last.txt 2>&1; local rc=$?; local e=$(date +%s.%N); echo "exit=$rc  wall=$(echo "$e - $s" | bc)s  lines=$(wc -l < /tmp/s03-demo/last.txt)  checks-started=$(grep -c '"'"'^python3 scripts/\|^\./scripts/verify\|^npm \|^node '"'"' /tmp/s03-demo/last.txt)"; echo "first 2 lines:"; head -2 /tmp/s03-demo/last.txt | cut -c1-500; echo "every verify: line:"; grep '"'"'^verify:'"'"' /tmp/s03-demo/last.txt | cut -c1-700; echo "stamp dir: $(ls .git/slipwai 2>&1 | tr '"'"'\n'"'"' '"'"' '"'"')"; } { echo; echo "======== NOTE (the hand): timeout -s KILL killed only the top make; its recipe'"'"'s shell lived on as an orphan, finished every check and passed while the next run was also running (hence two '"'"'all gates passed'"'"' lines in one capture). Both runs passed on the same tree, so the stamp that resulted is for a tree every check passed on. Repeated once more killing the whole process group:"; set -m; make verify VERIFY_FORCE=1 > /tmp/s03-demo/kill.txt 2>&1 & P=$!; sleep 1.5; kill -KILL -- -$P; wait $P; echo "kill -KILL -- -$P ; exit=$?"; set +m; sleep 0.5; echo "left running: [$(pgrep -f '"'"'verify-checks|scripts/verify'"'"' | grep -v $$ | wc -l) processes]"; pgrep -fa '"'"'make --no-print-directory verify-checks'"'"'; echo "last line of the killed run: $(tail -1 /tmp/s03-demo/kill.txt | cut -c1-150)"; ls -la .git/slipwai run "AC-26: after a run killed as a group" make verify run "reused" make verify } >> $D/09-make-modes-force-stamp-file.txt 2>&1; sed -n '"'"'/timeout -s KILL killed only/,$p'"'"' $D/09-make-modes-force-stamp-file.txt | grep -v "^first 2\|^every verify\|^\$ make verify$" | cut -c1-300' && pwd -P >| /tmp/claude-46ad-cwd
+last line of the killed run: python3 scripts/check-ux-gates.py
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  4 00:20 .
+drwxrwxr-x 8 noahc noahc 280 Oct  4 00:20 ..
+-rw------- 1 noahc noahc 878 Oct  4 00:20 verify-stamp-e3b0c44298fc1c14.pending
+
+### AC-26: after a run killed as a group
+$ make verify
+exit=0  wall=3.689533982s  lines=72  checks-started=18
+first 2 lines:
+./scripts/verify --lint-only
+All checks passed!
+every verify: line:
+verify: all gates passed
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 
+
+### reused
+$ make verify
+exit=0  wall=.530180895s  lines=1  checks-started=0
+first 2 lines:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:20:22Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+every verify: line:
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:20:22Z (key 0dd2b2a3368e); VERIFY_FORCE=1 runs it anyway
+stamp dir: verify-stamp-e3b0c44298fc1c14.json 

@@ -1,0 +1,108 @@
+machine: 12th Gen Intel(R) Core(TM) i5-12400, 12 cores, Linux 7.0.0-31-generic x86_64, GNU Make 4.4.1, git version 2.53.0, uv 0.12.20 (2274b80d6 2026-09-28 x86_64-unknown-linux-gnu), python3 Python 3.14.4, node v22.22.1, npm 9.2.0
+project: /tmp/s03-demo/stamped (python backend, no frontend, target none), branch topic, tmpfs? tmpfs
+CI=<unset> GITHUB_ACTIONS=<unset> GITLAB_CI=<unset>
+load: 0.71 0.80 0.74 1/909 1541164
+
+$ time make verify   # reuse run 1
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.508s
+user	0m0.389s
+sys	0m0.085s
+exit=0
+
+$ time make verify   # reuse run 2
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.518s
+user	0m0.390s
+sys	0m0.094s
+exit=0
+
+$ time make verify   # reuse run 3
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.518s
+user	0m0.391s
+sys	0m0.087s
+exit=0
+
+$ time make verify   # reuse run 4
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.521s
+user	0m0.404s
+sys	0m0.085s
+exit=0
+
+$ time make verify   # reuse run 5
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.521s
+user	0m0.390s
+sys	0m0.095s
+exit=0
+
+$ time make verify   # reuse run 6
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.515s
+user	0m0.392s
+sys	0m0.082s
+exit=0
+
+$ time make verify   # reuse run 7
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.508s
+user	0m0.393s
+sys	0m0.075s
+exit=0
+
+$ time make verify   # reuse run 8
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.519s
+user	0m0.398s
+sys	0m0.086s
+exit=0
+
+$ time make verify   # reuse run 9
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.510s
+user	0m0.384s
+sys	0m0.083s
+exit=0
+
+$ time make verify   # reuse run 10
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:12:23Z (key 2428845e93eb); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.517s
+user	0m0.396s
+sys	0m0.080s
+exit=0
+load after: 0.73 0.81 0.74 1/910 1541938
+
+--- where the half second goes (each asked alone, 'real' of time, one run each):
+make --version: .003216975s
+git --version: .003225582s
+python3 --version: .002881017s
+uv --version: .081195433s
+node --version: .022868775s
+npm --version: .237864675s
+--- seven more reuse runs at the end of the demo (branch topic, load 0.90 0.78 0.75):
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+real	0m0.520s
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+real	0m0.512s
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+real	0m0.503s
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+real	0m0.508s
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+real	0m0.526s
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+real	0m0.514s
+verify: the full gate did not run; this tree already passed it at 2026-10-04T05:23:24Z (key ae27555291e1); VERIFY_FORCE=1 runs it anyway
+real	0m0.512s
