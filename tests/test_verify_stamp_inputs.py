@@ -105,6 +105,34 @@ class IgnoredInputsTest(KeyTestCase):
         self.assertTrue(self.checks(), "no check started: the ignored file was not in the key")
         self.assertNotEqual(self.stamp()["key"], before)
 
+    def test_a_tool_the_gate_installs_beside_the_checkout_moves_the_key_changed_created_and_removed(self) -> None:
+        """e7, T017: `check-model` puts `.delivery-tools/` first on `sys.path` and imports `yaml` from it; the gate
+        installs there only on an `ImportError`, so what is installed is an input — a `yaml.py` that fails the check."""
+        self.assertIn(".delivery-tools/", load_script(self.repo).IGNORED_INPUTS)
+        tool = self.repo / ".delivery-tools" / "yaml.py"
+        self.assertEqual(subprocess.run(["git", "check-ignore", "-q", ".delivery-tools/yaml.py"], cwd=self.repo,
+                                        check=False).returncode, 0, "the generated project does not ignore it")
+        absent = self.key()
+        tool.parent.mkdir()
+        tool.write_text("raise ImportError\n", encoding="utf-8")
+        created = self.key()
+        tool.write_text("def safe_load(text): return {}\n", encoding="utf-8")
+        changed = self.key()
+        tool.unlink()
+        self.assertEqual(len({absent, created, changed}), 3, "a change under .delivery-tools/ did not move the key")
+        self.assertEqual(self.key(), absent, "absence is a value, and the same one")
+
+    def test_a_tool_installed_beside_the_checkout_runs_the_gate_through_make(self) -> None:
+        """e7, T017: the stamp is not reused for a tree whose `.delivery-tools/` changed."""
+        self.assertEqual(self.run_gate().returncode, 0)
+        self.forget_log()
+        tool = self.repo / ".delivery-tools" / "yaml.py"
+        tool.parent.mkdir()
+        tool.write_text("raise ImportError\n", encoding="utf-8")
+        run = self.run_gate()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertTrue(self.checks(), "no check started: a reused stamp stood for a changed tool")
+
     def test_the_canonical_slots_are_in_the_list(self) -> None:
         """e7, the sweep: `check-slice-scope` reads the five ignored slots at a feature root (a regular file there
         fails it), so they are inputs the criterion did not name."""

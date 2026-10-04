@@ -1,7 +1,7 @@
 """R6 (AC-S03-7, -9), the closed lists: a check script that reads what git ignores, or a variable, that is on neither
 list fails here.
 
-The scan is a reading of the generated project's `scripts/check-*.py` — every string that names a path git ignores
+The scan is a reading of a generated project's check scripts — every string that names a path git ignores
 there, and every upper-case name inside a function that reads the environment — against the script's own lists, which
 are imported and never copied. What a check mentions and does not read as an input is an exemption, with its reason.
 """
@@ -81,23 +81,25 @@ def read_directly(node: ast.AST) -> str | None:
     return None
 
 
-def unlisted(scripts: Path, gitignore: str, entries: tuple[str, ...], variables: set[str]) -> list[str]:
-    """Every ignored path a check names and every variable a check reads that the lists do not hold."""
+def unlisted(paths: list[Path], root: Path, gitignore: str, entries: tuple[str, ...], variables: set[str]) -> list[str]:
+    """Every ignored path one of `paths` names and every variable it reads that the lists do not hold; each finding
+    is led by the script's path under `root`."""
     patterns = ignored_patterns(gitignore)
     findings = []
-    for path in sorted(scripts.glob("check-*.py")):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
+    for script in sorted(paths):
+        label = script.relative_to(root).as_posix()
+        tree = ast.parse(script.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 literal = node.value
                 looks_like_a_path = PATH_LIKE.match(literal) and ("/" in literal or "." in literal)
                 unlisted_path = literal not in EXEMPT_PATHS and not on_the_list(literal, entries)
                 if looks_like_a_path and unlisted_path and names_ignored_path(literal, patterns):
-                    findings.append(f"{path.name}: reads the ignored path {literal}, which is not on the list")
+                    findings.append(f"{label}: reads the ignored path {literal}, which is not on the list")
         for node in ast.walk(tree):
             name = read_directly(node)
             if name is not None and name not in variables and name not in EXEMPT_NAMES:
-                findings.append(f"{path.name}: reads the variable {name}, which is on neither list")
+                findings.append(f"{label}: reads the variable {name}, which is on neither list")
         for function in [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
             if not uses_environment(function):
                 continue
@@ -106,7 +108,7 @@ def unlisted(scripts: Path, gitignore: str, entries: tuple[str, ...], variables:
                     continue
                 name = node.value
                 if NAME_LIKE.match(name) and name not in variables and name not in EXEMPT_NAMES:
-                    findings.append(f"{path.name}: reads the variable {name}, which is on neither list")
+                    findings.append(f"{label}: reads the variable {name}, which is on neither list")
     return sorted(set(findings))
 
 
@@ -115,7 +117,8 @@ class ClosedListsTest(StampTestCase):
         script = load_script(self.repo)
         variables = set(script.VARIABLES) | set(script.UNKEYED_VARIABLES) | set(CI_MARKERS)
         gitignore = (self.repo / ".gitignore").read_text(encoding="utf-8")
-        return unlisted(self.repo / "scripts", gitignore, tuple(script.IGNORED_INPUTS), variables)
+        checks = sorted((self.repo / "scripts").glob("check-*.py"))
+        return unlisted(checks, self.repo, gitignore, tuple(script.IGNORED_INPUTS), variables)
 
     def plant(self, source: str) -> None:
         (self.repo / "scripts" / "check-planted.py").write_text(source, encoding="utf-8")
@@ -127,18 +130,18 @@ class ClosedListsTest(StampTestCase):
     def test_a_planted_check_that_reads_an_ignored_path_off_the_list_fails_it(self) -> None:
         """e7: `.pytest_cache/` is ignored and is no input the list holds."""
         self.plant('from pathlib import Path\nPath(".pytest_cache/v/cache/lastfailed").read_text()\n')
-        self.assertEqual(self.findings(), ["check-planted.py: reads the ignored path .pytest_cache/v/cache/lastfailed, "
-                                           "which is not on the list"])
+        self.assertEqual(self.findings(), ["scripts/check-planted.py: reads the ignored path "
+                                           ".pytest_cache/v/cache/lastfailed, which is not on the list"])
 
     def test_a_planted_check_that_reads_a_variable_off_the_lists_fails_it(self) -> None:
         """e9: by `os.environ.get` and by the loop `check-slice-scope` reads its variables in."""
         self.plant('import os\nos.environ.get("A_NEW_SWITCH")\n')
         self.assertEqual(self.findings(),
-                         ["check-planted.py: reads the variable A_NEW_SWITCH, which is on neither list"])
+                         ["scripts/check-planted.py: reads the variable A_NEW_SWITCH, which is on neither list"])
         self.plant('import os\n\ndef name():\n    for variable in ("ANOTHER_SWITCH", "UX_GATES_REQUIRE"):\n'
                    '        if os.environ.get(variable):\n            return variable\n')
         self.assertEqual(self.findings(),
-                         ["check-planted.py: reads the variable ANOTHER_SWITCH, which is on neither list"])
+                         ["scripts/check-planted.py: reads the variable ANOTHER_SWITCH, which is on neither list"])
 
     def test_a_planted_check_that_reads_what_the_lists_hold_passes_it(self) -> None:
         """e7, e9: a listed path, a listed variable, the unkeyed one, a CI marker."""

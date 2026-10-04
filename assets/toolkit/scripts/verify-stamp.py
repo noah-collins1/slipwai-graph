@@ -34,7 +34,7 @@ import time
 FIELDS = ("key", "tree", "scripts", "tools", "passed", "result")
 # The two closed lists. What a check reads that git ignores and the gate does not rebuild from the tree, by its bytes
 # (absence is a value); and the variables a check reads that can change its answer, by value (unset is not empty).
-# A test fails when a `scripts/check-*.py` reads an ignored path or a variable that is on neither list. A directory
+# A test fails when a script the gate runs (every one a `verify-checks` recipe launches, and what it imports) reads an ignored path or a variable that is on neither list. A directory
 # is every file under it; a `*` is one level of names.
 IGNORED_INPUTS: tuple[str, ...] = (
     # the code index `check-codegraph` opens, and the write-ahead file beside it — never `gate-memory.json`, which is
@@ -47,6 +47,9 @@ IGNORED_INPUTS: tuple[str, ...] = (
     "skills/ui-ux-pro-max/",
     # a project's tests may read it, though no gate script does
     ".env",
+    # what the gate installs beside the checkout for `check-model`, which puts it first on `sys.path` and imports `yaml`
+    # from it — installed only on an `ImportError`, never from a lock on every run
+    ".delivery-tools/",
     # the slots a Spec Kit command writes through, which `check-slice-scope` refuses a regular file at
     "specs/*/plan.md",
     "specs/*/research.md",
