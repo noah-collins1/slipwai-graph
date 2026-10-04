@@ -701,7 +701,7 @@ this tip: 145 pass, two do not (T024).
 
 #### T024 — `CRITICAL` — The slice's own suite is red at this tip: T019's fix changed what a ratchet run does and two T007 tests, the plan and AC-S03-9 still say the opposite (AC-S03-9, AC-S03-26, constitution I and XIV)
 
-- [ ] Evidence: `PYTHONPATH=src:tests python3 -m unittest test_verify_stamp_inputs.RatchetTest` at `9195588` →
+- [x] *(done at `54adcac`: a ratchet run touches nothing (D80); T019's example for it corrected; all fourteen stamp modules green)* Evidence: `PYTHONPATH=src:tests python3 -m unittest test_verify_stamp_inputs.RatchetTest` at `9195588` →
   `ERROR: test_a_run_that_tightens_the_ratchet_reads_no_stamp` (`FileNotFoundError` on the stamp at
   `tests/test_verify_stamp_inputs.py` 196: the test asserts *the stamp's bytes stand*) and
   `FAIL: test_a_run_that_tightens_the_ratchet_writes_no_stamp` (`['verify-stamp-e3b0c44298fc1c14.pending'] != []`, line
@@ -728,7 +728,7 @@ stamp), `specs/001-faster-slipwai/spec.md` and `plan.md` (the host's).
 
 #### T025 — `CRITICAL` — The trunk reads and writes a stamp where its short name is ambiguous: a tag named `main` (AC-S03-21, D74 R2, constitution I — T016's class, another route)
 
-- [ ] Evidence: `eligible()` (`verify-stamp.py` 487–488) compares `git symbolic-ref -q --short HEAD` with the trunk's
+- [x] *(done at `534f4d2`: the trunk is recognised by `refs/heads/<trunk>`, never a short name; left for Phase 4's triage: `current_branch()` in `check-slice-scope.py` reads a short name, older than this slice)* Evidence: `eligible()` (`verify-stamp.py` 487–488) compares `git symbolic-ref -q --short HEAD` with the trunk's
   name. git shortens a branch only as far as the name stays unambiguous: on the fixture, on `main`, after `git tag main`,
   `git symbolic-ref -q --short HEAD` prints `heads/main`, which is not `main`. Before the tag, two plain `make verify`
   runs on `main` ran 24 checks each. After it: the first ran 24 checks, `verify: all gates passed`, and wrote the stamp;
@@ -752,7 +752,7 @@ name. Sweep every `--short`, `--abbrev-ref` and bare branch name the stamp scrip
 
 #### T026 — `MEDIUM` — A tool whose first line is not its version: the version is not in the key, and the line persisted can hold a path (AC-S03-15, D75; constitution, *Additional Constraints*: persisted data)
 
-- [ ] Evidence: `ask()` (`verify-stamp.py` 313–339) takes the first non-empty line of standard output and standard error
+- [x] *(done at `c304510`: a tool's whole answer on both streams is in the key (D80); the stamp shows one line per tool with path-like words replaced)* Evidence: `ask()` (`verify-stamp.py` 313–339) takes the first non-empty line of standard output and standard error
   together. On this machine `JAVA_TOOL_OPTIONS=-Djava.io.tmpdir=/home/someone/tmp java -version 2>&1 | head -1` prints
   `Picked up JAVA_TOOL_OPTIONS: -Djava.io.tmpdir=/home/someone/tmp`; the version (`openjdk version "25.0.4.1" …`) is on a
   later line. With the stand-in: `STANDIN_UV_VERSION='warning: something\nuv 0.12.20' make verify` stamped, and the next
