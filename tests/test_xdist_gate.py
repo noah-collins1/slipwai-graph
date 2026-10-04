@@ -19,7 +19,7 @@ from stamp_fixture import PYVENV_CFG
 
 sys.dont_write_bytecode = True
 
-FLAGS = "-n auto --maxprocesses 4"
+FLAGS = "-p xdist -n auto --maxprocesses 4"
 # The stock stand-in exits 0 for everything; this wrapper lets a test make pytest exit with a chosen
 # status (5: nothing selected).
 WRAPPER = """#!/bin/sh

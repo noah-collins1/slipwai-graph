@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from ..services import App, backends_of
 
-FLAGS = "-n auto --maxprocesses 4"
+# `-p xdist` names the plugin to pytest, so a run with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` still starts its workers,
+# and registers it under the name autoload would have, so a run without the variable does not register it twice.
+FLAGS = "-p xdist -n auto --maxprocesses 4"
 
 MARK = f"""**Tests across cores.** A Python service's gate runs its tests across cores where `project.json` says it may: `"parallelSafe": true`,
 which every new project has, adds `{FLAGS}` (`pytest-xdist`, capped at four workers) to the gate's `pytest` in `make test`
@@ -17,12 +19,12 @@ and `make verify`, and never to the adversarial run or the integration run, whos
 and so is `false`, or a file the gate cannot read: a project made before the mark existed has none, and `slipwai migrate` never adds
 one. Only the JSON `true` turns it on (a string `"true"` is serial), and a mark written twice is serial, because the gate cannot
 tell which copy is meant: add the line `"parallelSafe": true,` once, with its comma, right after the `"target"` line, where `generate` writes it. The gate reads the mark each time it runs, so a change takes effect on the next run with nothing regenerated. Set it `false`
-when the tests share a file, a port, a database or module-level state, which a second worker would trip over. On a small suite the workers cost a fraction of a second; they pay back once the suite takes several seconds. The mark needs `pytest-xdist`
-in each Python service's development tools, which every service has; a service that removed it fails on an argument error until it is back. A parallel run can also hide a test that depends on another test's leftovers, because the two may run on different workers, so CI runs the suite serially to catch it: a test that passes locally but fails in CI is the first thing to look for.
+when the tests share a file, a port, a database or module-level state, which a second worker would trip over, or when a Python module at the project's root is named like a standard-library one (a `json.py`, say): it crashes every worker with *maximum crashed workers reached*, so rename it or set the mark `false`. On a small suite the workers cost a fraction of a second; they pay back once the suite takes several seconds. The mark needs `pytest-xdist`
+in each Python service's development tools, which every service has; a service that removed it fails on an argument error until it is back, and so does one that sets `-p no:xdist` in `PYTEST_ADDOPTS`, which asks for no xdist while the mark asks for it: set the mark `false`. A parallel run can also hide a test that depends on another test's leftovers, because the two may run on different workers, so CI runs the suite serially to catch it: a test that passes locally but fails in CI is the first thing to look for.
 """
 
 # A project with no Python service carries the key too, because `add-service` can bring one later.
-NO_PYTHON = """`project.json` carries `"parallelSafe": true`: it runs a Python service's tests across cores. It changes nothing until a Python service is added.
+NO_PYTHON = """Where `project.json` carries `"parallelSafe": true`, a Python service's tests run across cores; it changes nothing until a Python service is added.
 """
 
 # What each family's runner does with the tests the gate hands it, whatever the mark says: no backend's command changes.

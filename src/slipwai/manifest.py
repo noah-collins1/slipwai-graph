@@ -9,6 +9,7 @@ not understand is refused.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 from .assets import VERSION
@@ -94,8 +95,16 @@ def recorded_parallel_safe(document: dict) -> object:
     """The project's own `parallelSafe`, as written, for a tool that regenerates its files: whatever JSON value the
     key holds (`null` included), and ABSENT where there is no key — which is what keeps a project made before the
     key serial, since no tool adds the mark (D102). The gate turns on only the JSON `true`; the value is the
-    project's own, and no tool deletes or rewrites it."""
-    return document.get("parallelSafe", ABSENT)
+    project's own, and no tool deletes or rewrites it. A non-finite number (`1e400`, `Infinity`, `NaN`, as Python's
+    `json` reads them) is refused, because the rewrite would write `Infinity`, which is not JSON (D108)."""
+    mark = document.get("parallelSafe", ABSENT)
+    if isinstance(mark, float) and not math.isfinite(mark):
+        written = getattr(mark, "written", mark)
+        raise GenerationError(
+            f'project.json has "parallelSafe": {written}, which is not a JSON value this factory can write back: '
+            "set it to true or false"
+        )
+    return mark
 
 
 def apps_from_manifest(document: dict, allow_empty: bool = False) -> list[App]:
@@ -208,9 +217,26 @@ def keys_written_twice(text: str) -> list[str]:
     return _paths_twice(json.loads(text, object_pairs_hook=_once))
 
 
+class _NonFinite(float):
+    """A number `project.json` wrote that is not finite, with the text it was written as, for the refusal's line."""
+
+    written: str
+
+
+def _non_finite(written: str) -> float:
+    value = _NonFinite(float(written))
+    value.written = written
+    return value
+
+
+def _float(written: str) -> float:
+    value = float(written)
+    return value if math.isfinite(value) else _non_finite(written)
+
+
 def parse_manifest(text: str) -> object:
     """`json.loads` for a `project.json`, which refuses a key written twice rather than keeping the last copy."""
-    document = json.loads(text, object_pairs_hook=_once)
+    document = json.loads(text, object_pairs_hook=_once, parse_float=_float, parse_constant=_non_finite)
     twice = _paths_twice(document)
     if twice:
         raise GenerationError(

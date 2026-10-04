@@ -12,6 +12,7 @@ from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
 from ..openapi import published_document
+from ..parallel_tests import FLAGS
 
 
 def service_files(event: bool, selection: Selection, target: str = "none") -> dict[str, str]:
@@ -182,7 +183,7 @@ parallel=
 case "$mode" in
   --test-only|all)
     if [ -z "${{CI:-}}${{GITHUB_ACTIONS:-}}${{GITLAB_CI:-}}" ] && python3 -I -c 'import json,sys; once=lambda pairs: dict(pairs) if [k for k, _ in pairs].count("parallelSafe") < 2 else dict(); sys.exit(0 if json.load(open("project.json", encoding="utf-8"), object_pairs_hook=once).get("parallelSafe") is True else 1)' >/dev/null 2>&1; then
-      parallel="-n auto --maxprocesses 4"
+      parallel="{FLAGS}"
     fi ;;
 esac
 for app in $apps; do
