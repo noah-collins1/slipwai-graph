@@ -8,8 +8,9 @@ file under the git directory, never in the working tree, holding the key the tre
 here can fail the gate: `reuse` exits 0 only after printing its line, and `record` always exits 0.
 
 The key is one SHA-256 over named parts, each a digest of its own so the stamp can show them apart. It starts the
-way a tree is judged — the raw bytes of every file git tracks and every file it does not ignore, read from the
-working tree through no filter — and the parts a later rule adds are named where they join.
+way a tree is judged — every file git tracks and every file it does not ignore, by raw bytes, executable bit and a
+link's target, read from the working tree through no filter, and the index's entries — and the parts a later rule
+adds are named where they join.
 
 Starts on any `python3`: nothing here is newer than the syntax the gate's `check-python` message is printed from,
 and an interpreter older than 3.10 answers "no stamp" before it reads anything.
@@ -19,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import stat
 import subprocess
 import sys
 import time
@@ -62,13 +64,30 @@ def covered_files() -> list[bytes]:
 
 
 def file_record(path: bytes) -> bytes:
-    """One covered file as the key sees it: its name and the SHA-256 of its raw bytes."""
+    """One covered file as the key sees it, whatever it is: a regular file by its executable bit and the SHA-256 of
+    its raw bytes, a link by its target as written and never followed, a file that is not there as missing. Read with
+    `lstat` and `open`, through none of git's filters and none of its stat shortcuts."""
+    try:
+        status = os.lstat(path)
+    except FileNotFoundError:
+        return path + b"\0missing"
+    if stat.S_ISLNK(status.st_mode):
+        return path + b"\0link\0" + os.readlink(path)
+    if not stat.S_ISREG(status.st_mode):
+        raise CannotTell(os.fsdecode(path) + " is neither a file nor a link")
     with open(path, "rb") as handle:
-        return path + b"\0" + hashlib.sha256(handle.read()).hexdigest().encode("ascii")
+        content = hashlib.sha256(handle.read()).hexdigest().encode("ascii")
+    return path + b"\0" + (b"exec" if status.st_mode & stat.S_IXUSR else b"file") + b"\0" + content
+
+
+def index_entries() -> bytes:
+    """The index's entries — mode, blob id, stage, name — as `ls-files --stage` lists them, which reads the index
+    and never writes it."""
+    return git("ls-files", "-z", "--stage")
 
 
 def tree_digest() -> str:
-    return digest([file_record(path) for path in covered_files()])
+    return digest([index_entries()] + [file_record(path) for path in covered_files()])
 
 
 def build_key() -> dict[str, object]:
