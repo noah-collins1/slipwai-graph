@@ -33,6 +33,11 @@ case " $* " in
 esac
 exec "$(dirname "$0")/uv-stock" "$@"
 """
+# A `python3` first on PATH that records its arguments to PYTHON_LOG and then runs the real interpreter.
+PYTHON_STAND_IN = f"""#!/bin/sh
+printf '%s\\n' "$*" >> "$PYTHON_LOG"
+exec {sys.executable} "$@"
+"""
 
 
 class MarkReachesPytest(unittest.TestCase):
@@ -147,3 +152,47 @@ class MarkReachesPytest(unittest.TestCase):
         self.project()
         self.mark(True)
         self.assertEqual(self.verify("--test-only", pytest_exit="1").returncode, 1)
+
+
+class TheReaderIsIsolatedAndReadsOnlyWhereTheMarkIsUsed(MarkReachesPytest):
+    """T017 and T014: the read is `python3 -I`, runs in the three modes that splice the flags, and a mark written
+    twice is not parallel."""
+
+    def reads(self, *mode: str) -> list[str]:
+        python_log = self.root / "python.log"
+        python_log.write_text("", encoding="utf-8")
+        (self.bin / "python3").write_text(PYTHON_STAND_IN, encoding="utf-8")
+        (self.bin / "python3").chmod(0o755)
+        self.log.write_text("", encoding="utf-8")
+        env = gate_environment(self.bin, self.log, {"PYTHON_LOG": str(python_log)})
+        done = subprocess.run(["./scripts/verify", *mode], cwd=self.repo, env=env, text=True, capture_output=True,
+                              timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return [line for line in python_log.read_text(encoding="utf-8").splitlines() if "project.json" in line]
+
+    def test_a_json_py_at_the_projects_root_does_not_turn_the_mark_off(self) -> None:
+        self.project()
+        self.mark(True)
+        (self.repo / "json.py").write_text("raise ImportError('not the standard library')\n", encoding="utf-8")
+        for line in self.pytest_lines("--test-only"):
+            self.assertIn(FLAGS, line)
+
+    def test_only_the_three_modes_that_splice_the_flags_read_the_mark_and_each_reads_once_isolated(self) -> None:
+        self.project()
+        self.mark(True)
+        for mode in ("--lint-only", "--typecheck-only", "--format", "--migrate", "--integration-only"):
+            with self.subTest(mode=mode):
+                self.assertEqual(self.reads(mode), [])
+        for splicing in (["--test-only"], ["--adversarial-only"], []):
+            with self.subTest(mode=splicing):
+                reads = self.reads(*splicing)
+                self.assertEqual(len(reads), 1)
+                self.assertTrue(reads[0].startswith("-I "), reads[0])
+
+    def test_a_mark_written_twice_is_serial_whichever_copy_says_true(self) -> None:
+        self.project()
+        for raw in ('{"parallelSafe": false, "parallelSafe": true}', '{"parallelSafe": true, "parallelSafe": true}',
+                    '{"parallelSafe": true, "name": "x", "parallelSafe": false}'):
+            with self.subTest(raw=raw):
+                self.mark(raw=raw)
+                self.assertNotIn("-n ", " ".join(self.pytest_lines("--test-only")))
