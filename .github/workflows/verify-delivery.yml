@@ -12,7 +12,11 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
+      # Full history: `check-slice-scope` and `check-migrations`, and `check-flags` where the project has one,
+      # compare this change with the trunk, and a checkout of one commit gives them nothing to compare with.
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'

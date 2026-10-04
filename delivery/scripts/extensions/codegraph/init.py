@@ -11,7 +11,13 @@ of falling back to grep-and-read, and name the server in the committed project M
 here, so the connection travels with the checkout. The same block tells a delegated agent to probe its own session rather than assume it
 inherited the primary agent's connection. The pointer says how to tell that an environment cannot reach
 the index at all, because a checkout travels into
-places its tooling does not, and `make check-codegraph` is what notices an index nothing is maintaining.
+places its tooling does not, and `make check-codegraph` is what notices an index nothing is maintaining (on a `slice/<id>` branch, outside CI, it
+compares only what changed and leaves the integrity check to the trunk and CI; its record is
+`.codegraph/gate-memory.json`, and deleting that file makes the next run whole).
+The runner's check before an iteration narrows the same way, on any branch outside CI, from the same record: it
+hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
+changed while its size, times and identity all read as before — it cannot see either; and deleting that file makes
+its next comparison whole.
 See docs/extensions.md for what every extension's `init.py` owes.
 
 It indexes this project and nothing else. CodeGraph's own `codegraph install` also rewrites the global config
@@ -98,6 +104,14 @@ client or a `codegraph` command, shuts down on an idle timeout, and turns itself
 is sandboxed — so the syncs above do the keeping, and `make check-codegraph`, part of `make verify`, rebuilds a
 corrupt database, syncs a stale one, and fails with the date it was last written where the index still cannot be
 made sound and current. A corrupt database is the one CodeGraph's own `status` and `sync` call up to date.
+That is the whole run, which the trunk, every other branch and CI make. On a `slice/<id>` branch in a developer's
+checkout, outside CI, the gate compares only what changed since its last whole comparison and leaves the integrity
+check to the trunk and CI; it keeps that record in `.codegraph/gate-memory.json` (ignored by Git), and deleting that
+file makes the next run whole.
+The runner's check before an iteration narrows the same way, on any branch outside CI, from the same record: it
+hashes only what changed since the last whole comparison; what a narrowed comparison cannot see — a file whose bytes
+changed while its size, times and identity all read as before — it cannot see either; and deleting that file makes
+its next comparison whole.
 
 **A sub-agent does not inherit this session's connection**, and needs none: `scripts/codegraph` is in its shell.
 Do not pass the parent conversation merely to carry that fact — every harness receives this `AGENTS.md` block,

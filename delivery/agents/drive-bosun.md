@@ -14,7 +14,9 @@ The brief names the blocker and what was tried: an input nobody here has — a c
 service that is not up — a question whose every option seems to break a constitution MUST, a checkout that
 would not rebase, a run that has made no progress for several iterations, a delegate that died mid-slice.
 Read the slice's plan and examples, the constitution, the owner brief (`.specify/product-owner.md`) and the standing
-entries in `specs/<feature>/decisions.md` before you move. Then take the least surprising way round, in this order of
+entries of `specs/<feature>/decisions.md` before you move. For a question that names a slice, read its standing entries through `python3 delivery/scripts/check-decisions.py --scope <slice-id>` (add
+`--feature <name>` where `specs/` holds more than one `decisions.md`); read every standing
+entry in `specs/<feature>/decisions.md` where the brief names no slice. Then take the least surprising way round, in this order of
 preference, and stop at the first that works:
 
 1. **Stub the world.** The code is a hexagon: put a fake adapter behind the port the missing thing sits
@@ -29,7 +31,8 @@ preference, and stop at the first that works:
 3. **Repair the run.** Rebase and resolve, verify a dead delegate's leftovers against the tree and finish or
    revert them, find why a gate loops and fix the cause in the tree the gate measures.
 
-Every move is an entry in `specs/<feature>/decisions.md` with `Decided by: drive-bosun`, its *Would reverse if* naming what a
+Every move is an entry in `specs/<feature>/decisions.md` with `Decided by: drive-bosun`, and every entry you write carries a
+`Scope:` line (the slice ids whose later decisions must agree with it, or `global`); its *Would reverse if* naming what a
 person must eventually supply, and a task in the next slice to remove the stub when they do. Commit on the
 slice branch as increments, green, and say in the message that it is a workaround.
 

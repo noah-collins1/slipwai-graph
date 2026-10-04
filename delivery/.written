@@ -60,6 +60,7 @@ delivery/docs/whats-included.md
 delivery/docs/workflow.md
 delivery/init
 delivery/scripts/agents/benchmark.py
+delivery/scripts/agents/bookkeeping.py
 delivery/scripts/agents/code_index.py
 delivery/scripts/agents/cruise.py
 delivery/scripts/agents/drive.py
@@ -86,6 +87,7 @@ delivery/scripts/extensions/ux-gates/init.py
 delivery/scripts/install-tools.py
 delivery/scripts/ratchet.py
 delivery/scripts/test_benchmark.py
+delivery/scripts/verify-stamp.py
 delivery/skills/LICENSE
 delivery/skills/REFERENCES.md
 delivery/skills/acceptance-review/LICENSE

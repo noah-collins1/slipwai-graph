@@ -89,7 +89,7 @@ has a target of its own. The same `verify` runs in CI from `.github/workflows/ve
    `make -f delivery/Makefile ratchet-tighten` quarantines it once you have read the failures. Anything else not green is the
    repository's own command failing, and `project.json` is where to correct what the survey got wrong.
 4. Offer the targets as the repository's own: add `-include delivery/Makefile` to the root `Makefile`,
-   and `make verify` is one word again.
+   and `make verify` is one word again. The include adds the method's targets and leaves your own `-j` alone; the gate is held serial by `make -f delivery/Makefile -j verify`.
 5. Read `delivery/docs/convergence.md`: where this repository stands on every ladder a generated project
    sits at the top of, what is planned to move each row, and what nobody has established yet; and
    `delivery/survey/structure.md`, the architecture view — where anything starts, what depends on what,

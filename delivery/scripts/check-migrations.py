@@ -13,13 +13,17 @@ them. The constitution's rule is expand, then contract, in separate deployments.
   history is available, "new" is anything not yet in the base branch (`main`), or uncommitted when on it.
 
 Comments are stripped before anything is matched, and only the `up` half of a JavaScript migration is read.
-Every migration file under every `apps/*/` and `packages/*/` is checked: `migrations/<n>_*.{sql,js,ts}` where
-`<n>` is the shipped ones' zero-padded number or a new one's `YYYYMMDDHHMM` stamp, Flyway's
-`db/migration/V<n>__*.sql`. Nothing else in this repository is a migration.
+Every migration file under every `apps/*/` and `packages/*/` is checked, except inside the five directories
+nobody reads — `.venv`, `node_modules`, `__pycache__`, `.git` and the `target` at the root of a Java deployable
+`project.json` records, beside its `pom.xml`, none of which is descended (a directory that is a recorded
+deployable's path, or on the way to one, always is): `migrations/<n>_*.{sql,js,ts}` where `<n>` is the shipped ones' zero-padded number or a new
+one's `YYYYMMDDHHMM` stamp, Flyway's `db/migration/V<n>__*.sql`. Nothing else in this repository is a migration.
 """
 
 from __future__ import annotations
 
+import json
+import os
 import re
 import subprocess
 import sys
@@ -65,16 +69,98 @@ NOT_NULL = re.compile(r"\bNOT\s+NULL\b", re.IGNORECASE)
 DEFAULT = re.compile(r"\bDEFAULT\b", re.IGNORECASE)
 
 
+PRUNED = {".venv", "node_modules", "__pycache__", ".git"}
+listings: dict[Path, list[Path]] = {}
+members: dict[Path, frozenset[Path]] = {}
+entries_read = 0
+_recorded: tuple[set[str], set[str]] | None = None
+
+
+def relative(path: Path) -> str | None:
+    """`path` below the root, as POSIX, or None where it is not below it."""
+    try:
+        return Path(os.path.normpath(path)).relative_to(os.path.normpath(ROOT)).as_posix()
+    except ValueError:
+        return None
+
+
+def recorded() -> tuple[set[str], set[str]]:
+    """What `project.json` says about where deployables are: every recorded `path`, and the paths recorded as Java
+    (`language` the string `java`), each as `x` whether recorded as `x`, `x/` or `./x`. A record that is not there,
+    is unreadable, is not an object, or whose `path` or `language` is not a string says nothing."""
+    global _recorded
+    if _recorded is None:
+        paths: set[str] = set()
+        java: set[str] = set()
+        try:
+            record = json.loads((ROOT / "project.json").read_text(encoding="utf-8"))
+            records = record.get("deployables", {}) if isinstance(record, dict) else {}
+        except (OSError, ValueError):
+            records = {}
+        for record in records.values() if isinstance(records, dict) else []:
+            if isinstance(record, dict) and isinstance(record.get("path"), str):
+                path = os.path.normpath(record["path"])
+                if path != ".":
+                    paths.add(Path(path).as_posix())
+                if record.get("language") == "java":
+                    java.add(Path(path).as_posix())
+        _recorded = (paths, java)
+    return _recorded
+
+
+def skipped(directory: Path, name: str) -> bool:
+    """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own, or
+    Maven's `target` at the root of a Java deployable `project.json` records, beside that deployable's `pom.xml`.
+    The record decides, never a file the tree holds: elsewhere `target` is a source directory. A directory that is a
+    recorded deployable's path, or on the way to one, is read whatever it is called."""
+    parent = relative(directory)
+    if parent is None:
+        return name in PRUNED
+    here = name if parent == "." else f"{parent}/{name}"
+    paths, java = recorded()
+    if any(path == here or path.startswith(f"{here}/") for path in paths):
+        return False
+    return name in PRUNED or (name == "target" and parent in java and (directory / "pom.xml").is_file())
+
+
+def listing(top: Path) -> list[Path]:
+    """Every path under `top`, files and directories, in `Path` order — listed once, links not followed. A directory
+    nobody reads is still an entry of its parent, so it is listed; only what is inside it is not.
+
+    The count of names every listing returned is what the pass line reports: a measurement, not a limit.
+    """
+    global entries_read
+    if top not in listings:
+        found: list[Path] = []
+        for current, directories, files in os.walk(top):
+            entries_read += len(directories) + len(files)
+            directory = Path(current)
+            found.extend(directory / name for name in directories + files)
+            directories[:] = [name for name in directories if not skipped(directory, name)]
+        listings[top] = sorted(found)
+        members[top] = frozenset(found)
+    return listings[top]
+
+
+def children(directory: Path) -> list[Path]:
+    """What `directory` holds, from a listing already taken where that listing holds the directory as one of its
+    own entries, spelled as it is spelled here, and not a link; anything else is listed on its own, counted.
+    No directory is read except through `listing()`, so the count is the sum of what the listings returned."""
+    for top, paths in listings.items():
+        if top in directory.parents and directory in members[top] and not directory.is_symlink():
+            return [path for path in paths if path.parent == directory]
+    return [path for path in listing(directory) if path.parent == directory]
+
+
 def migrations() -> list[Path]:
     found = []
     for area in ("apps", "packages"):
-        for path in sorted((ROOT / area).rglob("*")):
+        for path in listing(ROOT / area):
             if (
                 path.is_file()
                 and path.suffix in SUFFIXES
                 and MIGRATION_NAME.match(path.name)
                 and path.parent.name in MIGRATION_DIRECTORIES
-                and "node_modules" not in path.parts
             ):
                 found.append(path)
     return found
@@ -157,11 +243,11 @@ def go_migrate_embeds() -> list[str]:
     apps = ROOT / "apps"
     if not apps.is_dir():
         return violations
-    for app in sorted(apps.iterdir()):
+    for app in children(apps):
         migrations_dir = app / "migrations"
         if not migrations_dir.is_dir():
             continue
-        if not any(migrations_dir.glob("*.sql")):
+        if not any(path.name.endswith(".sql") for path in children(migrations_dir)):
             continue
         if not (app / "cmd" / "migrate").is_dir():
             continue
@@ -193,7 +279,7 @@ def check() -> list[str]:
             )
             continue
         name = Path(marker.group(1)).stem
-        expand = next((p for p in path.parent.iterdir() if p.stem == name and p != path), None)
+        expand = next((p for p in children(path.parent) if p.stem == name and p != path), None)
         if expand is None:
             violations.append(f"{relative}: {what}, and names `{name}`, which is not a migration beside it.")
         elif expand.name >= path.name:
@@ -217,7 +303,7 @@ def main() -> int:
         return 1
     print(
         "check-migrations: every migration is additive, or a marked contraction of an earlier one; "
-        "Go migrate images embed their .sql files"
+        f"Go migrate images embed their .sql files ({entries_read} directory entries read)"
     )
     return 0
 

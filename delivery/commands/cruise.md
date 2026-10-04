@@ -32,8 +32,9 @@ printed: the runner it started drives the ladder from here, one fresh session pe
 runs no stage of it. A refusal is the whole answer — a runner already running, the stop file present, no
 harness on PATH it can run an iteration through. Then take the watch seat (*The watch seat*, below). **Where
 it says the outer loop started this session**, this is an iteration: read the owner brief (`.specify/product-owner.md`)
-and every standing entry in `specs/<feature>/decisions.md`, and say the iteration number from `specs/cruise-log.jsonl`, the branch and its
-distance from trunk, and that a person stops this run with `touch .specify/cruise.stop`. Where `.codegraph/` is in the
+and every standing entry in `specs/<feature>/decisions.md` (a slice's question reads those `python3 delivery/scripts/check-decisions.py --scope <slice-id>` prints; a
+feature-level one reads all), and say the iteration number from `specs/cruise-log.jsonl`, the branch and its distance from
+trunk, and that a person stops this run with `touch .specify/cruise.stop`. Where `.codegraph/` is in the
 tree, the runner has already opened, checked and synced it for this iteration: a caller or blast-radius question
 is one call — `delivery/scripts/codegraph callers <symbol>`, or `codegraph_explore` — and `python3 delivery/scripts/agents/cruise.py status`
 counts, per delegate, who asked it and who searched the source for a symbol first. Open a `skipper`, `hand` or `bosun`
@@ -109,7 +110,8 @@ where the table is silent, the ladder's own rule stands.
 A product question is decided, never deferred, and every decision is written twice — into the artifact the
 stage owns, and as the next entry of `specs/<feature>/decisions.md`, which is the only place a person can read every decision
 this run took. Read the standing entries before any decision, so a hundred answers stay consistent with each
-other. Under `decide: recommended-first`, decide here when the stage itself recommends an answer (the
+other: for a slice's question, those `python3 delivery/scripts/check-decisions.py --scope <slice-id>` prints; for a feature-level one, every standing entry.
+Under `decide: recommended-first`, decide here when the stage itself recommends an answer (the
 release-constraint stage says *recommend the answer with its reason rather than asking an open question*),
 when a standing entry already covers the question, or when the specification or the constitution answers it
 outright. Anything else is an **open question**: delegate it to one fresh `drive-skipper` delegate with the
@@ -131,6 +133,7 @@ The entry's shape, which `make -f delivery/Makefile check-decisions` holds:
 ```markdown
 ## D<n> — <the question, in one line>
 - **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
+- **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
 - **Question:** <as the stage raised it>
 - **Options:** <each, marking the one the stage recommended>
 - **Decision:** <one>
@@ -298,7 +301,10 @@ not left to the text: on Claude Code, `python3 delivery/scripts/agents/cruise.py
 tool and refuses, in a runner's session, an edit under `delivery/scripts/`, `tools/`, the `Makefile`, CI or the hook
 settings before it lands; and the runner compares those files before and after every iteration, on every
 harness, and parks the run on any change — `controls_changed` on the log entry names the files — whatever
-the iteration's last line said. A file installed under `tools/` by `./delivery/init --extension` is not a change.
+the iteration's last line said. It compares them between iterations too: a control changed after one iteration
+ended and before the next began, with no park between, parks the run before the next starts; one changed while
+the run was parked is named on the next entry (`controls_changed_between`) and in the feed, and does not park it
+again. A file installed under `tools/` by `./delivery/init --extension` is not a change.
 
 ## What holds throughout
 

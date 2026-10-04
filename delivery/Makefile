@@ -84,6 +84,12 @@ audit: ## Run the ecosystem-native dependency vulnerability audit
 verify: check-python lint typecheck check-imports check-migrations check-slice-scope check-extensions check-agents check-speckit check-codegraph check-ux-gates check-constitution check-benchmark check-decisions test check-convergence ## Full deterministic pre-commit gate
 	@echo
 	@echo 'verify: all gates passed'
+
+# Serial under -j when make is started on this file (`make -f delivery/Makefile -j verify`): the gate is not stamped, and
+# its ratchet runs share one baseline.json. A Makefile that includes this one keeps its own -j.
+ifeq ($(words $(MAKEFILE_LIST)),1)
+.NOTPARALLEL:
+endif
 ci: verify audit test-integration smoke ## Local equivalent of the extended CI gate
 
 .PHONY: check-convergence

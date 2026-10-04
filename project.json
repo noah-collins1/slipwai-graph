@@ -3,7 +3,7 @@
   "generator": {
     "name": "slipwai",
     "generatedWith": "1.5.2.dev0",
-    "updatedWith": "1.5.2.dev0"
+    "updatedWith": "1.6.0.dev0"
   },
   "speckitSource": "git+https://github.com/github/spec-kit.git@v1.0.8",
   "origin": "adopted",

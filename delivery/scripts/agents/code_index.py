@@ -16,7 +16,17 @@ So this script holds the index at the points the harness and the runner already 
     python3 scripts/agents/code_index.py guard    # Claude Code's PreToolUse hook: a symbol search before the index
 
 `health` is what `scripts/agents/cruise.py` runs before every iteration, what `make check-codegraph` runs on a corrupt
-database before it judges one, and what a person runs to repair an index by hand. `session` is the same step at the
+database before it judges one, and what a person runs to repair an index by hand. That gate runs it on the whole run
+only: on a `slice/<id>` branch in a developer's checkout, outside CI, it compares only what changed since its last
+whole comparison and leaves the integrity check to the trunk and CI; it keeps that record in
+`.codegraph/gate-memory.json` (ignored by Git), and deleting that file makes the next run whole.
+`health` is the runner's check before an iteration, and the runner's check before an iteration narrows the same way —
+through the gate's own functions and memory — on every branch, the trunk included, wherever no CI marker is set: it
+hashes only what changed since the last whole comparison, says how many files that was of how many, and always runs
+the integrity check. What a narrowed comparison cannot see — a file whose bytes changed while its size, times and
+identity all read as before — it cannot see either, and deleting `.codegraph/gate-memory.json` makes its next
+comparison whole. With no usable memory, or in CI, it hashes every tracked file. A `health` that ends current, or synced with the comparison after the sync clean, records what it
+vouched for in that memory as a passing gate run does, outside CI and in no other case. `session` is the same step at the
 start of a Claude Code session — a person's `/drive` has no runner in front of it — and prints only what it did or
 could not do, since a hook's output lands in the session's context. The database is ignored by Git and derived from the source, so a corrupt one loses nothing by being moved
 aside (to `.codegraph/corrupt/`, the latest only) and rebuilt. `sync` keeps the index current while an iteration is
@@ -41,6 +51,7 @@ import re
 import shlex
 import shutil
 import sqlite3
+import stat
 import subprocess
 import sys
 import time
@@ -195,6 +206,78 @@ def behind() -> int | None:
     return None if found is None else len(found[1]) + len(found[2])
 
 
+class Compared:
+    """One comparison of the index with the tree: what `drift()` found (None where it could not say), how many files
+    were hashed to find it, and the memory it was narrowed by (None where it compared everything)."""
+
+    def __init__(self, found: Any, hashed: int, record: dict[str, Any] | None, moment: Any = None,
+                 why: str | None = None) -> None:
+        self.found, self.hashed, self.record, self.moment, self.why = found, hashed, record, moment, why
+
+    def behind(self) -> int | None:
+        return None if self.found is None else len(self.found[1]) + len(self.found[2])
+
+    def said(self) -> str:
+        """In one line, how much of the index was hashed and why that was enough, where the comparison was narrowed."""
+        if self.found is None:  # the gate could not say: not a checkout, no `files` table; nothing was compared
+            return "compared nothing: the index and the tree could not be compared here"
+        if self.why is not None:  # the gate's own words for why the memory could not be used
+            return f"compared everything: {self.why}"
+        if self.record is None:
+            return ""
+        return (f"hashed {self.hashed} of {len(self.found[0])} file(s), only what changed since the last whole "
+                f"comparison ({self.moment(float(self.record['whole']))})")
+
+
+def compare(tooling: Any, memory: dict[str, Any] | str | None) -> Compared:
+    """The index against the tree, through the gate's own candidates and memory: only what the memory cannot vouch
+    for is hashed. `memory` is what the gate's `remembered()` gave, or None where none may be read (CI). With no usable
+    memory, or where reading or using it goes wrong, every tracked file is hashed, and the gate's own words say why."""
+    why = memory if isinstance(memory, str) else None
+    if isinstance(memory, dict):
+        try:
+            read = tooling.read_once(memory)
+            if isinstance(read, str):
+                why = read
+            else:
+                rows, candidates = read
+                tooling.HASHED[0] = 0
+                found = tooling.drift(candidates, rows)
+                if found is not None:
+                    return Compared(found, tooling.HASHED[0], memory, tooling.moment_of)
+        except Exception:  # noqa: BLE001 — whatever the memory held, reading it or using it, it is the whole run
+            why = tooling.UNREADABLE
+    tooling.HASHED[0] = 0
+    return Compared(tooling.drift(), tooling.HASHED[0], None, why=why)
+
+
+def memory_of(tooling: Any) -> dict[str, Any] | str | None:
+    """The gate's memory of its last whole comparison, or the reason it cannot be used; None in CI, where it is
+    neither read nor written."""
+    if any(os.environ.get(marker) for marker in tooling.CI_MARKERS):
+        return None
+    try:
+        return tooling.remembered()
+    except Exception:  # noqa: BLE001
+        return tooling.UNREADABLE
+
+
+def renew(tooling: Any, compared: Compared) -> None:
+    """Record what this comparison vouched for, through the gate's own writer and under its own rules: outside CI, only
+    where git ignores the record, and as a passing gate run records it. Never fatal: an index that cannot take notes
+    is merely compared again."""
+    # An index holding no row is one the gate refuses and records nothing for ("holds no files at all"); so does this.
+    if compared.found is None or not compared.found[0] or any(os.environ.get(marker) for marker in tooling.CI_MARKERS):
+        return
+    try:
+        if compared.record is None:
+            tooling.remember(compared.found[0])
+        else:  # a narrowed comparison keeps the moment of the whole one and what it did not hash
+            tooling.remember(compared.found[0], float(compared.record["whole"]), compared.record["files"])
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def set_aside() -> str:
     """Move the database and its journal files under `.codegraph/corrupt/`, keeping only this latest copy."""
     shutil.rmtree(ASIDE, ignore_errors=True)
@@ -223,6 +306,8 @@ def health() -> dict[str, Any]:
         return {}
     began = time.monotonic()
     result: dict[str, Any] = {}
+    tooling: Any = None
+    compared: Compared | None = None
     if route() is None:
         result = {"state": "unreachable", "detail": f"{NO_ROUTE}; so nothing can maintain or query the index"}
     elif not DATABASE.is_file():
@@ -242,7 +327,9 @@ def health() -> dict[str, Any]:
             result = {"state": "failed", "detail": f"the database failed its integrity check ({problem}), was moved "
                                                    f"to {where}/, and `codegraph init` failed: {said}"}
     else:
-        stale = behind()
+        tooling = gate()
+        compared = compare(tooling, memory_of(tooling))
+        stale = compared.behind()
         if stale:
             done, said = cli("sync", ".")
             result = {"state": "synced", "detail": f"{stale} tracked file(s) were ahead of the index; synced it"}
@@ -250,14 +337,22 @@ def health() -> dict[str, Any]:
                 result = {"state": "failed", "detail": f"{stale} tracked file(s) ahead of the index, and `codegraph "
                                                        f"sync` failed: {said}"}
         else:
-            result = {"state": "current", "detail": "opens, passes its integrity check, and describes the tree"}
+            result = {"state": "current", "detail": "opens, passes its integrity check, and describes the tree"
+                      + (f"; {compared.said()}" if compared.said() else "")}
     if result["state"] in ("built", "rebuilt", "synced"):
         problem, stale = (checked() if DATABASE.is_file() else "no database was written"), None
-        if problem is None:
-            stale = behind()
+        if problem is None and result["state"] == "synced" and tooling is not None and compared is not None:
+            compared = compare(tooling, compared.record or compared.why)  # the same way, after the one sync
+            stale = compared.behind()
+            if not stale and compared.said():
+                result["detail"] += f"; {compared.said()}"
+        elif problem is None:
+            stale = behind()  # a database just made is not the one the memory compared: the whole comparison
         if problem is not None or stale:
             result = {"state": "failed", "detail": f"{result['detail']}, and it is still "
                       + (f"not sound ({problem})" if problem else f"behind on {stale} file(s)")}
+    if result["state"] in ("current", "synced") and tooling is not None and compared is not None:
+        renew(tooling, compared)
     result["seconds"] = round(time.monotonic() - began, 1)
     return result
 
@@ -470,16 +565,41 @@ def sync() -> int:
 # --- what the stream says each delegate did --------------------------------------------------------------------------
 
 
-def delegate_use(stream: Path, only: int | None = None) -> dict[int, list[dict[str, Any]]]:
+def delegate_use(stream: Path, only: int | None = None, offset: int = 0) -> dict[int, list[dict[str, Any]]]:
     """Per iteration of a runner's stream, per agent — the host session, then each delegate in the order it was sent —
     how often it asked the index, which symbols it searched the source for before it had, and how often `guard`
     refused it. Claude Code marks a delegate's events with `parent_tool_use_id`; a harness whose stream does not
-    is counted as the host alone."""
+    is counted as the host alone. Read from byte `offset`, which the caller vouches is the start of a line."""
+    return delegate_use_read(stream, only, offset)[0]
+
+
+def read_regular(path: Path, offset: int = 0, length: int | None = None) -> bytes | None:
+    """The bytes of `path` from `offset`, only where it is a regular file: the open never waits for a writer of a FIFO,
+    and a directory, a device or a path that cannot be read gives None (D63)."""
+    try:
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0))
+    except OSError:
+        return None
+    if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+        os.close(descriptor)
+        return None
+    try:
+        with os.fdopen(descriptor, "rb") as handle:
+            handle.seek(offset)
+            return handle.read() if length is None else handle.read(length)
+    except OSError:
+        return None
+
+
+def delegate_use_read(stream: Path, only: int | None = None,
+                      offset: int = 0) -> tuple[dict[int, list[dict[str, Any]]], int]:
+    """`delegate_use`, and how many bytes of the stream were read to give it."""
     found: dict[int, list[dict[str, Any]]] = {}
-    if not stream.is_file():
-        return found
+    data = read_regular(stream, offset)
+    if data is None:
+        return found, 0
     iteration, agents = 0, {}
-    for line in stream.read_text(errors="replace", encoding="utf-8").splitlines():
+    for line in data.decode("utf-8", errors="replace").splitlines():
         if line.startswith("# iteration "):
             iteration = int(line.split()[2])
             if only is not None and iteration != only:
@@ -523,7 +643,7 @@ def delegate_use(stream: Path, only: int | None = None) -> dict[int, list[dict[s
                 symbol = symbol_search("Bash", {"command": item.get("command", "")})
                 if symbol:
                     owner["searched_first"].append(symbol)
-    return found
+    return found, len(data)
 
 
 def use_lines(iteration: int, agents: list[dict[str, Any]]) -> list[str]:
