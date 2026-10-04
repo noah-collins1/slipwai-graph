@@ -206,6 +206,11 @@ A day with it looks like this:
 | Before every push | terminal | `make verify` |
 | Another service or frontend | agent | `/add-service`, `/add-frontend` |
 
+Run on a branch that is not the trunk, `make verify` does not judge a tree twice: when this tree already passed it, it
+prints `verify: the full gate did not run; this tree already passed it …`, starts no check and exits 0, and
+`make verify VERIFY_FORCE=1` runs the gate anyway. The trunk, CI and `make ci` always run the full gate, and
+`docs/gates.md` in your project says what a stamp cannot see.
+
 ---
 
 ## Phase 4: `/drive` or `/cruise`
