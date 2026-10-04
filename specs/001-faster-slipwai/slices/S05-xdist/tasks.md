@@ -265,14 +265,14 @@ by path; level line as above.
 
 ### T007 — Converge, two passes (host task)
 
-- [ ] `drive-converge` over the slice's diff, pass 1 then pass 2, at the loop's bound; every finding appends a task
+- [x] `drive-converge` over the slice's diff, pass 1 then pass 2, at the loop's bound; every finding appends a task
   under *Phase 4* below (the S04 shape), and the verdict goes under `## Convergence`. The passes read the generated
   `scripts/verify` of a Python project under the real `uv` with the mark `true`, `false` and removed, `--integration-only`
   with the mark `true`, and a project replayed from before the release.
 
 ### T008 — After-converge gaps (host task)
 
-- [ ] `drive-gaps` traces AC-S05-1 … AC-S05-13 over the diff; each gap is answered by a decision entry and, where it
+- [x] `drive-gaps` traces AC-S05-1 … AC-S05-13 over the diff; each gap is answered by a decision entry and, where it
   changes code, a task appended below.
 
 ### T009 — The demo, with the measurement (host task)
@@ -495,7 +495,7 @@ checkout, and on a scratch repository `adopt`ed by this checkout. No production 
 
 ### T020 — `MEDIUM` — The words the after-converge gaps pass found missing (G1–G3; D105)
 
-- [ ] **Host-routed fix, before the demo (it changes the page the demo reads).** RED first, as examples in
+- [x] **Host-routed fix, before the demo (it changes the page the demo reads).** RED first, as examples in
   `tests/test_xdist_page.py`: (G1) a TypeScript-, a Go- and a Java-only project's gates page names `parallelSafe`, says
   in one sentence what it does and that it changes nothing until a Python service is added, and no sentence opens
   with "the other runners" where no Python paragraph precedes it; (G2) the fragment's catch-up says a dependency of
