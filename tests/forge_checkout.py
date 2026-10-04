@@ -8,8 +8,9 @@ builds, in a directory the caller owns:
 - a `file://` clone of it with no local branch: the only refs are `refs/remotes/origin/*`, and `HEAD` is
   detached on the merge commit;
 - at full history (`depth=None`), every branch of the origin fetched under `refs/remotes/origin/` and the
-  merge ref after it, as `actions/checkout` does at `fetch-depth: 0`; at `depth=1`, only the merge ref at
-  `--depth 1`, as it does by default: no branch of the origin, the base among them, is a ref there.
+  merge ref after it, as `actions/checkout` does at `fetch-depth: 0`, and every tag with them (research R-1);
+  at `depth=1`, only the merge ref at `--depth 1`, as it does by default:
+  no branch of the origin, the base among them, is a ref there.
 
 It returns the path of the checkout. It sets no environment variable, runs no script and knows nothing of what
 a caller checks: the caller supplies `GITHUB_HEAD_REF` and the rest.
@@ -51,7 +52,7 @@ def pull_request_checkout(origin: Path, head: str, workdir: Path, *, base: str =
     run(clone, "init", "-q")
     run(clone, "remote", "add", "origin", f"file://{origin}")
     if depth is None:
-        run(clone, "fetch", "-q", "--no-tags", "origin", "+refs/heads/*:refs/remotes/origin/*")
+        run(clone, "fetch", "-q", "origin", "+refs/heads/*:refs/remotes/origin/*", "+refs/tags/*:refs/tags/*")
         run(clone, "fetch", "-q", "--no-tags", "origin", MERGE_REF)
     else:
         run(clone, "fetch", "-q", "--no-tags", "--depth", str(depth), "origin", MERGE_REF)

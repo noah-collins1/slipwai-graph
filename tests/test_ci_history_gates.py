@@ -154,6 +154,51 @@ class CiHistoryGatesTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertIn("nothing to hold", result.stdout)
 
+    def develop_origin(self, *, older: str | None) -> Path:
+        """A project whose trunk is `develop`, beside an older branch `older` (`master`) or none at all."""
+        origin = self.origin("aws")
+        run(origin, "branch", "-m", "main", older or "develop")
+        if older:
+            run(origin, "checkout", "-q", "-b", "develop")
+        return origin
+
+    def migrations_gate(self, clone: Path):
+        return self.gate(clone, "check-migrations.py", GITHUB)
+
+    def test_hold_s31_develop_trunk_beside_master_push_is_refused_with_every_branch_and_passes_at_depth_one(self):
+        """Holds a reading `S31-gates-read-recorded-trunk` will change (D86, AC-S24-8): `check-migrations` finds its
+        base by the names `main` and `master`, not `ci.branch`, so on a `develop` trunk beside an older `master` a push
+        to `develop` is refused when every branch is fetched and passes at depth 1. S31 makes both answers one."""
+        origin = self.develop_origin(older="master")
+        write(origin, "apps/service/migrations/202610010900_orders_add_status.sql", EXPAND)
+        commit(origin, "the expand", "apps/service")
+        write(origin, "apps/service/migrations/202610011000_orders_drop_legacy.sql", CONTRACT)
+        commit(origin, "the contract", "apps/service")
+        whole = self.scratch / "whole"
+        run(self.scratch, "clone", "-q", f"file://{origin}", str(whole))
+        run(whole, "fetch", "-q", "origin", "+refs/heads/*:refs/remotes/origin/*")
+        refused = self.migrations_gate(whole)
+        self.assertEqual(refused.returncode, 1, refused.stdout + refused.stderr)
+        self.assertIn("is new in this same change", refused.stderr)
+        shallow = self.scratch / "shallow"
+        run(self.scratch, "clone", "-q", "--depth", "1", f"file://{origin}", str(shallow))
+        passed = self.migrations_gate(shallow)
+        self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
+
+    def test_hold_s31_develop_trunk_with_no_main_or_master_pull_request_with_history_passes(self):
+        """Holds a reading `S31-gates-read-recorded-trunk` will change (D86, AC-S24-8): with neither `main` nor
+        `master` the gate has no base even at full history, so a pull request into `develop` carrying an expand and
+        its contract passes. S31 reads the recorded trunk and refuses it."""
+        origin = self.develop_origin(older=None)
+        run(origin, "checkout", "-q", "-b", "feature/x")
+        write(origin, "apps/service/migrations/202610010900_orders_add_status.sql", EXPAND)
+        write(origin, "apps/service/migrations/202610011000_orders_drop_legacy.sql", CONTRACT)
+        commit(origin, "expand and contract", "apps/service")
+        run(origin, "checkout", "-q", "develop")
+        clone = pull_request_checkout(origin, "feature/x", self.scratch, base="develop")
+        result = self.migrations_gate(clone)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
