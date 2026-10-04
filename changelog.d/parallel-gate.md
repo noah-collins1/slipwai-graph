@@ -6,7 +6,10 @@ the gate's checks side by side, from GNU Make 3.81 on, and each check's output i
 still say `make verify`. A failed run ends on its own line, naming where to look, and `check-python` is first under `-j`
 as it is serially. The checks that write one directory are ordered by prerequisite inside the gate alone, so a target
 typed by itself is what it was: a Java service's three Maven checks run lint, typecheck, test in turn, and a Go project's
-`lint` and `test` wait for `typecheck`, which resolves the workspace. A Java gate therefore gains little under `-j`: on the one run measured by hand it was not faster than the serial one.
+`typecheck` and `test` wait for `lint`, whose last `go` command resolves the workspace, and then run together — the
+order `make verify` has always started them in. Nothing installs beside a failing `check-python`. A gate target that
+reads the project's installed npm tree now waits for it: `make check-ux-gates` typed alone on a fresh clone installs the
+project's npm dependencies first, and a TypeScript service's `make check-openapi` waits for the workspace packages to be built. A Java gate gains little under `-j`: on the one run measured by hand it was not faster than the serial one.
 
 `make verify` used to run `uv sync` for every Python service in each of `lint`, `typecheck` and `test` (three syncs, and
 under `make -j` all three at once on one `.venv`). A Python project's `Makefile` now has a `sync` target that every
@@ -21,10 +24,9 @@ In a project with the event profile the model tooling now installs from a lock t
 than what is installed: `check-drawio` says on one line when it did not reinstall, and `make install` now also installs
 the model tooling from its committed lock, needing Node as the gate already did. A passing run that installed
 dependencies as it went is not recorded (the stamp's rule stands), so on a fresh clone the first `make verify` runs in
-full again unless `make install` came first. An adopted repository's gate, started on its own Makefile (`make -f delivery/Makefile -j verify`), is serial whatever `-j` says; a root Makefile that includes it keeps `-j` for its own targets, and `make -j verify` typed there is not promised.
+full again unless `make install` came first. In an adopted repository (experimental) the gate, started on its own Makefile (`make -f delivery/Makefile -j verify`), is serial whatever `-j` says; a root Makefile that includes it keeps `-j` for its own targets, and `make -j verify` typed there is not promised.
 
-Run with the real toolchain: Go, TypeScript, Java (Quarkus) and Python, each serially and under `-j`. Read and not run: Java
-(Spring). Not run: GNU Make 3.81 and 4.3 (4.4.1 was the make), Windows and macOS.
+Run with the real toolchain: Go, TypeScript, Java (Quarkus), Java (Spring) and Python, each serially and under `-j`. Not run: GNU Make 3.81 and 4.3 (4.4.1 was the make), Windows and macOS.
 Migrating a project made before this change — generated, adopted, and with the layout moved, so that a Makefile the earlier
 factory wrote is the one replaced — was run by hand against a factory archived at the commit before it; the kept tests
 take this checkout's project with the lock removed as the earlier one, since a test that needs an old commit in history
