@@ -9,8 +9,9 @@ here can fail the gate: `reuse` exits 0 only after printing its line, and `recor
 
 The key is one SHA-256 over named parts, each a digest of its own so the stamp can show them apart. It starts the
 way a tree is judged — every file git tracks and every file it does not ignore, by raw bytes, executable bit and a
-link's target, read from the working tree through no filter, and the index's entries — and the parts a later rule
-adds are named where they join.
+link's target, read from the working tree through no filter, and the index's entries — and where the checkout stands
+in its repository: `HEAD`, every branch and remote ref, the shallow boundary. The parts a later rule adds are named
+where they join.
 
 Starts on any `python3`: nothing here is newer than the syntax the gate's `check-python` message is printed from,
 and an interpreter older than 3.10 answers "no stamp" before it reads anything.
@@ -44,6 +45,20 @@ def git(*args: str) -> bytes:
         done = subprocess.run(["git", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
     except OSError as error:
         raise CannotTell("git: " + str(error))
+    if done.returncode != 0:
+        raise CannotTell("git " + " ".join(args) + ": " + done.stderr.decode("utf-8", "replace").strip())
+    return done.stdout
+
+
+def git_or_nothing(*args: str) -> bytes:
+    """What a `-q` question of git answers, or nothing where git says no without a reason: a detached `HEAD` has no
+    branch and an unborn branch no commit, and neither is a failure."""
+    try:
+        done = subprocess.run(["git", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    except OSError as error:
+        raise CannotTell("git: " + str(error))
+    if done.returncode == 1 and not done.stderr:
+        return b""
     if done.returncode != 0:
         raise CannotTell("git " + " ".join(args) + ": " + done.stderr.decode("utf-8", "replace").strip())
     return done.stdout
@@ -86,8 +101,25 @@ def index_entries() -> bytes:
     return git("ls-files", "-z", "--stage")
 
 
+def history_digest() -> str:
+    """Where the checkout stands in its repository: the branch `HEAD` names (nothing where it is detached) and the
+    commit it names (nothing on an unborn branch), every ref under `refs/heads` and `refs/remotes`, and the shallow
+    boundary — the bytes of the file git names for it, or their absence."""
+    refs = git("for-each-ref", "--format=%(objectname) %(refname)", "refs/heads", "refs/remotes")
+    shallow = git("rev-parse", "--git-path", "shallow").decode("utf-8").strip()
+    boundary = b"absent"
+    if os.path.exists(shallow):
+        with open(shallow, "rb") as handle:
+            boundary = b"present\0" + handle.read()
+    return digest([
+        git_or_nothing("symbolic-ref", "-q", "HEAD"), git_or_nothing("rev-parse", "-q", "--verify", "HEAD"), refs,
+        boundary,
+    ])
+
+
 def tree_digest() -> str:
-    return digest([index_entries()] + [file_record(path) for path in covered_files()])
+    parts = [history_digest().encode("ascii"), index_entries()]
+    return digest(parts + [file_record(path) for path in covered_files()])
 
 
 def build_key() -> dict[str, object]:
