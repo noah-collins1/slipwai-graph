@@ -86,12 +86,16 @@ def recorded_provenance(record: dict) -> dict[str, str]:
     return dict(provenance)
 
 
-def recorded_parallel_safe(document: dict) -> bool | None:
-    """The project's own `parallelSafe`, as written, for a tool that regenerates its files: a boolean where the
-    key holds one, and None where there is none — which is what keeps a project made before the key serial, since
-    no tool adds the mark (D102). Anything but a boolean is not a mark and is not carried."""
-    mark = document.get("parallelSafe")
-    return mark if isinstance(mark, bool) else None
+# "No `parallelSafe` in the document": not None, because the project's own mark may be JSON `null`.
+ABSENT: object = object()
+
+
+def recorded_parallel_safe(document: dict) -> object:
+    """The project's own `parallelSafe`, as written, for a tool that regenerates its files: whatever JSON value the
+    key holds (`null` included), and ABSENT where there is no key — which is what keeps a project made before the
+    key serial, since no tool adds the mark (D102). The gate turns on only the JSON `true`; the value is the
+    project's own, and no tool deletes or rewrites it."""
+    return document.get("parallelSafe", ABSENT)
 
 
 def apps_from_manifest(document: dict, allow_empty: bool = False) -> list[App]:

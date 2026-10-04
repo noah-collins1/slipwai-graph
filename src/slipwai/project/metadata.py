@@ -13,7 +13,7 @@ from ..assets import VERSION
 from ..capabilities import app_capabilities
 from ..catalog import CATALOG
 from ..layout import AT_ROOT, Layout
-from ..manifest import MANIFEST_SCHEMA
+from ..manifest import ABSENT, MANIFEST_SCHEMA
 from ..origin import Adoption
 from ..services import App, frontend_of
 from .pins import SPECKIT_SOURCE
@@ -22,7 +22,7 @@ from .shared_packages import PACKAGES
 
 def metadata(
     project_name: str, profile: str, target: str, apps: list[App], layout: Layout = AT_ROOT,
-    adoption: Adoption | None = None, *, parallel_safe: bool | None = None,
+    adoption: Adoption | None = None, *, parallel_safe: object = ABSENT,
 ) -> str:
     """`project.json`: the answers this project was generated from, for a tool rather than a reader.
 
@@ -41,7 +41,7 @@ def metadata(
     was installed around, `"origin": "adopted"` after the generator and its facts after the layout, with its
     applications recorded `"generated": false`, claiming no capability and event-sourced in nobody's eyes.
     `parallel_safe` is the project's own word on whether its tests may run across cores, written as
-    `"parallelSafe"` where a boolean is given and not at all for None — which is what `adopt` and a replay of
+    `"parallelSafe"` whatever JSON value it is, and not at all for ABSENT — which is what `adopt` and a replay of
     a project made before the key pass, so a missing mark stays serial and is never added by a tool.
     `layout` is where things live: `applications` and `packages` as constants (`scripts/deploy.py` reads the
     second), and
@@ -62,7 +62,7 @@ def metadata(
         # Where it goes to production; `none` is local only. The project's own pruner reads this, so a
         # later `./init` offers an axis only the answers this target carries.
         "target": target,
-        **({"parallelSafe": parallel_safe} if parallel_safe is not None else {}),
+        **({} if parallel_safe is ABSENT else {"parallelSafe": parallel_safe}),
         "capabilities": capabilities,
         "deployables": {
             app.name: {

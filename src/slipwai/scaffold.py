@@ -14,6 +14,7 @@ from pathlib import Path
 from .assets import ADOPTION_ROOT, PRUNER
 from .catalog import CATALOG
 from .layout import AT_ROOT, Layout
+from .manifest import ABSENT
 from .origin import Adoption
 from .project.adopted import adopted_files, adoption_page
 from .project.agent_settings import claude_settings
@@ -69,7 +70,7 @@ FACTORY_IDENTITY = os.environ | {
 
 def project_files(
     project_name: str, profile: str, target: str, apps: list[App], layout: Layout = AT_ROOT,
-    adoption: Adoption | None = None, *, parallel_safe: bool | None = None,
+    adoption: Adoption | None = None, *, parallel_safe: object = ABSENT,
 ) -> dict[str, str]:
     """Every file a generated project starts with, keyed by its path in the new repository.
 
@@ -200,7 +201,7 @@ def write_project(
     settled: set[str] | None = None,
     layout: Layout = AT_ROOT,
     adoption: Adoption | None = None,
-    parallel_safe: bool | None = None,
+    parallel_safe: object = ABSENT,
 ) -> None:
     """Write the project and commit it, once, as the repository it starts life as.
 
