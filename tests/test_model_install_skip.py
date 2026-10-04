@@ -83,7 +83,7 @@ class SkipTest(SkipCase):
 
 class MarkerDatedTest(SkipCase):
     def test_e12_the_marker_is_newer_than_both_manifests_after_an_install_that_wrote_it_old(self) -> None:
-        """D91 part 2: the recipe dates the marker itself, so the next run sees a tree that matches."""
+        """D91 part 2: the recipe writes the marker, so the next run sees a match."""
         self.assert_passed(self.make("check-drawio", env={"STANDIN_NPM_STALE": "1"}))
         marker = (self.repo / MARKER).stat().st_mtime
         for manifest in MANIFESTS:

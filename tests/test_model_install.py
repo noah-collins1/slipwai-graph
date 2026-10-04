@@ -1,7 +1,8 @@
 """R7 (AC-S04-47, -50, -53): the model tooling installs with `npm ci`, from one rule, and a disagreeing lock is refused.
 
-`npm` and `node` are stand-ins that log each call and make the marker npm makes; where an example needs npm's own
-refusal or the real tools it says so and skips, with its reason, where they are absent. Evidence is the log.
+`npm` and `node` are stand-ins that log each call and write the hidden lockfile npm writes (the rule does not depend
+on it); where an example needs npm's own refusal or the real tools it says so and skips, with its reason,
+where they are absent. Evidence is the log.
 """
 from __future__ import annotations
 
@@ -25,7 +26,7 @@ from slipwai.services import default_apps
 sys.dont_write_bytecode = True
 
 PREFIX = "scripts/event-model"
-MARKER = f"{PREFIX}/node_modules/.package-lock.json"
+MARKER = f"{PREFIX}/node_modules/.installed"
 CI = f"--prefix {PREFIX} ci --no-audit --no-fund --loglevel=error"
 SKIP = "check-drawio: the model tooling matches scripts/event-model/package-lock.json; not reinstalled"
 TARGETS = ("check-drawio", "model-drawio-test", "model", "model-drawio")
@@ -177,7 +178,7 @@ class OneRuleTest(unittest.TestCase):
         files = project_files("moved", "event-modelling", "none", apps, Layout("delivery"))
         makefile = files["delivery/Makefile"]
         base = "delivery/scripts/event-model"
-        rule = f"{base}/node_modules/.package-lock.json: {base}/package.json {base}/package-lock.json\n"
+        rule = f"{base}/node_modules/.installed: {base}/package.json {base}/package-lock.json\n"
         self.assertIn("\n" + rule, makefile)
         npm = [line for line in makefile.splitlines() if re.search(r"\bnpm\b", line) and "event-model" in line]
         self.assertEqual(len(npm), 1, npm)
