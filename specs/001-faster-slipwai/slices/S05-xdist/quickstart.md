@@ -15,6 +15,17 @@ cat docs/gates.md                        # the mark: its default, missing is ser
 ```
 
 A project made before this release, then `slipwai migrate`d with this checkout: `project.json` has no
-`parallelSafe` and `make test` is serial; adding `"parallelSafe": true,` on the line after `"target"` turns it on.
+`parallelSafe` and `make test` is serial; adding `"parallelSafe": true,` (with its comma) on the line after `"target"` turns it on.
 
-The measurement (AC-S05-13) is written here by the demo.
+## Measured at demo 1 (AC-S05-13)
+
+A fresh Python starter (event-modelling, FastAPI, Postgres store, 87 tests), warm, on a branch other than the trunk;
+12th Gen Intel i5-12400, `nproc` 12; medians of three (`demo/17-timings.tsv`, `demo/17-measure.sh`):
+
+| Command | Mark `true` (4 workers) | Mark `false` (serial) |
+|---|---|---|
+| `./scripts/verify --test-only` | 1.36 s | 0.99 s |
+| `VERIFY_FORCE=1 make verify` | 3.70 s | 3.30 s |
+| `VERIFY_FORCE=1 make -j verify` | 2.11 s | 1.72 s |
+
+D89's criterion holds both ways (the `-j` median below the serial one), so D103's cap stands.

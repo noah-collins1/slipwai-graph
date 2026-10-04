@@ -509,7 +509,7 @@ checkout, and on a scratch repository `adopt`ed by this checkout. No production 
 
 ### T021 — `HIGH` — The line the catch-up note and the gates page tell a person to add breaks `project.json` (demo 1, `implementation`)
 
-- [ ] **Demo feedback, before demo 2.** Demo 1 followed the fragment's **Catch-up.** paragraph literally: `"parallelSafe": true`
+- [x] **Demo feedback, before demo 2.** Demo 1 followed the fragment's **Catch-up.** paragraph literally: `"parallelSafe": true`
   pasted after the `"target"` line, as the note and the page at `src/slipwai/project/parallel_tests.py` say, leaves
   `project.json` invalid (the line needs its trailing comma there) — the gate goes serial silently and `make verify`
   fails in `check-imports` (`demo/12-catch-up-literal.txt`). RED first in `tests/test_xdist_page.py`: the line both the
