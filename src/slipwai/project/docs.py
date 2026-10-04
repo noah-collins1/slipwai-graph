@@ -7,6 +7,7 @@ anything of the constitution, and whether there is anywhere to deploy.
 from __future__ import annotations
 
 from ..catalog import CATALOG
+from ..layout import AT_ROOT, Layout
 from ..services import App, backends_of, frontend_of, services_of, web_apps
 from ..targets import managed
 from .backing_service_prose import backing_services_gates
@@ -16,14 +17,39 @@ from .event_model import event_documentation
 from .evolving import evolving_page
 from .existing import production_included_line
 from .flags import FLAG_GATE_NOTE
+from .gate import stamped
 from .pins import pin_list
 from .skills_page import skills_page
 
+STAMP_PAGE = """A tree that already passed `make verify` is not judged again. A full passing run on a branch that is not the trunk
+records a stamp under the git directory, never in the working tree, so `git status` shows nothing of it. It is keyed by
+what the stamp can see of the checks: every file under the project, tracked, untracked or ignored, except what the gate
+rebuilds or never reads (installed dependencies apart from the manifest of what is installed, caches and build output),
+the index, `HEAD`, every ref and the repository's own git configuration, `Makefile` and `scripts/`, the versions of the
+tools the machine supplies, and the variables a check reads. The next run on the same tree prints one
+line, `verify: the full gate did not run; this tree already passed it …`, starts no check and exits 0. `VERIFY_FORCE` is
+unset by default; anything but empty or `0` forces it, on the command line or in the environment. To run the gate anyway,
+run `make verify VERIFY_FORCE=1`. A stamp cannot see what a project's own tests or tools read from outside the repository: the clock, the network,
+user-level tool configuration, `PATH`, or a variable no gate script names. Nor can it see git's own user-level or
+system configuration, or a file edited by hand inside an installed dependency tree whose manifest did not move.
+A gate that would now fail for one of those alone is reused as green until a file, a ref or a listed input moves or
+`VERIFY_FORCE` is given. CI and the trunk, which never read a stamp, are where it is caught. When a check answers from
+one of those things, run `make verify VERIFY_FORCE=1`. The trunk and CI (`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set to
+a non-empty value) always run the full gate and neither read nor write a stamp. A pipeline that sets none of the three
+sets `CI=1` itself. `make ci` runs every check and records nothing. The trunk is the branch `project.json` records as
+`ci.branch`, else `main`, else `master`. A team whose trunk has another name sets `ci.branch` in `project.json` to it;
+until then that branch reuses a stamp like any other. A `ci.branch` the gate cannot use, or a trunk it cannot find, is
+said on one line before the first check, which tells what to fix; that run runs every check and records nothing.
+
+"""
+
 
 def documentation_files(
-    project_name: str, profile: str, apps: list[App], target: str = "none"
+    project_name: str, profile: str, apps: list[App], target: str = "none", layout: Layout = AT_ROOT
 ) -> dict[str, str]:
-    """Every file under `docs/` that the services' selections decide the content of."""
+    """Every file under `docs/` that the services' selections decide the content of. A project whose gate is not
+    stamped (a wrapped application, the delivery material moved) has a gates page with nothing of a stamp in it."""
+    stamp_paragraphs = STAMP_PAGE if stamped(apps, layout) else ""
     event = profile == "event-modelling"
     frontend = frontend_of(apps)
     services = services_of(apps)
@@ -113,22 +139,7 @@ keeps missing measurements visibly unbracketed. `make help` lists integration,
 adversarial, mutation, model, benchmark and dependency-audit targets. Mutation and dependency audit remain
 explicit end-of-phase/CI operations, not hidden costs in every local increment.
 
-A tree that already passed `make verify` is not judged again. A full passing run on a branch that is not the trunk
-records a stamp under the git directory, never in the working tree, so `git status` shows nothing of it. It is keyed by
-what the stamp can see of the checks: the files' bytes, the index, `HEAD` and the refs, `Makefile` and `scripts/`, the
-versions of the tools the machine supplies, and the variables a check reads. The next run on the same tree prints one
-line, `verify: the full gate did not run; this tree already passed it …`, starts no check and exits 0. `VERIFY_FORCE` is
-unset by default; anything but empty or `0` forces it, on the command line or in the environment. To run the gate anyway,
-run `make verify VERIFY_FORCE=1`. A stamp cannot see what a project's own tests or tools read from outside the repository: the clock, the network,
-user-level tool configuration, `PATH`, or a variable no gate script names. A gate that would now fail for one of those
-alone is reused as green until a file, a ref or a listed input moves or `VERIFY_FORCE` is given. CI and the trunk, which
-never read a stamp, are where it is caught. When a check answers from one of those things, run `make verify
-VERIFY_FORCE=1`. The trunk and CI (`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set to a non-empty value) always run the full
-gate and neither read nor write a stamp, and `make ci` always runs it. The trunk is the branch `project.json` records as
-`ci.branch`, else `main`, else `master`. A team whose trunk has another name sets `ci.branch` in `project.json` to it;
-until then that branch reuses a stamp like any other.
-
-`make check-codegraph` is in the gate for a project that has adopted a code index and a no-op for one that
+{stamp_paragraphs}`make check-codegraph` is in the gate for a project that has adopted a code index and a no-op for one that
 has not: it fails when `.codegraph/` no longer describes the tracked source — files it has never seen, or
 files that changed after it read them. CodeGraph indexes only while a client is attached to its daemon, so a
 checkout opened where that tooling is missing keeps a database nothing updates, and a stale index answers

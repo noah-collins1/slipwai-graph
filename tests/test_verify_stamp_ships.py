@@ -169,7 +169,7 @@ class ThePageSaysWhatTheStampDoesTest(StampTestCase):
         page = self.page()
         never_read = (
             "The trunk and CI (`CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set to a non-empty value) always run the full "
-            "gate and neither read nor write a stamp, and `make ci` always runs it."
+            "gate and neither read nor write a stamp."
         )
         for sentence in (SEES_NOT, REUSED_AS_GREEN, CAUGHT_IN_CI, never_read):
             self.assertIn(sentence, page)

@@ -152,7 +152,7 @@ def project_files(
     generated.update(decision_files())
     generated.update(biome_files(apps))
     generated.update(command_files(event, apps, target, layout, adoption))
-    generated.update(documentation_files(project_name, profile, apps, target))
+    generated.update(documentation_files(project_name, profile, apps, target, layout))
     generated.update(backing_service_files(apps))
     generated.update(target_files(project_name, profile, target, apps))
     # The copied assets first, so that anything generated above wins where both have an opinion. What a
