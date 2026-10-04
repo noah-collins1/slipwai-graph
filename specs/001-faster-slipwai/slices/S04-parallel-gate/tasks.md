@@ -380,7 +380,7 @@ test_verify_stamp_ships test_verify_stamp_where test_verify_stamp_runs test_veri
 
 ### T006 — [US1] Every backend family holds the rule: Java's three Maven checks and Go's first `go` command are ordered (R5 · AC-S04-15, -17, -42, -43, -5)
 
-- [ ] **Rule R5.** Needs T003 and T005 (same `makefile.py` and `parallel_gate.py` as T002/T003, same `gate.py` and helper as
+- [x] *(33a4757: `VERIFY_ORDER=1` on the gate's sub-make and an `ifdef VERIFY_ORDER` block — Java: `typecheck: lint`, `test: typecheck`; Go alone: `lint test: typecheck`; e1, e2 red first, e3–e5 holds with teeth; real toolchain run by hand for Go, TypeScript and Java (Quarkus), each exit 0 serial and `-j` with the same checks — Java's `-j` run was not faster there, and a fresh-clone run is the demo's)* **Rule R5.** Needs T003 and T005 (same `makefile.py` and `parallel_gate.py` as T002/T003, same `gate.py` and helper as
   T004/T005, so it follows both chains). **`VERIFY_ORDER=1` is added here, not in R3/R4 as the plan's structure lists
   it**: before this rule nothing reads it, and a variable no test can fail on is dead code.
 
@@ -471,7 +471,7 @@ says so).
 
 ### T008 — [P] [US1] The model tooling installs from a committed lock, once, and says when it did not (R7 · AC-S04-45 to -55)
 
-- [ ] **Rule R7.** Needs T002 (the helper, unedited here). Disjoint from every other task's manifest — the plan's third
+- [x] *(42aaac6, e7dab3f, a7ce7b0: the lock made by npm 9.2.0 against the registry (version 3, 31 packages and the root, 26 esbuild platforms); the install is spelled `npm --prefix scripts/event-model ci`; `@touch` after it; `install` names the marker (D93); a `NOT_SCANNED` entry in `tests/test_verify_stamp_scan.py` for the lock the skip line names; `tests/test_npm_install.py` not amended; the pin test's stand-in npm writes the marker and each model target starts uninstalled; AC-S04-54 as re-worded and AC-S04-64, -65 held with the real npm)* **Rule R7.** Needs T002 (the helper, unedited here). Disjoint from every other task's manifest — the plan's third
   group; it shares no file with the first two. **The only task that changes `assets/toolkit/`.**
 
 **The lock** is made by npm against the registry, never by hand (AC-S04-46): in an empty scratch directory holding only
