@@ -14,6 +14,8 @@ from test_verify_stamp_scan import makefile_rules
 
 from slipwai.assets import ROOT
 from slipwai.catalog import axis_default
+from slipwai.project.native_commands import STEP
+from slipwai.project.parallel_gate import in_recipe, script_of
 from slipwai.scaffold import project_files
 from slipwai.selection import resolve_selection
 from slipwai.services import App, add_service
@@ -66,6 +68,25 @@ class OrderSentencesAreTrueOfAParallelRunTest(unittest.TestCase):
         text = " ".join(FRAGMENT.split())
         self.assertNotIn("stops the run before any check starts", text)
         self.assertIn("A failed sync starts no check that runs a Python service's code, and says so once.", text)
+
+
+MODES = ("--lint-only", "--typecheck-only", "--test-only", "--format", "--migrate", "--integration-only",
+         "--adversarial-only", "--install-only")
+
+
+class InRecipeIsIdempotentTest(unittest.TestCase):
+    def test_t017_applied_to_its_own_output_it_gives_the_same_text(self) -> None:
+        """For each mode the script has and each spelling of its path (`verify`, `verify-python`), alone, with
+        another step beside it and already carrying `--synced`: a second application changes nothing."""
+        for name, apps in shapes().items():
+            script = script_of(apps)
+            for mode in MODES:
+                for recipe in (f"{script} {mode}", f"echo x{STEP}{script} {mode}{STEP}echo y",
+                               f"{script} {mode} --synced", f"{script} {mode}{STEP}{script} {mode}"):
+                    with self.subTest(shape=name, recipe=recipe):
+                        once = in_recipe(recipe, apps)
+                        self.assertEqual(in_recipe(once, apps), once)
+                        self.assertNotRegex(once, r"--synced\w|--synced --synced")
 
 
 class FormatSyncsOnceTest(ParallelGateTestCase):

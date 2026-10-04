@@ -63,7 +63,10 @@ def in_recipe(recipe: str, apps: list[App]) -> str:
         return recipe
     script = re.escape(script_of(apps))
     kept = [line for line in steps(recipe) if not re.fullmatch(rf"{script} --install-only", line)]
-    return STEP.join(re.sub(rf"({script} --[a-z]+(?:-[a-z]+)*)(?! --synced)", r"\1 --synced", line) for line in kept)
+    # The mode is taken whole (`(?![\w-])`) before the look-ahead, so a mode already followed by `--synced` cannot be
+    # matched one letter short and given a second: applied to its own output the recipe is what it was.
+    mode = rf"({script} --[a-z]+(?:-[a-z]+)*)(?![\w-])(?! --synced)"
+    return STEP.join(re.sub(mode, r"\1 --synced", line) for line in kept)
 
 
 def sync_rules(project_name: str, apps: list[App], suites: list[App], formatting: bool) -> str:
