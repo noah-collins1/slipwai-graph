@@ -186,6 +186,27 @@ class StampTestCase(unittest.TestCase):
         assert path is not None
         return json.loads(path.read_text(encoding="utf-8"))
 
+    def plant_stamp(self) -> bytes:
+        """A stamp that is valid for the tree, the branch and the machine as they stand now, written as a pass would
+        write it, and its bytes: what a run that may read it would reuse, so a run that does not is seen not to."""
+        module = load_script(self.repo)
+        makefile = (self.repo / "Makefile").read_text(encoding="utf-8")
+        arguments = re.search(r"^VERIFY_STAMP := (.*)$", makefile, re.M)
+        assert arguments is not None
+        options = module.Options(["--make", "make", *arguments.group(1).split()])
+        was, here, env = dict(os.environ), Path.cwd(), self.environment()
+        os.environ.clear()
+        os.environ.update(env)
+        os.chdir(self.repo)
+        try:
+            stamp = dict(module.build_key(module.machine_tools(options)), passed="2026-01-01T00:00:00Z", result="pass")
+            module.write_file(module.stamp_path(), json.dumps(stamp, indent=2, sort_keys=True) + "\n")
+            return Path(module.stamp_path()).read_bytes()
+        finally:
+            os.chdir(here)
+            os.environ.clear()
+            os.environ.update(was)
+
     def reuse_lines(self, run: subprocess.CompletedProcess[str]) -> list[str]:
         """The lines of a run's own, those beginning `verify:` other than the closing line."""
         return [line for line in run.stdout.splitlines() if line.startswith(REUSE_PREFIX) and line != CLOSING]

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import glob
 import hashlib
+import importlib.util
 import json
 import os
 import stat
@@ -111,6 +112,10 @@ VARIABLES: tuple[str, ...] = (
 # Read by a check and not in the key: how many run at once is not what they say.
 UNKEYED_VARIABLES = ("UX_GATES_JOBS",)
 RATCHET_VARIABLE = "RATCHET_TIGHTEN"
+# A run is a CI run when any of these is non-empty — `CI=false` included, the way `check-codegraph` and
+# `check-slice-scope` read them (D32).
+CI_MARKERS = ("CI", "GITHUB_ACTIONS", "GITLAB_CI")
+SLICE_SCOPE = "check-slice-scope.py"
 
 # How long a version question may take, and the one argument that is not `--version` for the tools that spell it
 # otherwise (`java -version` answers on standard error, which the answer is read from too).
@@ -361,8 +366,35 @@ def write_file(path: str, text: str) -> None:
     os.replace(temporary, path)
 
 
+def trunk_name() -> str:
+    """The trunk, by the one definition there is: `merge_base` of `check-slice-scope.py` beside this script, which
+    resolves it as D30 and D33 say (a usable `ci.branch` of `project.json` that has a ref, else `main` where it has
+    one, else `master`). Loaded, never copied, so the two cannot come to different answers."""
+    spec = importlib.util.spec_from_file_location(
+        "check_slice_scope_for_the_stamp", os.path.join(os.path.dirname(os.path.abspath(__file__)), SLICE_SCOPE))
+    if spec is None or spec.loader is None:
+        raise CannotTell("cannot load " + SLICE_SCOPE)
+    module = importlib.util.module_from_spec(spec)
+    was, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = was
+    return str(module.merge_base().trunk)
+
+
+def eligible() -> bool:
+    """Whether a stamp may be used at all on this run: not under a CI marker, not on a detached `HEAD`, not on the
+    trunk. Where it may not, a run reads nothing, writes nothing, removes nothing and says nothing — it is the gate as
+    it was. Asked by both verbs, so a `record` that follows a run that could not read writes nothing either."""
+    if any(os.environ.get(marker) for marker in CI_MARKERS):
+        return False
+    branch = git_or_nothing("symbolic-ref", "-q", "--short", "HEAD").decode("utf-8", "surrogateescape").strip()
+    return bool(branch) and branch != trunk_name()
+
+
 def reuse(options: Options) -> int:
-    if os.environ.get(RATCHET_VARIABLE):
+    if os.environ.get(RATCHET_VARIABLE) or not eligible():
         return 1
     try:
         tools = machine_tools(options)
@@ -382,7 +414,7 @@ def reuse(options: Options) -> int:
 def record(options: Options) -> int:
     """After the last check: the stamp, if the key is the one the run began with. The tools are the ones the run began
     with too — they are asked once — and the note that says this run records nothing records nothing."""
-    if os.environ.get(RATCHET_VARIABLE):
+    if os.environ.get(RATCHET_VARIABLE) or not eligible():
         return 0
     with open(pending_path(), "r", encoding="utf-8") as handle:
         pending = json.load(handle)
