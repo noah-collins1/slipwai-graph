@@ -41,7 +41,7 @@ Constraints that hold for every task's GREEN, stated once:
 R1–R6 share `assets/toolkit/scripts/hand_backs.py` and `assets/toolkit/scripts/check-decisions.py`, so they run in
 order; R6 also writes `assets/toolkit/scripts/agents/benchmark.py`.
 
-- [ ] T001 [US6] **R1 — a well-formed block passes** (AC-S14-3, AC-S14-5). Includes the shared fixture and the stub
+- [x] T001 [US6] **R1 — a well-formed block passes** (AC-S14-3, AC-S14-5). Includes the shared fixture and the stub
   (no separate setup task): `tests/hand_backs_fixture.py` (a scratch project with `project.json`, `specs/f/…`, the
   toolkit scripts copied; a valid block; `run(...)` as a `python3 -B` subprocess) and a first `hand_backs.py`
   (`FIELDS`, `STATUSES`, heading pattern, `extract`, `check_block`, `check_record` for the passing path) with the gate
@@ -52,7 +52,7 @@ order; R6 also writes `assets/toolkit/scripts/agents/benchmark.py`.
   Files: `tests/hand_backs_fixture.py`, `tests/test_hand_backs_shape.py`,
   `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`.
 
-- [ ] T002 [US6] **R2 — a malformed block names its field** (AC-S14-4, -7, -8, -9). Fault lines
+- [x] T002 [US6] **R2 — a malformed block names its field** (AC-S14-4, -7, -8, -9). Fault lines
   `<record>:<line>: <heading> — <field>: <fault>`, exit 1, one line per fault: absent field, wrong JSON type (`true`
   is not an integer), `contract` not 1, `delegate` not one of ten or differing from the heading, `status` outside
   its type's set, empty `scope`/`change_summary`, non-string in a list, `files_changed` absolute or with `..`,
@@ -63,7 +63,7 @@ order; R6 also writes `assets/toolkit/scripts/agents/benchmark.py`.
   Files: `tests/test_hand_backs_shape.py`, `assets/toolkit/scripts/hand_backs.py`,
   `assets/toolkit/scripts/check-decisions.py`.
 
-- [ ] T003 [US6] **R3 — a record's structure** (AC-S14-6, AC-S14-13). One finding naming the entry for: an unclosed
+- [x] T003 [US6] **R3 — a record's structure** (AC-S14-6, AC-S14-13). One finding naming the entry for: an unclosed
   fence, two blocks in one entry, a heading not `## <UTC> — drive-<name> — <stage>`, an entry with neither block nor
   `- **Missing:** <reason>` or with both, a body that is not one JSON object. `Missing:` with any non-empty reason
   passes, `stopped: <reason>` included; text before the first `## ` is the file's own. RED→GREEN e1–e7 (unterminated
@@ -72,7 +72,7 @@ order; R6 also writes `assets/toolkit/scripts/agents/benchmark.py`.
   Files: `tests/test_hand_backs_record.py`, `assets/toolkit/scripts/hand_backs.py`,
   `assets/toolkit/scripts/check-decisions.py`.
 
-- [ ] T004 [US6] **R4 — nothing recorded, nothing changes** (AC-S14-16). Where no `hand-backs.md` exists the checker's
+- [x] T004 [US6] **R4 — nothing recorded, nothing changes** (AC-S14-16). Where no `hand-backs.md` exists the checker's
   stdout, stderr and exit are byte-identical to `check-decisions.py` at `c3c760b` (taken from git, as
   `test_decisions_scope_gate.py` does), on an empty project, a project with decisions and demos, and this
   repository's own `specs/`; where one exists the summary gains `, <n> hand-back(s) in <m> record(s)` and nothing
@@ -83,7 +83,7 @@ order; R6 also writes `assets/toolkit/scripts/agents/benchmark.py`.
   test is its own task).
   Files: `tests/test_hand_backs_record.py`, `assets/toolkit/scripts/check-decisions.py`.
 
-- [ ] T005 [US6] **R5 — the dispatching session appends** (AC-S14-10, -11, -13). `--hand-back <dir> <type> <stage>`
+- [x] T005 [US6] **R5 — the dispatching session appends** (AC-S14-10, -11, -13). `--hand-back <dir> <type> <stage>`
   (stdin; takes the one block; checks with R2/R3's own functions; only on pass appends the heading, blank line and
   fence verbatim, creating the file with `# Hand-backs — <id>`; else appends nothing, prints faults, exit 1) and
   `--hand-back-missing <dir> <type> <stage> <reason…>`; `<dir>` only `specs/<feature>` or
@@ -94,7 +94,7 @@ order; R6 also writes `assets/toolkit/scripts/agents/benchmark.py`.
   Files: `tests/test_hand_backs_append.py`, `assets/toolkit/scripts/hand_backs.py`,
   `assets/toolkit/scripts/check-decisions.py`.
 
-- [ ] T006 [US6] **R6 — what was handed back, per stage** (AC-S14-11, -15). `check-decisions.py --hand-backs
+- [x] T006 [US6] **R6 — what was handed back, per stage** (AC-S14-11, -15). `check-decisions.py --hand-backs
   <slice-dir>` (`coverage` in `hand_backs.py`): per ended `benchmark.json` entry the transcript shows delegated,
   `block` / `missing — <reason>` / `nothing recorded`, matched by stage and heading time in `[started, ended]`; an
   entry with `usage.source` null is *could not attribute*, counted as neither; exit 0 always; ends with
@@ -113,7 +113,7 @@ R7–R9 write `src/slipwai/project/result_contract.py` and `tests/test_result_co
 **not** parallel with each other: one delegate, in order. As a chain they are disjoint from T003–T006 and may start
 once T002 is committed (the status table they compare against is final then).
 
-- [ ] T007 [P] [US6] **R7 — every brief ends with the block** (AC-S14-1, -2, -14). New `result_contract.py`
+- [x] T007 [P] [US6] **R7 — every brief ends with the block** (AC-S14-1, -2, -14). New `result_contract.py`
   (`PAGE`, `STATUSES`, `brief_paragraph(name)`, `slice_record_sentence()`); `agents.agent_file`'s shared part gains
   `{brief_paragraph(agent.name)}` and the `drive-slice` brief one sentence (its own slice's record for its
   sub-delegates, its own block to `specs/<feature>/hand-backs.md` stage `ready-set` per R-5/Q2); `cruise_agents.py`:
@@ -125,7 +125,7 @@ once T002 is committed (the status table they compare against is final then).
   Files: `tests/test_result_contract_briefs.py`, `src/slipwai/project/result_contract.py`,
   `src/slipwai/project/agents.py`, `src/slipwai/project/cruise_agents.py`.
 
-- [ ] T008 [US6] **R8 — the ladder says who records, when** (AC-S14-1, -10 to -14). `hand_backs_section(layout)`
+- [x] T008 [US6] **R8 — the ladder says who records, when** (AC-S14-1, -10 to -14). `hand_backs_section(layout)`
   placed after `{who_runs_each_stage(layout)}` in `commands/drive.md` (append with `--hand-back` before closing the
   benchmark entry; slice vs feature-level record; one continuation then `--hand-back-missing` with `refused`,
   `malformed: <field>` or `no continuation`; never re-run, never a host-written block; a stage in this context has no
@@ -141,7 +141,7 @@ once T002 is committed (the status table they compare against is final then).
   `src/slipwai/project/commands.py`, `src/slipwai/project/converge_stage.py`, `src/slipwai/project/cruise.py`,
   `src/slipwai/project/agents.py` (converge-brief sentence only).
 
-- [ ] T009 [US6] **R9 — the shape is one table** (AC-S14-1, -3). `assets/toolkit/docs/result-contract.md`: the thirteen
+- [x] T009 [US6] **R9 — the shape is one table** (AC-S14-1, -3). `assets/toolkit/docs/result-contract.md`: the thirteen
   fields in order with rules, the ten types with status sets, the heading, the `Missing:` forms, the three verbs;
   `src/slipwai/project/docs_index.py` indexes it. RED→GREEN e1 the page's field-table rows equal
   `hand_backs.FIELDS` · e2 its status rows equal `hand_backs.STATUSES` and the factory's `result_contract.STATUSES`
@@ -154,7 +154,7 @@ once T002 is committed (the status table they compare against is final then).
 
 ## Phase 3: Migrate and release
 
-- [ ] T010 [US6] **R10 — what a project already made gets** (AC-S14-17). Last, because it needs every file. A project
+- [x] T010 [US6] **R10 — what a project already made gets** (AC-S14-17). Last, because it needs every file. A project
   generated by the factory at `c3c760b` (taken from git), migrated by this one: `scripts/hand_backs.py` and
   `docs/result-contract.md` arrive, agent files, `commands/drive.md`, `commands/cruise.md` and `check-decisions.py`
   are the new ones and re-projected, `make check-decisions` passes on its existing records unchanged; the same for an
@@ -167,7 +167,7 @@ once T002 is committed (the status table they compare against is final then).
 
 ## Phase 4: Final check
 
-- [ ] T011 [US6] **Hold AC-S14-18 and the gate** (no new behaviour, no new test). Run and report, changing nothing
+- [x] T011 [US6] **Hold AC-S14-18 and the gate** (no new behaviour, no new test). Run and report, changing nothing
   unless a failure names a file in the manifests above:
   `git diff --name-only c3c760b` lists only paths under the *Structure Decision* (`assets/toolkit/`,
   `src/slipwai/project/`, `tests/`, `changelog.d/result-contract.md`, this slice's folder); `find assets -name
