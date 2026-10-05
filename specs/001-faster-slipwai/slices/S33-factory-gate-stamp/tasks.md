@@ -183,7 +183,7 @@ and `--make "$(MAKE)"`. The list is written once.
 
 ### T009 — After-converge gaps pass (host task)
 
-- [ ] `drive-gaps` traces AC-S33-1 … -10 over the applied tree; findings are decisions or tasks under *Phase 4*.
+- [x] *(Iteration 18, over `2a8c10c`: seven gaps — T022–T025, D119, D120, and the quickstart's records.)* `drive-gaps` traces AC-S33-1 … -10 over the applied tree; findings are decisions or tasks under *Phase 4*.
 
 ### T010 — Demo (host task)
 
@@ -353,6 +353,44 @@ The three tasks below are what is left. None of them re-opens the loop.
   `assets/languages/go/scripts/__pycache__/` on every run, and it now turns the switch on around its load. A probe
   that imports a script under `assets/` by hand runs as `python3 -B`; every brief this run writes for a delegate
   that may probe says so. `tests/` only, so it reaches no user and raises no number.
+
+## Phase 4: After-converge gaps (T009, iteration 18)
+
+`drive-gaps` traced AC-S33-1 … -12 over `2a8c10c`. Every criterion is met except AC-S33-10, which is the demo's
+measurement (T010). Its HIGH (caches under `assets/` are exempt from the key but read by the suite) and one MEDIUM
+(an agent worktree under `.claude/worktrees/` stops every stamp) are product questions, D119 and D120. The rest
+change `tests/` only and are below, in the order found.
+
+### T022 — MEDIUM: a `FACTORY_BACKENDS` that names no backend takes the stamped path over an empty matrix
+
+- [ ] `FACTORY_BACKENDS=" "` (or `","`) is empty to make's `$(strip …)`, so `Makefile:51` does not bypass; but
+  `tests/support.py:31-38` reads it as a value and `backends_under_test()` returns `[]`. The matrix,
+  `test_flag_gate` and `test_line_widths` then pass over zero backends, a stamp is recorded, and a later plain run
+  reuses it. **Do (`tests/` only):** `backends_under_test()` raises when the value is set and names no backend,
+  as its docstring already says a silently empty slice is an error; an example in
+  `tests/test_factory_gate_stamp_inputs.py`, observed failing first.
+
+### T023 — LOW: what the inputs scan cannot see — `TMPDIR`, and what `src/slipwai` reads inside the suite
+
+- [ ] `tests/test_uncommitted_places.py:142,180` skip when the temporary directory sits inside a git repository, so
+  `TMPDIR` decides whether two tests run, and the table does not hold it. `src/slipwai` reads `GITEA_OWNER`,
+  `GITEA_PAGES_URL` and `GITEA_TOKEN` in the suite's own process, and the scan reads only `tests/*.py`. **Do
+  (`tests/` only):** make the two tests independent of where `TMPDIR` is (recommended: `GIT_CEILING_DIRECTORIES`
+  in the probe's and the child's environment, so git cannot see above the copy, and the skip goes); extend the scan
+  to `src/slipwai/**/*.py` and decide each name it finds in the tables, with its reason.
+
+### T024 — LOW: `go` and `gh` are named by AC-S33-6 and held by nothing
+
+- [ ] `listed()` asserts only `tofu` and `node`; `tests/test_factory_gate_stamp_inputs.py:131` asserts `ko`, `mvn`,
+  `pack`, `java`, `docker`. Dropping `go` from `VERIFY_TOOLS` leaves every test green. **Do (`tests/` only):**
+  assert AC-S33-6's whole list, with `ko` and `mvn`, is a subset of `listed()`; teeth shown by dropping `go`.
+
+### T025 — LOW: `npx`'s directory decides a skip, and the key holds only its version
+
+- [ ] `tests/test_extensions.py:209-212` skips according to whether `npx` shares a directory with `sh` (T019's
+  leftover). **Do (`tests/` only):** write its reason into the tables in
+  `tests/test_factory_gate_stamp_inputs.py` (a decided entry), or make the test hide `npx` without depending on
+  its directory; whichever, the scan must know of it.
 
 ## Convergence
 

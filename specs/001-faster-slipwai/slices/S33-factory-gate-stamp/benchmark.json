@@ -549,6 +549,88 @@
         "split": 0,
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "gaps",
+      "started": "2026-10-05T02:56:31Z",
+      "planned": "gaps: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 6,
+          "done": 15
+        },
+        "end": {
+          "open": 6,
+          "done": 15
+        }
+      },
+      "ended": "2026-10-05T03:03:22Z",
+      "seconds": 411,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/88bd686f-1f85-43ad-b1b7-86e86d2ef03d.jsonl": 743363
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/88bd686f-1f85-43ad-b1b7-86e86d2ef03d.jsonl": 786468,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/88bd686f-1f85-43ad-b1b7-86e86d2ef03d/subagents/agent-aeb849935bf97f586.jsonl": 634895
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "88bd686f-1f85-43ad-b1b7-86e86d2ef03d",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 4,
+            "output": 1967,
+            "cache_read": 204750,
+            "cache_creation": 3384
+          }
+        },
+        "subagents": {
+          "claude-opus-5-5": {
+            "input": 66,
+            "output": 523,
+            "cache_read": 3021865,
+            "cache_creation": 133466
+          }
+        },
+        "agents": [
+          "drive-gaps"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5"
+      ],
+      "agents": [
+        "drive-gaps"
+      ],
+      "delegated": true,
+      "signals": {
+        "driver": "cruise",
+        "gaps": 7
+      }
+    },
+    {
+      "stage": "skipper",
+      "started": "2026-10-05T03:03:22Z",
+      "planned": "skipper: skipper → host model — `skipper` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 6,
+          "done": 15
+        }
+      },
+      "cursor": {
+        "source": "claude",
+        "session": "88bd686f-1f85-43ad-b1b7-86e86d2ef03d",
+        "files": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/88bd686f-1f85-43ad-b1b7-86e86d2ef03d.jsonl": 803122
+        },
+        "subagents": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/88bd686f-1f85-43ad-b1b7-86e86d2ef03d/subagents/agent-aeb849935bf97f586.jsonl": 634895
+        }
+      }
     }
   ]
 }
