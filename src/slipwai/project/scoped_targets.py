@@ -84,6 +84,16 @@ def order_rules(apps: list[App]) -> str:
     return f"{ORDER}\n{rules}endif\n" if rules else ""
 
 
+def verify_scoped_rule() -> str:
+    """The one target a person types: `scripts/verify-scoped.py run`, handed the make and the makefile that are running,
+    as `verify` hands them to its own sub-make. It is the gate (`make verify`) wherever it cannot read the branch."""
+    return """
+.PHONY: verify-scoped
+verify-scoped: ## The checks whose inputs changed on a slice branch; the full gate wherever it cannot tell
+\t@python3 scripts/verify-scoped.py run --make "$(MAKE)" --makefile "$(firstword $(MAKEFILE_LIST))"
+"""
+
+
 def scoped_section(apps: list[App], layout: Layout) -> str:
     """The section a stamped gate's `Makefile` ends with; nothing for an adopted repository's, which keeps its own."""
     if not stamped(apps, layout):
@@ -114,4 +124,4 @@ def scoped_section(apps: list[App], layout: Layout) -> str:
             names.append(family)
             text += rule(family, [FIRST, *([SYNC] if language == "python" else [])], shared_lines)
         text += rules
-    return f"{HEADER}.PHONY: {' '.join(names)}\n{text}{order_rules(apps)}"
+    return f"{HEADER}.PHONY: {' '.join(names)}\n{text}{order_rules(apps)}{verify_scoped_rule()}"
