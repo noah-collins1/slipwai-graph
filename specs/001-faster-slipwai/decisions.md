@@ -3290,3 +3290,42 @@
 - **Confidence:** high on failing closed with the full gate over (a), and on (c) being unavailable; medium that the three mechanisms cover every resolver this factory's families ship (the run-time residual is named above). · **Would reverse if:** a benchmark or a person's survey shows that cross-deployable reaches are the common case in multi-deployable generated projects, more than half of them. Then the scoped gate saves those actors nothing, and (a)'s per-edge charge returns as its own MINOR slice, built over this same three-mechanism reader and never over a list of import syntaxes.
 - **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T043: the decision as its GREEN, which carries data-model.md *How a unit is chosen*, the fragment's Catch-up sentence and ADR 0004's two amendments at Proposed)
 - **Status:** standing
+
+## D149 — S08: a Python service with mutmut installed, on a slice branch
+
+- **Stage:** after-converge gaps (T029, handed back by drive-slice) · **Slice:** S08-scoped-mutation · **When:** 2026-10-05T19:52:07Z · **Iteration:** 23
+- **Scope:** S08-scoped-mutation
+- **Question:** Python's recipe runs `mutmut run` with no setup message, so a project that installed mutmut itself had a working `make mutation`; on a slice branch the scoped run now refuses it as a placeholder, while `make mutation-full` still runs mutmut.
+- **Options:** (a) keep D137's refusal, and make the refusal and the fragment say it refuses until `S42-mutmut-mutation` wires the tool, and that `make mutation-full` runs mutmut today — the drive-slice's recommendation; (b) sweep a Python service when mutmut is on PATH, narrowing D137 item 2.
+- **Decision:** (a).
+- **Why:** The developer is told in one line what still works (`make mutation-full`) and when the scope arrives; a sweep keyed on what happens to be on PATH would make the same command mean two things on two machines, against owner priority 5.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** the owner says a project's own mutmut must keep scoping before S42 lands.
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (and S08's tasks.md on slice/S08-scoped-mutation until it merges)
+- **Status:** standing
+
+## D150 — S08: make mutation-full SINCE=<ref> on Go
+
+- **Stage:** plan (open question 1, handed back by drive-slice) · **Slice:** S08-scoped-mutation · **When:** 2026-10-05T19:52:07Z · **Iteration:** 23
+- **Scope:** S08-scoped-mutation
+- **Question:** AC-S08-11 freezes `mutation-full` as today's recipe byte for byte, and today's Go recipe passes `SINCE` to `go-mutation.py`, so `make mutation-full SINCE=<ref>` still scopes Go.
+- **Options:** (a) keep it — the drive-slice's recommendation; (b) make `mutation-full` ignore `SINCE`.
+- **Decision:** (a).
+- **Why:** `SINCE` is Go's published flag (D138 item 4) and `mutation-full` is the old target unchanged; a person who types `SINCE` asked for a scope.
+- **Decided by:** host (standing decision D138)
+- **Confidence:** high · **Would reverse if:** a page tells developers `mutation-full` always sweeps whatever they pass.
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (and S08's plan.md on slice/S08-scoped-mutation until it merges)
+- **Status:** standing
+
+## D151 — S08: an empty SINCE under GNU Make 3.81, assumed from the manual
+
+- **Stage:** plan (open question 2, handed back by drive-slice) · **Slice:** S08-scoped-mutation · **When:** 2026-10-05T19:52:07Z · **Iteration:** 23
+- **Scope:** S08-scoped-mutation
+- **Question:** That an empty `SINCE` reaches the recipe under make 3.81 is read from the GNU Make manual and not run; no 3.81 is on this machine.
+- **Options:** (a) accept it as an assumption, written as one and owed to the cruise report beside S04's 3.81 lines — the drive-slice's recommendation; (b) block the slice on a 3.81 run.
+- **Decision:** (a).
+- **Why:** The input to run it is unavailable here; the run reads it as an assumption, never as a fact, and the cruise report carries it to a person.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** a run under 3.81 shows the empty value is not passed.
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (and S08's research.md on slice/S08-scoped-mutation until it merges)
+- **Status:** standing
