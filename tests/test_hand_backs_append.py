@@ -134,6 +134,35 @@ class AppendTest(Scratch):
         self.assertEqual(0, run(self.repo).returncode)
 
 
+class ArgumentsTest(Scratch):
+    def test_e10_a_trailing_slash_or_a_leading_dot_slash_names_the_same_folder(self) -> None:
+        for folder in (SLICE + "/", "./" + SLICE, "./" + SLICE + "/"):
+            result = self.append(PRETTY, folder)
+            self.assertEqual(0, result.returncode, (folder, result.stderr))
+        self.assertTrue(self.record.is_file())
+        missing = run(self.repo, "--hand-back-missing", "./" + SLICE + "/", "drive-tasks", "tasks", "why")
+        self.assertEqual(0, missing.returncode, missing.stderr)
+        self.assertEqual(1, self.record.read_text(encoding="utf-8").count("drive-tasks"))
+
+    def test_e10_the_coverage_verb_reads_the_same_folder_by_either_spelling(self) -> None:
+        for folder in (SLICE + "/", "./" + SLICE):
+            result = run(self.repo, "--hand-backs", folder)
+            self.assertEqual(0, result.returncode, (folder, result.stderr))
+            self.assertEqual("hand-backs: with a result contract: 0 of 0", result.stdout.strip())
+
+    def test_e11_each_refusal_names_the_argument_that_failed(self) -> None:
+        cases = (("--hand-back", "apps/x", "drive-gaps", "gaps"), ("--hand-back", SLICE, "drive-poet", "gaps"),
+                 ("--hand-back", SLICE, "drive-gaps", "after_converge"),
+                 ("--hand-back-missing", SLICE, "drive-gaps", "gaps", " "), ("--hand-backs", "specs/f"))
+        wanted = ("'apps/x'", "'drive-poet'", "'after_converge'", "reason", "'specs/f'")
+        for args, word in zip(cases, wanted, strict=True):
+            result = run(self.repo, *args, stdin=PRETTY)
+            self.assertEqual(2, result.returncode, args)
+            lines = result.stderr.splitlines()
+            self.assertTrue(lines[0].startswith("check-decisions: ") and word in lines[0], (args, lines))
+            self.assertTrue(any(line.startswith("usage") for line in lines), args)
+
+
 class RetryTest(Scratch):
     """Constitution II: a retry cannot duplicate the side effect of either write verb."""
 

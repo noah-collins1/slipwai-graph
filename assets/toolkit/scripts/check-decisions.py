@@ -560,20 +560,48 @@ HAND_USAGE = (
 FOLDER = re.compile(r"specs/([A-Za-z0-9][A-Za-z0-9._-]*)(?:/slices/([A-Za-z0-9][A-Za-z0-9._-]*))?")
 
 
+def refuse(reason: str) -> int:
+    """Usage, exit 2, led by one line naming the argument that failed."""
+    print(f"check-decisions: {reason}", file=sys.stderr)
+    print(HAND_USAGE, file=sys.stderr)
+    return 2
+
+
+def folder_of(argument: str, slice_only: bool) -> tuple[str, re.Match[str] | None, str]:
+    """The folder an argument names, without a leading `./` or a trailing `/`; its `FOLDER` match; and, where it is
+    not a folder the verb takes, why."""
+    path = argument
+    while path.startswith("./"):
+        path = path[2:]
+    path = path.rstrip("/")
+    found = FOLDER.fullmatch(path)
+    if found is None or (slice_only and not found.group(2)):
+        want = "specs/<feature>/slices/<id>" if slice_only else "specs/<feature> or specs/<feature>/slices/<id>"
+        return path, None, f"folder {argument!r} is not {want}"
+    if not (ROOT / path).is_dir():
+        return path, None, f"folder {argument!r} does not exist"
+    return path, found, ""
+
+
 def hand_back_verb(arguments: list[str]) -> int:
     """`--hand-back` and `--hand-back-missing`: append one entry to the record under a feature or a slice. Usage
-    (exit 2) unless the folder is `specs/<feature>` or `specs/<feature>/slices/<id>` and exists, the type is one of
-    the ten and the stage is a lower-case word."""
+    (exit 2, with a line naming the argument) unless the folder is `specs/<feature>` or `specs/<feature>/slices/<id>`
+    and exists, the type is one of the ten and the stage is a lower-case word."""
     module = hand_backs_module()
     missing = arguments[0] == "--hand-back-missing"
     wanted = 5 if missing else 4
-    folder = FOLDER.fullmatch(arguments[1]) if len(arguments) > 1 else None
-    if (len(arguments) < wanted or (not missing and len(arguments) != wanted) or folder is None
-            or not (ROOT / arguments[1]).is_dir() or arguments[2] not in module.STATUSES
-            or not re.fullmatch(r"[a-z][a-z0-9-]*", arguments[3]) or (missing and not " ".join(arguments[4:]).strip())):
-        print(HAND_USAGE, file=sys.stderr)
-        return 2
-    record = ROOT / arguments[1] / HAND_BACKS
+    if len(arguments) < wanted or (not missing and len(arguments) != wanted):
+        return refuse(f"{len(arguments) - 1} argument(s) given; {arguments[0]} takes {wanted - 1}")
+    where, folder, why = folder_of(arguments[1], False)
+    if folder is None:
+        return refuse(why)
+    if arguments[2] not in module.STATUSES:
+        return refuse(f"type {arguments[2]!r} is not one of the ten drive-* delegate types")
+    if not re.fullmatch(r"[a-z][a-z0-9-]*", arguments[3]):
+        return refuse(f"stage {arguments[3]!r} is not a lower-case word (a-z, 0-9, -; no underscore)")
+    if missing and not " ".join(arguments[4:]).strip():
+        return refuse("the reason is empty; --hand-back-missing says why")
+    record = ROOT / where / HAND_BACKS
     title = folder.group(2) or folder.group(1)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if missing:
@@ -585,7 +613,7 @@ def hand_back_verb(arguments: list[str]) -> int:
     for fault in faults:
         print(f"check-decisions: {fault}", file=sys.stderr)
     if not faults and not wrote:
-        print(f"check-decisions: note: {arguments[1]}/{HAND_BACKS} already ends this {arguments[2]} {arguments[3]} "
+        print(f"check-decisions: note: {where}/{HAND_BACKS} already ends this {arguments[2]} {arguments[3]} "
               "entry with the same content; nothing appended", file=sys.stderr)
     return 1 if faults else 0
 
@@ -593,11 +621,12 @@ def hand_back_verb(arguments: list[str]) -> int:
 def coverage_verb(arguments: list[str]) -> int:
     """`--hand-backs <specs/feature/slices/id>`: for each ended stage of the slice's benchmark.json the transcript
     shows was delegated, whether the record holds a passing block for it. A reading, not a gate: exit 0."""
-    folder = FOLDER.fullmatch(arguments[1]) if len(arguments) == 2 else None
-    if folder is None or not folder.group(2) or not (ROOT / arguments[1]).is_dir():
-        print(HAND_USAGE, file=sys.stderr)
-        return 2
-    where = ROOT / arguments[1]
+    if len(arguments) != 2:
+        return refuse(f"{len(arguments) - 1} argument(s) given; --hand-backs takes 1")
+    path, folder, why = folder_of(arguments[1], True)
+    if folder is None:
+        return refuse(why)
+    where = ROOT / path
     bench = where / "benchmark.json"
     stages = json.loads(bench.read_text(encoding="utf-8")).get("stages", []) if bench.is_file() else []
     record = where / HAND_BACKS
