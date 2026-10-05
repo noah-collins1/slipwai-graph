@@ -451,6 +451,25 @@ escalated; the resulting revision passes acceptance.
   and tail completion time, cost per accepted change, invalidations, escalations and independently detected
   integration defects. Protocol acceptance (Story 10's scenarios) is separate from and precedes it.
 
+- **FR-046** *(added 2026-10-05, owner, after external code review)*: Coordination state MUST live in an executable
+  tool with explicit, versioned state, not only in generated instructions: slice readiness, claims, evidence
+  records and their validity, invalidation, and integration eligibility are operations an agent calls and a gate
+  checks (for example `python3 scripts/agents/coordinate.py ready|claim|evidence|invalidate|eligible`). Agents make
+  the semantic decisions; the tool enforces the coordination rules and refuses an operation its state does not
+  allow. The Lean protocol work formalises these same states and transitions.
+- **FR-047**: Each active slice MUST record its write set (files and contract versions it changes) and its read set
+  (the inputs its checks and evidence depend on). Two active slices whose write sets overlap, or where one writes
+  what the other reads, MUST NOT both be eligible for integration until one is serialised behind the other or the
+  overlap is escalated. Permission under the shared-surface rule is not compatibility.
+- **FR-048**: The factory's own test selection MUST follow generation dependencies: a change to a generator, an asset
+  or the catalog maps to the generated configurations it affects, to the files those generate, and to the checks
+  that apply to them. Where that mapping cannot establish the affected set, selection broadens, up to the full
+  matrix. The merge root and CI keep running the full matrix. This is the factory analogue of FR-006.
+- **FR-049**: The benchmark MUST record, per slice and per feature, separately: elapsed time from a slice becoming
+  ready to its accepted integration; accumulated stage time; waiting time by cause (dependency, worker, review,
+  integration); and inference cost with rework. Summed stage time MUST NOT be reported as elapsed time once slices
+  overlap. FR-045's comparison uses these measures.
+
 ### Key Entities
 
 - **Verify stamp**: tree hash, gate script hash, tool versions, timestamp, result. The tree hash is of the working
@@ -487,6 +506,10 @@ escalated; the resulting revision passes acceptance.
   revision passes acceptance.
 - **SC-014**: The FR-045 comparison is run and reported; no performance figure for Stories 3 or 10 is stated as
   a result before it.
+- **SC-015**: Readiness, claims, evidence validity and integration eligibility are answered by FR-046's tool, and a
+  gate refuses an integration whose recorded state does not allow it.
+- **SC-016**: A change to one generator touches only the factory tests of the configurations it affects; a change
+  whose effect cannot be established runs the full matrix.
 - **SC-010**: After one feature, `make benchmark` prints K-effective, Gini, top-3 share and the
   context-expansion count per slice.
 
