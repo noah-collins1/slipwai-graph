@@ -515,7 +515,7 @@ its `main`, with `CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `MAKEFLAGS` and `MAKELEVEL
 The scratch is removed. No file of this worktree was mutated.
 
 ### T018 — [US2] HIGH · A change to the recipe that runs the tool sweeps, and the scoped run runs the recipe the project owns, for every wired backend (D138 item 3, AC-S08-8, Principle I · contradicts)
-- [ ] **The surface:** the tool invocation of every wired backend — Go's and Spring's — now lives in `mutation-full`'s
+- [x] *(Done at `ca92129`.)* **The surface:** the tool invocation of every wired backend — Go's and Spring's — now lives in `mutation-full`'s
   recipe (`native_commands.py:126`, `:177`, moved there at `:318`), but the scoped run neither reads it nor watches it:
   `mutation_rule()` (`mutation-scope.py:179–191`) matches `mutation:` only, and the commands the script runs are its own
   literals — `go()` at `:310`, `Tools.sweep` at `:437–444`, `PIT` at `:389`. D138 item 3 makes "the `mutation` recipe's
@@ -554,7 +554,7 @@ The scratch is removed. No file of this worktree was mutated.
   applications are left out of the reconstruction on purpose: they exist only in an adopted layout, which never scopes.
 
 ### T019 — [US2] MEDIUM · A whole-run sweep under `SINCE` is a sweep for every backend, Go included (D138 items 3–4, AC-S08-8, AC-S08-12 · partial)
-- [ ] **The surface:** every whole-run sweep cause that can co-occur with a set `SINCE` — `scope-script` and `rule-text`
+- [x] *(Done at `e830b3a`.)* **The surface:** every whole-run sweep cause that can co-occur with a set `SINCE` — `scope-script` and `rule-text`
   (borders are not asked under `SINCE`; an empty `SINCE` already sweeps Go). `main` raises `Sweep` and `full()`
   (`mutation-scope.py:125–128`, `:541–545`) runs `make mutation-full` with `SINCE` still in the environment and in
   `MAKEFLAGS`, so Go's line `$(if $(SINCE),--since $(SINCE))` scopes Go by its own `git diff` while the first line says
@@ -574,7 +574,7 @@ The scratch is removed. No file of this worktree was mutated.
   Files: `mutation-scope.py`, `tests/test_mutation_sweeps.py` or `tests/test_mutation_borders.py`.
 
 ### T020 — [US2] MEDIUM · The first line and the per-service lines say what the run did, in every outcome where no service is scoped (data-model *The words*, AC-S08-4, AC-S08-12 · contradicts)
-- [ ] **The surface:** the first line of data-model's set, over every outcome in which a production file changed but no
+- [x] *(Done at `499bcb7`.)* **The surface:** the first line of data-model's set, over every outcome in which a production file changed but no
   service ends `scoped`: (a) every changed file outside the tool's targets — Go's `.gremlins.yaml` exclusion, Spring's
   `targetClasses`/`excludedClasses`; (b) a wired service whose configuration cannot be read (`Result.unreadable`); (c)
   only placeholder services changed; (d) Spring's PIT *No mutations found*. The first line is decided at
@@ -607,7 +607,7 @@ The scratch is removed. No file of this worktree was mutated.
   in …` say why nothing ran. `data-model.md` *The words* says so in one sentence.
 
 ### T021 — [US2] MEDIUM · Each wired and placeholder backend's note says what the command text says (AC-S08-17 · partial)
-- [ ] **The surface:** the three notes `mutation_notes()` emits above the target (TypeScript and Python carry none, held
+- [x] *(Done at `d3e0e63`.)* **The surface:** the three notes `mutation_notes()` emits above the target (TypeScript and Python carry none, held
   deliberately by `test_mutation_words.py`'s e2 hold — that reading is not reopened here). AC-S08-17: *each backend's note
   above the target in `mutation.py` says the same* as the command text — bare target scopes on a slice branch, `SINCE=<ref>`
   anywhere, `mutation-full` is the sweep, CI and the trunk get the sweep, Phase 4 on `main` runs `make mutation SINCE=<the
