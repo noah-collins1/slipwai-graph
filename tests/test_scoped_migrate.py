@@ -8,11 +8,13 @@ and nothing else into a project, and it quotes the constitution template's new s
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
 import tempfile
 import unittest
+from collections.abc import Mapping
 from pathlib import Path
 
 from support import FactoryTestCase
@@ -34,9 +36,10 @@ NEW_SENTENCE = (
     "check it skips is taken as passing because the trunk passed it. The full gate MUST be green at the merge root "
     "and in CI before anything lands on trunk."
 )
-# The factory as it stood before this slice wrote any code: the commit that planned its tasks (the last release
-# tag is not reachable from a fresh clone, and this commit is on the branch's history).
-BEFORE_THE_SLICE = "58a9aed"
+# What the slice added first: the oldest commit that adds any of these is where the factory stops being "before".
+SLICE_FILES = ("assets/toolkit/scripts/verify-scoped.py", "src/slipwai/project/scoped_targets.py",
+               "assets/toolkit/scripts/verify_scoped")
+CI_MARKERS = ("CI", "GITHUB_ACTIONS", "GITLAB_CI")
 OLD_SENTENCE = "The whole suite MUST be green immediately before that first implementation push"
 
 
@@ -49,7 +52,7 @@ def made_by_the_factory_as_it_was(directory: str, name: str, frontend: str, adde
     `slipwai generate` (and `add-service` for each name in `added`), so every file is the one it wrote then."""
     old = Path(directory) / "factory-before"
     old.mkdir()
-    archive = subprocess.run(["git", "archive", BEFORE_THE_SLICE], cwd=ROOT, capture_output=True, check=True,
+    archive = subprocess.run(["git", "archive", BEFORE or "HEAD"], cwd=ROOT, capture_output=True, check=True,
                              timeout=120).stdout
     subprocess.run(["tar", "-x", "-C", str(old)], input=archive, check=True, timeout=120)
     arguments = [str(old / "slipwai"), "generate", name, "--profile", "event-modelling", "--backend", "typescript",
@@ -73,15 +76,42 @@ def catch_up_paragraphs(text: str) -> list[str]:
     return [block for block in text.split("\n\n") if block.startswith("**Catch-up.**")]
 
 
-IN_THIS_CLONE = subprocess.run(["git", "cat-file", "-e", BEFORE_THE_SLICE], cwd=ROOT, capture_output=True,
-                               timeout=60).returncode == 0
+def factory_before() -> str | None:
+    """The factory as it stood before the scoped gate: the parent of the oldest commit in this clone's history that adds
+    one of the gate's files. It comes from the history every clone that runs the suite holds, never from a hash on a
+    branch, so it is the same commit after a rebase and the commit before a squash; None where the clone is too
+    shallow to hold it, or the history never adds the files."""
+    added = subprocess.run(["git", "log", "--diff-filter=A", "--format=%H", "--", *SLICE_FILES], cwd=ROOT, text=True,
+                           capture_output=True, check=False, timeout=60).stdout.split()
+    if not added:
+        return None
+    parent = subprocess.run(["git", "rev-parse", "--verify", "-q", f"{added[-1]}^{{commit}}^"], cwd=ROOT, text=True,
+                            capture_output=True, check=False, timeout=60)
+    return parent.stdout.strip() or None
 
 
-@unittest.skipUnless(
-    IN_THIS_CLONE,
-    f"the commit before the slice, {BEFORE_THE_SLICE}, is not in this clone",
-)
+def absence(found: str | None, environment: Mapping[str, str]) -> tuple[str, str] | None:
+    """What a missing base means: `("fail", why)` under a CI marker, where nothing may pass by being skipped, and
+    `("skip", why)` on a machine whose clone is shallow; None where there is a base."""
+    if found is not None:
+        return None
+    why = "the factory as it stood before the scoped gate is not in this clone's history"
+    return ("fail" if any(environment.get(marker) for marker in CI_MARKERS) else "skip", why)
+
+
+BEFORE = factory_before()
+
+
 class AProjectMadeBeforeGainsTheScopedGateTest(FactoryTestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        missing = absence(BEFORE, os.environ)
+        if missing is not None and missing[0] == "fail":
+            raise AssertionError(missing[1] + ": the migrate example would pass by being skipped")
+        if missing is not None:
+            raise unittest.SkipTest(missing[1])
+
     def migrated(self, directory: str, frontend: str, added: tuple[str, ...], units: tuple[str, ...]) -> Path:
         repo = made_by_the_factory_as_it_was(directory, "product", frontend, added)
         before = targets_of(repo)
@@ -97,9 +127,10 @@ class AProjectMadeBeforeGainsTheScopedGateTest(FactoryTestCase):
         after = targets_of(repo)
         for target in ("verify-scoped", *units):
             self.assertRegex(after, rf"(?m)^{target}:", f"{target} arrives with migrate")
-        for module in ("choose", "record", "table", "__init__"):
+        for module in ("choose", "record", "rules", "table", "__init__"):
             self.assertTrue((repo / f"scripts/verify_scoped/{module}.py").is_file(), module)
         self.assertTrue((repo / "scripts/verify-scoped.py").is_file())
+        self.assertTrue((repo / "scripts/verify_scoped/rules.json").is_file(), "rules.json arrives with the Makefile")
         project = json.loads((repo / "project.json").read_text(encoding="utf-8"))
         self.assertNotIn("verification", project, "the obligations key is the project's own, never written")
         self.assertEqual(git(repo, "status", "--porcelain").stdout, "")
@@ -158,3 +189,31 @@ class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
     def test_the_fragment_says_where_the_measurement_will_be_written(self) -> None:
         self.assertIn("AC-S06-19", self.text)
         self.assertIn("quickstart.md", self.text)
+
+
+class TheMigrateExampleCannotPassBySkippingTest(unittest.TestCase):
+    def test_the_base_is_found_in_this_clone_and_lacks_the_gate(self) -> None:
+        found = factory_before()
+        self.assertIsNotNone(found, "no base: the history here never adds the gate, or the clone is shallow")
+        listed = subprocess.run(["git", "ls-tree", "-r", "--name-only", found or "", "--", *SLICE_FILES], cwd=ROOT,
+                                text=True, capture_output=True, check=False, timeout=60).stdout
+        self.assertEqual(listed.strip(), "", "the base already has the scoped gate")
+        ancestor = subprocess.run(["git", "merge-base", "--is-ancestor", found or "", "HEAD"], cwd=ROOT, check=False,
+                                  timeout=60)
+        self.assertEqual(ancestor.returncode, 0)
+
+    def test_no_base_fails_under_a_ci_marker_and_skips_outside_one(self) -> None:
+        for marker in CI_MARKERS:
+            self.assertEqual((absence(None, {marker: "true"}) or ("",))[0], "fail", marker)
+        self.assertEqual((absence(None, {}) or ("",))[0], "skip")
+        self.assertEqual((absence(None, {"CI": ""}) or ("",))[0], "skip")
+        self.assertIsNone(absence("abc123", {"CI": "true"}))
+
+    def test_sweep_no_scoped_test_skips_on_a_condition_a_ci_clone_always_or_never_meets(self) -> None:
+        """Every skip in the scoped modules is this module's, and `absence` makes it fail under a CI marker."""
+        found = {}
+        for path in sorted((ROOT / "tests").glob("test_*scoped_*.py")) + [ROOT / "tests/scoped_fixture.py"]:
+            hits = re.findall(r"skipUnless|skipIf|skipTest|SkipTest|unittest\.skip\b", path.read_text(encoding="utf-8"))
+            if hits and path.name != "test_scoped_migrate.py" and path.name != Path(__file__).name:
+                found[path.name] = hits
+        self.assertEqual(found, {})
