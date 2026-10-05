@@ -251,3 +251,10 @@ project has configured it. Mutation tooling is intentionally not part of the man
 is absent, report the exact setup decision needed instead of pretending mutations ran. Classify survivors,
 add tests only for meaningful behavioural gaps, then finish with `make verify`.
 {scoping}"""
+
+
+def scope_command(services: list[App]) -> str:
+    """The one line `make mutation` is: the scope script, handed the make and the Makefile that are running and one
+    `<backend>:<path>` word per service in service order. The spelling is written here and read by the script."""
+    words = " ".join(f"{service.backend}:{service.path}" for service in services)
+    return f'@python3 scripts/mutation-scope.py --make "$(MAKE)" --makefile "$(firstword $(MAKEFILE_LIST))" {words}'.rstrip()
