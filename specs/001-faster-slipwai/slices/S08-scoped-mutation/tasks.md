@@ -137,7 +137,7 @@ Each task starts from the green committed suite.
 
 ### T002 — [US2] Two targets: `mutation` is one script line, `mutation-full` is today's recipe (R1 · AC-S08-11, AC-S08-13)
 
-- [ ] **Rule 1.** Creates `scripts/mutation-scope.py` with only the argument parser and the delegation, so the target is
+- [x] *(Done at `67c454f`.)* **Rule 1.** Creates `scripts/mutation-scope.py` with only the argument parser and the delegation, so the target is
   never wrong in between: `mutation-scope.py --make <make> --makefile <file> <backend>:<path> …` runs
   `<make> --no-print-directory -f <file> mutation-full` and exits with its status; every later rule changes the script,
   none changes the recipe line. First commit that changes a user-visible tree, so the fragment's first draft lands in it
@@ -185,7 +185,7 @@ which holds the `mutation` rule, its note and the `.PHONY` line; the sweep at pl
 
 ### T003 — [US2] The checkouts that sweep say so, then sweep (R2 · AC-S08-1, AC-S08-15)
 
-- [ ] **Rule 2.** Needs T002 (the script and its delegation). The script loads `verify-scoped.py` beside it, asks its
+- [x] *(Done at `e9d5274`.)* **Rule 2.** Needs T002 (the script and its delegation). The script loads `verify-scoped.py` beside it, asks its
   `Ground` and borders `ci`, `head`, `trunk`, `slice_branch`, `base`, `told` in that order (research R6; `idle` and
   `forced` are the stamp's and are not asked), catching what `reason()` catches; and reads `project.json`'s
   `layout.delivery` (R8). Everything past the borders is still the sweep.
@@ -218,7 +218,7 @@ ref; `--make` is the logging fake):
 
 ### T004 — [US2] What changed, and how it prints (R3 · AC-S08-7, AC-S08-9, AC-S08-10, AC-S08-12)
 
-- [ ] **Rule 3.** Needs T003. The change set is `check-slice-scope.py`'s `changed_files(base)` through the same `Ground.scope`
+- [x] *(Done at `3d7328b`.)* **Rule 3.** Needs T003. The change set is `check-slice-scope.py`'s `changed_files(base)` through the same `Ground.scope`
   with `base` the merge-base or the commit `SINCE` resolves to (`git rev-parse --verify <ref>^{commit}`); classification
   is data-model's table **for `shared`, `deleted`, `test`, `production`, `other`** (the sweep classes are T008's); outcomes
   `scoped`, `skipped` and the words of *The words*. The tool run is behind the `Runner` seam; **the default runner is
@@ -265,7 +265,7 @@ of e1, e5, e6, e7; name differs from T009's `test_mutation_words.py` so the two 
 
 ### T005 — [US2] Go: one changed file mutates that file only, the other service starts no Gremlins (R4 · AC-S08-2)
 
-- [ ] **Rule 4.** Needs T004. `go-mutation.py` gains `--file <path within the module>` (repeatable): it skips its own
+- [x] *(Done at `614836a`.)* **Rule 4.** Needs T004. `go-mutation.py` gains `--file <path within the module>` (repeatable): it skips its own
   `git diff` and feeds the files through the same `mutable()` and `scope()` it uses for `--since`, so `.gremlins.yaml`
   exclusions are carried back exactly as today (research R4); `--since` is unchanged. `mutation-scope.py`'s Go runner
   calls `go-mutation.py <path> --file …` (paths relative to the service) and reports a file the yaml excludes as `outside
@@ -308,7 +308,7 @@ as above.
 
 ### T006 — [US2] Spring: PIT mutates `Foo` and `Foo$*` within the pom's targets; nothing outside them starts Maven; the stamp is untouched (R5, R8 · AC-S08-3, AC-S08-4, AC-S08-14)
 
-- [ ] **Rule 5, with rule 8's examples folded in** (see *Not tasks*). Needs T005 (the real Go run it also covers for
+- [x] *(Done at `631e827`.)* **Rule 5, with rule 8's examples folded in** (see *Not tasks*). Needs T005 (the real Go run it also covers for
   AC-S08-14). The Spring runner reads `<targetClasses>` and `<excludedClasses>` of the `pitest-maven` plugin from the
   service's `pom.xml` and matches each changed class's fully qualified name with PIT's own glob rules (research R2:
   anchored, `*` any run including `.`, `?` one character, `$` and `.` literal, leading `~` a raw regex, `**.`); the
@@ -366,7 +366,7 @@ that file as this repository's own stamp — and say so in the report. Commit by
 
 ### T007 — [US2] Placeholders refuse with their setup message and name what they would mutate; a placeholder no longer stops a wired service (R6 · AC-S08-5, AC-S08-6)
 
-- [ ] **Rule 6.** Needs T006. TypeScript, Python and `java-quarkus` runners are refusals: a service with a changed
+- [x] *(Done at `0a33dd6`.)* **Rule 6.** Needs T006. TypeScript, Python and `java-quarkus` runners are refusals: a service with a changed
   production file prints `mutation: refuse <path> — <the placeholder's setup message>; the scope will apply once a tool is
   wired; it would mutate: <files>`, counts as `refused`, fails the run (status 2) after every service has run; an untouched
   one is `skip`. The setup message is the placeholder's existing one, read from `mutation.py` (single source —
@@ -402,7 +402,7 @@ there), `tests/test_mutation_placeholders.py` (new).
 
 ### T008 — [US2] What sweeps: configuration, the scripts, and the rule's own text (R7 · AC-S08-8)
 
-- [ ] **Rule 7.** Needs T007 (and T006's pom reader). Classes `rule-text`, `scope-script`, `backend-script`, `config`
+- [x] *(Done at `5df8e61`.)* **Rule 7.** Needs T007 (and T006's pom reader). Classes `rule-text`, `scope-script`, `backend-script`, `config`
   of data-model's table, evaluated first in its order; each names its file in `mutation: sweep <path> — `<file>` changed` or
   the whole-run `the sweep runs — `<file>` changed`. The `pitest-maven` block of a service's `pom.xml` is compared **as
   parsed structure** at the base and in the working tree (a comment or another plugin's change does not sweep; a side that
@@ -439,7 +439,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 
 ### T009 — [P] [US2] The words: command text, notes, the skill, the docs, the fragment, and `migrate` (R9 · AC-S08-16, AC-S08-17, AC-S08-18)
 
-- [ ] **Rule 9.** Needs T002 (the target and the builder exist; the words describe what T003–T008 build, as the plan and
+- [x] *(Done at `df3f854`.)* **Rule 9.** Needs T002 (the target and the builder exist; the words describe what T003–T008 build, as the plan and
   data-model fix them, so this task does not read their code). Disjoint from T003–T008's manifests, so it may run beside them.
   Applies the open-question recommendations of the plan as written (1: `mutation-full SINCE=<ref>` still scopes Go, the words
   say `mutation-full` is the sweep *without* `SINCE`; 2: an empty `SINCE` under make 3.81 is assumed, said in the page);
@@ -483,7 +483,10 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 **Files:** `src/slipwai/project/mutation.py`, `assets/toolkit/skills/mutation-testing/SKILL.md`,
 `docs/backend-obligations.md` (and any other `docs/` page naming `make mutation`: `docs/requirements.md`,
 `docs/maintaining.md`, `docs/verification.md` — the delegate lists exactly the ones it edits), `changelog.d/scoped-mutation.md`,
-`tests/test_mutation.py` (named lines only), `tests/test_mutation_words.py` (new), `tests/test_mutation_migrate.py` (new), `tests/test_scoped_targets.py` (`PRE_SLICE` hashes only — the notes above `mutation:` move them).
+`tests/test_mutation.py` (named lines only), `tests/test_mutation_words.py` (new), `tests/test_mutation_migrate.py` (new), `tests/test_scoped_targets.py` (`PRE_SLICE` hashes only — the notes above `mutation:` move them). Extended by the host at
+implementation: `src/slipwai/project/makefile.py` (`mutation-full` gets its own `.PHONY` line beside its rule — the
+test section's `.PHONY` line stays untouched, so `migrate`'s three-way merge no longer conflicts, as
+`test_scoped_migrate`'s two-Python-service example showed) and `tests/test_mutation_targets.py` (its `.PHONY` regex).
 
 ---
 

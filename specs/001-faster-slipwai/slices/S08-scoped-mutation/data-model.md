@@ -75,6 +75,8 @@ Every line starts `mutation: `. The first line is exactly one of:
   for the merge-base, `` `<ref>` `` for `SINCE`
 - `mutation: the sweep runs — <reason>` — a border's own words (verify-scoped's), `SINCE is set and empty`,
   `` `<file>` changed `` for a whole-run sweep
+  — this form also opens a run where no service is scoped and only some services sweep for a configuration change;
+  the per-service lines below it say which swept and which were skipped (settled by the host at implementation)
 - `mutation: no mutant to run — <why>` — `only tests changed: <files>; \`make mutation-full\` is the run that
   measures them` · `no production file changed` · `every changed production file is outside the tools' targets`
 - `mutation: this layout has no mutation scope — the recorded command runs` (adopted layout only)
