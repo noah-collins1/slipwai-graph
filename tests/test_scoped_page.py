@@ -44,18 +44,48 @@ class TheStampedPageSaysWhatTheScopedGateDoesTest(FactoryTestCase):
             "run or skipped, with the reason. It compares two things. Files, committed or not, are compared "
             "with the trunk commit the branch is built on, the one its last line names "
             "(`compared with `main` at <short>`); that commit moves when the branch is rebased onto the trunk "
-            "or merges it, and a check it skips is taken as passing because the trunk's own full gate passed it "
-            "there. Tools, variables and the files git ignores are compared with the baseline the branch's "
+            "or merges it. The base is the newer of local `main` and `origin/main`, so a check it skips is taken "
+            "as passing on the word of that commit, and a local commit nobody gated can be it. Tools, variables and "
+            "the files git ignores are compared with the baseline the branch's "
             "last green full run left."
         )
         self.assertIn(said, self.page)
         self.assertNotIn("since the branch last passed", self.page)
+        self.assertNotIn("trunk's own full gate passed it there", self.page)
 
     def test_it_is_the_full_gate_wherever_it_cannot_tell_and_what_broadens_it(self) -> None:
         self.assertIn("everywhere else it is the full gate, `make verify`", self.page)
         for broadening in ("the trunk", "`VERIFY_FORCE`", "a changed `Makefile`", "`project.json`",
                            "no check or contract claims"):
             self.assertIn(broadening, self.page)
+
+    def test_makefile_text_that_differs_from_the_factorys_makes_every_run_the_full_gate(self) -> None:
+        for said in (
+            "If your `Makefile` differs from the factory's in any way",
+            "a `GNUmakefile`, a `makefile` or a file named in `MAKEFILES`",
+            "every scoped run is the full gate",
+            "put targets of your own in a file `make verify` does not read and run "
+            "them with `make -f deploy.mk <target>`",
+        ):
+            self.assertIn(said, self.page)
+
+    def test_a_make_option_that_adds_text_or_conditions_is_the_full_gate_and_writes_no_stamp(self) -> None:
+        for said in (
+            "`--eval`, `-I`, `-e`, a variable on the command line other than `VERIFY_FORCE`",
+            "a `make verify` run that way writes no stamp and no baseline",
+        ):
+            self.assertIn(said, self.page)
+
+    def test_a_deployable_reaching_into_another_is_the_full_gate_and_how_to_scope_again(self) -> None:
+        for said in (
+            "reaches into another deployable's path or names its package",
+            "share through `packages/` or a published contract",
+        ):
+            self.assertIn(said, self.page)
+
+    def test_the_obligation_example_is_a_service_pair_not_a_service_and_the_web_app(self) -> None:
+        self.assertIn("such as two services that agree on a queue's message", self.page)
+        self.assertNotIn("a service and the web app that calls it", self.page)
 
     def test_the_baseline_sits_beside_the_stamp_is_written_by_a_green_full_run_and_removed_by_any(self) -> None:
         self.assertIn("baseline beside the stamp", self.page)

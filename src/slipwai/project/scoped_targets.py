@@ -48,7 +48,8 @@ HEADER = """
 SCOPED_PAGE = """`make verify-scoped` runs only the checks whose inputs changed, and prints a line for each check, run or skipped, with
 the reason. It compares two things. Files, committed or not, are compared with the trunk commit the branch is built on,
 the one its last line names (`compared with `main` at <short>`); that commit moves when the branch is rebased onto the
-trunk or merges it, and a check it skips is taken as passing because the trunk's own full gate passed it there. Tools,
+trunk or merges it. The base is the newer of local `main` and `origin/main`, so a check it skips is taken as passing on the
+word of that commit, and a local commit nobody gated can be it. Tools,
 variables and the files git ignores are compared with the baseline the branch's last green full run left. It scopes on a `slice/<id>` branch with a usable base, outside CI:
 every deployable's `lint-`, `typecheck-` and `test-` is a check, and each is chosen when a changed file is one it reads,
 when a contract it consumes changed, when an obligation names it, or when the machine differs from the baseline,
@@ -56,15 +57,22 @@ and everywhere else it is the full gate, `make verify`, and says why on its firs
 tell: on the trunk, on a branch that is no `slice/<id>`, with no usable base, in CI, under `VERIFY_FORCE`, and wherever
 the checkout cannot be read. Dependency knowledge it does not have broadens it to the full gate as well: a changed
 `Makefile`, `project.json` or gate script under `scripts/`, a changed path no check or contract claims, and a record
-that cannot be built. The baseline beside the stamp is a record under the git directory, never in the working tree: the
+that cannot be built. It scopes only the `Makefile` the factory wrote. If your `Makefile` differs from the factory's in any
+way, or make would also read a `GNUmakefile`, a `makefile` or a file named in `MAKEFILES`, every scoped run is the full
+gate and says so on its first line, until the file is the factory's text again; put targets of your own in a file `make
+verify` does not read and run them with `make -f deploy.mk <target>`. Every scoped run is also the full gate if make is
+run with an option that adds text or conditions, `--eval`, `-I`, `-e`, a variable on the command line other than
+`VERIFY_FORCE`, and a `make verify` run that way writes no stamp and no baseline. And it is the full gate when one
+deployable reaches into another deployable's path or names its package, because no check can tell what that edge
+carries: share through `packages/` or a published contract, and scoping returns. The baseline beside the stamp is a record under the git directory, never in the working tree: the
 tools the machine answered for and the variables' digests, written by a green full run on a `slice/<id>` branch and
 removed by any full run, so a full run that fails leaves none. A tool or variable that differs from the baseline chooses
 every check that reads it, and with no baseline, or another branch's, every check that reads a tool or a variable runs.
 `verification.obligations` in `project.json` declares an integration obligation: a name, two or more components, and the
 checks (`lint`, `typecheck`, `test`, or a unit's name) that run when either component changes. The default is none, and
 the factory never writes it; it is read as `project.json` stands at the branch's base. Declare one when two components
-agree on something no file of either shows and no contract path covers, such as a service and the web app that calls
-it. `make -j verify-scoped` runs the chosen checks at the same time, as `make -j verify` does.
+agree on something no file of either shows and no contract path covers, such as two services that agree on a
+queue's message. `make -j verify-scoped` runs the chosen checks at the same time, as `make -j verify` does.
 
 """
 
