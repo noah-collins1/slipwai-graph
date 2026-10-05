@@ -8,6 +8,8 @@ about itself.
 from __future__ import annotations
 
 import atexit
+import importlib
+import json
 import shutil
 import subprocess
 import sys
@@ -26,6 +28,11 @@ sys.dont_write_bytecode = True
 SLICE = "slice/S1"
 LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — "
+TAIL = "keep targets of your own in a file `make verify` does not read (`make -f deploy.mk …`) to scope again"
+MAKEFILE_WORDS = (
+    "`Makefile` is not the text the factory wrote (scripts/verify_scoped/rules.json), and the scoped gate scopes only "
+    "that text; " + TAIL
+)
 
 
 # What a green full run on a slice branch leaves beside the stamp, without the run: the baseline, written by
@@ -43,6 +50,16 @@ found = record.database("make", "Makefile").variables["VERIFY_STAMP"]
 tools = stamp.machine_tools(stamp.Options(["--make", "make", *found.split()]))
 stamp.write_baseline(tools, stamp.key_parts(tools)[1]["ignored"])
 """
+
+
+def as_factory_text(project: Path) -> None:
+    """`rules.json` rewritten for the `Makefile` as it stands, as `generate` writes it: for an example about something
+    other than whose text the Makefile is, which would otherwise be the full gate (D140)."""
+    sys.path.insert(0, str(ROOT / "assets" / "toolkit" / "scripts"))
+    rules = importlib.import_module("verify_scoped.rules")
+    held = project / "scripts" / "verify_scoped" / "rules.json"
+    held.write_text(json.dumps(rules.from_text((project / "Makefile").read_text(encoding="utf-8")), indent=2,
+                               sort_keys=True) + "\n", encoding="utf-8")
 
 
 class ScopedCase(StampTestCase):

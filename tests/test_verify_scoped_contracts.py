@@ -197,7 +197,7 @@ class PrintedRecordTest(RecordCase):
         section = published("The printed record")
         emitted = self.emitted()
         self.assertGreaterEqual(len(emitted), 20)
-        for key in ("whole", "differs", "event", "api"):
+        for key in ("whole", "event", "api"):
             self.assertIn(key, emitted, "the examples no longer produce a key the contract must name")
         for key in sorted(emitted):
             self.assertTrue(f'"{key}"' in section or f"`{key}`" in section, f"data-model.md does not name `{key}`")

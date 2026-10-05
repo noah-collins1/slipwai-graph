@@ -23,7 +23,6 @@ from .table import CHECKS, GATE_UNITS, NO_INPUTS, UNITS, Row  # noqa: E402
 
 SCHEMA = 1
 RULES_FILE = "scripts/verify_scoped/rules.json"
-DIFFERS = f"its rule is not the one the factory wrote ({RULES_FILE})"
 MODEL = "docs/event-model/model.yaml"
 DATABASE = ("-npq", ".DEFAULT")
 FULL_GATE_GOAL = "verify-checks"  # what `verify`'s recipe hands its sub-make, which is a level deeper
@@ -43,8 +42,8 @@ class RecordError(Exception):
 
 
 class FullGate(RecordError):
-    """The Makefile differs from the factory's where no one check or gate can be charged: the words say what, after
-    `the Makefile's`; `built` is the record, with every difference that could be charged marked."""
+    """The database of a Makefile whose text matched differs from what the factory fingerprinted: the words say what;
+    `built` is the record."""
 
     def __init__(self, words: str, built: dict[str, Any]) -> None:
         super().__init__(words)
@@ -67,14 +66,15 @@ class Database(NamedTuple):
 
 
 def database(make: str, makefile: str, goal: str = ".DEFAULT", level: str | None = None,
-             flags: tuple[str, ...] = ()) -> Database:
+             flags: tuple[str, ...] = (), words: tuple[str, ...] = ()) -> Database:
     """The rules and variables of `makefile`, read with `make -npq -f <makefile> .DEFAULT`: it exits 2 for the goal it
     has no rule for, and nothing is run. The make state of the caller's own run is left out of the call. A `goal` other
     than `.DEFAULT` is handed to the Makefile as `MAKECMDGOALS` on the command line and not as a goal, because a goal's
-    recipe lines that call `$(MAKE)` are run even under `-n`; a `level` is `MAKELEVEL`, `flags` are options of the call."""
+    recipe lines that call `$(MAKE)` are run even under `-n`; a `level` is `MAKELEVEL`, `flags` are options of the call, and
+    `words` goals and variables handed to it as they are (the factory's tests read its text under a real run's goals)."""
     environment = {key: value for key, value in os.environ.items() if key not in MAKE_STATE}
     environment.update({} if level is None else {"MAKELEVEL": level})
-    given = [] if goal == ".DEFAULT" else [f"MAKECMDGOALS={goal}"]
+    given = [*([] if goal == ".DEFAULT" else [f"MAKECMDGOALS={goal}"]), *words]
     try:
         done = subprocess.run([make, *flags, "-f", makefile, *DATABASE, *given], capture_output=True, text=True,
                               check=False, env=environment, timeout=60, encoding="utf-8", errors="replace")
@@ -318,23 +318,15 @@ def under_the_full_gate(make: str, makefile: str, data: Database) -> str | None:
 
 
 def compared(root: Path, data: Database, checks: dict[str, Any]) -> str | None:
-    """What the Makefile has that the factory did not write (`rules.json`): a named check charged is one with no recorded
-    inputs that always runs, a gate with units charged runs whole, and the words of a difference nobody can be charged
-    with are returned, to be the full gate. A file that cannot be read is a `RecordError`."""
+    """What the database has that the factory did not write (`rules.json`), as words, or None. The text of the `Makefile`
+    has matched already, or this would not be asked (D140), so a difference is the full gate and is charged to no one
+    check. A file that cannot be read is a `RecordError`."""
     try:
         held = rules.load(str(root / RULES_FILE))
-        judged = rules.judge(held, data, [unit for each in units_of(checks).values() for unit in each],
-                             data.needs["verify-checks"], units_of(checks), rules.project_exports(data, str(root)))
+        return rules.difference(held, data, [unit for each in units_of(checks).values() for unit in each],
+                                rules.project_exports(data, str(root)))
     except rules.Unreadable as error:
         raise RecordError(str(error)) from error
-    units = units_of(checks)
-    for name in judged.checks:
-        if name in checks:
-            checks[name].update(inputs=None, claims=False, always=DIFFERS)
-    for gate in judged.gates:
-        for unit in units[gate]:
-            checks[unit].update({"differs": True} if "whole" not in checks[unit] else {}, whole=True, targets=[gate])
-    return judged.full
 
 
 def packages_of(root: Path, scope: Any, base: str | None) -> list[str]:

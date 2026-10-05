@@ -69,7 +69,12 @@ class PruneKeepsTheRecordTest(FactoryTestCase):
         return copy
 
     def assertMatches(self, project: Path, why: str = "") -> None:
-        self.assertEqual(held(project), read(project), why or "rules.json is not what the Makefile makes")
+        """The file is the form the database reads as, and its `makefile` key is the digest of the text on disk."""
+        written = held(project)
+        digest = written.pop("makefile", None)
+        self.assertEqual(written, read(project), why or "rules.json is not what the Makefile makes")
+        rules = importlib.import_module("verify_scoped.rules")
+        self.assertEqual(digest, rules.text_digest((project / "Makefile").read_text(encoding="utf-8")), why)
 
     def test_e1_the_starter_that_keeps_postgres_and_fastify_matches_to_begin_with(self) -> None:
         self.assertIn("CI_DATABASE :=", (self.base / "Makefile").read_text(encoding="utf-8"))
@@ -101,7 +106,8 @@ class PruneKeepsTheRecordTest(FactoryTestCase):
         before = (project / RULES).read_bytes()
         prune(project, "--event-store", "memory")
         self.assertEqual((project / RULES).read_bytes(), before)
-        self.assertNotEqual(held(project), read(project))
+        rules = importlib.import_module("verify_scoped.rules")
+        self.assertNotEqual(held(project)["makefile"], rules.text_digest(makefile.read_text(encoding="utf-8")))
 
     def test_e4_a_missing_rules_file_stays_missing(self) -> None:
         project = self.fresh()

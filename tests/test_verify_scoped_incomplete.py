@@ -12,7 +12,7 @@ import sys
 import unittest
 from typing import Any
 
-from scoped_fixture import EVENTS, FULL, LINE, ScopedCase, ShapeCase
+from scoped_fixture import EVENTS, FULL, LINE, ScopedCase, ShapeCase, as_factory_text
 from stamp_fixture import commit_all, git
 
 from slipwai.assets import ROOT
@@ -54,6 +54,7 @@ class IncompleteTest(ScopedCase):
     def test_e2_the_makefile_and_this_scripts_own_modules_count(self) -> None:
         with (self.repo / "Makefile").open("a", encoding="utf-8") as handle:
             handle.write("\n# edited\n")
+        as_factory_text(self.repo)
         (self.repo / "scripts" / "verify_scoped" / "extra.py").write_text("x = 1\n", encoding="utf-8")
         with (self.repo / "scripts" / "verify-scoped.py").open("a", encoding="utf-8") as handle:
             handle.write("\n# edited\n")
@@ -61,6 +62,7 @@ class IncompleteTest(ScopedCase):
             f"{INCOMPLETE} for Makefile — it is the Makefile",
             f"{INCOMPLETE} for scripts/verify-scoped.py — it is a gate script under scripts/",
             f"{INCOMPLETE} for scripts/verify_scoped/extra.py — it is a gate script under scripts/",
+            f"{INCOMPLETE} for scripts/verify_scoped/rules.json — it is a gate script under scripts/",
         ])
 
     def test_e5_every_unclaimed_path_has_its_own_line_and_the_gate_runs_once_with_its_status(self) -> None:

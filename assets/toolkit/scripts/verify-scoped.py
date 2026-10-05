@@ -28,6 +28,7 @@ sys.path.insert(0, HERE)
 
 from verify_scoped import choose  # noqa: E402
 from verify_scoped import record as records  # noqa: E402
+from verify_scoped import rules  # noqa: E402
 
 LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — {reason}"
@@ -198,6 +199,12 @@ def run(make: str, makefile: str) -> int:
     found = reason(ground)
     if found is not None:
         return broaden(make, makefile, found)
+    try:  # the text of the Makefile before any read of it: a project's own is never parsed by a scoped run (D140)
+        foreign = rules.text_problem(makefile, os.path.join(str(ground.scope.ROOT), records.RULES_FILE), os.environ)
+    except Exception as error:  # text this script cannot compare is text it cannot scope
+        return broaden(make, makefile, "the Makefile's text could not be compared (" + words(error) + ")")
+    if foreign is not None:
+        return broaden(make, makefile, foreign)
     try:
         data: records.Database | None = records.database(make, makefile)
     except records.RecordError:
@@ -212,8 +219,8 @@ def run(make: str, makefile: str) -> int:
             data = records.database(make, makefile)  # the same words the record gives, where it cannot be read
         record = records.build(make, makefile, ground.scope, data, base)
         changed = sorted(ground.scope.changed_files(base))
-    except records.FullGate as error:  # a difference from the factory's Makefile that no one check can be charged with
-        return broaden(make, makefile, str(error))
+    except records.FullGate as error:  # matching text that make reads differently: knowledge this script does not have
+        return incomplete(make, makefile, str(error).replace("\n", " "))
     except records.ObligationError as error:  # a person's declaration is named on a line of its own
         return broaden(make, makefile, INCOMPLETE, [str(error).replace("\n", " ")])
     except records.RecordError as error:

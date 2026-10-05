@@ -62,7 +62,8 @@ class EveryShapeTest(RecordCase):
                 data = self.records().database("make", str(project / "Makefile"))
                 units = self.units(project, data)
                 written = self.rules().from_text(text)
-                self.assertEqual(written, self.rules().from_database(data, units, str(project)), shape)
+                self.assertEqual({key: value for key, value in written.items() if key != "makefile"},
+                                 self.rules().from_database(data, units, str(project)), shape)
                 self.assertEqual(json.loads((project / RULES).read_text(encoding="utf-8")), written, shape)
                 self.assertEqual(written["schema"], 1)
                 self.assertIn("verify", written["rules"])
@@ -90,15 +91,17 @@ class EveryShapeTest(RecordCase):
         (folder / "Makefile").write_text(text, encoding="utf-8")
         data = self.records().database("make", str(folder / "Makefile"))
         written = self.rules().from_text(text)
-        self.assertEqual(written, self.rules().from_database(data, [], str(folder)))
+        self.assertEqual({key: value for key, value in written.items() if key != "makefile"},
+                         self.rules().from_database(data, [], str(folder)))
         self.assertTrue({"verify", "verify-checks", "a", "b"} <= set(written["rules"]))
         self.assertEqual(set(written["variables"]), {"SHELL", "X", "Y", "Z", "W"})
         self.assertNotEqual(written, self.rules().from_text(text.replace("verify-checks: | o1\n", "")))
 
     def test_e5_the_file_holds_target_and_variable_names_and_digests_alone(self) -> None:
         written = self.rules().from_text((self.project("model-typescript-web") / "Makefile").read_text("utf-8"))
-        self.assertEqual(set(written), {"schema", "rules", "variables", "exports"})
+        self.assertEqual(set(written), {"schema", "rules", "variables", "exports", "makefile"})
         self.assertRegex(written["exports"], r"^[0-9a-f]{64}$")
+        self.assertRegex(written["makefile"], r"^[0-9a-f]{64}$")
         for part in ("rules", "variables"):
             self.assertTrue(written[part])
             for name, digest in written[part].items():

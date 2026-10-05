@@ -1,10 +1,10 @@
-"""T033 (R4, R5 · AC-S06-2, -5; D127 item 4, D133): every variable and export line make can hand a recipe is compared.
+"""T033 (R4, R5 · AC-S06-2, -5; D127 item 4, D133, D140): every variable and export line make can hand a recipe is held.
 
-`override SHELL := …`, `export PATH := …`, `.SHELLFLAGS`, a `define`, a pattern-specific variable, an `unexport`: each
-changes what a skipped check runs, and each is the full gate, with the words D133 item 5 prints. A target-specific
-variable is part of its rule, and one on a rule `make verify` does not reach charges nothing. The hold (e4) is the
-factory's own Makefile in every shape. The runs are the real `make verify-scoped` on a slice branch, after the trunk
-changed the project's own `Makefile`.
+`override SHELL := …`, `export PATH := …`, `.SHELLFLAGS`, a `define`, a pattern-specific variable, an `unexport`, a
+target-specific variable: each changes what a skipped check runs, and each is a `Makefile` the factory did not write, so
+each is the full gate with the `Makefile` words (D140 point 6), wherever it sits. The comparison of variables and export
+lines stays as a second check behind the text; its hold (e4) is the factory's own Makefile in every shape. The runs are
+the real `make verify-scoped` on a slice branch, after the trunk changed the project's own `Makefile`.
 """
 from __future__ import annotations
 
@@ -16,10 +16,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from scoped_fixture import EVENTS, FULL, events_project
+from scoped_fixture import EVENTS, FULL, MAKEFILE_WORDS, events_project
 from test_scoped_targets import SHAPES
 from test_verify_scoped_record import RecordCase
-from test_verify_scoped_sum import WHY, RuleCase
+from test_verify_scoped_sum import RuleCase
 
 from slipwai.assets import ROOT
 
@@ -27,87 +27,67 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / "assets" / "toolkit" / "scripts"))
 
 RULES = "scripts/verify_scoped/rules.json"
-UNWRITTEN = ("the Makefile sets variable `{}`{}, which the factory did not write and make can hand to any check; "
-             "set it on the rule that uses it (`<rule>: {} := …`) to scope again")
-EXPORTS = "the Makefile's export lines are not the ones the factory wrote"
-CHANGED = "the Makefile's variable `{}` is not the one the factory wrote"
 UNIT_GATES = ("lint", "typecheck", "test")
 
 
-def unwritten(name: str, pattern: str | None = None) -> str:
-    return UNWRITTEN.format(name, "" if pattern is None else f" for pattern `{pattern}`", name)
-
-
 class FullGateCase(RuleCase):
-    def assert_full(self, text: str, words: str) -> None:
-        """The trunk's `Makefile` gains `text`; a branch that edits the web app runs the full gate, with `words`."""
+    def assert_full(self, text: str) -> None:
+        """The trunk's `Makefile` gains `text`; a branch that edits the web app runs the full gate, for the text."""
         self.trunk(lambda old: old + text)
         self.forbidden()
         run = self.scoped()
-        self.assertEqual(self.scoped_lines(run)[0], FULL + words, run.stdout)
+        self.assertEqual(self.scoped_lines(run)[0], FULL + MAKEFILE_WORDS, run.stdout)
         self.assertEqual(self.lines(run), [], "a unit line was said beside the full gate")
         self.assertEqual(len(self.verify_calls()), 1, "`make verify` was not run exactly once")
 
 
 class UnwrittenVariableTest(FullGateCase):
     def test_e1_an_override_of_a_factory_variable_is_a_difference_in_that_variable(self) -> None:
-        self.assert_full("\noverride SHELL := /bin/bash\n", CHANGED.format("SHELL"))
+        self.assert_full("\noverride SHELL := /bin/bash\n")
 
     def test_e2_an_exported_variable_the_factory_never_assigned_is_the_full_gate(self) -> None:
-        self.assert_full("\nexport PATH := $(CURDIR)/tools/bin:$(PATH)\n", EXPORTS)
+        self.assert_full("\nexport PATH := $(CURDIR)/tools/bin:$(PATH)\n")
 
     def test_e2_one_born_in_the_environment_and_reassigned_is_the_full_gate(self) -> None:
-        self.assert_full("\nPATH := $(CURDIR)/tools/bin:$(PATH)\n", unwritten("PATH"))
+        self.assert_full("\nPATH := $(CURDIR)/tools/bin:$(PATH)\n")
 
     def test_e2_a_plain_variable_that_nothing_references_is_the_full_gate_too(self) -> None:
-        self.assert_full("\nFOO := x\n", unwritten("FOO"))
+        self.assert_full("\nFOO := x\n")
 
     def test_e3_a_shellflags_the_factory_did_not_write_is_a_difference(self) -> None:
-        self.assert_full("\n.SHELLFLAGS := -ec\n", unwritten(".SHELLFLAGS"))
+        self.assert_full("\n.SHELLFLAGS := -ec\n")
 
     def test_e3_so_is_a_special_variable_make_reads(self) -> None:
-        self.assert_full("\nVPATH = tools\n", unwritten("VPATH"))
+        self.assert_full("\nVPATH = tools\n")
 
     def test_e5_unexport_of_a_variable_is_the_full_gate(self) -> None:
-        self.assert_full("\nunexport DATABASE_URL\n", EXPORTS)
+        self.assert_full("\nunexport DATABASE_URL\n")
 
     def test_e5_export_all_variables_is_the_full_gate(self) -> None:
-        self.assert_full("\n.EXPORT_ALL_VARIABLES:\n", EXPORTS)
+        self.assert_full("\n.EXPORT_ALL_VARIABLES:\n")
 
     def test_e5_a_pattern_specific_variable_is_the_full_gate(self) -> None:
-        self.assert_full("\n%: SHELL := /bin/bash\n", unwritten("SHELL", "%"))
+        self.assert_full("\n%: SHELL := /bin/bash\n")
 
     def test_e6_a_define_variable_is_the_full_gate(self) -> None:
-        self.assert_full("\ndefine BLOCK\none\ntwo\nendef\n", unwritten("BLOCK"))
+        self.assert_full("\ndefine BLOCK\none\ntwo\nendef\n")
 
     def test_e6_an_eval_that_can_write_any_of_the_above_is_the_full_gate(self) -> None:
-        self.assert_full("\n$(eval export NODE_OPTIONS := --require ./tools/hook.js)\n", EXPORTS)
+        self.assert_full("\n$(eval export NODE_OPTIONS := --require ./tools/hook.js)\n")
 
 
-class TargetVariableTest(RuleCase):
-    def test_e7_a_target_specific_variable_on_a_rule_verify_does_not_reach_charges_nothing(self) -> None:
-        self.trunk(lambda text: text + "\ndeploy: IMAGE := foo\n")
-        self.forbidden()
-        run = self.scoped()
-        ran, skipped = self.decided(run)
-        self.assertNotIn(FULL, run.stdout)
-        self.assertEqual(self.verify_calls(), [])
-        self.assertIn("check-drawio", skipped)
-        self.assertNotIn("check-drawio", ran)
+class TargetVariableTest(FullGateCase):
+    """A target-specific variable was charged by what it sat on (D127 item 4); the text is held now, so each is the
+    full gate, including one on a rule `make verify` does not reach."""
 
-    def test_e7_on_a_named_check_it_is_that_checks_rule_and_the_check_always_runs(self) -> None:
-        self.trunk(lambda text: text + "\ncheck-drawio: IMAGE := foo\n")
-        self.forbidden()
-        ran, skipped = self.decided(self.scoped())
-        self.assertEqual(ran.get("check-drawio"), WHY)
-        self.assertIn("check-decisions", skipped)
+    def test_e7_on_a_rule_verify_does_not_reach_is_the_full_gate(self) -> None:
+        self.assert_full("\ndeploy: IMAGE := foo\n")
 
-    def test_e7_on_verify_it_is_the_full_gate(self) -> None:
-        self.trunk(lambda text: text + "\nverify: IMAGE := foo\n")
-        self.forbidden()
-        run = self.scoped()
-        self.assertEqual(self.scoped_lines(run)[0],
-                         FULL + "the Makefile's `verify` rule is not the one the factory wrote")
+    def test_e7_on_a_named_check_is_the_full_gate(self) -> None:
+        self.assert_full("\ncheck-drawio: IMAGE := foo\n")
+
+    def test_e7_on_verify_is_the_full_gate(self) -> None:
+        self.assert_full("\nverify: IMAGE := foo\n")
 
 
 class FactoryHoldTest(RecordCase):
@@ -126,7 +106,7 @@ class FactoryHoldTest(RecordCase):
     def makes(self) -> list[str]:
         return ["make", *[path for name in ("make-3.81", "make3.81", "gmake-3.81") if (path := shutil.which(name))]]
 
-    def judged(self, make: str, project: Path) -> Any:
+    def difference(self, make: str, project: Path) -> Any:
         rules, record = self.modules()
         data = record.database(make, str(project / "Makefile"))
         names = json.loads((project / "project.json").read_text(encoding="utf-8"))["deployables"]
@@ -134,15 +114,14 @@ class FactoryHoldTest(RecordCase):
                         and not name.startswith("integration")] for gate in UNIT_GATES}
         gates = {gate: units for gate, units in gates.items() if units}
         held = rules.load(str(project / RULES))
-        return rules.judge(held, data, [unit for each in gates.values() for unit in each], data.needs["verify-checks"],
-                           gates, rules.project_exports(data, str(project)))
+        return rules.difference(held, data, [unit for each in gates.values() for unit in each],
+                                rules.project_exports(data, str(project)))
 
     def test_e4_hold_no_shape_the_factory_generates_has_a_difference(self) -> None:
         for make in self.makes():
             for shape, project in self.shapes().items():
                 with self.subTest(make=make, shape=shape):
-                    judged = self.judged(make, project)
-                    self.assertEqual((judged.full, judged.checks, judged.gates), (None, frozenset(), frozenset()))
+                    self.assertIsNone(self.difference(make, project))
 
     def test_e4_hold_the_factorys_own_override_dot_names_and_export_lines_are_held(self) -> None:
         rules, record = self.modules()

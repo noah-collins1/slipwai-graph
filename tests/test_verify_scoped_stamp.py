@@ -11,7 +11,7 @@ import subprocess
 import sys
 import unittest
 
-from scoped_fixture import FULL, ScopedCase
+from scoped_fixture import FULL, ScopedCase, as_factory_text
 from stamp_fixture import commit_all, load_script
 
 sys.dont_write_bytecode = True
@@ -110,6 +110,7 @@ class StampTest(ScopedCase):
         makefile.write_text(text.replace("--environment apps/service/.venv",
                                          "--environment apps/service/.venv --environment apps/other/.venv"),
                             encoding="utf-8")
+        as_factory_text(self.repo)
         commit_all(self.repo, "a second environment")
         was = self.plant_stamp()
         self.forget_log()

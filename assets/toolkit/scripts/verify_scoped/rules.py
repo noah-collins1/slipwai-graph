@@ -20,11 +20,13 @@ import json
 import os
 import re
 import sys
+from collections.abc import Mapping
 from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
 
 SCHEMA = 1
+MAKEFILE = "makefile"  # the key of `rules.json` that holds `text_digest` of the `Makefile` the factory wrote
 ROOTS = ("verify", "verify-checks")  # `verify`'s recipe runs `verify-checks` in a sub-make
 SECTION = "# Scoped gate:"  # the comment that heads the section whose `.PHONY` line names the scoped units
 ASSIGNMENT = re.compile(r"^(override\s+)?([A-Za-z_.][\w.]*)\s*(::=|:=|\?=|\+=|=)\s*(.*?)\s*$")
@@ -38,7 +40,6 @@ OUTPUT_SYNC = "$(if $(filter output-sync,$(.FEATURES)),--output-sync=target)"
 # the only reference-bearing simple assignment the factory writes (`gate.py`), by its written text: what it expands to
 WRITTEN = {OUTPUT_SYNC: lambda features: "--output-sync=target" if "output-sync" in features else ""}
 UNSET_BY_COMMAND = "ifeq ($(origin VERIFY_ORDER),command line)"  # false under `make -npq`, which gets no variable
-REFERENCES = re.compile(r"\$(\$|[({]\s*([A-Za-z_][\w.-]*))")  # group 2 is the name; `$$` is a dollar sign
 
 
 class Parsed(NamedTuple):
@@ -197,6 +198,48 @@ def from_database_parsed(data: Any, units: list[str]) -> Parsed:
     return Parsed(data.needs, data.order_only, data.recipes, compared_variables(data), units, data.target_vars)
 
 
+def text_digest(text: str) -> str:
+    """The digest of a `Makefile`'s exact text (D140 point 1): a CRLF read as LF, and nothing else changed, so a space, a
+    comment or the order of two lines is a different text."""
+    return hashlib.sha256(text.replace("\r\n", "\n").encode("utf-8")).hexdigest()
+
+
+ADVICE = "keep targets of your own in a file `make verify` does not read (`make -f deploy.mk …`) to scope again"
+NOT_THE_TEXT = ("`Makefile` is not the text the factory wrote (scripts/verify_scoped/rules.json), and the scoped gate "
+                "scopes only that text; " + ADVICE)
+OTHER_MAKEFILE = "make reads `{}`, which the factory did not write; " + ADVICE
+MAKEFILES_SET = "`MAKEFILES` in the environment adds makefiles the factory did not write; " + ADVICE
+
+
+def text_problem(makefile: str, rules_path: str, environ: Mapping[str, str]) -> str | None:
+    """Why the text `make` reads is not the one the factory wrote, in the words the run prints after `—`, or None where
+    it is (D140 point 2). Asked before any make call, so a project's own `Makefile` is never parsed by a scoped run. In
+    this order, the first that holds: the directory's own entry list names `GNUmakefile` or `makefile` (read exactly,
+    so a case-insensitive filesystem cannot pass one for `Makefile`); `MAKEFILES` is set non-empty; the `Makefile`
+    cannot be read; `rules.json` has no `makefile` key, or one that is not the digest of the text. A `rules.json` that
+    is missing or is not JSON is not this check's to judge: the caller's own reading of it says so."""
+    try:
+        entries = os.listdir(os.path.dirname(os.path.abspath(makefile)))
+    except OSError:
+        entries = []
+    for name in ("GNUmakefile", "makefile"):
+        if name in entries:
+            return OTHER_MAKEFILE.format(name)
+    if environ.get("MAKEFILES"):
+        return MAKEFILES_SET
+    try:
+        with open(rules_path, encoding="utf-8") as handle:
+            held = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    try:
+        with open(makefile, encoding="utf-8", newline="") as handle:
+            written = text_digest(handle.read())
+    except (OSError, ValueError):
+        return NOT_THE_TEXT
+    return None if isinstance(held, dict) and held.get(MAKEFILE) == written else NOT_THE_TEXT
+
+
 def digest(document: object) -> str:
     text = json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(text.encode("ascii")).hexdigest()
@@ -284,7 +327,7 @@ def fingerprint(parsed: Parsed) -> dict[str, Any]:
 
 def from_text(text: str) -> dict[str, Any]:
     """What the factory writes into `rules.json` for the `Makefile` text it writes."""
-    return {**fingerprint(from_text_parsed(text)), "exports": digest(export_lines(text))}
+    return {**fingerprint(from_text_parsed(text)), "exports": digest(export_lines(text)), MAKEFILE: text_digest(text)}
 
 
 def from_database(data: Any, units: list[str], root: str = ".") -> dict[str, Any]:
@@ -300,13 +343,6 @@ class Unreadable(ValueError):
     """`rules.json` is missing, is not JSON, or is a schema this script does not know: what the factory wrote is not known."""
 
 
-class Judgement(NamedTuple):
-    """What the comparison charges: the first cause that makes the run the full gate (its words, whole), the named checks that always run, and the gates with units that run whole."""
-    full: str | None
-    checks: frozenset[str]
-    gates: frozenset[str]
-
-
 def load(path: str) -> dict[str, Any]:
     """The file's content; `Unreadable` where it is not a schema-1 file. Fields it does not know are ignored."""
     try:
@@ -320,73 +356,28 @@ def load(path: str) -> dict[str, Any]:
     return found
 
 
-def used(parsed: Parsed, target: str, variables: dict[str, str]) -> set[str]:
-    """The variables a target's recipe lines name, directly and through the values of the variables they name."""
-    names = {name for line in parsed.recipes.get(target, []) for found in REFERENCES.finditer(line)
-             if (name := found.group(2)) is not None}
-    pending = list(names)
-    while pending:
-        for found in REFERENCES.finditer(variables.get(pending.pop(), "")):
-            if found.group(2) is not None and found.group(2) not in names:
-                names.add(found.group(2))
-                pending.append(found.group(2))
-    return names
-
-
-UNWRITTEN = ("the Makefile sets variable `{name}`{where}, which the factory did not write and make can hand to any check; "
-             "set it on the rule that uses it (`<rule>: {name} := …`) to scope again")
-READ_BY_ALL = ("SHELL", ".SHELLFLAGS")  # every recipe is run by them
-
-
-def changed_variables(held: dict[str, Any], found: dict[str, Any], data: Any) -> list[str]:
-    """The variables the factory fingerprinted that the project's `Makefile` gives a value that differs, or no longer gives.
-    A variable the environment or the command line gives is the baseline's (D116), not compared here."""
-    changed = [name for name, held_digest in found["variables"].items()
-               if name in held["variables"] and held["variables"][name] != held_digest]
-    changed += [name for name in held["variables"] if name not in found["variables"] and name not in data.origins]
-    return sorted(changed)
-
-
-def judge(held: dict[str, Any], data: Any, units: list[str], members: list[str], gates: dict[str, list[str]],
-          exports: list[str] | None = None) -> Judgement:
-    """Every difference between the factory's text and the project's, each charged to the one member of `verify-checks`
-    that reaches it: a named check, or a gate with units; one that no member or two or more reach, and any in `verify` or
-    `verify-checks`, is the full gate. A fingerprinted rule the project no longer has is a difference in `verify-checks`.
-    A variable the factory did not write, a pattern-specific one, and an export line that differs are the full gate (D133);
-    `exports` is `export_lines` of the project's files, None where one could not be read."""
+def difference(held: dict[str, Any], data: Any, units: list[str], exports: list[str] | None) -> str | None:
+    """The first way the project's database differs from what the factory fingerprinted, in words, or None. It is a
+    second check behind the text (D140 point 3): the text having matched, a difference here comes from make or from this
+    reader and never from the project, so it is the full gate, charged to no one check. `exports` is `export_lines` of
+    the project's files, None where one could not be read."""
     if exports is None:
         raise Unreadable("a file the Makefile reads cannot be read")
     parsed = from_database_parsed(data, units)
     found = fingerprint(parsed)
-    reached = {member: set(reach(parsed, [member, *gates.get(member, [])])) for member in members}
-    # a check of the project's own (`verify-checks: check-licences`, with a rule of its own) is a check the factory never
-    # wrote and not a change to one: it is judged on its own rule below, and `verify-checks` as the factory wrote it
-    own = [need for need in parsed.needs.get(ROOTS[1], []) if need not in held["rules"] and ruled(parsed, need)]
-    if own and ROOTS[1] in found["rules"]:
-        kept = {**parsed.needs, ROOTS[1]: [need for need in parsed.needs[ROOTS[1]] if need not in own]}
-        found["rules"][ROOTS[1]] = rule_digest(parsed._replace(needs=kept), ROOTS[1])
-    rules = [target for target, held_digest in found["rules"].items()
-             if held["rules"].get(target) != held_digest and target not in own]
-    rules += [ROOTS[1]] if any(target not in found["rules"] for target in held["rules"]) else []
-    reading = {target: used(parsed, target, data.variables) | set(READ_BY_ALL) for target in found["rules"]}
-    sent = exported_names(exports)  # the factory's own export lines, where the digest below says they are unchanged
-    causes: list[str] = []
-    charged: set[str] = set()
-
-    def charge(owners: list[str], cause: str) -> None:
-        causes.append(cause) if len(owners) != 1 else charged.add(owners[0])
-
-    causes += [] if digest(exports) == held["exports"] else ["the Makefile's export lines are not the ones the factory wrote"]
-    causes += [UNWRITTEN.format(name=name, where=f" for pattern `{pattern}`") for pattern, names in data.patterns.items()
-               for name in names]
-    for target in sorted(set(rules), key=lambda name: (name not in ROOTS, name)):
-        charge([] if target in ROOTS else [member for member in members if target in reached[member]],
-               f"the Makefile's `{target}` rule is not the one the factory wrote")
-    for name in changed_variables(held, found, data):
-        users = [target for target, names in reading.items() if name in names]
-        charge([] if name in sent or any(target in ROOTS for target in users) else
-               [member for member in members if any(target in reached[member] for target in users)],
-               f"the Makefile's variable `{name}` is not the one the factory wrote")
-    causes += [UNWRITTEN.format(name=name, where="") for name in found["variables"] if name not in held["variables"]]
-    return Judgement(None if not causes else causes[0], frozenset(charged - set(gates)),
-                     frozenset(charged & set(gates)))
+    if digest(exports) != held["exports"]:
+        return "the Makefile's export lines are not the ones the factory wrote"
+    for pattern, names in data.patterns.items():
+        for name in names:
+            return f"the Makefile sets variable `{name}` for pattern `{pattern}`, which the factory did not write"
+    for target in sorted({*found["rules"], *held["rules"]}, key=lambda name: (name not in ROOTS, name)):
+        if held["rules"].get(target) != found["rules"].get(target):
+            return f"the Makefile's `{target}` rule is not the one the factory wrote"
+    for name in sorted({*found["variables"], *held["variables"]}):
+        if found["variables"].get(name) == held["variables"].get(name):
+            continue
+        if name not in held["variables"]:
+            return f"the Makefile sets variable `{name}`, which the factory did not write"
+        if name in found["variables"] or name not in data.origins:  # one the environment or the command line gives is the baseline's
+            return f"the Makefile's variable `{name}` is not the one the factory wrote"
+    return None

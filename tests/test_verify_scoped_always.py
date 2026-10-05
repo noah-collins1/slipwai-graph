@@ -1,8 +1,9 @@
 """R6 (AC-S06-6): the checks that always run claim nothing.
 
 `check-slice-scope` compares the whole branch with its base and `check-codegraph` reads every tracked file, so each runs
-on every scoped run and neither claims a file; `check-python` runs because every check waits on it; a `verify-checks`
-prerequisite with no recorded inputs runs, named so. None of them broadens what else runs.
+on every scoped run and neither claims a file; `check-python` runs because every check waits on it. None of them
+broadens what else runs. A check of the project's own, added to `verify-checks`, is a `Makefile` the factory did
+not write: the full gate (D140 point 5).
 """
 from __future__ import annotations
 
@@ -11,7 +12,7 @@ import subprocess
 import sys
 import unittest
 
-from scoped_fixture import ShapeCase
+from scoped_fixture import FULL, MAKEFILE_WORDS, ShapeCase
 from stamp_fixture import commit_all, git
 
 sys.dont_write_bytecode = True
@@ -52,7 +53,9 @@ class AlwaysTest(ShapeCase):
         self.assertEqual(set(ran), set(ALWAYS) | set(NO_INPUTS))
         self.assertTrue(skipped, "nothing was skipped")
 
-    def test_e2_a_check_the_project_added_runs_as_having_no_recorded_inputs_and_broadens_nothing(self) -> None:
+    def test_e2_a_check_the_project_added_is_the_full_gate_for_the_text_of_the_makefile(self) -> None:
+        """D131 overridden (D140 point 5): a check added to `verify-checks` changes the text, so every scoped run is the
+        full gate, with the `Makefile` words."""
         git(self.repo, "checkout", "-q", "main")
         makefile = self.repo / "Makefile"
         makefile.write_text(makefile.read_text(encoding="utf-8")
@@ -62,10 +65,9 @@ class AlwaysTest(ShapeCase):
         git(self.repo, "checkout", "-q", "-B", "slice/S1", "main")
         self.edit("apps/web/src/App.tsx")
         run = self.scoped()
-        ran, skipped = self.decided(run)
-        self.assertEqual(ran["check-licences"], "no recorded inputs")
-        self.assertIn("licences checked", run.stdout)
-        self.assertTrue(set(skipped) >= SERVICE, sorted(SERVICE - set(skipped)))
+        self.assertEqual(self.scoped_lines(run)[0], FULL + MAKEFILE_WORDS, run.stdout)
+        self.assertEqual(self.lines(run), [])
+        self.assertEqual(len(self.verify_calls()), 1)
 
     def test_e3_the_two_that_read_everything_claim_nothing(self) -> None:
         done = subprocess.run(["python3", "-B", "scripts/verify-scoped.py", "record"], cwd=self.repo,
