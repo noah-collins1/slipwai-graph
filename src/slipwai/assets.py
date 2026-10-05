@@ -101,7 +101,14 @@ def _load_pruner():
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot load the backing-service pruner from {source}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    # No cache is written beside the script: the verify stamp keys the paths of caches under `assets/` (D119), so
+    # one written at import time means a recorded pass is never reused (D121).
+    previous = sys.dont_write_bytecode
+    try:
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = previous
     return module
 
 
@@ -117,8 +124,8 @@ def _load_style_checker():
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot load the style checker from {source}")
     module = importlib.util.module_from_spec(spec)
-    # Unlike the pruner, this source sits inside the canonical toolkit. Its self-containment test reads
-    # every file there as text, so an import cache beside the script would become binary toolkit material.
+    # This source sits inside the canonical toolkit. Its self-containment test reads every file there as
+    # text, so an import cache beside the script would become binary toolkit material.
     previous = sys.dont_write_bytecode
     try:
         sys.dont_write_bytecode = True

@@ -1,7 +1,8 @@
-"""No test leaves an interpreter cache under `assets/`, and the toolkit holds none (S33 T021).
+"""No test leaves an interpreter cache under `assets/`, and nothing under `assets/` holds one (S33 T021, T028).
 
-The product itself may: `slipwai.assets` loads the pruner with bytecode writing on, so
-`assets/backing-services/__pycache__/` is the gate's own doing, and the verify stamp's key lists it (D119).
+No one writes one, the product included: the verify stamp's key lists the paths of caches under `assets/` (D119), so
+a pass recorded from a tree without one is never reused once a run writes one. `slipwai.assets` therefore loads the
+pruner, as it loads the style checker, with bytecode writing off (D121).
 
 Iteration 16's first converge pass over S33 loaded `assets/toolkit/scripts/verify-stamp.py` with `importlib` to read
 its key, with bytecode writing on. That left `assets/toolkit/scripts/__pycache__/verify-stamp.cpython-314.pyc`, and
@@ -12,12 +13,18 @@ by hand runs as `python3 -B`.
 """
 from __future__ import annotations
 
+import os
 import re
+import shutil
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
-from slipwai.assets import TOOLKIT_ROOT
+from slipwai.assets import BACKING_SERVICE_ROOT
 
+ASSETS = BACKING_SERVICE_ROOT.parent
+REPO = ASSETS.parent
 TESTS = Path(__file__).resolve().parent
 LOADER = re.compile(r"spec_from_file_location\(|run_path\(|SourceFileLoader\(")
 ASSET_TREE = re.compile(r"\b(?:TOOLKIT|PROFILE|FRONTEND|LANGUAGE|BACKING_SERVICE|ADOPTION)_ROOT\b|[\"']assets/")
@@ -31,6 +38,15 @@ THE_PROBE = (
 )
 
 
+def caches() -> list[str]:
+    """Every interpreter cache under `assets/`, as a path from the repository root."""
+    return sorted(
+        path.relative_to(REPO).as_posix()
+        for path in ASSETS.rglob("*")
+        if path.name == "__pycache__" or path.suffix in {".pyc", ".pyo"}
+    )
+
+
 def leaves_bytecode(source: str) -> bool:
     """True where a test module loads a script, names an asset tree in its code, and never turns bytecode off.
 
@@ -41,18 +57,24 @@ def leaves_bytecode(source: str) -> bool:
 
 
 class AssetsBytecodeTest(unittest.TestCase):
-    def test_the_toolkit_tree_holds_no_interpreter_cache(self) -> None:
-        cached = sorted(
-            path.relative_to(TOOLKIT_ROOT.parent.parent).as_posix()
-            for path in TOOLKIT_ROOT.rglob("*")
-            if path.name == "__pycache__" or path.suffix in {".pyc", ".pyo"}
-        )
+    def test_nothing_under_assets_holds_an_interpreter_cache(self) -> None:
+        cached = caches()
         self.assertEqual(
             cached, [],
-            "an interpreter cache under the toolkit, which test_toolkit reads as text: something imported a script "
-            "there with bytecode writing on (a test turns sys.dont_write_bytecode on; a probe runs as python3 -B); "
-            "find what, then delete it",
+            "an interpreter cache under assets/, which test_toolkit reads as text and the verify stamp keys by path: "
+            "something imported a script there with bytecode writing on (turn sys.dont_write_bytecode on around the "
+            "load; run a probe as python3 -B); find what, then delete it",
         )
+
+    def test_importing_slipwai_assets_in_a_fresh_interpreter_writes_no_cache(self) -> None:
+        # The in-process import may have written one; clear it so the fresh interpreter is the one asked.
+        for stale in ASSETS.rglob("__pycache__"):
+            shutil.rmtree(stale)
+        self.assertEqual(caches(), [])
+        env = {key: value for key, value in os.environ.items() if key != "PYTHONDONTWRITEBYTECODE"}
+        env["PYTHONPATH"] = str(REPO / "src")
+        subprocess.run([sys.executable, "-c", "import slipwai.assets"], env=env, check=True, cwd=REPO)
+        self.assertEqual(caches(), [])
 
     def test_every_test_that_loads_a_script_from_an_asset_tree_turns_bytecode_off(self) -> None:
         modules = sorted(path for path in TESTS.glob("*.py") if path.name != Path(__file__).name)
