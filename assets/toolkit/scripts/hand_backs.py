@@ -81,6 +81,18 @@ def difficulty_fault(value: object) -> str | None:
     return None
 
 
+DECISION = re.compile(r"^## D(\d+) — ", re.M)
+
+
+def decision_ids(feature: Path) -> set[str]:
+    """The `D<n>` ids a feature's decisions.md has a heading for (none where it has no log): the one reading the
+    gate, `--hand-back`, `--hand-backs` and the benchmark's count all hold a block's `decisions` to."""
+    log = feature / "decisions.md"
+    if not log.is_file():
+        return set()
+    return {f"D{number}" for number in DECISION.findall(log.read_text(encoding="utf-8", errors="replace"))}
+
+
 def decision_fault(item: object, known: set[str] | None) -> str | None:
     if not isinstance(item, str) or not re.fullmatch(r"D[0-9]+", item):
         return f"{item!r} is not a decision id `D<n>`"

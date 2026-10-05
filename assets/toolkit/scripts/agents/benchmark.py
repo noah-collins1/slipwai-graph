@@ -874,7 +874,8 @@ def hand_back_lines(records_: list[dict[str, Any]]) -> list[str]:
             folder = folder / "slices" / str(record["slice"])
         kept = folder / "hand-backs.md"
         text = kept.read_text(encoding="utf-8") if kept.is_file() else ""
-        _, held, delegated, unattributed = module.coverage(record.get("stages", []), text, None)
+        _, held, delegated, unattributed = module.coverage(
+            record.get("stages", []), text, module.decision_ids(ROOT / "specs" / str(record.get("feature"))))
         if delegated or unattributed:
             lines.append(f"{record.get('slice') or '(feature)'}: hand-backs with a result contract: {held} of {delegated}"
                          + (f"; {unattributed} stage(s) the harness could not attribute — not counted"

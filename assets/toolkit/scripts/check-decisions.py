@@ -480,14 +480,6 @@ def verb_options(arguments: list[str]) -> dict[str, str] | None:
     return options
 
 
-def decision_ids(feature: Path) -> set[str]:
-    """The `D<n>` ids a feature's decisions.md has a heading for (none where it has no log)."""
-    log = feature / DECISIONS
-    if not log.is_file():
-        return set()
-    return {f"D{m.group(1)}" for m in map(DECISION_HEADING.match, lines_of(read(log))) if m}
-
-
 def hand_backs_module() -> Any:
     """`hand_backs.py` beside this script, loaded by path with bytecode off (a `__pycache__` under scripts/ would
     make every later scoped run the full gate)."""
@@ -510,7 +502,7 @@ def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int]:
     blocks = 0
     for path in records:
         feature = path.parent if path.parent.parent == SPECS else path.parent.parent.parent
-        known = decision_ids(feature)
+        known = module.decision_ids(feature)
         found, said, count = module.check_record(read(path), path.relative_to(ROOT).as_posix(), known)
         findings += found
         notes += said
@@ -609,7 +601,7 @@ def hand_back_verb(arguments: list[str]) -> int:
         faults: list[str] = []
     else:
         faults, wrote = module.append(record, title, arguments[2], arguments[3], sys.stdin.read(),
-                                      decision_ids(ROOT / "specs" / folder.group(1)), now)
+                                      module.decision_ids(ROOT / "specs" / folder.group(1)), now)
     for fault in faults:
         print(f"check-decisions: {fault}", file=sys.stderr)
     if not faults and not wrote:
@@ -630,8 +622,9 @@ def coverage_verb(arguments: list[str]) -> int:
     bench = where / "benchmark.json"
     stages = json.loads(bench.read_text(encoding="utf-8")).get("stages", []) if bench.is_file() else []
     record = where / HAND_BACKS
-    lines, held, delegated, _ = hand_backs_module().coverage(
-        stages, read(record) if record.is_file() else "", decision_ids(ROOT / "specs" / folder.group(1)))
+    module = hand_backs_module()
+    lines, held, delegated, _ = module.coverage(
+        stages, read(record) if record.is_file() else "", module.decision_ids(ROOT / "specs" / folder.group(1)))
     for line in lines:
         print(line)
     print(f"hand-backs: with a result contract: {held} of {delegated}")

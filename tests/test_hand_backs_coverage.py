@@ -128,6 +128,18 @@ class BenchmarkCountTest(unittest.TestCase):
         out = self.aggregate([stage("gaps", "2026-10-05T16:00:00Z", "2026-10-05T16:10:00Z", delegated=False)])
         self.assertNotIn("hand-backs", out)
 
+    def test_a_block_naming_a_decision_the_feature_lacks_counts_in_neither_reading(self) -> None:
+        ghost = entry(valid() | BLOCK | {"decisions": ["D9999"]}, IMPLEMENT)
+        stages = TWO[:1]
+        self.assertIn("S1: hand-backs with a result contract: 0 of 1", self.aggregate(stages, ghost))
+        with tempfile.TemporaryDirectory() as directory:
+            verb = run(project(directory, stages, ghost), "--hand-backs", SLICE)
+        self.assertEqual("hand-backs: with a result contract: 0 of 1", verb.stdout.splitlines()[-1])
+
+    def test_a_block_naming_a_decision_the_feature_has_counts_in_both(self) -> None:
+        good = entry(valid() | BLOCK | {"decisions": ["D134"]}, IMPLEMENT)
+        self.assertIn("S1: hand-backs with a result contract: 1 of 1", self.aggregate(TWO[:1], good))
+
     def test_a_project_without_the_module_prints_what_it_printed_before(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = project(directory, TWO, implement_block())
