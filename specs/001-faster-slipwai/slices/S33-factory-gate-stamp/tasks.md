@@ -394,7 +394,7 @@ change `tests/` only and are below, in the order found.
 
 ### T026 — HIGH (D119): interpreter caches under `assets/` are exempt from the key, and the suite fails on them — BLOCKED on a person (⛔)
 
-- [ ] *(Built in iteration 18 as `s33-3.patch` — branch `s33-patch-3`, `aa46146`; `git apply --check` clean against `adopt-method`; RED observed (the run after the plant reused), teeth shown; the probe line writes a line unique to the run where `sort` is missing, held by its own example, and the AC-S33-6 hold's stand-in PATH carries `find` and `sort`, both decided in the tools table. ⛔ until a person applies it.)* `verify-stamp.py`'s `EXEMPT` skips `__pycache__/` and `*.pyc` at the factory root too, while `test_toolkit`
+- [x] *(Applied by the owner at `63d529d`; its diff is the patch line for line, checked in iteration 19.)* *(Built in iteration 18 as `s33-3.patch` — branch `s33-patch-3`, `aa46146`; `git apply --check` clean against `adopt-method`; RED observed (the run after the plant reused), teeth shown; the probe line writes a line unique to the run where `sort` is missing, held by its own example, and the AC-S33-6 hold's stand-in PATH carries `find` and `sort`, both decided in the tools table. ⛔ until a person applies it.)* `verify-stamp.py`'s `EXEMPT` skips `__pycache__/` and `*.pyc` at the factory root too, while `test_toolkit`
   reads the toolkit and profile overlays as text and `test_assets_bytecode` fails on a toolkit cache: in a /tmp clone
   `key_parts()` was the same before and after planting `assets/toolkit/scripts/__pycache__/verify-stamp.cpython-314.pyc`,
   so D118's incident over a stamped tree would have printed the reuse line. **Do (AC-S33-13):** in the stamped branch
