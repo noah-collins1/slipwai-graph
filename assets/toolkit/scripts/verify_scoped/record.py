@@ -34,6 +34,10 @@ class RecordError(Exception):
     """The record cannot be built: the words say why, on one line."""
 
 
+class ObligationError(RecordError):
+    """`verification.obligations` in `project.json` is not what it must be: the words are the one line that says so."""
+
+
 class Database(NamedTuple):
     needs: dict[str, list[str]]  # target -> prerequisites, in the order the rules gave them
     recipes: dict[str, list[str]]
@@ -247,6 +251,71 @@ def contracts_of(deployables: dict[str, dict[str, Any]], context: Context, model
     return contracts
 
 
+def declared(root: Path, scope: Any, base: str | None) -> object:
+    """`verification` as `project.json` has it at the base, never the branch's own; the working tree's where there is no
+    base to read (the record printed off a slice branch). None where there is no such key."""
+    if base is not None:
+        document: object = scope.project_document(base)
+    else:
+        try:
+            document = json.loads((root / "project.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            document = {}
+    return document.get("verification") if isinstance(document, dict) else None
+
+
+def shown(position: int, entry: object) -> str:
+    name = entry.get("name") if isinstance(entry, dict) else None
+    return f"obligation {position} ({'`' + name + '`' if isinstance(name, str) and name else 'unnamed'})"
+
+
+def obligations_of(verification: object, deployables: dict[str, dict[str, Any]],
+                   checks: dict[str, Any]) -> list[dict[str, Any]]:
+    """The obligations `verification` declares, each as the record holds it (a gate name replaced by its units, the
+    checks sorted); an `ObligationError` whose words are one line where it is not the shape data-model.md fixes."""
+    where = "in project.json's verification.obligations"
+    if verification is None:
+        return []
+    if not isinstance(verification, dict):
+        raise ObligationError("verification in project.json is not an object")
+    if "obligations" not in verification:
+        return []
+    if not isinstance(verification["obligations"], list):
+        raise ObligationError("verification.obligations in project.json is not a list")
+    found: list[dict[str, Any]] = []
+    for position, entry in enumerate(verification["obligations"], 1):
+        who = f"{shown(position, entry)} {where}"
+        if not isinstance(entry, dict):
+            raise ObligationError(f"{who} is not an object")
+        name = entry.get("name")
+        if not isinstance(name, str) or not name:
+            raise ObligationError(f"{who} has no name")
+        if any(item["name"] == name for item in found):
+            first = next(index for index, item in enumerate(found, 1) if item["name"] == name)
+            raise ObligationError(f"{who} repeats the name of obligation {first}")
+        components = entry.get("components")
+        distinct = list(dict.fromkeys(components)) if isinstance(components, list) else []
+        if len(distinct) < 2:
+            raise ObligationError(f"{who} names fewer than two distinct components")
+        unknown = next((item for item in distinct if item not in deployables), None)
+        if unknown is not None:
+            raise ObligationError(f"{who} names the component `{unknown}`, which is not among the deployables")
+        wanted = entry.get("checks")
+        if not isinstance(wanted, list) or not wanted:
+            raise ObligationError(f"{who} names no checks")
+        units: set[str] = set()
+        for check in wanted:
+            if not isinstance(check, str):
+                raise ObligationError(f"{who} names a check that is not a name")
+            held = [unit for unit, item in checks.items() if item["gate"] == check] if check in GATE_UNITS \
+                else [check] if check in checks else []
+            if not held:
+                raise ObligationError(f"{who} names the check `{check}`, which the record does not hold")
+            units.update(held)
+        found.append({"name": name, "components": distinct, "checks": sorted(units)})
+    return found
+
+
 def base_of(scope: Any) -> str | None:
     """The commit the branch is compared with; None where there is none to be had."""
     try:
@@ -266,8 +335,9 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
     checks = checks_of(data, deployables, context)
     services = [name for name, item in deployables.items() if item["kind"] == "service"]
     models = models_of(root, scope, base) if len(services) > 1 else []
+    obligations = obligations_of(declared(root, scope, base), deployables, checks)
     return {"schema": SCHEMA, "deployables": deployables, "checks": checks,
-            "contracts": contracts_of(deployables, context, models), "obligations": []}
+            "contracts": contracts_of(deployables, context, models), "obligations": obligations}
 
 
 def render(record: dict[str, Any]) -> str:

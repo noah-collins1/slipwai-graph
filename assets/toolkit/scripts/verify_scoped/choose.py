@@ -2,9 +2,9 @@
 
 A check that always runs (the record's `always`: why it runs on every scoped run, or `no recorded inputs`) is chosen with
 that reason whatever changed, and claims nothing. Any other unit runs when, in this order, a changed path is one of its
-file inputs (`<path> changed`), a contract it consumes changed (`consumes <contract> (<path>)`), or a unit it shares a
-recipe or a build directory with runs (`shares one recipe with <unit>`, `shares a build directory with <unit>`). Changed
-paths are taken in sorted order, so the reason a unit names is the first path that chose it; every unit is named once,
+file inputs (`<path> changed`), a contract it consumes changed (`consumes <contract> (<path>)`), an obligation a person
+declared names it (`obligation <name> (<path>)`), or a unit it shares a recipe or a build directory with runs
+(`shares one recipe with <unit>`, `shares a build directory with <unit>`). Changed paths are taken in sorted order, so the reason a unit names is the first path that chose it; every unit is named once,
 the first reason that holds winning. After the paths come the machine's: a tool the baseline saw answer differently
 (`<tool> answers differently from the baseline`) or a variable whose digest differs (`<NAME> differs from the baseline`),
 for the units whose recorded inputs name it; a unit that shares a recipe with one of those runs with it.
@@ -106,10 +106,26 @@ def sharing(unit: str, check: dict[str, Any], record: dict[str, Any], data: Data
     return None
 
 
-def first_reason(check: dict[str, Any], contracts: list[dict[str, Any]], paths: list[str]) -> str | None:
-    """Why a changed path chooses the check, by the order of the reasons: it reads the path, then it consumes it."""
+def bound(unit: str, record: dict[str, Any], paths: list[str]) -> str | None:
+    """`obligation <name> (<path>)` for the first declared obligation that names the unit and whose component a changed
+    path is in: the first path, in sorted order, under any of the obligation's components."""
+    for obligation in record["obligations"]:
+        if unit not in obligation["checks"]:
+            continue
+        under = [record["deployables"][name]["path"] + "/" for name in obligation["components"]]
+        path = next((path for path in paths if any(is_input(path, entry) for entry in under)), None)
+        if path is not None:
+            return f"obligation {obligation['name']} ({path})"
+    return None
+
+
+def first_reason(unit: str, check: dict[str, Any], record: dict[str, Any], paths: list[str]) -> str | None:
+    """Why a changed path chooses the check, by the order of the reasons: it reads the path, it consumes it through a
+    contract, then an obligation a person declared names it."""
     path = read_by(check, paths)
-    return f"{path} changed" if path is not None else consumed(check, contracts, paths)
+    if path is not None:
+        return f"{path} changed"
+    return consumed(check, record["contracts"], paths) or bound(unit, record, paths)
 
 
 def moved(check: dict[str, Any], drifted: Drift | None) -> str | None:
@@ -140,7 +156,7 @@ def choose(record: dict[str, Any], data: Database, changed: list[str], drifted: 
     def along(unit: str, check: dict[str, Any]) -> str | None:
         return sharing(unit, check, record, data, list(reasons)) if check["gate"] in GATE_UNITS else None
 
-    take(lambda unit, check: check["always"] or first_reason(check, record["contracts"], paths))
+    take(lambda unit, check: check["always"] or first_reason(unit, check, record, paths))
     take(along)
     take(lambda unit, check: moved(check, drifted))
     take(along)

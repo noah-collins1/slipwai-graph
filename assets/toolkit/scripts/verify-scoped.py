@@ -206,6 +206,8 @@ def run(make: str, makefile: str) -> int:
             data = records.database(make, makefile)  # the same words the record gives, where it cannot be read
         record = records.build(make, makefile, ground.scope, data, base)
         changed = sorted(ground.scope.changed_files(base))
+    except records.ObligationError as error:  # a person's declaration is named on a line of its own
+        return broaden(make, makefile, INCOMPLETE, [str(error).replace("\n", " ")])
     except records.RecordError as error:
         return incomplete(make, makefile, str(error).replace("\n", " "))
     except Exception as error:  # what cannot be read is knowledge this script does not have
