@@ -31,6 +31,7 @@ from .parallel_gate import FIRST, SYNC, in_recipe
 
 CHECKS = ("lint", "typecheck", "test")
 NPM_PACKAGES = "build-packages"
+NO_RECORD = "this layout has no verification-dependency record yet — the full gate runs"
 ORDER = "ifeq ($(origin VERIFY_ORDER),command line)"
 HEADER = """
 # Scoped gate: each deployable's lint, typecheck and test as targets of their own, and the family targets that hold
@@ -94,10 +95,21 @@ verify-scoped: ## The checks whose inputs changed on a slice branch; the full ga
 """
 
 
+def adopted_rule(layout: Layout) -> str:
+    """An adopted repository's `verify-scoped`: its gate has no stamp and no record of what each check reads, so the
+    target says so and runs the full gate, as `ratchet-tighten` runs its own: through `$(MAKE)` with the layout's flag."""
+    return f"""
+.PHONY: verify-scoped
+verify-scoped: ## The full gate: this layout has no verification-dependency record yet
+\t@echo 'verify-scoped: {NO_RECORD}'; $(MAKE){layout.make_flag} --no-print-directory verify
+"""
+
+
 def scoped_section(apps: list[App], layout: Layout) -> str:
-    """The section a stamped gate's `Makefile` ends with; nothing for an adopted repository's, which keeps its own."""
+    """The section a stamped gate's `Makefile` ends with; for an adopted repository's, the one target that says it has
+    no record and runs its own full gate."""
     if not stamped(apps, layout):
-        return ""
+        return adopted_rule(layout)
     everything = own_lines(apps)
     paths = [app.path for app, _ in everything]
     units = [(app, lines) for app, lines in everything if has_units(app)]
