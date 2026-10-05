@@ -700,7 +700,8 @@ def make_flags() -> str:
 
 # What make hands every recipe in `MAKEFLAGS` (and reads from `GNUMAKEFLAGS`) that adds no text and no condition the
 # factory did not write (D146): the letters that change no recipe (`k`, `s`, `w`, and the idle ones, which the borders
-# take themselves), a job count, the jobserver's words, `--no-print-directory` and an output-sync word. Nothing else.
+# take themselves), a job count, the jobserver's words, `--no-print-directory` and an output-sync word. Nothing
+# else.
 QUIET_LETTERS = frozenset("kswntqi")
 QUIET_WORD = re.compile(r"-[kswntqi]+|-j[0-9]*|--jobserver-(?:auth|fifo|fds)=\S*|--no-print-directory|-O[a-z]*"
                         r"|--output-sync(?:=[a-z]+)?")
@@ -708,11 +709,126 @@ FORCING = re.compile(r"VERIFY_FORCE=\S*")  # the one command-line variable allow
 NOT_THE_FACTORYS = "make was run with `{word}`, which can add text or conditions the factory did not write"
 
 
+def quoted(word: str) -> str:
+    """A word from the command line or the environment as a line may carry it: control characters escaped, cut short, and
+    no backtick, so that it cannot forge a line or close the span it is printed in."""
+    return word.encode("unicode_escape").decode("ascii")[:80].replace("`", "\\x60")
+
+
+# What no `MAKEFLAGS` says (D146, adversary B1, B2, B8): which makefile make read, and the variables recipes run under.
+# `-f <file>` is on make's command line only; `MAKEFILES`, a `GNUmakefile` or a `makefile` is a makefile the factory did not
+# write; `.SHELLFLAGS` in the environment changes how every recipe runs (`SHELL` in the environment does not: the
+# `Makefile` sets it, and an environment variable never overrides that without `-e`, which `MAKEFLAGS` carries).
+SHELLS = frozenset({"sh", "bash", "dash", "zsh", "ksh", "ash"})
+MAKES = frozenset({"make", "gmake", "remake"})
+ARGUMENT_LETTERS = frozenset("CEIfoW")  # make's short options that take an argument; `j`, `l` and `O` take it only attached
+WITH_ARGUMENT = frozenset({"directory", "include-dir", "old-file", "assume-old", "what-if", "new-file", "assume-new",
+                           "eval"})
+
+
+def makefiles_named(argv: list[str]) -> list[str]:
+    """The files make's own command line names with `-f`, `--file` or `--makefile`, in every spelling it takes."""
+    named: list[str] = []
+    index = 1
+    while index < len(argv):
+        word = argv[index]
+        index += 1
+        if word == "--":
+            break
+        if word.startswith("--"):
+            option, _, value = word[2:].partition("=")
+            if option in ("file", "makefile", *WITH_ARGUMENT) and not value and index < len(argv):
+                value = argv[index]
+                index += 1
+            if option in ("file", "makefile"):
+                named.append(value)
+        elif word.startswith("-") and len(word) > 1:
+            for position, letter in enumerate(word[1:], 1):
+                if letter in "jlO":
+                    break
+                if letter in ARGUMENT_LETTERS:
+                    value = word[position + 1:]
+                    if not value and index < len(argv):
+                        value = argv[index]
+                        index += 1
+                    if letter == "f":
+                        named.append(value)
+                    break
+    return named
+
+
+def process_of(pid: int) -> tuple[int, list[str]] | None:
+    """The parent and the command line of a process, from `/proc` where there is one, else from `ps`; None where neither
+    can say."""
+    try:
+        with open(f"/proc/{pid}/stat", encoding="utf-8", errors="replace") as handle:
+            parent = int(handle.read().rpartition(")")[2].split()[1])
+        with open(f"/proc/{pid}/cmdline", "rb") as raw:
+            return parent, [os.fsdecode(word) for word in raw.read().split(b"\0") if word]
+    except (OSError, ValueError, IndexError):
+        pass
+    try:
+        done = subprocess.run(["ps", "-o", "ppid=", "-o", "args=", "-p", str(pid)], capture_output=True, text=True,
+                              check=False, timeout=10)
+        words = done.stdout.split()
+        return (int(words[0]), words[1:]) if done.returncode == 0 and len(words) > 1 else None
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+
+
+def making_command() -> list[str] | None:
+    """The command line of the make whose recipe is running this process, reached through the shells between them; [] where
+    no make runs it (a person at a prompt, a test runner), None where it cannot be read and a make is running it."""
+    pid = os.getppid()
+    for _ in range(32):
+        found = process_of(pid)
+        if found is None:
+            return None if "MAKELEVEL" in os.environ else []
+        parent, argv = found
+        name = os.path.basename(argv[0]).lstrip("-") if argv else ""
+        if name in MAKES:
+            return argv
+        if name not in SHELLS or parent <= 1:
+            return []
+        pid = parent
+    return []
+
+
+def makefile_problem(environ: Mapping[str, str], cwd: str | None) -> str | None:
+    """Why make did not read exactly the project's root `Makefile` under the factory's shell: `MAKEFILES` or `.SHELLFLAGS`
+    in the environment; and, where `cwd` is the directory the recipe runs in, a `GNUmakefile` or `makefile` there, or a
+    make whose command line names a file other than `Makefile`."""
+    if environ.get("MAKEFILES"):
+        return "make was run with `MAKEFILES`, which adds makefiles the factory did not write"
+    if ".SHELLFLAGS" in environ:
+        return "make was run with `.SHELLFLAGS` in the environment, which changes how every recipe runs"
+    if cwd is None:
+        return None
+    try:
+        entries = sorted(os.listdir(cwd))
+    except OSError:
+        entries = []
+    for name in entries:
+        if name != "Makefile" and name.casefold() in ("gnumakefile", "makefile"):
+            return f"make reads `{quoted(name)}`, not the `Makefile` the factory wrote"
+    command = making_command()
+    if command is None:
+        return "make's command line could not be read, so which makefile it read is not known"
+    root = os.path.realpath(os.path.join(cwd, "Makefile"))
+    for name in makefiles_named(command):
+        if os.path.realpath(os.path.join(cwd, name)) != root:
+            return f"make read `{quoted(name)}`, not the project's `Makefile`"
+    return None
+
+
 def makeflags_problem(environ: Mapping[str, str] | None = None) -> str | None:
     """Why this run's `MAKEFLAGS` or `GNUMAKEFLAGS` can add text or conditions the factory did not write — `--eval`, `-I`,
     `-e`, `-r`, `-R`, `-B`, `-W`, `-o`, `-L`, `--trace`, `--shuffle`, anything after `--` — naming the first word that is
-    not allowed, else None. Defined here once: `verify-scoped.py` asks it for the full gate, and `declined` for the stamp.
-    The word is printed with its control characters escaped and cut short, so it cannot forge a line."""
+    not allowed, else why make did not read exactly the project's `Makefile` under the factory's shell
+    (`makefile_problem`), else None. Defined here once: `verify-scoped.py` asks it for the full gate, and `declined` for
+    the stamp. The word is printed with its control characters escaped and cut short, so it cannot forge a line. Given an
+    environment, only that is read; without one, the process, the directory and the make that runs it are read too."""
+    real = environ is None
     environ = os.environ if environ is None else environ
     for name in ("MAKEFLAGS", "GNUMAKEFLAGS"):
         words = environ.get(name, "").split()
@@ -721,9 +837,8 @@ def makeflags_problem(environ: Mapping[str, str] | None = None) -> str | None:
                 break  # only `VERIFY_FORCE=<value>` follows (D147): the documented forced run
             if QUIET_WORD.fullmatch(word) or (index == 0 and word.isalpha() and set(word) <= QUIET_LETTERS):
                 continue
-            shown_word = word.encode("unicode_escape").decode("ascii")[:80].replace("`", "\\x60")
-            return NOT_THE_FACTORYS.format(word=shown_word)
-    return None
+            return NOT_THE_FACTORYS.format(word=quoted(word))
+    return makefile_problem(environ, os.getcwd() if real else None)
 
 
 def ratcheting() -> bool:

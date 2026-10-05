@@ -36,16 +36,19 @@ class RecipeRunsFromWhereItStartedTest(StampTestCase):
         self.assertEqual(self.checks(), [], "the second run did not reuse")
         self.assertIn("did not run", again.stdout)
 
-    def test_make_dash_f_a_file_not_named_makefile_runs_the_gate_and_records(self) -> None:
+    def test_make_dash_f_a_file_not_named_makefile_runs_the_gate_and_records_nothing(self) -> None:
+        """T049 (adversary B1): the gate still runs from the file make was given, but a stamp is for the project's own
+        `Makefile` alone, so none is written and the next run runs the checks again."""
         (self.repo / "Makefile").rename(self.repo / "build.mk")
         first = self.run_gate(args=["-f", "build.mk"])
         self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
         self.assertTrue(self.checks(), "no check started")
-        self.assertIsNotNone(self.stamp_path(), "the pass was not recorded")
+        self.assertIsNone(self.stamp_path(), "a pass under a makefile that is not the project's was recorded")
+        self.assertIn("was not recorded", first.stdout)
         self.forget_log()
         again = self.run_gate(args=["-f", "build.mk"])
         self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
-        self.assertEqual(self.checks(), [])
+        self.assertTrue(self.checks(), "the second run reused a stamp that was never written")
 
 
 class CiIsTheChecksOwnTargetTest(StampTestCase):
