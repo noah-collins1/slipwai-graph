@@ -1,0 +1,17 @@
+date: 2026-10-05T08:58:19Z
+HEAD: a8ab3f29b99018e60cfb0e4aa7ce70b849d0832b on adopt-method
+--- git worktree list
+/home/noahc/math/slipwai-graph a8ab3f2 [adopt-method]
+--- git status --porcelain
+?? specs/cruise-log.jsonl
+--- find assets caches (empty = none)
+--- pgrep -af 'make verify' (empty = none)
+--- env CI markers
+--- cruise-log.jsonl
+9980 bytes mtime 2026-10-05 03:13:04.389499392 -0500
+--- stamp dir
+total 716
+drwxrwxr-x  2 noahc noahc   4096 Oct  4 22:28 .
+drwxrwxr-x 21 noahc noahc   4096 Oct  5 03:13 ..
+-rw-rw-r--  1 noahc noahc 713513 Oct  4 23:09 iter18-verify.log
+-rw-rw-r--  1 noahc noahc     31 Oct  5 03:56 verify-probes

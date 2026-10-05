@@ -1,0 +1,4 @@
+2026-10-05T09:40:38Z
+find assets ... (empty = none):
+--- git status --porcelain
+?? specs/cruise-log.jsonl

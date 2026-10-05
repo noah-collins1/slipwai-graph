@@ -187,20 +187,20 @@ and `--make "$(MAKE)"`. The list is written once.
 
 ### T010 — Demo (host task)
 
-- [ ] *(After T026 is applied. First check the quickstart's precondition — no worktree inside the checkout, a clean `git status`, nothing writing the tree — and record that it held (D120); a fresh checkout's first run changes the cache list, so measure the run after the one that wrote it.)* The demo from [quickstart.md](quickstart.md) run by `drive-hand`: the factory's own `make verify` twice on an
+- [x] *(Iteration 19: accepted by drive-hand — demo-log.md, first section; full 2495.6 s, reuse 1.24 s.)* *(After T026 is applied. First check the quickstart's precondition — no worktree inside the checkout, a clean `git status`, nothing writing the tree — and record that it held (D120); a fresh checkout's first run changes the cache list, so measure the run after the one that wrote it.)* The demo from [quickstart.md](quickstart.md) run by `drive-hand`: the factory's own `make verify` twice on an
   unchanged tree on `adopt-method`, the second **measured** (AC-S33-10; the first took about forty minutes, the second
   must return at once with the reuse line), plus `VERIFY_FORCE=1`, `CI=1` and `TESTS=…` as the actor would type them.
   The measurement is written into the quickstart by the host.
 
 ### T011 — Adversary pass (host task)
 
-- [ ] Per the trigger table in `/drive`: this slice's seam is the key and the stamp (a tool changing under it, an
+- [x] *(Iteration 19: run — D122, findings A1–A5 in adversary-log.md; A1, A3, A5 fixed by T030 and T031, A2 stated in the quickstart, A4 declined under D83.)* Per the trigger table in `/drive`: this slice's seam is the key and the stamp (a tool changing under it, an
   interrupted run, two `make verify` at once on one stamp). If the table says run, `drive-adversary` attacks it and each
   confirmed finding is a regression test appended as a task; if it says skip, the row says why. Not before T010.
 
 ### T012 — Mutation (host task)
 
-- [ ] **N/A**: this repository records no mutation command (`project.json`), as for the slices before it; said in the
+- [x] **N/A**: this repository records no mutation command (`project.json`), as for the slices before it; said in the
   register row, not pretended.
 
 ### T013 — The full gate (host task)
@@ -428,7 +428,7 @@ change `tests/` only and are below, in the order found.
 
 ### T029 — Demo 2: reuse from a tree without a cache under `assets/` (D121)
 
-- [ ] From a tree with nothing under `assets/` named `__pycache__`, `*.pyc` or `*.pyo`: `make verify` (full), then
+- [x] *(Iteration 21, at `a8ab3f2`: accepted by drive-hand — demo-log.md, second section; full 2512 s, 1961 tests; reuse 1.24 s; no cache under `assets/` after either; the quickstart carries the measurement.)* From a tree with nothing under `assets/` named `__pycache__`, `*.pyc` or `*.pyo`: `make verify` (full), then
   `make verify` measured — under 5 s, the reuse line — and no cache under `assets/` after either. By `drive-hand`.
 
 

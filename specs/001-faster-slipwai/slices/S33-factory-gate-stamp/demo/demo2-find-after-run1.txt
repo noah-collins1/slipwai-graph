@@ -1,0 +1,10 @@
+2026-10-05T09:40:37Z
+find assets \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) (empty = none):
+--- git status --porcelain
+?? specs/cruise-log.jsonl
+--- .factory-work
+total 716
+drwxrwxr-x  2 noahc noahc   4096 Oct  4 22:28 .
+drwxrwxr-x 21 noahc noahc   4096 Oct  5 03:13 ..
+-rw-rw-r--  1 noahc noahc 713513 Oct  4 23:09 iter18-verify.log
+-rw-rw-r--  1 noahc noahc     31 Oct  5 03:58 verify-probes

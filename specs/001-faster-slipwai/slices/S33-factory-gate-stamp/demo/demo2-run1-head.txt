@@ -1,0 +1,8 @@
+./scripts/verify --lint-only
+All checks passed!
+python3 -m compileall -q src scripts tests
+./scripts/verify --typecheck-only
+Success: no issues found in 432 source files
+python3 scripts/check-structure.py
+check-structure: 151 modules, 7 tiers, no upward imports and no cycles
+PYTHONPATH=src python3 -m unittest discover -s tests -v

@@ -1095,15 +1095,57 @@
         "start": {
           "open": 6,
           "done": 25
+        },
+        "end": {
+          "open": 6,
+          "done": 25
         }
       },
-      "cursor": {
-        "source": "claude",
-        "session": "67e812bd-e703-4942-b0d1-77fde79a23ab",
-        "files": {
+      "ended": "2026-10-05T09:41:33Z",
+      "seconds": 2629,
+      "span": {
+        "from": {
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/67e812bd-e703-4942-b0d1-77fde79a23ab.jsonl": 443393
         },
-        "subagents": {}
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/67e812bd-e703-4942-b0d1-77fde79a23ab.jsonl": 561657,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/67e812bd-e703-4942-b0d1-77fde79a23ab/subagents/agent-afae2993790c0578e.jsonl": 273197
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "67e812bd-e703-4942-b0d1-77fde79a23ab",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 16,
+            "output": 5386,
+            "cache_read": 553559,
+            "cache_creation": 8556
+          }
+        },
+        "subagents": {
+          "claude-opus-5-5": {
+            "input": 26,
+            "output": 2356,
+            "cache_read": 317670,
+            "cache_creation": 146638
+          }
+        },
+        "agents": [
+          "drive-hand"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5"
+      ],
+      "agents": [
+        "drive-hand"
+      ],
+      "delegated": true,
+      "signals": {
+        "outcome": "accepted",
+        "driver": "cruise"
       }
     }
   ]
