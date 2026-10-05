@@ -92,14 +92,20 @@ class DryRunTest(ScopeCase):
         self.assertEqual(status, 0)
         self.nothing_started(runner, lines)
 
-    def test_a_refusal_is_printed_and_starts_no_tool(self) -> None:
-        self.write("apps/service/src/pkg/x.py")
-        status, lines, runner = self.under("n", "python:apps/service")
-        self.assertEqual(lines[0], "mutation: dry run (make was run with -n) — the plan below starts no tool")
-        self.assertTrue(any(line.startswith("mutation: refuse apps/service — ") for line in lines), lines)
-        closing = "mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/service"
-        self.assertEqual((status, lines[-1]), (2, closing))
-        self.nothing_started(runner, lines)
+    def test_a_refusal_is_the_plan_and_the_dry_run_exits_0(self) -> None:
+        paths = {"typescript": "apps/service/src/x.ts", "python": "apps/service/src/pkg/x.py",
+                 "java-quarkus": "apps/service/src/main/java/com/x/Foo.java"}
+        for backend, path in paths.items():
+            for flags in ("n", "q", "t"):
+                with self.subTest(backend=backend, flags=flags):
+                    self.write(path)
+                    status, lines, runner = self.under(flags, f"{backend}:apps/service")
+                    self.assertEqual(lines[0], f"mutation: dry run (make was run with -{flags}) — "
+                                     "the plan below starts no tool")
+                    self.assertTrue(any(line.startswith("mutation: refuse apps/service — ") for line in lines), lines)
+                    closing = "mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; dry run — would fail: apps/service"
+                    self.assertEqual((status, lines[-1]), (0, closing))
+                    self.nothing_started(runner, lines)
 
     def test_an_adopted_layout_prints_the_recorded_command_and_runs_no_make(self) -> None:
         project = self.repo / "project.json"

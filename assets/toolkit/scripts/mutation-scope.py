@@ -623,6 +623,8 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
             failed.append(root)
             status = status or result.status
     ended = "passed" if not failed else "failed: " + ", ".join(failed)
+    if dry and failed:  # a dry run reports what would happen and does not fail, as `make -n` on a refusing recipe exits 0
+        ended, status = "dry run — would fail: " + ", ".join(failed), 0
     say(f"{counts['scoped']} scoped, {counts['swept']} swept, {counts['skipped']} skipped, {counts['refused']} refused; {ended}")
     return status
 
