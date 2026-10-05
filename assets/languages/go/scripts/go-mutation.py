@@ -71,6 +71,12 @@ NOT_COVERED = "NOT COVERED"
 THRESHOLD_EXITS = (10, 11)  # Gremlins: below efficacy-threshold, below mutant coverage threshold
 
 
+def say(text: str) -> None:
+    """A line of this script's own, flushed: Gremlins writes to the same pipe from another process, and a line
+    buffered here until exit would print after the output it introduces."""
+    print(text, flush=True)
+
+
 def module_path(go_mod: Path) -> str:
     for line in go_mod.read_text(encoding="utf-8").splitlines():
         if line.startswith("module "):
@@ -145,7 +151,7 @@ def stage(service: Path, root: Path, modules: dict[str, Path], into: Path) -> Pa
             text += f"\nrequire {path} v0.0.0\n"
         text += f"replace {path} => {staged}\n"
         sums.append(staged / "go.sum")
-        print(f"mutation: staged {directory.relative_to(root)} for {path}")
+        say(f"mutation: staged {directory.relative_to(root)} for {path}")
     go_mod.write_text(text, encoding="utf-8", newline="\n")
     # A workspace keeps the checksums of a shared module's dependencies in go.work.sum; with GOWORK=off the
     # staged service needs them in its own go.sum. Every line once, whichever file it came from.
@@ -274,7 +280,7 @@ def keep_report(report: Path, service: Path) -> Path | None:
         return None
     kept = service / REPORT
     shutil.copyfile(report, kept)
-    print(f"mutation: report written to {os.path.relpath(kept)}")
+    say(f"mutation: report written to {os.path.relpath(kept)}")
     return kept
 
 
@@ -298,7 +304,7 @@ def assess(report: Path) -> int:
             "and rerun.\n"
         )
         return 1
-    print(f"mutation: {sum(statuses.values())} mutants, none timed out; Gremlins' threshold held")
+    say(f"mutation: {sum(statuses.values())} mutants, none timed out; Gremlins' threshold held")
     return 0
 
 
@@ -358,19 +364,19 @@ def main(argv: list[str]) -> int:
         asked = files(service, since, given_files)
         keep = mutable(asked, own)
         for path in sorted(asked - keep) if given_files else []:
-            print(f"mutation: not mutated {given}/{path} — outside Gremlins' configured targets")
+            say(f"mutation: not mutated {given}/{path} — outside Gremlins' configured targets")
         if not keep:
             # Not the "nothing mutated" failure below, and the difference is worth keeping: that one is a run
             # that found no mutable code, which can only mean a misconfigured scope. This is a change with no
             # mutant of its own to answer for — it touched no production Go file, or only files this project
             # excludes — said out loud, because an unexplained green is what this script exists to refuse.
-            print(f"mutation: nothing under {given} that {'was given' if given_files else 'differs from ' + str(since)}"
+            say(f"mutation: nothing under {given} that {'was given' if given_files else 'differs from ' + str(since)}"
                   " is a file Gremlins would mutate; no mutant to run")
             return 0
         scoped = scope(service, keep, own)
         said = "given file(s)" if given_files else f"changed file(s) since {since}"
         wins = f" (--file wins; --since {since} is not read)" if given_files and since is not None else ""
-        print(f"mutation: scoped to {len(keep)} {said}: {', '.join(sorted(keep))}{wins}")
+        say(f"mutation: scoped to {len(keep)} {said}: {', '.join(sorted(keep))}{wins}")
     root, modules = workspace(service)
     into = Path(tempfile.mkdtemp(prefix="go-mutation-"))
     try:
@@ -385,8 +391,8 @@ def main(argv: list[str]) -> int:
             count = untested(report) if scoped and run.returncode in THRESHOLD_EXITS else 0
             if not count:
                 return run.returncode
-            print(f"mutation: {count} mutants not covered by any test, none killed or lived; not covered is "
-                  "reported, never failed", flush=True)
+            say(f"mutation: {count} mutants not covered by any test, none killed or lived; not covered is "
+                  "reported, never failed")
             return 0
         return assess(report)
     finally:

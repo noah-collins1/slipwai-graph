@@ -67,7 +67,7 @@ class DryRunTest(ScopeCase):
                 status, lines, runner = self.under(flags, "go:apps/service")
                 self.assertTrue(lines[0].startswith(f"mutation: dry run (make was run with -{flags})"), lines)
                 self.assertIn("mutation: scope apps/service — health/health.go", lines)
-                self.assertEqual((status, lines[-1]), (0, "mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed"))
+                self.assertEqual((status, lines[-1]), (0, "mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; planned"))
                 self.nothing_started(runner, lines)
 
     def test_a_per_service_sweep_prints_the_sweep_and_starts_no_tool(self) -> None:
@@ -80,7 +80,7 @@ class DryRunTest(ScopeCase):
         status, lines, runner = self.under("n", *TWO_GO)
         self.assertIn(f"mutation: sweep apps/billing — `{YAML}` changed", lines)
         self.assertIn("mutation: scope apps/service — health/more.go", lines)
-        self.assertEqual((status, lines[-1]), (0, "mutation: 1 scoped, 1 swept, 0 skipped, 0 refused; passed"))
+        self.assertEqual((status, lines[-1]), (0, "mutation: 1 scoped, 1 swept, 0 skipped, 0 refused; planned"))
         self.nothing_started(runner, lines)
 
     def test_a_whole_sweep_prints_the_reason_and_runs_no_make(self) -> None:
