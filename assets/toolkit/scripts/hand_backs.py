@@ -180,6 +180,20 @@ def entry_faults(entry: dict[str, Any]) -> list[str]:
     return []
 
 
+def block_faults(entry: dict[str, Any], known: set[str] | None) -> tuple[list[str], dict[str, Any] | None]:
+    """The faults of one entry's block, shape and fields (each `<field>: <fault>`), and the block where it parsed
+    to an object. An entry that is a `Missing:` line holds none."""
+    if not entry["blocks"]:
+        return [], None
+    try:
+        block = json.loads(entry["blocks"][0][1])
+    except ValueError as error:
+        return [f"block: the body is not JSON ({error})"], None
+    if not isinstance(block, dict):
+        return [f"block: the body is {block!r}, not one JSON object"], None
+    return ([] if newer(block) else check_block(block, entry["match"].group(2), known)), block
+
+
 def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[str], list[str], int]:
     """Findings, notes and the count of blocks in one record's text; `where` is its path from the root."""
     findings: list[str] = []
@@ -192,18 +206,11 @@ def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[st
         if shape or not entry["blocks"]:
             continue
         count += 1
-        try:
-            block = json.loads(entry["blocks"][0][1])
-        except ValueError as error:
-            findings.append(f"{at} — block: the body is not JSON ({error})")
-            continue
-        if not isinstance(block, dict):
-            findings.append(f"{at} — block: the body is {block!r}, not one JSON object")
-        elif newer(block):
+        faults, block = block_faults(entry, known)
+        findings += [f"{at} — {fault}" for fault in faults]
+        if block is not None and newer(block):
             notes.append(f"check-decisions: note: {at} — contract {block['contract']} is newer than this "
                          "checker reads; its fields are not held")
-        else:
-            findings += [f"{at} — {fault}" for fault in check_block(block, entry["match"].group(2), known)]
     return findings, notes, count
 
 
@@ -261,3 +268,37 @@ def write(record: Path, title: str, entry: str) -> None:
         entry = "\n\n" + entry
     with open(record, "a", encoding="utf-8", newline="\n") as handle:
         handle.write(entry)
+
+
+def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None) -> tuple[list[str], int, int, int]:
+    """For each ended stage of a slice's `benchmark.json`, whether the record holds what the stage's delegates
+    handed back: the lines to print, how many delegated stages have a passing block, how many were delegated and
+    how many the harness could not attribute (`usage.source` null: counted as neither). A block belongs to a stage
+    when its heading names the stage and its time lies in the stage's `[started, ended]`."""
+    entries = [entry for entry in extract(record) if entry["match"] is not None and not entry_faults(entry)]
+    lines: list[str] = []
+    held = delegated = unattributed = 0
+    for stage in stages:
+        usage = stage.get("usage")
+        if "ended" not in stage:
+            continue
+        name, started = stage["stage"], stage.get("started", "")
+        if usage is not None and not usage.get("source"):
+            unattributed += 1
+            lines.append(f"hand-backs: {name} {started}: the harness could not attribute its delegates — not counted")
+            continue
+        if not stage.get("delegated"):
+            continue
+        delegated += 1
+        mine = [entry for entry in entries
+                if entry["match"].group(3) == name and started <= entry["match"].group(1) <= str(stage["ended"])]
+        passing = [entry for entry in mine if entry["blocks"] and not block_faults(entry, known)[0]]
+        if passing:
+            held += 1
+            lines.append(f"hand-backs: {name} {started} {passing[0]['match'].group(2)}: block")
+        elif any(entry["missing"] for entry in mine):
+            reason = next(entry["missing"][0] for entry in mine if entry["missing"])
+            lines.append(f"hand-backs: {name} {started}: missing — {reason}")
+        else:
+            lines.append(f"hand-backs: {name} {started}: nothing recorded — a finding for {name}")
+    return lines, held, delegated, unattributed

@@ -29,6 +29,7 @@ how many groups its delegate fanned out into, and `model=` or `agent=` only wher
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -854,6 +855,33 @@ def by_feature() -> dict[str, list[tuple[Path, dict[str, Any]]]]:
     return grouped
 
 
+def hand_back_lines(records_: list[dict[str, Any]]) -> list[str]:
+    """Per record with a delegated or unattributed stage, how many delegated stages handed back a result-contract
+    block (`scripts/hand_backs.py`, loaded by path with bytecode off). None where a project lacks the module."""
+    path = Path(__file__).resolve().parent.parent / "hand_backs.py"
+    if not path.is_file():
+        return []
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location("hand_backs", path)
+    if spec is None or spec.loader is None:
+        return []
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    lines = []
+    for record in records_:
+        folder = ROOT / "specs" / str(record.get("feature"))
+        if record.get("slice"):
+            folder = folder / "slices" / str(record["slice"])
+        kept = folder / "hand-backs.md"
+        text = kept.read_text(encoding="utf-8") if kept.is_file() else ""
+        _, held, delegated, unattributed = module.coverage(record.get("stages", []), text, None)
+        if delegated or unattributed:
+            lines.append(f"{record.get('slice') or '(feature)'}: hand-backs with a result contract: {held} of {delegated}"
+                         + (f"; {unattributed} stage(s) the harness could not attribute — not counted"
+                            if unattributed else ""))
+    return lines
+
+
 def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> list[str]:
     lines = [f"{summary['slice'] or '(feature)'}: still open — {', '.join(summary['open'])}"
              for summary in summaries if summary["open"]]
@@ -883,7 +911,7 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
                     f"{record.get('slice') or '(feature)'} {entry['stage']}: not bracketed around its work — "
                     "start and end were called in the same moment, so this stage's wall and tokens are missing, not zero."
                 )
-    return lines
+    return lines + hand_back_lines(records_)
 
 
 def aggregate() -> str:

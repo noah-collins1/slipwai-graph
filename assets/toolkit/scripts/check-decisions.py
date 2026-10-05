@@ -63,6 +63,7 @@ A project with no record anywhere passes and says so: the gate runs in `make ver
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import sys
 from datetime import date, datetime, timezone
@@ -552,8 +553,10 @@ def gate() -> int:
     return 0
 
 
-HAND_USAGE = ("usage: check-decisions.py --hand-back <specs/feature[/slices/id]> <drive-type> <stage>   (the hand-back on stdin)\n"
-              "       check-decisions.py --hand-back-missing <specs/feature[/slices/id]> <drive-type> <stage> <reason>")
+HAND_USAGE = (
+    "usage: check-decisions.py --hand-back <specs/feature[/slices/id]> <drive-type> <stage>   (the hand-back on stdin)\n"
+    "       check-decisions.py --hand-back-missing <specs/feature[/slices/id]> <drive-type> <stage> <reason>\n"
+    "       check-decisions.py --hand-backs <specs/feature/slices/id>")
 FOLDER = re.compile(r"specs/([A-Za-z0-9][A-Za-z0-9._-]*)(?:/slices/([A-Za-z0-9][A-Za-z0-9._-]*))?")
 
 
@@ -583,6 +586,25 @@ def hand_back_verb(arguments: list[str]) -> int:
     return 1 if faults else 0
 
 
+def coverage_verb(arguments: list[str]) -> int:
+    """`--hand-backs <specs/feature/slices/id>`: for each ended stage of the slice's benchmark.json the transcript
+    shows was delegated, whether the record holds a passing block for it. A reading, not a gate: exit 0."""
+    folder = FOLDER.fullmatch(arguments[1]) if len(arguments) == 2 else None
+    if folder is None or not folder.group(2) or not (ROOT / arguments[1]).is_dir():
+        print(HAND_USAGE, file=sys.stderr)
+        return 2
+    where = ROOT / arguments[1]
+    bench = where / "benchmark.json"
+    stages = json.loads(bench.read_text(encoding="utf-8")).get("stages", []) if bench.is_file() else []
+    record = where / HAND_BACKS
+    lines, held, delegated, _ = hand_backs_module().coverage(
+        stages, read(record) if record.is_file() else "", decision_ids(ROOT / "specs" / folder.group(1)))
+    for line in lines:
+        print(line)
+    print(f"hand-backs: with a result contract: {held} of {delegated}")
+    return 0
+
+
 def main() -> int:
     arguments = sys.argv[1:]
     if not arguments:
@@ -594,6 +616,8 @@ def main() -> int:
         return baseline()
     if arguments[0] in ("--hand-back", "--hand-back-missing"):
         return hand_back_verb(arguments)
+    if arguments[0] == "--hand-backs":
+        return coverage_verb(arguments)
     options = verb_options(arguments)
     if options is None:
         print(USAGE, file=sys.stderr)
