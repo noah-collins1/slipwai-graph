@@ -214,16 +214,16 @@ MAKEFILES_SET = "`MAKEFILES` in the environment adds makefiles the factory did n
 def text_problem(makefile: str, rules_path: str, environ: Mapping[str, str]) -> str | None:
     """Why the text `make` reads is not the one the factory wrote, in the words the run prints after `—`, or None where
     it is (D140 point 2). Asked before any make call, so a project's own `Makefile` is never parsed by a scoped run. In
-    this order, the first that holds: the directory's own entry list names `GNUmakefile` or `makefile` (read exactly,
-    so a case-insensitive filesystem cannot pass one for `Makefile`); `MAKEFILES` is set non-empty; the `Makefile`
-    cannot be read; `rules.json` has no `makefile` key, or one that is not the digest of the text. A `rules.json` that
-    is missing or is not JSON is not this check's to judge: the caller's own reading of it says so."""
+    this order, the first that holds: the directory's own entry list has an entry other than `Makefile` whose casefold is
+    `gnumakefile` or `makefile` (the list is read exactly and compared casefolded, so a case-insensitive filesystem
+    cannot pass one for `Makefile`); `MAKEFILES` is set non-empty; `rules.json` cannot be read, is not JSON, or is not an
+    object with a `makefile` key; the `Makefile` cannot be read; the key is not the digest of the text."""
     try:
         entries = os.listdir(os.path.dirname(os.path.abspath(makefile)))
     except OSError:
         entries = []
-    for name in ("GNUmakefile", "makefile"):
-        if name in entries:
+    for name in sorted(entries):
+        if name != "Makefile" and name.casefold() in ("gnumakefile", "makefile"):
             return OTHER_MAKEFILE.format(name)
     if environ.get("MAKEFILES"):
         return MAKEFILES_SET
@@ -231,7 +231,7 @@ def text_problem(makefile: str, rules_path: str, environ: Mapping[str, str]) -> 
         with open(rules_path, encoding="utf-8") as handle:
             held = json.load(handle)
     except (OSError, ValueError):
-        return None
+        return NOT_THE_TEXT
     try:
         with open(makefile, encoding="utf-8", newline="") as handle:
             written = text_digest(handle.read())

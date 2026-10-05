@@ -186,7 +186,7 @@ class FullGateTest(RuleCase):
         self.trunk(change=lambda repo: (repo / RULES).unlink(missing_ok=True))
         self.forbidden()
         run = self.scoped()
-        self.assertEqual(self.scoped_lines(run)[-1], INCOMPLETE, run.stdout)
+        self.assertEqual(self.scoped_lines(run)[0], FULL + MAKEFILE_WORDS, run.stdout)
         self.assertEqual(self.lines(run), [])
 
     def test_e6_a_rules_file_of_a_schema_it_does_not_know_is_the_same(self) -> None:
@@ -205,4 +205,4 @@ class FullGateTest(RuleCase):
 
         self.trunk(change=write)
         self.forbidden()
-        self.assertEqual(self.scoped_lines(self.scoped())[-1], INCOMPLETE)
+        self.assertEqual(self.scoped_lines(self.scoped())[0], FULL + MAKEFILE_WORDS)

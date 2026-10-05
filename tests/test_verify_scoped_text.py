@@ -122,6 +122,25 @@ class TextBorderTest(RuleCase):
         self.assertEqual(self.scoped_lines(run)[0], FULL + MAKEFILE_WORDS, run.stdout)
         self.text_first(run)
 
+    def test_e1_a_rules_file_that_is_gone_is_the_full_gate_with_the_makefile_words_before_any_read(self) -> None:
+        self.trunk(change=lambda repo: (repo / RULES).unlink())
+        self.forbidden()
+        run = self.scoped()
+        self.assertEqual(self.scoped_lines(run)[0], FULL + MAKEFILE_WORDS, run.stdout)
+        self.text_first(run)
+
+    def test_e1_a_rules_file_that_is_not_json_or_not_an_object_is_the_full_gate(self) -> None:
+        for what, content in (("not JSON", "{"), ("a list", "[]"), ("a string", '"x"')):
+            with self.subTest(what):
+                def write(repo: Path, text: str = content) -> None:
+                    (repo / RULES).write_text(text, encoding="utf-8")
+
+                self.trunk(change=write)
+                self.forbidden()
+                run = self.scoped()
+                self.assertEqual(self.scoped_lines(run)[0], FULL + MAKEFILE_WORDS, run.stdout)
+                self.text_first(run)
+
     def test_e2_a_makefile_the_script_cannot_read_is_the_full_gate(self) -> None:
         self.trunk(change=nothing)
         self.forbidden()
@@ -148,6 +167,21 @@ class TextBorderTest(RuleCase):
         run = self.scoped()
         self.assertEqual(self.scoped_lines(run)[0], FULL + OTHER.format("makefile"), run.stdout)
         self.text_first(run)
+
+    def only_in_case(self, name: str) -> None:
+        self.other_makefile(name)
+        run = self.scoped()
+        self.assertEqual(self.scoped_lines(run)[0], FULL + OTHER.format(name), run.stdout)
+        self.text_first(run)
+
+    def test_e2_a_lowercase_gnumakefile_is_the_full_gate_naming_it_as_listed(self) -> None:
+        self.only_in_case("gnumakefile")
+
+    def test_e2_an_uppercase_makefile_is_the_full_gate_naming_it_as_listed(self) -> None:
+        self.only_in_case("MAKEFILE")
+
+    def test_e2_a_mixed_case_gnumakefile_is_the_full_gate_naming_it_as_listed(self) -> None:
+        self.only_in_case("GNUMakefile")
 
     def test_e2_makefiles_in_the_environment_is_the_full_gate(self) -> None:
         self.trunk(change=nothing)
