@@ -86,6 +86,30 @@ class RecordStructureTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("1 hand-back(s) in 1 record(s)", result.stdout)
 
+    def test_e8_each_content_before_the_first_heading_never_crashes_the_gate(self) -> None:
+        after = f"{HEADING}\n- **Missing:** no continuation\n"
+        cases = {
+            "no fence": ("# T\n\nprose\n\n", 0),
+            "a closed fence": (f"# T\n\n{fence(valid())}\n", 0),
+            "an unclosed fence": ("# T\n```result-contract\n{\n", 1),
+            "another info string, unclosed": ("# T\n```text\n{\n", 0),
+        }
+        for name, (preamble, code) in cases.items():
+            with self.subTest(name):
+                result = gate(preamble + after)
+                self.assertNotIn("Traceback", result.stderr)
+                self.assertEqual(code, result.returncode, result.stdout + result.stderr)
+        found = findings(gate(cases["an unclosed fence"][0] + after))
+        self.assertEqual(1, len(found), found)
+        self.assertTrue(found[0].startswith(f"{RECORD}:2: "), found[0])
+        self.assertIn("not closed", found[0])
+
+    def test_e8_an_unclosed_fence_before_the_first_heading_at_the_end_of_the_file_is_a_finding(self) -> None:
+        result = gate("# T\n\n```result-contract\n{\n")
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual(1, result.returncode, result.stdout)
+        self.assertIn(f"{RECORD}:3: ", findings(result)[0])
+
 
 def released_checker(directory: str) -> Path:
     path = Path(directory) / "released-check-decisions.py"

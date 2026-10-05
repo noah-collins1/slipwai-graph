@@ -152,7 +152,7 @@ def extract(text: str) -> list[dict[str, Any]]:
             fence[2].append(line)
         elif line.startswith("## "):
             if fence is not None:  # a block no closing fence ended before this heading
-                entries[-1]["open"] = fence[1]
+                keep_open(entries, fence)
                 fence = None
             entries.append({"line": number, "heading": line, "match": HEADING.match(line), "blocks": [],
                             "missing": [], "open": None})
@@ -160,13 +160,25 @@ def extract(text: str) -> list[dict[str, Any]]:
             fence = (stripped[3:].strip(), number, [])
         elif entries and (found := MISSING.match(line.rstrip())):
             entries[-1]["missing"].append(found.group(1).strip())
-    if fence is not None and fence[0] == FENCE and entries:
-        entries[-1]["open"] = fence[1]
+    if fence is not None and fence[0] == FENCE:
+        keep_open(entries, fence)
     return entries
+
+
+def keep_open(entries: list[dict[str, Any]], fence: tuple[str, int, list[str]]) -> None:
+    """Note a `result-contract` fence nothing closed on the entry it sits in; before the first heading it is an
+    entry of its own (`preamble`), so the file's own text is held to the one rule that a fence is closed."""
+    if entries:
+        entries[-1]["open"] = fence[1]
+    elif fence[0] == FENCE:
+        entries.append({"line": fence[1], "heading": f"```{FENCE}", "match": None, "blocks": [], "missing": [],
+                        "open": fence[1], "preamble": True})
 
 
 def entry_faults(entry: dict[str, Any]) -> list[str]:
     """What is wrong with the shape of one entry, apart from the fields of its block."""
+    if entry.get("preamble"):
+        return [f"the {FENCE} fence before the first heading is not closed"]
     if entry["match"] is None:
         return [f"is not {SHAPE}"]
     if entry["open"] is not None:
