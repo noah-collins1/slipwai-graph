@@ -132,10 +132,21 @@ def delivery_moved() -> bool:
     return isinstance(layout, dict) and layout.get("delivery", ".") != "."
 
 
-def full(make: str, makefile: str, clear_since: bool = False) -> int:
+def dry_flags() -> str:
+    """The make flags that start nothing (`-n`, `-q`, `-t`) this run was made with, as verify-scoped's `idle` border reads
+    them: the stamp's own `make_flags` and `IDLE_FLAGS`. Empty where the run is a real one."""
+    stamp = load("verify-stamp.py")
+    flags = str(stamp.make_flags())
+    return flags if any(letter in flags for letter in stamp.IDLE_FLAGS) else ""
+
+
+def full(make: str, makefile: str, clear_since: bool = False, dry: bool = False) -> int:
     """The sweep: `make mutation-full`, its status the run's. close_fds=False keeps a jobserver's descriptors. Under a
     set `SINCE` the sub-make gets `SINCE=` on its command line, which beats the environment and `MAKEFLAGS`, so Go's
     `$(if $(SINCE),--since $(SINCE))` cannot scope a run that is announced as the sweep."""
+    if dry:
+        say("`make mutation-full` would run here; it starts nothing under a dry run")
+        return 0
     command = [make, "--no-print-directory", "-f", makefile, "mutation-full", *(["SINCE="] if clear_since else [])]
     return subprocess.run(command, close_fds=False, check=False).returncode
 
@@ -527,10 +538,11 @@ def said(paths: list[str]) -> str:
 
 
 def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], runner: Runner,
-          causes: dict[str, list[str]]) -> int:
+          causes: dict[str, list[str]], dry: bool = False) -> int:
     """The scoped run: what changed, classified, what each tool will take of it decided for every service, then the first
     line, each service once in service order, and the closing line. A service in `causes` is swept and its production
-    files are not additionally scoped; so is one whose configuration cannot be read."""
+    files are not additionally scoped; so is one whose configuration cannot be read. Under `dry` no wired tool is asked: the
+    plan is printed and each service reads as having run clean; a refusal, which starts none, is the runner's."""
     handled = {path for found in causes.values() for path in found}
     shared: list[str] = []
     deleted: list[str] = []
@@ -575,10 +587,10 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         plan = plans.get(root)
         if root in causes:
             say(f"sweep {root} — {said(causes[root])}")
-            result, kind = runner.sweep(backend, root), "swept"
+            result, kind = (Result(0, [], []) if dry and backend in WIRED else runner.sweep(backend, root)), "swept"
         elif root in unread:
             say(f"sweep {root} — {unread[root]}")
-            result, kind = runner.sweep(backend, root), "swept"
+            result, kind = (Result(0, [], []) if dry and backend in WIRED else runner.sweep(backend, root)), "swept"
         elif plan is None:
             say(f"skip {root} — no changed production file")
             counts["skipped"] += 1
@@ -592,7 +604,9 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         else:
             if backend in WIRED:
                 say(f"scope {root} — {', '.join(shown(name) for name in production[root])}")
-            result, kind = runner.run(backend, root, production[root]), "scoped"
+            result = (Result(0, list(production[root]), []) if dry and backend in WIRED
+                      else runner.run(backend, root, production[root]))
+            kind = "scoped"
         for name, why in result.skipped:
             say(f"not mutated {shown(root + '/' + name)} — {why}")
         if result.refusal is not None:
@@ -620,9 +634,13 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
         print(USAGE, file=sys.stderr)
         return 2
     make, makefile = options["--make"], options["--makefile"]
+    flags = dry_flags()
+    dry = bool(flags)
+    if dry:
+        say(f"dry run (make was run with -{flags}) — the plan below starts no tool")
     if delivery_moved():
         say(NO_SCOPE)
-        return full(make, makefile)
+        return full(make, makefile, dry=dry)
     try:
         if not services:
             raise Sweep(NO_SERVICE)
@@ -634,11 +652,11 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
             raise Sweep(NOT_FACTORY)
     except Sweep as why:
         say(SWEEPS.format(reason=why))
-        return full(make, makefile, bool(os.environ.get("SINCE")))
+        return full(make, makefile, bool(os.environ.get("SINCE")), dry)
     except Refused as why:
         say(str(why))
         return 2
-    return scope(services, words, changes, runner or Tools(), causes)
+    return scope(services, words, changes, runner or Tools(), causes, dry)
 
 
 if __name__ == "__main__":
