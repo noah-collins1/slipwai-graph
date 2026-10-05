@@ -822,6 +822,25 @@
         "cycle": "rule",
         "verify_failures": 0
       }
+    },
+    {
+      "stage": "demo",
+      "started": "2026-10-05T05:36:11Z",
+      "planned": "demo: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 5,
+          "done": 22
+        }
+      },
+      "cursor": {
+        "source": "claude",
+        "session": "d1599cc9-399e-4ddc-a0a6-a5037ac676d4",
+        "files": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/d1599cc9-399e-4ddc-a0a6-a5037ac676d4.jsonl": 451235
+        },
+        "subagents": {}
+      }
     }
   ]
 }
