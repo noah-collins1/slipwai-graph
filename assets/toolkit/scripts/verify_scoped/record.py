@@ -26,6 +26,7 @@ RULES_FILE = "scripts/verify_scoped/rules.json"
 DIFFERS = f"its rule is not the one the factory wrote ({RULES_FILE})"
 MODEL = "docs/event-model/model.yaml"
 DATABASE = ("-npq", ".DEFAULT")
+FULL_GATE_GOAL = "verify-checks"  # what `verify`'s recipe hands its sub-make, which is a level deeper
 RULE = re.compile(r"^([^\s#:=%][^:=]*?)::?(?!=)\s*(.*)$")
 ASSIGNED = re.compile(r"^([^\s#:=%][^\s:=]*) ([:?!+]*=) (.*)$")
 TARGET_VARIABLE = re.compile(r"^([^\s#:=%][^:=]*?):\s+(\S+) (:?=|\+=) (.*)$")
@@ -65,13 +66,18 @@ class Database(NamedTuple):
     patterns: dict[str, list[str]] = {}  # pattern -> the variables a Makefile sets for it (origin `file` or `override`)
 
 
-def database(make: str, makefile: str) -> Database:
+def database(make: str, makefile: str, goal: str = ".DEFAULT", level: str | None = None,
+             flags: tuple[str, ...] = ()) -> Database:
     """The rules and variables of `makefile`, read with `make -npq -f <makefile> .DEFAULT`: it exits 2 for the goal it
-    has no rule for, and nothing is run. The make state of the caller's own run is left out of the call."""
+    has no rule for, and nothing is run. The make state of the caller's own run is left out of the call. A `goal` other
+    than `.DEFAULT` is handed to the Makefile as `MAKECMDGOALS` on the command line and not as a goal, because a goal's
+    recipe lines that call `$(MAKE)` are run even under `-n`; a `level` is `MAKELEVEL`, `flags` are options of the call."""
     environment = {key: value for key, value in os.environ.items() if key not in MAKE_STATE}
+    environment.update({} if level is None else {"MAKELEVEL": level})
+    given = [] if goal == ".DEFAULT" else [f"MAKECMDGOALS={goal}"]
     try:
-        done = subprocess.run([make, "-f", makefile, *DATABASE], capture_output=True, text=True, check=False,
-                              env=environment, timeout=60, encoding="utf-8", errors="replace")
+        done = subprocess.run([make, *flags, "-f", makefile, *DATABASE, *given], capture_output=True, text=True,
+                              check=False, env=environment, timeout=60, encoding="utf-8", errors="replace")
     except (OSError, subprocess.SubprocessError) as error:
         raise RecordError(f"the make database cannot be read: {error}") from error
     found = Database({}, {}, {}, {}, {}, {}, {}, {})
@@ -292,6 +298,25 @@ def units_of(checks: dict[str, Any]) -> dict[str, list[str]]:
     return units
 
 
+def under_the_full_gate(make: str, makefile: str, data: Database) -> str | None:
+    """Words saying what the Makefile reads differently under the goal and level `make verify` hands its sub-make
+    (`verify-checks`, `MAKELEVEL` 1, the options it passes) than under the scoped run's own, or None where nothing does.
+    A rule, a variable a Makefile gives or one set for a pattern that differs is a conditional on `MAKECMDGOALS`,
+    `MAKELEVEL` or `MAKEFLAGS`, and the full gate sees what this read does not."""
+    group = data.variables.get("VERIFY_GROUP", "").split()
+    there = database(make, makefile, FULL_GATE_GOAL, "1", ("--no-print-directory", *group))
+    mine, theirs = rules.from_database_parsed(data, []), rules.from_database_parsed(there, [])
+    parts = ((mine.needs, theirs.needs, "`{}` rule"), (mine.order_only, theirs.order_only, "`{}` rule"),
+             (mine.recipes, theirs.recipes, "`{}` rule"), (mine.target_vars, theirs.target_vars, "`{}` rule"),
+             (mine.variables, theirs.variables, "variable `{}`"), (data.patterns, there.patterns, "variable `{}`"))
+    for here, full, words in parts:
+        for name in sorted(set(here) | set(full)):
+            if here.get(name) != full.get(name) and (here.get(name) or full.get(name)):
+                return (f"the Makefile's {words.format(name)} reads differently under the goal `{FULL_GATE_GOAL}` and "
+                        "level 1 that `make verify` gives its sub-make")
+    return None
+
+
 def compared(root: Path, data: Database, checks: dict[str, Any]) -> str | None:
     """What the Makefile has that the factory did not write (`rules.json`): a named check charged is one with no recorded
     inputs that always runs, a gate with units charged runs whole, and the words of a difference nobody can be charged
@@ -503,7 +528,7 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
     base = base or base_of(scope)
     context = Context(deployables, data, packages_of(root, scope, base))
     checks = checks_of(data, deployables, context)
-    full = compared(root, data, checks)
+    full = compared(root, data, checks) or under_the_full_gate(make, makefile, data)
     services = [name for name, item in deployables.items() if item["kind"] == "service"]
     models = models_of(root, scope, base) if len(services) > 1 or "check-model" in checks else []
     with_named(checks, root, models)
