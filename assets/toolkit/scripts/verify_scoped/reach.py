@@ -61,15 +61,22 @@ def git_bytes(root: Path, *args: str) -> bytes | None:
     return done.stdout if done.returncode == 0 else None
 
 
-def listed(root: Path, paths: list[str]) -> dict[str, list[str]]:
-    """The files git lists under each path, tracked or untracked and not ignored, from one listing of the tree. A file
-    that is gone from the working tree is not there to read."""
+def listed(root: Path, paths: list[str]) -> tuple[dict[str, list[str]], set[str]]:
+    """The files git lists under each path, tracked or untracked and not ignored, from one listing of the tree, and the
+    links among the ignored ones: a link is read whether or not git ignores it. A file that is gone from the working
+    tree is not there to read."""
     out = git_bytes(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard")
     if out is None:
         raise Unsure("git cannot list the tree", paths[0] if paths else None)
+    hidden = git_bytes(root, "ls-files", "-z", "--others", "--ignored", "--exclude-standard")
+    if hidden is None:
+        raise Unsure("git cannot list the ignored files", paths[0] if paths else None)
     names = sorted({name.decode("utf-8", "surrogateescape") for name in out.split(b"\0") if name})
-    return {path: [name for name in names if inside(name, path) and name != path
-                   and ((root / name).is_symlink() or (root / name).exists())] for path in paths}
+    links = {name for name in (item.decode("utf-8", "surrogateescape") for item in hidden.split(b"\0") if item)
+             if any(inside(name, path) for path in paths) and (root / name).is_symlink()}
+    found = {path: [name for name in sorted(set(names) | links) if inside(name, path) and name != path
+                    and ((root / name).is_symlink() or (root / name).exists())] for path in paths}
+    return found, links
 
 
 def text_of(data: bytes | None) -> str:
@@ -203,7 +210,7 @@ def identity_reach(file: str, text: str, name: str, deployables: dict[str, dict[
     return None
 
 
-def link_reach(root: Path, file: str, directory: str) -> str | None:
+def link_reach(root: Path, file: str, directory: str, ignored: bool = False) -> str | None:
     real_root, real_directory = (Path(p).resolve() for p in (root, root / directory))
     try:
         target = (root / file).resolve()
@@ -214,15 +221,17 @@ def link_reach(root: Path, file: str, directory: str) -> str | None:
     try:
         return target.relative_to(real_root).as_posix()
     except ValueError as error:
+        if ignored:  # a file git ignores that leads out of the repository (a `.venv`'s interpreter) reads none of it
+            return None
         raise Unsure(f"the link `{shown(file)}` leads outside the repository") from error
 
 
 def scan(root: Path, deployables: dict[str, dict[str, Any]], packages: list[str], base: str | None) -> str | None:
     names = identities(root, deployables, base) if len(deployables) > 1 else {name: set() for name in deployables}
-    files = listed(root, [str(item["path"]) for item in deployables.values()])
+    files, ignored = listed(root, [str(item["path"]) for item in deployables.values()])
     for name, item in deployables.items():
         try:
-            found = scan_one(root, name, deployables, packages, names, files[item["path"]])
+            found = scan_one(root, name, deployables, packages, names, files[item["path"]], ignored)
         except Unsure as error:
             raise Unsure(str(error), error.owner or item["path"]) from error
         if found is not None:
@@ -231,13 +240,13 @@ def scan(root: Path, deployables: dict[str, dict[str, Any]], packages: list[str]
 
 
 def scan_one(root: Path, name: str, deployables: dict[str, dict[str, Any]], packages: list[str],
-             names: dict[str, set[str]], files: list[str]) -> str | None:
+             names: dict[str, set[str]], files: list[str], ignored: set[str]) -> str | None:
     directory = deployables[name]["path"]
     for file in files:
         here = f"`{shown(file)}`"
         outside = f"outside its deployable `{shown(directory)}`, {ENDING}"
         if (root / file).is_symlink():
-            target = link_reach(root, file, directory)
+            target = link_reach(root, file, directory, file in ignored)
             if target is not None:
                 return f"{here} reaches `{shown(target)}`, {outside}"
             continue

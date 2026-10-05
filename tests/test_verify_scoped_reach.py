@@ -125,6 +125,19 @@ class PathTest(TwoCase):
         self.edit("apps/billing/src/rate.ts", "x\n")
         self.reached(self.scoped(), self.path_cause(f"{SERVICE}/src/billing-src", "apps/billing/src"))
 
+    def test_e8_an_ignored_symlink_that_leaves_the_deployable_is_the_full_gate(self) -> None:
+        """T051 (A3): the link is read whether or not git ignores it; a change through it must not be skipped."""
+        self.trunk({".gitignore": f"{SERVICE}/src/svc\n"}, {f"{SERVICE}/src/svc": "../../billing/src"})
+        self.assertEqual(git(self.repo, "check-ignore", f"{SERVICE}/src/svc").strip(), f"{SERVICE}/src/svc")
+        self.edit("apps/billing/src/rate.ts", "x\n")
+        self.reached(self.scoped(), self.path_cause(f"{SERVICE}/src/svc", "apps/billing/src"))
+
+    def test_e8_an_ignored_symlink_inside_the_deployable_or_out_of_the_repository_is_no_reach(self) -> None:
+        self.trunk({".gitignore": f"{SERVICE}/src/own\n{SERVICE}/src/away\n"},
+                   {f"{SERVICE}/src/own": "main.ts", f"{SERVICE}/src/away": "/usr"})
+        self.edit("apps/billing/src/rate.ts", "x\n")
+        self.stays_scoped(self.scoped())
+
     def test_e8_an_untracked_file_is_scanned_as_a_tracked_one_is(self) -> None:
         self.write_baseline()
         self.edit(f"{SERVICE}/src/new.ts", 'import "../../billing/src/rate.js";\n')
