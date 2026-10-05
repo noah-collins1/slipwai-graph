@@ -2178,3 +2178,94 @@ mark* is `parallelSafe` at the top level of the project's `project.json`.
   named like a standard-library one (a `json.py`) as crashing every worker; a project with no Python service gets the
   sentence "Where `project.json` carries `"parallelSafe": true`, …"; a mark that is a non-finite number (`1e400`,
   `NaN`) is refused by every factory rewrite of `project.json` with one line and nothing written.
+
+### S06-scoped-gate
+
+**Gaps reviewed** 2026-10-05, cruise iteration 17, host with `drive-skipper` for D114, D115 and D116 and the host's
+own D117: User Story 2's scenarios 1–5 and its Independent Test, revised FR-006 and FR-007, FR-023 (what S07 adds to
+the record) and FR-039–FR-044 (what S34–S36 read through it), against `makefile()` and `native_commands()` in
+`src/slipwai/project/`, the stamped gate (`gate.py`, `parallel_gate.py`, `assets/toolkit/scripts/verify-stamp.py`),
+the base and change rules of `assets/toolkit/scripts/check-slice-scope.py`, the contracts a generated project has
+(`openapi.py`, `shared_packages.py`, the event model's `reads`), the ladder text (`commands.py`,
+`parallel_slices.py`) and the adopted `delivery/Makefile`. Found and written back: nothing regenerates a stored
+record when a person edits `project.json`, so the record is derived when the gate runs and the obligations a person
+declares live in `project.json` (D114, ADR 0004 at `Proposed`); `lint`, `typecheck` and `test` are each one target
+over every deployable, so a component is a deployable with targets of its own, and a recipe line shared by a family
+— Python's `scripts/verify` — selects the whole family (D115); a machine's tool version and a variable's value are
+not in git, so they are compared with a baseline only a full green gate on the branch writes (D116); the stamp is
+stronger than any scoped run and only `make verify` writes it (D116); `check-slice-scope` reads every changed file,
+so it runs always and claims nothing, or no file would ever be unclaimed (D117); the ladder's three gate calls are
+two scoped and one full (D117); an adopted repository gets the target as its full gate (D114).
+
+Unless a criterion says otherwise, *a slice branch* is a branch named `slice/<id>` with a usable base, outside CI;
+*the base* is the merge-base `check-slice-scope` finds; *changed* is a path that differs from the base in a commit,
+the working tree or an untracked file git does not ignore (a deletion and both sides of a rename included); *the
+checks* are this project's `verify-checks` prerequisites; and *the record* is what `verify-scoped` derives.
+
+- **AC-S06-1** — *D117.* Given the trunk, a branch not named `slice/<id>`, a detached `HEAD`, any of `CI`,
+  `GITHUB_ACTIONS` or `GITLAB_CI` set, or a slice branch with no usable base, when `make verify-scoped` runs, then it
+  runs `make verify` — its stamp reuse and record as that target has them — and says in one line which of those it
+  was; its exit status is `make verify`'s.
+- **AC-S06-2** — *D115, scenario 1.* Given a generated project with two deployables and a slice branch changing one
+  source file under one deployable's path, when `make verify-scoped` runs, then that deployable's `lint-<name>`,
+  `typecheck-<name>` and `test-<name>` run, with every project-wide check whose recorded inputs include the file, and
+  the other deployable's three are named as skipped with *none of its inputs changed*.
+- **AC-S06-3** — *D115, scenario 1.* Given a change to a service's committed OpenAPI document or its source, then
+  `check-openapi` and the typecheck and test of every web app whose `api` names the service run; given a change under
+  `packages/<name>/`, then the typecheck and test of every npm-family deployable run; given a change in a service
+  that produces an event another service's slice `reads` in `model.yaml`, then the reading service's typecheck and
+  test run.
+- **AC-S06-4** — *D115.* Given two Python services and a change in one, then all three checks of both run, and the
+  run says the Python services share one recipe; `verify`'s targets, recipes and output are byte-for-byte today's.
+- **AC-S06-5** — *D114, D117, scenario 2.* Given a changed file no deployable's path and no check's recorded inputs
+  claim, or a change to `project.json`, the `Makefile`, anything under `scripts/`, then `make verify-scoped` runs
+  `make verify` and prints, once per such file, that dependency knowledge was incomplete for it; so does a record
+  the script cannot build, naming why.
+- **AC-S06-6** — *D117.* `check-slice-scope` runs on every scoped run and claims no file; a check with no recorded
+  inputs — until `S07-scoped-checks`, `check-agents`, `check-speckit`, `check-extensions` and `check-constitution` —
+  runs on every scoped run, named with *no recorded inputs*, and broadens nothing else.
+- **AC-S06-7** — *D116, scenario 3.* Given a change to a file that pins a tool (`.python-version`, `.nvmrc`,
+  `uv.lock`, `pyproject.toml`, `package-lock.json`, `go.mod`, `go.sum`, `pom.xml`, the Maven wrapper's properties),
+  then every check whose tool it pins runs.
+- **AC-S06-8** — *D116, scenario 3.* Given a green `make verify` that ran every check on this slice branch, when a
+  machine tool a check reads answers its version differently, or a variable a check reads changes — set, unset or
+  given another value — then every check that reads it runs; with both as they were, those checks are skipped with
+  *none of its inputs changed*. `UX_GATES_JOBS` and the job count select nothing.
+- **AC-S06-9** — *D116.* Given no baseline, a baseline taken on another branch, one that does not parse, or a tool
+  the record names that does not answer, then every check that reads a tool or a variable runs, and the run says
+  why once. The baseline is kept in the git directory beside the stamp, holds the branch, each tool's answer and a
+  digest — never the value — of each variable; it is written only by a `make verify` that ran and passed every check
+  on this slice branch, never by a scoped run that ran fewer, never under `-i`, `-n`, `-t`, `-q` or
+  `RATCHET_TIGHTEN`, and a failed `make verify` removes it.
+- **AC-S06-10** — *D116.* Given a verify stamp `reuse` accepts for the current tree, then `make verify-scoped` prints
+  the reuse line and exits 0 running nothing else; `VERIFY_FORCE` set makes it `make verify`; `verify-scoped` never
+  writes, removes or refreshes the stamp except through `make verify`'s own recipe.
+- **AC-S06-11** — *D114, scenario 4.* Given an integration obligation declared in `project.json` at the base, naming
+  two deployables and the checks that hold it, and a slice branch changing a file of either, then the obligation's
+  checks run and are named with it. A missing key is no obligation; a key that does not parse, or an entry naming a
+  deployable or a check the record does not know, runs `make verify` with one line naming the entry.
+- **AC-S06-12** — *D117.* Every check is named once — run, with the first changed input that chose it, or skipped
+  with its reason — and a last line counts each; the chosen checks run in one `make` call with the gate's grouping
+  and ordering, so `make -j verify-scoped` runs them in parallel as `make -j verify` does; a failed check fails the
+  run and is named.
+- **AC-S06-13** — *D114.* `verify-scoped` can print the record as JSON in the shape ADR 0004 fixes: every check
+  with its inputs (files, tools, variables) and its components, each deployable, each contract with its consumers,
+  each obligation; a check with no recorded inputs appears with none.
+- **AC-S06-14** — *D117, scenario 5, SC-007.* Given `main`, then `make verify-scoped` is `make verify`; the
+  generated `verify`, `verify-checks` and `ci` rules are unchanged, and the full gate's findings on the same tree are
+  identical before and after the slice.
+- **AC-S06-15** — *D117, FR-007.* The generated drive ladder starts a slice from a green `make verify-scoped` and
+  runs it before the first push; Phase 4 on `main` and the merge root keep `make verify`; the generated agent
+  settings allow `make verify-scoped`.
+- **AC-S06-16** — *D114.* Given an adopted repository, then `make -f delivery/Makefile verify-scoped` runs its full
+  gate and says in one line that this layout has no verification-dependency record yet.
+- **AC-S06-17** — Given a project generated before this release, when `slipwai migrate` runs, then it gains
+  `verify-scoped` and the per-deployable targets, and its `project.json` gains no obligations key. The `changelog.d/`
+  fragment claims MINOR, and its catch-up note, standing alone, names `make verify-scoped`, says the merge root and
+  CI still run the full gate, and names the key that declares an obligation.
+- **AC-S06-18** — The generated gates page documents `verify-scoped`: where it scopes and where it is the full gate,
+  what broadens it, the baseline, and the obligations key with its default (none) and one sentence on when to
+  declare one.
+- **AC-S06-19** — Scenario 7 re-checked: given the merge root, `make verify` runs pytest with xdist as `S05-xdist`
+  delivered. The demo records, in the quickstart and the fragment, `make verify-scoped` on a slice branch touching
+  one deployable of a two-deployable starter against `make verify` on the same tree, with the command and the machine.

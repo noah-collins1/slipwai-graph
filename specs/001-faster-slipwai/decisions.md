@@ -2240,3 +2240,119 @@
 - **Confidence:** high · **Would reverse if:** the owner would rather the run park than carry a second unapplied patch.
 - **Written to:** `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/plan.md`; `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/tasks.md`; `specs/001-faster-slipwai/story-split.md`
 - **Status:** standing
+
+## D114 — At S06's gaps stage: where the verification-dependency record lives, who writes it, how it stays true, where a person declares an integration obligation, and whether an adopted repository gets `verify-scoped` in this slice
+- **Stage:** 5 slice gaps · **Slice:** S06-scoped-gate · **When:** 2026-10-05T01:05:43Z · **Iteration:** 17
+- **Scope:** S06-scoped-gate, S07-scoped-checks, S34-evidence-milestone, S35-negotiation-budget, S36-integration-invariants
+- **Question:** Where does the verification-dependency record live, who writes it, how does it stay true, where does a person declare a multi-component integration obligation, and does an adopted repository get `verify-scoped` in this slice?
+- **Options:** (a) **recommended**. The record is never stored. `verify-scoped` derives it each time it runs. The factory's table of what each check reads ships inside the toolkit script that implements `verify-scoped`. That script is a gate script, so any change to it is a full-gate change. At run time the table is joined with `project.json`'s `deployables`, and the script can print the derived record as JSON, the shape ADR 0004 fixes and S07 and S34 read. A person declares integration obligations in `project.json` under one new key (for example `verification.obligations`: name, components, checks), which `migrate` keeps as the project's own. An adopted repository's `delivery/Makefile` gets a `verify-scoped` that runs the full gate and says in one line that this layout has no record yet. Scoping an adopted repository's wrapped commands is parked. · (b) A generated file (for example `verification.json` at the root) written at `generate`, `add-service`, `add-frontend` and `migrate` from `project.json`, which a person may extend by hand, with obligations in it. Adopted repositories as in (a). · (c) As (a), but an adopted repository is scoped in this slice by its per-app recorded commands.
+- **Decision:** (a), as the stage recommended, with three points settled here so the plan does not have to re-ask them:
+  1. **The record's own inputs.** The record is derived from the branch's tree. If the branch changed any of the following, the record "cannot establish what is affected" (FR-006) and `verify-scoped` runs the full gate, naming the file as the reason:
+     - `project.json` (the deployables and the obligations)
+     - the `verify-scoped` script or its table
+     - any other gate script (`is_gate_script`)
+  2. **A bad obligation fails safe.** An obligations key that is missing means no obligations. If the key is present but unreadable or malformed, or an entry names a component that is not among the `deployables` or a check the table does not know, `verify-scoped` runs the full gate. It says which entry was at fault, in one line. This follows D104's rule that only a well-formed value narrows anything.
+  3. **The adopted repository.** `delivery/Makefile`'s `verify-scoped` is the full gate, plus one line saying this layout has no verification-dependency record yet. That keeps FR-006 true there by its own broadening clause, and lets FR-007's ladder call the same target in both kinds of repository. Scoping the wrapped per-app commands goes into the Parking Lot as a later slice. The S06 row's release note *"a new generated record"* is reworded to *"a new target, a derived record and one optional `project.json` key"*. The level stays MINOR.
+- **Why:** The developer's question is whether a skipped check really could not have failed, and a stored copy is the one thing that can make the answer wrong without anyone noticing.
+  - **Option (b) goes stale.** A person may edit `project.json` at any time and nothing regenerates a file from it then. A `verification.json` would quietly drift from what it claims to describe, and a stale record skips a check whose input changed. That is the false green the brief's fifth priority rules out. D104 already chose to read `project.json` when the gate runs, for this same reason. Deriving at run time means there is nothing to keep true.
+  - **The table belongs in the gate script.** It changes only with the checks it describes, and the stamp's existing rule already treats a change to it as a full-gate change.
+  - **Obligations are the project's own declaration**, like `parallelSafe`. They belong in the file the project owns and `migrate` merges three ways, not in a factory-written file `migrate` would rewrite. That keeps constitution I's first MUST.
+  - **No new dependency, no new file kind.** The record is a JSON printout from a stdlib script.
+  - **Option (c) is premature.** Scoping wrapped commands means a dependency model for code the factory did not write, through `ratchet.py`'s baselines. That is a second slice's worth of risk to a deterministic gate. The brief's third priority puts the generated project's loop first, and full-gate broadening already satisfies FR-006 for the adopted layout.
+  - **What does not change:** the merge root and CI keep the full gate (constitution I, the brief's first priority).
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** a check's inputs turn out not to be derivable from the shipped table plus `project.json`. For example, a project's own added check would need person-declared file inputs to be skipped at all. The record would then need a declared, hand-extended section, and its home would have to be re-decided.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S06's criteria); `specs/001-faster-slipwai/story-split.md` (S06's release note; the Parking Lot line on scoping an adopted repository's wrapped commands); `delivery/docs/adr/0004-verification-dependency-record.md`
+- **Status:** standing
+
+## D115 — In a generated project, what is a component, what are a contract and its consumers, and what are "the contract tests of every consumer"?
+- **Stage:** slice gaps (stage 5) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T01:05:53Z · **Iteration:** 17
+- **Scope:** S06-scoped-gate
+- **Question:** In a generated project, what is a *component* the record names, what are *a contract* and *its consumers*, and what does "the contract tests of every consumer" run? Today `lint`, `typecheck` and `test` are each one target that merges every service's and web app's recipe, and a generated project has no separate contract-test target.
+- **Options:** (a) **recommended**: a component is a deployable in `project.json`. Per-deployable `lint-<name>`, `typecheck-<name>` and `test-<name>` targets are reached only by `verify-scoped`, and `verify` stays as it is today. There are three contracts (a service's OpenAPI document, a shared package, a model event). A consumer's contract tests are its typecheck and test. Project-wide checks stay whole. · (b) components as in (a), but lint, typecheck and test stay one target each, and splitting them is a later slice · (c) components are bounded contexts (`src/<context>/`), with tests selected per context.
+- **Decision:** (a), with three changes:
+  1. **A component is a deployable** in `project.json`: a generated service, a web app, or a wrapped application the method found. A service's bounded contexts belong to that one component in this slice.
+  2. **Per-deployable targets.** The slice adds `lint-<name>`, `typecheck-<name>` and `test-<name>`.
+     - They are built from each deployable's own recipe lines, the per-app recipes `native_commands` builds before `merged()` combines them.
+     - Only `verify-scoped` reaches them.
+     - `verify`'s prerequisites, recipes and output stay byte-for-byte as they are.
+  3. **Change 1: shared recipe lines.** A recipe line that names no app's path is a repository-level step, for example `npm ci` or Python's `./scripts/verify --lint-only`, which loops over every Python service itself. Such a line is not split.
+     - The record makes it an input shared by every deployable in that family. If any of them is selected, the line runs once.
+     - So in a project with several Python services, one Python service changing runs every Python service's lint, typecheck and test, and the output says so. The run is wider than it needs to be, never narrower.
+     - The generated `scripts/verify` does not change in this slice.
+  4. **The three contracts and their consumers.**
+
+     | Contract | Its consumers | What runs for them |
+     |---|---|---|
+     | A service's committed OpenAPI document (`document_of(service)`) | Every web app whose `api` names that service, through `packages/api-client` | `check-openapi`, then each consumer's typecheck and test |
+     | A shared package under `packages/` | Every npm-family deployable: TypeScript services and web apps. `shared_packages.consumers()` lists Make targets, not deployables, and this is the deployable reading of the same rule | Each consumer's typecheck and test |
+     | An event that a `model.yaml` slice whose `service` is X produces, and that a slice whose `service` is Y≠X `reads` | Y | Y's typecheck and test |
+
+  5. **Change 2: events.** The record cannot yet name the one file that defines an event's shape. So any change inside the producing service counts as possibly changing the event, and Y's typecheck and test run.
+  6. **Contract tests.** "The contract tests of a consumer" are that consumer's `typecheck-<name>` and `test-<name>`, because no narrower target exists.
+  7. **Project-wide checks stay whole.** `check-imports`, `check-migrations`, `check-model`, `check-openapi`, `check-structure` and the rest each claim the files they read. A changed claimed input runs the whole check.
+  8. **Change 3: unknown components.** A file under no deployable's path and claimed by no check is incomplete knowledge (scenario 2), and the full gate runs.
+- **Why:** The developer on a slice branch wants only what their change could break to run, and never less.
+  - (b) would make "only those checks" in the Independent Test false in every project with more than one deployable. That is the case Story 2 exists for, and owner priority 2 (fewer runs of the same check) is lost there.
+  - (c) would put the check split inside one service's test runner, which every backend does differently. FR-006 also says touched context alone is not enough, so contexts would still need contract edges on top.
+  - Treating the deployable as the component matches how the gate's recipes are already cut. Any doubt (a shared recipe line, a producing service, an unclaimed file) widens the run, which is owner priority 5.
+  - `verify`, the merge root and CI are left exactly as they are. That holds owner priority 1, constitution I's additive-gate MUST and SC-007, and nothing in "out of scope" is touched.
+  - The cost: a multi-service Python project gets no per-service narrowing until `scripts/verify` learns to filter by app. Leaving it unsplit is honest about that, where a split could silently skip something.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** a person reads the Independent Test's "one context's checks" as a bounded context inside a service, with per-context test selection required in this slice. The component then becomes the context, as in (c), and the per-deployable targets become its fallback.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S06's criteria); `delivery/docs/adr/0004-verification-dependency-record.md`
+- **Status:** standing
+
+## D116 — On a slice branch, what is a change to a tool version or to an environment variable a check reads measured against, and how does `verify-scoped` meet the verify stamp?
+- **Stage:** slice gaps · **Slice:** S06-scoped-gate · **When:** 2026-10-05T01:06:03Z · **Iteration:** 17
+- **Scope:** S06-scoped-gate
+- **Question:** User Story 2 scenario 3 says that when a tool version, a configuration file or an environment variable a check reads changes, every check that reads it runs. A configuration file is in git, so it is compared with the slice's base like any other file. A machine's tool version and a variable's value are not in git. On a `slice/<id>` branch, what is a *change* to them measured against? And how does `verify-scoped` meet the verify stamp from S03 (D73–D77, D89)?
+- **Options:** (a) **recommended by the stage.** A file that pins a version is a file input of the checks that use it. For the machine's tools and for variables, `verify-scoped` compares against a baseline it records itself, kept beside the stamp and written only after a green run of every check on this branch. With no usable baseline, every check that reads a tool or a variable runs. Unkeyed variables (`UX_GATES_JOBS`) are not inputs. A stamp that `reuse` accepts satisfies `verify-scoped`, and `verify-scoped` records the verify stamp only through `make verify` itself. (b) Every check that reads any tool or variable runs on every scoped run. (c) As (a) for tools, but a variable counts as changed whenever it is set and non-empty.
+- **Decision:** (a), the stage's recommendation, tightened in rules 3, 4 and 6. Each rule is one a test can hold.
+  1. **Pinning files are file inputs.** `.python-version`, `.nvmrc`, `uv.lock`, `pyproject.toml`, `package-lock.json`, `go.mod`/`go.sum`, `pom.xml`, `.mvn/wrapper/maven-wrapper.properties` and their kind are file inputs of the checks whose tools they pin. They are compared with the slice's base like any file. A lock-pinned tool (ruff, mypy, pytest, staticcheck, the Maven plugins, anything under `package-lock.json`) is never asked its version (D75 rule 3). Its change is a change to one of these files.
+  2. **Machine tools and variables are compared with a baseline, not with the base.** The record says which machine tools and which variables each check reads. The tools are the ones in D75's table: `make`, `git`, `python3`, `uv`, `node`, `npm`, `go`, `java`, and a Python service's interpreter from `.venv/pyvenv.cfg`. Each is read the way `verify-stamp.py` reads it today. `verify-scoped` keeps a baseline in the git directory, beside the stamp: one per worktree and per project (D76's rule on where the stamp lives), never in the working tree, never shared. The baseline holds:
+     - the branch name it was taken on;
+     - each tool's answer, in the form the stamp's `tools` holds it;
+     - for each variable the record lists, a digest of `variable_record`'s bytes. That keeps unset distinct from empty and stores no value (the constitution on persisted data).
+
+     A check runs when any of its recorded tools or variables differs from the baseline.
+  3. **No usable baseline means every reader runs.** There may be no baseline, it may be from another branch, or it may fail to parse. Or a tool the record names may not be askable within D75's timeout, in which case its readers run. Each of these is incomplete knowledge (FR-006), so every check that reads a tool or a variable runs. On a branch's first scoped run that is in practice the full gate. The output names this as the reason, in one line, once.
+  4. **When the baseline is written.** It is written only after a run on this branch that ran every check and passed all of them. That run is a full `make verify`, or a `verify-scoped` that broadened to the full gate through `make verify`. The tools are the ones that run asked at its start. The variables and the tree's key must be what they were when it began, as `record()` holds today. The baseline is never written when:
+     - a scoped run ran fewer checks, even if every reader of a changed input ran green;
+     - the run was under `-i`, `-n`, `-t`, `-q`, or with `RATCHET_TIGHTEN` set (the `declined()` and `ratcheting()` cases);
+     - the run was on the trunk, under a CI marker, or on a detached `HEAD` (D74, D77).
+
+     A failed run removes the baseline.
+  5. **Unkeyed variables are not inputs.** `UNKEYED_VARIABLES` (`UX_GATES_JOBS`), and `MAKEFLAGS`' job count (D89 rule 3), say how many checks run at once, not what they answer. They select nothing.
+  6. **How `verify-scoped` meets the stamp.** A run is CI when a CI marker is set (D74 R1). Such a run, and any run on the trunk (FR-006, scenario 5), is `make verify` and nothing else: it reads and writes no baseline. `VERIFY_FORCE` set to a forcing value (D76) makes `verify-scoped` run `make verify`, which honours it. On a slice branch, a stamp that `reuse` accepts for the current tree, tools and variables satisfies `verify-scoped` outright. It prints the reuse line and exits 0, because that stamp vouches for every check on this exact tree. `verify-scoped` itself never writes, removes or refreshes the verify stamp. Only a full gate that went through `make verify`'s own recipe records one, so a stamp always means the full gate passed.
+- **Why:** The developer wants a slice branch whose second and later gates cost only what they changed, without the gate going green on something it would catch.
+  - **Against the base is not available.** For a machine tool or a variable, "against the base" has no meaning: the base was proven by CI's tools, not this machine's.
+  - **The baseline is the last time every check passed here.** So a check skipped for an unchanged tool or variable is one this machine already saw pass with that exact tool and value on this branch. The broadening rules cover everything else: missing, foreign or unreadable knowledge runs the readers. That honours priority 5, and FR-006's "broaden where the record cannot establish".
+  - **Why only a full green run writes the baseline.** If a partial run refreshed it, the baseline could vouch for a tool under which some reader never ran. The cost is that a tool upgrade re-runs its readers until the next full `make verify`. That cost is small and errs safe.
+  - **Why not (b).** Every check reads `python3` and `make`, so (b) is the full gate on every run. It defeats priority 2 and the story.
+  - **Why not (c).** It misses a variable that went from set to unset, a change that can flip `check-slice-scope` or `UX_GATES_REQUIRE`. It also re-runs readers forever for a variable that is always set. That is false greens one way and wasted runs the other.
+  - **Why the stamp rule holds.** The stamp is strictly stronger than any scoped run, so honouring it costs nothing. Letting only `make verify` write it keeps D73–D77 true as written.
+  - **Priority 1 holds.** The merge root and CI are untouched and run the full gate.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** a check can give a different answer under an identical tool answer and identical variable digests on the same branch. An example would be a tool whose behaviour moves with something its `--version` cannot see, as D112 found for the Compose plugin. Then the baseline would have to key that input through a probe the way D112 does, or else treat the check as having unrecorded inputs, so it always runs.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S06's criteria: the baseline, its broadening, and the stamp rule)
+- **Status:** standing
+
+## D117 — On which checkouts is `verify-scoped` the full gate, what is a change measured from, what broadens, what does it print, and where does the ladder call it?
+- **Stage:** slice gaps (stage 5) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T01:12:30Z · **Iteration:** 17
+- **Scope:** S06-scoped-gate
+- **Question:** FR-006 and FR-007 leave the run's borders to the gaps stage: the checkouts that are not a slice branch, the base a change is measured from, a check with no recorded inputs, what a run prints and how it fails, how it runs under `make -j`, and which of the ladder's gate calls become `verify-scoped`.
+- **Options:** (a) recommended, read from FR-006, FR-007, FR-023 and the owner brief's first and fifth priorities: as the decision says · (b) scope every branch that is not the trunk, not only `slice/<id>`.
+- **Decision:** (a).
+  1. `verify-scoped` is `make verify` itself — the stamped full gate, with its reuse and its record — on the trunk (the name `check-slice-scope`'s `merge_base()` reads: `ci.branch` where usable, else `main`, else `master`), on any branch not named `slice/<id>`, on a detached `HEAD`, under any CI marker, and where the slice's base cannot be found. It says why in one line.
+  2. A change is measured as `check-slice-scope` measures it, by importing that script (as `verify-stamp.py` does): every path in `git diff --no-renames` against the merge-base, the working tree and untracked files included, a deletion and both sides of a rename counted.
+  3. A check with no recorded inputs runs on every scoped run and is named with that reason; it does not broaden the rest (FR-023's reading). `check-slice-scope` always runs on a slice branch.
+  4. A changed file no deployable and no check claims, any change to a gate script, `project.json` or the record's script, and a record the script cannot build each run the full gate through `make verify`, with one line naming the file and *dependency knowledge was incomplete* (scenario 2).
+  5. Every check of this project's `verify-checks` is named once: run, with the first changed input that selected it, or skipped, with *none of its inputs changed*. A last line counts both. The checks chosen run in one `$(MAKE)` call with the gate's own grouping and ordering (`VERIFY_GROUP`, `VERIFY_ORDER=1`), so `make -j verify-scoped` runs them in parallel as `make -j verify` does; the run fails when any of them fails, naming it.
+  6. FR-007: the drive ladder's *start the slice from a green `make verify`* and the gate before the first push become `verify-scoped`, in `drive_command()` and `concurrent_slices()`; Phase 4 on `main` and the merge root keep `make verify`; the generated agent settings allow `make verify-scoped` beside `make verify`.
+  7. `verify`, `verify-checks` and `ci` are unchanged (SC-007): the merge root and CI run the full gate.
+- **Why:** The specification says where the scoped run applies (a `slice/<id>` branch) and that every doubt broadens; the owner's first priority keeps the merge root and CI whole, and the fifth says a cache that could cache a false green is wrong. Scoping other branches (b) would extend a gate the spec defines for slice branches to branches nobody asked about, with no base rule of their own.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** the owner wants the scoped run on branches other than `slice/<id>`.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S06's criteria)
+- **Status:** standing
