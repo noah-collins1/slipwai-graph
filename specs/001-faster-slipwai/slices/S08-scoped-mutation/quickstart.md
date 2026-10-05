@@ -24,7 +24,7 @@ cd /tmp/s08/demo/demo-go && slipwai add-service billing --backend go && git add 
    `skip apps/billing — no changed production file`, and a last line `1 scoped, 0 swept, 1 skipped, 0 refused; passed`.
 3. **Tests only.** Revert, edit `apps/service/health/health_test.go` → `no mutant to run — only tests changed: …`, exit 0.
 4. **Config sweeps.** Edit `apps/billing/.gremlins.yaml` → `sweep apps/billing — \`apps/billing/.gremlins.yaml\` changed`.
-5. **`SINCE` anywhere.** Before `add-service` (which rewrites the `mutation` rule, and a changed rule sweeps), `make mutation SINCE=HEAD~1` on `main` scopes; `make mutation SINCE=nope` fails naming `nope`;
+5. **`SINCE` anywhere.** Before `add-service` (which rewrites the `mutation` rule, and a changed rule sweeps), `make mutation SINCE=HEAD~1` on `main`, after a commit that changes one production file Gremlins can mutate, scopes (a commit that changes only a comment is `no mutant to run`, exit 0); `make mutation SINCE=nope` fails naming `nope`;
    `make mutation SINCE=` sweeps.
 6. **Spring.** On a slice branch, edit a class under a `targetClasses` package (`health/HealthStatus.java`) → PIT
    mutates `HealthStatus` and `HealthStatus$*` only; edit an adapter outside it → named, Maven not started, exit 0.

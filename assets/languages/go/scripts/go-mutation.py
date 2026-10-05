@@ -68,7 +68,6 @@ REPORT = "gremlins.json"
 CONFIG = ".gremlins.yaml"
 TIMED_OUT = "TIMED OUT"
 NOT_COVERED = "NOT COVERED"
-THRESHOLD_EXITS = (10, 11)  # Gremlins: below efficacy-threshold, below mutant coverage threshold
 
 
 def say(text: str) -> None:
@@ -308,24 +307,41 @@ def assess(report: Path) -> int:
     return 0
 
 
-def untested(report: Path) -> int:
-    """How many mutants the report holds that no test reached, when that is every mutant it holds that counted.
-
-    Gremlins scores zero tested mutants as 0% efficacy and exits below `efficacy-threshold`, which a scoped
-    run meets whenever the change it was scoped to is code no test reaches. The sweep's configuration says
-    *not covered is reported, never failed; a survivor fails*, so a scoped run is held to that: this is the
-    count when nothing was killed, lived or timed out, and 0 for any other report, a missing one included.
-    """
+def tally(report: Path) -> Counter[str] | None:
+    """The mutants in Gremlins' report by status, or None when there is no report or it cannot be read."""
     if not report.is_file():
-        return 0
+        return None
     try:
         result = json.loads(report.read_text(encoding="utf-8"))
-    except ValueError:
+        return Counter(m["status"] for f in result.get("files", []) for m in f.get("mutations", []))
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return None
+
+
+def judge_scoped(report: Path, code: int) -> int:
+    """A scoped run's exit status, from Gremlins' report and not from the exit code of what started it.
+
+    `go run` turns the program's exit 10 into its own 1 (and prints "exit status 10"), a built binary exits 10,
+    so the code says only whether Gremlins passed; which way it failed is in the report. The sweep's configuration
+    says *not covered is reported, never failed; a survivor fails*: Gremlins scores zero tested mutants as 0%
+    efficacy and exits below the threshold, which a scoped run meets whenever the change it was scoped to is code
+    no test reaches. So a failing run whose report holds mutants and none was killed, lived or timed out passes
+    with them counted. A failing run with no report, or one that cannot be read, is a build or setup failure and
+    stays red; and Gremlins' "No results to report." (exit 0, no report) after a scope is a change with no mutant
+    of its own to answer for.
+    """
+    statuses = tally(report)
+    if code == 0:
+        if not statuses:
+            say("mutation: no mutant to run — Gremlins found nothing to mutate in the scoped file(s), "
+                "such as a change to comments only")
+            return 0
+        return assess(report)
+    if statuses and not (statuses["KILLED"] or statuses["LIVED"] or statuses[TIMED_OUT]) and statuses[NOT_COVERED]:
+        say(f"mutation: {statuses[NOT_COVERED]} mutants not covered by any test, none killed or lived; not covered is "
+            "reported, never failed")
         return 0
-    statuses = Counter(m["status"] for f in result.get("files", []) for m in f.get("mutations", []))
-    if statuses["KILLED"] or statuses["LIVED"] or statuses[TIMED_OUT]:
-        return 0
-    return statuses[NOT_COVERED]
+    return code
 
 
 USAGE = "usage: go-mutation.py <service> [--since <branch-or-commit> | --file <path> ...]\n"
@@ -387,13 +403,10 @@ def main(argv: list[str]) -> int:
             cwd=staged, env={**os.environ, "GOWORK": "off"},
         )
         keep_report(report, service)
+        if scoped:
+            return judge_scoped(report, run.returncode)
         if run.returncode != 0:
-            count = untested(report) if scoped and run.returncode in THRESHOLD_EXITS else 0
-            if not count:
-                return run.returncode
-            say(f"mutation: {count} mutants not covered by any test, none killed or lived; not covered is "
-                  "reported, never failed")
-            return 0
+            return run.returncode
         return assess(report)
     finally:
         shutil.rmtree(into, ignore_errors=True)
