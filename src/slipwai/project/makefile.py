@@ -27,6 +27,7 @@ from .openapi import exporting, openapi_targets
 from .parallel_gate import gate_order, in_recipe, python_first, sync_rules
 from .parallel_gate import needs as sync_needs
 from .production import deploy_role_gate, production_targets
+from .scoped_targets import scoped_section
 from .shared_packages import npm_dependency, npm_workspace_targets
 
 
@@ -330,4 +331,4 @@ audit: ## Run the ecosystem-native dependency vulnerability audit
 
 .PHONY: verify ci
 {verify_target}
-{python_first(gate_name == "verify-checks", verify_dependencies)}{gate_order(gate_name == "verify-checks", apps, event)}{document_gate}{ci_targets}{production_section}{adoption_targets(apps, layout)}"""
+{python_first(gate_name == "verify-checks", verify_dependencies)}{gate_order(gate_name == "verify-checks", apps, event)}{document_gate}{ci_targets}{production_section}{adoption_targets(apps, layout)}{scoped_section(apps, layout)}"""

@@ -282,6 +282,20 @@ def format_command(apps: list[App]) -> str:
     return STEP.join(lines)
 
 
+def web_recipes(web: list[App]) -> list[dict[str, str]]:
+    """Each browser app's own checks, one line per target and app, in app order: spelled here once, for the merged
+    recipes below and for the per-deployable targets (`scoped_targets`)."""
+    return [
+        {
+            "typecheck": f"npm --workspace {w.path} run typecheck",
+            "lint": f"npm --workspace {w.path} run lint",
+            "test": f"npm --workspace {w.path} test",
+            "adversarial": f"npm --workspace {w.path} exec -- vitest run --passWithNoTests -t adversarial",
+        }
+        for w in web
+    ]
+
+
 def native_commands(apps: list[App]) -> dict[str, str]:
     """Every service's commands, merged, with each browser app's own checks appended after them — and after
     the generated services', the recorded commands of every application that existed before the method did."""
@@ -297,12 +311,8 @@ def native_commands(apps: list[App]) -> dict[str, str]:
             native["install"] += "\n\tnpm ci"
         # No install step here either: these targets take the npm dependency target as a prerequisite
         # (`shared_packages`), which is emitted for exactly the projects these lines are appended to.
-        native["typecheck"] += "".join(f"\n\tnpm --workspace {w.path} run typecheck" for w in web)
-        native["lint"] += "".join(f"\n\tnpm --workspace {w.path} run lint" for w in web)
-        native["test"] += "".join(f"\n\tnpm --workspace {w.path} test" for w in web)
-        native["adversarial"] += "".join(
-            f"\n\tnpm --workspace {w.path} exec -- vitest run --passWithNoTests -t adversarial" for w in web
-        )
+        for target in ("typecheck", "lint", "test", "adversarial"):
+            native[target] += "".join(f"{STEP}{recipe[target]}" for recipe in web_recipes(web))
         if not node_backend:
             native["audit"] += "\n\tnpm audit --audit-level=critical"
     return native
