@@ -2200,3 +2200,31 @@
 - **Confidence:** medium · **Would reverse if:** the owner says S06 must itself deliver scoped mutation, or that User Story 10 is to land as one slice.
 - **Written to:** `specs/001-faster-slipwai/story-split.md`
 - **Status:** standing
+
+## D112 — S33's converge pass: the Docker Compose plugin decides whether a Postgres contract test runs, and `--version` cannot see it — how does the factory's stamped gate key it?
+- **Stage:** converge (S33 pass 1, T016 part c) · **Slice:** S33-factory-gate-stamp · **When:** 2026-10-05T00:31:59Z · **Iteration:** 16
+- **Scope:** S33-factory-gate-stamp
+- **Question:** The root gate's key asks `<tool> --version` for each name in `VERIFY_TOOLS`. `tests/test_postgres.py:208-211` skips without the Compose plugin (`docker compose version`), and `docker --version` gives the same answer with or without the plugin. A stamp recorded without the plugin is therefore reused after it is installed, over a Postgres contract test that never ran. `assets/toolkit/scripts/verify-stamp.py` asks only `--version`, and D91 says S32 comes first if the script must change. How is the plugin handled?
+- **Options:** (a) name it in the spec's *Not keyed, and said so* sentence beside the npm registry, with `VERIFY_FORCE=1` as the remedy (the converge pass's framing calls this the cheapest); (b) key it from the root `Makefile` without changing the script: before `token` and `reuse`, the recipe writes the probe's answer (or `absent`) into a git-ignored file the key already reads; (c) bypass the stamp whenever `docker compose version` succeeds; (d) take S32 first and teach the script a second probe form.
+- **Decision:** (b). The root `Makefile`'s `verify` recipe, in the stamped branch only (the `TESTS`/`SKIP` bypass is unchanged), writes the probe file as its first step, before `token`. Roughly `mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; } > .factory-work/verify-probes`. The file holds the probe's stdout, or the word `absent` when the probe fails or `docker` is not on `PATH`. Nothing is written to stderr.
+  - The path is `.factory-work/verify-probes`. `.gitignore:4` ignores the directory, it is not on the script's `EXEMPT` list, and nothing else in the repository uses it. `tree_records` therefore hashes the file into the key's `ignored` part by its bytes. Writing the same bytes on every run leaves the key unchanged, because the key reads content and not modification time.
+  - The file name is plural so a later probe-only skip gets a line in the same file, not a second mechanism.
+  - The script does not change, so S32 is not owed (D91).
+  - The *Not keyed, and said so* sentence keeps the npm registry and git's user configuration, and does not gain Compose.
+  - `tests/test_factory_gate_stamp.py` gets an example built on `GateCase`:
+    - Set-up: a stand-in `docker` first on `PATH` answers `--version` the same way throughout, and fails `compose version`. After a pass, the stand-in is changed to answer `compose version`.
+    - Holds: the next `make verify` is a full run, and the run after that reuses the stamp.
+    - Teeth: take the probe line out of the recipe and the example fails.
+  - T016(a)'s table of probed tools records `docker compose` as *keyed through the probe file*, not as an exemption. That way the class-closing example accounts for it instead of passing over it.
+  - The `Makefile` line reaches the tree the way T001–T007 did: a patch a person applies (D99, D101). The test-only part does not need a person.
+  - No version bump: the root `Makefile` and `tests/` reach no user.
+- **Why:**
+  - **Against (a):** The owner brief's fifth priority rules it out. Naming the gap would still record a stamp that can cache a false green after an ordinary act (installing the Compose plugin). The npm registry is a different case: reachability is network state, which a key cannot hold.
+  - **Against (c):** This machine has Compose, so the gate would never reuse here. That gives up the slice's whole purpose, about thirty-five minutes a run twice a slice (D99), to close a gap that (b) closes for one shell line.
+  - **Against (d):** It spends a whole slice (S32) ahead of S05's successors on what the tree can already express.
+  - **For (b):** It is the only option that keeps both determinism and reuse. It uses a property the script already promises: ignored files are in the key unless listed exempt, and an exempt list nobody extended leaves them in.
+  - This is a departure from the framing's recommendation of (a). The reason is that the cheapest option is not available when a cheap correct one exists.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the script's `EXEMPT` list gains `.factory-work/`, or the key stops reading ignored files. The probe would then be invisible to the key, and (d), through S32, becomes the route.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S33's gaps note: Compose keyed through the probe file; the criterion that holds it is numbered by the host); `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/tasks.md` (T016 part c); `Makefile` (by patch, a person applies it); `tests/test_factory_gate_stamp.py`
+- **Status:** standing

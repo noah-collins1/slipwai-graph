@@ -2098,6 +2098,16 @@ records it was started and exits as the test says.
 - **AC-S33-10** — Each of AC-S33-1 to -7 has an example in the suite that runs the root `Makefile`, copied into a
   temporary repository with stand-in checks, written as a hold and seen once to have teeth; the factory's own
   second `make verify` on an unchanged tree is measured at the demo.
+- **AC-S33-11** — *Added by converge pass 1 (T015, CRITICAL).* Given any environment variable the factory's suite
+  reads that narrows or redirects what it runs — `FACTORY_BACKENDS` first — set, when `make verify` runs, then it is
+  a full run of what that variable selects and no stamp is read, written or removed, as AC-S33-5; every variable
+  the suite reads is named in a table in the suite as either such a bypass or as changing nothing the suite runs,
+  with its reason, and a name the table does not carry fails the suite.
+- **AC-S33-12** — *Added by converge pass 1 (T016, HIGH) and D112.* Every tool whose presence or version changes what
+  the suite runs is in the key: `ko` and `mvn` join the tools of AC-S33-6, and the Docker Compose plugin, which
+  `docker --version` cannot see, is keyed through `.factory-work/verify-probes`, a git-ignored file the root gate
+  writes from `docker compose version` (or `absent`) before it asks the stamp; a tool the suite probes that is in
+  neither the key nor a written exemption with its reason fails the suite.
 
 ### S05-xdist
 

@@ -167,7 +167,7 @@ and `--make "$(MAKE)"`. The list is written once.
 
 ### T007 — BLOCKED: a person applies `s33.patch` (⛔)
 
-- [ ] **Not a delegate's task and not the host's: the root `Makefile` is a control (D99, D101).** A person runs the
+- [x] *(Applied by the owner at `cab6cda`, with the follow-ups `e3bc084` and `e997a5f`; iteration 16 re-enters at T008.)* **Not a delegate's task and not the host's: the root `Makefile` is a control (D99, D101).** A person runs the
   three commands in plan.md's *Summary* (`git apply …/s33.patch`; `make lint typecheck check-structure && make test
   TESTS=test_factory_gate_stamp`; the commit by path). Until then the slice is blocked and the run takes `S05-xdist`;
   the iteration after it lands re-enters at **T008**. No task below starts before this one is ticked.
@@ -236,6 +236,62 @@ runs on the tree T007 produced, never beside T013.
 ## Design review
 
 No screen in this slice
+
+## Phase 4: Converge findings (pass 1)
+
+The root `Makefile` is still a control (D99, D101). A task below that changes it goes the way T001–T007 did: a
+scratch worktree, an exported patch, then a person applies it. A task that changes only `tests/` does not.
+
+### T015 — CRITICAL: an environment variable that narrows the suite is neither keyed nor a bypass (Principle I; owner priority 5)
+
+- [ ] `tests/support.py:31` reads `FACTORY_BACKENDS` and cuts the matrix down (`FACTORY_BACKENDS=python` → 1 backend
+  out of 5). `.github/workflows/verify.yml:57` calls it, beside `TESTS`/`SKIP`, *how a slice is named*. The key
+  holds only the script's `VARIABLES` (`verify-stamp.py:115`). Root `Makefile:46` bypasses the stamp for `TESTS` and
+  `SKIP` and nothing else. **Evidence:** `key_parts()` over this tree gives `646104d6449f41a4` both with and without
+  `FACTORY_BACKENDS=python` (and with `IMAGE_REGISTRY=x/`). In a scratch fixture built from
+  `GateCase`, `FACTORY_BACKENDS=python make verify` after a pass printed the reuse line and started no check. Turn
+  that round and you have the false green: `FACTORY_BACKENDS=python make verify` records a stamp, and a later plain
+  `make verify` reuses it, so four backends' generated gates never run locally. That is a check removed to make the
+  loop faster (constitution I, line 33), and it is a false green, which priority 5 rules out. **Close the class, not
+  the instance:** (a) root `Makefile` (a person, by patch): every variable that narrows or redirects what the suite
+  runs bypasses the stamp the way `TESTS`/`SKIP` do, starting with `FACTORY_BACKENDS` in the `ifneq` at line 46.
+  (b) `tests/test_factory_gate_stamp.py`: one example that collects every name `tests/*.py` reads from the
+  environment (`os.environ.get(...)`, `os.environ[...]`, `getenv(...)`) and fails on a name missing from a table
+  in the test. The table says *bypasses* (each such name gets an example: the checks run straight, the stamp's
+  bytes and mtime are unchanged, and the fixture's `gate()` strips it) or *does not change what the suite runs*,
+  with the reason (`PATH`, and the variables a test sets for its own child: `STANDIN_LOG`, `FAKE_CODEGRAPH_LOG`…).
+  `IMAGE_REGISTRY` and `PACK_FLAGS` (`tests/test_images.py:118`, `tests/test_launcher.py:54`) are decided in that
+  table, not left out of it. Show the example's teeth by deleting `FACTORY_BACKENDS` from the bypass.
+
+### T016 — HIGH: tools whose presence changes what the suite runs are missing from `VERIFY_TOOLS` (AC-S33-6's class)
+
+- [ ] `VERIFY_TOOLS` (`Makefile:42`) is a list someone wrote by hand. The suite looks for more than it holds:
+  `ko` (`tests/test_images.py:61,179` skip the Go image without it); `mvn` (`tests/test_wrappers.py:103` asserts
+  only when `mvn` is absent); the Docker Compose plugin (`tests/test_postgres.py:208-211` skips without
+  `docker compose version`, and `docker --version` stays the same when the plugin is installed). Install `ko`
+  after a pass and the next `make verify` reuses the stamp over an image test that never ran. **Close the class:**
+  (a) `tests/test_factory_gate_stamp.py`: one example that collects every tool name the suite probes, from the
+  `shutil.which("<name>")` literals, the `NEEDS`-style maps and the `for tool in (...)` loops in `tests/*.py`, and
+  fails on a name that is neither in `VERIFY_TOOLS` (read from the Makefile, as `listed()` does) nor on a written
+  exemption list with its reason. Seed the list with `sh` (D100) and the names that only build a stand-in `PATH`
+  (`dirname`). Its teeth: drop `ko` from the list. (b) root `Makefile` (a person, by patch): `ko` and `mvn` join
+  `VERIFY_TOOLS`. (c) The Compose plugin cannot be a `--tool`, because the script asks `<tool> --version` and
+  nothing else. That is a product question for the host: key it some other way, or name it in the spec's *Not keyed,
+  and said so* sentence beside the npm registry. The delegate does not choose. **Decided (D112): keyed through `.factory-work/verify-probes`, written by the
+  root recipe from `docker compose version` (or `absent`) before `token`; the probed-tools table records it as *keyed
+  through the probe file*.**
+
+### T017 — MEDIUM: clauses of AC-S33-6 and the root recipe's make-flag paths have no example (AC-S33-10)
+
+- [ ] `tests/test_factory_gate_stamp.py` has no example of a listed tool **leaving** `PATH`. Its "one missing, still
+  written and reused" example (`:226`) holds only on a machine where some listed tool really is missing. Nothing
+  runs the root recipe under `-i`, `-n`, `-q` or `-k`, although its exit handling (`Makefile:49`, the
+  `rc -eq 1` silence) is its own and not the generated one. In a scratch `GateCase` probe each one already behaves:
+  a tool leaving gives a full run; `-i` with a failing check exits 0, writes no stamp and the next run is full; `-n`
+  starts no check and leaves the stamp's bytes alone; `-q` exits 1 and says nothing; `-k` with a failing check exits
+  2, names the failure and writes no stamp. So these are holds. Write each one as a hold and show its teeth. For
+  "missing", build the `PATH` so at least one listed tool is certainly absent instead of depending on the host.
+  Tests only. No Makefile change.
 
 ## Convergence
 
