@@ -823,7 +823,7 @@ what follows is what pass 2 found still open.
 
 ### T030 — [US2] CRITICAL — Every rule `make verify` reaches is read, not only the three gates with units (R3, R4, R5 · AC-S06-2, -4, -5; data-model *How a unit is chosen*, last paragraph)
 
-- [ ] **Finding.** T025 closed its instance: a line or a normal prerequisite a project gives `lint`, `typecheck` or
+- [x] **Finding.** T025 closed its instance: a line or a normal prerequisite a project gives `lint`, `typecheck` or
   `test`. The class is wider. *The selection trusts a rule's text that the project owns and that nothing compares*
   (Principle I: the project owns its `Makefile`; a `Makefile` change broadens only while it is on the branch). Four
   rules `make verify` reaches are still taken on trust. (1) **A named check's recipe and prerequisites.** `table.py`'s
@@ -900,7 +900,7 @@ that lists a generated project's files only where the new file changes it (named
 
 ### T031 — [US2] MEDIUM — The record's contract says what the record now holds (R10 · AC-S06-13; ADR 0004, data-model *The printed record*)
 
-- [ ] **Finding.** ADR 0004 says the printed shape is the contract its readers use (S07, S34–S36). Three things the
+- [x] **Finding.** ADR 0004 says the printed shape is the contract its readers use (S07, S34–S36). Three things the
   record now does are written nowhere in that contract:
   (1) T025 added a `whole: true` key to units (`record.py` 215). In that case `targets` names the gate, not the unit.
   Neither ADR 0004's shape (lines 60–80) nor data-model.md's (lines 126–169) names the key.
@@ -930,7 +930,7 @@ Records and tests only: reaches no user.
 
 ### T032 — [US2] MEDIUM — The migrate example cannot pass by being skipped (R13 · AC-S06-17)
 
-- [ ] **Finding.** T029 builds the "made before" project from `git archive 58a9aed`, and it skips the class when that
+- [x] **Finding.** T029 builds the "made before" project from `git archive 58a9aed`, and it skips the class when that
   commit is not in the clone (`tests/test_scoped_migrate.py` 39, 76–83). `58a9aed` lies on this feature branch only:
   it is not reachable from `main` or from any remote branch (`git merge-base --is-ancestor 58a9aed main` fails), and
   the clone has no `v*` tag. After a squash or rebase merge, CI's clone of `main` never has the commit, even with

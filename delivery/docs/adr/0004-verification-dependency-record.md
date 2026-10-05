@@ -75,7 +75,14 @@ Added at S06's plan stage (`specs/001-faster-slipwai/slices/S06-scoped-gate/data
 - `inputs` is `null` for a check with no recorded inputs. `tools` uses the verify stamp's names (`make`, `git`,
   `python3`, `uv`, `node`, `npm`, `go`, `java`, `interpreter <path>/.venv`); `variables` are names, never values.
 - `claims: false` marks a check whose file inputs never make a changed path known (it reads every file); `always` is
-  the reason a check runs on every scoped run, or `null`.
+  the reason a check runs on every scoped run, or `null`. `claims: true` makes a path under `apps/` or `packages/`
+  known only through a deployable's units and a contract's paths; a check beside them can choose itself for such a
+  path but never makes it known (T027).
+- `whole: true` on a unit means its gate runs whole — its recipe is not the sum of its units, or its rule is not the
+  one the factory wrote — and `targets` then names the gate, not the unit (T025). `differs: true` appears beside
+  `whole` only where the sum holds and the factory's rule does not (D127). A named check whose rule differs from
+  `scripts/verify_scoped/rules.json` is printed with `inputs: null`, `claims: false` and `always` giving that reason
+  (D127, ADR 0005). The record is printed even where the verdict is the full gate.
 - The obligations come from `project.json`'s optional `verification.obligations`: a list of objects with `name`
   (used once), `components` (at least two distinct `deployables` keys) and `checks` (units, or `lint`, `typecheck`,
   `test` for all their units); other keys in an entry are ignored.

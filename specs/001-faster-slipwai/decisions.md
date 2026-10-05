@@ -2645,3 +2645,15 @@
 - **Confidence:** high · **Would reverse if:** the owner says otherwise
 - **Written to:** `specs/001-faster-slipwai/story-split.md` (rows for S34a, S34b, S35, S36; new rows and graph rows for S38 and S39; S07 now after S38; S37 reads S39), `specs/001-faster-slipwai/spec.md` (FR-046 to FR-049, the owner's commit e11c0d1)
 - **Status:** standing
+
+## D131 — A check a project adds to verify-checks itself: always run, or the full gate under D127?
+- **Stage:** converge (pass 2 finding T030, implementation) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T16:25:10Z · **Iteration:** 22
+- **Scope:** S06-scoped-gate
+- **Question:** D127 read literally makes any difference in verify-checks' rule the full gate, which would include a check a project adds as a prerequisite of verify-checks. R6 (AC-S06-6) and its tests say such a check runs on every scoped run with no recorded inputs and broadens nothing else. Which holds?
+- **Options:** (a) the project's own check stays an always-run check with no recorded inputs, judged on its own rule; verify-checks' fingerprint covers its recipe lines and the factory's prerequisites only — R6, recommended by the stage's own criteria · (b) the full gate on every scoped run of a project that added a check
+- **Decision:** (a). rules.py leaves an unfingerprinted prerequisite out of verify-checks' digest; that check runs on every scoped run and claims nothing. A recipe line of verify-checks, a prerequisite of verify, and a factory check removed from verify-checks are still the full gate. D127's Catch-up sentence stands as written; its "added to verify-checks" now means a recipe line there.
+- **Why:** A check a project adds always runs under (a), so nothing it would fail on is skipped; (b) would turn the scoped gate off for every project that ever added a check, which R6 already decided against.
+- **Decided by:** host (standing decision D117)
+- **Confidence:** high · **Would reverse if:** a project-added prerequisite of verify-checks could change what a factory check runs without its own rule differing
+- **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T030), `assets/toolkit/scripts/verify_scoped/rules.py`
+- **Status:** standing
