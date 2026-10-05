@@ -561,7 +561,7 @@ names the new text).
 
 ### T016 — Every suite that reads a generated gate, once, before the gates (host task)
 
-- [ ] **Host task; no story.** After T002–T015 are committed: run `make test TESTS="<every name>"` over
+- [x] **Host task; no story.** After T002–T015 are committed: run `make test TESTS="<every name>"` over
   `ls tests | grep -E '^test_(verify_stamp|parallel_gate|model_|gate_)'` plus `test_matrix test_commands
   test_commit_boundaries test_toolkit test_gates test_docs_index test_render_docs test_replay test_migrate test_adopt
   test_changelog test_xdist_mark test_xdist_gate test_xdist_plugin test_xdist_carry test_xdist_page` and every
@@ -570,6 +570,8 @@ names the new text).
   never skipped. Confirm the diff touches nothing under `delivery/`, `tools/`, the root `Makefile` or CI, not `VERSION`,
   and that `make starters`'s `build/` differs from T001's only by the suffix, the scripts, `verify-stamp.py`, the page,
   the settings line and the ladder text.
+
+**T016 result (host, iteration 22):** 705 tests OK (1 skipped: `test_changelog`'s release-tag hold, no tag fetched here, older than this slice) at `c1f2716` with every gate-reading suite, the scoped and xdist suites; `make lint typecheck check-structure` green; nothing under `delivery/`, `tools/`, the root `Makefile`, CI or `VERSION` changed. `make starters` differs from T001's copy in exactly: `Makefile`, `scripts/verify-scoped.py`, `scripts/verify_scoped/`, `scripts/verify-stamp.py`, `docs/gates.md`, `.claude/settings.json`, `commands/drive.md`, `agents/drive-implement.md`, `agents/drive-converge.md`, `skills/planning/SKILL.md` and the two constitution templates — every one the plan names.
 
 ### T017 — Converge, two passes (host task)
 
