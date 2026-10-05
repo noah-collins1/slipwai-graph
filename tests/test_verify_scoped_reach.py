@@ -275,3 +275,49 @@ class FactoryShapesTest(RecordCase):
                                 f"`{SERVICE}`, {ENDING}")
 
 
+
+
+class LinearTest(RecordCase):
+    """T053 (A6): the reader makes one pass over each file, whatever the number of deployables."""
+
+    def test_e8_forty_deployables_of_three_hundred_files_are_read_in_seconds(self) -> None:
+        import time  # noqa: PLC0415
+
+        reach = importlib.import_module("verify_scoped.reach")
+        parent = Path(tempfile.mkdtemp(prefix="scoped-linear-"))
+        self.addCleanup(shutil.rmtree, parent, ignore_errors=True)
+        body = "".join(f"export const value{n} = compute({n}) + helper('text {n}');\n" for n in range(40))
+        deployables = {}
+        for index in range(40):
+            path = f"apps/svc{index}"
+            deployables[f"svc{index}"] = {"path": path, "family": "typescript"}
+            (parent / path / "src").mkdir(parents=True)
+            (parent / path / "package.json").write_text(json.dumps({"name": f"proj-svc{index}"}), encoding="utf-8")
+            for number in range(300):
+                (parent / path / "src" / f"f{number}.ts").write_text(body, encoding="utf-8")
+        git(parent, "init", "-q", "-b", "main")
+        commit_all(parent, "the tree")
+        started = time.monotonic()
+        found = reach.find(parent, deployables, [], "HEAD")
+        took = time.monotonic() - started
+        self.assertIsNone(found)
+        self.assertLess(took, 5, f"the reader took {took:.1f} s over 40 deployables of 300 files")
+
+    def test_e8_the_one_pass_still_finds_each_identity_and_path_of_every_other_deployable(self) -> None:
+        reach = importlib.import_module("verify_scoped.reach")
+        parent = Path(tempfile.mkdtemp(prefix="scoped-linear-"))
+        self.addCleanup(shutil.rmtree, parent, ignore_errors=True)
+        deployables = {name: {"path": f"apps/{name}", "family": "typescript"} for name in ("aa", "bb", "cc")}
+        for name in deployables:
+            (parent / "apps" / name / "src").mkdir(parents=True)
+            (parent / "apps" / name / "package.json").write_text(json.dumps({"name": f"proj-{name}"}), encoding="utf-8")
+            (parent / "apps" / name / "src" / "x.ts").write_text("export {};\n", encoding="utf-8")
+        (parent / "apps/bb/src/y.ts").write_text('import "proj-cc";\n', encoding="utf-8")
+        git(parent, "init", "-q", "-b", "main")
+        commit_all(parent, "the tree")
+        found = reach.find(parent, deployables, [], "HEAD")
+        self.assertEqual(found, "`apps/bb/src/y.ts` names `proj-cc`, the package of the deployable `cc`, outside its "
+                                f"deployable `apps/bb`, {ENDING}")
+        (parent / "apps/bb/src/y.ts").write_text('read("apps/aa/src");\n', encoding="utf-8")
+        found = reach.find(parent, deployables, [], "HEAD")
+        self.assertEqual(found, "`apps/bb/src/y.ts` reaches `apps/aa`, outside its deployable `apps/bb`, " + ENDING)

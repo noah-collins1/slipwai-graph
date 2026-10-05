@@ -74,7 +74,8 @@ def listed(root: Path, paths: list[str]) -> tuple[dict[str, list[str]], set[str]
     names = sorted({name.decode("utf-8", "surrogateescape") for name in out.split(b"\0") if name})
     links = {name for name in (item.decode("utf-8", "surrogateescape") for item in hidden.split(b"\0") if item)
              if any(inside(name, path) for path in paths) and (root / name).is_symlink()}
-    found = {path: [name for name in sorted(set(names) | links) if inside(name, path) and name != path
+    every = sorted(set(names) | links)
+    found = {path: [name for name in every if inside(name, path) and name != path
                     and ((root / name).is_symlink() or (root / name).exists())] for path in paths}
     return found, links
 
@@ -165,7 +166,43 @@ def exempt(path: str, item: dict[str, Any], packages: list[str]) -> bool:
     return item["family"] == "typescript" and any(inside(path, f"packages/{package}") for package in packages)
 
 
-def path_reach(file: str, text: str, name: str, deployables: dict[str, dict[str, Any]], packages: list[str]) -> str | None:
+class Readers:
+    """The patterns one scan reads every file with, each compiled once over every deployable: one for the paths of the
+    deployables and one per family for their identities, so a file is read in one pass however many deployables there
+    are."""
+
+    def __init__(self, deployables: dict[str, dict[str, Any]], names: dict[str, set[str]]) -> None:
+        self.owners: dict[str, set[str]] = {}
+        for name, known in names.items():
+            for identity_name in known:
+                self.owners.setdefault(identity_name, set()).add(name)
+        self.paths: dict[str, set[str]] = {}
+        for name, item in deployables.items():
+            self.paths.setdefault(str(item["path"]), set()).add(name)
+        self.path_pattern = self.combined(sorted(self.paths), r"(?<![\w/.-])", r"(?![\w-])")
+        around = {"typescript": (r"(?<![\w@./-])", r"(?![\w-])"), "go": (r"(?<![\w./-])", r"(?![\w.-])"),
+                  "java": (r"(?<![\w.-])", r"(?![\w.-])")}
+        self.identity_pattern = {family: self.combined(sorted(self.owners), *edges) for family, edges in around.items()}
+
+    @staticmethod
+    def combined(words: list[str], before: str, after: str) -> re.Pattern[str] | None:
+        if not words:
+            return None
+        return re.compile(before + "(" + "|".join(re.escape(word) for word in sorted(words, key=lambda w: (-len(w), w)))
+                          + ")" + after)
+
+    def other(self, pattern: re.Pattern[str] | None, text: str, table: dict[str, set[str]], name: str) -> tuple[str, str] | None:
+        """(the word found, the first other deployable that holds it) for the first match in `text` of a word that
+        some deployable other than `name` holds."""
+        for match in pattern.finditer(text) if pattern else ():
+            others = sorted(table[match.group(1)] - {name})
+            if others:
+                return match.group(1), others[0]
+        return None
+
+
+def path_reach(file: str, text: str, name: str, deployables: dict[str, dict[str, Any]], packages: list[str],
+               readers: Readers) -> str | None:
     """The first target outside the deployable that a path in this file lands on, or None. A path in a manifest or a
     config is read against the deployable's root as well as its own directory."""
     item = deployables[name]
@@ -180,34 +217,28 @@ def path_reach(file: str, text: str, name: str, deployables: dict[str, dict[str,
                     raise Unsure(f"`{shown(file)}` climbs above the repository root")
                 if not inside(landed, item["path"]) and not exempt(landed, item, packages):
                     return landed
-    for other, entry in deployables.items():
-        if other != name and re.search(rf"(?<![\w/.-]){re.escape(entry['path'])}(?![\w-])", text):
-            return str(entry["path"])
-    return None
+    found = readers.other(readers.path_pattern, text, readers.paths, name)
+    return found[0] if found else None
 
 
 def identity_reach(file: str, text: str, name: str, deployables: dict[str, dict[str, Any]],
-                   names: dict[str, set[str]]) -> tuple[str, str] | None:
+                   readers: Readers) -> tuple[str, str] | None:
     """(the name found, the deployable it is the package of) for the first identity of another deployable that this
     file names, where a resolver of this file's family would resolve it without a declaration."""
     family = deployables[name]["family"]
     base = file.rsplit("/", 1)[-1]
-    for other in deployables:
-        if other == name:
-            continue
-        for known in sorted(names[other]):
-            if family == "typescript" and re.search(rf"(?<![\w@./-]){re.escape(known)}(?![\w-])", text):
-                return known, other
-            if family == "go" and re.search(rf"(?<![\w./-]){re.escape(known)}(?![\w.-])", text):
-                return known, other
-            if family == "python" and PYTHON_FILES.match(base):
-                for token in TOKEN.findall(text):
-                    if normal(token) == known:
-                        return token, other
-            if family == "java" and JAVA_FILES.match(base) and re.search(
-                    rf"(?<![\w.-]){re.escape(known)}(?![\w.-])", text):
-                return known, other
-    return None
+    if family == "python":
+        if not PYTHON_FILES.match(base):
+            return None
+        for token in TOKEN.findall(text):
+            owners = readers.owners.get(normal(token), set()) - {name}
+            if owners:
+                return token, sorted(owners)[0]
+        return None
+    if family == "java" and not JAVA_FILES.match(base):
+        return None
+    found = readers.other(readers.identity_pattern.get(family), text, readers.owners, name)
+    return found
 
 
 def link_reach(root: Path, file: str, directory: str, ignored: bool = False) -> str | None:
@@ -229,9 +260,10 @@ def link_reach(root: Path, file: str, directory: str, ignored: bool = False) -> 
 def scan(root: Path, deployables: dict[str, dict[str, Any]], packages: list[str], base: str | None) -> str | None:
     names = identities(root, deployables, base) if len(deployables) > 1 else {name: set() for name in deployables}
     files, ignored = listed(root, [str(item["path"]) for item in deployables.values()])
+    readers = Readers(deployables, names)
     for name, item in deployables.items():
         try:
-            found = scan_one(root, name, deployables, packages, names, files[item["path"]], ignored)
+            found = scan_one(root, name, deployables, packages, names, files[item["path"]], ignored, readers)
         except Unsure as error:
             raise Unsure(str(error), error.owner or item["path"]) from error
         if found is not None:
@@ -240,7 +272,8 @@ def scan(root: Path, deployables: dict[str, dict[str, Any]], packages: list[str]
 
 
 def scan_one(root: Path, name: str, deployables: dict[str, dict[str, Any]], packages: list[str],
-             names: dict[str, set[str]], files: list[str], ignored: set[str]) -> str | None:
+             names: dict[str, set[str]], files: list[str], ignored: set[str],
+             readers: Readers) -> str | None:
     directory = deployables[name]["path"]
     for file in files:
         here = f"`{shown(file)}`"
@@ -254,10 +287,10 @@ def scan_one(root: Path, name: str, deployables: dict[str, dict[str, Any]], pack
             text = text_of((root / file).read_bytes())
         except OSError as error:
             raise Unsure(f"cannot read `{shown(file)}` ({error.strerror or type(error).__name__})") from error
-        landed = path_reach(file, text, name, deployables, packages)
+        landed = path_reach(file, text, name, deployables, packages, readers)
         if landed is not None:
             return f"{here} reaches `{shown(landed)}`, {outside}"
-        named = identity_reach(file, text, name, deployables, names)
+        named = identity_reach(file, text, name, deployables, readers)
         if named is not None:
             return f"{here} names `{shown(named[0])}`, the package of the deployable `{shown(named[1])}`, {outside}"
     return None
