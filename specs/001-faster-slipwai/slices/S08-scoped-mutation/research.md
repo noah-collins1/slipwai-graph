@@ -79,7 +79,7 @@ service's `mvnw`, pitest-maven 1.25.9 with pitest-junit5-plugin 1.2.3 as the Spr
 - **Evidence** (documentation): the GNU Make manual, *Communicating Variables to a Sub-make*: "make exports a
   variable only if it is either defined in the environment initially or set on the command line". Not run under
   make 3.81 (none on this machine): *assumed* there for the empty value, and the factory test runs under the
-  machine's make.
+  machine's make. **D151:** that assumption stands as an assumption, recorded here, until a make 3.81 run proves it.
 - **Why**: a ref may hold `'`, `"` or `$` (git's refname rules forbid none of them), and any spelling of
   `$(SINCE)` inside a shell word has to quote it; the environment needs no quoting. Today's Go spelling,
   `$(if $(SINCE),--since $(SINCE))`, cannot tell an empty `SINCE` from none at all.

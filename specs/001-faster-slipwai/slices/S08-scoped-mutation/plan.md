@@ -127,7 +127,8 @@ generated toolkit — so one context, and saying so is the decision. Code genera
 
 ## Open questions
 
-None blocks the plan. Two readings are recorded for the host to confirm or overturn:
+Both answered by the host on adopt-method: question 1 as **D150**, question 2 as **D151**, each as recommended below.
+The two readings, as they were handed back:
 
 1. **`make mutation-full SINCE=<ref>` still scopes Go.** AC-S08-11 asks for today's recipe byte for byte, and
    today's Go line honours `SINCE`. Recommendation: keep it (byte for byte wins; `SINCE` is a person's explicit

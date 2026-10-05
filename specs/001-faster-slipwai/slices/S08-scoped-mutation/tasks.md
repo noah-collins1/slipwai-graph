@@ -703,7 +703,8 @@ worktree was mutated and restored (T018's teeth, below).
 ### After-converge gaps (2026-10-05, `drive-gaps`, range `c3c760b..1db94ad`, read only)
 
 Every AC-S08-1..18 has a holding test (trace in the gaps report); these are what T022–T025 miss. Each is a task; the host
-recommends T026 and T027 land before the demo (a silent green, and a dry run that runs the tool).
+recommends T026 and T027 land before the demo (a silent green, and a dry run that runs the tool). **Host (coordinator), after
+the gaps:** T026, T027, T028 and T029 land before the demo; T030–T032 and T022–T025 stay for Phase 4.
 
 - [ ] **T026 — HIGH · A project in a git subdirectory reports `no mutant to run` for a changed production file, exit 0
   (G1; AC-S08-2, AC-S08-8, priority 5).** `check-slice-scope.changed_files` gives tracked paths from the repository top
@@ -724,7 +725,11 @@ recommends T026 and T027 land before the demo (a silent green, and a dry run tha
   `SKILL.md:84` and `:132` (`git diff <base>...HEAD`) contradict the rewritten `:89`. **Owed:** the section's commands
   include the working tree and untracked files (`git diff <merge-base>` plus `git ls-files --others --exclude-standard`),
   and the test reads the commands, not only the sentence.
-- [ ] **T029 — MEDIUM · Python with mutmut on PATH is refused (G3; AC-S08-5, D137) — product question handed back.**
+- [ ] **T029 — MEDIUM · Python with mutmut on PATH is refused (G3; AC-S08-5, D137) — decided: D149, option (a).** The
+  refusal and the fragment say a Python service is refused until `S42-mutmut-mutation` wires the tool, and that
+  `make mutation-full` runs mutmut today where it is installed. Files: `assets/toolkit/scripts/mutation-scope.py`,
+  `changelog.d/scoped-mutation.md`, `tests/test_mutation_placeholders.py`, `tests/test_mutation_words.py`. The
+  question as handed back:
   `make mutation-full` still runs `mutmut run` where it is installed (`native_commands.py:102`); the scoped run refuses
   Python unconditionally (`mutation-scope.py:469–475`). The fragment's *until you wire a tool* names no step a project
   can take. Host recommendation: (a) keep D137's refusal and change the words — the refusal and the fragment say the
