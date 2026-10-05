@@ -12,6 +12,9 @@ that the mutant dies.
 """
 from __future__ import annotations
 
+from ..layout import AT_ROOT, Layout
+from .result_contract import converge_sentence
+
 # Passes after which the loop stops by default and what is still open goes to Phase 4. One pass finds the
 # work and one confirms it closed; a third is a decision somebody takes, not what the wording produces.
 PASSES = "two"
@@ -24,7 +27,7 @@ def levels() -> str:
     return ", ".join(LEVELS)
 
 
-def convergence_stage() -> str:
+def convergence_stage(layout: Layout = AT_ROOT) -> str:
     """The `**Convergence**` rung, as one item of the ladder's numbered list (three-space continuation)."""
     return f"""**Convergence** — `tasks.md` records a converged verdict for the current commit and has no
    unchecked convergence task. Otherwise run the installed Spec Kit converge command, implement whatever it
@@ -72,4 +75,6 @@ def convergence_stage() -> str:
    its neighbour is a pass the next one repeats: six of them closing a sibling each is the same work as one
    closing the surface, at six times the price, and it is what writing the task as the example produces.
    Where the sweep is genuinely larger than the slice, say so in the verdict and leave a task naming the
-   rest — that is a scope decision recorded, not a sibling found again next pass."""
+   rest — that is a scope decision recorded, not a sibling found again next pass.
+
+   {converge_sentence(layout, '   ')}"""

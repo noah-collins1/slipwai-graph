@@ -13,6 +13,7 @@ from test_stage_models import installed
 from slipwai.assets import TOOLKIT_ROOT
 from slipwai.layout import AT_ROOT, Layout
 from slipwai.project.agents import agent_file, types
+from slipwai.project.commands import command_files
 
 ADOPTED = Layout(delivery="delivery")
 SECTION = "## What you hand back"
@@ -104,3 +105,70 @@ class BriefsTest(FactoryTestCase):
         for agent in types():
             if agent.name != "drive-slice":
                 self.assertNotIn(SLICE_RECORD, brief(agent.name, AT_ROOT), agent.name)
+
+
+def command(name: str, layout: Layout, event: bool = False) -> str:
+    """One generated command as a project at `layout` carries it."""
+    files = layout.relocate(command_files(event, [], "none", layout, None))
+    return files[layout.place(f"commands/{name}.md")]
+
+
+class LadderTest(FactoryTestCase):
+    def test_the_drive_ladder_says_who_appends_each_block_and_what_a_missing_one_costs(self) -> None:
+        for event in (False, True):
+            for layout in (AT_ROOT, ADOPTED):
+                where = f"{layout.delivery}/" if layout.moved else ""
+                text = command("drive", layout, event)
+                with self.subTest(event=event, layout=layout.delivery):
+                    heading = "## What every delegate hands back"
+                    self.assertEqual(text.count(heading), 1)
+                    self.assertLess(text.index("## Who runs each stage"), text.index(heading))
+                    self.assertLess(text.index(heading), text.index("## What each stage costs"))
+                    section = text.split(heading, 1)[1].split("\n## ", 1)[0]
+                    check = f"python3 {where}scripts/check-decisions.py"
+                    for words in (
+                        f"{check} --hand-back <dir> <type> <stage>",
+                        f"{check} --hand-back-missing <dir> <type> <stage> <reason>",
+                        f"{check} --hand-backs specs/<feature>/slices/<id>", "`specs/<feature>/slices/<id>`",
+                        "`specs/<feature>`", "`ready-set`", "before it closes the stage's benchmark entry",
+                        "one continuation", "`refused: <the delegate's words>`", "`malformed: <field>`",
+                        "`no continuation`", "`stopped: <reason>`", "never re-run", "never writes a block",
+                        "A stage run in this context has no delegate, so it has no entry",
+                        "Before the hand, at the demo stop", "at the adversary stop",
+                        "never re-opens converge",
+                    ):
+                        self.assertIn(words, section)
+                    if layout.moved:
+                        self.assertNotRegex(section, r"(?<![\w/])(scripts|docs)/")
+
+    def test_the_convergence_rung_and_the_converge_brief_read_the_record_by_stage(self) -> None:
+        for layout in (AT_ROOT, ADOPTED):
+            where = f"{layout.delivery}/" if layout.moved else ""
+            drive = command("drive", layout)
+            rung = drive.split("**Convergence**", 1)[1].split("**Demo**", 1)[0]
+            converge = brief("drive-converge", layout)
+            with self.subTest(layout=layout.delivery):
+                lines = [each for each in rung.splitlines() if "--hand-backs" in each]
+                self.assertTrue(lines and all(each.startswith("   ") for each in lines), lines)
+                self.assertIn(f"{where}scripts/check-decisions.py --hand-backs", rung)
+                for text in (rung, converge):
+                    self.assertIn("`--hand-backs`", text.replace("check-decisions.py --hand-backs", "`--hand-backs`"))
+                    self.assertIn("without a passing `result-contract` block is a finding", text)
+                    self.assertIn("naming the stage and the delegate type", text)
+                    self.assertIn("`MEDIUM`", text.split("--hand-backs", 1)[1])
+                self.assertLess(converge.index("Account for every level"), converge.index("--hand-backs"))
+                self.assertLess(converge.index("--hand-backs"), converge.index("Where you prove a finding"))
+
+    def test_the_cruise_command_records_every_skipper_hand_and_bosun_dispatch_the_same_way(self) -> None:
+        for layout in (AT_ROOT, ADOPTED):
+            where = f"{layout.delivery}/" if layout.moved else ""
+            text = command("cruise", layout)
+            with self.subTest(layout=layout.delivery):
+                self.assertEqual(text.count("Every skipper, hand and bosun dispatch is recorded the same way"), 1)
+                sentence = text.split("Every skipper, hand and bosun dispatch is recorded the same way", 1)[1]
+                sentence = sentence.split("\n\n", 1)[0]
+                for words in (
+                    f"({where}docs/result-contract.md)", "`specs/<feature>/decisions.md`", "drive-skipper",
+                    f"{where}scripts/check-decisions.py --hand-back <dir>", "What every delegate hands back",
+                ):
+                    self.assertIn(words, sentence)

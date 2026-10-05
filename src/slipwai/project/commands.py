@@ -21,6 +21,7 @@ from .existing import release_stage
 from .flags import PUSH_CHECK
 from .mutation import mutation_command
 from .parallel_slices import concurrent_slices, done_marker, ready_set_selection
+from .result_contract import hand_backs_section
 from .stage_models import model_delegation_settings_command, who_runs_each_stage
 from .whats_next import whats_next_command
 from .where_are_we import where_are_we_command
@@ -126,7 +127,7 @@ def drive_command(
             if web
             else ""
         ),
-        convergence_stage(),
+        convergence_stage(layout),
         """**Demo** — the actor-visible path is ready to show.""",
     ]
     stages = with_design_rungs(stages, baseline) if web else stages
@@ -172,6 +173,7 @@ artifact is work to do with the user, not a gap to fill from context. A stage ne
 decision is a stop.
 
 {who_runs_each_stage(layout)}
+{hand_backs_section(layout)}
 {what_each_stage_costs(layout)}
 {implementation_section(layout)}
 ## Once inside the slice

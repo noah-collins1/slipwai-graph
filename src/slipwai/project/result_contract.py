@@ -7,6 +7,9 @@ import a script a project runs.
 """
 from __future__ import annotations
 
+from ..layout import Layout
+from .cruise_agents import DECISIONS
+
 PAGE = "docs/result-contract.md"
 # Per delegate type, the words `status` may take (D134 section 3).
 STATUSES: dict[str, tuple[str, ...]] = {
@@ -38,6 +41,66 @@ the thirteen fields [{PAGE}]({PAGE}) lists, in that order. In yours `delegate` i
 {spelled(STATUSES[name])}. Whatever you started and did not finish, decided, assumed or left open goes inside that
 one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
 The session that delegated you appends it, verbatim, to the record; it never writes a block for you."""
+
+
+def hand_backs_section(layout: Layout) -> str:
+    """`commands/drive.md`'s *What every delegate hands back*: who appends the block, when, and what a miss costs."""
+    return f"""## What every delegate hands back
+
+Every delegate ends its hand-back with one `result-contract` block ([{PAGE}]({PAGE}) has the shape). **This session
+appends it**, verbatim, before it closes the stage's benchmark entry:
+
+```sh
+python3 scripts/check-decisions.py --hand-back <dir> <type> <stage>   # the whole hand-back on stdin
+```
+
+`<dir>` is the slice's own folder, `specs/<feature>/slices/<id>`, for the slice's stages, and `specs/<feature>` for
+the feature-level ones: the split, the ready set's `drive-slice` delegates (stage `ready-set`) and the completion
+audit. The verb checks the block with the gate's own function, writes the heading itself, and appends nothing when a
+field fails — it prints the field. `{layout.make} check-decisions` holds every record to the same shape.
+
+A hand-back with no block, or one the verb refused, gets **one continuation** of the same delegate asking only for the
+block. If that does not produce one, record the miss with a reason:
+
+```sh
+python3 scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>
+```
+
+The reason is `refused: <the delegate's words>`, `malformed: <field>` or `no continuation`; a delegate that was
+stopped is recorded `stopped: <reason>`. The stage is never re-run for a block, and this session never writes a block
+for a delegate — one it wrote would be the session grading the work it was handed.
+A stage run in this context has no delegate, so it has no entry and nothing to record.
+
+Two stops check the record, and a miss at either is a task, closed with one continuation, and never re-opens converge.
+Before the hand, at the demo stop, read the hand-backs since the last converge pass; at the adversary stop, those of
+the hand, the adversary and mutation:
+
+```sh
+python3 scripts/check-decisions.py --hand-backs specs/<feature>/slices/<id>
+```
+"""
+
+
+def converge_sentence(layout: Layout, indent: str = "") -> str:
+    """The converge rung's and the converge brief's reading of the record; `indent` is the rung's list continuation."""
+    lines = (
+        "Converge also reads the record: `python3 scripts/check-decisions.py --hand-backs specs/<feature>/slices/<id>`",
+        "lists, for each delegated stage in `benchmark.json`, whether `hand-backs.md` holds its `result-contract` block,",
+        "a `Missing:` line or nothing. A delegated stage without a passing `result-contract` block is a finding,",
+        "naming the stage and the delegate type, graded `MEDIUM`: one continuation of that delegate closes it before",
+        "Phase 4.",
+        f"`{layout.make} check-decisions` holds what is recorded to the shape.",
+    )
+    return f"\n{indent}".join(lines)
+
+
+def cruise_sentences(layout: Layout) -> str:
+    """`commands/cruise.md`: where the skipper's entry and every skipper, hand and bosun block go."""
+    return f"""**Every skipper, hand and bosun dispatch is recorded the same way** ([{PAGE}]({PAGE})): the skipper's entry
+goes to `{DECISIONS}` as above, and its `result-contract` block — the entry's `D<n>` in `decisions` — to the record with
+`python3 scripts/check-decisions.py --hand-back <dir> drive-skipper <stage>`; the hand's and the bosun's blocks the
+same, each before the stage's benchmark entry closes. *What every delegate hands back* in `commands/drive.md` has
+the continuation and the `Missing:` forms; `{layout.make} check-decisions` holds the record to the shape."""
 
 
 def slice_record_sentence() -> str:

@@ -23,7 +23,7 @@ from ..layout import AT_ROOT, Layout
 from .converge_stage import levels
 from .cruise_agents import cruise_body, cruise_summary
 from .design_stage import tasks_brief as design_tasks_brief
-from .result_contract import brief_paragraph, slice_record_sentence
+from .result_contract import brief_paragraph, converge_sentence, slice_record_sentence
 from .stage_models import AGENT, ANY, MANIFEST, NO_STAGE, STAGES
 
 # Where the canonical types live, beside `skills/` and `commands/`.
@@ -180,6 +180,8 @@ a pass per level. Grade every task you append
 past the ladder's bound, so the grade is a decision about what the slice may ship without, not a label. The
 brief names your budget; when you reach it, return what you have found marked incomplete rather than
 continuing — an incomplete verdict with three findings is worth more than a complete one nobody waited for.
+
+{converge_sentence(layout)}
 
 Where you prove a finding by changing the code and watching the suite, you own leaving the tree clean on every
 exit path, including the one where you are stopped: make a branch or a commit before your first mutation so an
