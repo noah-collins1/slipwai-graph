@@ -56,10 +56,12 @@ A project with no record anywhere passes and says so: the gate runs in `make ver
 
 from __future__ import annotations
 
+import importlib.util
 import re
 import sys
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 
 def project_root(script: Path, depth: int) -> Path:
@@ -74,6 +76,7 @@ SPECS = ROOT / "specs"
 DECISIONS = "decisions.md"
 DEMO_LOG = "demo-log.md"
 ADVERSARY_LOG = "adversary-log.md"
+HAND_BACKS = "hand-backs.md"
 # The fields of one decision entry, in order, as the bold label each line opens with.
 DECISION_FIELDS = ("Stage", "Question", "Options", "Decision", "Why", "Decided by", "Confidence", "Written to",
                    "Status")
@@ -470,14 +473,46 @@ def verb_options(arguments: list[str]) -> dict[str, str] | None:
     return options
 
 
+def hand_backs_module() -> Any:
+    """`hand_backs.py` beside this script, loaded by path with bytecode off (a `__pycache__` under scripts/ would
+    make every later scoped run the full gate)."""
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location("hand_backs", Path(__file__).resolve().with_name("hand_backs.py"))
+    if spec is None or spec.loader is None:
+        raise ImportError("cannot load hand_backs.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int]:
+    """The findings, the notes and the count of hand-backs in every record, each finding naming its file."""
+    findings: list[str] = []
+    if not records:  # no record: the module is not even loaded, and the gate is what it was
+        return findings, [], 0
+    module = hand_backs_module()
+    notes: list[str] = []
+    blocks = 0
+    for path in records:
+        feature = path.parent if path.parent.parent == SPECS else path.parent.parent.parent
+        log = feature / DECISIONS
+        known = {f"D{m.group(1)}" for m in map(DECISION_HEADING.match, lines_of(read(log))) if m} if log.is_file() else set()
+        found, said, count = module.check_record(read(path), path.relative_to(ROOT).as_posix(), known)
+        findings += found
+        notes += said
+        blocks += count
+    return findings, notes, blocks
+
+
 def gate() -> int:
     for ident in unowned():
         print(f"check-decisions: note: {ident} is implemented in docs/event-model/model.yaml but names no feature "
               "and has no specs/*/slices/ folder, so no adversary log is asked for it")
     decisions = sorted(SPECS.glob(f"*/{DECISIONS}")) if SPECS.is_dir() else []
     logs = sorted(SPECS.glob(f"*/slices/*/{DEMO_LOG}")) if SPECS.is_dir() else []
+    records = sorted([*SPECS.glob(f"*/{HAND_BACKS}"), *SPECS.glob(f"*/slices/*/{HAND_BACKS}")]) if SPECS.is_dir() else []
     findings: list[str] = check_adversary_rows()
-    if not decisions and not logs and not findings:
+    if not decisions and not logs and not records and not findings:
         print("check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet")
         return 0
     for path in decisions:
@@ -486,6 +521,10 @@ def gate() -> int:
         findings += check_decisions(path)
     for path in logs:
         findings += check_demo_log(path)
+    held, said, blocks = check_hand_backs(records)
+    for note in said:
+        print(note)
+    findings += held
     if findings:
         print("check-decisions: the record is not in the shape commands/cruise.md shows\n", file=sys.stderr)
         for finding in findings:
@@ -494,8 +533,9 @@ def gate() -> int:
         return 1
     counted = sum(len(entries(read(p), DECISION_HEADING, legacy=True)) for p in decisions)
     demos = sum(len(entries(read(p), DEMO_HEADING, legacy=True)) for p in logs)
-    print(f"check-decisions: {counted} decision(s) in {len(decisions)} file(s), {demos} demo(s) in {len(logs)} log(s), "
-          "every field present and every path in the tree, every done slice in the adversary log")
+    kept = f", {blocks} hand-back(s) in {len(records)} record(s)" if records else ""
+    print(f"check-decisions: {counted} decision(s) in {len(decisions)} file(s), {demos} demo(s) in {len(logs)} log(s)"
+          f"{kept}, every field present and every path in the tree, every done slice in the adversary log")
     return 0
 
 
