@@ -417,7 +417,7 @@ change `tests/` only and are below, in the order found.
 
 ### T028 — HIGH (D121): the suite writes the pruner's bytecode under `assets/`, so the key moves after every pass from a tree without it
 
-- [ ] `src/slipwai/assets.py` `_load_pruner` runs `assets/backing-services/prune.py` with bytecode writing on, at import, so
+- [x] *(Iteration 19: `dbbc0ef` by drive-implement — RED with the cache deleted, GREEN, teeth shown; `3b9cd90` by the host — its fresh-interpreter example cleared caches from the tree, which hid the tree check that runs after it and moved the key mid-run, so it now watches through `PYTHONPYCACHEPREFIX`, red without the fix and green with it.)* `src/slipwai/assets.py` `_load_pruner` runs `assets/backing-services/prune.py` with bytecode writing on, at import, so
   any test (and `slipwai` itself) writes `assets/backing-services/__pycache__/`; D119 keys those paths, so a pass from a
   tree without the cache is never reused (owner: 41.5 min, then 41.5 min again). **Do:** first, in
   `tests/test_assets_bytecode.py`, widen the tree check to every path under `assets/` and add an example that a fresh
