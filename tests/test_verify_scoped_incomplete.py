@@ -92,6 +92,90 @@ class TypescriptTest(ShapeCase):
         self.assertEqual(self.verify_calls(), [])
 
 
+MODEL = """slices:
+  - id: S1
+    name: Place an order
+    pattern: state-change
+    status: implemented
+    actor: Customer
+    service: service
+    stream: order-{orderId}
+    gwt: specs/001-ordering/slices/S1.md
+    code:
+      - packages/shared-py/shared/__init__.py
+    frames:
+      - type: cmd
+        name: PlaceOrder
+      - type: evt
+        name: OrderPlaced
+"""
+
+
+class ClaimsTest(ShapeCase):
+    """T027 (R5): a check's row makes a path known only where nothing else reads the path. What units build and what
+    contracts carry is read by their consumers, so a row that is not a unit's, and reaches into `apps/` or
+    `packages/`, can choose its check and never makes the path known."""
+
+    shape = "model-typescript-web-cloud"
+
+    def incomplete_for(self, run: Any, *paths: str) -> None:
+        self.assertEqual(self.scoped_lines(run), [*[f"{INCOMPLETE} for {path} — {UNCLAIMED}" for path in paths],
+                                                  BROADENED], run.stdout + run.stderr)
+        self.assertEqual(len(self.verify_calls()), 1)
+
+    def test_e1_under_a_target_a_package_check_flags_reads_is_still_unknown(self) -> None:
+        self.edit("packages/shared-py/shared/__init__.py", "VALUE = 2\n")
+        self.edit("packages/shared/migrations/202610051200_drop.sql", "ALTER TABLE t DROP COLUMN c;\n")
+        self.incomplete_for(self.scoped(DRY), "packages/shared-py/shared/__init__.py",
+                            "packages/shared/migrations/202610051200_drop.sql")
+
+    def test_e3_a_path_the_model_names_as_code_is_read_by_check_model_and_known_by_no_one(self) -> None:
+        model = self.repo / "docs/event-model/model.yaml"
+        model.write_text(model.read_text(encoding="utf-8").replace("slices: []\n", MODEL), encoding="utf-8")
+        self.edit("specs/001-ordering/slices/S1.md", "# S1\n")
+        self.edit("packages/shared-py/shared/__init__.py", "VALUE = 1\n")
+        git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-qm", "S1 implemented")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        self.write_baseline()
+        self.edit("packages/shared-py/shared/__init__.py", "VALUE = 2\n")
+        self.incomplete_for(self.scoped(DRY), "packages/shared-py/shared/__init__.py")
+
+    def test_e5_hold_a_path_only_one_check_reads_stays_known(self) -> None:
+        """HOLD (teeth: let no row that is not a unit's claim, and each fails): what no unit builds is the check's."""
+        for path, check in (("specs/001-ordering/notes.md", "check-decisions"),
+                            ("infra/bootstrap/extra.tf", "check-deploy-role"),
+                            ("infra/service/flags.auto.tfvars", "check-flags"),
+                            (".specify/notes.md", "check-benchmark"),
+                            (".github/workflows/verify.yml", "check-ux-gates")):
+            with self.subTest(path=path):
+                self.reset()
+                self.edit(path)
+                run = self.scoped(DRY)
+                self.assertNotIn(INCOMPLETE, "\n".join(self.scoped_lines(run)), run.stdout)
+                ran, _ = self.decided(run)
+                self.assertEqual(ran.get(check), f"{path} changed")
+                self.assertEqual(self.verify_calls(), [])
+
+
+class ContractlessPackageTest(ShapeCase):
+    def test_e4_check_openapi_reads_the_api_client_but_a_package_with_no_package_json_is_unknown(self) -> None:
+        git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "rm", "-q", "packages/api-client/package.json")
+        git(self.repo, "commit", "-qm", "the api client is no package")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        self.write_baseline()
+        self.edit("packages/api-client/src/extra.ts", "export const x = 1;\n")
+        self.assertEqual(self.scoped_lines(self.scoped(DRY)), [
+            f"{INCOMPLETE} for packages/api-client/src/extra.ts — {UNCLAIMED}", BROADENED])
+
+    def test_e2_hold_without_a_target_the_same_paths_broaden(self) -> None:
+        self.edit("packages/shared-py/shared/__init__.py", "VALUE = 2\n")
+        self.assertEqual(self.scoped_lines(self.scoped(DRY)), [
+            f"{INCOMPLETE} for packages/shared-py/shared/__init__.py — {UNCLAIMED}", BROADENED])
+
+
 class IntegrationTest(ShapeCase):
     shape = "integration"
 

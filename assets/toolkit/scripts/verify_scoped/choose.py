@@ -30,7 +30,7 @@ UNCHANGED = "none of its inputs changed"
 WHOLE = "its recipe is not the sum of its per-deployable targets"
 MAKEFILES = ("Makefile", "GNUmakefile", "makefile")
 PROJECT_JSON = "project.json"
-WALKS = ("apps/", "packages/")  # directories a check walks whole: a changed path there chooses it, and is not known by it
+SHARED = ("apps/", "packages/")  # what units build: a check beside them that reads a path there chooses itself, and no more
 
 
 class Choice(NamedTuple):
@@ -171,13 +171,16 @@ def choose(record: dict[str, Any], data: Database, changed: list[str], drifted: 
 
 
 def claimed(path: str, record: dict[str, Any]) -> bool:
-    """Whether a deployable, a contract or a claiming check's file inputs hold the path: a check that always runs and
-    one with no recorded inputs claim nothing, however much they read; a directory a check walks whole (`apps/`,
-    `packages/`) is read by it and known by none, since a package nobody builds is a path this script cannot reason about."""
+    """Whether a contract, a unit's file inputs or a claiming check's hold the path. A check that always runs and one
+    with no recorded inputs claim nothing, however much they read. Under `apps/` and `packages/` only a deployable's own
+    units and a contract can stand for the checks that build and consume the path, so a check beside them (`check-flags`,
+    `check-imports`, `check-migrations`, `check-model`'s named paths, `check-openapi`) is chosen by a path there and
+    never makes it known: a package nobody builds is a path this script cannot reason about."""
     if any(is_input(path, entry) for contract in record["contracts"] for entry in contract["paths"]):
         return True
-    return any(check["claims"] and any(is_input(path, entry) for entry in (check["inputs"] or {}).get("files", [])
-                                       if entry not in WALKS) for check in record["checks"].values())
+    return any(check["claims"] and any(
+        is_input(path, entry) for entry in (check["inputs"] or {}).get("files", [])
+        if check["gate"] in GATE_UNITS or not entry.startswith(SHARED)) for check in record["checks"].values())
 
 
 def unknown(record: dict[str, Any], changed: list[str], is_gate_script: Callable[[str], bool]) -> list[tuple[str, str]]:
