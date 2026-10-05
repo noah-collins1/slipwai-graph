@@ -187,7 +187,7 @@ and `--make "$(MAKE)"`. The list is written once.
 
 ### T010 — Demo (host task)
 
-- [ ] The demo from [quickstart.md](quickstart.md) run by `drive-hand`: the factory's own `make verify` twice on an
+- [ ] *(After T026 is applied. First check the quickstart's precondition — no worktree inside the checkout, a clean `git status`, nothing writing the tree — and record that it held (D120); a fresh checkout's first run changes the cache list, so measure the run after the one that wrote it.)* The demo from [quickstart.md](quickstart.md) run by `drive-hand`: the factory's own `make verify` twice on an
   unchanged tree on `adopt-method`, the second **measured** (AC-S33-10; the first took about forty minutes, the second
   must return at once with the reuse line), plus `VERIFY_FORCE=1`, `CI=1` and `TESTS=…` as the actor would type them.
   The measurement is written into the quickstart by the host.
@@ -363,7 +363,7 @@ change `tests/` only and are below, in the order found.
 
 ### T022 — MEDIUM: a `FACTORY_BACKENDS` that names no backend takes the stamped path over an empty matrix
 
-- [ ] `FACTORY_BACKENDS=" "` (or `","`) is empty to make's `$(strip …)`, so `Makefile:51` does not bypass; but
+- [x] *(Iteration 18, `f35f981`.)* `FACTORY_BACKENDS=" "` (or `","`) is empty to make's `$(strip …)`, so `Makefile:51` does not bypass; but
   `tests/support.py:31-38` reads it as a value and `backends_under_test()` returns `[]`. The matrix,
   `test_flag_gate` and `test_line_widths` then pass over zero backends, a stamp is recorded, and a later plain run
   reuses it. **Do (`tests/` only):** `backends_under_test()` raises when the value is set and names no backend,
@@ -372,7 +372,7 @@ change `tests/` only and are below, in the order found.
 
 ### T023 — LOW: what the inputs scan cannot see — `TMPDIR`, and what `src/slipwai` reads inside the suite
 
-- [ ] `tests/test_uncommitted_places.py:142,180` skip when the temporary directory sits inside a git repository, so
+- [x] *(Iteration 18, `d69f345`.)* `tests/test_uncommitted_places.py:142,180` skip when the temporary directory sits inside a git repository, so
   `TMPDIR` decides whether two tests run, and the table does not hold it. `src/slipwai` reads `GITEA_OWNER`,
   `GITEA_PAGES_URL` and `GITEA_TOKEN` in the suite's own process, and the scan reads only `tests/*.py`. **Do
   (`tests/` only):** make the two tests independent of where `TMPDIR` is (recommended: `GIT_CEILING_DIRECTORIES`
@@ -381,16 +381,36 @@ change `tests/` only and are below, in the order found.
 
 ### T024 — LOW: `go` and `gh` are named by AC-S33-6 and held by nothing
 
-- [ ] `listed()` asserts only `tofu` and `node`; `tests/test_factory_gate_stamp_inputs.py:131` asserts `ko`, `mvn`,
+- [x] *(Iteration 18, `f326372`.)* `listed()` asserts only `tofu` and `node`; `tests/test_factory_gate_stamp_inputs.py:131` asserts `ko`, `mvn`,
   `pack`, `java`, `docker`. Dropping `go` from `VERIFY_TOOLS` leaves every test green. **Do (`tests/` only):**
   assert AC-S33-6's whole list, with `ko` and `mvn`, is a subset of `listed()`; teeth shown by dropping `go`.
 
 ### T025 — LOW: `npx`'s directory decides a skip, and the key holds only its version
 
-- [ ] `tests/test_extensions.py:209-212` skips according to whether `npx` shares a directory with `sh` (T019's
+- [x] *(Iteration 18, `d26bb55`.)* `tests/test_extensions.py:209-212` skips according to whether `npx` shares a directory with `sh` (T019's
   leftover). **Do (`tests/` only):** write its reason into the tables in
   `tests/test_factory_gate_stamp_inputs.py` (a decided entry), or make the test hide `npx` without depending on
   its directory; whichever, the scan must know of it.
+
+### T026 — HIGH (D119): interpreter caches under `assets/` are exempt from the key, and the suite fails on them — BLOCKED on a person (⛔)
+
+- [ ] *(Built in iteration 18 as `s33-3.patch` — branch `s33-patch-3`, `aa46146`; `git apply --check` clean against `adopt-method`; RED observed (the run after the plant reused), teeth shown; the probe line writes a line unique to the run where `sort` is missing, held by its own example, and the AC-S33-6 hold's stand-in PATH carries `find` and `sort`, both decided in the tools table. ⛔ until a person applies it.)* `verify-stamp.py`'s `EXEMPT` skips `__pycache__/` and `*.pyc` at the factory root too, while `test_toolkit`
+  reads the toolkit and profile overlays as text and `test_assets_bytecode` fails on a toolkit cache: in a /tmp clone
+  `key_parts()` was the same before and after planting `assets/toolkit/scripts/__pycache__/verify-stamp.cpython-314.pyc`,
+  so D118's incident over a stamped tree would have printed the reuse line. **Do (AC-S33-13):** in the stamped branch
+  only, the root `Makefile`'s probe line appends `find assets \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \)
+  2>/dev/null | LC_ALL=C sort` to `.factory-work/verify-probes`, after the Compose answer; the script is unchanged.
+  `tests/test_factory_gate_stamp.py` gains the example on `GateCase` — after a pass, a planted `.pyc` under the
+  fixture's `assets/toolkit/scripts/__pycache__/` makes the next run full and the one after it a reuse — observed
+  failing first, teeth shown by taking the `find` out. Built in a scratch worktree, exported as `s33-3.patch`,
+  `git apply --check`ed against `adopt-method`; **a person applies it** (D99, D101, D113).
+
+### T027 — The quickstart's precondition and the general question (D120)
+
+- [x] *(Iteration 18.)* `quickstart.md` states the precondition before step 1 and names all three patches, `CI=1`
+  and `FACTORY_BACKENDS`; `story-split.md` carries a Parking Lot line on a harness's worktree directory and the stamp,
+  after `S32-verify-stamp-split`; `cruise-carry.md`'s lesson gains no `isolation: worktree` delegate while S33's
+  measurement or demo is pending. No code.
 
 ## Convergence
 

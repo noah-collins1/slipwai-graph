@@ -1,4 +1,7 @@
-"""Nothing this repository's own work runs leaves an interpreter cache under `assets/` (S33 T021).
+"""No test leaves an interpreter cache under `assets/`, and the toolkit holds none (S33 T021).
+
+The product itself may: `slipwai.assets` loads the pruner with bytecode writing on, so
+`assets/backing-services/__pycache__/` is the gate's own doing, and the verify stamp's key lists it (D119).
 
 Iteration 16's first converge pass over S33 loaded `assets/toolkit/scripts/verify-stamp.py` with `importlib` to read
 its key, with bytecode writing on. That left `assets/toolkit/scripts/__pycache__/verify-stamp.cpython-314.pyc`, and

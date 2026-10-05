@@ -2108,6 +2108,11 @@ records it was started and exits as the test says.
   `docker --version` cannot see, is keyed through `.factory-work/verify-probes`, a git-ignored file the root gate
   writes from `docker compose version` (or `absent`) before it asks the stamp; a tool the suite probes that is in
   neither the key nor a written exemption with its reason fails the suite.
+- **AC-S33-13** — *Added by the after-converge gaps pass (T009, HIGH) and D119.* Given a tree the root gate passed,
+  when an interpreter cache (`__pycache__/`, `*.pyc`, `*.pyo`) appears or goes anywhere under `assets/`, then the next
+  `make verify` is a full run, because the root gate writes the sorted list of those paths into
+  `.factory-work/verify-probes` before it asks the stamp; their contents are not keyed, and the shipped script's
+  `EXEMPT` is unchanged.
 
 ### S05-xdist
 

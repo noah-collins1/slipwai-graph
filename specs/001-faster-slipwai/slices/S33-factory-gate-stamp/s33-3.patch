@@ -1,0 +1,112 @@
+From aa461461f5f0dd7d470e68b766290f9a7b4429b8 Mon Sep 17 00:00:00 2001
+From: noah-collins1 <noah.t.collins1@gmail.com>
+Date: Sun, 4 Oct 2026 22:22:03 -0500
+Subject: [PATCH] =?UTF-8?q?S33=20T026:=20caches=20under=20assets/=20join?=
+ =?UTF-8?q?=20the=20stamp's=20key=20through=20the=20probe=20file,=20and=20?=
+ =?UTF-8?q?a=20run=20that=20cannot=20list=20them=20reuses=20nothing=20(D11?=
+ =?UTF-8?q?9,=20AC-S33-13)=20(root=20Makefile=20and=20tests=20=E2=80=94=20?=
+ =?UTF-8?q?reaches=20no=20user)=20(cruise=20iteration=2018)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The probe line writes the sorted paths of __pycache__/, *.pyc and *.pyo under assets/ after the Compose
+answer. Where sort is missing the line is unique to the run, so nothing is reused over an unlisted cache.
+The stand-in PATH of the AC-S33-6 hold carries find and sort, both decided in the tools table.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ Makefile                                |  8 +++++---
+ tests/test_factory_gate_stamp.py        | 10 ++++++++++
+ tests/test_factory_gate_stamp_inputs.py | 16 +++++++++++++++-
+ 3 files changed, 30 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index e2b5dd6..6f09fda 100644
+--- a/Makefile
++++ b/Makefile
+@@ -41,8 +41,10 @@ test: ## Run the factory's test suite, or a slice: TESTS="test_a test_b", or SKI
+ # script cannot ask a missing one, and would then record nothing. The Docker Compose plugin answers to `docker compose
+ # version`, which the script cannot ask, so the recipe writes that answer (or `absent`) to the ignored `.factory-work/verify-probes`,
+ # which the key reads like any ignored file. The line holds `$(MAKE)`, so `make -n verify` and `make -q verify` write that
+-# file too: harmless, an ignored file with its true answer, and no stamp is touched. `make` itself is always there,
+-# under the name it was run as.
++# file too: harmless, an ignored file with its true answer, and no stamp is touched. The paths of interpreter caches
++# under `assets/` follow it, because the suite reads them as text and the stamp exempts them; their contents are not
++# keyed (D119). Where they cannot be listed, the line is unique to the run, so nothing is reused. `make` itself is
++# always there, under the name it was run as.
+ VERIFY_STAMP_SCRIPT := assets/toolkit/scripts/verify-stamp.py
+ VERIFY_TOOLS := python3 git uv node npm npx go java docker pack ko mvn tofu gh codegraph
+ VERIFY_STAMP = --tool make --make "$(MAKE)" $(foreach tool,$(VERIFY_TOOLS),$(if $(shell command -v $(tool) 2>/dev/null),--tool $(tool)))
+@@ -51,7 +53,7 @@ verify: ## Full local gate — a tree that already passed is not judged again; V
+ ifneq ($(strip $(TESTS)$(SKIP)$(FACTORY_BACKENDS)),)
+ 	@"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks
+ else
+-	@mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; } > .factory-work/verify-probes; run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
++	@mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; { command -v sort >/dev/null && find assets \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) 2>/dev/null | LC_ALL=C sort; } || echo "caches: not listed, run $$$$"; } > .factory-work/verify-probes; run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
+ endif
+ 
+ .PHONY: verify-checks
+diff --git a/tests/test_factory_gate_stamp.py b/tests/test_factory_gate_stamp.py
+index f04d4fd..d0d7bb4 100644
+--- a/tests/test_factory_gate_stamp.py
++++ b/tests/test_factory_gate_stamp.py
+@@ -139,6 +139,16 @@ class TestPassedTreeIsNotJudgedAgain(GateCase):
+                 shutil.rmtree(self.repo / ".git" / "slipwai")
+ 
+ 
++    def test_an_interpreter_cache_under_assets_puts_the_next_run_in_full(self) -> None:  # D119, AC-S33-13
++        self.passes()
++        cache = self.repo / SCRIPTS / "__pycache__"
++        cache.mkdir(parents=True, exist_ok=True)
++        (cache / "verify-stamp.cpython-314.pyc").write_bytes(b"\x00cache")
++        self.assertEqual(self.gate().returncode, 0)
++        self.assertEqual(self.ran(), FULL)
++        self.assertEqual(self.gate().returncode, 0)
++        self.assertEqual(self.ran(), [])
++
+ class TestAlwaysRunsInFull(GateCase):
+     def test_force_runs_every_check_and_says_so(self) -> None:  # e1
+         self.passes()
+diff --git a/tests/test_factory_gate_stamp_inputs.py b/tests/test_factory_gate_stamp_inputs.py
+index 6edc353..7bf29e5 100644
+--- a/tests/test_factory_gate_stamp_inputs.py
++++ b/tests/test_factory_gate_stamp_inputs.py
+@@ -65,6 +65,8 @@ EXEMPT_TOOLS = {
+     "mkfifo": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
+     "echo": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
+     "sleep": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "find": "lists the caches under `assets/` into the probe file (D119); a stand-in PATH carries it, never a skip",
++    "sort": "orders that list; where it is missing the probe line is unique to the run, so nothing is reused",
+     "init": "the generated repository's own `init` script, asserted executable: a file its test lands, not a tool",
+     "make": "keyed by the recipe itself: `--tool make --make \"$(MAKE)\"`, under the name it was run as",
+ }
+@@ -204,12 +206,24 @@ class TestEveryToolTheSuiteLooksForIsAccountedFor(GateCase):
+         self.assertFalse((self.repo / PROBE_FILE).exists())
+ 
+ 
++class TestCachesThatCannotBeListedAreNeverReused(GateCase):
++    def test_a_path_without_sort_never_reuses(self) -> None:  # AC-S33-13 hold (D119)
++        """Where the caches under `assets/` cannot be listed, the probe line is unique to the run: no reuse."""
++        bare = self.bin.parent / "bare"
++        bare.mkdir()
++        for name in ("make", "git", "python3", "sh", "mkdir", "echo", "find"):
++            (bare / name).symlink_to(shutil.which(name) or name)
++        for _ in range(2):
++            done = self.gate(path=str(bare))
++            self.assertEqual((done.returncode, self.ran()), (0, FULL), done.stdout + done.stderr)
++
++
+ class TestAListedToolLeavingPutsTheNextRunInFull(GateCase):
+     def test_a_stand_in_tool_removed_from_a_path_that_holds_none_other_is_a_full_run(self) -> None:  # AC-S33-6 hold
+         """The `PATH` is built here so `tofu` is certainly absent after, whatever the host has installed."""
+         bare = self.bin.parent / "bare"
+         bare.mkdir()
+-        for name in ("make", "git", "python3", "sh", "mkdir", "echo"):
++        for name in ("make", "git", "python3", "sh", "mkdir", "echo", "find", "sort"):
+             (bare / name).symlink_to(shutil.which(name) or name)
+         path = str(bare)
+         tofu = self.bin / "tofu"
+-- 
+2.53.0
+

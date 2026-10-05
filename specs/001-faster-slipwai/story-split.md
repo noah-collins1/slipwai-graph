@@ -112,7 +112,7 @@ starter, run its gate, read what it enumerated — is the demo path every later 
 | `S30-route-classifier` | `S29-route-by-rule`, `S14-result-contract`, `S13-one-hop-brief` | `S17-locality-report` | Needs the rule as fallback, result contracts to calibrate on (FR-036) and one-hop contracts as input (FR-035); a new dependency, so an ADR first |
 | `S31-gates-read-recorded-trunk` | `S24-ci-fetches-slice-base` | any | **Blocked: needs a person's approval before it is driven** (D86; owner brief, *Always ask a person*, first item — a repository whose trunk has another name would see CI newly refuse where it says nothing today). In the pool behind the PRD's slices (D39). `assets/toolkit/scripts/check-migrations.py`, both `check-flags.py`, and their tests |
 | `S32-verify-stamp-split` | `S03-verify-stamp` | any | In the pool behind the PRD's slices (D39, D91): `assets/toolkit/scripts/verify-stamp.py` and its tests. **A prerequisite of whichever slice next names that script in its plan**, landing before it as its own pull request — `S04-parallel-gate` included, should its plan need the script after all; where no slice names it, taken in pool order, at the latest before the completion audit |
-| `S33-factory-gate-stamp` | `S04-parallel-gate` | none — taken alone | **The owner's addition (D99): next, immediately after `S04-parallel-gate` and before `S05-xdist`**, overriding D39's order for this one slice. **⛔ Blocked on a person (D101): planned and implemented as `slices/S33-factory-gate-stamp/s33.patch`, which a person applies (plan.md, *Summary*); the run takes `S05-xdist` meanwhile and re-enters S33 at convergence once the patch is committed.** **Applied at `cab6cda`; converged in iteration 16 over a second patch, `slices/S33-factory-gate-stamp/s33-2.patch`, which a person applies (D113); ⛔ until then, the run takes `S06-scoped-gate`, and S33 re-enters at T009.** The root `Makefile` and its tests; the stamp's script reused unchanged where the plan can |
+| `S33-factory-gate-stamp` | `S04-parallel-gate` | none — taken alone | **The owner's addition (D99): next, immediately after `S04-parallel-gate` and before `S05-xdist`**, overriding D39's order for this one slice. **⛔ Blocked on a person (D101): planned and implemented as `slices/S33-factory-gate-stamp/s33.patch`, which a person applies (plan.md, *Summary*); the run takes `S05-xdist` meanwhile and re-enters S33 at convergence once the patch is committed.** **Applied at `cab6cda`; converged in iteration 16 over a second patch, `slices/S33-factory-gate-stamp/s33-2.patch`, which a person applies (D113); ⛔ until then, the run takes `S06-scoped-gate`, and S33 re-enters at T009.** **Applied at `d92f908`; T009's gaps pass (iteration 18) kept T022–T025 in `tests/` and decided D119: caches under `assets/` join the key through the root `Makefile`'s probe line, a third patch, `slices/S33-factory-gate-stamp/s33-3.patch`, which a person applies; ⛔ until then, the run takes `S06-scoped-gate`, and S33 re-enters at T010 (the demo) once it is committed.** The root `Makefile` and its tests; the stamp's script reused unchanged where the plan can |
 | `S19-pip-audit` | `S00-run-path` | any | Cheap; placed last by the owner's priority 3 (the generated project's loop first); taken earlier if a fan-out has a free seat |
 
 `/drive` and `/where-are-we` read this table to compute the **ready** set: not yet done, every `depends_on`
@@ -451,6 +451,14 @@ that cannot delegate takes the earliest ready slice in split order and names the
   `assets/toolkit/scripts/verify-stamp.py`; its first example is that a run under `PYTEST_ADDOPTS=--co` writes no
   stamp a plain run reuses. Behind S32, because that closed list owes the split first (D91, D100). Older (S03's
   mechanism), read and not run end to end; the trunk and CI never read a stamp meanwhile.
+
+- **A harness's own worktree directory and the stamp (D120), a method slice queued after `S32-verify-stamp-split`, not
+  inside it.** Claude Code's `.claude/worktrees/` (and its counterparts in other harnesses) makes every stamped gate
+  unrecordable while a worktree exists there: where the directory is ignored, `tree_records` refuses it as an ignored
+  directory that is itself a repository; in a generated project, whose `.gitignore` does not ignore it, the refusal
+  comes earlier, at `covered_files`, which an `EXEMPT` entry would not reach. To decide: what the shipped `.gitignore`
+  says, what the key leaves out, and what the gate's checks then read inside such a directory. It changes what the
+  stamp answers, so it lands under `assets/` after S32 (D91). Found by S33's after-converge gaps pass.
 
 ## Next Step
 
