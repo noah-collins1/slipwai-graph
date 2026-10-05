@@ -536,6 +536,11 @@ def pending_path() -> str:
     return os.path.join(stamp_directory(), "verify-stamp-" + project_name() + ".pending")
 
 
+def baseline_path() -> str:
+    """What a scoped run compares the machine with: beside the stamp, under the same project's name."""
+    return os.path.join(stamp_directory(), "verify-baseline-" + project_name() + ".json")
+
+
 def read_own(path: str) -> str | None:
     """The text of one of this script's own files, or None where it is not there or is anything but a regular file in
     a real directory: a link is never followed, a directory or a FIFO is never opened (a FIFO would wait for a writer),
@@ -725,6 +730,31 @@ def remove_own(path: str) -> str | None:
     return None
 
 
+def variable_digests() -> dict[str, str]:
+    """The SHA-256 of each keyed variable's record, never a value: unset is told from empty by the record itself."""
+    return {name: hashlib.sha256(variable_record(name)).hexdigest() for name in VARIABLES}
+
+
+def write_baseline(tools: dict[str, str]) -> None:
+    """Beside a stamp just written, where the branch is a `slice/<id>`: the branch, the tools the run asked at its start
+    and the variables' digests, for a scoped run to compare with. Nothing is written on any other branch."""
+    ref = git_or_nothing("symbolic-ref", "-q", "HEAD").removesuffix(b"\n").decode("utf-8", "surrogateescape")
+    branch = ref.removeprefix("refs/heads/")
+    if not trunk_module().SLICE_BRANCH.match(branch):
+        return
+    baseline = {"branch": branch, "tools": tools, "variables": variable_digests()}
+    write_file(baseline_path(), json.dumps(baseline, indent=2, sort_keys=True) + "\n")
+
+
+def forget_baseline() -> str | None:
+    """The baseline, gone: a run that may change what it was taken of leaves none. None where it is gone, or git cannot
+    say where it would be."""
+    try:
+        return remove_own(baseline_path())
+    except CannotTell:
+        return None
+
+
 def remove_stamp() -> str | None:
     """The stamp, gone before the first check starts (`remove_own`)."""
     return remove_own(stamp_path())
@@ -737,7 +767,7 @@ def begin_full_run(note: dict[str, object], token: str, forced: str | None = Non
     key cannot be built (`cannot`, the run records nothing), the stamp cannot be removed (it names the file to delete,
     and the run records nothing), the run was forced. Exits non-zero, so the recipe runs every check."""
     try:
-        reason = remove_stamp() or remove_own(pending_path())
+        reason = next(filter(None, (remove_stamp(), remove_own(pending_path()), remove_own(baseline_path()))), None)
     except CannotTell:
         reason = None  # git cannot say where a stamp would be, so there is none to remove and none to write
     if cannot is None and reason is not None:
@@ -765,6 +795,7 @@ def reuse(options: Options) -> int:
         if not usable:
             return 1
         if ratcheting():
+            forget_baseline()  # what it writes is what the baseline was not taken of
             return 1  # a ratchet run reads, writes and removes nothing (D80): a stamp that stood is for a key that passed
         if declined():
             # `-i`: the checks run and may fail with the run still exiting 0, so no stamp may stand to be reused
@@ -872,6 +903,10 @@ def record(options: Options) -> int:
         write_file(stamp_path(), json.dumps(stamp, indent=2, sort_keys=True) + "\n")
     except OSError as error:
         return not_recorded("cannot write " + shown(stamp_path()) + " (" + (error.strerror or str(error)) + ")")
+    try:
+        write_baseline(key["tools"])  # type: ignore[arg-type]
+    except (OSError, CannotTell):
+        pass  # the stamp stands; a scoped run finds no baseline and runs the full gate
     try:
         os.remove(pending_path())
     except OSError:
