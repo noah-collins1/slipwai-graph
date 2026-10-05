@@ -73,6 +73,10 @@ The time is `YYYY-MM-DDTHH:MM:SSZ` and is written by the verb, never by the dele
 method writes are `refused: <the delegate's words>`, `malformed: <field>`, `no continuation` and
 `stopped: <reason>`; any non-empty reason passes the gate. Text before the first `## ` heading is the file's own.
 
+Helpers a delegate starts (Explore, general-purpose, the groups a `drive-implement` fans out to) get no block and no
+entry of their own: what they did is reported in the delegate's own block, in `tests`, `files_changed`, `unresolved`
+and `change_summary`, and that one block is what the dispatching session appends.
+
 ## The verbs
 
 All three are `scripts/check-decisions.py`; `<dir>` is `specs/<feature>` or `specs/<feature>/slices/<id>`, existing,

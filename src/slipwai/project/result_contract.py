@@ -50,6 +50,8 @@ End your hand-back with one fenced block whose info string is exactly `result-co
 the thirteen fields [{PAGE}]({PAGE}) lists, in that order. In yours `delegate` is `{name}` and `status` is
 {spelled(STATUSES[name])}. Whatever you started and did not finish, decided, assumed or left open goes inside that
 one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
 The session that delegated you appends it, verbatim, to the record; it never writes a block for you."""
 
 

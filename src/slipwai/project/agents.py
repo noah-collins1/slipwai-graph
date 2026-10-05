@@ -159,7 +159,8 @@ an assertion failure rather than a build failure, and whether it was observed be
 same type, under four constraints: a sub-delegate's manifest is a subset of yours, never wider; you verify each
 one's evidence against the tree rather than relaying its claim; nothing you spawn writes `tasks.md`; and you
 report as one delegate with one cycle's evidence, saying that you split and into how many groups. The obvious
-implementation hands a sub-delegate your whole write scope, and that is the one this forbids.
+implementation hands a sub-delegate your whole write scope, and that is the one this forbids. Your sub-delegates get no `result-contract` block and no entry
+of their own: what each did, and its evidence, goes in your one block.
 
 Return what you finished, the boundary you were given and the cycle unit you ran, whether you fanned out and
 into how many groups, the tests you added with their names, the commands you ran and their

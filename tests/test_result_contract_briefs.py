@@ -70,6 +70,23 @@ class BriefsTest(FactoryTestCase):
                     self.assertEqual([each for each in elsewhere if f"`{each}`" in paragraph], [])
                     self.assertLess(text.index(SECTION), text.index("## What holds for every delegate here"))
 
+    def test_each_type_says_the_helpers_it_starts_get_no_block_and_report_inside_its_own(self) -> None:
+        for layout in (AT_ROOT, ADOPTED):
+            for agent in types():
+                with self.subTest(layout=layout.delivery, agent=agent.name):
+                    paragraph = " ".join(handed_back(brief(agent.name, layout)).split())
+                    self.assertIn("Helpers you start (Explore, general-purpose, a fan-out group) get no block and "
+                                  "no entry of their own", paragraph)
+                    self.assertIn("what they did is reported in your own block", paragraph)
+
+    def test_the_implement_brief_fan_out_text_says_the_groups_report_inside_the_one_block(self) -> None:
+        for layout in (AT_ROOT, ADOPTED):
+            text = " ".join(brief("drive-implement", layout).split())
+            with self.subTest(layout=layout.delivery):
+                fan = text.split("**You may fan your own increment out**", 1)[1].split("Return what you finished", 1)[0]
+                self.assertIn("get no `result-contract` block and no entry of their own", fan)
+                self.assertIn("one block", fan)
+
     def test_the_claude_codex_and_gemini_projections_carry_the_paragraph(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "projected", "standard", "python")
@@ -225,6 +242,13 @@ class PageTest(FactoryTestCase):
             "scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>",
             "scripts/check-decisions.py --hand-backs <slice-dir>", "```result-contract",
         ):
+            self.assertIn(words, text)
+
+    def test_the_page_says_helpers_get_no_block_of_their_own(self) -> None:
+        record = PAGE.read_text(encoding="utf-8").split("\n## The record", 1)[1].split("\n## The verbs", 1)[0]
+        text = " ".join(record.split())
+        for words in ("Helpers a delegate starts", "get no block and no entry of their own",
+                      "reported in the delegate's own block"):
             self.assertIn(words, text)
 
     def test_the_page_says_what_owes_a_block_and_what_the_finding_line_names(self) -> None:
