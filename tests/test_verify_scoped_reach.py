@@ -118,7 +118,8 @@ class PathTest(TwoCase):
 
         """T055 (A7): a traversal test's input is a string, not a path that is reached; still the full gate."""
         """T055 (A7): a traversal test's input is a string, not a path that is reached; the gate is still the full one."""
-        self.trunk({f"{SERVICE}/src/traversal.test.ts": 'const attack = "../../etc/passwd";\n'})
+        attack = 'const attack = "../../etc/passwd";\n'
+        self.trunk({f"{SERVICE}/src/traversal.test.ts": attack})
         self.edit("apps/billing/src/rate.ts", "x\n")
         self.reached(self.scoped(), f"`{SERVICE}/src/traversal.test.ts` holds a string that climbs out of `{SERVICE}` "
                      f"onto `apps/etc/passwd`, which is no deployable and no path in the repository, {ENDING}")
