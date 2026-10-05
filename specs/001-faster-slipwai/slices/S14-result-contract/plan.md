@@ -165,6 +165,29 @@ into `slices/<id>/hand-backs.md` on its checkout while the slice branch appends 
 merge. **Recommend** the feature-level record, stage `ready-set` — which is how D134 already reads; the plan proceeds
 on it and asks only for confirmation.
 
+**Q3 — The skipper's block and its own entry: which is written first, and what does an `unavailable` skipper put in
+`decisions`?** (raised by the post-converge `/gaps`.) `--hand-back` refuses a block whose `decisions` names a `D<n>`
+not yet in `decisions.md` (AC-S14-8), so a skipper block naming its own number fails until the entry is appended.
+D134 §4 already says a skipper's own number is its output, named in `change_summary`, *not* in `decisions` — so the
+order problem arises only when a skipper lists its own number against D134. Options: (a) the cruise text says,
+beside the skipper protocol, *append the entry, then the block*, and the skipper brief repeats D134 §4 (its own
+number goes in `change_summary`, never `decisions`); an `unavailable` answer — which is still an entry, `Decision:
+unavailable: …` — follows the same order; (b) relax the id check for `drive-skipper`. **Recommend (a)**: it is D134
+as written, adds no exception to the gate, and is two sentences of generated text (`result_contract.py`'s
+`cruise_sentences`, the skipper brief). Not done on this branch, because whether an `unavailable` answer is written as
+an entry is the cruise protocol's to say.
+
+**Q4 — AC-S14-18's file list.** The diff writes `src/slipwai/project/cruise.py` (the cruise text lives there, not in
+`commands.py`), `docs_index.py` (the new page's index line) and the new `result_contract.py` (the budget: three
+modules at 333–345 lines). The host's brief allowed *what the plan proves it needs*, and the Structure Decision
+proves each. **Recommend** the criterion's list gain the three, or a recorded deviation, as the host prefers.
+
+**Q5 — AC-S14-19's no-block fixture shows the `--hand-backs` line, not a converge verdict carrying the finding.**
+Options: (a) the demo runs a real `drive-converge` delegate on the generated project over the no-block fixture and
+shows its verdict naming the stage and type; (b) the `--hand-backs` line is the demonstration, since it is the one
+thing converge's brief tells it to read. **Recommend (a)**, the criterion's words, at the cost of one more real
+delegate in the demo; quickstart step 3 gains the dispatch.
+
 **Record changes the host owns** (not this branch's to write, AC-S14-18): ADR 0006 names no page, and AC-S14-1 needs
 one — a line naming `docs/result-contract.md` in its *Decision*, while it is `Proposed`; D136 item 3's *this
 repository's own measurement* line in the cruise report.

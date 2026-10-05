@@ -510,3 +510,52 @@ which stages count moves with it.
     fence left unclosed at the end of the file.
   - **Sweep:** `extract` and `blocks_in`.
   - Files: `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_record.py`.
+
+### After convergence: `/gaps` over the slice diff
+
+2026-10-05, cruise iteration 23, `drive-gaps` (read only) over `git diff c3c760b..0d8097d`. It traced AC-S14-1..19:
+twelve fully pinned, five partly, one confirmed defect, three product questions (written into
+[plan.md](plan.md#open-questions) as Q3–Q5). The loop is at its bound and none is `CRITICAL`, so each lands here as a
+Phase 4 task; the slice goes to its demo carrying them.
+
+- [ ] T024 [US6] **MEDIUM (Phase 4) — a four-backtick quoted example hides the delegate's real block from
+  `--hand-back`** (AC-S14-10, -11).
+  - **Evidence:** `blocks_in` (`hand_backs.py:242`) and `extract` (`:149`) treat any line opening with three backticks
+    as a fence, so a ```` ````markdown ```` wrapper pairs with the inner closing fence and the trailing real block is
+    swallowed. Reproduction: prose, then a ```` ````markdown ```` wrapper around a ```` ```result-contract ```` example
+    (as `docs/result-contract.md` itself shows), then a valid `drive-gaps` block, piped to `--hand-back
+    specs/f/slices/S1 drive-gaps gaps`, prints `no result-contract block in the hand-back`, exit 1; without the quoted
+    example, exit 0. A delegate that did return a block costs a continuation or gets a `Missing:` line.
+  - **GREEN:** fences are paired CommonMark-style — a fence closes only on a run of the same character at least as
+    long as the one that opened it — and only a top-level `result-contract` fence is a block.
+  - **Sweep:** `blocks_in` and `extract` together, with T023 (the same two functions); a test per nesting: four inside
+    three, three inside four, tildes, an unclosed outer fence.
+  - Files: `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_append.py`, `tests/test_hand_backs_record.py`.
+
+- [ ] T025 [US6] **MEDIUM (Phase 4) — the completion audit is not told to be the backstop** (AC-S14-12, last clause;
+  D136 item 2).
+  - **Evidence:** `## When the ready set is empty: the completion audit` (`cruise.py:199`ff) says nothing of hand-backs;
+    no text or test puts the check there.
+  - **GREEN:** one sentence there — each audit `drive-gaps` delegate runs `--hand-backs` over every slice and reports a
+    delegated stage with neither a passing block nor a `Missing:` line as an audit finding — spliced from
+    `result_contract.py`, pinned in `test_result_contract_briefs.py`.
+  - **Sweep:** the three stops D136 names (demo, adversary, audit), each pinned by a test.
+  - Files: `src/slipwai/project/result_contract.py`, `src/slipwai/project/cruise.py` (one placeholder),
+    `tests/test_result_contract_briefs.py`.
+
+- [ ] T026 [US6] **LOW (Phase 4) — three harness projections are not pinned** (AC-S14-1, *`make agents` carries it into
+  every harness's agent file*).
+  - **Evidence:** `test_the_claude_codex_and_gemini_projections_carry_the_paragraph` covers three of six; Cursor,
+    Copilot and opencode are unchecked.
+  - **GREEN / sweep:** the test runs over every harness with an `agentFile` row in `scripts/agents/registry.json`.
+  - Files: `tests/test_result_contract_briefs.py`.
+
+- [ ] T027 [US6] **LOW (Phase 4) — the migrate test proves `make check-decisions`, not `make verify`** (AC-S14-17,
+  AC-S14-16's full-gate clause).
+  - **Evidence:** `test_result_contract_migrate` e1/e2 run only `check-decisions`; nothing compares the full gate's
+    findings before and after on a project with no record.
+  - **GREEN:** on the migrated root project, `make verify-checks` (the gate's checks without the matrix) exits as it
+    did before migrate, with the same findings; the adopted fixture the same under `delivery/`. The full `make verify`
+    stays the merge root's.
+  - **Sweep:** both layouts.
+  - Files: `tests/test_result_contract_migrate.py`.
