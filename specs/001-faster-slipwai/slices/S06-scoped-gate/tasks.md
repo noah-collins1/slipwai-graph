@@ -605,7 +605,7 @@ tree; each RED below restates one as an example.
 
 ### T024 — [US2] CRITICAL — A check's row is as wide as what the check walks and what its data names (R4, R10 e4 · AC-S06-2, -5, -6, -13)
 
-- [ ] **Finding.** Some rows in `table.py` are narrower than the paths their checks read. When another row claims
+- [x] **Finding.** Some rows in `table.py` are narrower than the paths their checks read. When another row claims
   the changed path, R5's safety net never fires, and the narrow check is skipped. Three checks are shown:
   `check-migrations` walks **every** `apps/*/` and `packages/*/` (`check-migrations.py` 16, 157), but its row is
   `{dep}`. `check-imports` walks every directory under `apps/` and `packages/` (`check-imports.py` 142, 284), but its
@@ -653,7 +653,7 @@ row cannot be bounded, it becomes `inputs: null` (it always runs), never narrowe
 
 ### T025 — [US2] CRITICAL — The recipe-sum guard: a check whose recipe is not the sum of its units runs whole (R3, R4 · AC-S06-2, -4; data-model *How a unit is chosen*, last paragraph)
 
-- [ ] **Finding.** The data-model specifies a recipe-sum guard: where a gate check's recipe lines (from the make database)
+- [x] **Finding.** The data-model specifies a recipe-sum guard: where a gate check's recipe lines (from the make database)
   are not exactly its units' and family targets' lines, the check runs whole under its gate name. **It is not
   built.** Nothing in `record.py` or `choose.py` compares the two. T002 e4 proves the sum only for the generated text,
   at generate time. A project owns its `Makefile` (Principle I), and a project that adds a line to `lint:` is the case
@@ -688,7 +688,7 @@ then `make lint typecheck check-structure`. Level line: MINOR, already carried.
 
 ### T026 — [US2] CRITICAL — Every part of the stamp's key is compared by the selection, the ignored files included (R4, R7 · AC-S06-5, -8, -9)
 
-- [ ] **Finding.** The stamp's key holds the ignored part: every file git ignores under the project, except
+- [x] **Finding.** The stamp's key holds the ignored part: every file git ignores under the project, except
   `EXEMPT` (`verify-stamp.py` 42–48, 499). It holds it because a check reads those files: `.env` (Vite and Vitest
   load it from the app's root), `node_modules/.package-lock.json` (kept in the key on purpose, line 79), the UX kit
   under `tools/ux-gates/` and `skills/ui-ux-pro-max/` (ignored, run by `check-ux-gates`), and a new test file excluded
@@ -731,7 +731,7 @@ check-structure`. Level line: MINOR, already carried.
 
 ### T027 — [US2] HIGH — A claim means every reader of the path is chosen: `check-flags`' `packages/` (R5 · AC-S06-5)
 
-- [ ] **Finding.** A check's file inputs claim a path for R5. That is safe only if every unit reading the path is then
+- [x] **Finding.** A check's file inputs claim a path for R5. That is safe only if every unit reading the path is then
   chosen. `check-flags` (present under any target) claims all of `packages/`, so a change in a package without a
   `package.json` is no longer unclaimed, and nothing broadens. Examples: a Python path dependency, a
   `go.work` member, a shared migrations package. Only `check-flags` runs. The deployables that build the package,
@@ -761,7 +761,7 @@ then `make lint typecheck check-structure`. Level line: MINOR, already carried.
 
 ### T028 — [US2] MEDIUM — The words say what the comparison is (R11, R13 · AC-S06-15, -18; D123)
 
-- [ ] **Finding.** The gates page (`scoped_targets.SCOPED_PAGE`, line 41), both constitution templates (D123's
+- [x] **Finding.** The gates page (`scoped_targets.SCOPED_PAGE`, line 41), both constitution templates (D123's
   sentence) and the fragment's **Catch-up.** say the scoped gate runs *every check whose inputs changed since the
   branch last passed the full gate*. The code compares changed **paths** with the trunk's merge base
   (`records.base_of`, `changed_files(base)`), and only **tools and variables** with the baseline that the last green
@@ -797,7 +797,7 @@ then `make lint typecheck check-structure`.
 
 ### T029 — [US2] LOW — The tests claim what they hold: a migrate from the real last factory, a jobserver example with teeth (R9, R13 · AC-S06-12, -17)
 
-- [ ] **Finding.** (1) `tests/test_scoped_migrate.made_before_the_slice` builds its "made before" project by
+- [x] **Finding.** (1) `tests/test_scoped_migrate.made_before_the_slice` builds its "made before" project by
   stripping the scoped section from a project this checkout generated. That project still has the stamp, the new
   `verify-stamp.py` and today's every other line, which is not what any earlier factory made. A real migrate passes:
   `git archive 58a9aed` → `slipwai generate product --profile event-modelling --backend typescript --frontend
