@@ -17,6 +17,7 @@ import os
 import subprocess
 import sys
 import unicodedata
+from pathlib import Path
 from typing import Any, Mapping, NamedTuple, Protocol
 
 sys.dont_write_bytecode = True  # an untracked file under scripts/ would make every later scoped run the full gate
@@ -71,14 +72,20 @@ def unreadable(error: BaseException) -> str:
     return "the checkout could not be read (" + str(error).replace("\n", " ")[:120] + ")"
 
 
-def scoped_gate() -> Any:
-    """`verify-scoped.py` beside this script, loaded and never copied: the borders and the trunk are the gate's own."""
-    spec = importlib.util.spec_from_file_location("verify_scoped_for_the_mutation_scope", os.path.join(HERE, "verify-scoped.py"))
+def load(filename: str) -> Any:
+    """A script beside this one, loaded and never copied: the borders and the trunk are `verify-scoped.py`'s own, the
+    Go exclusions are `go-mutation.py`'s."""
+    spec = importlib.util.spec_from_file_location("mutation_scope_" + filename.replace("-", "_"),
+                                                  os.path.join(HERE, filename))
     if spec is None or spec.loader is None:
-        raise ImportError("cannot load verify-scoped.py")
+        raise ImportError("cannot load " + filename)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def scoped_gate() -> Any:
+    return load("verify-scoped.py")
 
 
 def ground() -> Any:
@@ -208,10 +215,30 @@ def classify(path: str, status: str, services: list[tuple[str, str]]) -> tuple[s
     return ("deleted" if status == "D" and kind == "production" else kind), root, inside
 
 
-class Unwired:
-    """The runner until a tool is wired for a backend: it refuses, so the target can fail but never pass."""
+def go(path: str, files: list[str]) -> Result:
+    """Gremlins over the given files only: the exclusions `.gremlins.yaml` carries are `go-mutation.py`'s to read, and a
+    file they take is named and left out, so a run with nothing left starts no tool."""
+    tool = load("go-mutation.py")
+    try:
+        keep = tool.mutable(set(files), tool.excluded(Path(path) / tool.CONFIG))
+    except SystemExit as stop:  # a configuration go-mutation.py refuses to read is a failed run, with its words
+        print(stop.code, file=sys.stderr)
+        return Result(2, [], [])
+    left = [(name, "outside Gremlins' configured targets") for name in files if name not in keep]
+    if not keep:
+        return Result(0, [], left)
+    command = [sys.executable, os.path.join(HERE, "go-mutation.py"), path]
+    command += [word for name in sorted(keep) for word in ("--file", name)]
+    return Result(subprocess.run(command, close_fds=False, check=False).returncode, sorted(keep), left)
+
+
+class Tools:
+    """The runner of the wired backends. Any other backend refuses until its tool is wired, so the target can fail but
+    never pass for it."""
 
     def run(self, backend: str, path: str, files: list[str]) -> Result:
+        if backend == "go":
+            return go(path, files)
         return Result(2, [], [], f"no runner for {backend}")
 
 
@@ -295,7 +322,7 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
     except Refused as why:
         say(str(why))
         return 2
-    return scope(services, words, changes, runner or Unwired())
+    return scope(services, words, changes, runner or Tools())
 
 
 if __name__ == "__main__":
