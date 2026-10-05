@@ -24,6 +24,9 @@ than a red one:
   no mutable code; here that is exit 1.
 - **A timed-out mutant is a failure.** Gremlins leaves timed-out mutants out of the score, so a suite that
   slowed past `timeout-coefficient` passes on the mutants it managed. The fix is in `.gremlins.yaml`.
+- **A scoped run whose mutants are all not covered passes.** Gremlins scores zero tested mutants as 0% efficacy
+  and exits below its threshold; `--since` and `--file` read that from the report and say how many mutants no
+  test reached, because *not covered is reported, never failed; a survivor fails*. The sweep is unchanged.
 
 Only this module is mutated. A shared module under `packages/` is built here and never mutated: run this
 against it as a service of its own if its rules deserve a gate of their own.
@@ -64,6 +67,8 @@ GREMLINS = "__GO_GREMLINS__"
 REPORT = "gremlins.json"
 CONFIG = ".gremlins.yaml"
 TIMED_OUT = "TIMED OUT"
+NOT_COVERED = "NOT COVERED"
+THRESHOLD_EXITS = (10, 11)  # Gremlins: below efficacy-threshold, below mutant coverage threshold
 
 
 def module_path(go_mod: Path) -> str:
@@ -297,6 +302,26 @@ def assess(report: Path) -> int:
     return 0
 
 
+def untested(report: Path) -> int:
+    """How many mutants the report holds that no test reached, when that is every mutant it holds that counted.
+
+    Gremlins scores zero tested mutants as 0% efficacy and exits below `efficacy-threshold`, which a scoped
+    run meets whenever the change it was scoped to is code no test reaches. The sweep's configuration says
+    *not covered is reported, never failed; a survivor fails*, so a scoped run is held to that: this is the
+    count when nothing was killed, lived or timed out, and 0 for any other report, a missing one included.
+    """
+    if not report.is_file():
+        return 0
+    try:
+        result = json.loads(report.read_text(encoding="utf-8"))
+    except ValueError:
+        return 0
+    statuses = Counter(m["status"] for f in result.get("files", []) for m in f.get("mutations", []))
+    if statuses["KILLED"] or statuses["LIVED"] or statuses[TIMED_OUT]:
+        return 0
+    return statuses[NOT_COVERED]
+
+
 USAGE = "usage: go-mutation.py <service> [--since <branch-or-commit> | --file <path> ...]\n"
 
 
@@ -357,7 +382,12 @@ def main(argv: list[str]) -> int:
         )
         keep_report(report, service)
         if run.returncode != 0:
-            return run.returncode
+            count = untested(report) if scoped and run.returncode in THRESHOLD_EXITS else 0
+            if not count:
+                return run.returncode
+            print(f"mutation: {count} mutants not covered by any test, none killed or lived; not covered is "
+                  "reported, never failed", flush=True)
+            return 0
         return assess(report)
     finally:
         shutil.rmtree(into, ignore_errors=True)
