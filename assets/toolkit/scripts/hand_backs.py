@@ -8,6 +8,7 @@ each holding one fenced `result-contract` block.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -65,7 +66,7 @@ def path_fault(path: str) -> str | None:
     """A path is repository-relative: no leading `/` or `\\`, no `X:` drive, no `..` segment."""
     if path.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", path):
         return f"{path!r} is absolute; a path is repository-relative"
-    if ".." in re.split(r"[/\\]", path):
+    if os.pardir in re.split(r"[/\\]", path):
         return f"{path!r} has a `..` segment; a path stays inside the repository"
     return None
 
