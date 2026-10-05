@@ -573,6 +573,8 @@ names the new text).
 
 **T016 result (host, iteration 22):** 705 tests OK (1 skipped: `test_changelog`'s release-tag hold, no tag fetched here, older than this slice) at `c1f2716` with every gate-reading suite, the scoped and xdist suites; `make lint typecheck check-structure` green; nothing under `delivery/`, `tools/`, the root `Makefile`, CI or `VERSION` changed. `make starters` differs from T001's copy in exactly: `Makefile`, `scripts/verify-scoped.py`, `scripts/verify_scoped/`, `scripts/verify-stamp.py`, `docs/gates.md`, `.claude/settings.json`, `commands/drive.md`, `agents/drive-implement.md`, `agents/drive-converge.md`, `skills/planning/SKILL.md` and the two constitution templates — every one the plan names.
 
+**T016 result (host, iteration 23, on the final tip after Phase 3 T024–T047):** `make test` over 96 modules — every gate-reading, scoped, xdist, stamp and model suite plus `test_backing_services test_add_service test_utf8_io test_assets_bytecode` — `Ran 913 tests in 1748.333s`, `OK (skipped=1)` (the same release-tag hold); `make lint typecheck check-structure` green. Nothing under `delivery/scripts/`, `tools/`, the root `Makefile`, CI or `VERSION` changed since `58a9aed`.
+
 ### T017 — Converge, two passes (host task)
 
 - [ ] `drive-converge` over the slice's diff, pass 1 then pass 2, at the loop's bound; every finding appends a task under
