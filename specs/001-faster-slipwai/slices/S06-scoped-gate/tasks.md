@@ -953,7 +953,7 @@ run the check or the full gate and exit 2. What follows is what pass 3 found sti
 
 ### T033 — [US2] CRITICAL — A variable the comparison never reads changes what a skipped check runs (R4, R5 · AC-S06-2, -5; D127 item 4)
 
-- [ ] **Finding.** T030 closed the class for rule text. It is still open for variables. `rules.py` keeps a variable from
+- [x] **Finding.** T030 closed the class for rule text. It is still open for variables. `rules.py` keeps a variable from
   the make database only when its origin is `file` and its name does not begin with a dot (`rules.py` 144). It compares a
   variable the factory never assigned only when a reached recipe names it (`rules.py` 241). That leaves three ways a
   project can change what a factory check runs, and the comparison never sees any of them.
@@ -1013,7 +1013,7 @@ word. Not here: a project's `.ONESHELL:` or `.POSIX:` (rule text, T030's class) 
 
 ### T034 — [US2] HIGH — The rules are read under the goal the full gate gives them (R4, R5 · AC-S06-2, -5; D127 item 2)
 
-- [ ] **Finding.** `record.database` reads the make database with the goal `.DEFAULT` (`record.py` 28). `make verify`
+- [x] **Finding.** `record.database` reads the make database with the goal `.DEFAULT` (`record.py` 28). `make verify`
   hands its sub-make the goal `verify-checks`. A conditional on `MAKECMDGOALS`, or on `MAKELEVEL`, can add a
   prerequisite or a line that the full gate runs and the comparison never sees. **Reproduced** (probe
   `GoalConditional`). On `main`, commit
