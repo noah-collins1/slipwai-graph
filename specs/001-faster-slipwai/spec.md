@@ -470,6 +470,40 @@ escalated; the resulting revision passes acceptance.
   integration); and inference cost with rework. Summed stage time MUST NOT be reported as elapsed time once slices
   overlap. FR-045's comparison uses these measures.
 
+- **FR-050** *(added 2026-10-05, owner, from the author's updated product and engineering material)*: Every
+  record FR-046's tool writes (claim, evidence, eligibility, decision classification) MUST be append-only and carry
+  the hash of its full input, the version of the rules that produced it, the rules that fired and a timestamp; a
+  record MUST NOT be reclassified after the fact, only superseded by a new record.
+- **FR-051**: The reversibility score (FR-029) MUST be computed by a fail-closed classifier over factual booleans and
+  enums only, never free text: at least contract change, schema change, permission or authentication change,
+  pricing or customer-visible effect, data export, and `rollback_complexity` (trivial | hours | days |
+  needs-migration). A missing or unrecognised field MUST classify as `hard`. `days` and `needs-migration` MUST be
+  `hard`. Size of change and urgency MUST NOT change the classification. The classifier MUST have a test per rule
+  and MUST change only as a decision taken at the hard tier.
+- **FR-052**: A contract-edge change MUST follow the contract-first sequence: the consumer slice writes a failing
+  expectation against the provider's contract first; the provider slice's gate runs every consumer expectation on
+  its edges against the real provider (never only against the consumer's fake); destructive changes go through
+  expand then contract, the contract phase no earlier than the next convergence. The expectation file's hash and
+  the provider's input fingerprint are the evidence record's inputs (FR-039).
+- **FR-053**: Provisional approval (FR-030) and classifier routing (FR-034) MUST roll out through recorded modes:
+  shadow (the decision is computed and logged, nothing changes), advisory (shown beside the human or rule decision),
+  enforced, in that order, with the mode in the run's settings and the move between modes a decision entry.
+- **FR-054**: The locality report (FR-025) MUST flag a hot spot when, for two consecutive weeks or two consecutive
+  features, the top-3 share of slice touches exceeds 50 percent, or the Gini coefficient exceeds 0.6, or K-effective
+  falls below 0.4 times the number of slices; thresholds MUST be calibrated to the number of slices (a top-3 share
+  target below 3/K is unreachable) and stated with the report. The recommended response is a two- or three-way
+  split, re-measured after the next two features, never added queueing.
+- **FR-055**: The split skill MUST flag for splitting a slice whose plan exceeds about one day of agent work or whose
+  contract exposes more than ten operations, and a slice reading more than five operations from one neighbour as a
+  boundary to reconsider; these are prompts to the split stage, not hard refusals.
+- **FR-056**: The skipper MUST escalate one tier at a time, never skipping a tier, and MUST NOT surface a question
+  in a diff or a note as a substitute for escalating. When three decisions with the same shape occur within one
+  feature, it MUST propose a rule for the owner brief in a decision entry instead of continuing to decide case by
+  case.
+- **FR-057**: The benchmark MUST report decision health: the share of easy and guarded decisions escalated to hard
+  (healthy band 5 to 15 percent; zero or above 25 percent is flagged), the misclassification rate found by review
+  (flag above 5 percent), and median decision wait by tier.
+
 ### Key Entities
 
 - **Verify stamp**: tree hash, gate script hash, tool versions, timestamp, result. The tree hash is of the working
@@ -510,6 +544,10 @@ escalated; the resulting revision passes acceptance.
   gate refuses an integration whose recorded state does not allow it.
 - **SC-016**: A change to one generator touches only the factory tests of the configurations it affects; a change
   whose effect cannot be established runs the full matrix.
+- **SC-017**: A decision with a missing or unknown classifier field is `hard`; the same input always yields the same
+  record hash and classification; no record is edited in place.
+- **SC-018**: A provider change is accepted only when every consumer expectation on its edges passes against the
+  real provider.
 - **SC-010**: After one feature, `make benchmark` prints K-effective, Gini, top-3 share and the
   context-expansion count per slice.
 
