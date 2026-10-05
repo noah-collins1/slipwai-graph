@@ -451,3 +451,45 @@ Findings: five — three `MEDIUM` counting A3, two `LOW`. What held: 19 asset-to
 | A3 | A | MEDIUM | `tests/test_gitea_pages.py` loads `scripts/gitea-pages.py`, which reads `GITEA_PAGES_*` at import; a value in the maintainer's shell fails the suite but is not keyed, so a pass is reused past it. The scan reads no `scripts/*.py`. New | D122; T030 | fixed `06d0732` (T030) |
 | A4 | A | LOW | `MAKE=/bin/true` in the environment makes the root gate a stamped no-op. Same class as S03's C8 (D83) | Declined on D83; the cruise report | declined |
 | A5 | A | LOW | Where `find` fails part-way the probe lists nothing and does not fall back to a line unique to the run, as the `Makefile`'s comment promises; no false green reached. New | D122; T031 (`s33-4.patch`) | fixed `5842ba9` (T031) |
+
+## S06 · d36097e · 2026-10-06
+
+Slice `S06-scoped-gate` (cruise iterations 17–23), diff `58a9aed..d36097e`: the generated `make verify-scoped` and the per-deployable `lint-`, `typecheck-` and `test-` targets (`src/slipwai/project/scoped_targets.py`, `src/slipwai/project/makefile.py`, `src/slipwai/project/native_commands.py`), the toolkit script and its package (`assets/toolkit/scripts/verify-scoped.py`, `assets/toolkit/scripts/verify_scoped/`), the baseline and the flags predicate in `assets/toolkit/scripts/verify-stamp.py`, the prune's re-fingerprint (`assets/backing-services/prune.py`), the ladder and template words, one fragment.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | A new make target a developer and the ladder run, `make verify-scoped`, and the script's `run` and `record` commands (`src/slipwai/project/scoped_targets.py`, `assets/toolkit/scripts/verify-scoped.py`) |
+| driven adapter or the provider types behind one | widened | The script drives git (merge-base, diff, ls-files, cat-file) and make (`-npq` database reads, the sub-make with the jobserver) and reads `project.json`, `rules.json` and the baseline (`assets/toolkit/scripts/verify_scoped/record.py`, `assets/toolkit/scripts/verify_scoped/reach.py`, `assets/toolkit/scripts/verify-stamp.py`) |
+| authorisation decision (who can reach one that already exists) | not present | The diff decides nothing about who may do what |
+| concurrency, idempotency, ordering, retention, or time | widened | `make -j verify-scoped` keeps make's jobserver; the baseline is written only by a green full run and removed by any other; the base is the newer of two refs (`assets/toolkit/scripts/verify-scoped.py`, `assets/toolkit/scripts/verify-stamp.py`) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
+
+Spawned: seam A — the selection's inputs from git and the tree, and D148's reach reader · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/toolkit/scripts/verify-scoped.py`, `assets/toolkit/scripts/verify_scoped/choose.py`, `assets/toolkit/scripts/verify_scoped/table.py`, `assets/toolkit/scripts/verify_scoped/record.py`, `assets/toolkit/scripts/verify_scoped/reach.py`, `assets/toolkit/scripts/check-slice-scope.py`, `src/slipwai/project/scoped_targets.py`, `tests/scoped_fixture.py`
+Spawned: seam B — the baseline file, obligations and the flags predicate (D116, D125, D146, D147) · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/toolkit/scripts/verify-stamp.py`, `assets/toolkit/scripts/verify-scoped.py`, `assets/toolkit/scripts/verify_scoped/record.py`, `assets/toolkit/scripts/verify_scoped/choose.py`, `tests/test_verify_scoped_baseline.py`, `tests/test_verify_scoped_flags.py`
+Spawned: seam C — make (one call, the jobserver, versions) and every factory writer of `rules.json` · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/toolkit/scripts/verify_scoped/rules.py`, `assets/toolkit/scripts/verify_scoped/record.py`, `src/slipwai/project/scoped_targets.py`, `src/slipwai/project/makefile.py`, `src/slipwai/project/native_commands.py`, `src/slipwai/scaffold.py`, `assets/backing-services/prune.py`, `tests/test_verify_scoped_factory_text.py`
+Omitted: the project-edited Makefile text and `MAKEFLAGS` (classes closed by D140 and D146, five converge passes); assume-unchanged and skip-worktree (T044). GNU Make 3.81, Windows and macOS: not on this machine (C5 read, not run)
+Findings: twenty — three `HIGH`, five `MEDIUM`, twelve `LOW` or unverified. What held: paths with tabs, quotes, a leading dash or case-only differences; renames, deletions and a directory replaced by a file; every `project.json` change; a submodule; an ignored regular file; a tracked or untracked link; colour, `diff.relative` and `core.quotePath` settings; a baseline that is a directory, a link, a FIFO, invalid UTF-8, truncated, another branch's; two runs at once; SIGINT mid-run; every malformed obligation but two; the flags allowlist under real make 4.4.1; `rules.json` matching after `generate` (20 combinations), 40 prunes, every other writer and `migrate` from `58a9aed`; the adopted layout; no unit run twice; the jobserver under `-j4`, `-j2` and `-j`; a CRLF Makefile.
+
+| # | Seam | Severity | Finding | Triage | State |
+|---|---|---|---|---|---|
+| A1 | A | HIGH | Content git's filters normalise away — CRLF under the project's `text=auto eol=lf`, a mode bit under `core.fileMode=false` — is never *changed*: the scoped run says *passed* while `make verify` fails (biome on the CRLF file; `scripts/verify` not executable). New | Confirmed; S06 T048 | open |
+| B1 | B | HIGH | `make -f <file> verify` writes the stamp and the baseline for a tree no check judged: `-f` is not in `MAKEFLAGS`, and the sub-make reads the alternate file; the next plain `make verify` and `make verify-scoped` reuse it. Older hole (S03's stamp), widened by S06's baseline and `make -f deploy.mk` advice | Confirmed; S06 T049 | open |
+| B2 | B | HIGH | `MAKEFILES=<file> make verify` does the same; `.SHELLFLAGS` from the environment reaches recipes unseen (not built to a false green). Same class as B1 | Confirmed; S06 T049 | open |
+| A2 | A | HIGH | A local `main` with commits nobody gated, merged into the slice, becomes the base; its breakage is never checked by the scoped run. New in S06 | Question: D153 | open |
+| A3 | A | MEDIUM | An ignored symlink out of a deployable is invisible to D148's reader and to the ignored-files digest (it records the link's text): a change through it is skipped. New | Confirmed; S06 T051 | open |
+| A6 | A | MEDIUM | D148's reader is quadratic in deployables: 40 deployables of 300 files take 115 s on every scoped run. New | Confirmed; S06 T053 | open |
+| C1 | C | MEDIUM | A fresh `generate --users keycloak` with the browser app can never scope: the factory's own Go, TypeScript and Python identity assets name `apps/web` in a comment, which D148 reads as a reach. New | Confirmed; S06 T054 | open |
+| A4 | A | MEDIUM | A non-UTF-8 path crashes the run with a traceback (fails closed, no verdict). New | Confirmed; S06 T052 | open |
+| A5 | A | LOW | A path with a newline forges `verify-scoped:` lines. New | Confirmed; S06 T052 | open |
+| B5 | B | LOW | Obligation and check names, and a hand-written baseline's branch, print raw control characters. New | Confirmed; S06 T052 | open |
+| B3 | B | LOW | A deeply nested baseline or stamp crashes with `RecursionError` instead of the full gate. New | Confirmed; S06 T052 | open |
+| B4 | B | LOW | An unhashable obligation component does not name the entry. New | Confirmed; S06 T052 | open |
+| A7 | A | LOW | A `../` string that is not a path (a traversal test's input) is a reach with wrong words. New | Confirmed; S06 T055 | open |
+| C2 | C | LOW | With two Go services the scoped order lets one service's lint run beside another's test (D96's order is whole-gate). New | Confirmed; S06 T055 | open |
+| C3 | C | LOW | `-l`/`--load-average` is refused by D146's allowlist though it adds no text. New | D152; S06 T055 | open |
+| B8 | B | LOW | Under `MAKEFILES` the scoped run's fallback runs `make -f <that file> verify` and fails with *No rule*. New | Confirmed; S06 T049 | open |
+| B6 | B | LOW | A failed full run under a CI marker leaves the baseline; AC-S06-9 and D116 rule 6 differ. No false green: a CI machine's baseline is never read locally | Declined: D116 rule 6 stands; the cruise report | declined |
+| B7 | B | LOW | 20,000 obligations take 17 s. New | Declined: nobody writes that list | declined |
+| C4 | C | LOW | SIGTERM to the outer make orphans the sub-make, which keeps running checks. Older (S04's `make verify` does the same) | Declined: not this slice's; the cruise report | declined |
+| C5 | C | unverified | GNU Make 3.81 may print the `override` origin in backtick style, which `record.py`'s pattern would miss (read, not run). Older class (S04's 3.81 lines) | The cruise report | parked |

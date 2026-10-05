@@ -3329,3 +3329,16 @@
 - **Confidence:** medium · **Would reverse if:** a run under 3.81 shows the empty value is not passed.
 - **Written to:** `specs/001-faster-slipwai/decisions.md` (and S08's research.md on slice/S08-scoped-mutation until it merges)
 - **Status:** standing
+
+## D152 — make's load limit (-l, --load-average) on D146's allowlist
+
+- **Stage:** adversary (S06 Phase 4, finding C3) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T22:29:11Z · **Iteration:** 23
+- **Scope:** S06-scoped-gate
+- **Question:** D146's allowlist refuses `-l`/`--load-average`, so a developer who exports `MAKEFLAGS=-l…` never scopes and never reuses a stamp, though the flag adds no text or condition.
+- **Options:** (a) allow `-l` and `--load-average` with or without a value, like a job count; (b) keep refusing it.
+- **Decision:** (a).
+- **Why:** The load limit changes only when make starts a job, as `-j` does, never what a recipe runs; refusing it costs a developer every saving for nothing a check reads.
+- **Decided by:** host (standing decision D146)
+- **Confidence:** high · **Would reverse if:** a make version is found where `-l` changes a recipe's text or environment.
+- **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md`
+- **Status:** standing

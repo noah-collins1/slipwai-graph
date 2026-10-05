@@ -1444,11 +1444,44 @@ changed, only the text that describes the keys.
 - [x] (G6, host) AC-S06-5 in spec.md says "dependency knowledge was incomplete for …" per file. Under D140, a changed `Makefile` prints only the Makefile line. Amend the criterion to say the first cause is printed. (G7) In a Go starter with no web app, the record names `node`/`npm` for `check-ux-gates`, but `VERIFY_STAMP` asks only `make git python3 go`. Add a test that the record's tools are a subset of what the baseline asks for, across shapes, and make it so. (G10) The Catch-up says "nothing else asks anything of it" and then asks for a constitution amendment: reword it so it stands alone without contradicting itself. **Files:** `assets/toolkit/scripts/verify_scoped/record.py` or `table.py`, `tests/test_verify_scoped_record.py`, `changelog.d/scoped-gate.md`; spec.md (host).
 
 
+### T048 — [US2] HIGH — What git's filters normalise away is changed too (adversary A1 · AC-S06-2, -5)
+
+- [ ] **Finding** (`adversary-log.md`, S06 row, A1). `changed_files` asks `git diff --name-status <base>`, which applies git's filters; the stamp reads raw bytes. CRLF under `* text=auto eol=lf`, or a mode bit under `core.fileMode=false`, gives `skip lint-web … passed` while `make verify` fails. **RED:** both reproductions are the units their paths select (or the full gate), and a `.gitattributes` `filter=`/`ident`/`eol` variant. **GREEN — the class:** a path is *changed* when its working-tree bytes or mode differ from the base's blob, read through none of git's filters — every filter, attribute and config that can hide a difference (eol, autocrlf, fileMode, `filter=`, `ident`, `working-tree-encoding`), each named in a test. **Files:** `assets/toolkit/scripts/verify-scoped.py` (or the change reader it loads), `tests/test_verify_scoped_changed.py` (new).
+
+### T049 — [US2] HIGH — The stamp and the baseline are written only when make read the project's own Makefile under the factory's shell (adversary B1, B2, B8 · AC-S06-9, -10; D146)
+
+- [ ] **Finding.** `make -f <file> verify` and `MAKEFILES=<file> make verify` run a sub-make over another makefile and stamp a red tree as passed; `.SHELLFLAGS` (and `SHELL`) from the environment reach recipes unseen; under `MAKEFILES` the scoped fallback runs `make -f <that file> verify` and fails with *No rule*. **RED:** each of the three writes no stamp and no baseline and says why in one line; the scoped run under each is the full gate through `make verify` on the project's `Makefile`. **GREEN — the class:** the stamp writer declines unless the makefiles make read are exactly the project's root `Makefile` (no `-f` other than it, no `MAKEFILES`, no `GNUmakefile`/`makefile`) and the shell variables recipes run under are the factory's — every way a makefile, an include path or a shell reaches the sub-make, each named in a test, through D146's one predicate. **Files:** `assets/toolkit/scripts/verify-stamp.py`, `assets/toolkit/scripts/verify-scoped.py`, `tests/test_verify_scoped_flags.py`, the stamp module that holds `declined()`.
+
+### T050 — [US2] HIGH — An ungated local trunk as the base (adversary A2)
+
+- [ ] **Decide before GREEN: D153** (skipper, pending at the time of writing). Its decision is this task's GREEN, with its words on the gates page and in the Catch-up.
+
+### T051 — [US2] MEDIUM — An ignored link out of a deployable is a reach (adversary A3 · D148)
+
+- [ ] `reach.listed` uses `--exclude-standard`, and the ignored-files digest records a link by its text. **RED:** an ignored link from `apps/web/src/svc` to `../../service/src` is a reach. **GREEN — the class:** D148's link mechanism reads every link under a deployable, ignored or not; an ignored directory the reader cannot list is *unsure*. **Files:** `assets/toolkit/scripts/verify_scoped/reach.py`, `tests/test_verify_scoped_reach.py`.
+
+### T052 — [US2] MEDIUM — Every word the script prints is printable, and every unreadable input is the full gate with words (adversary A4, A5, B3, B4, B5)
+
+- [ ] A non-UTF-8 path crashes; a newline in a path, an obligation or check name, or a baseline's branch forges a `verify-scoped:` line; a deeply nested baseline or stamp raises `RecursionError`; an unhashable obligation component does not name the entry. **GREEN — the class:** one printer for every word from a path, `project.json`, the baseline or the stamp (`printable`), used by every line; every read of a file the script did not write catches every exception its parser can raise and is the full gate naming the file. **Files:** `assets/toolkit/scripts/verify-scoped.py`, `assets/toolkit/scripts/verify_scoped/record.py`, `choose.py`, `tests/test_verify_scoped_words.py` (new).
+
+### T053 — [US2] MEDIUM — The reach reader is linear in the tree (adversary A6 · D148)
+
+- [ ] 40 deployables of 300 files took 115 s. **RED:** a 40-deployable synthetic tree is read in under 5 s on this machine (a bound in the test, generous). **GREEN:** one pass over each file with one combined pattern of every other deployable's identities and paths. **Files:** `assets/toolkit/scripts/verify_scoped/reach.py`, `tests/test_verify_scoped_reach.py`.
+
+### T054 — [US2] MEDIUM — Every starter the factory makes scopes (adversary C1 · D148 point 8)
+
+- [ ] `generate --users keycloak` with the browser app never scopes: the identity assets in Go, TypeScript and Python name `apps/web` in a comment. **RED:** D148's starter hold runs over every combination `make starters` builds, `--users keycloak` included. **GREEN:** the assets say "the browser app" without its path, and the hold names every shape. **Files:** the three identity assets under `assets/`, `tests/test_verify_scoped_reach.py`.
+
+### T055 — LOW — The reach words for a non-path, Go's order, the load limit (adversary A7, C2, C3; D152)
+
+- [ ] (A7) a `../` string that does not resolve to an existing path or a deployable says so in its words ("a string that climbs out of `<deployable>`"), not "reaches `apps/etc/passwd`". (C2) the scoped ordering block for a family with a shared root (Go's `go.work.sum`) orders every chosen lint of the family before any of its typecheck or test, as D96's whole-gate order does. (C3, D152) `-l` and `--load-average` join the allowlist. **Files:** `reach.py`, `scoped_targets.py`, `verify-stamp.py`, their tests.
+
+
 ## Phase 4: After acceptance (host tasks)
 
 ### T020 — The adversary pass (host task)
 
-- [ ] Per the trigger table in `delivery/skills/adversary`: `drive-adversary` over the seams this slice opens — the
+- [x] Per the trigger table in `delivery/skills/adversary`: `drive-adversary` over the seams this slice opens — the
   selection's inputs (a path with a newline, a symlink, a rename out of a deployable's path, a deleted file, a changed
   `project.json` at the base against the working tree), the baseline file (a directory, huge, invalid UTF-8, another
   branch's), `verification.obligations` (every malformed shape), a make database with a stand-in `verify-checks`, and
