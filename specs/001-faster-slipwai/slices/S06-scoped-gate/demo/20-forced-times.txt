@@ -1,0 +1,6 @@
+forced 1 exit=0 wall=7.645381335
+verify: all gates passed
+forced 2 exit=0 wall=7.595815498
+verify: all gates passed
+forced 3 exit=0 wall=7.590565414
+verify: all gates passed

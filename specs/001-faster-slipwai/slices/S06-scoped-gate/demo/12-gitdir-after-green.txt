@@ -1,0 +1,5 @@
+total 8
+drwxrwxr-x 2 noahc noahc   80 Oct  5 16:58 .
+drwxrwxr-x 8 noahc noahc  260 Oct  5 16:58 ..
+-rw------- 1 noahc noahc 1333 Oct  5 16:58 verify-baseline-e3b0c44298fc1c14.json
+-rw------- 1 noahc noahc  553 Oct  5 16:58 verify-stamp-e3b0c44298fc1c14.json

@@ -1,0 +1,18 @@
+created: /tmp/s06-demo/shop
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 313ms
+npm ci
+
+added 276 packages, and audited 280 packages in 2s
+
+74 packages are looking for funding
+  run `npm fund` for details
+
+7 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+Spec Kit not initialized; run ./init when ready.

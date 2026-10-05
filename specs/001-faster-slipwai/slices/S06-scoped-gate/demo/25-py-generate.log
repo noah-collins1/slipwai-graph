@@ -1,0 +1,6 @@
+created: /tmp/s06-demo/py/pyshop
+./scripts/verify --install-only
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 307ms
+Spec Kit not initialized; run ./init when ready.

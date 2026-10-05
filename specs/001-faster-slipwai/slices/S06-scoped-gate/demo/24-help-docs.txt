@@ -1,0 +1,19 @@
+== make help | grep verify
+  verify                 Full deterministic pre-commit gate (a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway)
+  verify-scoped          The checks whose inputs changed on a slice branch; the full gate wherever it cannot tell
+== docs/gates.md
+43:`make verify-scoped` runs only the checks whose inputs changed, and prints a line for each check, run or skipped, with
+48:variables and the files git ignores are compared with the baseline the branch's last green full run left. It scopes on a `slice/<id>` branch with a usable base, outside CI:
+50:when a contract it consumes changed, when an obligation names it, or when the machine differs from the baseline,
+60:`VERIFY_FORCE`, and a `make verify` run that way writes no stamp and no baseline. And it is the full gate when one
+62:carries: share through `packages/` or a published contract, and scoping returns. The baseline beside the stamp is a record under the git directory, never in the working tree: the
+64:removed by any full run, so a full run that fails leaves none. A tool or variable that differs from the baseline chooses
+65:every check that reads it, and with no baseline, or another branch's, every check that reads a tool or a variable runs.
+66:`verification.obligations` in `project.json` declares an integration obligation: a name, two or more components, and the
+70:queue's message. `make -j verify-scoped` runs the chosen checks at the same time, as `make -j verify` does.
+96:`skills/` teach, and the Event Modeling and event-sourcing obligations. An unfilled
+== agent settings
+.claude/settings.json:6:      "Bash(make verify-scoped)",
+agents/drive-converge.md
+commands/drive.md
+agents/drive-implement.md

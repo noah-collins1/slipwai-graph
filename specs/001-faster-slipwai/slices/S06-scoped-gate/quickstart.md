@@ -69,5 +69,8 @@ writes the stamp — measure it last). Record the medians, the commands, the CPU
 
 | Command | Median | Machine |
 |---|---|---|
-| `make verify-scoped` | *to be measured* | |
-| `VERIFY_FORCE=1 make verify` | *to be measured* | |
+| `make verify-scoped` | 4.298 s (4.300, 4.275, 4.298) | 12th Gen Intel Core i5-12400, `nproc` 12 |
+| `VERIFY_FORCE=1 make verify` | 7.596 s (7.645, 7.596, 7.591) | the same |
+
+Taken by `drive-hand` at the demo of iteration 23 (`demo/35-measurement.txt`), `main` at 6d681b7 of the generated
+project. `make -j verify-scoped` took 2.93 s once.

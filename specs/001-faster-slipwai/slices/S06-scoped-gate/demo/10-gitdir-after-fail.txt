@@ -1,0 +1,4 @@
+total 4
+drwxrwxr-x 2 noahc noahc  60 Oct  5 16:57 .
+drwxrwxr-x 8 noahc noahc 260 Oct  5 16:58 ..
+-rw------- 1 noahc noahc 836 Oct  5 16:57 verify-stamp-e3b0c44298fc1c14.pending

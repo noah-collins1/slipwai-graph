@@ -1,0 +1,51 @@
+verify-scoped: run  check-python — every check waits on it
+verify-scoped: skip lint-service — none of its inputs changed
+verify-scoped: skip lint-web — none of its inputs changed
+verify-scoped: skip typecheck-service — none of its inputs changed
+verify-scoped: skip typecheck-web — none of its inputs changed
+verify-scoped: skip check-imports — none of its inputs changed
+verify-scoped: skip check-migrations — none of its inputs changed
+verify-scoped: run  check-slice-scope — it compares the whole branch with its base
+verify-scoped: run  check-extensions — no recorded inputs
+verify-scoped: run  check-agents — no recorded inputs
+verify-scoped: run  check-speckit — no recorded inputs
+verify-scoped: run  check-codegraph — it reads every tracked file
+verify-scoped: run  check-ux-gates — UX_GATES_SINCE differs from the baseline
+verify-scoped: run  check-constitution — no recorded inputs
+verify-scoped: skip check-benchmark — none of its inputs changed
+verify-scoped: skip check-decisions — none of its inputs changed
+verify-scoped: skip test-service — none of its inputs changed
+verify-scoped: skip test-web — none of its inputs changed
+verify-scoped: skip check-styles — none of its inputs changed
+verify-scoped: skip check-model — none of its inputs changed
+verify-scoped: skip check-drawio — none of its inputs changed
+verify-scoped: skip check-openapi — none of its inputs changed
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at a5d1f40)
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s06-demo/shop/packages/api-client/src/schema.ts [12ms]
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+verify-scoped: 8 run, 14 skipped, compared with `main` at a5d1f40; passed
+
+real	0m1.642s
+user	0m1.471s
+sys	0m0.263s

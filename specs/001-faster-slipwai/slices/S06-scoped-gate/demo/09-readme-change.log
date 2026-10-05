@@ -1,0 +1,47 @@
+verify-scoped: dependency knowledge was incomplete for README.md — no deployable, contract or check claims it
+verify-scoped: the full gate runs, as `make verify` — dependency knowledge was incomplete
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s06-demo/shop/packages/api-client/src/schema.ts [12ms]
+npm --workspace apps/service run lint
+
+> shop-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 33 files in 19ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> shop-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> shop-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (117 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (117 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at a5d1f40
+
+  README.md: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+make[2]: *** [Makefile:107: check-slice-scope] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make[1]: *** [Makefile:226: verify] Error 2
+make: *** [Makefile:259: verify-scoped] Error 2
+
+real	0m3.428s
+user	0m4.789s
+sys	0m0.706s

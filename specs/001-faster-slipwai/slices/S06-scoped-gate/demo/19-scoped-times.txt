@@ -1,0 +1,6 @@
+scoped 1 exit=0 wall=4.300108531
+verify-scoped: 15 run, 7 skipped, compared with `main` at 6d681b7; passed
+scoped 2 exit=0 wall=4.274951127
+verify-scoped: 15 run, 7 skipped, compared with `main` at 6d681b7; passed
+scoped 3 exit=0 wall=4.297933557
+verify-scoped: 15 run, 7 skipped, compared with `main` at 6d681b7; passed

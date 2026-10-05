@@ -577,19 +577,19 @@ names the new text).
 
 ### T017 — Converge, two passes (host task)
 
-- [ ] `drive-converge` over the slice's diff, pass 1 then pass 2, at the loop's bound; every finding appends a task under
+- [x] `drive-converge` over the slice's diff, pass 1 then pass 2, at the loop's bound; every finding appends a task under
   *Phase 3*, and the verdict goes under `## Convergence`. The passes read the generated `verify-scoped` of a TypeScript +
   web starter and a two-service Python starter under the real `npm` and `uv`, on a `slice/S1` branch, with a README edit,
   a web-only edit, a `node` that changes version, an obligation declared and a bad one.
 
 ### T018 — After-converge gaps (host task)
 
-- [ ] `drive-gaps` traces AC-S06-1 … AC-S06-19 over the diff; each gap is answered by a decision entry and, where it
+- [x] `drive-gaps` traces AC-S06-1 … AC-S06-19 over the diff; each gap is answered by a decision entry and, where it
   changes code, a task appended under *Phase 3*.
 
 ### T019 — The demo, with the measurement (host task)
 
-- [ ] The demo of [quickstart.md](quickstart.md) run as the actor with this checkout's `./slipwai`, every step. **R14 /
+- [x] The demo of [quickstart.md](quickstart.md) run as the actor with this checkout's `./slipwai`, every step. **R14 /
   AC-S06-19:** on `slice/S1` with only `apps/web/src/App.tsx` changed, `make verify-scoped` three times, then
   `VERIFY_FORCE=1 make verify` three times on the same tree (that run writes the stamp, so it is measured last); the
   medians, the commands, the CPU model and `nproc` go into the quickstart's table and `changelog.d/scoped-gate.md` (host

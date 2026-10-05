@@ -1,0 +1,17 @@
+== env VERIFY_FORCE=1 make verify-scoped
+exit=0
+verify-scoped: the full gate runs, as `make verify` — VERIFY_FORCE=1
+verify: the full gate runs, forced by VERIFY_FORCE=1
+verify: all gates passed
+== env CI=1 make verify-scoped
+exit=0
+verify-scoped: the full gate runs, as `make verify` — CI is set, so this is a CI run
+
+verify: all gates passed
+== env GITHUB_ACTIONS=true make verify-scoped
+exit=0
+verify-scoped: the full gate runs, as `make verify` — GITHUB_ACTIONS is set, so this is a CI run
+
+verify: all gates passed
+== branch feature/x
+verify-scoped: the full gate runs, as `make verify` — `feature/x` is not a slice/<id> branch

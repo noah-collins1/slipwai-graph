@@ -1,0 +1,20 @@
+CPU: 12th Gen Intel(R) Core(TM) i5-12400
+nproc: 12
+tree: slice/S1 in /tmp/s06-demo/shop, only apps/web/src/App.tsx changed against main 6d681b7
+commands: make verify-scoped (x3), then VERIFY_FORCE=1 make verify (x3), timed by date +%s.%N around each, MERMAID_PUPPETEER_CONFIG set to a --no-sandbox JSON
+scoped 1 exit=0 wall=4.300108531
+verify-scoped: 15 run, 7 skipped, compared with `main` at 6d681b7; passed
+scoped 2 exit=0 wall=4.274951127
+verify-scoped: 15 run, 7 skipped, compared with `main` at 6d681b7; passed
+scoped 3 exit=0 wall=4.297933557
+verify-scoped: 15 run, 7 skipped, compared with `main` at 6d681b7; passed
+forced 1 exit=0 wall=7.645381335
+verify: all gates passed
+forced 2 exit=0 wall=7.595815498
+verify: all gates passed
+forced 3 exit=0 wall=7.590565414
+verify: all gates passed
+median make verify-scoped: 4.298 s
+median VERIFY_FORCE=1 make verify: 7.596 s
+ratio: 0.57
+aside: make -j verify-scoped on the same change, once: 2.929 s real (06-web-change-j.log)

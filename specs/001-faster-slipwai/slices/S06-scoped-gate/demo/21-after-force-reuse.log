@@ -1,0 +1,5 @@
+verify: the full gate did not run; this tree already passed it at 2026-10-05T21:59:52Z (key 35ace6beb82a); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.431s
+user	0m0.349s
+sys	0m0.074s

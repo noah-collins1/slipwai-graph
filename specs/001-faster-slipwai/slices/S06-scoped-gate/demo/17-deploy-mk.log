@@ -1,0 +1,84 @@
+verify-scoped: run  check-python — every check waits on it
+verify-scoped: skip lint-service — none of its inputs changed
+verify-scoped: run  lint-web — apps/web/src/App.tsx changed
+verify-scoped: skip typecheck-service — none of its inputs changed
+verify-scoped: run  typecheck-web — apps/web/src/App.tsx changed
+verify-scoped: run  check-imports — apps/web/src/App.tsx changed
+verify-scoped: run  check-migrations — apps/web/src/App.tsx changed
+verify-scoped: run  check-slice-scope — it compares the whole branch with its base
+verify-scoped: run  check-extensions — no recorded inputs
+verify-scoped: run  check-agents — no recorded inputs
+verify-scoped: run  check-speckit — no recorded inputs
+verify-scoped: run  check-codegraph — it reads every tracked file
+verify-scoped: run  check-ux-gates — apps/web/src/App.tsx changed
+verify-scoped: run  check-constitution — no recorded inputs
+verify-scoped: skip check-benchmark — none of its inputs changed
+verify-scoped: skip check-decisions — none of its inputs changed
+verify-scoped: skip test-service — none of its inputs changed
+verify-scoped: run  test-web — apps/web/src/App.tsx changed
+verify-scoped: run  check-styles — apps/web/src/App.tsx changed
+verify-scoped: run  check-model — apps/web/src/App.tsx changed
+verify-scoped: skip check-drawio — none of its inputs changed
+verify-scoped: skip check-openapi — none of its inputs changed
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s06-demo/shop/packages/api-client/src/schema.ts [12ms]
+npm --workspace apps/web run lint
+
+> shop-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 4ms. No fixes applied.
+npm --workspace apps/web run typecheck
+
+> shop-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (117 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (117 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 6d681b7)
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+npm --workspace apps/web test
+
+> shop-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s06-demo/shop/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  16:59:08
+   Duration  941ms (transform 124ms, setup 282ms, import 133ms, tests 270ms, environment 1.47s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+verify-scoped: 15 run, 7 skipped, compared with `main` at 6d681b7; passed
+
+real	0m4.321s
+user	0m7.795s
+sys	0m0.863s

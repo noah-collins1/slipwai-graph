@@ -202,9 +202,9 @@ class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
         for reference in ("T0", "AC-S06", "D12", "above", "the page"):
             self.assertNotIn(reference, self.note)
 
-    def test_the_fragment_says_where_the_measurement_will_be_written(self) -> None:
-        self.assertIn("AC-S06-19", self.text)
-        self.assertIn("quickstart.md", self.text)
+    def test_the_fragment_carries_the_measurement_with_its_commands_and_machine(self) -> None:
+        for words in ("make verify-scoped", "VERIFY_FORCE=1 make verify", "median", "nproc", "three runs each"):
+            self.assertIn(words, self.text)
 
 
 class TheMigrateExampleCannotPassBySkippingTest(unittest.TestCase):
