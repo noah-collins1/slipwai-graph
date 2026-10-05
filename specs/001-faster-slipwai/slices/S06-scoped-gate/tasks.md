@@ -714,6 +714,14 @@ needs per-path selection, the per-path digests, never a name the constitution's 
 the host records in the decision log whether a moved ignored part broadens to the full gate (simplest; the stamp's
 own choice) or selects by path. Either way, the sweep is e3: every part of the key is compared.
 
+**Decided — D125 (a):** a moved ignored part is the full gate. The baseline gains one field, `ignored`, the stamp key's
+`ignored` part from the same run (`key_parts`, never a copy; no path stored); `verify-scoped` computes the tree's the
+same way and, where they differ, prints `the full gate runs, as \`make verify\` — a file git ignores differs from the
+baseline` with the stamp's `git status --ignored` hint, then runs `make verify`. A baseline without `ignored` is
+unusable. e1 is that line and the full gate. e3's mapping: `files`, `index` → changed paths; `scripts` → D117 rule 4;
+`history` → the base and branch check; `tools`, `variables` → the baseline comparison; `ignored` → D125. data-model.md
+and AC-S06-9 carry it.
+
 **Verify:** `make test TESTS="test_verify_scoped_ignored test_verify_scoped_baseline test_verify_scoped_compare test_verify_stamp_pinned"`
 and every `test_verify_stamp_*`, because `verify-stamp.py` is the root `Makefile`'s stamp. Then `make lint typecheck
 check-structure`. Level line: MINOR, already carried.
@@ -765,6 +773,15 @@ then `make lint typecheck check-structure`. Level line: MINOR, already carried.
 **RED** (`tests/test_scoped_page.py`, `tests/test_scoped_migrate.py`): the page, both templates and the Catch-up
 paragraph name what paths are compared with and what tools and variables are compared with, in the words the host's
 decision fixes *(fails today)*.
+
+**Decided — D126 (a), with D125 applied (its item 2):** the behaviour stays; the words change. Both templates' D123
+sentence becomes, word for word: *"The branch's scoped gate MUST be green immediately before that first implementation
+push: it runs every check that reads a file changed since the trunk commit the branch is built on, or a tool, a
+variable or an ignored file that differs from the branch's last green full gate, and it is the full gate wherever it
+cannot tell; a check it skips is taken as passing because the trunk passed it. The full gate MUST be green at the merge
+root and in CI before anything lands on trunk."* `SCOPED_PAGE`'s first sentence becomes D126 item 3's text with
+*"Tools and variables"* read as *"Tools, variables and the files git ignores"*; the Catch-up quotes the new template
+sentence word for word. Nothing else (the planning skill, briefs and ladder keep D123's words).
 
 **GREEN — the class.** Every published place that describes the comparison takes the same words: the page, the
 adopted sentence, both templates, the planning skill, the implement/converge briefs, the ladder and the fragment.

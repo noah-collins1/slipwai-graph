@@ -2238,8 +2238,10 @@ checks* are this project's `verify-checks` prerequisites; and *the record* is wh
   *none of its inputs changed*. `UX_GATES_JOBS` and the job count select nothing.
 - **AC-S06-9** — *D116.* Given no baseline, a baseline taken on another branch, one that does not parse, or a tool
   the record names that does not answer, then every check that reads a tool or a variable runs, and the run says
-  why once. The baseline is kept in the git directory beside the stamp, holds the branch, each tool's answer and a
-  digest — never the value — of each variable; it is written only by a `make verify` that ran and passed every check
+  why once. The baseline is kept in the git directory beside the stamp, holds the branch, each tool's answer, a
+  digest — never the value — of each variable, and one digest of the files git ignores that the stamp's key holds
+  (never a path; *D125*): where that digest differs from the tree's, the run is the full gate and says the ignored
+  part moved; it is written only by a `make verify` that ran and passed every check
   on this slice branch, never by a scoped run that ran fewer, never under `-i`, `-n`, `-t`, `-q` or
   `RATCHET_TIGHTEN`, and a failed `make verify` removes it.
 - **AC-S06-10** — *D116.* Given a verify stamp `reuse` accepts for the current tree, then `make verify-scoped` prints

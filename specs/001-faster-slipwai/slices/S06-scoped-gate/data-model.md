@@ -32,14 +32,18 @@ file, rename) by `verify-stamp.py record`, right after the stamp, only where the
 ```json
 { "branch": "slice/S1",
   "tools": { "make": "4.4.1 [answer 0f3c…]", "node": "v22.1.0 [answer 9a2e…]", "interpreter apps/billing/.venv": "3.13.1" },
-  "variables": { "UX_GATES_SINCE": "<sha256 of variable_record>", "…": "…" } }
+  "variables": { "UX_GATES_SINCE": "<sha256 of variable_record>", "…": "…" },
+  "ignored": "<the stamp key's ignored part, as key_parts computes it>" } }
 ```
 
 - `tools` is the pending note's `tools` — what the run asked at its start, the stamp's `tools` exactly.
 - `variables` holds, for every name in `VARIABLES`, the hex SHA-256 of `variable_record(name)`; never a value.
+- `ignored` is the stamp key's `ignored` part from the same run, as `key_parts` computes it — one digest, no path
+  (D125). `verify-scoped` computes the tree's through the same function and compares; a difference is the full gate.
 - Removed by `begin_full_run` (every full run of an eligible checkout that starts its checks, `-i` included) and on
   `reuse`'s ratchet path; never written under `declined()`, never off a slice branch, never by `verify-scoped`.
-- Unusable when absent, not a regular file, not JSON of this shape, or its `branch` is not the current branch.
+- Unusable when absent, not a regular file, not JSON of this shape (one without `ignored` included), or its `branch`
+  is not the current branch.
 
 ## The table (`scripts/verify_scoped/table.py`)
 
@@ -106,7 +110,8 @@ All lines begin `verify-scoped: `.
 - Full gate: `the full gate runs, as \`make verify\` — <reason>`; reasons: `this is the trunk (\`<name>\`)`,
   `\`<branch>\` is not a slice/<id> branch`, `HEAD is detached` (or `names no commit`), `<MARKER> is set, so this is
   a CI run`, `VERIFY_FORCE=<value>`, `make was run with -<flags>`, `slice/<id> has no usable base — <check-slice-scope's
-  words>`, `the trunk cannot be told — <verify-stamp's words>`, `every check was chosen`.
+  words>`, `the trunk cannot be told — <verify-stamp's words>`, `every check was chosen`, `a file git ignores differs
+  from the baseline` (D125; followed by the stamp's hint that `git status --ignored` shows it).
 - Incomplete: `dependency knowledge was incomplete for <path> — <it is project.json | it is the Makefile | it is a
   gate script under scripts/ | no deployable, contract or check claims it>`, once per path; or `dependency knowledge
   was incomplete — <why the record cannot be built>`; or `obligation <n> (\`<name>\`) in project.json's
