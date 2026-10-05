@@ -1039,7 +1039,7 @@ its reason. The sweep covers each conditional a project's Makefile can branch on
 
 ### T035 — [US2] MEDIUM — A prune the project ran is not a Makefile the project wrote (R5, R13 · AC-S06-5, -18)
 
-- [ ] **Finding.** `generate` writes `rules.json` from the Makefile it has already pruned. With or without explicit
+- [x] **Finding.** `generate` writes `rules.json` from the Makefile it has already pruned. With or without explicit
   answers (`--event-store memory --http none`, postgres + fastify + keycloak, python + fastapi), and after
   `add-service`, the database matches and nothing is charged. A later `./init --event-store …` or `--http none`
   behaves differently. The project README offers it under *Changing your mind*, with the example

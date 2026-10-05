@@ -2739,3 +2739,318 @@
 - **Confidence:** high on (a) over (b). Medium on the export-line scan (item 3), which reads text rather than make's own state. · **Would reverse if:** every make version the factory supports could report a variable's export status without running a recipe (for example in the `-p` database). Then a variable no reached recipe uses and that is provably not exported is charged to nothing, and item 3's text scan is replaced by that reading.
 - **Written to:** `specs/001-faster-slipwai/decisions.md` (this entry); `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T033: the decision, e2 widened, e5–e7, Files gains `changelog.d/scoped-gate.md` and `delivery/docs/adr/0005-generated-makefile-rules-fingerprinted.md`); `changelog.d/scoped-gate.md` (the Catch-up sentence in item 7); `delivery/docs/adr/0005-generated-makefile-rules-fingerprinted.md` (amended at Proposed)
 - **Status:** standing
+
+## D134 — Where a delegate's result contract is kept, and its shape (schema 1)
+
+- **Stage:** slice gaps (pre-planning) · **Slice:** S14-result-contract · **When:** 2026-10-05T16:57:29Z · **Iteration:** 23
+- **Scope:** global
+- **Question:** FR-017 says every delegate ends with a `result-contract` block "of the shape in the PRD". `check-decisions` must hold that shape, and a missing block is a converge finding. No session can open the PRD, so the shape has to be fixed here. Five parts are open:
+  - Q1: where hand-backs are kept.
+  - Q2: what format the block's body uses.
+  - Q3: what `status` values are allowed.
+  - Q4: what the `decisions` field means.
+  - Q8: whether `difficulty_observed` is required before S15.
+  - Q9: which delegates must write the block.
+- **Options:** Each part was offered as below, and the stage recommended one option for each.
+  - Q1: (a) a per-slice, append-only `hand-backs.md`, with a feature-level file beside it, held by `check-decisions` (recommended); (b) inside `benchmark.json`; (c) the cruise stream only; (d) `decisions.md`.
+  - Q2: (a) JSON in a fenced `result-contract` block (recommended); (b) a YAML subset; (c) `key: value` lines.
+  - Q3: (a) one shared set of values; (b) one set per delegate type, keeping the verdict words people already act on (recommended); (c) free text.
+  - Q4: (a) the ids the delegate depended on, with proposals listed under `unresolved` (recommended); (b) the decisions taken or proposed; (c) both.
+  - Q8: (a) required now (recommended); (b) null allowed until S15.
+  - Q9: (a) the ten `drive-*` types, with their own helpers folded into them (recommended); (b) also untyped built-in agents.
+- **Decision:** I take the recommendation on all five parts and add what GREEN would otherwise have to ask. The one departure: in Q8 the value is a JSON object, not the text `n — reason`.
+  1. **Where it lives (Q1 a).**
+     - **Files.** A slice's hand-backs go in `specs/<feature>/slices/<id>/hand-backs.md`. Hand-backs from feature-level stages (split, ready set, completion audit) go in `specs/<feature>/hand-backs.md`.
+     - **Who writes them.** The session that dispatched the delegate appends to the file; the delegate never does. This holds for gaps, skipper and adversary, which write nothing, and for every other type too. Inside a `drive-slice` worktree, the `drive-slice` delegate is that session for its own sub-delegates. Under D129 a concurrent slice therefore writes only its own folder. Feature-level files are written only by the main session.
+     - **Entry shape.**
+       - Each entry opens with the heading `## <UTC ISO-8601 time> — <delegate type> — <stage>`.
+       - The block follows exactly as the delegate returned it.
+       - If the delegate returned no block, or returned a malformed one twice, the heading is followed by one line, `- **Missing:** <reason>`.
+       - Entries are only ever appended. A wrong entry is followed by a new one and never edited.
+     - **Receiving a block.** The session checks each block with the checker's own function before appending it. If the block is malformed, the session sends the checker's line back to the same delegate once. If the second block is still malformed, the session records a `Missing:` line.
+     - **What the gate holds.** `check-decisions` reads every `hand-backs.md` (by glob, as it already reads `demo-log.md`) and refuses three things, each on one line naming the file, the entry and the field:
+       - a block that fails §2;
+       - a heading that does not match the shape above;
+       - an entry with neither a block nor a `Missing:` line.
+
+       It does not refuse a slice that has no `hand-backs.md`. Under D60's test this falls only on files this release introduces, so it is not D54's case. Absence stays a **converge** finding. Converge reads the file: if a delegate the ladder dispatched has no entry, or has a `Missing:` entry, that is a finding (User Story 6 scenario 1).
+  2. **The body (Q2 a).**
+     - **Encoding.** One JSON object inside a fence whose info string is exactly `result-contract`. It is read with `json` from the standard library.
+     - **Fields.** All are required and appear in this order when written. Readers ignore key order:
+
+       | Field | Type and rule |
+       |---|---|
+       | `contract` | Integer `1`. This is the schema version. |
+       | `delegate` | One of the ten type names. |
+       | `scope` | Non-empty string naming what the delegate was given, e.g. `S14-result-contract T003`. |
+       | `status` | See §3. |
+       | `contracts_changed` | List of strings; may be empty. |
+       | `invariants_checked` | List of strings. |
+       | `tests` | List of strings, each naming a command or test and its result. |
+       | `decisions` | See §4. |
+       | `assumptions` | List of strings. |
+       | `unresolved` | List of strings. |
+       | `change_summary` | Non-empty string. |
+       | `files_changed` | List of repository-relative paths; may be empty. This is the "changed files a delegate reports" that D59 deferred to S14, so the runner's sync has something to read. |
+       | `difficulty_observed` | See §5. |
+
+     - **Tolerance (constitution VIII).** Unknown keys are ignored. A block whose `contract` is greater than 1 is passed with a `note:` and its known fields are not held. A later schema may only add fields; removing or retyping one needs `contract: 2` and a reader that maps version 1 forward.
+  3. **`status` (Q3 b).** Each type has its own set, listed in one table in `check-decisions`. `status` must be in the set for the block's `delegate`.
+
+     | Type | Allowed values |
+     |---|---|
+     | `drive-gaps` | `gaps` \| `none` |
+     | `drive-skipper` | `decided` \| `unavailable` |
+     | `drive-adversary` | `broken` \| `held` |
+     | `drive-bosun` | `unblocked` \| `cannot` \| `catastrophic` |
+     | `drive-converge` | `converged` \| `not-converged` \| `incomplete` |
+     | `drive-hand` | `accepted` \| `behaviour` \| `implementation` (the same words as `VERDICTS` and `benchmark.py end outcome=`) |
+     | `drive-implement` | `green` \| `partial` \| `stopped` |
+     | `drive-mutation` | `scored` \| `failed-run` |
+     | `drive-slice` | `converged` \| `stopped` |
+     | `drive-tasks` | `written` \| `contradiction` |
+
+     A reader that needs a coarse outcome, such as S30's calibration, maps from this table. No second field is stored for it.
+  4. **`decisions` (Q4 a).** This is a list of `D<n>` ids (`^D[0-9]+$`) for the standing entries the work relied on. It may be empty. Proposed decisions have no number yet under D129, so they go under `unresolved`. A skipper's own entry number is its output, named in `change_summary`, and is not listed here. FR-032's revert reads this list together with the register's column (S28).
+  5. **`difficulty_observed` (Q8 a, refined).**
+     - **Form.** `{"score": <integer 1–5>, "reason": "<non-empty string>"}`, required from S14 on.
+     - **Text form.** In `tasks.md`, under S15, the same value is written as text: `difficulty: n — reason`.
+     - **Why an object and not the string.** The value would otherwise be parsed out of text, and changing its type later would cost a schema version. An object is typed now.
+     - **Where it does not apply.** A type with no implementation work, such as the skipper, scores how hard its question was.
+  6. **Who writes the block (Q9 a).**
+     - **Every dispatch** of one of the ten `drive-*` types writes one block and gets one entry, at any depth. That includes the ones a `drive-slice` delegate dispatches.
+     - **Helpers fold in.** Untyped helpers a delegate starts (Explore, general-purpose, `drive-implement`'s fan-out groups) report inside that delegate's single block.
+     - **Brief changes.** Each of the ten briefs, and the cruise and drive commands' dispatch text, gain the instruction to end with the block and a pointer to the shape. The shape is written once, in the docstring of `check-decisions` and on the page the ADR names.
+  7. **What is out of scope here.**
+     - FR-050's hashing applies to FR-046's tool (D132), not to this file.
+     - Replacing the harness's sync after each delegate with a sync driven by `files_changed` is a separate question for whoever plans S14 against D59's deferral. This decision only fixes the field.
+     - **Release:** MINOR, as the row says. The fragment's catch-up note says nothing is asked of existing logs or slices, and that older slices with no `hand-backs.md` are not refused.
+  8. **Unavailable:** nothing. FR-017's PRD shape is treated as unavailable, as the brief said. If a person later produces it and it differs, the difference is reconciled additively under `contract: 2`.
+- **Why:**
+  - **It has to be in git.** The developer cruising at iteration 50 needs every hand-back to be something a gate in CI can read and a later slice can calibrate on. That rules out (c), which is gitignored and exists only under `/cruise`.
+  - **It cannot share a file across slices.** Per D129, a concurrent slice must not write a shared file, which rules out (d) and the feature-level `benchmark.json`.
+  - **It follows an existing pattern.** A per-slice, append-only markdown file with a checker-held shape is already how `demo-log.md` works. It keeps the block verbatim, which is what the "hand-back without the block" finding has to see.
+  - **JSON is the cheapest reader.** It is the only format with a standard-library parser and no hand-written grammar (owner taste: no new dependency, and owner priority 6 for S30).
+  - **Per-type status keeps existing words.** It keeps `accepted|behaviour|implementation` and `unblocked|cannot|catastrophic`, which people and `benchmark.py` already act on. A shared four-word set would sit beside them as a second vocabulary that someone has to map.
+  - **Optional now means a migration later.** Making a field optional now and required later is the kind of retyping that constitution VIII prices as a schema version. The same is true of a string that is later parsed into a number.
+  - **Constitution XIV.** It forbids an agent inventing a persisted field. That is why this shape is fixed here, by the owner's proxy, before S14 plans anything.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:**
+  - high on Q1, Q2, Q4 and Q9;
+  - medium on Q3's exact words for the types that have no verdict word today (gaps, adversary, implement, mutation, slice, tasks);
+  - medium on Q8's object form.
+- **Would reverse if:** the owner produces the PRD's shape and it fixes a shared `status` set or the text form of difficulty. Q3 or Q8 would then follow it, and since nothing has been written yet, `contract` would stay at 1.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S14's acceptance criteria); delivery/docs/adr/0006-result-contracts-in-hand-backs.md (Proposed)
+- **Status:** standing
+
+## D135 — Where does D59's deferred "sync on the files a delegate reports" go, now that S14's row leaves it out?
+
+- **Stage:** slice gaps (pre-planning) · **Slice:** S14-result-contract · **When:** 2026-10-05T16:53:05Z · **Iteration:** 23
+- **Scope:** S14-result-contract
+- **Question:** D59 sent this part of FR-024 to `S14` by name: a further sync inside an iteration, tied to the changed files a delegate reports in its result contract, in place of the unconditional sync after every delegate's return, with those reported files handed to the runner's comparison as candidates. S14's row in `story-split.md` leaves it out, and FR-017's ten fields have no changed-files field. Without a home, FR-024's *Read by D59* clause points at a slice that does not deliver it.
+- **Options:** (a) S14 adds a `files_changed` field and rewires the `PostToolUse` `code_index.py sync` to sync only when the field is non-empty and to pass the files to the comparison as candidates; today's unconditional sync stays where there is no block or no files. This was the gaps pass's recommendation. (b) Move it to `S36-integration-invariants` with FR-047's write sets. (c) Drop it.
+- **Decision:** None of the three as stated. The work is split across two slices:
+  - **S14 adds the field.** It becomes the block's eleventh field, `files_changed`: the repository-relative paths the delegate created, modified or deleted. It is required and may be an empty list. `check-decisions` rejects a missing field, a value that is not a list of strings, an absolute path and a path containing `..`, and names the field when it does. Reporting what you changed is part of "every delegate hands back the same structured result", so it belongs to S14's capability. S14 does not change `sync()` or `health()`.
+  - **The sync behaviour gets a slice of its own,** proposed as `S40-reported-sync`. It depends on `S14-result-contract` and comes ahead of `S15-difficulty-score` only where a fan-out seat is free. The host confirms the id is unused; `story-split.md` has none above S39. The deferred work rides there, tightened in one way: **a delegate's report can add candidates but can never remove a sync.**
+    - The `PostToolUse` sync reads the hand-back's block from its hook input.
+    - It runs the gate's narrowed comparison (D59's functions and memory) over the memory's candidates plus the reported `files_changed`.
+    - It syncs when that comparison finds anything behind. It skips the sync only when the comparison finds nothing behind.
+    - With no block, an unreadable block, no usable memory, or a CI marker, it syncs unconditionally, as today.
+    - Reported files are hashed even when their size, times and identity read as before. This closes D49's accepted residual for exactly the files a delegate says it touched.
+  - The level stays MINOR. `VERSION` is already `1.6.0.dev0`, and S40 adds no setting. It carries the standard release constraint (snapshot plus `migrate`, D7).
+- **Why:**
+  - **(a) as written breaks the constitution.** The constitution's *one capability per slice* MUST says a slice joining two capabilities must be split before it is planned. "Delegates hand back a structured result" and "the index syncs on what a delegate reports" are two capabilities. The owner's D128 asks for the same thing for the same reason: a failed review costs the whole diff, so keep the diff small. S14 changes every agent brief; adding a hook rewrite to that review is how a small slice stops being small.
+  - **(a)'s "sync only when non-empty" fails the wrong way.** It trusts a delegate's self-report to skip a sync. A delegate that edits a file and reports `[]` would leave the index stale for the rest of the iteration. Owner priority 5 (deterministic over fast) rules out a skip that rests on an unchecked claim. Letting the narrowed comparison decide, with the report only adding candidates, keeps priority 2's saving (no sync when nothing moved) and makes the index more correct than today, not less.
+  - **(b) puts the work in the wrong slice.** FR-047's write sets are per slice and decide integration eligibility through FR-046's coordination tool. This is per delegate and keeps a code index current mid-iteration. It would also add a fifth requirement to S36, the slice D128 is trying to keep small, behind S34a, S34b and S35, delaying a runner saving that needs none of them.
+  - **(c) is not this entry's to take.** FR-024's text already carries the clause and its *Read by D59* reading. Dropping it would rewrite a requirement the spec states, which is a person's call.
+  - **Reading of FR-017.** FR-017 says the block has "the shape in the PRD". Adding `files_changed` extends that shape rather than contradicting it: FR-024 already assumes delegates report changed files, and this field is where they report them. The other ten fields keep their meaning. Nothing this entry decides changes what the merge root or CI checks. The index is not a gate (D59, *Not a gate*).
+  - **Verified by reading:**
+    - `sync()` in `assets/toolkit/scripts/agents/code_index.py` (line 558) syncs whenever the database and a route exist, so it is unconditional on what the delegate did.
+    - The module docstring (line 15) names it as Claude Code's `PostToolUse` hook.
+    - D59 items 13–14 and FR-024's *Read by D59* clause.
+    - S14's row and graph row, and S36's row, in `story-split.md`.
+  - **Not verified:** that Claude Code's `PostToolUse` hook input carries the delegate's final message in a form `sync` can parse. `S40`'s plan proves it first.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** S40's plan finds the `PostToolUse` hook cannot read the delegate's hand-back from its input in any harness the factory projects to. Then the reported files reach the comparison only through the runner's own read of the stream, before the next iteration's `health()`, and the in-iteration sync stays unconditional.
+- **Proposed criteria (for the host to number):**
+  - Under S14:
+    - Given a hand-back whose block lacks `files_changed`, when `check-decisions` runs, then it fails naming `files_changed`.
+    - Given `files_changed: ["/etc/passwd"]` or `["../x"]`, it fails naming the field.
+    - Given `files_changed: []`, it passes.
+  - Under S40:
+    - Given a hand-back reporting `files_changed: []` after the delegate in fact edited an indexed file, when the hook runs, then the index is synced.
+    - Given a hand-back reporting a file whose bytes changed with size and times restored, when the hook runs, then that file is hashed and the index synced.
+    - Given a hand-back reporting nothing and nothing behind, when the hook runs, then no sync is invoked and the hook exits 0.
+    - Given no block, a malformed block, no usable memory, or a CI marker, then the sync runs as today.
+- **Written to:**
+  - `specs/001-faster-slipwai/spec.md`: FR-017's field list gains files_changed (*Read by D135*); FR-024's *Read by D59* clause is re-pointed to S40-reported-sync; S14's criteria (the field).
+  - `specs/001-faster-slipwai/story-split.md`: S14's Includes gains the field. A new S40-reported-sync row and graph row (after S14-result-contract) carry the sync behaviour. S02's *Defers* cell is re-pointed from S14 to S40.
+- **Status:** standing
+
+## D136 — A hand-back with no result-contract block: the host asks the same delegate once for the block, late stages are checked at the demo and adversary stops, and the slice is demonstrated on a generated project
+
+- **Stage:** slice gaps (pre-planning) · **Slice:** S14-result-contract · **When:** 2026-10-05T16:57:29Z · **Iteration:** 23
+- **Scope:** S14-result-contract
+- **Question:** FR-017 says a hand-back with no `result-contract` block is a converge finding. That leaves two things open. **(Q6)** What closes such a finding? And who catches a missing block from a stage that runs after the last converge pass: the after-converge `/gaps`, the demo's `drive-hand`, the adversary, mutation? **(Q10)** This repository's own delegates only get the new briefs once a person runs `slipwai migrate` (E8, D9, D130), so SC-008 cannot be measured here during the run. Where is the slice demonstrated?
+- **Options:**
+  - **Q6 (a)** The host continues the same delegate and asks for its block. A refusal is recorded as missing, with its reason. Late stages are checked at the demo and adversary stops, and the completion audit is the backstop. **This is the stage's recommendation:** re-running a 40-minute stage just to get a summary costs the time this feature exists to save.
+  - **Q6 (b)** Run the stage again.
+  - **Q6 (c)** Mark the entry missing and close the finding.
+  - **Q10 (a)** Demonstrate on a generated project, using a rehearsal harness (`CRUISE_HARNESS_COMMAND`) that produces real hand-backs. **This is the stage's recommendation.**
+  - **Q10 (b)** Wait for a person to run migrate.
+- **Decision:** I take the stage's recommendation, Q6 (a) and Q10 (a), with the limits below. A planner reading this should have nothing left to ask.
+  1. **What closes the finding.** The host continues the delegate that produced the hand-back. The continuation asks only for the `result-contract` block describing the work already handed back. It does not let the delegate resume or change that work.
+     - **Only one ask.** If the reply has a block, it goes through `check-decisions` like any other block. If that block is malformed, it counts as a malformed block. The host does not ask a second time.
+     - **Two ways the finding closes.**
+       - A block that passes `check-decisions`.
+       - A recorded `missing` entry with its reason. The reason is either `refused` (with the delegate's words), `malformed: <field>`, or `no continuation` (the harness cannot continue a finished delegate).
+     - **Two things are never done.**
+       - The stage is never re-run to get a block, so (b) is out.
+       - The host never writes a block on the delegate's behalf. Doing so would invent a fact.
+     - **Why (c) is out.** It closes the finding without asking.
+     - **A recorded missing still counts.** It counts as a hand-back without a contract in SC-008's measure. Closing the finding does not make the measure read 100 percent.
+  2. **Who catches the late stages.** Each check is made by the host, at a stop that already exists.
+     - **The demo stop.** Before the host dispatches `drive-hand`, it checks every hand-back since the last converge pass. That covers the after-converge `/gaps` delegates and any Phase 4 worker.
+     - **The adversary stop**, after acceptance and before the done marker. The host checks `drive-hand`'s own hand-back, the adversary delegates and `drive-mutation`.
+     - **How a miss found at these stops is handled.** It is recorded and closed under item 1, as a task in the slice's `tasks.md`. It does not reopen converge.
+     - **The completion audit is the backstop.** Its `drive-gaps` delegates check that every hand-back in the stream has a valid block or a recorded `missing`. A hand-back with neither is an audit finding.
+  3. **Where the slice is demonstrated.**
+     - **The project.** The demo runs on a project generated from the slice branch with `slipwai generate`. Generation writes the new delegate briefs straight into the project, so no migrate is involved and D9 stands.
+     - **What the hand-backs must come from.** They come from real delegates running on that project, through its own headless harness. If `CRUISE_HARNESS_COMMAND` is set, it may only wrap a real headless harness, for example to limit the run to one slice. A script that prints pre-written hand-backs proves the checker works, but proves nothing for SC-008.
+     - **Two seeded fixtures run beside it**, to prove the checker paths.
+       - A hand-back with no block, which shows the converge finding (User Story 6, scenario 1).
+       - A malformed block, which `check-decisions` fails, naming the field.
+     - **What the demo records.** The share of real hand-backs that carried a block is written into the slice's quickstart, with the project's axes, the harness and the number.
+     - **This repository's own measurement** of SC-008 goes to the cruise report as a line for after a person's migrate, next to E8.
+- **Why:** For the developer, a missing summary should cost one short exchange, not another 40-minute stage. That is the time this feature exists to save (owner brief, outcome and priority 2). It also keeps the stream honest, because a refusal stays visible as a miss instead of being closed silently or filled in by the host.
+  - **The late stages.** FR-017 makes a missing block a *converge* finding. It does not say who checks hand-backs that converge never sees. Adding checks at the demo and adversary stops leaves FR-017 intact and adds no new stop. The demo stop already gathers everything the actor is shown (`delivery/commands/drive.md`, *What the demo stop has to contain*; `delivery/commands/cruise.md`, *the hand protocol*), and the completion audit already re-reads the whole spec against what shipped.
+  - **The generated project.** Owner priority 3 puts the generated project's loop first and says a change lands under `assets/` before it reaches this repository. A generated project is exactly where new briefs are in effect without a migrate. Q10 (b) would hold the slice for a person's step that D9 deliberately leaves outside the run.
+  - **Not every harness can continue a finished delegate.** Per `delivery/scripts/agents/registry.json`, several headless rows do not pass `--continue`/`--resume`. So `no continuation` has to be a recorded reason, not a stall.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium. Q6 is high. Q10 depends on a real headless harness being runnable on the demo machine.
+- **Would reverse if:** No real headless harness can run on the generated project at the demo. Then SC-008's first half is `unavailable: a real harness run on a generated project, or a person's slipwai migrate here`. The demo would show only the seeded checker paths, and the measurement would be a named line in the cruise report.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D137 — S08 makes `make mutation` scoped on every backend, but only Go and Spring run mutants; Stryker and mutmut get their own follow-on slices, and Quarkus stays a placeholder
+
+- **Stage:** slice gaps (pre-planning) · **Slice:** S08-scoped-mutation · **When:** 2026-10-05T16:53:13Z · **Iteration:** 23
+- **Scope:** S08-scoped-mutation
+- **Question:** FR-008, User Story 2 scenario 6 and S08's example say a scoped `make mutation` runs only the changed module's mutants "for Python, TypeScript, Go and Java". Only two backends have a working tool today:
+  - Go runs Gremlins through `scripts/go-mutation.py`, which already takes `--since`.
+  - `java-spring` runs PIT.
+
+  The other three cannot run any mutants:
+  - TypeScript, the catalog default, has a placeholder that exits 2.
+  - `java-quarkus` has a placeholder that exits 2 on purpose, because of pitest #1287 (`src/slipwai/project/mutation.py`).
+  - Python's `mutmut run` names no service, and mutmut is not a dependency.
+
+  What does S08 deliver, and what happens to Quarkus?
+- **Options:**
+  - **(a)** S08 builds the scope mechanism for every backend, and only Go and Spring run mutants. Wiring Stryker and mutmut becomes follow-on slices. Recommended by the gaps pass.
+  - **(b)** S08 also wires Stryker and mutmut, which adds devDependencies, locks and config to every TypeScript and Python project.
+  - **(c)** Placeholders count as delivered.
+- **Decision:** (a), the gaps pass's recommendation, taken. The Quarkus placeholder stays, also as the gaps pass recommended.
+  1. **What S08 delivers.**
+     - In every generated project, `make mutation` measures its scope from the merge-base with the slice's base.
+     - `make mutation-full` keeps today's whole-module run.
+     - The scope reaches every backend's recipe in the same way.
+     - On Go, the scope is passed through the existing `--since`.
+     - On `java-spring`, it narrows PIT's `targetClasses` to the classes of the changed production files, within the pom's current scope. A change outside that scope mutates nothing, and the run says so in one line. It is not a red run, and it is not a silent green run either.
+  2. **Placeholder backends.**
+     - On TypeScript, Python and `java-quarkus`, the scoped `make mutation` keeps exiting 2.
+     - Its message still names the setup a person must do, and adds that the scope will apply once a tool is wired.
+     - This is recorded as a stub under constitution §"Where a slice is delivered with stubs". S08's demo and examples are the Go and Spring starters.
+  3. **Spec text.** `specs/001-faster-slipwai/spec.md` is amended in place. No new numbers are needed.
+     - **FR-008** reads: *"`make mutation` MUST scope to the diff against merge-base for every backend whose mutation tool is wired; `mutation-full` MUST keep the whole-module run. A backend whose target is a placeholder MUST keep failing with its setup message, never pass. Stryker (TypeScript) and mutmut (Python) are each wired by their own slice; `java-quarkus` stays a placeholder while pitest #1287 stands."*
+     - **User Story 2 scenario 6:** "for every backend" becomes "for every backend with a wired mutation tool (Go and Java Spring now; TypeScript and Python as their slices land), and a placeholder backend still exits 2 with its setup message".
+  4. **Follow-on slices**, appended to `specs/001-faster-slipwai/story-split.md`. The host allocates their ids.
+     - **`stryker-mutation`**: *"A TypeScript slice's mutation run is real and proportional to its change."* It wires Stryker into the TypeScript backend: devDependencies in the lock, a checked-in config, and the scope passed as `--mutate` over the changed files. It depends on S08. It comes first because TypeScript is the catalog default.
+     - **`mutmut-mutation`**: *"A Python slice's mutation run is real and proportional to its change."* It wires mutmut as a pinned dev dependency, names each service's own packages, and passes the scope. It depends on S08 and is `parallel_ok_with` `stryker-mutation`.
+     - Each slice carries its own ADR at plan time, because each adds a dependency to every generated project of its backend. Each is MINOR, with a snapshot and `migrate`.
+     - S08's row in the split loses "Python, TypeScript" from its example and names these two slices as its follow-ons.
+  5. **Quarkus.** The placeholder and its note stay as they are. No follow-on slice is added in this feature: the blocker is upstream, and `mutation.py` already says which domain-only configuration a project chooses for itself.
+- **Why:**
+  - **(c) is ruled out.** A placeholder that counts as delivered is what `mutation_command`'s own text forbids: *"report the exact setup decision needed instead of pretending mutations ran."* It is also the false green priority 5 and the brief's "one thing that would make it pointless" rule out.
+  - **(a) over (b).**
+    - D128's standing rule is that a slice's review failure stays small. Wiring two tools roughly triples S08's diff.
+    - It would also put new third-party dependencies, locks and config into every TypeScript and Python project, inside a slice whose behaviour is scoping.
+    - The brief's "no new dependency where a stdlib or existing script will do" does not forbid Stryker or mutmut, since no stdlib mutation tool exists. But it does ask that each dependency be decided on its own, with its own ADR, not ride along.
+  - **Priority 3 (the generated project first).** Priority 3 is served by putting `stryker-mutation` immediately after S08, not by making S08 larger.
+    - No gate in a generated project runs `make mutation` today (`docs/backend-obligations.md` §2), so delaying TypeScript by one slice costs no developer a check they have now.
+    - The scoping speedup only matters where a tool runs. S08 delivers it in full where one does.
+  - **FR-008 still holds.** FR-008's intent, that the mutation run be priced per change, is kept whole for every backend that can mutate. The literal "every backend" is narrowed in the spec text itself rather than being left as a claim no demo can prove.
+  - Nothing on *Always ask a person* is touched: the merge root and CI check exactly what they checked before.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high on (a) over (c). Medium on whether the two follow-ons belong in this feature's split rather than a later feature; the decision is to keep them here, right after S08. · **Would reverse if:** the owner says FR-008's "every backend" means S08 cannot close until a scoped TypeScript and Python run actually mutates code. Then (b) applies, split into two halves under D128.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (FR-008 and User Story 2 scenario 6, as in item 3); `specs/001-faster-slipwai/story-split.md` (S08's Split Candidates row and its example narrowed to Go and Java Spring; the two follow-on slices' Split Candidates rows and Slice graph rows, each depending on S08-scoped-mutation)
+- **Status:** standing
+
+## D138 — What does a scoped `make mutation` mutate, what counts as changed, what widens it to the sweep, and what does an explicit `SINCE` mean?
+- **Stage:** slice gaps (pre-planning) · **Slice:** S08-scoped-mutation · **When:** 2026-10-05T16:53:26Z · **Iteration:** 23
+- **Scope:** S08-scoped-mutation
+- **Question:** FR-008 says `make mutation` scopes to the diff against the merge-base for every backend, and `mutation-full` keeps the whole-module run. User Story 2 scenario 6 adds that a branch which changed one production module runs only that module's mutants. Four things are still open. **Q5:** what unit is mutated. **Q6:** whether uncommitted and untracked work counts. **Q7:** which changes widen the run to the sweep. **Q9:** what an explicit `SINCE` means.
+- **Options:**
+  - Q5: (a) the changed production files, recommended · (b) the whole changed deployable · (c) the changed lines.
+  - Q6: (a) uncommitted and untracked work is included, as in D117 rule 2, and the skill's clean-tree sentence is amended, recommended · (b) committed changes only, with a clean tree required.
+  - Q7: (a) a change to the backend's mutation configuration sweeps that backend; shared `packages/` code is named but not mutated; a change that touches only tests runs no mutants, recommended · (b) any test-infrastructure change also sweeps · (c) nothing widens the run.
+  - Q9: (a) an explicit `SINCE` keeps its published meaning, `git diff <ref>`, and the merge-base is used only for the implicit slice-branch scope, recommended · (b) the merge-base for both.
+- **Settled already, cited and not re-decided:**
+  - D117 rule 1 and owner priority 1: the run is scoped only on a `slice/<id>` branch with a usable base. On the trunk, on any other branch, on a detached `HEAD`, under a CI marker, or with no base, it is the sweep. Each of those runs says why in one line.
+  - FR-008: `mutation-full` stays the sweep.
+- **Decision:** (a) on all four, as the stage recommended. Q7 is narrowed in one place (item 3). Items 1 to 6 are written so that planning has nothing left to ask.
+  1. **The unit (Q5 a).** The run mutates each changed production file that the backend's own configuration would mutate anyway. It is an intersection, never an addition. This is how `mutable()` in `assets/languages/go/scripts/go-mutation.py` already treats `.gremlins.yaml`'s `exclude-files`.
+     - Gremlins: the file.
+     - Stryker: the file, within the files its config lists to mutate.
+     - PIT: the changed source file's top-level class and its inner classes (`Foo` and `Foo$*`, never a `Foo*` prefix that would also catch `FooBar`). This only applies inside the pom's `targetClasses`, so a changed adapter class outside the domain packages is named and not mutated.
+     - mutmut: the module, within `paths_to_mutate`.
+
+     Changed lines (c) are refused because neither Gremlins nor PIT supports them. The whole deployable (b) is refused because it is the hour-long sweep FR-008 exists to avoid.
+
+     A deleted file has no mutants. For a rename, the new path counts.
+
+     Where the backend's `mutation` recipe is a placeholder that refuses (`exit 2`, as TypeScript's and Quarkus's are today in `src/slipwai/project/native_commands.py`), the scoped run refuses in the same words. Scoping never turns "not configured" into "nothing to mutate". Whether S08 configures those starters is the plan's question, not this entry's.
+  2. **What changed (Q6 a).** On the implicit slice-branch scope, "changed" means what D117 rule 2 means: every path in `git diff --no-renames` against the merge-base, with the working tree and untracked files included, measured by the same import of `check-slice-scope`. A developer in the middle of a slice runs mutation over what they are actually about to push, and both scoped runs agree on what changed.
+     - The sentence at line 89 of `assets/toolkit/skills/mutation-testing/SKILL.md` ("covers committed branch changes only … Require a clean working tree") is replaced with this rule: staged, unstaged and untracked production files are included and mutated; nothing is committed or stashed to run it.
+  3. **What sweeps (Q7 a, narrowed).** A change to mutation configuration sweeps exactly what that configuration governs, and the run names the file in one line:
+     - A service's own config sweeps that service: `.gremlins.yaml`, the `pitest-maven` plugin block of its `pom.xml`, a Stryker config file, or the `[tool.mutmut]` table of its `pyproject.toml` where one is wired. The pom block and the TOML table are compared as parsed structure on both sides. A file that cannot be parsed on either side counts as changed and sweeps (fail closed).
+     - A backend-wide file sweeps every service of that backend: `go-mutation.py` or the new scope script for that backend.
+     - The `mutation` recipe's text in the generated Makefile sweeps every service.
+     - A changed shared file under `packages/` is named, not mutated. This follows the decision `go-mutation.py` already documents: run the tool against that package as a service of its own.
+     - A change that touches only tests runs no mutants. It prints one line naming the changed test files and saying `make mutation-full` is the run that measures them, and it exits 0. That matches Go's existing "no mutant to run" line, which reports nothing mutated rather than a score.
+
+     The narrowing: the recommendation said a backend's configuration change sweeps every service of that backend. One service's `.gremlins.yaml` or pom cannot change what another service's run mutates, so it sweeps only its own service.
+  4. **An explicit `SINCE` (Q9 a).** `make mutation SINCE=<ref>` keeps Go's published meaning: `git diff <ref>`, with the working tree and untracked files included, on any checkout, as a person's explicit request. Every other backend gains `SINCE` with that same meaning. Without `SINCE`, the implicit scope uses the merge-base, and only where D117 rule 1 allows a scope.
+  5. **What the run prints.** It always prints one first line, in one of these forms:
+     - `scoped to <n> changed file(s) since <base>: …`
+     - `the sweep runs — <reason>`, where the reason is D117 rule 1's checkout reason or item 3's file
+     - `no mutant to run — <why>`
+
+     Each changed production file that is not mutated is named with its reason: outside the tool's configured targets, under `packages/`, or deleted.
+  6. **No MAJOR.** No flag is removed and no meaning changes. On a slice branch, a bare `make mutation` starts scoping, as FR-008 requires, and `mutation-full` still sweeps. The fragment claims MINOR, with a `migrate` note.
+- **Why:**
+  - **The developer wants the cost to follow the change.** Mutating the changed production files is the smallest unit all four tools support, and Go already ships it.
+  - **Including uncommitted work keeps one answer to "what changed".** D117 rule 2 already counts uncommitted work for `verify-scoped`. A mutation run that left it out would assess a different tree from the gate run beside it. The skill's clean-tree rule was a guard for Stryker's committed-only diff. Measuring the working tree removes the reason for it.
+  - **Sweeping only on configuration changes keeps the run deterministic (priority 5).** A configuration change changes which mutants exist or how they are judged, so the scope computed from file paths is no longer trustworthy. That is the case that must widen.
+  - **Test-infrastructure changes do not widen the run (Q7 b refused).** Widening on them would need a map from tests to production code that no tool here supplies. The honest answer is a line that says nothing was mutated, not a score nobody earned.
+  - **Never widening (Q7 c) is refused.** It would score a changed `.gremlins.yaml` against mutants chosen under the old config.
+  - **Keeping `SINCE` stable avoids a MAJOR (Q9 b refused).** Moving a published flag to merge-base semantics would change an answer projects already rely on, which the owner brief puts out of scope.
+  - **Priority 1 is untouched.** `mutation-full`, the merge root and CI are unchanged. The brief's out-of-scope line on mutation at the merge root and in CI holds.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high on Q5, Q6 and Q9. Medium on Q7's test-only rule.
+- **Would reverse if:** the slice's adversary or a demo shows a slice that weakened tests for unchanged production code and that the scoped run's line let through as acceptable. Then a test-only change would sweep the services whose test trees changed. That would be Q7 (b), limited to the owning service.
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (this entry); `specs/001-faster-slipwai/spec.md` (S08's criteria: the unit, what changed, what sweeps, SINCE, the first line); `assets/toolkit/skills/mutation-testing/SKILL.md` (line 89's clean-tree sentence replaced per item 2)
+- **Status:** standing
+
+## D139 — Phase 4 runs mutation on `main` after the merge, where the base is `HEAD`: what does the scoped run measure there?
+
+- **Stage:** slice gaps (pre-planning) · **Slice:** S08-scoped-mutation · **When:** 2026-10-05T16:59:26Z · **Iteration:** 23
+- **Scope:** S08-scoped-mutation
+- **Question:** Phase 4 runs on `main` after the slice merges (`parallel_slices.py`), where D117 rule 1 gives the sweep and a merge-base would equal `HEAD`. Without a rule, Phase 4 either sweeps for hours or measures nothing.
+- **Options:** (a) `commands/mutation.md` teaches `make mutation SINCE=<the commit before the merge>`, written in S08's own `mutation.py` — the stage's recommendation; (b) move Phase 4's mutation onto the slice branch now; (c) the sweep on `main`.
+- **Decision:** (a). The bare target on `main` stays the sweep (D117 rule 1, owner priority 1); the mutation command's text, for every backend, names the explicit `SINCE` with the commit before the merge for Phase 4, which D138 item 4 already defines on any checkout.
+- **Why:** The developer's Phase 4 is priced per change without moving a stage: (b) is FR-010, `S09-phase4-fanout`'s, and the ladder text is S06's surface; (c) is the hour-long run FR-008 exists to avoid.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** `S09-phase4-fanout` moves Phase 4's mutation onto the slice branch, which makes the explicit `SINCE` unnecessary there.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

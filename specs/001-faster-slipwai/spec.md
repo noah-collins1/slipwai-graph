@@ -80,7 +80,9 @@ same tree are identical before and after.
    `make verify-scoped` runs, **Then** that obligation's checks run.
 5. **Given** `main`, **When** `make verify-scoped` runs, **Then** it is `make verify`.
 6. **Given** a branch that changed one production module, **When** `make mutation` runs, **Then** only that
-   module's mutants run, for every backend, and `make mutation-full` still runs the whole module.
+   module's mutants run, for every backend with a wired mutation tool (Go and Java Spring now; TypeScript and Python
+   as their slices land), a placeholder backend still exits 2 with its setup message, and `make mutation-full` still
+   runs the whole module. *(Amended by D137.)*
 7. **Given** the merge root, **When** `make verify` runs, **Then** pytest runs with xdist and the pass/fail set
    equals the serial run's.
 
@@ -351,8 +353,10 @@ escalated; the resulting revision passes acceptance.
   which checks are affected. Selecting tests by touched context alone is not sufficient.
 - **FR-007**: The drive ladder MUST call `verify-scoped` at slice start and before the push, and the full gate
   once at the merge root.
-- **FR-008**: `make mutation` MUST scope to the diff against merge-base for every backend; `mutation-full` MUST
-  keep the whole-module run.
+- **FR-008**: `make mutation` MUST scope to the diff against merge-base for every backend whose mutation tool is
+  wired; `mutation-full` MUST keep the whole-module run. A backend whose target is a placeholder MUST keep failing with
+  its setup message, never pass. Stryker (TypeScript) and mutmut (Python) are each wired by their own slice;
+  `java-quarkus` stays a placeholder while pitest #1287 stands. *(Amended by D137.)*
 - **FR-009**: The root gate MUST run pytest with xdist where the project is marked parallel-safe (default on
   for new projects, with a one-line opt-out in `project.json`).
 - **FR-010**: After a fan-out, Phase 4 MUST run per slice in its worktree concurrently; merges MUST form a tree
@@ -372,7 +376,9 @@ escalated; the resulting revision passes acceptance.
   decisions only. *Read by D60:* every writer adds the line from `S02-runner-bookkeeping` on; an entry without
   one passes the gate and is carried as global; making absence a finding is a person's to approve.
 - **FR-017**: Every delegate MUST end with a `result-contract` block of the shape in the PRD; `check-decisions`
-  MUST hold it; a missing block MUST be a converge finding.
+  MUST hold it; a missing block MUST be a converge finding. *Read by D134, D135, D136 (ADR 0006):* the shape is a
+  JSON object, schema `contract: 1`, kept in the slice's append-only `hand-backs.md`; the block also carries
+  `files_changed`; a missing block is closed by one continuation of the same delegate or a recorded `Missing:` line.
 - **FR-018**: The planner MUST write a difficulty score and reason per task; `make benchmark` MUST join planned
   and observed difficulty with converge passes, escalations and mutation survivors.
 - **FR-019**: `models.json` MUST gain a documented, default-off `route_by_difficulty` whose only effect is a log
@@ -391,7 +397,8 @@ escalated; the resulting revision passes acceptance.
 - **FR-024**: The runner MUST compute `controls_signature()` once per iteration from mtimes, and run one
   codegraph sync per iteration unless a delegate reports changed files. *Read by D56:* each control file's content
   is read at most once per iteration unless its size, times or identity changed; what the run parks on stays a
-  comparison of content. *Read by D59:* the *unless a delegate reports* half waits for `S14-result-contract`.
+  comparison of content. *Read by D59:* the *unless a delegate reports* half waits for `S40-reported-sync` (D135; `S14-result-contract`
+  adds the `files_changed` field it reads).
 - **FR-025**: `make benchmark` MUST report K-effective, the Gini coefficient of slice-touch frequency and the
   top-3 share per feature, and flag a node above a configurable share as a decomposition candidate.
 - **FR-026**: Every read beyond a stage's or delegate's one-hop brief MUST be logged as a context-expansion
@@ -2337,3 +2344,163 @@ checks* are this project's `verify-checks` prerequisites; and *the record* is wh
 - **AC-S06-19** — Scenario 7 re-checked: given the merge root, `make verify` runs pytest with xdist as `S05-xdist`
   delivered. The demo records, in the quickstart and the fragment, `make verify-scoped` on a slice branch touching
   one deployable of a two-deployable starter against `make verify` on the same tree, with the command and the machine.
+
+### S08-scoped-mutation
+
+**Gaps reviewed** 2026-10-05, cruise iteration 23, `drive-gaps` (read only) with `drive-skipper` for D137 and D138 and
+the host's own D139: User Story 2's scenario 6, FR-008, FR-007 and FR-010's placement, S08's split and graph rows
+against D129 and the rows of `S06-scoped-gate`, `S14-result-contract` and `S38-factory-test-selection`; D110, D111,
+D117, D123, D125, D127–D133, ADR 0004 and ADR 0005; the owner brief's priorities, *Out of scope* and *Always ask a
+person*; against `mutation.py`, `native_commands.py` and `makefile()` in `src/slipwai/project/`,
+`assets/languages/go/scripts/go-mutation.py`, the Spring pom's `pitest-maven` block, `verify-stamp.py`'s cache table,
+`verify_scoped/rules.py`, the adopted `delivery/Makefile`, `commands/mutation.md`, the Phase 4 text in
+`parallel_slices.py`, `docs/backend-obligations.md` and `mutation-testing/SKILL.md`. Found and written back: no gate
+in a generated project runs `make mutation`, so scoping is additive except through a project's own CI and Phase 4 on
+`main`; only Go and Spring have a working tool — TypeScript and Python are wired by follow-on slices, Quarkus stays a
+placeholder (D137, FR-008 amended); the unit, what changed, what sweeps and an explicit `SINCE` (D138); Phase 4 on
+`main` names the commit before the merge (D139); a merged recipe stops at the first placeholder's `exit 2`; Spring's
+`failWhenNoMutations` would turn an empty scope red; mutation output must stay out of the stamp's key and the
+ignored-files digest; a new Make construct must be one `rules.py` reads, or every scoped run is the full gate; the graph
+rows now say S08 runs beside S06 and S14 (D129).
+
+Unless a criterion says otherwise, *a slice branch*, *the base* and *changed* are as S06 defines them (D117 rule 2,
+D138 item 2); *a production file* is a source file of a service that is not a test; *the sweep* is the command
+`make mutation` runs today for that backend.
+
+- **AC-S08-1** — *D117 rule 1, owner priority 1.* Given the trunk, a branch not named `slice/<id>`, a detached `HEAD`,
+  any of `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set, a slice branch with no usable base, or a directory git cannot read,
+  when `make mutation` runs with no `SINCE`, then it runs the sweep and says which case it was in one line; its exit
+  status is the tool's.
+- **AC-S08-2** — *Scenario 6, Go.* Given a two-service Go starter and a slice branch changing one production file in
+  one service, when `make mutation` runs, then that service's Gremlins run mutates only that file, and the other service
+  is named as skipped with *no changed production file* and starts no Gremlins.
+- **AC-S08-3** — *Scenario 6, Spring; D138 item 1.* Given a Spring starter and a slice branch changing one class inside
+  the pom's `targetClasses`, then PIT mutates only that class and its inner classes (`Foo` and `Foo$*`, never a `Foo*`
+  prefix); the pom's `excludedClasses`, `targetTests` and `*IT` exclusion still hold.
+- **AC-S08-4** — *Spring.* Given a change only to classes outside `targetClasses`, then Maven is not invoked, each such
+  file is named with its reason, one line says no mutant runs, and the exit is 0 — a scoped run never trips
+  `failWhenNoMutations`.
+- **AC-S08-5** — *D137 item 2.* Given a changed production file in a TypeScript, Python or `java-quarkus` service, when
+  `make mutation` runs, then that service's placeholder still exits 2 with its setup message, adding that the scope will
+  apply once a tool is wired, and names the files it would mutate; an untouched placeholder service is named as skipped
+  and does not fail the run.
+- **AC-S08-6** — *Mixed backends.* Given a project with a wired backend and a placeholder one and a slice branch
+  changing only the wired one's file, then the scoped run completes and exits by that backend's result — a placeholder
+  ahead of it in service order no longer stops it.
+- **AC-S08-7** — *D138 items 1 and 3.* A change only to tests runs no mutants: one line names the changed test files and
+  says `make mutation-full` is the run that measures them, exit 0. A change only to non-source files or only deletions
+  runs no mutants, one line, exit 0. A renamed production file is mutated at its new path (for Java, its new fully
+  qualified name).
+- **AC-S08-8** — *D138 item 3.* A change to a service's own mutation configuration (`.gremlins.yaml`, its pom's
+  `pitest-maven` block compared as parsed structure, a Stryker config or `[tool.mutmut]` table where wired) sweeps that
+  service; a change to `go-mutation.py` or the new scope script sweeps every service of that backend; a change to the
+  `mutation` rule's text sweeps every service; a configuration file that cannot be parsed on either side counts as
+  changed. Each names the file that caused it.
+- **AC-S08-9** — *D138 item 3.* A changed file under `packages/` is named as *not mutated by this target* and exits 0.
+- **AC-S08-10** — *D138 item 4.* Given `make mutation SINCE=<ref>` on any checkout, CI included, every wired backend
+  scopes to the production files `git diff <ref>` names, the working tree and untracked files included — Go's published
+  meaning, unchanged. An unresolvable `<ref>` fails naming it; `SINCE` with an empty value is the sweep.
+- **AC-S08-11** — *FR-008.* On every checkout `make mutation-full` runs the sweep, each backend's recipe lines byte for
+  byte today's; it appears in `make help` and `.PHONY`.
+- **AC-S08-12** — *D138 item 5.* The run's first line is one of *scoped to <n> changed file(s) since <base>: …*, *the
+  sweep runs — <reason>* or *no mutant to run — <why>*; every service is named once — scoped with its files, skipped or
+  swept with its reason — and a last line counts each; a scoped service's failure fails the run and is named.
+- **AC-S08-13** — *SC-007, ADR 0005, D133.* `mutation` and `mutation-full` are reachable from none of `verify`,
+  `verify-checks` and `ci`; those rules and the generated CI workflow are byte for byte unchanged; `rules.json` is
+  generated from the new Makefile, and on a freshly generated project `make verify-scoped` on a slice branch is not
+  driven to the full gate by anything S08 wrote.
+- **AC-S08-14** — *D116, D125.* Given a reusable verify stamp and a scoped baseline, after `make mutation` or
+  `make mutation-full` runs, the stamp still reuses and `verify-scoped` is not broadened: every report and temporary
+  tree the run leaves is git-ignored and a cache row in `verify-stamp.py`'s key, as `gremlins.json` already is.
+- **AC-S08-15** — *Adopted layout.* Given an adopted repository, `make -f delivery/Makefile mutation` and
+  `mutation-full` run the recorded command unchanged, and one line says this layout has no mutation scope.
+- **AC-S08-16** — *D138 item 2.* `mutation-testing/SKILL.md`'s clean-tree sentence is replaced: staged, unstaged and
+  untracked production files are included and mutated, nothing is committed or stashed to run it.
+- **AC-S08-17** — *D139.* `commands/mutation.md` (from `mutation_command()`), for every backend, says the bare target
+  scopes on a slice branch, `SINCE=<ref>` scopes anywhere, `mutation-full` is the sweep, CI and the trunk get the sweep,
+  and Phase 4 on `main` runs `make mutation SINCE=<the commit before the merge>`; each backend's note above the target
+  in `mutation.py` says the same (Go's *Without SINCE it mutates the whole module* is rewritten).
+- **AC-S08-18** — *Catch-up.* Given a project generated before this release, when `slipwai migrate` runs, then it gains
+  the scoped `mutation`, `mutation-full`, any new script and a regenerated `rules.json`; the fragment claims MINOR, and
+  its one-paragraph catch-up note says what `make mutation` now does on a slice branch, that it is unchanged in CI, on
+  the trunk and with `SINCE`, that `mutation-full` is the old behaviour, and which backends still need a tool wired.
+- **AC-S08-19** — *The row's "proportional".* The demo records `make mutation` against `make mutation-full` on a
+  two-service Go starter and a Spring starter, on a slice branch touching one file — wall time, mutant counts, the
+  command and the machine — in the quickstart.
+
+### S14-result-contract
+
+**Gaps reviewed** 2026-10-05, cruise iteration 23, `drive-gaps` (read only) with `drive-skipper` for D134, D135 and
+D136: S14's split and graph rows, S02's *Defers* cell, the rows of S15, S28, S30, S34a, S34b, S38 and S39; User Story
+6, FR-017, FR-024 (D59's reading), FR-032, FR-036, FR-046–FR-050, FR-057, SC-008 and the *Result contract* entity; D59,
+D60, D65, D128–D133; constitution VIII, XIV and *Additional Constraints*; against `assets/toolkit/scripts/check-decisions.py`,
+`assets/toolkit/scripts/agents/benchmark.py`, `code_index.py`'s `sync`, `cruise.py`'s stream, `agents.py` and
+`cruise_agents.py` (ten types and their return clauses), `migrate.py`'s re-projection and `catch_up.py`; S06's plan and
+tasks for shared files. Found and written back: hand-backs were persisted nowhere a gate can read — they go to the
+slice's append-only `hand-backs.md`, written by the dispatching session (D134, ADR 0006 at `Proposed`); the PRD's shape
+cannot be opened, so schema 1 is fixed here — JSON, thirteen fields, a per-type `status` set, `difficulty_observed` as
+an object (D134); D59's deferred sync was dropped from the row — S14 adds `files_changed` and the sync is
+`S40-reported-sync` (D135); a missing block is closed by one continuation or a recorded `Missing:` line, late stages
+are checked at the demo and adversary stops, and the demo runs on a generated project (D136); three types already have
+return words the block keeps; S14 shares `agents.py` and `commands.py` with S06; the graph rows now say S14 runs beside
+S06 and S08 (D129).
+
+Unless a criterion says otherwise, *a delegate* is one of the ten `drive-*` types; *a hand-back* is its final message
+to the session that dispatched it; *the block* is the fenced `result-contract` block; *the record* is
+`specs/<feature>/slices/<id>/hand-backs.md` (feature-level stages: `specs/<feature>/hand-backs.md`).
+
+- **AC-S14-1** — *D134 item 6.* Given a project generated at the root or under `delivery/`, when its agent files are
+  written, then each of the ten types' standing brief tells it to end its hand-back with the block, pointing at the shape
+  written once (a page every type references, as the safety page is); one test runs over every type; `make agents`
+  carries it into every harness's agent file, and the drive and cruise commands' dispatch text says the dispatching
+  session appends each block to the record.
+- **AC-S14-2** — *D134 item 3.* The types with a return protocol keep it: the bosun's and the hand's verdict words are
+  their block's `status`; a skipper's entry is followed by the block, and the host writes the entry to `decisions.md`
+  and the block to the record; no brief tells a delegate to end two ways at once.
+- **AC-S14-3** — *D134 item 2.* Given a record holding one well-formed block — one JSON object, `contract: 1`, all
+  thirteen fields of the right type — when `check-decisions` runs, then it passes; a list field may be empty, never
+  absent.
+- **AC-S14-4** — *The row's second example.* Given a block missing a field, holding a value of the wrong type, or a
+  `status` outside its type's set, then `check-decisions` exits 1 with one line per fault naming the record file, the
+  entry's heading and the field.
+- **AC-S14-5** — *Constitution VIII.* Given a block with a field outside the thirteen, the gate passes; given
+  `contract` greater than 1, it passes with a note and holds no field.
+- **AC-S14-6** — An unterminated fence, two blocks in one entry, a heading not in D134's shape, an entry with neither a
+  block nor a `Missing:` line, or a body that does not parse is a finding naming the entry.
+- **AC-S14-7** — *D135, constitution Additional Constraints.* An absolute path or one containing `..` in
+  `files_changed` or any path-valued field is a finding naming the field; `files_changed: []` passes.
+- **AC-S14-8** — *D134 item 4.* A `decisions` id not matching `^D[0-9]+$` or naming no entry in the feature's
+  `decisions.md` is a finding.
+- **AC-S14-9** — *D134 item 5.* `difficulty_observed` is `{"score": 1–5, "reason": "<non-empty>"}`; anything else is a
+  finding.
+- **AC-S14-10** — *D134 item 1.* When a delegated stage ends, the dispatching session validates the block with the
+  checker's own function and appends it verbatim under `## <UTC time> — <type> — <stage>`; a concurrent slice appends
+  only to its own folder; entries are never edited.
+- **AC-S14-11** — *The row's first example, D136 item 1.* Given a hand-back with no block, when converge runs, then its
+  verdict carries a finding naming the stage and type; the finding closes with a block from one continuation of the same
+  delegate that passes the checker, or a recorded `- **Missing:** refused | malformed: <field> | no continuation`; the
+  stage is never re-run for it and the host never writes a block for a delegate.
+- **AC-S14-12** — *D136 item 2.* Before the hand is dispatched, the host checks every hand-back since the last converge
+  pass; at the adversary stop it checks the hand's, the adversary's and mutation's; a miss there is a task in the slice's
+  `tasks.md` and does not reopen converge; the completion audit is the backstop.
+- **AC-S14-13** — A stage run in the host's own context has no hand-back, and nothing is recorded or found for it; a
+  stopped or cut-off delegate's entry says so with its reason and is not charged with a malformed block.
+- **AC-S14-14** — *D134 item 6.* Untyped helpers a delegate starts report inside that delegate's one block; inside a
+  `drive-slice` worktree, `drive-slice` records its own sub-delegates in its slice's record.
+- **AC-S14-15** — *SC-008, first half.* `make benchmark` prints *hand-backs with a result contract: n of m* per slice,
+  `m` the delegated stages in `benchmark.json`; a harness that cannot attribute a delegate says so rather than guessing.
+- **AC-S14-16** — *D60, D65.* Given a project whose slices predate this release, with no record anywhere, then
+  `check-decisions`' output and exit are byte-identical to today's, and the full gate's findings are unchanged (SC-007).
+- **AC-S14-17** — *Migrate.* Given a project generated at the release before this one, when `slipwai migrate` runs,
+  then the agent files, the commands, the shape's page and `check-decisions.py` are replaced and re-projected,
+  `make verify` passes on the project's existing records unchanged, and the fragment's one-paragraph catch-up note says
+  nothing is asked of existing logs and slices without a record are not refused; the same holds for an adopted
+  repository under `delivery/`.
+- **AC-S14-18** — *D129, the shared-surface rule.* S14's branch writes only under `assets/toolkit/`, `src/slipwai/project/`
+  (`agents.py`, `cruise_agents.py`, the drive and cruise text in `commands.py`, `converge_stage.py`), `tests/`,
+  `docs/`, `changelog.d/result-contract.md` and its own slice folder; never `delivery/`, `decisions.md`, `spec.md`,
+  `story-split.md` or the register; and stays off the paragraphs S06's D123 rewords.
+- **AC-S14-19** — *D136 item 3.* The demo runs on a project generated from the slice branch: real delegates through
+  its own headless harness produce hand-backs, and two seeded fixtures (no block; a malformed block) show the converge
+  finding and the field-naming refusal; the share of real hand-backs carrying a block is written into the quickstart
+  with the project's axes, the harness and the number.
