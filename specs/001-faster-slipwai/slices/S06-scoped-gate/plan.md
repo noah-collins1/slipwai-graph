@@ -6,8 +6,8 @@
 **Input**: User Story 2, FR-006, FR-007, FR-023 and SC-007 in [spec.md](../../spec.md); the slice's row in
 [story-split.md](../../story-split.md); D114, D115, D116, D117 (and D73–D77, D89, D104 they cite) in
 [decisions.md](../../decisions.md); ADR 0004 (Proposed), which this plan extends with the printed record's shape.
-Written by cruise iteration 17's plan stage (delegated, strong model). Two questions this plan does not answer are
-under [Open questions](#open-questions).
+Written by cruise iteration 17's plan stage (delegated, strong model). Its two open questions were answered in
+iteration 20 as D123 and D124 ([Open questions](#open-questions)).
 
 ## Summary
 
@@ -47,9 +47,9 @@ are named per deployable (`lint-web`). Output lines are spelled in [data-model.m
 | **R8** obligations a person declares | AC-S06-11 | `verification.obligations` in `project.json` (read at the base): a list of `{name, components, checks}`; a change under any component's path runs the obligation's checks, named with it. Missing key: none. Present but not that shape, a name twice, fewer than two distinct components, a component not among the `deployables`, a check the record does not know: one line naming the entry, then `make verify` | e1 `{"name": "checkout", "components": ["orders","billing"], "checks": ["test-orders","test-billing"]}` and a change in `apps/orders/`: `test-billing` runs, *obligation `checkout`* · e2 `"checks": ["test-nope"]`: the line names entry 1 and the check, full gate · e3 `"obligations": {}`: the line, full gate |
 | **R9** every unit named once, one make call | AC-S06-12 | Each unit is printed once, `run` with the first changed input that chose it or `skip` with *none of its inputs changed*; the chosen units run as one `"$(MAKE)" $(VERIFY_GROUP) --no-print-directory -f <makefile> <units…> VERIFY_ORDER=1`, the script keeping make's jobserver descriptors open (`close_fds=False`); the last line counts run and skipped and says passed, or that the run failed and each failed check is named above on a line carrying `***`; the exit status is the sub-make's | e1 `make -j verify-scoped` with a stand-in check that waits for another: both start before either ends · e2 a failing `test-web`: make's `*** [...test-web]` line, the closing line, non-zero exit · e3 the counts equal the named lines |
 | **R10** the record as JSON | AC-S06-13 | `python3 scripts/verify-scoped.py record` prints the derived record in ADR 0004's shape (schema 1): every unit with its gate, components, inputs (files, tools, variables) or `null`, whether it claims, why it always runs; each deployable; each contract with its consumers; each obligation | e1 the TS service + web starter's record parses and lists `check-agents` with `"inputs": null` · e2 a declared obligation appears under `obligations` |
-| **R11** the ladder and the harness call it | AC-S06-15 | `drive_command()`: *start the slice from a green `make verify-scoped`*, and `make verify-scoped` before the first push; `concurrent_slices()`: the slice's pre-push gate `verify-scoped`; Phase 4 on `main` and the merge root keep `make verify`; `agent_settings` allows `make verify-scoped` | e1 a generated `commands/drive.md` carries both scoped calls and the Phase 4 `make verify` · e2 `.claude/settings.json` lists `Bash(make verify-scoped)` |
+| **R11** the ladder and the harness call it | AC-S06-15 | `drive_command()`: *start the slice from a green `make verify-scoped`*, and `make verify-scoped` before the first push; `concurrent_slices()`: the slice's pre-push gate `verify-scoped`; Phase 4 on `main` and the merge root keep `make verify`; no call carries `-j` (D124); `agent_settings` allows `make verify-scoped`; the constitution templates' principle V, the `planning` skill, and the implement and converge briefs say the scoped gate before the push and the full gate at the merge root and in CI (D123) | e1 a generated `commands/drive.md` carries both scoped calls and the Phase 4 `make verify` · e2 `.claude/settings.json` lists `Bash(make verify-scoped)` · e3 a generated constitution (both profiles) carries D123's principle V sentence and no longer *The whole suite MUST be green immediately before that first implementation push*; the `planning` skill and the implement and converge briefs carry D123's wording · e4 no ladder line types `-j` |
 | **R12** an adopted repository | AC-S06-16 | Where the gate is not the stamped one (`gate.stamped()` false), `verify-scoped` prints *this layout has no verification-dependency record yet* and runs `$(MAKE) -f <its makefile> verify` | e1 `make -f delivery/Makefile verify-scoped` in an adopted fixture: the line, then the full gate's output and exit status |
-| **R13** what a project already made gets, and the words | AC-S06-17, -18 | `migrate` brings the new `Makefile` section and scripts; `metadata()` never writes `verification`; the fragment claims MINOR with a standalone catch-up note; the gates page documents where it scopes, where it is the full gate, what broadens, the baseline, and the obligations key, its default (none) and when to declare one | e1 a project generated at the last release, migrated: `make verify-scoped` exists, `project.json` has no `verification` · e2 the fragment's first line is `MINOR`, its note names `make verify-scoped`, the merge root and CI, and `verification.obligations` · e3 the page has the paragraph in a stamped project, the one sentence in an adopted one |
+| **R13** what a project already made gets, and the words | AC-S06-17, -18 | `migrate` brings the new `Makefile` section and scripts; `metadata()` never writes `verification`; the fragment claims MINOR with a standalone catch-up note; the gates page documents where it scopes, where it is the full gate, what broadens, the baseline, and the obligations key, its default (none) and when to declare one, and that `make -j verify-scoped` runs the chosen checks at once (D124); the catch-up note says a ratified constitution keeps its words and quotes D123's sentence for a maintainer who amends it | e1 a project generated at the last release, migrated: `make verify-scoped` exists, `project.json` has no `verification` · e2 the fragment's first line is `MINOR`, its note names `make verify-scoped`, the merge root and CI, and `verification.obligations` · e3 the page has the paragraph in a stamped project, the one sentence in an adopted one |
 | **R14** measured, and S05 still holds | AC-S06-19 | At the merge root `make verify` runs pytest with xdist (S05's tests unchanged); the demo records `make verify-scoped` on `slice/S1` touching one deployable of the two-deployable starter against `VERIFY_FORCE=1 make verify` on the same tree, with the command and the machine, in the quickstart and the fragment | e1 three runs each, medians, the machine's CPU and `nproc` |
 
 Every AC-S06-n is covered: 1, 14 (R1); 10 (R2); 2, 4, 14 (R3); 2, 3, 4, 7 (R4); 5 (R5); 6 (R6); 8, 9 (R7);
@@ -91,10 +91,11 @@ The factory's constitution (`.specify/memory/constitution.md`):
   only (`stored_answer`), as the stamp does; no path or host name is persisted.
 - **XIII. Fast feedback** (a target here) — this is the slice that scopes the branch gate; nothing leaves the gate.
 - **XIV. Agent-generated change meets the same bar** — the ladder's merge root and Phase 4 keep the full gate; the
-  conflict with the generated constitution template's *whole suite before the first push* is not decided here
-  ([Open questions](#open-questions), Q1).
+  generated constitution templates' principle V is reworded to *the scoped gate before the first push, the full gate
+  at the merge root and in CI*, still a MUST (D123).
 
-The generated projects' constitution is not amended by this plan.
+No ratified constitution is amended by this plan: the templates seed new projects only, and the catch-up note hands
+the amendment to a project's maintainer (D123).
 
 ## Structure Decision
 
@@ -113,6 +114,11 @@ The generated projects' constitution is not amended by this plan.
 - `src/slipwai/project/parallel_slices.py`: the pre-push `{layout.make} verify` (~127) becomes `verify-scoped`;
   Phase 4 (~134) unchanged.
 - `src/slipwai/project/agent_settings.py`: `"make verify-scoped"` beside `"make verify"`.
+- `src/slipwai/project/agents.py`: the implement brief (~135) and the converge brief (~189) reworded in place (D123).
+- `assets/profiles/standard/.specify/presets/standard/templates/constitution-template.md` (~124) and
+  `assets/profiles/event-modelling/.specify/presets/event-modelling/templates/constitution-template.md` (~136):
+  principle V's pre-push sentence, D123's wording; `tests/test_commit_boundaries.py`'s phrase kept.
+- `assets/toolkit/skills/planning/SKILL.md` (~221): D123's wording.
 - `assets/toolkit/scripts/verify-stamp.py`: `baseline_path()`, `variable_digests()`, `write_baseline()` called by
   `record()` after the stamp is written on a `slice/<id>` branch, the baseline removed in `begin_full_run()` and on
   the ratchet path of `reuse()`; nothing else changes (its split is S32's).
@@ -154,23 +160,15 @@ starters*): a `Makefile` suffix, the new scripts, `verify-stamp.py`, the gates p
 
 ## Open questions
 
-**Q1 — The pre-push gate and the generated texts that say *whole suite* / *full gate* before the first push.**
-D117 rule 6 and FR-007 put `make verify-scoped` before the first push. Three texts the factory writes into every
-project say otherwise: both constitution templates' principle V (*"The whole suite MUST be green immediately before
-that first implementation push"*, `assets/profiles/*/…/constitution-template.md` lines 136 and 124), the `planning`
-skill (*"run the repository's full gate"*, line 221) and the implement brief (`agents.py` ~135, *the full
-`{layout.make} verify`* before the first push). The ladder would contradict the project's own constitution.
-Options: (a) as D117 says, and reword the three texts to *the scoped gate before the push, the full gate at the
-merge root and in CI* — new projects only; a ratified constitution keeps its words, and the fragment's catch-up says
-so; (b) as D117 says, texts unchanged — the contradiction stands; (c) keep `make verify` before the push (the stamp
-makes it near-free on a tree that passed) and scope only the slice start — departs from FR-007's letter.
-**Recommendation: (a)** — FR-007 is the owner's revised requirement, constitution I's additive clause holds because
-CI and the merge root still run everything, and a template is the factory's to keep consistent; but it rewrites a
-MUST in a constitution template, which is the owner's to approve. Until answered, the plan changes only R11's texts.
+Both answered in iteration 20; the questions as raised are in the entries.
 
-**Q2 — Does the ladder type `-j`?** D89 rule 2 handed this to S06 (*"Whether the ladder types `-j` goes to
-`S06-scoped-gate`, which owns that text"*, Parking Lot); D114–D117 do not answer it. Options: (a) the ladder types
-`make verify-scoped` and `make verify`, no `-j` — D89 rule 1 (the person or harness asks); (b) it types
-`make -j verify-scoped` (the scoped run's units run at once, R9) and keeps `make verify` serial at the merge root;
-(c) `-j` on both. **Recommendation: (a)**, and the Parking Lot line stays: no AC asks for `-j`, CI keeps one check
-after another, and a harness may already export `MAKEFLAGS`.
+**Q1 — answered by D123: (a).** The ladder runs `make verify-scoped` before the first push; both generated
+constitution templates' principle V, the `planning` skill and the implement and converge briefs are reworded to
+*the scoped gate before the first push, the full gate at the merge root and in CI* — the exact words are D123's
+items 1–4 — for new projects only. A ratified constitution keeps its words; the fragment's catch-up note says so and
+quotes the new sentence (D123 item 5). Medium confidence: it reverses if the owner holds a template's MUST as
+theirs to approve, and then only the template sentence parks.
+
+**Q2 — answered by D124: (a).** The ladder types `make verify-scoped` and `make verify`, never `-j`; jobs come
+from the person or the harness (`MAKEFLAGS`), which the scoped run's sub-make inherits (R9). The gates page says
+`make -j verify-scoped` runs the chosen checks at once.

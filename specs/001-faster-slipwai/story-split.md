@@ -270,8 +270,8 @@ that cannot delegate takes the earliest ready slice in split order and names the
   on the experimental path, and so is holding the one-word door — `make -j verify` typed at a root Makefile that
   includes the delivery one — by prerequisite lines read only when `verify` is a goal, or by the ratchet locking its
   read and write of `baseline.json` (D95).
-  Whether the ladder's text types `-j` is `S06-scoped-gate`'s, which owns that text; CI asking for jobs itself
-  comes back as its own question if ever proposed (D89). `make -j verify lint` and every goal but `verify` alone
+  The ladder's text types no `-j` (D124, at `S06-scoped-gate`); typing it, like CI asking for jobs itself,
+  comes back as its own question only with a measurement behind it (D89, D124). `make -j verify lint` and every goal but `verify` alone
   under `-j` are not claimed. For the cruise report: GNU Make 3.81 and 4.3 read, not run (none on this machine);
   a file edited by hand inside the model tooling's installed tree is not seen, as D83 says of the root's.
 - **Seen at S04's implementation (D93).** *S04's lock-matching install settles* the untracked lock, not the first

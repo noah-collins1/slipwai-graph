@@ -2416,3 +2416,63 @@
 - **Confidence:** high · **Would reverse if:** a person would rather close S33 now and carry A1 and A5 as a slice of their own; then T031 moves to the Parking Lot and S33 closes after T030.
 - **Written to:** `specs/001-faster-slipwai/adversary-log.md`; `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/tasks.md` (T030, T031); `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/quickstart.md`; `specs/001-faster-slipwai/story-split.md`
 - **Status:** standing
+
+## D123 — The pre-push gate, and the generated texts that say *whole suite* / *full gate* before the first push
+
+- **Stage:** plan (open question Q1) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T08:10:16Z · **Iteration:** 20
+- **Scope:** global
+- **Question:** D117 rule 6 and FR-007 put `make verify-scoped` before a slice's first push. Four texts the factory writes into every project say the whole suite or the full gate runs there instead:
+  - the sentence in principle V of both constitution templates: *"The whole suite MUST be green immediately before that first implementation push, which is what may land on trunk"*;
+  - the `planning` skill, around line 221: *"run the repository's full gate"*;
+  - the implement brief in `src/slipwai/project/agents.py`, around line 135;
+  - the converge brief in the same file, around line 189: *"Do not run the full `{layout.make} verify`: that gate runs after demo acceptance, immediately before the implementation is pushed"*. The plan did not list this one, but it says the same thing and gets the same treatment.
+
+  If these stay as they are, the ladder contradicts the project's own constitution. Is rewording a MUST in a constitution template something the owner must approve?
+- **Options:**
+  - (a) Follow D117 and reword the texts to *scoped gate before the push, full gate at the merge root and in CI*. This applies to new projects only. A ratified constitution keeps its words, and the fragment's catch-up note says so. This is **the stage's recommendation**.
+  - (b) Follow D117 and leave the texts unchanged, so the contradiction stands.
+  - (c) Keep `make verify` before the push and scope only the slice start. This departs from FR-007's wording.
+- **Decision:** (a), as the stage recommended. It is decided here, not parked. The plan changes the four texts as follows. Every other word in each file stays as it is.
+  1. **Both constitution templates**, at `assets/profiles/standard/.specify/presets/standard/templates/constitution-template.md` line 124 and `assets/profiles/event-modelling/.specify/presets/event-modelling/templates/constitution-template.md` line 136. The sentence *"The whole suite MUST be green immediately before that first implementation push, which is what may land on trunk."* becomes: *"The branch's scoped gate MUST be green immediately before that first implementation push: it runs every check whose inputs changed since the branch last passed the full gate, and it is the full gate wherever it cannot tell. The full gate MUST be green at the merge root and in CI before anything lands on trunk."* This is still a MUST, and nothing is weakened. The template names no `make` command, so it reads the same in an adopted layout. It keeps the phrase `tests/test_commit_boundaries.py` checks for (*immediately before that first implementation push*).
+  2. **`assets/toolkit/skills/planning/SKILL.md`**, lines 221–223. The text becomes: *"After demo acceptance, immediately before the first implementation push, widen to the affected suites, verify static analysis, run the repository's scoped gate where it has one and its full gate otherwise, then run the end-of-phase mutation gate once where required and present its final report (or the reviewed alternate-evidence record and `N/A` rationale). The full gate runs at the merge root and in CI."* Item 3 on line 217 stays as it is, and so does *"After demo acceptance"*, which the test checks for.
+  3. **`src/slipwai/project/agents.py` implement brief**, lines 135–136. The text becomes: *"…do not push, and do not widen to affected suites, static analysis or `{layout.make} verify-scoped`. Those checks belong immediately before the first implementation push, which happens after demo acceptance; the full `{layout.make} verify` runs at the merge root."*
+  4. **`src/slipwai/project/agents.py` converge brief**, lines 189–190. The text becomes: *"Do not run `{layout.make} verify-scoped` or `{layout.make} verify`: the scoped gate runs after demo acceptance, immediately before the implementation is pushed, and the full gate at the merge root."*
+  5. **Catch-up note** in the `changelog.d/` fragment the plan names (`scoped-gate.md`, still to be written). It goes after the note about `make verify-scoped` and `verification.obligations`, and says: *"`slipwai migrate` never touches a constitution you ratified. If your `.specify/memory/constitution.md` still says* The whole suite MUST be green immediately before that first implementation push*, your constitution outranks the ladder, and your agents will keep running `make verify` before the first push. To use the scoped gate there, amend that sentence yourself to the new template's wording (quoted in full in this note), as a constitution amendment of your own. If you leave it, nothing breaks: you only lose the saving before the push. The merge root and CI run `make verify` either way."* The fragment quotes the template's new sentence word for word.
+
+  None of this changes the level. The slice is already MINOR (D114), and `VERSION` stays `1.6.0.dev0`. The plan's Constitution Check XIV bullet and its line *"The generated projects' constitution is not amended by this plan"* get one more sentence. That sentence says the template is reworded for new projects, and that no ratified constitution is touched.
+- **Why:**
+  - **Leaving the contradiction (b) is the one outcome the actor cannot live with.** A generated project's own constitution would forbid what its ladder does. Its principle XIV says the constitution wins over the implementation. A converge or skipper stage reading it would therefore either stall or quietly run the full gate. The factory's constitution I calls *a gate the factory writes but does not hold itself to* a defect.
+  - **(c) is not available.** FR-007's *before the push* comes from the owner's own specification, written at grounding (`abffa52`), and D117 rule 6 stands on it. Reversing it would override a human-authored requirement, not interpret one.
+  - **(a) is not on the owner's *Always ask a person* list:**
+    - It changes nothing the merge root or CI check. Both keep `make verify`, which matches priority 1 and constitution I's *additive* MUST.
+    - It removes no check. Every check whose input changed still runs before the push, and every doubt broadens to the full gate (D115–D117).
+    - It deletes or renames no generated file.
+    - It is not MAJOR. Every constitution a project already ratified keeps its exact words, because the template only seeds the next ratification.
+
+    The scoping before the push is what the owner asked for. The template sentence just follows it.
+  - **The rewording keeps the MUST's force.** It names exactly what *green* means for the scoped gate and adds a MUST for the merge root and CI.
+  - **What would make this a park:** a project's ratified constitution being edited. That would be XIV's *human-amended* line, and it is why the catch-up note hands the amendment to the project's maintainer instead of `migrate`.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** the owner says that rewording a MUST in a generated constitution template is theirs to approve. In that case the template sentence parks and becomes a question for a person, while texts 2–4 and the catch-up note still land.
+- **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/plan.md` (Open questions Q1 answered; Constitution Check XIV; Structure Decision gains the two templates, `assets/toolkit/skills/planning/SKILL.md` and `src/slipwai/project/agents.py`). This repository's own `delivery/skills/planning/SKILL.md` is listed in `delivery/.written`. It is not edited by hand, and it picks up the change when slipwai migrate runs here.
+- **Status:** standing
+
+## D124 — Does the generated ladder's text type `-j` for `verify-scoped` or `verify`?
+- **Stage:** plan (open question Q2) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T08:10:22Z · **Iteration:** 20
+- **Scope:** S06-scoped-gate
+- **Question:** D89 rule 2 left one thing to S06, because S06 owns the ladder's text: should that text type the job flag? D114–D117 do not answer it. D117 rule 5 makes `make -j verify-scoped` run its chosen checks at the same time, the way `make -j verify` does. The question is whether the commands that `drive_command()` and `concurrent_slices()` write should ask for that.
+- **Options:** (a) the ladder types `make verify-scoped` and `make verify` with no `-j`, following D89 rule 1: the person or the harness asks for jobs. This is **the stage's recommendation**. (b) The ladder types `make -j verify-scoped` and keeps `make verify` serial at the merge root. (c) `-j` on both.
+- **Decision:** (a), as the stage recommended.
+  1. The generated ladder types `make verify-scoped` at slice start and before the first push (`{layout.make} verify-scoped` in `concurrent_slices()`). Phase 4 on `main` and the merge root keep `make verify`. Neither command carries `-j`, and neither does the Phase 4 or merge-root `make verify`.
+  2. Jobs come from the person or the harness, as they do for `make verify` (D89 rule 1): a typed `make -j verify-scoped`, or `MAKEFLAGS` exported by the harness. R9 already holds that the scoped run's single sub-make inherits make's jobserver, and R9 e1 shows that.
+  3. The gates page's scoped paragraph (R13) says in one sentence that `make -j verify-scoped` runs the chosen checks at the same time, as `make -j verify` does (D89 rule 8). This is page text inside R13. It adds no criterion, and no AC asks for `-j`.
+  4. The Parking Lot line in `story-split.md` changes from "this is S06's" to the answer. The ladder types no `-j` (D124). Typing it comes back as a question of its own only with a measurement behind it, just as CI asking for jobs itself does (D89 rule 3).
+- **Why:**
+  - Bare `-j` has no limit. Several slices run their pre-push gates at the same time in separate worktrees (`concurrent_slices()`), so if the ladder typed it, every one of those runs would start as many checks as it could on the same machine. A harness that knows the machine can choose the count. Text written into every project cannot.
+  - Under `-j`, the end of the log is whichever check finished last. On GNU Make 3.81 the lines can also interleave (D89 rule 7). The ladder's delegates read a failed gate from the bottom, and the owner brief's taste is a gate that says why it failed in one line. Leaving `-j` out of the ladder keeps that line where they look.
+  - Option (b) would make the ladder's two gate calls behave differently for no reason a reader could see. Option (c) would change what the merge root types. The owner brief's priority 1 and D89 rule 3 keep that as it is, and the owner's Always-ask list sends any change near what the merge root runs to a person.
+  - None of this gives up speed. `MAKEFLAGS` reaches the scoped run through the jobserver (R9), so a harness or person who wants jobs gets them without the text saying so.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** AC-S06-19's demo, or a later measurement, shows that the ladder's scoped runs are the wait a person feels and that the harnesses the factory projects into never pass a job count. Then a bounded flag (`-j<n>` from a documented setting) in the ladder's scoped calls only becomes its own question.
+- **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/plan.md` (Q2 answered; R11 and R13 as above); `specs/001-faster-slipwai/story-split.md` (the Parking Lot line now carries the answer)
+- **Status:** standing
