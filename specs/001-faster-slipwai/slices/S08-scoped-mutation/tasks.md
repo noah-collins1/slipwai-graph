@@ -493,7 +493,7 @@ test section's `.PHONY` line stays untouched, so `migrate`'s three-way merge no 
 ## Phase 2: Host closing tasks
 
 ### T010 — Every suite that reads a generated gate, once, before the gates (host task)
-- [x] *(Done at `3e7aa4f`: 775 tests OK, 1 skipped, 1441 s; lint, typecheck, structure green at T009.)* After T009 is committed and the chain T002 … T008 is: `make test TESTS="$(ls tests | grep -E '^test_(verify_stamp|parallel_gate|model_|gate_|verify_scoped|scoped_|mutation)' | sed 's/\.py$//' | tr '\n' ' ') test_matrix test_commands test_commit_boundaries test_monorepos test_layout test_changelog"`, then `make lint typecheck check-structure`. Not `make verify`.
+- [x] *(Done at `3e7aa4f`: 775 tests OK, 1 skipped, 1441 s; lint, typecheck, structure green at T009.; re-run on the final tip `8e8c66d` after T018–T029: 803 tests OK, 1 skipped, 1419 s.)* After T009 is committed and the chain T002 … T008 is: `make test TESTS="$(ls tests | grep -E '^test_(verify_stamp|parallel_gate|model_|gate_|verify_scoped|scoped_|mutation)' | sed 's/\.py$//' | tr '\n' ' ') test_matrix test_commands test_commit_boundaries test_monorepos test_layout test_changelog"`, then `make lint typecheck check-structure`. Not `make verify`.
 
 ### T011 — Converge, passes as needed (host task)
 - [ ] `drive-converge` over the slice's range; findings append as tasks below.
@@ -706,7 +706,7 @@ Every AC-S08-1..18 has a holding test (trace in the gaps report); these are what
 recommends T026 and T027 land before the demo (a silent green, and a dry run that runs the tool). **Host (coordinator), after
 the gaps:** T026, T027, T028 and T029 land before the demo; T030–T032 and T022–T025 stay for Phase 4.
 
-- [ ] **T026 — HIGH · A project in a git subdirectory reports `no mutant to run` for a changed production file, exit 0
+- [x] *(Done at `403548c`.)* **T026 — HIGH · A project in a git subdirectory reports `no mutant to run` for a changed production file, exit 0
   (G1; AC-S08-2, AC-S08-8, priority 5).** `check-slice-scope.changed_files` gives tracked paths from the repository top
   (`sub/apps/…`) and untracked ones from the project (`check-slice-scope.py:511`, `:515`); `classify` and `sweep_causes`
   (`mutation-scope.py:273–281`, `:322–332`) match project-relative roots, so a committed or modified change is `other`
@@ -716,16 +716,16 @@ the gaps:** T026, T027, T028 and T029 land before the demo; T030–T032 and T022
   set, the `Makefile`, the scope and backend scripts, each service's config, `git show <base>:<path>`) is made
   project-relative through the stamp's `project_prefix()` — or the prefix is a border that sweeps with its reason — with
   a tracked and an untracked example. Files: `mutation-scope.py`, `tests/test_mutation_change_set.py` or a new file.
-- [ ] **T027 — MEDIUM · `make -n mutation` on a slice branch runs the tool (G2; AC-S08-1).** The recipe names
+- [x] *(Done at `699ebec`, amended at `8e8c66d`.)* **T027 — MEDIUM · `make -n mutation` on a slice branch runs the tool (G2; AC-S08-1).** The recipe names
   `$(MAKE)`, so make runs it under `-n`/`-q`/`-t`; the script never asks verify-scoped's `idle` border, and the scoped
   path starts `go-mutation.py`/`./mvnw` itself. Repro: `make -n mutation` with `health.go` edited printed `scope
   apps/service — …` and reached `go run … unleash`. **Owed:** honour `idle` — print the plan and run nothing on every
   path (scoped, per-service sweep, whole sweep, refusal) — with an example under `MAKEFLAGS=n` for each.
-- [ ] **T028 — MEDIUM · The skill's commands collect committed changes only (G4; AC-S08-16, D138 item 2).**
+- [x] *(Done at `ec59223`.)* **T028 — MEDIUM · The skill's commands collect committed changes only (G4; AC-S08-16, D138 item 2).**
   `SKILL.md:84` and `:132` (`git diff <base>...HEAD`) contradict the rewritten `:89`. **Owed:** the section's commands
   include the working tree and untracked files (`git diff <merge-base>` plus `git ls-files --others --exclude-standard`),
   and the test reads the commands, not only the sentence.
-- [ ] **T029 — MEDIUM · Python with mutmut on PATH is refused (G3; AC-S08-5, D137) — decided: D149, option (a).** The
+- [x] *(Done at `eef52fa`.)* **T029 — MEDIUM · Python with mutmut on PATH is refused (G3; AC-S08-5, D137) — decided: D149, option (a).** The
   refusal and the fragment say a Python service is refused until `S42-mutmut-mutation` wires the tool, and that
   `make mutation-full` runs mutmut today where it is installed. Files: `assets/toolkit/scripts/mutation-scope.py`,
   `changelog.d/scoped-mutation.md`, `tests/test_mutation_placeholders.py`, `tests/test_mutation_words.py`. The
