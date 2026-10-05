@@ -294,6 +294,17 @@ def checks_of(data: Database, deployables: dict[str, dict[str, Any]], context: C
     return checks
 
 
+def asked_tools(data: Database) -> set[str] | None:
+    """The tools the stamp asks of the machine, so the baseline holds their answers: a `--tool` each and an
+    `--environment` for each interpreter, from the `VERIFY_STAMP` the project's `verify` recipe hands the stamp script.
+    None where the gate names none."""
+    words = data.variables.get("VERIFY_STAMP", "").split()
+    if "VERIFY_STAMP" not in data.variables:
+        return None
+    return {words[i + 1] for i, word in enumerate(words[:-1]) if word == "--tool"} | {
+        "interpreter " + words[i + 1] for i, word in enumerate(words[:-1]) if word == "--environment"}
+
+
 def units_of(checks: dict[str, Any]) -> dict[str, list[str]]:
     """The units of each gate that has them, as the record's checks hold them."""
     units: dict[str, list[str]] = {}
@@ -524,6 +535,10 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
     base = base or base_of(scope)
     context = Context(deployables, data, packages_of(root, scope, base))
     checks = checks_of(data, deployables, context)
+    asked = asked_tools(data)
+    for entry in checks.values():  # a tool the baseline never asks cannot be told to have changed
+        if asked is not None and entry["inputs"]:
+            entry["inputs"]["tools"] = [tool for tool in entry["inputs"]["tools"] if tool in asked]
     full = compared(root, data, checks) or under_the_full_gate(make, makefile, data)
     reached = None if full is not None else reach.find(root, deployables, context.packages, base)
     services = [name for name, item in deployables.items() if item["kind"] == "service"]

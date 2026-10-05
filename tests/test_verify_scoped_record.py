@@ -133,6 +133,21 @@ class RecordTest(RecordCase):
         self.assertEqual(java["deployables"]["service"]["family"], "java")
         self.assertEqual(java["checks"]["typecheck-service"]["inputs"]["tools"], ["java", "make", "python3"])
 
+    def test_e1_the_tools_a_record_names_are_tools_the_baseline_asks_for(self) -> None:
+        """T047 (G7): a tool the stamp never asks of the machine cannot drift against the baseline, so the record must
+        not name it. `VERIFY_STAMP` is the list: a `--tool` each, and an `--environment` for each interpreter."""
+        buildable = [name for name in SHAPE_TABLE if not name.startswith("integration")]  # their record is not built
+        for shape in buildable:
+            with self.subTest(shape=shape):
+                project = self.project(shape)
+                text = (project / "Makefile").read_text(encoding="utf-8")
+                words = re.search(r"^VERIFY_STAMP := (.*)$", text, re.M).group(1).split()  # type: ignore[union-attr]
+                asked = {words[i + 1] for i, word in enumerate(words) if word == "--tool"}
+                asked |= {"interpreter " + words[i + 1] for i, word in enumerate(words) if word == "--environment"}
+                for unit, check in loaded(project)["checks"].items():
+                    named = set((check["inputs"] or {}).get("tools", []))
+                    self.assertEqual(named - asked, set(), unit)
+
     def test_e5_the_tables_own_claims(self) -> None:
         checks = loaded(self.project("model-typescript-web-cloud"))["checks"]
         for name in ("check-slice-scope", "check-codegraph"):
