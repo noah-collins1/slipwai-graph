@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import pty
+import shutil
 import subprocess
 import tempfile
 import time
@@ -204,15 +205,23 @@ class ExtensionsTest(FactoryTestCase):
             # under a home directory — which has to be arranged, not assumed: the machine running the suite may
             # well have every one of them. Installs are off for the whole suite (`support.py`), so the extension
             # cannot put Node here either, and has to say so.
-            routes = [
-                entry for entry in os.environ["PATH"].split(os.pathsep)
-                if any(os.access(Path(entry) / tool, os.X_OK) for tool in ("codegraph", "npx"))
-            ]
-            if any(os.access(Path(entry) / "sh", os.X_OK) for entry in routes):
-                self.skipTest("`npx` shares a directory with `sh` here, so it cannot be hidden from ./init")
-            without_codegraph = os.pathsep.join(
-                entry for entry in os.environ["PATH"].split(os.pathsep) if entry not in routes
-            )
+            # Where one directory holds `sh` and `npx` alike (`/usr/bin`), it is not dropped from the `PATH`: a shadow
+            # of it is, every other executable linked in and neither route, so the answer never turns on where `npx` is.
+            routes = ("codegraph", "npx")
+            entries = []
+            for number, entry in enumerate(os.environ["PATH"].split(os.pathsep)):
+                if not any(os.access(Path(entry) / tool, os.X_OK) for tool in routes):
+                    entries.append(entry)
+                    continue
+                shadow = Path(directory) / f"shadow-{number}"
+                shadow.mkdir()
+                for name in os.listdir(entry):
+                    if name not in routes:
+                        (shadow / name).symlink_to(Path(entry) / name)
+                entries.append(str(shadow))
+            without_codegraph = os.pathsep.join(entries)
+            for tool in routes:
+                self.assertIsNone(shutil.which(tool, path=without_codegraph), f"`{tool}` is hidden from ./init")
             environment = {
                 key: value for key, value in os.environ.items() if key not in ("NVM_DIR", "VOLTA_HOME", "FNM_DIR")
             } | {"PATH": f"{fake_bin}:{without_codegraph}", "HOME": directory}
