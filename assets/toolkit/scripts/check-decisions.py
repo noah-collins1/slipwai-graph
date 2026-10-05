@@ -51,6 +51,12 @@ printed and counted as an entry; the gate does not.
 writes, once, a `## <id> · predates the adversary gate · <date>` row for every done slice without one, which the gate accepts
 and which says the slice was never attacked. A second baseline is refused.
 
+Every `specs/<feature>/hand-backs.md` and `specs/<feature>/slices/<id>/hand-backs.md` is held to the result-contract
+shape `docs/result-contract.md` writes down: an entry `## <UTC time> — drive-<name> — <stage>` holding one fenced
+`result-contract` block, or a `- **Missing:** <reason>` line, one finding per fault naming the file, the heading and
+the field. The shape itself lives in `hand_backs.py` beside this script. Where no such record exists the gate says and
+does exactly what it did before them; where one does, its summary gains `, <n> hand-back(s) in <m> record(s)`.
+
 A project with no record anywhere passes and says so: the gate runs in `make verify` from the first commit.
 """
 

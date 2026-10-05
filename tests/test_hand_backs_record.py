@@ -2,9 +2,18 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 
-from hand_backs_fixture import HEADING, RECORD, entry, fence, findings, gate, valid
+from hand_backs_fixture import HEADING, RECORD, decision, entry, fence, findings, gate, run, scratch, valid
+from test_decisions_scope import entry as scope_entry
+
+from slipwai.assets import ROOT
+
+RELEASED = "c3c760b"  # the checker as it stood before hand-backs.md was read
 
 
 class RecordStructureTest(unittest.TestCase):
@@ -75,6 +84,77 @@ class RecordStructureTest(unittest.TestCase):
         result = gate(text)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("1 hand-back(s) in 1 record(s)", result.stdout)
+
+
+def released_checker(directory: str) -> Path:
+    path = Path(directory) / "released-check-decisions.py"
+    text = subprocess.run(["git", "show", f"{RELEASED}:assets/toolkit/scripts/check-decisions.py"], cwd=ROOT,
+                          text=True, capture_output=True, check=True, encoding="utf-8").stdout
+    path.write_text(text, encoding="utf-8", newline="\n")
+    return path
+
+
+def empty(repo: Path) -> None:
+    """A project with nothing under specs/."""
+    shutil.rmtree(repo / "specs")
+
+
+def with_logs(repo: Path) -> None:
+    """A project with decisions and a demo, and no record."""
+    demo = ("## 2026-10-03T00:00:00Z — accepted · iteration 1 · drive-hand (sonnet)\n- **Started with:** a\n"
+            "- **Driven through:** b\n- **Examples:** c\n- **Evidence:** none\n- **Feedback:** d\n")
+    (repo / "specs/f/decisions.md").write_text("# Decisions\n\n" + scope_entry(1), encoding="utf-8")
+    (repo / "specs/f/slices/S1/demo-log.md").write_text("# Demo\n\n" + demo, encoding="utf-8")
+
+
+def with_own_specs(repo: Path) -> None:
+    """This repository's own specs/, which holds no hand-backs.md."""
+    shutil.rmtree(repo / "specs")
+    shutil.copytree(ROOT / "specs", repo / "specs")
+
+
+class NothingRecordedTest(unittest.TestCase):
+    def triple(self, build, released: bool) -> tuple[int, str, str]:  # type: ignore[no-untyped-def]
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as other:
+            repo = scratch(directory, decisions=0)
+            if released:
+                shutil.copy(released_checker(other), repo / "scripts/check-decisions.py")
+            build(repo)
+            result = run(repo)
+        return result.returncode, result.stdout, result.stderr
+
+    def test_e1_without_a_record_stdout_stderr_and_exit_equal_the_released_checkers(self) -> None:
+        for build in (empty, with_logs, with_own_specs):
+            with self.subTest(build.__name__):
+                self.assertEqual(self.triple(build, True), self.triple(build, False))
+
+    def test_e1_the_tree_with_logs_is_not_the_empty_answer(self) -> None:
+        returncode, stdout, _ = self.triple(with_logs, False)
+        self.assertEqual(0, returncode)
+        self.assertIn("1 decision(s) in 1 file(s), 1 demo(s) in 1 log(s), every field", stdout)
+
+    def test_e2_a_tree_whose_only_record_is_hand_backs_is_not_nothing_recorded_yet(self) -> None:
+        result = gate(entry(valid() | {"decisions": []}), decisions=0)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertNotIn("nothing recorded yet", result.stdout)
+        self.assertIn("0 decision(s) in 0 file(s), 0 demo(s) in 0 log(s), 1 hand-back(s) in 1 record(s)", result.stdout)
+
+    def test_e2_the_feature_level_record_is_read_too(self) -> None:
+        result = gate(entry("[1]"), path="specs/f/hand-backs.md")
+        self.assertEqual(1, result.returncode)
+        self.assertIn("  specs/f/hand-backs.md:1: ", result.stderr)
+
+    def test_e3_a_malformed_record_and_a_malformed_decision_report_under_one_header(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = scratch(directory, entry("[1]"), decisions=1)
+            broken = decision(1).replace("- **Why:** because\n", "")
+            (repo / "specs/f/decisions.md").write_text("# Decisions\n\n" + broken, encoding="utf-8")
+            result = run(repo)
+        self.assertEqual(1, result.returncode)
+        self.assertEqual(1, result.stderr.count("the record is not in the shape"))
+        self.assertEqual(2, len(findings(result)), result.stderr)
+        self.assertTrue(findings(result)[0].startswith("specs/f/decisions.md"))
+        self.assertTrue(findings(result)[1].startswith(RECORD))
 
 
 if __name__ == "__main__":
