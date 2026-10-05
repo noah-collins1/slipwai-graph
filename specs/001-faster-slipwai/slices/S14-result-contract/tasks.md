@@ -202,3 +202,159 @@ factory module, in order) · T010 after T006 and T009 · T011 last.
 No screen in this slice.
 
 ## Convergence
+
+### Converge pass 1
+
+2026-10-05, cruise iteration 23, `drive-converge` over `git diff c3c760b..cbac143`. There is no `.codegraph/` in this
+tree, so every symbol question went to text search. Probes ran in `/tmp/s14/` on a project generated from this
+branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tree adopt-method slice/S14-result-contract`
+(tree `2a85658`). Each mutation was made on the committed tree and restored with `git checkout -- <path>`.
+
+**Verdict: not converged.** The pass found three HIGH tasks (T012–T014), three MEDIUM (T015–T017) and two LOW
+(T018–T019).
+- **Domain** (`hand_backs.py`): R1–R3 are proven. The fields, the per-type `status` sets, the tolerant reader and the
+  path rule hold, and mutations show the append tests have teeth. Not proven: a record whose preamble is malformed
+  (T015).
+- **Use case:** the gate and its byte-identity when no record exists (R4) hold. `--hand-backs` and the benchmark
+  count give a wrong reading (T012, T018).
+- **Delivery adapter (CLI):** exit codes 0/1/2, stdin and append-only writes hold. Not proven: retry safety (T017)
+  and the usage message (T019).
+- **Screen:** none. The slice has none.
+- **Published contract:** the ten briefs, the drive and cruise text, the page, migrate and the fragment are in
+  place. AC-S14-14's helper clause is neither stated nor pinned (T016), and the quickstart cannot be run as written
+  (T014).
+- **AC-S14-18 holds.** `git diff --name-only c3c760b..cbac143` lists nothing outside the allowed paths. The D123
+  sentences (`agents.py:136-138`, `:193`) and the `commands.py` lines above `{who_runs_each_stage}` are untouched.
+- **The rebase onto S06 is textually clean but leaves the suite red** (T013).
+- **Constitution V evidence is adequate after the fact.** T005's first REDs failed partly for the wrong reason
+  (FileNotFoundError). This pass's mutations of `write` (`"a"`→`"w"`) and of `append`'s fault check each turned the
+  matching `test_hand_backs_append` examples red. T010's examples are characterisation of behaviour that T001–T009
+  built, and the host's after-the-fact break of the brief paragraph is the sanctioned check that they have teeth.
+- **Q1 (MEDIUM for a missing block) and Q2 (`drive-slice`'s own block at feature level, stage `ready-set`) are still
+  the host's to confirm.** T012 shows Q2 interacts with the count.
+- **Record changes still owed by the host:** ADR 0006 does not yet name the page.
+- **The tree was not clean at the start.** `benchmark.json` in this folder was already modified (the host's
+  `start converge` bracket). This pass left it untouched.
+
+- [ ] T012 [US6] **HIGH — `--hand-backs` gives the wrong reading of what was delegated, and its finding line names
+  the stage instead of converge and the type** (AC-S14-11, -13, -15).
+  - **Evidence (wrong line):** `hand_backs.py:303` prints `nothing recorded — a finding for {name}`, where `name` is
+    the stage. `test_hand_backs_coverage.py:90` pins `a finding for implement`, which is the same bug. Changing the
+    text to `a finding for converge`, as `data-model.md:106` and `quickstart.md:42` spell it, fails that test. The
+    line never names the delegate type, although `usage.agents` carries it (`benchmark.py:420`).
+  - **Evidence (wrong count):** `coverage` counts every entry with `delegated: true` (`hand_backs.py:290`).
+    `benchmark.py:508` sets that flag when any sub-agent spent tokens, so the count includes stages that owe no
+    block. Two probes show it:
+    - This slice's own committed `benchmark.json` reads `0 of 4`, with a finding for `plan`. `drive-slice` ran
+      `plan` in its own context, and under Q2 its block goes to the feature record.
+    - A host-run `gaps` stage whose only sub-agent was `Explore` reads `nothing recorded — a finding for gaps`.
+      AC-S14-13 says it should read nothing at all.
+  - **GREEN:**
+    - A stage counts in `m` only when `usage.agents` names a `drive-*` type that owes a block to that record.
+      `drive-slice` owes its block to the feature record, and untyped helpers owe none.
+    - Each line names the stage and the type(s), and reads `a finding for converge`.
+    - The `<stage>` the session passes to `--hand-back` is the open benchmark entry's stage name. Today the ladder
+      only implies this.
+  - **Sweep, across every reader of the delegation:**
+    - `coverage` and `benchmark.hand_back_lines`;
+    - `data-model.md`'s `--hand-backs` example and `quickstart.md` step 3;
+    - the page's `--hand-backs` paragraph, `converge_sentence`, `hand_backs_section`, `slice_record_sentence` and
+      `cruise_sentences` (how `<stage>` is chosen);
+    - `test_hand_backs_coverage` e1–e5, re-pinned to the right text and given an `Explore`-only example and a
+      `drive-slice`-own-context example.
+
+    If the host's answer to Q2 changes where `drive-slice`'s block goes, the rule for which stages count follows it.
+  - Files: `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/agents/benchmark.py`,
+    `assets/toolkit/docs/result-contract.md`, `src/slipwai/project/result_contract.py`,
+    `tests/test_hand_backs_coverage.py`, `tests/test_result_contract_briefs.py`, this folder's `data-model.md` and
+    `quickstart.md`.
+
+- [ ] T013 [US6] **HIGH — the rebase onto S06's tip is textually clean and leaves the suite red.**
+  - **Evidence:** `git merge-tree --write-tree adopt-method slice/S14-result-contract` reports no conflict (tree
+    `2a85658`). On that tree, `test_verify_scoped_record.TableHeldTest.test_e4_every_path_a_check_script_reads_lies_under_one_of_its_recorded_inputs`
+    fails with `<shape>: check-benchmark reads .., under none of ['.specify/', … 'specs/']` for every shape.
+  - **Cause:** `benchmark.py` now loads `hand_backs.py`. S06's scanner then reads the bare `".."` literal at
+    `hand_backs.py:68` as a path input.
+  - **Fix, proven on the scratch tree only:** writing `os.pardir` there makes `TableHeldTest` and
+    `test_hand_backs_shape` green (20 tests OK).
+  - **GREEN:** after the rebase, `make test TESTS="<every test_verify_scoped_* module> <the six S14 modules>
+    test_decisions_scope_gate test_decisions_scope_calls"` passes. Its six errors on the scratch tree came only from
+    that tree having no git history (`git show c3c760b:`/`596740f:`); they must resolve on the rebased branch.
+  - **Sweep:** S06's `TableHeldTest` over every check script this slice changed or added: `check-decisions.py`,
+    `agents/benchmark.py`, `hand_backs.py`, and every string literal in them the scanner can read as a path. Do not
+    widen S06's table or its `NOT_AN_INPUT`; that is S06's surface (D129).
+  - Files: `assets/toolkit/scripts/hand_backs.py` (and the other two scripts, only if the sweep finds a literal
+    there).
+
+- [ ] T014 [US6] **HIGH — the demo script cannot be run as written** (AC-S14-19).
+  - **Evidence:**
+    - Step 1 generates with `--no-init`. In `/tmp/s14/c1/demo`, step 2's `make agents` then fails with `agent
+      projection failed: cannot determine the selected integration; rerun ./init --integration <agent>`.
+    - Step 2 never gives the dispatch command. `claude --help` lists `--agent <agent>`, but the script does not say
+      how a typed delegate's own final message reaches `handback.txt`, rather than the outer session's message.
+    - Step 3's expected `gaps …: nothing recorded — a finding for converge` is not what the code prints (T012).
+  - **GREEN:** every command in steps 1–4 is written out exactly — the init or integration step, the headless
+    `--agent` dispatch and its capture, and the fixture `benchmark.json` for step 3. Each has been run once in
+    `/tmp/s14/` up to the point where a real model call is needed, and its expected output is the code's.
+  - **Sweep:** every expected-output line in `quickstart.md`, checked against the code that prints it.
+  - Files: this folder's `quickstart.md`.
+
+- [ ] T015 [US6] **MEDIUM — the gate crashes with a traceback on a record whose preamble holds an unclosed
+  `result-contract` fence** (AC-S14-6).
+  - **Evidence:** the record `# T`, then an unclosed fence opened with the `result-contract` info string, then
+    `{`, then `## 2026-10-05T10:00:00Z — drive-gaps — gaps`, then `- **Missing:** no continuation`. Running
+    `python3 -B scripts/check-decisions.py` on it in the generated project gives `IndexError: list index out of
+    range` at `hand_backs.py:154` (`entries[-1]` with no entry yet).
+  - **Why it matters:** `check-decisions.py:111` promises one line naming the file and never a traceback.
+  - **GREEN:** a finding naming the file and line, exit 1.
+  - **Sweep:**
+    - every `entries[-1]` in `extract`, and `blocks_in`;
+    - a test that runs the gate over each R3 fixture with each content (no fence, a closed `result-contract` fence,
+      an unclosed one, another info string) placed before the first heading, and asserts no traceback on stderr.
+  - Files: `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_record.py`.
+
+- [ ] T016 [US6] **MEDIUM — AC-S14-14's first half is neither stated nor pinned.**
+  - **Evidence:**
+    - `result_contract.py:41`'s paragraph says *Whatever you started and did not finish … goes inside that one
+      block*. That covers unfinished work, not the untyped helpers a delegate dispatches (Explore, general-purpose,
+      `drive-implement`'s fan-out groups), and D134 item 6 asks for those to report inside the delegate's one block.
+    - No test mentions helpers (searching the briefs test, the module and the page for `helper` finds nothing).
+  - **GREEN:** the paragraph says that helpers the delegate starts get no block and no entry of their own, and that
+    what they did is reported in its own block. A test holds this for all ten types, in both layouts.
+  - **Sweep:** `brief_paragraph`, the page's *The record* section, and the `drive-implement` brief's fan-out text.
+  - Files: `src/slipwai/project/result_contract.py`, `assets/toolkit/docs/result-contract.md`,
+    `tests/test_result_contract_briefs.py`.
+
+- [ ] T017 [US6] **MEDIUM — retrying `--hand-back` duplicates the entry** (constitution II: *a retry MUST NOT be
+  able to duplicate a side effect; a test proving this MUST accompany each new write path*).
+  - **Evidence:** `append` and `write` (`hand_backs.py:233-270`) append without looking at what is there. A session
+    that retries after an interrupted stage close writes the same block twice, with two headings.
+  - **GREEN:** the same type, stage and byte-identical block as the record's last entry for that type and stage is a
+    no-op with exit 0 and a stderr note. A different block is still appended, because D134 says a wrong entry is
+    followed by a new one. `--hand-back-missing` follows the same rule.
+  - **Sweep:** both write verbs, each with its retry test.
+  - Files: `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`,
+    `tests/test_hand_backs_append.py`.
+
+- [ ] T018 [US6] **LOW — `make benchmark` and `--hand-backs` can count different blocks** (AC-S14-15).
+  - **Evidence:** `benchmark.py:877` passes `known=None`, while `check-decisions.py` (`coverage_verb`) passes the
+    feature's `D<n>` ids. A block naming an absent `D9999` therefore counts in `n` for the benchmark and fails the
+    gate.
+  - **Impact:** on a green tree the gate refuses such a record, so the two agree. They differ only on a red tree,
+    or on a slice branch cut before its `D<n>` was written on trunk. Even so, *n* should count only blocks that
+    pass the gate.
+  - **GREEN:** both callers pass the same `known`. The decision-id reading lives in one function, which the gate,
+    the coverage verb and the benchmark all call.
+  - **Sweep:** every caller of `coverage` and `check_block`.
+  - Files: `assets/toolkit/scripts/agents/benchmark.py`, `assets/toolkit/scripts/check-decisions.py`,
+    `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_coverage.py`.
+
+- [ ] T019 [US6] **LOW — the three verbs refuse a directory with a trailing slash or a leading `./`, and print only
+  the usage text.**
+  - **Evidence:** in the generated project, `--hand-back specs/f/slices/S1/ …` and `--hand-back ./specs/f/slices/S1
+    …` both exit 2. A stage name such as `after_converge` is refused the same way, without the line saying which
+    argument failed.
+  - **GREEN:** the directory is normalised before the `FOLDER` match, and each refusal adds one line naming the
+    argument.
+  - **Sweep:** `hand_back_verb` and `coverage_verb`.
+  - Files: `assets/toolkit/scripts/check-decisions.py`, `tests/test_hand_backs_append.py`.
