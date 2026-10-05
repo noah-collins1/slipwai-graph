@@ -1,0 +1,5 @@
+mutation: the sweep runs — this is the trunk (`main`)
+install and configure mutmut for the selected production packages
+make[1]: *** [Makefile:230: mutation-full] Error 2
+make: *** [Makefile:227: mutation] Error 2
+exit=2

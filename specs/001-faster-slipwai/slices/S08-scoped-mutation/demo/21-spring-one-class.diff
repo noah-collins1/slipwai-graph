@@ -1,0 +1,21 @@
+diff --git a/apps/service/src/main/java/com/example/demospring/health/HealthStatus.java b/apps/service/src/main/java/com/example/demospring/health/HealthStatus.java
+index f4a11de..665d74f 100644
+--- a/apps/service/src/main/java/com/example/demospring/health/HealthStatus.java
++++ b/apps/service/src/main/java/com/example/demospring/health/HealthStatus.java
+@@ -13,6 +13,15 @@ public record HealthStatus(String status) {
+ 
+     /** What this service reports before any slice has been built. */
+     public static HealthStatus check() {
+-        return new HealthStatus("ok");
++        return new HealthStatus(Label.of(0));
++    }
++
++    /** Names the health for a count of failed dependency checks. */
++    static final class Label {
++        private Label() {}
++
++        static String of(int failures) {
++            return failures > 0 ? "degraded" : "ok";
++        }
+     }
+ }

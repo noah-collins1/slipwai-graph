@@ -1,0 +1,5 @@
+mutation: no mutant to run — only tests changed: apps/service/health/health_test.go; `make mutation-full` is the run that measures them
+mutation: skip apps/service — no changed production file
+mutation: skip apps/billing — no changed production file
+mutation: 0 scoped, 0 swept, 2 skipped, 0 refused; passed
+exit=0

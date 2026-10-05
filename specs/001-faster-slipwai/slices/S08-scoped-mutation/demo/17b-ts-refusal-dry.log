@@ -1,0 +1,6 @@
+python3 scripts/mutation-scope.py --make "make" --makefile "Makefile" typescript:apps/service
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: scoped to 2 changed file(s) since `main` at 3acaa6a: apps/service/src/adapters/driven/event-store-memory.ts, apps/service/src/adapters/driving/http/app.ts
+mutation: refuse apps/service — Configure the repository-selected Stryker mutator, then run its checked-in configuration; the scope will apply once a tool is wired; it would mutate: apps/service/src/adapters/driven/event-store-memory.ts, apps/service/src/adapters/driving/http/app.ts
+mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; dry run — would fail: apps/service
+exit=0

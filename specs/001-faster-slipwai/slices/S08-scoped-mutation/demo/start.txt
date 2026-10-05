@@ -1,0 +1,10 @@
+2026-10-05T22:08:37Z
+a70c4f3
+slice/S08-scoped-mutation
+1.6.0.dev0
+slipwai 1.6.0.dev0
+Model name:                              12th Gen Intel(R) Core(TM) i5-12400
+12
+go version go1.27.1 linux/amd64
+openjdk version "25.0.4.1" 2026-08-18 LTS
+GNU Make 4.4.1

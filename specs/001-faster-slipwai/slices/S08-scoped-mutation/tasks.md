@@ -746,6 +746,11 @@ the gaps:** T026, T027, T028 and T029 land before the demo; T030–T032 and T022
   "mutation"*; AC-S08-14: a stamp written, then reused after `make mutation`, and `verify-scoped` from a scoped baseline
   not broadened; AC-S08-15: the adopted example sees the recorded command run.
 
+### T033 — [US2] HIGH — A scoped Go run whose changed code no test reaches fails where the sweep passes (demo 1, `implementation`)
+
+- [ ] **Finding** (drive-hand, demo 1, iteration 23; `demo/24-uncovered-scoped.log`, `demo/24-uncovered-full.log`). In the two-service Go starter on `slice/demo`, a new untested `func Degraded(failures int) bool` in `apps/service/health/health.go` gives `Killed: 0, Lived: 0, Not covered: 2 … Test efficacy: 0.00% … ERROR: below efficacy-threshold`, then `failed: apps/service`, exit 2; `make mutation-full` on the same tree passes (efficacy 100%) and `make test` passes. The project's `.gremlins.yaml` and the Makefile note promise *not covered* is reported and never fails the run. Gremlins scores zero tested mutants as 0% efficacy; the `SINCE=` path before this slice had the same flaw, and scoping by default makes every slice branch meet it. **RED:** a scoped run whose mutants are all not covered passes, naming the not-covered count; a scoped run with a lived mutant still fails. **GREEN — the class:** every scoped run judges by the same rule the sweep's configuration states, for every wired backend — Go's efficacy over zero tested mutants, and PIT's equivalent (`mutationThreshold` with zero covered) — and the words say what was not covered. **Also from the demo, LOW:** the Python refusal names the factory-internal `S42-mutmut-mutation` (say "until a later slipwai release wires mutmut"); the Go scoped line prints after Gremlins' output when piped (flush); `make help` does not say `mutation` scopes on a slice branch; a dry run ends "passed" (say "planned"); the quickstart's scenario 5 `SINCE=HEAD~1` sweeps because `add-service` rewrote the rule (reword the step). **Files:** `assets/languages/go/scripts/go-mutation.py` or `assets/toolkit/scripts/mutation-scope.py`, `src/slipwai/project/mutation.py`, `src/slipwai/project/native_commands.py`, the tests, `quickstart.md`.
+
+
 ## Phase 4: After acceptance (host tasks)
 
 ### T014 — The adversary pass (host task)
