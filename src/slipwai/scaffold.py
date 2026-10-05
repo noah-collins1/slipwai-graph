@@ -34,6 +34,7 @@ from .project.drive_settings import drive_config
 from .project.event_model import event_model_workflow
 from .project.existing import existing_deployment_page
 from .project.frontend import frontend_files
+from .project.gate import stamped
 from .project.gitignore import build_artifacts
 from .project.ground_command import ground_command_files
 from .project.guidance import agent_guidance, architecture
@@ -48,6 +49,7 @@ from .project.readme import readme
 from .project.renovate import renovate_config
 from .project.repository import repository_files
 from .project.run_skill import run_skill
+from .project.scoped_targets import RULES_PATH, rules_file
 from .project.shared_packages import PACKAGES
 from .project.stage_models import stage_models
 from .project.strangle_command import strangle_files
@@ -96,6 +98,7 @@ def project_files(
     `services_of` and `web_apps` mean the generated ones.
     """
     event = profile == "event-modelling"
+    gate = makefile(project_name, profile, apps, target, layout)
     generated = {
         "README.md": readme(project_name, profile, apps, target),
         "project.json": metadata(project_name, profile, target, apps, layout, adoption, parallel_safe=parallel_safe),
@@ -103,7 +106,7 @@ def project_files(
         ".gitignore": build_artifacts(event, apps, target),
         ".gitattributes": GITATTRIBUTES,
         "renovate.json": renovate_config(apps),
-        "Makefile": makefile(project_name, profile, apps, target, layout),
+        "Makefile": gate,
         "AGENTS.md": agent_guidance(profile, apps, target),
         ".claude/settings.json": claude_settings(apps, target, layout),
         ".specify/models.json": stage_models(),
@@ -114,6 +117,8 @@ def project_files(
         f"{PACKAGES}/.gitkeep": "",
         "skills/run-the-app/SKILL.md": run_skill(project_name, apps, layout),
     }
+    if stamped(apps, layout):  # what `verify-scoped` compares the Makefile it finds with; an adopted gate has no record
+        generated[RULES_PATH] = rules_file(gate)
     if event:
         generated[".github/workflows/event-model.yml"] = event_model_workflow(layout.make)
     if adoption is not None:

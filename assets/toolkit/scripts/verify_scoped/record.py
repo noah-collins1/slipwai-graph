@@ -24,7 +24,8 @@ SCHEMA = 1
 MODEL = "docs/event-model/model.yaml"
 DATABASE = ("-npq", ".DEFAULT")
 RULE = re.compile(r"^([^\s#:=%][^:=]*?)::?(?!=)\s*(.*)$")
-ASSIGNED = re.compile(r"^(\w+) :?= (.*)$")
+ASSIGNED = re.compile(r"^(\w+) (:?=) (.*)$")
+ORIGIN = re.compile(r"^# (makefile \(from |'override' directive|environment|command line|default|automatic|makefile$)")
 MAKE_STATE = ("MAKEFLAGS", "MFLAGS", "MAKELEVEL", "MAKEOVERRIDES")
 SERVICE_KINDS = ("service", "web")
 ALWAYS_TOOLS = ("make", "python3")
@@ -42,6 +43,9 @@ class Database(NamedTuple):
     needs: dict[str, list[str]]  # target -> prerequisites, in the order the rules gave them
     recipes: dict[str, list[str]]
     variables: dict[str, str]
+    order_only: dict[str, list[str]] = {}  # target -> what it waits for without being rebuilt by it (`a: | b`)
+    origins: dict[str, str] = {}  # variable -> `file` where the Makefile assigns it, else the kind make prints
+    flavours: dict[str, str] = {}  # variable -> `:=` (simple) or `=` (recursive)
 
 
 def database(make: str, makefile: str) -> Database:
@@ -56,25 +60,34 @@ def database(make: str, makefile: str) -> Database:
     needs: dict[str, list[str]] = {}
     recipes: dict[str, list[str]] = {}
     variables: dict[str, str] = {}
+    order_only: dict[str, list[str]] = {}
+    origins: dict[str, str] = {}
+    flavours: dict[str, str] = {}
     current: list[str] = []
+    origin = ""
     for line in done.stdout.splitlines():
         if line.startswith("\t"):
             for target in current:
                 recipes.setdefault(target, []).append(line[1:])
             continue
-        if line.startswith("#"):  # the database's own notes, among them the one that heads each recipe
+        if line.startswith("#"):  # the database's own notes: the one that heads each recipe, and each variable's origin
+            origin = "file" if line.startswith("# makefile (from") else line[2:] if ORIGIN.match(line) else origin
             continue
         assigned = ASSIGNED.match(line)
         if assigned:
-            variables[assigned.group(1)] = assigned.group(2)
+            name = assigned.group(1)
+            variables[name], flavours[name], origins[name] = assigned.group(3), assigned.group(2), origin
             current = []
             continue
         rule = RULE.match(line)
         current = rule.group(1).split() if rule else []
+        normal, _, ordered = (rule.group(2) if rule else "").partition("|")
         for target in current:
             known = needs.setdefault(target, [])
-            known.extend(word for word in (rule.group(2).split("|")[0].split() if rule else []) if word not in known)
-    return Database(needs, recipes, variables)
+            known.extend(word for word in normal.split() if word not in known)
+            later = order_only.setdefault(target, [])
+            later.extend(word for word in ordered.split() if word not in later and word not in known)
+    return Database(needs, recipes, variables, order_only, origins, flavours)
 
 
 def family_of(deployable: dict[str, Any]) -> str:

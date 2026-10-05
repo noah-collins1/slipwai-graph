@@ -21,8 +21,14 @@ gate, so a name is never a way to skip a check.
 """
 from __future__ import annotations
 
+import importlib.util
+import json
 import re
+import sys
+from functools import cache
+from typing import Any
 
+from ..assets import TOOLKIT_ROOT
 from ..layout import Layout
 from ..services import App, services_of, web_apps
 from .gate import stamped
@@ -31,6 +37,7 @@ from .parallel_gate import FIRST, SYNC, in_recipe
 
 CHECKS = ("lint", "typecheck", "test")
 NPM_PACKAGES = "build-packages"
+RULES_PATH = "scripts/verify_scoped/rules.json"
 NO_RECORD = "this layout has no verification-dependency record yet — the full gate runs"
 ORDER = "ifeq ($(origin VERIFY_ORDER),command line)"
 HEADER = """
@@ -171,3 +178,28 @@ def scoped_section(apps: list[App], layout: Layout) -> str:
             text += rule(family, [FIRST, *([SYNC] if language == "python" else [])], shared_lines)
         text += rules
     return f"{HEADER}.PHONY: {' '.join(names)}\n{text}{order_rules(apps)}{verify_scoped_rule()}"
+
+
+@cache
+def rules_module() -> Any:
+    """`scripts/verify_scoped/rules.py` as the toolkit ships it, loaded and never copied: the one canonical form of a rule
+    and the reader of the factory's own text. No bytecode is written beside it, as `assets.py` does for its other loads."""
+    source = TOOLKIT_ROOT / "scripts/verify_scoped/rules.py"
+    spec = importlib.util.spec_from_file_location("slipwai_verify_scoped_rules", source)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load the rules reader from {source}")
+    module = importlib.util.module_from_spec(spec)
+    previous = sys.dont_write_bytecode
+    try:
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = previous
+    return module
+
+
+def rules_file(makefile_text: str) -> str:
+    """The text of `scripts/verify_scoped/rules.json` for the `Makefile` text a stamped project is given: what the
+    factory wrote, read by the same code the project's script reads make's database with. A construct that code cannot
+    read raises here, so it fails the factory's tests and never reaches a project."""
+    return json.dumps(rules_module().from_text(makefile_text), indent=2, sort_keys=True) + "\n"
