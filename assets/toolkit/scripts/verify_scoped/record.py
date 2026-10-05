@@ -224,6 +224,43 @@ def models_of(root: Path, scope: Any, base: str | None) -> list[object]:
         raise RecordError("the model cannot be read: " + str(error).replace("\n", " ")[:100]) from error
 
 
+def named_by(models: list[object]) -> list[str] | None:
+    """Every path a slice of the model names as evidence (`gwt`, `code`, a mockup's `at`), the working tree's and the
+    base's, as `check-model` requires each to exist: a file as it is, a directory or a missing path with a `/` so a
+    file under it is read too. None where a model was there and could not be read as a mapping."""
+    found: set[str] = set()
+    for model in models:
+        if not isinstance(model, dict):
+            return None
+        items = model.get("slices")
+        for item in items if isinstance(items, list) else []:
+            if not isinstance(item, dict):
+                continue
+            for key in ("gwt", "code"):
+                value = item.get(key)
+                found.update(path for path in (value if isinstance(value, list) else [value]) if isinstance(path, str))
+            for frame in item.get("frames") or []:
+                for mockup in (frame.get("mockups") if isinstance(frame, dict) else None) or []:
+                    at = mockup.get("at") if isinstance(mockup, dict) else None
+                    found.update([at] if isinstance(at, str) and not at.startswith(("http://", "https://")) else [])
+    return sorted(path.removeprefix("./") for path in found if path.removeprefix("./"))
+
+
+def with_named(checks: dict[str, Any], root: Path, models: list[object]) -> None:
+    """`check-model` reads what the model names, so each such path is one of its file inputs; where a model cannot be
+    read as a mapping it is a check with no recorded inputs, which always runs."""
+    entry = checks.get("check-model")
+    if entry is None or entry["inputs"] is None:
+        return
+    named = named_by(models)
+    if named is None:
+        entry.update(inputs=None, claims=False, always=NO_INPUTS)
+        return
+    files = set(entry["inputs"]["files"])
+    files.update(path if (root / path).is_file() else path.rstrip("/") + "/" for path in named)
+    entry["inputs"]["files"] = sorted(files)
+
+
 def contracts_of(deployables: dict[str, dict[str, Any]], context: Context, models: list[object]) -> list[dict[str, Any]]:
     contracts: list[dict[str, Any]] = []
     for name in deployables:
@@ -334,7 +371,8 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
     context = Context(deployables, data, packages_of(root, scope, base))
     checks = checks_of(data, deployables, context)
     services = [name for name, item in deployables.items() if item["kind"] == "service"]
-    models = models_of(root, scope, base) if len(services) > 1 else []
+    models = models_of(root, scope, base) if len(services) > 1 or "check-model" in checks else []
+    with_named(checks, root, models)
     obligations = obligations_of(declared(root, scope, base), deployables, checks)
     return {"schema": SCHEMA, "deployables": deployables, "checks": checks,
             "contracts": contracts_of(deployables, context, models), "obligations": obligations}

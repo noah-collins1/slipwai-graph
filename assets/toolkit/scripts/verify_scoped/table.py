@@ -42,22 +42,22 @@ EVERY_CHECK_WAITS = "every check waits on it"
 CHECKS: dict[str, Row] = {
     "check-openapi": Row(("{svc}", "packages/api-client/", "package.json", "package-lock.json", ".nvmrc"),
                          ("node", "npm", "{svc}")),
-    "check-imports": Row(("{dep}", "{npm}")),
-    "check-migrations": Row(("{dep}",), ("git",)),
+    "check-imports": Row(("apps/", "packages/", "{dep}")),  # walks both, a deployable or not, and project.json's paths
+    "check-migrations": Row(("apps/", "packages/"), ("git",)),  # likewise: a package's migrations are read too
     "check-styles": Row(("{web}",)),
     "check-ux-gates": Row(
         ("{web}", ".slipwai/extensions.json", "AGENTS.md", "package-lock.json", ".github/workflows/verify.yml"),
         ("git", "node", "npm"),
         ("UX_GATES_REQUIRE", "UX_GATES_SINCE", "UX_GATES_SHARD", "SLIPWAI_NO_INSTALL"),
     ),
-    "check-model": Row(("docs/event-model/", "{dep}")),
+    "check-model": Row(("docs/event-model/", "{dep}")),  # and every path the model names (`record.py` adds them)
     "check-drawio": Row(("docs/event-model/model.yaml", "docs/event-model/model.drawio"), ("node", "npm")),
     "check-decisions": Row(("specs/", "docs/event-model/model.yaml")),
     "check-benchmark": Row(
         ("specs/", ".specify/", "docs/event-model/model.yaml", "AGENTS.md", "agents/", "commands/", "skills/"),
         ("git",),
     ),
-    "check-flags": Row(("{dep}", "packages/", "infra/service/flags.auto.tfvars"), ("git",)),
+    "check-flags": Row(("apps/", "packages/", "{dep}", "infra/service/flags.auto.tfvars"), ("git",)),  # SOURCE_TREES
     "check-deploy-role": Row(("infra/bootstrap/", "infra/service/")),
     "check-python": Row(claims=False, always=EVERY_CHECK_WAITS),
     "check-slice-scope": Row(

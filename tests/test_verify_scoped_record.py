@@ -21,6 +21,7 @@ from typing import Any
 
 from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE, git
 from support import FactoryTestCase, commit_all
+from test_scoped_targets import SHAPES as SHAPE_TABLE
 from test_scoped_targets import build
 
 from slipwai.assets import ROOT
@@ -42,8 +43,6 @@ NOT_AN_INPUT = {
     ".": "the project's own directory, as a working directory",
     "init": "a subcommand of a tool a check launches, not a path",
     ".claude/projects": "under the user's home (`Path.home()`), where the benchmark reads session transcripts",
-    "packages": "a directory walked to find the packages in it: what a check reads inside is `{npm}`'s, and a"
-                " `packages/<p>/` with no `package.json` claims nothing, so it runs the full gate (R5)",
 }
 
 
@@ -251,8 +250,10 @@ def reads_of(path: Path, project: Path) -> set[str]:
 
 
 def covered(literal: str, files: list[str]) -> bool:
+    """An entry at or above the literal. A directory the script walks is covered by the directory, never by one
+    entry somewhere under it: that reads less than the script does."""
     return any(entry == "./" or literal.rstrip("/") == entry.rstrip("/") or (entry.endswith("/")
-               and literal.startswith(entry)) or entry.startswith(literal.rstrip("/") + "/") for entry in files)
+               and literal.startswith(entry)) for entry in files)
 
 
 def modules_of(project: Path, entry: Path) -> set[Path]:
@@ -296,7 +297,7 @@ class TableHeldTest(RecordCase):
     """The file column against the scripts: a check's script, and what it imports, names no project path the check's
     recorded inputs leave out. A check with no recorded inputs is held to nothing."""
 
-    SHAPES = ("model-typescript-web-cloud", "model-go-azure", "model-python-sqlite")
+    SHAPES = tuple(SHAPE_TABLE)  # every shape the factory generates for the scoped gate, a cloud one among them
 
     def findings(self) -> list[str]:
         records = importlib.import_module("verify_scoped.record")  # the script's own reading of the make database
@@ -305,6 +306,8 @@ class TableHeldTest(RecordCase):
         fired: set[str] = set()
         for shape in self.SHAPES:
             project = self.project(shape)
+            if record(project).returncode != 0:  # a shape whose record is refused (`integration`) has no table to hold
+                continue
             data = loaded(project)
             was = os.getcwd()
             os.chdir(project)

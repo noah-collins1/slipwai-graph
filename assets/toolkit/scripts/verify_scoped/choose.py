@@ -27,6 +27,7 @@ BUILD_DIRECTORY_FAMILIES = ("go", "java")  # whose three units build in one dire
 UNCHANGED = "none of its inputs changed"
 MAKEFILES = ("Makefile", "GNUmakefile", "makefile")
 PROJECT_JSON = "project.json"
+WALKS = ("apps/", "packages/")  # directories a check walks whole: a changed path there chooses it, and is not known by it
 
 
 class Choice(NamedTuple):
@@ -165,11 +166,12 @@ def choose(record: dict[str, Any], data: Database, changed: list[str], drifted: 
 
 def claimed(path: str, record: dict[str, Any]) -> bool:
     """Whether a deployable, a contract or a claiming check's file inputs hold the path: a check that always runs and
-    one with no recorded inputs claim nothing, however much they read."""
+    one with no recorded inputs claim nothing, however much they read; a directory a check walks whole (`apps/`,
+    `packages/`) is read by it and known by none, since a package nobody builds is a path this script cannot reason about."""
     if any(is_input(path, entry) for contract in record["contracts"] for entry in contract["paths"]):
         return True
-    return any(check["claims"] and any(is_input(path, entry) for entry in (check["inputs"] or {}).get("files", []))
-               for check in record["checks"].values())
+    return any(check["claims"] and any(is_input(path, entry) for entry in (check["inputs"] or {}).get("files", [])
+                                       if entry not in WALKS) for check in record["checks"].values())
 
 
 def unknown(record: dict[str, Any], changed: list[str], is_gate_script: Callable[[str], bool]) -> list[tuple[str, str]]:
