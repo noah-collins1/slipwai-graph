@@ -735,14 +735,15 @@ def variable_digests() -> dict[str, str]:
     return {name: hashlib.sha256(variable_record(name)).hexdigest() for name in VARIABLES}
 
 
-def write_baseline(tools: dict[str, str]) -> None:
-    """Beside a stamp just written, where the branch is a `slice/<id>`: the branch, the tools the run asked at its start
-    and the variables' digests, for a scoped run to compare with. Nothing is written on any other branch."""
+def write_baseline(tools: dict[str, str], ignored: str) -> None:
+    """Beside a stamp just written, where the branch is a `slice/<id>`: the branch, the tools the run asked at its start,
+    the variables' digests and the key's `ignored` part (`key_parts`' own digest of the files git ignores, no name of
+    one), for a scoped run to compare with. Nothing is written on any other branch."""
     ref = git_or_nothing("symbolic-ref", "-q", "HEAD").removesuffix(b"\n").decode("utf-8", "surrogateescape")
     branch = ref.removeprefix("refs/heads/")
     if not trunk_module().SLICE_BRANCH.match(branch):
         return
-    baseline = {"branch": branch, "tools": tools, "variables": variable_digests()}
+    baseline = {"branch": branch, "tools": tools, "variables": variable_digests(), "ignored": ignored}
     write_file(baseline_path(), json.dumps(baseline, indent=2, sort_keys=True) + "\n")
 
 
@@ -904,7 +905,7 @@ def record(options: Options) -> int:
     except OSError as error:
         return not_recorded("cannot write " + shown(stamp_path()) + " (" + (error.strerror or str(error)) + ")")
     try:
-        write_baseline(key["tools"])  # type: ignore[arg-type]
+        write_baseline(key["tools"], parts["ignored"])  # type: ignore[arg-type]
     except (OSError, CannotTell):
         pass  # the stamp stands; a scoped run finds no baseline and runs the full gate
     try:

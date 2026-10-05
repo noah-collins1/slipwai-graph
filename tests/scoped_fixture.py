@@ -40,7 +40,8 @@ spec = importlib.util.spec_from_file_location("stamp", "scripts/verify-stamp.py"
 stamp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(stamp)
 found = record.database("make", "Makefile").variables["VERIFY_STAMP"]
-stamp.write_baseline(stamp.machine_tools(stamp.Options(["--make", "make", *found.split()])))
+tools = stamp.machine_tools(stamp.Options(["--make", "make", *found.split()]))
+stamp.write_baseline(tools, stamp.key_parts(tools)[1]["ignored"])
 """
 
 

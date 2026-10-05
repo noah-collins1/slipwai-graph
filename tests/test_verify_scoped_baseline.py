@@ -1,9 +1,10 @@
 """R7, the writing half (AC-S06-9): a full green run on a slice branch leaves the baseline; any full run removes it.
 
 `verify-stamp.py record` writes `verify-baseline-<project>.json` beside the stamp, only where it writes the stamp and
-only on a `slice/<id>` branch: the branch, the tools the run asked at its start, and a SHA-256 of each variable's
-record — never a value. `begin_full_run` and the ratchet path of `reuse` remove it. What is read is the file; what ran
-is the stand-ins' log. The stamp's own fields are untouched (e8), and `test_verify_stamp_*` keep holding that.
+only on a `slice/<id>` branch: the branch, the tools the run asked at its start, a SHA-256 of each variable's
+record — never a value — and the key's `ignored` digest (D125), no name of a file. `begin_full_run` and the ratchet
+path of `reuse` remove it. What is read is the file; what ran is the stand-ins' log. The stamp's own fields are
+untouched (e8), and `test_verify_stamp_*` keep holding that.
 """
 from __future__ import annotations
 
@@ -51,16 +52,28 @@ class BaselineTest(ScopedCase):
             os.environ.update(was)
             os.chdir(here)
 
+    def ignored_digest(self, tools: dict[str, str]) -> str:
+        """The stamp key's `ignored` part, as `key_parts` computes it for the tree as it stands."""
+        code = ("import importlib.util, sys\nsys.dont_write_bytecode = True\n"
+                "spec = importlib.util.spec_from_file_location('stamp', 'scripts/verify-stamp.py')\n"
+                "stamp = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(stamp)\n"
+                f"print(stamp.key_parts({tools!r})[1]['ignored'])")
+        done = subprocess.run([sys.executable, "-B", "-c", code], cwd=self.repo, env=self.environment(None),
+                              check=True, capture_output=True, text=True, timeout=120)
+        return done.stdout.strip()
+
     def test_e1_a_green_run_on_a_slice_branch_writes_the_branch_the_tools_and_digests(self) -> None:
         env: dict[str, str | None] = {
             "UX_GATES_SINCE": "", "SLIPWAI_NO_INSTALL": "secret-value-1", "UX_GATES_REQUIRE": None,
         }
         self.green(env)
         written = self.baseline()
-        self.assertEqual(set(written), {"branch", "tools", "variables"})
+        self.assertEqual(set(written), {"branch", "tools", "variables", "ignored"})
         self.assertEqual(written["branch"], "slice/S1")
         self.assertEqual(written["tools"], self.stamp()["tools"])
         self.assertEqual(written["variables"], self.digests(env))
+        self.assertEqual(written["ignored"], self.ignored_digest(written["tools"]))  # type: ignore[arg-type]
+        self.assertRegex(str(written["ignored"]), r"^[0-9a-f]{64}$", "the ignored part is one digest, no name")
         text = self.baseline_path().read_text(encoding="utf-8")  # type: ignore[union-attr]
         self.assertNotIn("secret-value-1", text, "a value is in the baseline")
 

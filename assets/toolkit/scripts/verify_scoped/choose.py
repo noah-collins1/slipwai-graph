@@ -40,9 +40,11 @@ class Choice(NamedTuple):
 
 
 class Drift(NamedTuple):
-    """What differs between the machine and the baseline: the tools that answer differently, the variables that differ."""
+    """What differs between the machine and the baseline: the tools that answer differently, the variables that differ,
+    and whether the files git ignores do (the stamp key's `ignored` part, which no changed path names)."""
     tools: frozenset[str]
     variables: frozenset[str]
+    ignored: bool
 
 
 def baseline_of(text: str | None, branch: str, exists: bool) -> tuple[dict[str, Any] | None, str]:
@@ -55,18 +57,20 @@ def baseline_of(text: str | None, branch: str, exists: bool) -> tuple[dict[str, 
     except ValueError:
         return None, "it cannot be read"
     if not (isinstance(found, dict) and isinstance(found.get("branch"), str)
+            and isinstance(found.get("ignored"), str)
             and all(isinstance(found.get(key), dict) and all(isinstance(item, str) for item in found[key].values())
                     for key in ("tools", "variables"))):
         return None, "it cannot be read"
     return (found, "") if found["branch"] == branch else (None, f"it was taken on {found['branch']}")
 
 
-def drift(baseline: Mapping[str, Any], tools: Mapping[str, str], variables: Mapping[str, str]) -> Drift:
-    """The tools the machine answers for otherwise than the baseline recorded, and the variables whose digests differ;
-    a name only one side has differs."""
+def drift(baseline: Mapping[str, Any], tools: Mapping[str, str], variables: Mapping[str, str], ignored: str) -> Drift:
+    """The tools the machine answers for otherwise than the baseline recorded, the variables whose digests differ (a name
+    only one side has differs), and whether the digest of the files git ignores is not the baseline's."""
     moved = {name for name in baseline["tools"].keys() | tools.keys() if baseline["tools"].get(name) != tools.get(name)}
     return Drift(frozenset(moved), frozenset(name for name in baseline["variables"].keys() | variables.keys()
-                                             if baseline["variables"].get(name) != variables.get(name)))
+                                             if baseline["variables"].get(name) != variables.get(name)),
+                 baseline["ignored"] != ignored)
 
 
 def is_input(path: str, entry: str) -> bool:

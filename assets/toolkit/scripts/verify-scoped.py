@@ -32,6 +32,7 @@ LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — {reason}"
 INCOMPLETE = "dependency knowledge was incomplete"
 EVERY = "every check was chosen"
+IGNORED = "a file git ignores differs from the baseline"
 
 
 def load(name: str, filename: str) -> Any:
@@ -157,9 +158,10 @@ def compared(ground: Ground, make: str, data: records.Database) -> tuple[choose.
         return None, "the gate does not name the tools the stamp asks"
     try:
         tools = stamp.machine_tools(stamp.Options(["--make", make, *named.split()]))
+        ignored = stamp.key_parts(tools)[1]["ignored"]  # the stamp's own digest of the files git ignores, never a copy
     except (stamp.CannotTell, OSError, subprocess.SubprocessError) as error:
         return None, words(error)
-    return choose.drift(found, tools, stamp.variable_digests()), ""
+    return choose.drift(found, tools, stamp.variable_digests(), ignored), ""
 
 
 def full_gate(make: str, makefile: str, *goals: str) -> int:
@@ -168,11 +170,14 @@ def full_gate(make: str, makefile: str, *goals: str) -> int:
     return subprocess.run(command, close_fds=False, check=False).returncode
 
 
-def broaden(make: str, makefile: str, reason: str, notes: list[str] | None = None) -> int:
-    """The full gate, `make verify`, with its status: what is said first (one line each), then why it runs."""
+def broaden(make: str, makefile: str, reason: str, notes: list[str] | None = None, then: str | None = None) -> int:
+    """The full gate, `make verify`, with its status: what is said first (one line each), then why it runs, then, where
+    there is one, a line of advice."""
     for note in notes or []:
         print(LINE + note, flush=True)
     print(FULL.format(reason=reason), flush=True)
+    if then is not None:
+        print(LINE + then, flush=True)
     return full_gate(make, makefile, "verify")
 
 
@@ -221,6 +226,8 @@ def run(make: str, makefile: str) -> int:
     if drifted is None:  # with no baseline every reader runs, and every check reads `make`
         note = f"no usable baseline ({why}) — every check that reads a tool or a variable runs"
         return broaden(make, makefile, EVERY, [note])
+    if drifted.ignored:  # a check reads a file git ignores, and no changed path names one: as the stamp's key has it (D125)
+        return broaden(make, makefile, IGNORED, then=ground.stamp.WRITTEN_IGNORED.removeprefix(" — "))
     choices = choose.choose(record, data, changed, drifted)
     if all(choice.runs for choice in choices):
         return broaden(make, makefile, EVERY)
