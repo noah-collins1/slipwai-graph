@@ -307,19 +307,45 @@
       "started": "2026-10-05T08:12:47Z",
       "planned": "tasks: fast → sonnet — Claude Code: the Agent tool's `model` parameter, set per call",
       "tasks": {
-        "start": null
+        "start": null,
+        "end": null
       },
-      "cursor": {
-        "source": "claude",
-        "session": "ca2432d6-c321-4918-9e16-87dd9d107a5f",
-        "files": {
-          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ca2432d6-c321-4918-9e16-87dd9d107a5f.jsonl": 625464
+      "ended": "2026-10-05T08:13:04Z",
+      "seconds": 17,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ca2432d6-c321-4918-9e16-87dd9d107a5f.jsonl": 625464,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ca2432d6-c321-4918-9e16-87dd9d107a5f/subagents/agent-a281f2f27b282b22a.jsonl": 266228,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ca2432d6-c321-4918-9e16-87dd9d107a5f/subagents/agent-a62a42fba52af0124.jsonl": 331380
         },
-        "subagents": {
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ca2432d6-c321-4918-9e16-87dd9d107a5f.jsonl": 645619,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ca2432d6-c321-4918-9e16-87dd9d107a5f/subagents/agent-a281f2f27b282b22a.jsonl": 266228,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ca2432d6-c321-4918-9e16-87dd9d107a5f/subagents/agent-a62a42fba52af0124.jsonl": 331380
         }
-      }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "ca2432d6-c321-4918-9e16-87dd9d107a5f",
+        "read": "message.usage on each assistant line, once per requestId; read after the session that opened the entry had ended",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 4,
+            "output": 1928,
+            "cache_read": 207729,
+            "cache_creation": 2082
+          }
+        },
+        "subagents": {},
+        "agents": []
+      },
+      "ran": [
+        "claude-opus-5-5"
+      ],
+      "agents": null,
+      "delegated": false,
+      "signals": {},
+      "cut_off": "iteration 20 ended with the entry open"
     }
   ]
 }
