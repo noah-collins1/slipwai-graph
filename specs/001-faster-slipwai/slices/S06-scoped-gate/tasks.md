@@ -1216,6 +1216,196 @@ example. Tests only: reaches no user.
 
 **Files:** `tests/test_verify_scoped_variables.py`.
 
+### T039 — [US2] MEDIUM — Text and conditions that reach every make through `MAKEFLAGS` are compared by nobody (R4, R5, R7 · AC-S06-2, -5, -8; D140 point 2, D116 rule 5)
+
+- [ ] **Finding.** D140 point 2 makes a non-empty `MAKEFILES` the full gate because it "adds makefiles the factory did not
+  write". `MAKEFLAGS` carries the same kind of text and conditions, and it reaches every make the script starts.
+  - Nothing reads it beyond the idle letters (`verify-scoped.py` 65–67, `verify-stamp.py` 683–687).
+  - The database read strips it (`record.py` 35, 75), so the comparison reads clean factory text.
+  - The scoped call (`verify-scoped.py` 253) and the full gate (`verify-scoped.py` 171) both inherit it.
+  - The baseline keys none of it (`verify-stamp.py` 115–119; D116 rule 5 names only the job count).
+
+  `MAKEFLAGS` carries `--eval` text, `-I`/`--include-dir` together with an eval'd `include`, `-e`, `-r`/`-R`, `-B`,
+  `-W`/`-o`, and `-- NAME=value` command-line variables. These reach the scoped call from the command line, from
+  `MAKEFLAGS` in the environment, and from `GNUMAKEFLAGS`.
+
+  **Reproduced** (`/tmp/s06-c5/probe5/probe_p5.py`). Set-up: the TS service + web starter, factory text, a baseline
+  written, then `// FORBIDDEN` appended to `apps/web/src/App.tsx`. Each of (a)–(d) gives `skip check-drawio — none of
+  its inputs changed`, then `15 run, 7 skipped, …; passed`, exit 0. Under the same conditions the full gate's sub-make
+  exits 2:
+  - (a) `make verify-scoped '--eval=scripts/event-model/%.json: FORCE ; @! grep -rq FORBIDDEN apps/web/src' --eval=FORCE:`,
+    which fails with `*** [<builtin>: scripts/event-model/package.json] Error 1`;
+  - (b) `--eval=check-drawio: lint-docs` together with an eval'd `lint-docs` recipe. This is an explicit prerequisite,
+    and the database comparison still never sees it, because it reads without `MAKEFLAGS`;
+  - (c) the text of (a) in `MAKEFLAGS` in the environment;
+  - (d) the same text in `GNUMAKEFLAGS`.
+
+  Not an escape:
+  - A second `-f` (`make -f Makefile -f extra.mk verify-scoped`) is read by neither the scoped call (`-f <first>`,
+    `verify-scoped.py` 171, 253) nor the full gate's sub-make (`gate.py` 36).
+  - An untracked `extra.mk`, or an `inc/x.mk` reached through `-I`, is an unclaimed path, and that is the full gate
+    (probes e, f).
+
+  **Graded MEDIUM, not HIGH.** Every route needs the person who runs the scoped gate to give the condition. The false
+  *passed* is therefore relative to a `make verify` run under that same condition, never to the merge root's. The
+  merge root runs without it, and there the skipped check's inputs have not changed since a green base (owner
+  priority 1 holds). The published words still claim more than holds: the contract says the scoped run reads only
+  text it has proved to be the factory's (data-model *How a unit is chosen*, ADR 0005), and `--eval` is such text.
+  There is a second effect: a full green `make verify --eval='override SHELL := /bin/true'` on a slice branch writes a
+  baseline that vouches for tools under which no check ran, because `declined()` reads only letters.
+
+**RED** (`tests/test_verify_scoped_text.py`, at 192 lines; a new module if it nears 350):
+- e1: (a)–(d) above are each the full gate, with their own words. *(fails today)*
+- e2: each of these stays scoped: a `MAKEFLAGS` holding only a job count, the jobserver's words, `--no-print-directory`,
+  `-O…`/`--output-sync=…`, `-k` or `-s`.
+- e3: a full green `make verify --eval=…` on a slice branch writes no baseline. *(fails today)*
+
+**GREEN — the class.** Hold `MAKEFLAGS` by an allowlist, as D140 holds the `Makefile` by its text, so that anything
+not on the list fails closed.
+- **Where.** Before any make call, beside `text_problem`, the script reads the `MAKEFLAGS` its recipe was handed.
+- **The allowlist.** The single-letter word may hold only letters that apply alike to the scoped call and to
+  `make verify` and change no recipe: `k`, `s`, `w`, and the idle letters the borders already take. Every other word
+  must be one of: a job count, a jobserver word (`--jobserver-auth=`, `--jobserver-fifo=`), `--no-print-directory`,
+  or an output-sync word.
+- **Everything else is the full gate.** That includes any `--eval`, `-I`, `-e`, `-r`, `-R`, `-B`, `-W`, `-o`, `-L`,
+  `--trace` and `--shuffle`, and anything after `--`.
+- **The words**, after D140 point 6: `… — make was run with \`<the first word not allowed>\`, which can add text or
+  conditions the factory did not write; …`.
+- **The baseline.** The baseline writer in `verify-stamp.py` declines under the same predicate. The predicate is defined
+  once, and both scripts load it.
+
+**Decide before GREEN** (host, in the decision log):
+- whether a command-line variable after `--` is the full gate (recommended: yes, failing closed) or the baseline's
+  (D116);
+- whether the stamp's own `declined()` takes the predicate too. The stamp is S05's, so that half is a decision for the
+  log; this task's files do not include it.
+
+**Verify:** `make test TESTS="test_verify_scoped_text test_verify_scoped_baseline test_verify_scoped_borders test_verify_scoped_run"`,
+then `make lint typecheck check-structure`. Level line: MINOR, already carried. Catch-up: the fragment's D140 sentence
+gains "or if make is run with an option that adds text or conditions — `--eval`, `-I`, `-e`, a variable on the
+command line —" in the words the decision gives.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/rules.py`, `assets/toolkit/scripts/verify-scoped.py`,
+`assets/toolkit/scripts/verify-stamp.py` (the baseline writer only), `changelog.d/scoped-gate.md`,
+`tests/test_verify_scoped_text.py`, `tests/test_verify_scoped_baseline.py`, `specs/001-faster-slipwai/decisions.md`
+(host only).
+
+### T040 — [US2] MEDIUM — The factory-text hold covers the units and named checks only, and does not assert what makes its ordering exception sound (R4 · AC-S06-2; D140 point 4)
+
+- [ ] **Finding.** D140 point 4 rests the class on one finite argument: the factory's text reads the same under the
+  scoped call, the full gate's sub-make and the database read, for everything a scoped run can run. The test falls
+  short of that in two ways.
+
+  **First, its scope.** `test_verify_scoped_factory_text.py` compares only the units, the named checks, `verify` and
+  `verify-checks` (`reached` 65–68, `held` 70–72 and 83–84). The fingerprint and the scoped call reach further,
+  through prerequisites such as `node_modules/.package-lock.json`, `scripts/event-model/node_modules/.installed`,
+  `sync` and `build-packages`. Those are the rules T030 established must be held.
+  - **Mutation** (in a clone): `gate_order` (`parallel_gate.py` 150–151) writes
+    `node_modules/.package-lock.json: VERIFY_HIDDEN := 1` inside the factory's `VERIFY_ORDER` block.
+    `test_e6_hold_every_shape_reads_the_same_under_the_three_conditions` stays green.
+  - **Control:** the same line on `check-python` fails that test, in `model-typescript-web` and
+    `model-typescript-web-cloud`.
+
+  **Second, its ordering exception.** The exception (`differences` 93–94) admits needs that grow by existing targets.
+  That is sound only while three conditions hold:
+  - no rule that gains a prerequisite has a recipe naming `$^`, `$+`, `$<`, `$?` or `$|`;
+  - no target on the path sets a target-specific variable. make passes such a variable down to the prerequisites it
+    runs, and no database read shows it on the prerequisite;
+  - a normal prerequisite added to a *file* target does not change when that target is rebuilt.
+
+  All three hold today. A scan of every `SHAPES` entry finds no target-specific variable and no automatic variable in
+  any recipe, and the block's file-target line is order-only. Nothing asserts them, so a later `makefile()` construct
+  can break the argument and still pass the hold.
+
+  **Graded MEDIUM:** no false *passed* exists today, but this is the one argument D140 left to enumeration, and the
+  test covers less than the gate runs.
+
+**RED/GREEN** (tests only):
+- e1: the hold compares every target that `rules.reach` finds from `verify`, `verify-checks` and the units, in each of
+  the three reads, and the mutation above fails it.
+- e2: the exception admits a grown `needs` or `order_only` only where all three hold:
+  - (i) no recipe of the target names an automatic variable;
+  - (ii) neither the target nor any target that reaches it has `target_vars` in any read;
+  - (iii) a file target (one not in `.PHONY`) grows only its `order_only`.
+
+  Each condition has a mutation of its own that fails e2.
+- e3: a fourth read, the scoped call's goals *without* `VERIFY_ORDER`, must equal the database read exactly. That
+  makes any growth attributable to the factory's `VERIFY_ORDER` block and no other conditional.
+
+**Verify:** `make test TESTS="test_verify_scoped_factory_text"`, then `make lint typecheck check-structure`. Tests only:
+reaches no user.
+
+**Files:** `tests/test_verify_scoped_factory_text.py`.
+
+### T041 — [US2] MEDIUM — The record's contract still describes D127's charges: `differs`, a named check's `always`, "each charged difference marked" (R10 · AC-S06-13; ADR 0004, data-model *The printed record*; D140 point 3)
+
+- [ ] **Finding.** D140 point 3 removed the per-check `inputs: null` and per-gate Makefile charges.
+  - The record now sets `whole` only where a recipe is not the sum of its units (`record.py` 286–289), and it never
+    emits `differs`.
+  - A Makefile difference on matching text is the full gate, charged to no check (`record.py` 319–323,
+    `rules.py` 359–363).
+
+  The published text still describes the old behaviour in three places:
+  - ADR 0004, lines 81–85: `whole` "or its rule is not the one the factory wrote", `differs: true`, and a named check
+    printed with `inputs: null` and an `always` reason;
+  - data-model.md, lines 206–215: the same three, plus "the record is still printed, with each charged difference
+    marked";
+  - `verify-scoped.py` line 275: those words again, as a comment.
+
+  ADR 0004's *Consequences* calls the printed shape a published contract, and a reader built from it looks for a key
+  that never comes. **Graded MEDIUM**, as T031 was for the same drift: schema 1 is unreleased, so there is no released
+  consumer.
+
+**RED** (`tests/test_verify_scoped_contracts.py`): every backticked key that ADR 0004's record bullets give a value
+(`` `<key>: true` ``, `` `: false` ``, `` `: null` ``) is a key that some shape's record prints. The same holds for
+data-model.md *The printed record*. `differs` fails it today.
+
+**GREEN:** ADR 0004's bullet and data-model's both say three things:
+- `whole` means a gate's recipe is not the sum of its units;
+- no key marks a Makefile difference;
+- on such a difference the record is printed as it is, and the run is the full gate with *dependency knowledge was
+  incomplete* (D140 point 3).
+
+Delete `differs` and the named check's `always` reason from both texts, and the comment at `verify-scoped.py` 275. ADR
+0004 records the amendment as ADR 0005 does: `Amended by D140 (…)`.
+
+**Verify:** `make test TESTS="test_verify_scoped_contracts test_verify_scoped_record"`, then
+`make lint typecheck check-structure`. Level line: MINOR, already carried. The fragment gains nothing, because no key
+changed, only the text that describes the keys.
+
+**Files:** `delivery/docs/adr/0004-verification-dependency-record.md`,
+`specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md`, `assets/toolkit/scripts/verify-scoped.py`,
+`tests/test_verify_scoped_contracts.py`.
+
+### T042 — [US2] LOW — D140 point 2 as written: a `rules.json` that cannot be read lets the project's `Makefile` be parsed, and the name check is exact on a case-insensitive filesystem (R5 · AC-S06-5; D140 point 2)
+
+- [ ] **Finding.** Two places where the code is weaker than D140 point 2's words.
+
+  **(1) An unreadable `rules.json` lets the Makefile be parsed.** Where `rules.json` is missing or is not JSON,
+  `text_problem` returns None (`rules.py` 230–234). `run` then reads the database with `make -npq`
+  (`verify-scoped.py` 209) and asks `standing()`, and only then fails at `records.compared` and runs the full gate. So
+  a `Makefile` the factory may not have written is parsed by the scoped run, and its `$(shell …)` runs. D140 point 2
+  lists "`rules.json` has no `makefile` key" among the checks made before any make call, and a missing file has no
+  key. The run still ends in the full gate.
+
+  **(2) The name check is exact.** The entry-list check is exact (`rules.py` 225–227). On a filesystem where make's
+  lookup of `GNUmakefile` opens `gnumakefile` or `GNUMakefile`, the list passes it. Not reproduced, because this host's
+  filesystem is case-sensitive; if make does find such a file, the check fails open.
+
+**RED/GREEN** (`tests/test_verify_scoped_text.py`):
+- e1: with `rules.json` deleted, the first line is the `Makefile` words, and the stand-in make logs no `-npq` call.
+- e2: a root entry `gnumakefile`, or `MAKEFILE`, is the full gate with D140's words, naming the entry as listed.
+- GREEN for e1: `text_problem` returns `NOT_THE_TEXT` wherever `rules.json` cannot be read or is not an object with
+  the key.
+- GREEN for e2: compare entries casefolded. Any entry other than `Makefile` whose casefold is `gnumakefile` or
+  `makefile` is the full gate. On a case-sensitive filesystem that costs a full gate for a file make would not read,
+  which is the safe direction.
+
+**Verify:** `make test TESTS="test_verify_scoped_text test_verify_scoped_matching"`, then
+`make lint typecheck check-structure`. Level line: MINOR, already carried.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/rules.py`, `tests/test_verify_scoped_text.py`.
+
 ---
 
 ## Phase 4: After acceptance (host tasks)
@@ -1379,6 +1569,90 @@ root `Makefile` or `VERSION` changed; `delivery/` gained ADR records only. `chan
 of an unknown schema is the full gate (`rules.py` 317–319, `record.py` 328–329). IX: `rules.json` holds names and
 digests only (`rules.py` 200–202, 277–287); exported values are never stored. XIII (not in force) and XIV: tests ship
 in each code commit, and the mutations above fail them. No money, time or identity value is touched.
+
+### Pass 5 — iteration 23, `drive-converge` · model: host (claude-opus-5-5) · delegated, fresh context · over `58a9aed..3b74bf9`
+
+**Converged.** No CRITICAL or HIGH finding: nothing re-opens the loop. D140 closes pass 4's class. Four tasks are
+appended, all below the grade that re-opens: T039, T040 and T041 MEDIUM, T042 LOW.
+
+**Pass 4 re-run against `3b74bf9`.** Every reproduction now ends in the full gate, with D140's `Makefile` words on
+the first line:
+- T037 (a), (b), (c), (a′) and (d), and T036 e1: exit 2, the full gate's sub-make also exits 2;
+- `probe_specials`' 17 constructs (T036 e2–e5, with `.PHONY` reversed per point 8): each is the full gate.
+  `MAKEFLAGS += n` is the `-n` border.
+
+**Teeth.** One mutation per new module, each made in a clone under `/tmp/s06-c5` and restored by path:
+- dropping the `MAKEFILES` test from `text_problem` fails 2 of `test_verify_scoped_text`;
+- skipping the text check in `run` fails 21 subtests of `test_verify_scoped_implicit`;
+- a `VERIFY_ORDER`-only target variable on `node_modules/.package-lock.json` passes
+  `test_verify_scoped_factory_text`. The same line on `check-python` fails it. That gap is T040.
+
+**The class, each route** (item 2 of the brief):
+- **`-f`.** The first file is compared: it is the recipe's `$(firstword $(MAKEFILE_LIST))` (`scoped_targets.py` 135),
+  digested at `rules.py` 236–240. Later `-f` files are read by neither the scoped call (`verify-scoped.py` 171, 253)
+  nor the full gate's sub-make (`gate.py` 36), and `-f` never travels in `MAKEFLAGS`.
+- **`include` in the factory's text.** Cannot exist: `from_text` raises on `include`, `-include` and `sinclude`
+  (`rules.py` 91–96). A project's own `include` changes the text, so it is the full gate.
+- **`-I` alone.** Has nothing to resolve.
+- **`--eval`, and `-I` with an eval'd `include`, from the command line, `MAKEFLAGS` or `GNUMAKEFLAGS`.** Neither
+  compared nor the full gate, nor the baseline's (`verify-stamp.py` 115–119; D116 rule 5 keys only the job count).
+  Four false *passed* reproductions: T039.
+- **A symlinked `Makefile`.** Compared: `open` follows the link and digests what make reads (`rules.py` 236–237). A
+  dangling link is the full gate (238–239).
+- **A case-insensitive filesystem.** A `Makefile` found under the name `makefile` is the same text. A
+  differently-cased `gnumakefile` passes the exact list (`rules.py` 225–227). Not reproduced: T042.
+- **`MAKEFILES` in the environment.** The full gate (`rules.py` 228–229). Given on make's command line instead, it was
+  not probed.
+- **Command-line variables outside `VARIABLES`.** Not compared. Whether they are the full gate or the baseline's is
+  T039's decision.
+
+**Item 3: the `VERIFY_ORDER` exception.** Sound today, by fact and not by test. Both real runs carry the block
+(`gate.py` 36, `verify-scoped.py` 253), so over-running is the worst it does. Under the block, units gain normal
+prerequisites (`scoped_targets.py` 116–126). The block's file-target line is order-only. No shape has a
+target-specific variable or an automatic variable in any recipe (a scan of every `SHAPES` entry). The test asserts
+none of these conditions, and it compares only named targets: T040. Not reproduced: a unit that the block pulls in as
+a prerequisite still prints `skip` while it runs (safe direction).
+
+**Item 4: the stale record text.** ADR 0004 (lines 81–85), data-model.md (206–215) and `verify-scoped.py` 275 still
+describe `differs`, D127's per-check `always` and "each charged difference marked". The record emits none of them
+(`record.py` 286–289): T041, MEDIUM, as T031 was.
+
+**Item 5: the relay from S14.** Not S06's, graded LOW, no task.
+- `NOT_AN_INPUT` (`tests/test_verify_scoped_record.py` 42–46) is the e4 sweep's list of explanations; it is not
+  `table.py`.
+- The sweep's stale rule (`test_verify_scoped_record.py` 330–331) fails an entry that no check reads uncovered. On
+  this tree the literal `agents` is read only by `scripts/agents/benchmark.py`, and check-benchmark's `agents/` covers
+  it there. An entry added here would fail e4.
+- The entry belongs in S14's own commit that makes check-decisions load `hand_backs.py`:
+  `"agents": "a key of a benchmark.json stage, not a path"`. That commit should also spell the literal plainly:
+  `"agent" + "s"` evades the sweep instead of explaining the literal to it. The host relays this to S14.
+
+**Levels.** No domain or screen.
+- **Use case** (`text_problem`, `rules.difference`, `choose`): proved for the `Makefile`'s text. `MAKEFLAGS` is open
+  (T039).
+- **Adapter** (the generated `Makefile`): `verify`, `verify-checks` and `ci` are unchanged (`gate.py` 36), and so is
+  the recipe of `verify-scoped` (`scoped_targets.py` 135). The factory-text hold is partial (T040).
+- **Published contracts.** `rules.json` gains `makefile` under unreleased schema 1, and ADR 0005 is amended
+  (Proposed). The record's text has drifted (T041). The fragment's Catch-up carries D140's sentence
+  (`changelog.d/scoped-gate.md` 13).
+
+**Principles.**
+- **I.** Met. The merge root and CI run `make verify` (`gate.py` 36). A project's edit costs the full gate and is
+  never blessed (`rules.py` 214–240, `verify-scoped.py` 202–207). Nothing under CI, `tools/`, the root `Makefile` or
+  `VERSION` (`1.6.0.dev0`) changed; `delivery/` gained ADR text only. `changelog.d/scoped-gate.md` line 1 is `MINOR`.
+  The *passed* line overclaims only under a person's own `MAKEFLAGS` (T039).
+- **II.** Met. A prune rewrites `rules.json` by temporary file and rename (`prune.py` 1294–1307), and only where the
+  whole file, `makefile` included, equals `from_text` (1280–1291).
+- **VIII.** Met. `SCHEMA = 1` (`rules.py` 28). A file of an unknown schema, or one without `exports`, is `Unreadable`
+  (346–356). One without `makefile` is the full gate (240). The record's contract text is T041.
+- **IX.** Met. `rules.json` holds digests only (`text_digest` 201–204, `variable_digest` 271–272). The baseline stores
+  variable digests, never values (`verify-stamp.py` 733–735).
+- **X.** Met. On the trunk and under a CI marker, the scoped gate is `make verify` (`verify-scoped.py` 70–74, 87–89,
+  111).
+- **XIII.** Not in force.
+- **XIV.** Met. `be74b85` ships its tests with its code, and the mutations above fail them, except T040's gap.
+
+No money, time or identity value is touched.
 
 ## Differences from plan.md
 
