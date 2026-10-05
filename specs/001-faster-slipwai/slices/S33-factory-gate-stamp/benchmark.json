@@ -1086,6 +1086,25 @@
         "cycle": "rule",
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "hand",
+      "started": "2026-10-05T08:57:44Z",
+      "planned": "hand: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 6,
+          "done": 25
+        }
+      },
+      "cursor": {
+        "source": "claude",
+        "session": "67e812bd-e703-4942-b0d1-77fde79a23ab",
+        "files": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/67e812bd-e703-4942-b0d1-77fde79a23ab.jsonl": 443393
+        },
+        "subagents": {}
+      }
     }
   ]
 }
