@@ -142,7 +142,8 @@ class CoverageVerbTest(unittest.TestCase):
             "hand-backs: with a result contract: 0 of 1"], self.verb(stages).stdout.splitlines())
 
     def test_e7_a_delegated_stage_with_no_agents_recorded_could_not_be_attributed_and_is_no_finding(self) -> None:
-        for agents in (None, []):
+        nothing: tuple[list[str] | None, ...] = (None, [])
+        for agents in nothing:
             stages = [stage("implement", "2026-10-05T17:00:00Z", "2026-10-05T17:10:00Z", agents=agents)]
             self.assertEqual([
                 "hand-backs: implement 2026-10-05T17:00:00Z: the harness could not attribute its delegates — "
