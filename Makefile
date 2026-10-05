@@ -41,8 +41,10 @@ test: ## Run the factory's test suite, or a slice: TESTS="test_a test_b", or SKI
 # script cannot ask a missing one, and would then record nothing. The Docker Compose plugin answers to `docker compose
 # version`, which the script cannot ask, so the recipe writes that answer (or `absent`) to the ignored `.factory-work/verify-probes`,
 # which the key reads like any ignored file. The line holds `$(MAKE)`, so `make -n verify` and `make -q verify` write that
-# file too: harmless, an ignored file with its true answer, and no stamp is touched. `make` itself is always there,
-# under the name it was run as.
+# file too: harmless, an ignored file with its true answer, and no stamp is touched. The paths of interpreter caches
+# under `assets/` follow it, because the suite reads them as text and the stamp exempts them; their contents are not
+# keyed (D119). Where they cannot be listed, the line is unique to the run, so nothing is reused. `make` itself is
+# always there, under the name it was run as.
 VERIFY_STAMP_SCRIPT := assets/toolkit/scripts/verify-stamp.py
 VERIFY_TOOLS := python3 git uv node npm npx go java docker pack ko mvn tofu gh codegraph
 VERIFY_STAMP = --tool make --make "$(MAKE)" $(foreach tool,$(VERIFY_TOOLS),$(if $(shell command -v $(tool) 2>/dev/null),--tool $(tool)))
@@ -51,7 +53,7 @@ verify: ## Full local gate — a tree that already passed is not judged again; V
 ifneq ($(strip $(TESTS)$(SKIP)$(FACTORY_BACKENDS)),)
 	@"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks
 else
-	@mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; } > .factory-work/verify-probes; run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
+	@mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; { command -v sort >/dev/null && find assets \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) 2>/dev/null | LC_ALL=C sort; } || echo "caches: not listed, run $$$$"; } > .factory-work/verify-probes; run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
 endif
 
 .PHONY: verify-checks

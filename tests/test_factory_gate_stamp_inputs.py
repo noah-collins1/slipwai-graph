@@ -65,6 +65,8 @@ EXEMPT_TOOLS = {
     "mkfifo": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
     "echo": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
     "sleep": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
+    "find": "lists the caches under `assets/` into the probe file (D119); a stand-in PATH carries it, never a skip",
+    "sort": "orders that list; where it is missing the probe line is unique to the run, so nothing is reused",
     "init": "the generated repository's own `init` script, asserted executable: a file its test lands, not a tool",
     "make": "keyed by the recipe itself: `--tool make --make \"$(MAKE)\"`, under the name it was run as",
 }
@@ -204,12 +206,24 @@ class TestEveryToolTheSuiteLooksForIsAccountedFor(GateCase):
         self.assertFalse((self.repo / PROBE_FILE).exists())
 
 
+class TestCachesThatCannotBeListedAreNeverReused(GateCase):
+    def test_a_path_without_sort_never_reuses(self) -> None:  # AC-S33-13 hold (D119)
+        """Where the caches under `assets/` cannot be listed, the probe line is unique to the run: no reuse."""
+        bare = self.bin.parent / "bare"
+        bare.mkdir()
+        for name in ("make", "git", "python3", "sh", "mkdir", "echo", "find"):
+            (bare / name).symlink_to(shutil.which(name) or name)
+        for _ in range(2):
+            done = self.gate(path=str(bare))
+            self.assertEqual((done.returncode, self.ran()), (0, FULL), done.stdout + done.stderr)
+
+
 class TestAListedToolLeavingPutsTheNextRunInFull(GateCase):
     def test_a_stand_in_tool_removed_from_a_path_that_holds_none_other_is_a_full_run(self) -> None:  # AC-S33-6 hold
         """The `PATH` is built here so `tofu` is certainly absent after, whatever the host has installed."""
         bare = self.bin.parent / "bare"
         bare.mkdir()
-        for name in ("make", "git", "python3", "sh", "mkdir", "echo"):
+        for name in ("make", "git", "python3", "sh", "mkdir", "echo", "find", "sort"):
             (bare / name).symlink_to(shutil.which(name) or name)
         path = str(bare)
         tofu = self.bin / "tofu"

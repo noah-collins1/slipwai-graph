@@ -139,6 +139,16 @@ class TestPassedTreeIsNotJudgedAgain(GateCase):
                 shutil.rmtree(self.repo / ".git" / "slipwai")
 
 
+    def test_an_interpreter_cache_under_assets_puts_the_next_run_in_full(self) -> None:  # D119, AC-S33-13
+        self.passes()
+        cache = self.repo / SCRIPTS / "__pycache__"
+        cache.mkdir(parents=True, exist_ok=True)
+        (cache / "verify-stamp.cpython-314.pyc").write_bytes(b"\x00cache")
+        self.assertEqual(self.gate().returncode, 0)
+        self.assertEqual(self.ran(), FULL)
+        self.assertEqual(self.gate().returncode, 0)
+        self.assertEqual(self.ran(), [])
+
 class TestAlwaysRunsInFull(GateCase):
     def test_force_runs_every_check_and_says_so(self) -> None:  # e1
         self.passes()
