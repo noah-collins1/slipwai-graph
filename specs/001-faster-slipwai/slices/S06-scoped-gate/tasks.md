@@ -1133,6 +1133,11 @@ naming a pattern rule, a special target and `vpath`, in the words the decision g
 `changelog.d/scoped-gate.md`, `tests/test_verify_scoped_implicit.py` (new), `specs/001-faster-slipwai/decisions.md`
 (host only).
 
+
+**Decided — D140 (a): the Makefile is held by its text; ADR 0005 amended at Proposed.** Read `## D140 ` in `specs/001-faster-slipwai/decisions.md` in full — its eight points replace this task's GREEN and T037's together (one implementer, both tasks): the `makefile` digest checked before any make call, `GNUmakefile`/`makefile`/`MAKEFILES`, matching text's database differences as the full gate, D127 item 4's narrower charges and `rules.used` removed, the factory-text hold over every shape (point 4), the words (point 6), the writers (point 7), the examples and teeth (point 8, e5 reversed). The same commit series updates plan.md R6 e2, data-model.md *How a unit is chosen*, and replaces the Catch-up sentences D127 and D133 put in `changelog.d/scoped-gate.md` with:
+
+> `make verify-scoped` scopes only the `Makefile` the factory wrote. If yours differs from it in any way — a check, a target, a variable, a rule or a condition of your own — or if make would also read a `GNUmakefile`, a `makefile` or a file named in `MAKEFILES`, every scoped run is the full gate, `make verify`, and says so on its first line, until the file is the factory's text again. `slipwai migrate` carries the factory's changes into your `Makefile` but never makes your edits count as the factory's. To keep scoping, put targets of your own in a file `make verify` does not read and run them with `make -f deploy.mk <target>`. Your merge root and CI run `make verify` either way.
+
 ### T037 — [US2] HIGH — The conditions a scoped run reads are not the conditions any real run has (R4, R5 · AC-S06-2, -5; D127 item 2; T034 closed one instance)
 
 - [ ] **Finding.** T034 reads the database a second time, with `MAKECMDGOALS=verify-checks` given *on the command
@@ -1193,9 +1198,11 @@ decision's sentence.
 **Files:** `assets/toolkit/scripts/verify_scoped/rules.py`, `assets/toolkit/scripts/verify_scoped/record.py`,
 `changelog.d/scoped-gate.md`, `tests/test_verify_scoped_goal.py`, `specs/001-faster-slipwai/decisions.md` (host only).
 
+**Decided — D140:** see T036; T037 is implemented with it.
+
 ### T038 — [US2] LOW — D127 item 4's per-member charge of a changed factory variable has an example (R4 · AC-S06-2)
 
-- [ ] **Finding.** `rules.used` (`rules.py` 323–333) charges a changed factory variable to the one member whose reached
+- [x] **Superseded by D140 point 3** — the charge this task tested is removed. **Finding.** `rules.used` (`rules.py` 323–333) charges a changed factory variable to the one member whose reached
   recipes name it. Disabling it (`… is not None and False`) leaves all 205 tests of the 18 `test_verify_scoped_*`
   modules green. With the reader off, every such change is the full gate. That is the safe direction, but nothing
   holds D127 item 4's decided scoping.

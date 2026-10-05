@@ -2668,7 +2668,7 @@
 - **Decided by:** human
 - **Confidence:** high · **Would reverse if:** the owner says otherwise
 - **Written to:** `specs/001-faster-slipwai/story-split.md` (the Includes of S16, S17, S26, S27, S28, S30, S34a, S34b, S36 and S39), `specs/001-faster-slipwai/spec.md` (FR-050 to FR-057, the owner's commit a462166)
-- **Status:** standing
+- **Status:** overridden by D140
 
 ## D133 — What an unnamed project variable is charged to: every Makefile variable, export line and special variable make can hand a recipe is compared, and one the factory did not write is the full gate
 
@@ -3053,4 +3053,91 @@
 - **Decided by:** host (stage recommendation)
 - **Confidence:** high · **Would reverse if:** `S09-phase4-fanout` moves Phase 4's mutation onto the slice branch, which makes the explicit `SINCE` unnecessary there.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D140 — How the scoped gate closes "Makefile text that changes what a skipped check runs" as a class: the Makefile is held by its text
+
+- **Stage:** converge (pass 4, findings T036 CRITICAL and T037 HIGH; T038 LOW decided with them) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T17:33:16Z · **Iteration:** 23
+- **Scope:** S06-scoped-gate
+- **Question:** Four converge passes have each found the next way a project's Makefile text changes what a skipped check runs without the comparison seeing it:
+  - table rows, then the recipe sum (T030);
+  - every variable and export line (T033);
+  - pattern, suffix, match-anything and `.DEFAULT` rules, special targets and `vpath` (T036);
+  - conditionals on `VERIFY_ORDER`, `MAKEFLAGS`, `$(origin MAKECMDGOALS)` and the scoped call's own goals, and `MAKEFLAGS += -e` (T037).
+
+  Reading the database under the full gate's real conditions is not safe, because `make -npq verify-checks` executes `$(MAKE)` and `+` lines. How does the scoped gate close the class rather than the next instance?
+- **Options:**
+  - **(a)** Hold the Makefile by text. One digest covers every file make reads as a makefile. A difference is the full gate, and the words name the file. The database comparison stays as a second check that can only add the full gate. **Recommended by the host.**
+  - **(b)** Keep enumerating, as converge recommends:
+    - T036: a pattern rule matching a reached target, any special target and any `vpath` are the full gate; an unmatched pattern rule and a `.PHONY` line are charged nothing.
+    - T037: every conditional directive is held by its text.
+  - **(c)** (a), but lines inside a factory-written block for project additions are compared through (b)'s rules.
+- **Decision:** (a), the host's recommendation, with three changes:
+  - the text is checked before make runs;
+  - any database difference on matching text is the full gate;
+  - the cost is stated as permanent, not as lasting until a factory writer re-fingerprints.
+
+  Eight points, so that GREEN has nothing left to ask:
+  1. **The guard is the text, not make's reading of it.** `scripts/verify_scoped/rules.json` (schema 1, still unreleased) gains `"makefile": "<sha256>"`.
+     - It is the digest of the exact `Makefile` text that `makefile()` produced, the same string `scaffold.project_files` writes. CRLF is normalised to LF and nothing else is changed: no whitespace collapsing, no comment stripping, no reordering.
+     - A stamped Makefile includes nothing, so that one file is all the factory's make reads.
+     - `rules.py` defines the digest once. The factory computes it at generate time and the script at run time.
+  2. **The script checks the text first, before any make call.** Each of these is the full gate:
+     - the root directory's own entry list (read exactly, so a case-insensitive filesystem cannot pass `makefile` as `Makefile`) contains `GNUmakefile` or `makefile`;
+     - `MAKEFILES` is set non-empty in the environment;
+     - `Makefile`'s digest differs from the file's;
+     - `Makefile` cannot be read;
+     - `rules.json` has no `makefile` key.
+
+     Only when the text matches does the script read the database with `make -npq`. That means a project's Makefile is never parsed by the scoped run. Its `$(MAKE)` and `+` lines never run there, and `make verify` is the only thing that runs them.
+  3. **What stays, and as what.**
+     - D127 items 1–3 stay: the per-rule fingerprints, the `from_text`/`from_database` canonical form and e5's hold. D133 items 1, 3 and 4 stay: the variables, `exports` and the `VERIFY_GROUP` table. All of these remain a second check behind the text.
+     - On matching text, any difference they find is the full gate, with the reason *dependency knowledge was incomplete*. On factory text, a difference can only come from make or the reader, never from the project. D127 item 4's per-check `inputs: null` and per-gate `whole: true` charges for Makefile differences therefore retire, and `rules.used` and the code that charges to one member go with them.
+     - T034's second read stays only as a hold over the factory's text.
+  4. **The factory's text is the one thing still argued by enumeration, and it is finite.** A factory test replaces T036's special-target sweep and T037's conditionals digest. For every shape in `test_scoped_targets.SHAPES`, plus two-service and a cloud shape, the factory's `Makefile` must give the same rule, recipe and variable for every unit and named check under three conditions:
+     - as the scoped call reads it (the chosen units as goals, `VERIFY_ORDER=1`);
+     - as the full gate's sub-make reads it (`verify-checks VERIFY_ORDER=1`);
+     - as the script's database read sees it.
+
+     The test runs under the make on the machine and, where present, 3.81. A construct `makefile()` gains later must pass it before the factory ships. The CRLF normalisation in point 1 stands only if this hold also passes for a CRLF copy of each shape. If it does not, the digest is over the exact bytes.
+  5. **This overrides three standing decisions:**
+     - **D131 is overridden.** A project's own check added to `verify-checks` changes the text, so every scoped run is the full gate. D131's question was what an edit to `verify-checks` is charged to. Its own *Would reverse if* is now the general case: text no reader has compared can change what a factory check runs.
+     - **D127 item 4's narrower charges are overridden, and item 5's result follows.** After a conflicted `migrate`, the resolved Makefile is the full gate, not one check that always runs. Item 5's rule that no command lets a project bless its edits stands. Because of it, a project's edit holds the full gate until the file is the factory's text again. That is the honest version of the option's "until a factory writer re-fingerprints it".
+     - **D133 item 5's "to scope again, set it on the rule" advice and item 7's Catch-up sentence are overridden.**
+  6. **The words.**
+     - A changed `Makefile`: `the full gate runs, as \`make verify\` — \`Makefile\` is not the text the factory wrote (scripts/verify_scoped/rules.json), and the scoped gate scopes only that text; keep targets of your own in a file \`make verify\` does not read (\`make -f deploy.mk …\`) to scope again`.
+     - `GNUmakefile` or `makefile`: the same words, starting `… — make reads \`<name>\`, which the factory did not write; …`.
+     - `MAKEFILES`: the same words, starting `… — \`MAKEFILES\` in the environment adds makefiles the factory did not write; …`.
+     - Only the first cause is printed, as today.
+  7. **Writers.**
+     - `generate`, `add-service`, `replay` and `migrate` write the key from the same `makefile()` string, as D127 item 1 already does for the file.
+     - The prune (T035, `prune.py` `refingerprint`) re-fingerprints only when the text digest matched before the prune. T035's decision rule stays the same; only what it compares becomes the text digest.
+  8. **Tasks.**
+     - T036's e1–e4 and T037's e1–e2 stand as reproductions, each now the full gate through the `Makefile` reason.
+     - T036 e5 is reversed: an unmatched project pattern rule and a project `.PHONY` line are the full gate.
+     - T036's and T037's GREENs become points 1–4, together with one example each for `GNUmakefile`, `makefile`, `MAKEFILES` and an unreadable `Makefile`.
+     - Teeth: dropping the text check makes T036 e1 pass vacuously and fail; normalising whitespace makes a `\t` → spaces example fail.
+     - T038 closes as superseded, because the charge it tested is removed (point 3).
+     - plan.md R6's e2 becomes: a project's own `check-licences` in `verify-checks` is the full gate, with the `Makefile` words. AC-S06-6 names no project-added check, so it does not change.
+- **Why:**
+  - **Every pass has found the same thing: the comparison failed open.**
+    - Each pass compared a list of what make does, and anything off the list passed.
+    - (b) adds the fifth list. Its correctness still rests on enumerating GNU Make 3.81–4.4's features and every condition a real run differs in (T037's GREEN itself names the clock and the environment). Nobody can prove that enumeration complete.
+    - (a) fails closed: any text the factory did not write is the full gate, whatever make feature it uses. Its correctness argument is point 4, a finite test over text the factory owns.
+    - This is the owner brief's "the one thing that would make it pointless" and priority 5, deterministic over fast, taken literally.
+  - **(a) also removes the hazard the question names.**
+    - The database read executes `$(MAKE)` and `+` lines.
+    - Under (a), the scoped run only ever reads text it has already proved is the factory's.
+  - **The cost is speed, never correctness, and only for the project that edited.**
+    - A project with an edited Makefile gets `make verify` on every scoped run, which is exactly what it pays today.
+    - Priority 1 is untouched: the merge root and CI run `make verify` as before.
+    - Projects that never edit the Makefile keep every saving.
+    - The printed words name the way back that changes nothing a project runs: its own targets in a file `make verify` does not read. That is a route D133's per-rule advice could not offer safely.
+  - **(c) does not close the class.**
+    - Lines in the block would be compared through (b)'s rules, so the enumeration problem moves into the block instead of leaving.
+    - No such block exists today. `makefile.py` writes only per-feature prune markers, so (c) would be a new generated-file feature (MINOR, with its own catch-up).
+    - If it ever comes, it needs a fail-closed grammar of allowed forms, not a list of dangerous ones. It would be its own slice, not part of this one.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high on (a) over (b) and (c). Medium on the cost, because nobody has measured how many generated projects carry an edited trunk Makefile. · **Would reverse if:** measurement shows that a Makefile edited away from `rules.json`'s digest is the common case, more than half of the generated repositories the run's benchmark or a person's survey covers. Then the scoped gate would save nothing for most actors, and (c) returns as its own MINOR slice: a factory-written project-additions file read under a fail-closed grammar. It would never return as a further enumeration of make's features.
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (this entry; D131's status); `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T036 and T037: the decision as their GREEN, which carries plan.md R6 e2, data-model.md *How a unit is chosen* and the fragment's Catch-up; T038 closed as superseded); `delivery/docs/adr/0005-generated-makefile-rules-fingerprinted.md` (amended at Proposed)
 - **Status:** standing
