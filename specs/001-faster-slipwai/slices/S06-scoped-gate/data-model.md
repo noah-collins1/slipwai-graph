@@ -54,26 +54,35 @@ not name has no recorded inputs.
 
 | Check (unit) | File inputs | Tools (beyond make, python3) | Variables | Claims | Always |
 |---|---|---|---|---|---|
-| `lint-<n>`, `typecheck-<n>`, `test-<n>` — npm family | `<dep>/`, `package.json`, `package-lock.json`, `.nvmrc`, `biome.jsonc` | node, npm | — | yes | — |
-| the same — Python | `<dep>/` (its `.python-version`, `pyproject.toml`, `uv.lock` inside) | uv, `interpreter <dep>/.venv` | — | yes | — |
-| the same — Go | `<dep>/` (its `go.mod`, `go.sum`), `go.work`, `go.work.sum` | go | — | yes | — |
-| the same — Java | `<dep>/` (its `pom.xml`, `.mvn/wrapper/maven-wrapper.properties`) | java | — | yes | — |
-| `check-openapi` | `<svc>/` of each exporting service, `packages/api-client/`, `package.json`, `package-lock.json`, `.nvmrc` | the services' family tools, node, npm | — | yes | — |
-| `check-imports` | `<dep>/`, each npm package `packages/<p>/` | — | — | yes | — |
-| `check-migrations` | `<dep>/` | git | — | yes | — |
+| `lint-<n>`, `typecheck-<n>`, `test-<n>` — npm family | `<dep>/`, `package.json`, `package-lock.json`, `.nvmrc`, `biome.jsonc` | `node`, `npm` | — | yes | — |
+| the same — Python | `<dep>/` | `uv`, `interpreter <dep>/.venv` | — | yes | — |
+| the same — Go | `<dep>/`, `go.work`, `go.work.sum` | `go` | — | yes | — |
+| the same — Java | `<dep>/` | `java` | — | yes | — |
+| `check-openapi` | `<svc>/`, `packages/api-client/`, `package.json`, `package-lock.json`, `.nvmrc` | `node`, `npm`, `<svc>` | — | yes | — |
+| `check-imports` | `apps/`, `packages/`, `<dep>/` | — | — | yes | — |
+| `check-migrations` | `apps/`, `packages/` | `git` | — | yes | — |
 | `check-styles` | `<web>/` | — | — | yes | — |
-| `check-ux-gates` | `<web>/`, `.slipwai/extensions.json`, `AGENTS.md`, `package-lock.json`, `.github/workflows/verify.yml` | git, node, npm | UX_GATES_REQUIRE, UX_GATES_SINCE, UX_GATES_SHARD, SLIPWAI_NO_INSTALL | yes | — |
+| `check-ux-gates` | `<web>/`, `.slipwai/extensions.json`, `AGENTS.md`, `package-lock.json`, `.github/workflows/verify.yml` | `git`, `node`, `npm` | `UX_GATES_REQUIRE`, `UX_GATES_SINCE`, `UX_GATES_SHARD`, `SLIPWAI_NO_INSTALL` | yes | — |
 | `check-model` | `docs/event-model/`, `<dep>/` | — | — | yes | — |
-| `check-drawio` | `docs/event-model/model.yaml`, `docs/event-model/model.drawio` | node, npm | — | yes | — |
+| `check-drawio` | `docs/event-model/model.yaml`, `docs/event-model/model.drawio` | `node`, `npm` | — | yes | — |
 | `check-decisions` | `specs/`, `docs/event-model/model.yaml` | — | — | yes | — |
-| `check-benchmark` | `specs/`, `.specify/integration.json`, `docs/event-model/model.yaml` | git | — | yes | — |
-| `check-flags` | `<dep>/`, `packages/`, `infra/service/flags.auto.tfvars` | git | — | yes | — |
+| `check-benchmark` | `specs/`, `.specify/`, `docs/event-model/model.yaml`, `AGENTS.md`, `agents/`, `commands/`, `skills/` | `git` | — | yes | — |
+| `check-flags` | `apps/`, `packages/`, `<dep>/`, `infra/service/flags.auto.tfvars` | `git` | — | yes | — |
 | `check-deploy-role` | `infra/bootstrap/`, `infra/service/` | — | — | yes | — |
-| `check-convergence` | — (only an adopted gate has it; never reached) | | | | |
-| `check-python` | — | — | — | — | every check waits on it |
-| `check-slice-scope` | (every path) | git | GITHUB_HEAD_REF, CI_COMMIT_REF_NAME, GITHUB_BASE_REF, CI_MERGE_REQUEST_TARGET_BRANCH_NAME | no | it compares the whole branch with its base |
-| `check-codegraph` | (every tracked path) | git | CODEGRAPH_GATE_NO_SYNC | no | it reads every tracked file |
-| `check-agents`, `check-speckit`, `check-extensions`, `check-constitution` | no recorded inputs (until S07) | | | no | no recorded inputs |
+| `check-convergence` | — (only an adopted gate has it; never reached) | — | — | no | — |
+| `check-python` | — | — | — | no | every check waits on it |
+| `check-slice-scope` | `./` | `git` | `GITHUB_HEAD_REF`, `CI_COMMIT_REF_NAME`, `GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` | no | it compares the whole branch with its base |
+| `check-codegraph` | `./` | `git` | `CODEGRAPH_GATE_NO_SYNC` | no | it reads every tracked file |
+| `check-agents`, `check-speckit`, `check-extensions`, `check-constitution` | — | — | — | no | no recorded inputs |
+
+Reading the cells: `<dep>/` is each deployable's directory, `<web>/` each browser app's, `<svc>/` each service that
+exports an OpenAPI document, `packages/<p>/` an npm package; `./` is every path. A Python unit's `.python-version`,
+`pyproject.toml` and `uv.lock`, a Go unit's `go.mod` and `go.sum`, and a Java unit's `pom.xml` and
+`.mvn/wrapper/maven-wrapper.properties` lie inside `<dep>/`. `check-model` also reads every path a slice of the model
+names (`gwt`, `code`, a mockup's `at`), added to its file inputs per run. A row that claims makes a changed path known,
+except that under `apps/` and `packages/` only a deployable's own units and a contract do: a check beside them
+(`check-flags`, `check-imports`, `check-migrations`, `check-model`'s named paths, `check-openapi`) is chosen by a path
+there and never makes it known, so a package nobody builds is a path the script cannot reason about (R5).
 
 `tests/test_verify_scoped_record.py` holds the file column against each check script's reads (research R-8); the
 implement stage corrects a row the scan contradicts, never by narrowing below what the script reads.
@@ -180,8 +189,20 @@ indent:
 - `inputs` is `null` for a check with no recorded inputs; otherwise `files` (sorted, `/`-ended for a directory),
   `tools` (the stamp's names: `make`, `git`, `python3`, `uv`, `node`, `npm`, `go`, `java`,
   `interpreter <path>/.venv`), `variables` (names only).
-- `claims` false means its files never make a changed path known; `always` is the reason it runs on every scoped run,
-  else `null`.
+- `claims` false means its files never make a changed path known. `claims` true makes a path known only where the
+  table says so: under `apps/` and `packages/`, a check that is not a deployable's unit (`check-flags`, `check-imports`,
+  `check-migrations`, `check-model`, `check-openapi`) never makes a path there known, only a unit or a contract does,
+  so a reader that rebuilds R5 from the record must apply the same rule. `always` is the reason it runs on every scoped
+  run, else `null`. A named check whose rule is not the one the factory wrote (D127) is printed with `inputs` `null`,
+  `claims` false and `always` `its rule is not the one the factory wrote (scripts/verify_scoped/rules.json)`.
+- `whole` is present, and true, on every unit of a gate (`lint`, `typecheck` or `test`) that runs whole: its recipe is
+  not the sum of its units' and family targets' lines, or its rule or a unit's is not the factory's. In that case
+  `targets` names the gate, not the unit, and choosing any one unit runs the gate under its own name. `differs` is also
+  present, and true, where the sum holds and the factory's rule does not (D127), and only beside `whole`; the reason
+  printed then is `its rule is not the one the factory wrote (scripts/verify_scoped/rules.json)` in place of
+  `its recipe is not the sum of its per-deployable targets`. Both keys are absent otherwise.
+- A Makefile that differs from the factory's where no one check or gate can be charged (`verify`, `verify-checks`'
+  recipe, a shared prerequisite) is the full gate; the record is still printed, with each charged difference marked.
 - `contracts[].kind` is `openapi`, `package` or `event` (`event` carries `"event": "<name>"`, `owner` the producer).
 - Readers tolerate unknown keys; a new key is MINOR, a renamed or removed one needs `schema` raised and a catch-up note.
 - A record the script cannot build prints nothing on stdout, one line on stderr, and exits 1.
