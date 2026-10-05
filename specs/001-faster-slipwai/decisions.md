@@ -2171,3 +2171,20 @@
 - **Confidence:** high · **Would reverse if:** nothing — the owner's instruction.
 - **Written to:** `specs/001-faster-slipwai/slices/S05-xdist/tasks.md`, `.claude/skills/add-language/SKILL.md`, `.claude/skills/add-framework/SKILL.md`
 - **Status:** standing
+
+## D110 — The owner's decision after external review: S06 and S07 change before they start, and User Story 10 joins the split
+- **Stage:** split (a person's note through `/cruise-tell`, received at the end of S05) · **Slice:** none · **When:** 2026-10-05T00:23:46Z · **Iteration:** 15
+- **Scope:** global
+- **Question:** The specification was revised in `d864541` (Story 2 selects checks by verification dependency and broadens where knowledge is incomplete; Story 10, versioned peer reconciliation, FR-039 to FR-045, SC-013, SC-014). What does the split carry?
+- **Options:** the owner's word, as given.
+- **Decision:** As the owner wrote it, 2026-10-04:
+  1. `S06-scoped-gate` implements revised FR-006 and User Story 2 scenarios 1–7: `verify-scoped` selects checks from a verification-dependency record (each check's inputs — files, contract versions, tools, config, environment variables — and the components it asserts, including consumers of changed contracts and multi-component obligations), runs every check with a changed input, names each skipped check with its reason, and broadens up to the full gate wherever the record cannot establish what is affected. Selecting by touched context alone is no longer acceptable.
+  2. `S07-scoped-checks` implements revised FR-023: the four method-file checks declare their inputs in that record; an undeclared or unreadable input means the check runs. S07 depends on S06's record.
+  3. User Story 10 (versioned peer reconciliation, FR-039 to FR-044) is split into slices that depend on `S06-scoped-gate` and `S14-result-contract`, placed before `S09-phase4-fanout` and `S10-merge-tree`. Its first deliverable is the milestone demo in SC-013; its seven protocol scenarios are acceptance, separate from the FR-045 performance comparison, which becomes a measurement slice after S10. No performance figure for the merge tree or peer reconciliation is a result before that slice.
+  4. S06 and S07 have not started: their rows in the split, and their criteria, are rewritten to match before either starts.
+- **Why:** The owner's decision after an external review.
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** the owner says otherwise.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (by the owner, `d864541`); `specs/001-faster-slipwai/story-split.md` (the S06 and S07 rows and Story 10's slices, rewritten by the next iteration before S06 starts)
+- **Status:** standing
+
