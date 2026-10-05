@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 from typing import Any
 
 SCHEMA = 1
@@ -204,3 +205,59 @@ def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[st
         else:
             findings += [f"{at} — {fault}" for fault in check_block(block, entry["match"].group(2), known)]
     return findings, notes, count
+
+
+def blocks_in(text: str) -> tuple[list[str], int | None]:
+    """The `result-contract` fences in a hand-back, each as its verbatim text (info line to closing fence), and
+    the line of one never closed. Fences with another info string are skipped whole."""
+    found: list[str] = []
+    lines = text.split("\n")
+    start: tuple[str, int] | None = None
+    for number, line in enumerate(lines):
+        if start is None and line.strip().startswith("```"):
+            start = (line.strip()[3:].strip(), number)
+        elif start is not None and line.strip() == "```":
+            if start[0] == FENCE:
+                found.append("\n".join(lines[start[1]:number + 1]) + "\n")
+            start = None
+    return found, (start[1] + 1 if start is not None and start[0] == FENCE else None)
+
+
+def append(record: Path, title: str, htype: str, stage: str, text: str, known: set[str] | None,
+           now: str) -> list[str]:
+    """Append one entry to `record` when the hand-back `text` holds exactly one block and the block passes the
+    checks the gate makes; otherwise append nothing and return the faults. `title` heads a file made here."""
+    fences, unclosed = blocks_in(text)
+    if unclosed is not None:
+        return [f"the {FENCE} fence opened on line {unclosed} of the hand-back is not closed"]
+    if not fences:
+        return [f"no {FENCE} block in the hand-back"]
+    if len(fences) > 1:
+        return [f"two {FENCE} blocks in the hand-back; it holds one"]
+    body = "\n".join(fences[0].split("\n")[1:-2])
+    try:
+        block = json.loads(body)
+    except ValueError as error:
+        return [f"block: the body is not JSON ({error})"]
+    if not isinstance(block, dict):
+        return [f"block: the body is {block!r}, not one JSON object"]
+    faults = [] if newer(block) else check_block(block, htype, known)
+    if faults:
+        return faults
+    write(record, title, f"## {now} — {htype} — {stage}\n\n{fences[0]}\n")
+    return []
+
+
+def append_missing(record: Path, title: str, htype: str, stage: str, reason: str, now: str) -> None:
+    """Append an entry saying no block was handed back, and why."""
+    write(record, title, f"## {now} — {htype} — {stage}\n\n- **Missing:** {reason}\n\n")
+
+
+def write(record: Path, title: str, entry: str) -> None:
+    """Append `entry`; make the file with its title first. Bytes already there are never rewritten."""
+    if not record.exists():
+        entry = f"# Hand-backs — {title}\n\n{entry}"
+    elif not record.read_bytes().endswith(b"\n"):
+        entry = "\n\n" + entry
+    with open(record, "a", encoding="utf-8", newline="\n") as handle:
+        handle.write(entry)

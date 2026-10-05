@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from collections.abc import Callable
 from pathlib import Path
 
 from hand_backs_fixture import HEADING, RECORD, decision, entry, fence, findings, gate, run, scratch, valid
@@ -114,7 +115,7 @@ def with_own_specs(repo: Path) -> None:
 
 
 class NothingRecordedTest(unittest.TestCase):
-    def triple(self, build, released: bool) -> tuple[int, str, str]:  # type: ignore[no-untyped-def]
+    def triple(self, build: Callable[[Path], None], released: bool) -> tuple[int, str, str]:
         with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as other:
             repo = scratch(directory, decisions=0)
             if released:

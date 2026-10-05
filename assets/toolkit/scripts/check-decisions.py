@@ -65,7 +65,7 @@ from __future__ import annotations
 import importlib.util
 import re
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -479,6 +479,14 @@ def verb_options(arguments: list[str]) -> dict[str, str] | None:
     return options
 
 
+def decision_ids(feature: Path) -> set[str]:
+    """The `D<n>` ids a feature's decisions.md has a heading for (none where it has no log)."""
+    log = feature / DECISIONS
+    if not log.is_file():
+        return set()
+    return {f"D{m.group(1)}" for m in map(DECISION_HEADING.match, lines_of(read(log))) if m}
+
+
 def hand_backs_module() -> Any:
     """`hand_backs.py` beside this script, loaded by path with bytecode off (a `__pycache__` under scripts/ would
     make every later scoped run the full gate)."""
@@ -501,8 +509,7 @@ def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int]:
     blocks = 0
     for path in records:
         feature = path.parent if path.parent.parent == SPECS else path.parent.parent.parent
-        log = feature / DECISIONS
-        known = {f"D{m.group(1)}" for m in map(DECISION_HEADING.match, lines_of(read(log))) if m} if log.is_file() else set()
+        known = decision_ids(feature)
         found, said, count = module.check_record(read(path), path.relative_to(ROOT).as_posix(), known)
         findings += found
         notes += said
@@ -545,6 +552,37 @@ def gate() -> int:
     return 0
 
 
+HAND_USAGE = ("usage: check-decisions.py --hand-back <specs/feature[/slices/id]> <drive-type> <stage>   (the hand-back on stdin)\n"
+              "       check-decisions.py --hand-back-missing <specs/feature[/slices/id]> <drive-type> <stage> <reason>")
+FOLDER = re.compile(r"specs/([A-Za-z0-9][A-Za-z0-9._-]*)(?:/slices/([A-Za-z0-9][A-Za-z0-9._-]*))?")
+
+
+def hand_back_verb(arguments: list[str]) -> int:
+    """`--hand-back` and `--hand-back-missing`: append one entry to the record under a feature or a slice. Usage
+    (exit 2) unless the folder is `specs/<feature>` or `specs/<feature>/slices/<id>` and exists, the type is one of
+    the ten and the stage is a lower-case word."""
+    module = hand_backs_module()
+    missing = arguments[0] == "--hand-back-missing"
+    wanted = 5 if missing else 4
+    folder = FOLDER.fullmatch(arguments[1]) if len(arguments) > 1 else None
+    if (len(arguments) < wanted or (not missing and len(arguments) != wanted) or folder is None
+            or not (ROOT / arguments[1]).is_dir() or arguments[2] not in module.STATUSES
+            or not re.fullmatch(r"[a-z][a-z0-9-]*", arguments[3]) or (missing and not " ".join(arguments[4:]).strip())):
+        print(HAND_USAGE, file=sys.stderr)
+        return 2
+    record = ROOT / arguments[1] / HAND_BACKS
+    title = folder.group(2) or folder.group(1)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if missing:
+        module.append_missing(record, title, arguments[2], arguments[3], " ".join(arguments[4:]).strip(), now)
+        return 0
+    faults = module.append(record, title, arguments[2], arguments[3], sys.stdin.read(),
+                           decision_ids(ROOT / "specs" / folder.group(1)), now)
+    for fault in faults:
+        print(f"check-decisions: {fault}", file=sys.stderr)
+    return 1 if faults else 0
+
+
 def main() -> int:
     arguments = sys.argv[1:]
     if not arguments:
@@ -554,6 +592,8 @@ def main() -> int:
         return 0
     if arguments == ["--adversary-baseline"]:
         return baseline()
+    if arguments[0] in ("--hand-back", "--hand-back-missing"):
+        return hand_back_verb(arguments)
     options = verb_options(arguments)
     if options is None:
         print(USAGE, file=sys.stderr)
