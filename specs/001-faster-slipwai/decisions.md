@@ -2185,6 +2185,6 @@
 - **Why:** The owner's decision after an external review.
 - **Decided by:** human
 - **Confidence:** high · **Would reverse if:** the owner says otherwise.
-- **Written to:** `specs/001-faster-slipwai/spec.md` (by the owner, `d864541`); `specs/001-faster-slipwai/story-split.md` (the S06 and S07 rows and Story 10's slices, rewritten by the next iteration before S06 starts)
+- **Written to:** `specs/001-faster-slipwai/spec.md` (by the owner, commit d864541); `specs/001-faster-slipwai/story-split.md` (the S06 and S07 rows and Story 10's slices, rewritten by the next iteration before S06 starts)
 - **Status:** standing
 
