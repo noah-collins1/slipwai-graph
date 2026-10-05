@@ -1148,5 +1148,13 @@
         "driver": "cruise"
       }
     }
-  ]
+  ],
+  "shape": {
+    "tasks": 31,
+    "files": 135,
+    "added": 42301,
+    "removed": 105,
+    "from": "c34ccc6016b1d727c4eec4e0e39819bbb26f1b27",
+    "to": "9e5b090877ac4c441c06ab41f4161e3131e42497"
+  }
 }

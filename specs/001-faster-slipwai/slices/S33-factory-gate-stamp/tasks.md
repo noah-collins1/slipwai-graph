@@ -205,13 +205,13 @@ and `--make "$(MAKE)"`. The list is written once.
 
 ### T013 — The full gate (host task)
 
-- [ ] `make verify` at the root on the tree after T007 — now itself through the stamp, so the **first run is a full
+- [x] *(Iteration 21: the root gate is demo 2's run 1 — a full run, 1961 tests, green at `a8ab3f2`, through the stamp; only records changed after it; then `make -f delivery/Makefile verify` green at `9e5b090`.)* `make verify` at the root on the tree after T007 — now itself through the stamp, so the **first run is a full
   run** (the tree is new) — green; then `make -f delivery/Makefile verify`, green. A forced run
   (`VERIFY_FORCE=1 make verify`) is the one that stands as the proof if a stamp could have been reused.
 
 ### T014 — Register row and benchmark (host task)
 
-- [ ] The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in this slice's
+- [x] The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in this slice's
   own pull request (`AGENTS.md`: one PR per slice).
 
 ---
