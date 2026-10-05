@@ -3342,3 +3342,48 @@
 - **Confidence:** high · **Would reverse if:** a make version is found where `-l` changes a recipe's text or environment.
 - **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md`
 - **Status:** standing
+
+## D153 — Only the forge's trunk counts as gated. Files on unpushed local trunk commits count as changed
+
+- **Stage:** adversary (S06 Phase 4, finding A2 HIGH) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T22:34:37Z · **Iteration:** 23
+- **Scope:** S06-scoped-gate
+- **Question:** `make verify-scoped` skips a check when that check's inputs are the same as the base's. The base is `check-slice-scope.py`'s `merge_base()`. Its `bases_of` takes the newer of the merge-bases with `refs/heads/<trunk>` and `refs/remotes/origin/<trunk>`. So a local `main` with commits nobody gated, merged into the slice branch, becomes the base, and the gate never checks what those commits broke. Reproduced: an unused variable committed on local `main` and merged in gives `skip lint-web … passed`, while `make verify` fails. Which commit is a skip allowed to rely on?
+- **Options:**
+  - **(a)** Scope only against a base that `origin/<trunk>` carries. Where local `main` is ahead of it, run the full gate with one line. With no remote, D117 stands.
+  - **(b)** Keep D117. The page says the base is taken as passing, and the merge root catches the rest.
+  - **(c)** Scope against the base, and also count every file changed between `origin/<trunk>` and the local base as changed.
+- **Decision:** (c), with (a)'s fail-closed rule wherever (c) cannot work out what the unpushed commits changed. Seven points:
+  1. **What a skip relies on.** A skip may rely only on a commit the forge's trunk carries. `verify-scoped` keeps `merge_base()` as the slice's base and leaves `check-slice-scope`'s own base rule alone: newest-base-wins is still what keeps `main`'s own files out of a slice's ownership diff. It then computes `pushed = git merge-base <base> refs/remotes/origin/<trunk>`, where `<trunk>` is the name `merge_base()` reports. If `pushed` equals the base, nothing changes.
+  2. **The unpushed range.** If `pushed` differs from the base, the run takes every path in `git diff --no-renames <pushed> <base>`, deletions and both sides of a rename included. It adds those paths to the slice's own changed set (D117 rule 2) as a union. A union rather than a direct diff from `pushed`, so a file changed and then reverted still counts. Those paths then go through the whole selector, borders included. A gate script, `project.json` or an unclaimed file in that range is the full gate (D117 rule 4). A `Makefile` that differs is the full gate (D140). A reach is the full gate (D148). Nothing new is trusted. The unpushed commits are simply treated as part of the slice's change.
+  3. **Where the range cannot be established, the full gate runs.** That covers:
+     - a remote exists but `refs/remotes/origin/<trunk>` does not, including a remote under another name. This is the same "only `origin` answers" rule `check-slice-scope` already uses.
+     - `merge-base` or `diff` fails;
+     - the clone is too shallow to reach `pushed`.
+  4. **No remote at all.** D117 stands: local `<trunk>` is the base. That is a residual, and the gates page says so.
+  5. **The printed words.**
+     - The `compared with` line gains: ``; `main` at <short> has <n> commits `origin/main` at <short> does not, and every file they changed counts as changed``
+     - A check chosen only by such a file: ``run lint-web — apps/web/src/x.ts changed on `main` since `origin/main` at <short>, which nobody's push has gated``
+     - Remote but no ref: ``the full gate runs, as `make verify` — there is a remote but no `origin/main` to say which of `main`'s commits were pushed; run `git fetch origin refs/heads/main:refs/remotes/origin/main` to scope again`` The fetch command is printed only where `fetch_command()` would print it. Otherwise the line ends at "were pushed".
+     - Cannot establish: ``the full gate runs, as `make verify` — `main` at <short> has commits `origin/main` does not, and what they changed cannot be established: <why>``
+     - As today, only the first cause is printed.
+  6. **This overrides D117 rule 2 in part, and why.** A change is still measured as `check-slice-scope` measures it, plus the unpushed range. D117 rule 2 took the merge-base as a commit that had already passed. A local trunk commit can be one nobody gated, so the claim was false.
+  7. **Tests (RED first).**
+     - e1 is A2 as reproduced: `run lint-web` with the words above, and the run fails.
+     - e2: a remote with no `origin/main` gives the full gate.
+     - e3: with no remote, the local `main` base is used and a merged commit's file is not added.
+     - e4: when `origin/main` is level with or ahead of local `main`, nothing is added and the existing examples still pass.
+     - e5: the unpushed range touches `project.json`, which gives the full gate through D117 rule 4.
+     - e6: a file added then reverted within the unpushed range still selects its check.
+     - The teeth: dropping the union makes e1 pass vacuously and fail. Dropping point 3 makes e2 scope and fail.
+- **Gates page** (`SCOPED_PAGE` in `src/slipwai/project/scoped_targets.py`). Replace "The base is the newer of local `main` and `origin/main`, so a check it skips is taken as passing on the word of that commit, and a local commit nobody gated can be it." with: *The base is the newer of local `main` and `origin/main`. Where local `main` has commits `origin/main` does not, every file those commits changed counts as changed too, so a check is skipped only on the word of a commit the forge's trunk carries. With a remote but no `origin/main` it is the full gate. With no remote at all, local `main` is the word, and only the merge root's `make verify` stands behind it.*
+- **Fragment Catch-up sentence** (`changelog.d/scoped-gate.md`; the MINOR is already carried): *If your local trunk has commits `origin/<trunk>` does not, `make verify-scoped` now counts every file those commits changed as changed, so the checks they touch run even when the slice did not touch them. If a remote exists but there is no `origin/<trunk>` ref, it is the full gate. Push or fetch the trunk and the scoped run narrows again. Nothing else is asked of you.*
+- **Why:**
+  - **(b) is the false green the owner brief rules out.** Priority 5 says a cache or stamp that could cache a false green is wrong. A skip resting on a commit nobody gated is exactly that. A2 shows `passed` where `make verify` fails, which is the brief's "the one thing that would make it pointless". Priority 1's backstop turns this from a defect on `main` into a red merge root, but the gate before the push is still telling the agent something false. And the generated page currently admits the hole rather than closing it.
+  - **(c) fails closed through borders that already exist.** This is D140's lesson. The unpushed commits are not trusted. Their files go through the same fail-closed selector the slice's own files go through, and that selector has already been made sound three times over (D117 rule 4, D140, D148). No new list of cases is added. The only new judgement is point 3, and it fails closed.
+  - **(a) charges a normal state the full price for no extra safety.** In the generated ladder, a local trunk ahead of `origin` is ordinary. Host changes land on `main` "before the fan-out or between merges" (`parallel_slices.py` lines 121, 128), and the commits stay local until pushed. Under (a), every sibling slice in that window would pay `make verify`. Under (c), it pays only for the checks those commits' files select, and the full gate wherever they touch a gate file. That is the same correctness, decided by what changed.
+  - **No remote stays as D117 says.** Without a forge, no commit carries anyone's gate except the merge root's `make verify`. Running the full gate there would remove scoping from every repository that has not been pushed yet, and would buy nothing priority 1 does not already give. That is why it is stated as a residual and not left silent.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high on (c) over (b), and on point 3 failing closed. Medium on the cost in a parallel run, which has not been measured.
+- **Would reverse if:** a benchmark of the parallel loop shows the unpushed range selects the full gate, or most checks, on most scoped runs. Then the local trunk commit could be vouched for instead by a recorded green full `make verify` on that clean trunk commit (Phase 4's run). That would be its own slice, and it would never return to option (b).
+- **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (A2's GREEN: points 1–7, which carry the gates page, data-model.md *How a unit is chosen* and the fragment's Catch-up sentence)
+- **Status:** standing

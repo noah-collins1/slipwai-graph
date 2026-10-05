@@ -1454,7 +1454,7 @@ changed, only the text that describes the keys.
 
 ### T050 — [US2] HIGH — An ungated local trunk as the base (adversary A2)
 
-- [ ] **Decide before GREEN: D153** (skipper, pending at the time of writing). Its decision is this task's GREEN, with its words on the gates page and in the Catch-up.
+- [ ] **Decided — D153 (c):** a skip relies only on a commit `origin/<trunk>` carries; files changed on unpushed local trunk commits count as changed (a union with the slice's own), and the full gate runs where that range cannot be established (a remote but no `origin/<trunk>`, a failed merge-base or diff, too shallow). Read `## D153 ` in decisions.md in full: points 1–7 are the GREEN and its RED (e1–e6, teeth), and it gives the gates page's sentence (replacing T045's base sentence) and the Catch-up sentence word for word. **Files:** `assets/toolkit/scripts/verify-scoped.py` (or the change reader T048 adds), `src/slipwai/project/scoped_targets.py`, `changelog.d/scoped-gate.md`, data-model.md *How a unit is chosen*, `tests/test_verify_scoped_base.py` (new), `tests/test_scoped_page.py`.
 
 ### T051 — [US2] MEDIUM — An ignored link out of a deployable is a reach (adversary A3 · D148)
 
