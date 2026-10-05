@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import importlib.util
 import os
-import re
 import subprocess
 import sys
 from typing import Any, Callable
@@ -24,12 +23,13 @@ from typing import Any, Callable
 sys.dont_write_bytecode = True  # an untracked file under scripts/ would make every later scoped run the full gate
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+
+from verify_scoped import record as records  # noqa: E402
+
 LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — {reason}"
 EVERY = LINE + "every check runs, as no selection is built yet; the stamp is left as it is"
-DATABASE = ("-npq", ".DEFAULT")
-ASSIGNED = re.compile(r"^VERIFY_STAMP :?= (.*)$", re.MULTILINE)
-MAKE_STATE = ("MAKEFLAGS", "MFLAGS", "MAKELEVEL", "MAKEOVERRIDES")
 
 
 def load(name: str, filename: str) -> Any:
@@ -121,13 +121,10 @@ def reason(ground: Ground) -> str | None:
 def stamp_arguments(make: str, makefile: str) -> list[str]:
     """What the project's `verify` recipe hands `verify-stamp.py` — its tools and environments — read from the make
     database as `VERIFY_STAMP`, so the key is built from the project's own list and this script holds none."""
-    environment = {key: value for key, value in os.environ.items() if key not in MAKE_STATE}
-    done = subprocess.run([make, "-f", makefile, *DATABASE], capture_output=True, text=True, check=False,
-                          env=environment, timeout=60, encoding="utf-8")
-    found = ASSIGNED.search(done.stdout)
+    found = records.database(make, makefile).variables.get("VERIFY_STAMP")
     if found is None:
         raise ValueError("the make database holds no VERIFY_STAMP")
-    return found.group(1).split()
+    return found.split()
 
 
 def standing(ground: Ground, make: str, makefile: str) -> str | None:
@@ -140,7 +137,7 @@ def standing(ground: Ground, make: str, makefile: str) -> str | None:
         if stamp.index_problem(stamp.top_level()) is not None:
             return None
         key = stamp.build_key(stamp.machine_tools(stamp.Options(["--make", make, *stamp_arguments(make, makefile)])))
-    except (stamp.CannotTell, ValueError, OSError, subprocess.SubprocessError):
+    except (stamp.CannotTell, ValueError, OSError, subprocess.SubprocessError, records.RecordError):
         return None
     held = stamp.read_stamp(stamp.stamp_path())
     if held is None or held["key"] != key["key"]:
@@ -173,12 +170,30 @@ def run(make: str, makefile: str) -> int:
     return full_gate(make, makefile, "verify-checks", "VERIFY_ORDER=1")
 
 
+def record(make: str, makefile: str) -> int:
+    """Print the record; where it cannot be built, one line on stderr, nothing on stdout, and status 1."""
+    try:
+        scope = load("verify_stamp_for_the_scope", "verify-stamp.py").trunk_module()
+        text = records.render(records.build(make, makefile, scope))
+    except records.RecordError as error:
+        print(LINE + "the record cannot be built — " + str(error).replace("\n", " "), file=sys.stderr)
+        return 1
+    except Exception as error:  # a checkout this script cannot read is one it cannot record
+        print(LINE + "the record cannot be built — " + str(error).replace("\n", " ")[:160], file=sys.stderr)
+        return 1
+    sys.stdout.write(text)
+    return 0
+
+
+VERBS = {"run": run, "record": record}
+
+
 def main(argv: list[str]) -> int:
     options = dict(zip(argv[1::2], argv[2::2], strict=False))
-    if argv[:1] != ["run"] or len(argv) % 2 == 0 or not set(options) <= {"--make", "--makefile"}:
-        print("usage: verify-scoped.py run [--make <make>] [--makefile <file>]", file=sys.stderr)
+    if argv[:1] not in (["run"], ["record"]) or len(argv) % 2 == 0 or not set(options) <= {"--make", "--makefile"}:
+        print("usage: verify-scoped.py run|record [--make <make>] [--makefile <file>]", file=sys.stderr)
         return 2
-    return run(options.get("--make", "make"), options.get("--makefile", "Makefile"))
+    return VERBS[argv[0]](options.get("--make", "make"), options.get("--makefile", "Makefile"))
 
 
 if __name__ == "__main__":
