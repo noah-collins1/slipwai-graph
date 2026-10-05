@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -62,3 +63,14 @@ def scratch(directory: str, record: str | None = None, decisions: int = 134, pat
 def run(repo: Path, *args: str, stdin: str | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["python3", "-B", "scripts/check-decisions.py", *args], cwd=repo, text=True,
                           capture_output=True, input=stdin)
+
+
+def gate(record: str, decisions: int = 134, path: str = RECORD) -> subprocess.CompletedProcess[str]:
+    """The checker's no-argument run over a project holding just this record."""
+    with tempfile.TemporaryDirectory() as directory:
+        return run(scratch(directory, record, decisions, path))
+
+
+def findings(result: subprocess.CompletedProcess[str]) -> list[str]:
+    """The finding lines on stderr, indentation removed."""
+    return [line.strip() for line in result.stderr.splitlines() if line.startswith("  ")]

@@ -128,19 +128,55 @@ def check_block(block: object, heading_type: str, known: set[str] | None) -> lis
     return faults
 
 
+MISSING = re.compile(r"^- \*\*Missing:\*\* (\S.*)$")
+SHAPE = "a heading `## <UTC time> — <drive-type> — <stage>`"
+
+
 def extract(text: str) -> list[dict[str, Any]]:
-    """The entries of a record: `line`, `heading`, `match` (the heading's parts or None) and `blocks`, the
-    (line, body) of each `result-contract` fence in it."""
+    """The entries of a record, each `line`, `heading`, `match` (the heading's parts or None), `blocks` (the
+    (line, body) of each `result-contract` fence), `missing` (the reasons of `- **Missing:**` lines) and `open`
+    (the line of a `result-contract` fence no closing fence ended before the next heading). A fence with another
+    info string is skipped whole, headings inside it included; text before the first heading is the file's own."""
     entries: list[dict[str, Any]] = []
     lines = text.split("\n")
+    fence: tuple[str, int, list[str]] | None = None  # info string, line, body so far
     for number, line in enumerate(lines, 1):
-        if line.startswith("## "):
-            entries.append({"line": number, "heading": line, "match": HEADING.match(line), "blocks": []})
-        elif entries and line.strip() == f"```{FENCE}":
-            end = next((i for i in range(number, len(lines)) if lines[i].strip() == "```"), None)
-            if end is not None:
-                entries[-1]["blocks"].append((number, "\n".join(lines[number:end])))
+        stripped = line.strip()
+        if fence is not None and stripped == "```":
+            if fence[0] == FENCE and entries:
+                entries[-1]["blocks"].append((fence[1], "\n".join(fence[2])))
+            fence = None
+        elif fence is not None and not (fence[0] == FENCE and line.startswith("## ")):
+            fence[2].append(line)
+        elif line.startswith("## "):
+            if fence is not None:  # a block no closing fence ended before this heading
+                entries[-1]["open"] = fence[1]
+                fence = None
+            entries.append({"line": number, "heading": line, "match": HEADING.match(line), "blocks": [],
+                            "missing": [], "open": None})
+        elif stripped.startswith("```"):
+            fence = (stripped[3:].strip(), number, [])
+        elif entries and (found := MISSING.match(line.rstrip())):
+            entries[-1]["missing"].append(found.group(1).strip())
+    if fence is not None and fence[0] == FENCE and entries:
+        entries[-1]["open"] = fence[1]
     return entries
+
+
+def entry_faults(entry: dict[str, Any]) -> list[str]:
+    """What is wrong with the shape of one entry, apart from the fields of its block."""
+    if entry["match"] is None:
+        return [f"is not {SHAPE}"]
+    if entry["open"] is not None:
+        return [f"the {FENCE} fence is not closed"]
+    blocks, missing = entry["blocks"], entry["missing"]
+    if len(blocks) > 1:
+        return [f"holds {len(blocks)} {FENCE} blocks; an entry holds one"]
+    if blocks and missing:
+        return [f"holds both a {FENCE} block and a `- **Missing:**` line; it holds one"]
+    if not blocks and not missing:
+        return [f"holds neither a {FENCE} block nor a `- **Missing:** <reason>` line"]
+    return []
 
 
 def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[str], list[str], int]:
@@ -149,13 +185,22 @@ def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[st
     notes: list[str] = []
     count = 0
     for entry in extract(text):
-        for _, body in entry["blocks"]:
-            count += 1
-            block = json.loads(body)
-            at = f"{where}:{entry['line']}: {entry['heading']}"
-            if newer(block):
-                notes.append(f"check-decisions: note: {at} — contract {block['contract']} is newer than this "
-                             "checker reads; its fields are not held")
-                continue
+        at = f"{where}:{entry['line']}: {entry['heading']}"
+        shape = entry_faults(entry)
+        findings += [f"{at} — {fault}" for fault in shape]
+        if shape or not entry["blocks"]:
+            continue
+        count += 1
+        try:
+            block = json.loads(entry["blocks"][0][1])
+        except ValueError as error:
+            findings.append(f"{at} — block: the body is not JSON ({error})")
+            continue
+        if not isinstance(block, dict):
+            findings.append(f"{at} — block: the body is {block!r}, not one JSON object")
+        elif newer(block):
+            notes.append(f"check-decisions: note: {at} — contract {block['contract']} is newer than this "
+                         "checker reads; its fields are not held")
+        else:
             findings += [f"{at} — {fault}" for fault in check_block(block, entry["match"].group(2), known)]
     return findings, notes, count
