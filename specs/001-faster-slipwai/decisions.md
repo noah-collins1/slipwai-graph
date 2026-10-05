@@ -2188,3 +2188,15 @@
 - **Written to:** `specs/001-faster-slipwai/spec.md` (by the owner, commit d864541); `specs/001-faster-slipwai/story-split.md` (the S06 and S07 rows and Story 10's slices, rewritten by the next iteration before S06 starts)
 - **Status:** standing
 
+
+## D111 — How the split carries D110: S06 and S07 rewritten, User Story 10 as three slices and a measurement
+- **Stage:** split (`/story-splitting`, re-entered for D110) · **Slice:** none · **When:** 2026-10-05T00:25:27Z · **Iteration:** 16
+- **Scope:** global
+- **Question:** D110 rewrites S06 and S07 and adds User Story 10 before S09 and S10, with FR-045 as a measurement slice after S10. Into which slices, in what order, and where do User Story 2's scenarios 6 (scoped mutation) and 7 (xdist at the merge root) land, given S08 and S05 already own them?
+- **Options:** (a) recommended: S06 carries User Story 2 scenarios 1–5 as its own and re-checks 7 (delivered by S05); 6 stays with S08, which FR-008 and the split already give it; User Story 10 split by protocol part — S34 the SC-013 milestone on one edge (evidence, invalidation, one round of structured proposals, acceptance on the exact tree: scenarios 1, 2, 3 for evidence, 5, 6), S35 the round budget and escalation (scenario 4), S36 invariants and obligations (scenarios 3 for obligations, 7); S37 the FR-045 comparison after S10; S34–S36 made dependencies of S09, as the owner's order was for S24 (D39) · (b) fold scoped mutation into S06 so it delivers all seven scenarios itself · (c) User Story 10 as one slice.
+- **Decision:** (a).
+- **Why:** The owner's milestone (SC-013) is the first thing a developer can watch work, so it is the first slice and the smallest one that shows it end to end; the budget and the invariants are each a separate thing an actor can see refused, so each is its own slice. Moving scoped mutation into S06 would double S06 and empty S08 for no new behaviour; the story's scenario 6 is still delivered, by the slice that already owns it. Making S34–S36 prerequisites of S09 is how the graph says *placed before*, so the ready set cannot take S09 first.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** the owner says S06 must itself deliver scoped mutation, or that User Story 10 is to land as one slice.
+- **Written to:** `specs/001-faster-slipwai/story-split.md`
+- **Status:** standing
