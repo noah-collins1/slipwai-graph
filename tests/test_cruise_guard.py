@@ -113,8 +113,8 @@ if [ "$n" -ge 3 ]; then echo "cruise: done"; else echo "cruise: continue"; fi"""
                           "never by editing what measures it**: nothing\nunder `scripts/` — the `check-*` gates, "
                           "this runner — the `Makefile`, anything under `tools/`, CI, or a\nharness's hook settings "
                           "is yours to touch, whatever it reports.", bosun)
-            self.assertIn("is `cannot: <the gate's name and\nits own last lines>`, and the run parks on those words; "
-                          "`make verify` reporting a gate as skipped is not a\nfailure", bosun)
+            self.assertIn("is `cannot`, with the gate's name and\nits own last lines in `change_summary`, and the run "
+                          "parks on those words; `make verify` reporting a gate as skipped is not a\nfailure", bosun)
             self.assertIn("fix the cause in the tree the gate measures", bosun)
             command = (repo / "commands/cruise.md").read_text()
             self.assertIn("- making a gate pass by changing the gate — anything under `scripts/`, the `Makefile`, "
