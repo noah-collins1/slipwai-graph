@@ -26,6 +26,13 @@ TEMPLATES = (
     "assets/profiles/standard/.specify/presets/standard/templates/constitution-template.md",
     "assets/profiles/event-modelling/.specify/presets/event-modelling/templates/constitution-template.md",
 )
+NEW_SENTENCE = (
+    "The branch's scoped gate MUST be green immediately before that first implementation push: it runs every check "
+    "that reads a file changed since the trunk commit the branch is built on, or a tool, a variable or an ignored "
+    "file that differs from the branch's last green full gate, and it is the full gate wherever it cannot tell; a "
+    "check it skips is taken as passing because the trunk passed it. The full gate MUST be green at the merge root "
+    "and in CI before anything lands on trunk."
+)
 OLD_SENTENCE = "The whole suite MUST be green immediately before that first implementation push"
 
 
@@ -101,6 +108,12 @@ class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
             sentence = re.search(r"The branch's scoped gate MUST be green.*?before anything lands on trunk\.", template)
             self.assertIsNotNone(sentence, "the template carries the new sentence")
             self.assertIn(sentence.group(0) if sentence else "", self.note, "quoted in full, word for word")
+
+    def test_both_templates_carry_the_sentence_and_the_note_quotes_it_word_for_word(self) -> None:
+        for name in TEMPLATES:
+            self.assertIn(NEW_SENTENCE, squashed((ROOT / name).read_text(encoding="utf-8")))
+        self.assertIn(NEW_SENTENCE, self.note)
+        self.assertNotIn("since the branch last passed", self.note)
 
     def test_the_note_stands_alone_in_one_paragraph(self) -> None:
         for reference in ("T0", "AC-S06", "D12", "above", "the page"):

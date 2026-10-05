@@ -133,9 +133,11 @@ events → outbox → event sourcing) is a plan-time decision recorded with its 
   guards.
 - At most **one rule's** examples may be failing at a time. Each cycle MUST leave the quickest relevant
   tests in its file or area green. Commit each completed cycle locally; do not push those commits until the
-  actor has accepted the demo. The branch's scoped gate MUST be green immediately before that first implementation push: it runs every
-  check whose inputs changed since the branch last passed the full gate, and it is the full gate wherever it
-  cannot tell. The full gate MUST be green at the merge root and in CI before anything lands on trunk. A row of pending tests is not RED; it is an unintegrated batch of
+  actor has accepted the demo. The branch's scoped gate MUST be green immediately before that first implementation push: it runs every check that
+  reads a file changed since the trunk commit the branch is built on, or a tool, a variable or an ignored file that
+  differs from the branch's last green full gate, and it is the full gate wherever it cannot tell; a check it skips is
+  taken as passing because the trunk passed it. The full gate MUST be green at the merge root and in CI before
+  anything lands on trunk. A row of pending tests is not RED; it is an unintegrated batch of
   the kind X exists to prevent.
 - **RED is a failing assertion, not a failing build.** Whatever an example names — function, method, type,
   field — MUST exist far enough to compile against before that example is written, as a no-op or a default

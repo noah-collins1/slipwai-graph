@@ -38,8 +38,11 @@ HEADER = """
 # a line shared by several. Nothing above this line names them, so `make verify` and `make ci` are what they were.
 """
 
-SCOPED_PAGE = """`make verify-scoped` runs only the checks whose inputs changed since the branch last passed the full gate, and
-prints a line for each check, run or skipped, with the reason. It scopes on a `slice/<id>` branch with a usable base, outside CI:
+SCOPED_PAGE = """`make verify-scoped` runs only the checks whose inputs changed, and prints a line for each check, run or skipped, with
+the reason. It compares two things. Files, committed or not, are compared with the trunk commit the branch is built on,
+the one its last line names (`compared with `main` at <short>`); that commit moves when the branch is rebased onto the
+trunk or merges it, and a check it skips is taken as passing because the trunk's own full gate passed it there. Tools,
+variables and the files git ignores are compared with the baseline the branch's last green full run left. It scopes on a `slice/<id>` branch with a usable base, outside CI:
 every deployable's `lint-`, `typecheck-` and `test-` is a check, and each is chosen when a changed file is one it reads,
 when a contract it consumes changed, when an obligation names it, or when the machine differs from the baseline,
 and everywhere else it is the full gate, `make verify`, and says why on its first line, so it is never wrong where it cannot

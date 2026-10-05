@@ -13,9 +13,11 @@ from slipwai.scaffold import project_files
 from slipwai.services import App
 
 PRINCIPLE_V = (
-    "The branch's scoped gate MUST be green immediately before that first implementation push: it runs every "
-    "check whose inputs changed since the branch last passed the full gate, and it is the full gate wherever it "
-    "cannot tell. The full gate MUST be green at the merge root and in CI before anything lands on trunk."
+    "The branch's scoped gate MUST be green immediately before that first implementation push: it runs every check "
+    "that reads a file changed since the trunk commit the branch is built on, or a tool, a variable or an ignored "
+    "file that differs from the branch's last green full gate, and it is the full gate wherever it cannot tell; a "
+    "check it skips is taken as passing because the trunk passed it. The full gate MUST be green at the merge root "
+    "and in CI before anything lands on trunk."
 )
 PLANNING = (
     "After demo acceptance, immediately before the first implementation push, widen to the affected suites, "

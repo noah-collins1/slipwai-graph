@@ -38,6 +38,19 @@ class TheStampedPageSaysWhatTheScopedGateDoesTest(FactoryTestCase):
         self.assertIn("`make verify-scoped` runs only the checks whose inputs changed", self.page)
         self.assertIn("`slice/<id>` branch with a usable base, outside CI", self.page)
 
+    def test_the_first_sentences_name_what_files_and_what_tools_variables_and_ignored_files_meet(self) -> None:
+        said = (
+            "`make verify-scoped` runs only the checks whose inputs changed, and prints a line for each check, "
+            "run or skipped, with the reason. It compares two things. Files, committed or not, are compared "
+            "with the trunk commit the branch is built on, the one its last line names "
+            "(`compared with `main` at <short>`); that commit moves when the branch is rebased onto the trunk "
+            "or merges it, and a check it skips is taken as passing because the trunk's own full gate passed it "
+            "there. Tools, variables and the files git ignores are compared with the baseline the branch's "
+            "last green full run left."
+        )
+        self.assertIn(said, self.page)
+        self.assertNotIn("since the branch last passed", self.page)
+
     def test_it_is_the_full_gate_wherever_it_cannot_tell_and_what_broadens_it(self) -> None:
         self.assertIn("everywhere else it is the full gate, `make verify`", self.page)
         for broadening in ("the trunk", "`VERIFY_FORCE`", "a changed `Makefile`", "`project.json`",
