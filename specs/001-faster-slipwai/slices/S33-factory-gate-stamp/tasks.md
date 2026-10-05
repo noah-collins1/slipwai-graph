@@ -392,7 +392,7 @@ change `tests/` only and are below, in the order found.
   `tests/test_factory_gate_stamp_inputs.py` (a decided entry), or make the test hide `npx` without depending on
   its directory; whichever, the scan must know of it.
 
-### T026 — HIGH (D119): interpreter caches under `assets/` are exempt from the key, and the suite fails on them — BLOCKED on a person (⛔)
+### T026 — HIGH (D119): interpreter caches under `assets/` are exempt from the key, and the suite fails on them — applied
 
 - [x] *(Applied by the owner at `63d529d`; its diff is the patch line for line, checked in iteration 19.)* *(Built in iteration 18 as `s33-3.patch` — branch `s33-patch-3`, `aa46146`; `git apply --check` clean against `adopt-method`; RED observed (the run after the plant reused), teeth shown; the probe line writes a line unique to the run where `sort` is missing, held by its own example, and the AC-S33-6 hold's stand-in PATH carries `find` and `sort`, both decided in the tools table. ⛔ until a person applies it.)* `verify-stamp.py`'s `EXEMPT` skips `__pycache__/` and `*.pyc` at the factory root too, while `test_toolkit`
   reads the toolkit and profile overlays as text and `test_assets_bytecode` fails on a toolkit cache: in a /tmp clone
@@ -444,9 +444,9 @@ change `tests/` only and are below, in the order found.
   `tests/test_factory_gate_stamp_scan.py` reads `scripts/*.py` as it reads `src/slipwai/`, and each name it then finds
   is classed in the table, so the next one fails the suite until it is.
 
-### T031 — MEDIUM (A1, A5, D122): the probe file is written or the run stops; a failed listing is unique to the run — BLOCKED on a person (⛔)
+### T031 — MEDIUM (A1, A5, D122): the probe file is written or the run stops; a failed listing is unique to the run — applied
 
-- [ ] *(Built in iteration 19 as `s33-4.patch` — branch `s33-patch-4`, `37d444a`; four examples in `tests/test_factory_gate_stamp_probes.py`, all four red against today's `Makefile` and green with the patch (checked by the host); `git apply --check` clean against `adopt-method` after T030. ⛔ until a person applies it; then T029 and T013.)* In a sibling worktree, the root `Makefile`'s stamped branch: the probe step joined with `&&` to the stamp's
+- [x] *(Applied by a person as `5842ba9`; recorded in iteration 21.)* *(Built in iteration 19 as `s33-4.patch` — branch `s33-patch-4`, `37d444a`; four examples in `tests/test_factory_gate_stamp_probes.py`, all four red against today's `Makefile` and green with the patch (checked by the host); `git apply --check` clean against `adopt-method` after T030. ⛔ until a person applies it; then T029 and T013.)* In a sibling worktree, the root `Makefile`'s stamped branch: the probe step joined with `&&` to the stamp's
   call, so a probe that cannot be written fails the gate with the shell's line; a `.factory-work` that is a symlink or
   not a directory refused in one line; the cache listing's fallback taken whenever `find` exits non-zero. Examples on
   `GateCase` in `tests/test_factory_gate_stamp.py` (or a new module under 350 lines): a read-only probe file after a
