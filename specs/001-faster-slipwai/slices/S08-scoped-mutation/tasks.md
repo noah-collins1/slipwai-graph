@@ -700,6 +700,47 @@ worktree was mutated and restored (T018's teeth, below).
   the `NOT_FACTORY` line, one example. Files: `mutation-scope.py`, `tests/test_mutation_scope_go.py`,
   `tests/test_mutation_scope_spring.py`, `tests/test_mutation_recipe.py`.
 
+### After-converge gaps (2026-10-05, `drive-gaps`, range `c3c760b..1db94ad`, read only)
+
+Every AC-S08-1..18 has a holding test (trace in the gaps report); these are what T022–T025 miss. Each is a task; the host
+recommends T026 and T027 land before the demo (a silent green, and a dry run that runs the tool).
+
+- [ ] **T026 — HIGH · A project in a git subdirectory reports `no mutant to run` for a changed production file, exit 0
+  (G1; AC-S08-2, AC-S08-8, priority 5).** `check-slice-scope.changed_files` gives tracked paths from the repository top
+  (`sub/apps/…`) and untracked ones from the project (`check-slice-scope.py:511`, `:515`); `classify` and `sweep_causes`
+  (`mutation-scope.py:273–281`, `:322–332`) match project-relative roots, so a committed or modified change is `other`
+  and a changed `Makefile` or scope script does not sweep. Repro: a Go starter at `outer/sub`, git at `outer`,
+  `slice/S1`, `// probe` appended to `sub/apps/service/health/health.go` → `no mutant to run — no production file
+  changed`, `0 scoped, 0 swept, 1 skipped`, exit 0. **Owed, as the class:** every path the script compares (the change
+  set, the `Makefile`, the scope and backend scripts, each service's config, `git show <base>:<path>`) is made
+  project-relative through the stamp's `project_prefix()` — or the prefix is a border that sweeps with its reason — with
+  a tracked and an untracked example. Files: `mutation-scope.py`, `tests/test_mutation_change_set.py` or a new file.
+- [ ] **T027 — MEDIUM · `make -n mutation` on a slice branch runs the tool (G2; AC-S08-1).** The recipe names
+  `$(MAKE)`, so make runs it under `-n`/`-q`/`-t`; the script never asks verify-scoped's `idle` border, and the scoped
+  path starts `go-mutation.py`/`./mvnw` itself. Repro: `make -n mutation` with `health.go` edited printed `scope
+  apps/service — …` and reached `go run … unleash`. **Owed:** honour `idle` — print the plan and run nothing on every
+  path (scoped, per-service sweep, whole sweep, refusal) — with an example under `MAKEFLAGS=n` for each.
+- [ ] **T028 — MEDIUM · The skill's commands collect committed changes only (G4; AC-S08-16, D138 item 2).**
+  `SKILL.md:84` and `:132` (`git diff <base>...HEAD`) contradict the rewritten `:89`. **Owed:** the section's commands
+  include the working tree and untracked files (`git diff <merge-base>` plus `git ls-files --others --exclude-standard`),
+  and the test reads the commands, not only the sentence.
+- [ ] **T029 — MEDIUM · Python with mutmut on PATH is refused (G3; AC-S08-5, D137) — product question handed back.**
+  `make mutation-full` still runs `mutmut run` where it is installed (`native_commands.py:102`); the scoped run refuses
+  Python unconditionally (`mutation-scope.py:469–475`). The fragment's *until you wire a tool* names no step a project
+  can take. Host recommendation: (a) keep D137's refusal and change the words — the refusal and the fragment say the
+  scope refuses whether or not mutmut is installed, until `S42-mutmut-mutation` wires it, and `make mutation-full` runs
+  what it ran; alternative (b) sweep a Python service when `mutmut` is on PATH (narrows D137's item 2).
+- [ ] **T030 — LOW · A deleted Spring service whose Makefile was not regenerated raises a traceback (G5; AC-S08-12).**
+  `stream()` (`mutation-scope.py:429`) raises `FileNotFoundError`; no closing line, the service not named. **Owed:** every
+  runner (Go, Spring, sweep) on a missing service directory fails that service by name and the run closes.
+- [ ] **T031 — LOW · States that work and nothing holds (G6).** A unicode path with a space; `SINCE` as an annotated tag,
+  `refs/tags/…`, a full and a short hash, detached with `CI=1`; a Java rename keeping its new FQN (AC-S08-7); a rename
+  across services; a Go + TypeScript shape in `test_mutation_targets.SERVICES`. **Owed:** an example each.
+- [ ] **T032 — LOW · Tests that hold less than their criterion (G7).** AC-S08-3: assert `targetTests` and the `*IT`
+  exclusion under `-DtargetClasses` in the real Spring run; AC-S08-13: the CI workflow byte for byte, not *no
+  "mutation"*; AC-S08-14: a stamp written, then reused after `make mutation`, and `verify-scoped` from a scoped baseline
+  not broadened; AC-S08-15: the adopted example sees the recorded command run.
+
 ## Phase 4: After acceptance (host tasks)
 
 ### T014 — The adversary pass (host task)
