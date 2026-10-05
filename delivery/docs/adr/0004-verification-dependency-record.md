@@ -44,6 +44,44 @@ wraps each application's recorded commands through `ratchet.py` and has no `veri
   build. Each says its reason in one line.
 - An adopted repository's `verify-scoped` runs the full gate and says this layout has no record yet.
 
+### The printed shape (schema 1)
+
+Added at S06's plan stage (`specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md`).
+`python3 scripts/verify-scoped.py record` prints one JSON object, keys sorted, two-space indent:
+
+```json
+{
+  "schema": 1,
+  "deployables": { "<name>": { "kind": "service|web", "path": "<path>", "family": "<language family>",
+                               "api": "<service>" } },
+  "checks": {
+    "<unit>": {
+      "gate": "<the verify-checks prerequisite it stands for>",
+      "components": ["<deployable>"],
+      "inputs": { "files": ["<path>", "<directory>/"], "tools": ["<tool>"], "variables": ["<NAME>"] },
+      "claims": true,
+      "always": null,
+      "targets": ["<make target>"]
+    }
+  },
+  "contracts": [ { "id": "<kind>:<name>", "kind": "openapi|package|event", "owner": "<deployable>|null",
+                   "paths": ["<directory>/"], "consumers": ["<deployable>"], "event": "<name, for kind event>" } ],
+  "obligations": [ { "name": "<name>", "components": ["<deployable>"], "checks": ["<unit>"] } ]
+}
+```
+
+- A *unit* is a `verify-checks` prerequisite, except that `lint`, `typecheck` and `test` appear once per deployable
+  (`lint-<name>`); `api` is present only for a web app that names one.
+- `inputs` is `null` for a check with no recorded inputs. `tools` uses the verify stamp's names (`make`, `git`,
+  `python3`, `uv`, `node`, `npm`, `go`, `java`, `interpreter <path>/.venv`); `variables` are names, never values.
+- `claims: false` marks a check whose file inputs never make a changed path known (it reads every file); `always` is
+  the reason a check runs on every scoped run, or `null`.
+- The obligations come from `project.json`'s optional `verification.obligations`: a list of objects with `name`
+  (used once), `components` (at least two distinct `deployables` keys) and `checks` (units, or `lint`, `typecheck`,
+  `test` for all their units); other keys in an entry are ignored.
+- Readers tolerate unknown keys. Adding a key is MINOR; renaming or removing one raises `schema` and needs a
+  `migrate` catch-up note.
+
 ## Consequences
 
 The record can never be staler than the tree it judges, and a person edits one file they already own. The merge

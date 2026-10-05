@@ -1,0 +1,164 @@
+# Data model: S06-scoped-gate
+
+Four shapes: the obligations key a person writes in `project.json`, the baseline `verify-stamp.py` keeps under the git
+directory, the factory's table inside the script, and the record the script prints (ADR 0004's contract). Nothing is
+written into the working tree.
+
+## `project.json`: `verification.obligations` (optional, the project's own)
+
+```json
+"verification": {
+  "obligations": [
+    { "name": "checkout", "components": ["orders", "billing"], "checks": ["test-orders", "test-billing"] }
+  ]
+}
+```
+
+- Missing `verification`, or `verification` without `obligations`: no obligations (the default).
+- Read from `project.json` at the base (`check-slice-scope.deployables`' reading); a branch that changes
+  `project.json` runs the full gate anyway.
+- Well-formed: `verification` an object; `obligations` a list; each entry an object with `name` a non-empty string
+  used once, `components` a list of at least two distinct names each a key of `deployables`, `checks` a non-empty
+  list of names each a unit the record holds, or a gate name (`lint`, `typecheck`, `test`) meaning all its units.
+  Other keys in an entry are ignored. Anything else: one line naming the entry by position and name, then
+  `make verify`.
+- `metadata()`, `replay`, `adopt` never write it; `migrate`'s three-way merge keeps a person's.
+
+## The baseline: `<git-dir>/slipwai/verify-baseline-<project>.json`
+
+`<project>` is `verify-stamp.project_name()`, the same suffix as the stamp's. Written with `write_file` (temporary
+file, rename) by `verify-stamp.py record`, right after the stamp, only where the branch matches `SLICE_BRANCH`.
+
+```json
+{ "branch": "slice/S1",
+  "tools": { "make": "4.4.1 [answer 0f3c…]", "node": "v22.1.0 [answer 9a2e…]", "interpreter apps/billing/.venv": "3.13.1" },
+  "variables": { "UX_GATES_SINCE": "<sha256 of variable_record>", "…": "…" } }
+```
+
+- `tools` is the pending note's `tools` — what the run asked at its start, the stamp's `tools` exactly.
+- `variables` holds, for every name in `VARIABLES`, the hex SHA-256 of `variable_record(name)`; never a value.
+- Removed by `begin_full_run` (every full run of an eligible checkout that starts its checks, `-i` included) and on
+  `reuse`'s ratchet path; never written under `declined()`, never off a slice branch, never by `verify-scoped`.
+- Unusable when absent, not a regular file, not JSON of this shape, or its `branch` is not the current branch.
+
+## The table (`scripts/verify_scoped/table.py`)
+
+Per gate check: the file inputs (a path, or a directory ending in `/`; `<dep>` is each deployable's path, `<web>` a
+web app's, `<svc>` a service's), the tools, the variables of `VARIABLES`, whether its file inputs claim, and why it
+runs always. Every check also reads `make` and `python3` (D116's *Why*). A `verify-checks` prerequisite the table does
+not name has no recorded inputs.
+
+| Check (unit) | File inputs | Tools (beyond make, python3) | Variables | Claims | Always |
+|---|---|---|---|---|---|
+| `lint-<n>`, `typecheck-<n>`, `test-<n>` — npm family | `<dep>/`, `package.json`, `package-lock.json`, `.nvmrc`, `biome.jsonc` | node, npm | — | yes | — |
+| the same — Python | `<dep>/` (its `.python-version`, `pyproject.toml`, `uv.lock` inside) | uv, `interpreter <dep>/.venv` | — | yes | — |
+| the same — Go | `<dep>/` (its `go.mod`, `go.sum`), `go.work`, `go.work.sum` | go | — | yes | — |
+| the same — Java | `<dep>/` (its `pom.xml`, `.mvn/wrapper/maven-wrapper.properties`) | java | — | yes | — |
+| `check-openapi` | `<svc>/` of each exporting service, `packages/api-client/`, `package.json`, `package-lock.json`, `.nvmrc` | the services' family tools, node, npm | — | yes | — |
+| `check-imports` | `<dep>/`, each npm package `packages/<p>/` | — | — | yes | — |
+| `check-migrations` | `<dep>/` | git | — | yes | — |
+| `check-styles` | `<web>/` | — | — | yes | — |
+| `check-ux-gates` | `<web>/`, `.slipwai/extensions.json`, `AGENTS.md`, `package-lock.json`, `.github/workflows/verify.yml` | git, node, npm | UX_GATES_REQUIRE, UX_GATES_SINCE, UX_GATES_SHARD, SLIPWAI_NO_INSTALL | yes | — |
+| `check-model` | `docs/event-model/`, `<dep>/` | — | — | yes | — |
+| `check-drawio` | `docs/event-model/model.yaml`, `docs/event-model/model.drawio` | node, npm | — | yes | — |
+| `check-decisions` | `specs/`, `docs/event-model/model.yaml` | — | — | yes | — |
+| `check-benchmark` | `specs/`, `.specify/integration.json`, `docs/event-model/model.yaml` | git | — | yes | — |
+| `check-flags` | `<dep>/`, `packages/`, `infra/service/flags.auto.tfvars` | git | — | yes | — |
+| `check-deploy-role` | `infra/bootstrap/`, `infra/service/` | — | — | yes | — |
+| `check-convergence` | — (only an adopted gate has it; never reached) | | | | |
+| `check-python` | — | — | — | — | every check waits on it |
+| `check-slice-scope` | (every path) | git | GITHUB_HEAD_REF, CI_COMMIT_REF_NAME, GITHUB_BASE_REF, CI_MERGE_REQUEST_TARGET_BRANCH_NAME | no | it compares the whole branch with its base |
+| `check-codegraph` | (every tracked path) | git | CODEGRAPH_GATE_NO_SYNC | no | it reads every tracked file |
+| `check-agents`, `check-speckit`, `check-extensions`, `check-constitution` | no recorded inputs (until S07) | | | no | no recorded inputs |
+
+`tests/test_verify_scoped_record.py` holds the file column against each check script's reads (research R-8); the
+implement stage corrects a row the scan contradicts, never by narrowing below what the script reads.
+
+**Contracts**, derived per run:
+
+| Contract | Changed when | Consumers | Units chosen |
+|---|---|---|---|
+| `openapi:<svc>` | a path under `<svc>/` | every web app whose `api` is `<svc>` | `check-openapi` (where present), each consumer's `typecheck-`, `test-` |
+| `package:<p>` (`packages/<p>/package.json` exists at the base or now) | a path under `packages/<p>/` | every npm-family deployable | each consumer's `typecheck-`, `test-` |
+| `event:<E>` (a slice of service X produces `E`, a slice of service Y≠X reads it — model at the base and now) | a path under X's path | Y | Y's `typecheck-`, `test-` |
+
+**Families**: a Python unit whose recipe is only its family target runs with any sibling chosen (*shares one recipe
+with `<unit>`*); a Go or Java deployable's three units are chosen together (*shares a build directory with
+`<unit>`*).
+
+## How a unit is chosen, and the reason printed
+
+Changed paths are taken in sorted order; for each unit the first that holds wins: (1) a changed path matches its file
+inputs — `<path> changed`; (2) a contract it consumes changed — `consumes <contract> (<path>)`; (3) an obligation names
+it — `obligation <name> (<path>)`; (4) a family rule — `shares one recipe with <unit>` / `shares a build directory with
+<unit>`; (5) a tool answers differently — `<tool> answers differently from the baseline`; (6) a variable differs —
+`<NAME> differs from the baseline`. Always-run units carry their *Always* reason. Otherwise: `none of its inputs
+changed`. Where every unit is chosen, the run is `make verify`.
+
+A recipe-sum guard: where a gate check's recipe lines (from the make database) are not exactly its units' and family
+targets' lines, the check runs whole under its gate name whenever any of its units is chosen, with the reason
+*its recipe is not the sum of its per-deployable targets*.
+
+## What a run prints
+
+All lines begin `verify-scoped: `.
+
+- Full gate: `the full gate runs, as \`make verify\` — <reason>`; reasons: `this is the trunk (\`<name>\`)`,
+  `\`<branch>\` is not a slice/<id> branch`, `HEAD is detached` (or `names no commit`), `<MARKER> is set, so this is
+  a CI run`, `VERIFY_FORCE=<value>`, `make was run with -<flags>`, `slice/<id> has no usable base — <check-slice-scope's
+  words>`, `the trunk cannot be told — <verify-stamp's words>`, `every check was chosen`.
+- Incomplete: `dependency knowledge was incomplete for <path> — <it is project.json | it is the Makefile | it is a
+  gate script under scripts/ | no deployable, contract or check claims it>`, once per path; or `dependency knowledge
+  was incomplete — <why the record cannot be built>`; or `obligation <n> (\`<name>\`) in project.json's
+  verification.obligations <fault>`; then the full-gate line.
+- Baseline: `no usable baseline (<none yet on this branch | it was taken on <branch> | it cannot be read | <tool> did
+  not answer>) — every check that reads a tool or a variable runs`, once.
+- Stamp: verify-stamp's `REUSE_LINE`, unchanged.
+- Each unit: `run  <unit> — <reason>` or `skip <unit> — none of its inputs changed`.
+- Last: `<n> run, <m> skipped, compared with \`<trunk>\` at <short>; passed` or `…; the scoped gate did not pass —
+  each failed check is named above on a line carrying ***`.
+
+## The printed record (schema 1) — the contract ADR 0004 fixes
+
+`python3 scripts/verify-scoped.py record [--make <make>] [--makefile <file>]` prints, with `sort_keys`, two-space
+indent:
+
+```json
+{
+  "schema": 1,
+  "deployables": {
+    "service": { "kind": "service", "path": "apps/service", "family": "typescript" },
+    "web":     { "kind": "web",     "path": "apps/web",     "family": "typescript", "api": "service" }
+  },
+  "checks": {
+    "lint-web": {
+      "gate": "lint",
+      "components": ["web"],
+      "inputs": { "files": ["apps/web/", "biome.jsonc", "package-lock.json", "package.json", ".nvmrc"],
+                  "tools": ["make", "node", "npm", "python3"], "variables": [] },
+      "claims": true,
+      "always": null,
+      "targets": ["lint-web"]
+    },
+    "check-agents": { "gate": "check-agents", "components": [], "inputs": null, "claims": false,
+                      "always": "no recorded inputs", "targets": ["check-agents"] }
+  },
+  "contracts": [
+    { "id": "openapi:service", "kind": "openapi", "owner": "service", "paths": ["apps/service/"], "consumers": ["web"] },
+    { "id": "package:api-client", "kind": "package", "owner": null, "paths": ["packages/api-client/"],
+      "consumers": ["service", "web"] }
+  ],
+  "obligations": [ { "name": "checkout", "components": ["orders", "billing"], "checks": ["test-billing", "test-orders"] } ]
+}
+```
+
+- `checks` holds every unit: each `verify-checks` prerequisite, with `lint`, `typecheck`, `test` replaced by their
+  units; `gate` is the prerequisite it stands for; `targets` are the Make targets the scoped call names for it.
+- `inputs` is `null` for a check with no recorded inputs; otherwise `files` (sorted, `/`-ended for a directory),
+  `tools` (the stamp's names: `make`, `git`, `python3`, `uv`, `node`, `npm`, `go`, `java`,
+  `interpreter <path>/.venv`), `variables` (names only).
+- `claims` false means its files never make a changed path known; `always` is the reason it runs on every scoped run,
+  else `null`.
+- `contracts[].kind` is `openapi`, `package` or `event` (`event` carries `"event": "<name>"`, `owner` the producer).
+- Readers tolerate unknown keys; a new key is MINOR, a renamed or removed one needs `schema` raised and a catch-up note.
+- A record the script cannot build prints nothing on stdout, one line on stderr, and exits 1.
