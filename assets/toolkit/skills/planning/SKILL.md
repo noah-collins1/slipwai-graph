@@ -219,8 +219,8 @@ After completing an implementation increment:
 4. **STOP and ask**: "Ready to commit [description] locally. Approve?"
 
 After demo acceptance, immediately before the first implementation push, widen to the affected suites,
-verify static analysis, run the repository's full gate, then run the end-of-phase mutation gate once where
-required and present its final report (or the reviewed alternate-evidence record and `N/A` rationale).
+verify static analysis, run the repository's scoped gate where it has one and its full gate otherwise, then run the end-of-phase mutation gate once where
+required and present its final report (or the reviewed alternate-evidence record and `N/A` rationale). The full gate runs at the merge root and in CI.
 
 Only proceed with commit after explicit approval.
 

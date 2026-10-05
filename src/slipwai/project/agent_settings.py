@@ -139,6 +139,7 @@ def claude_settings(apps: list[App], target: str = "none", layout: Layout = AT_R
     allowed = [
         "make",
         "make verify",
+        "make verify-scoped",
         "make test",
         "make check-constitution",
         "make constitution-requirements",

@@ -121,8 +121,9 @@ still a choice.
   guards.
 - At most **one rule's** examples may be failing at a time. Each cycle MUST leave the quickest relevant
   tests in its file or area green. Commit each completed cycle locally; do not push those commits until the
-  actor has accepted the demo. The whole suite MUST be green immediately before that first implementation push,
-  which is what may land on trunk. A row of pending tests is not RED; it is an unintegrated batch of
+  actor has accepted the demo. The branch's scoped gate MUST be green immediately before that first implementation push: it runs every
+  check whose inputs changed since the branch last passed the full gate, and it is the full gate wherever it
+  cannot tell. The full gate MUST be green at the merge root and in CI before anything lands on trunk. A row of pending tests is not RED; it is an unintegrated batch of
   the kind IX exists to prevent.
 - **RED is a failing assertion, not a failing build.** Whatever an example names — function, method, type,
   field — MUST exist far enough to compile against before that example is written, as a no-op or a default

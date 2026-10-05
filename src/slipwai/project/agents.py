@@ -132,8 +132,9 @@ area green. Within a rule the cycle unit says how: `rule`, its examples written 
 against; `example`, one at a time. Either way each example is observed failing for its own stated reason: stub
 whatever an example names, as a no-op or a default return, before writing it, so a broken build is never the
 RED. That local, fast feedback is all this increment needs. Commit the increment locally when it is
-green; do not push, and do not widen to affected suites, static analysis or the full `{layout.make} verify`.
-Those checks belong immediately before the first implementation push, which happens after demo acceptance.
+green; do not push, and do not widen to affected suites, static analysis or `{layout.make} verify-scoped`.
+Those checks belong immediately before the first implementation push, which happens after demo acceptance;
+the full `{layout.make} verify` runs at the merge root.
 The task, its contract and the files you may read and write are in the brief; nothing else in the
 repository is yours to edit, including `tasks.md` — report which task you finished and the session that
 delegated you ticks the checkbox, because concurrent siblings would otherwise all write that one file.
@@ -186,9 +187,9 @@ moving to the next, and never `git stash` or copy a file aside. A pass stopped m
 swapped in the working tree the demo was about to run from.
 
 Your one write is new tasks, which is what makes converge safe to repeat, plus whatever the verdict itself
-requires under the manifest. Do not run the full `{layout.make} verify`: that gate runs after demo
-acceptance, immediately before the implementation is pushed. Return the verdict, the tasks you appended and
-the evidence for each, so the session that delegated you can re-run this stage until it reports converged
+requires under the manifest. Do not run `{layout.make} verify-scoped` or `{layout.make} verify`: the scoped
+gate runs after demo acceptance, immediately before the implementation is pushed, and the full gate at the
+merge root. Return the verdict, the tasks you appended and the evidence for each, so the session that delegated you can re-run this stage until it reports converged
 or the ladder's bound is reached.""",
 
         "drive-gaps": """You read, and you report what is missing. You change nothing.

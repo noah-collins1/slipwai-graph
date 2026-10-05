@@ -176,7 +176,7 @@ decision is a stop.
 {implementation_section(layout)}
 ## Once inside the slice
 
-Start the slice from a green `make verify`. During implementation, take one RED-GREEN-REFACTOR increment per
+Start the slice from a green `make verify-scoped`. During implementation, take one RED-GREEN-REFACTOR increment per
 task — one rule of the example map with its examples, where the map numbers its rules — run only the quickest
 relevant tests in the same file or area, commit that increment locally, and keep
 task checkboxes truthful. A local commit is not a push: it does not run the full gate and it does not start
@@ -186,8 +186,8 @@ harness defers it — and name those callers in the delegate's manifest; a proje
 with a text search and says so.
 
 When the tasks are done, converge, then stop at the actor-visible demo from the unpushed slice branch. After
-acceptance — and only then — a project that has adopted CodeGraph runs `codegraph sync`, then the full
-`make verify`, then the first push of those increment commits (and the merge that lands them on trunk).
+acceptance — and only then — a project that has adopted CodeGraph runs `codegraph sync`, then
+`make verify-scoped`, then the first push of those increment commits (and the merge that lands them on trunk).
 That push is the integration boundary. A claim of `slice/<id>` at the start of the slice may still push a
 lock ref from `main`; that is not the implementation.
 
