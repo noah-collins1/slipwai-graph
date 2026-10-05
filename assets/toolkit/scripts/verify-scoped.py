@@ -205,6 +205,9 @@ def run(make: str, makefile: str) -> int:
         return broaden(make, makefile, "the Makefile's text could not be compared (" + words(error) + ")")
     if foreign is not None:
         return broaden(make, makefile, foreign)
+    conditions = ground.stamp.makeflags_problem()  # text or conditions make was handed (D146): the stamp's one predicate
+    if conditions is not None:
+        return broaden(make, makefile, conditions + "; " + rules.ADVICE)
     try:
         data: records.Database | None = records.database(make, makefile)
     except records.RecordError:

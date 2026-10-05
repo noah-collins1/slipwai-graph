@@ -32,6 +32,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Mapping
 from typing import Any
 
 # What is persisted under the git directory is a closed set of fields — the stamp's own, and the note's: the key, the
@@ -687,6 +688,34 @@ def make_flags() -> str:
     return words[0] if words and words[0].isalpha() else ""
 
 
+# What make hands every recipe in `MAKEFLAGS` (and reads from `GNUMAKEFLAGS`) that adds no text and no condition the
+# factory did not write (D146): the letters that change no recipe (`k`, `s`, `w`, and the idle ones, which the borders
+# take themselves), a job count, the jobserver's words, `--no-print-directory` and an output-sync word. Nothing else.
+QUIET_LETTERS = frozenset("kswntqi")
+QUIET_WORD = re.compile(r"-[kswntqi]+|-j[0-9]*|--jobserver-(?:auth|fifo|fds)=\S*|--no-print-directory|-O[a-z]*"
+                        r"|--output-sync(?:=[a-z]+)?")
+FORCING = re.compile(r"VERIFY_FORCE=\S*")  # the one command-line variable allowed, by name and any value (D147)
+NOT_THE_FACTORYS = "make was run with `{word}`, which can add text or conditions the factory did not write"
+
+
+def makeflags_problem(environ: Mapping[str, str] | None = None) -> str | None:
+    """Why this run's `MAKEFLAGS` or `GNUMAKEFLAGS` can add text or conditions the factory did not write — `--eval`, `-I`,
+    `-e`, `-r`, `-R`, `-B`, `-W`, `-o`, `-L`, `--trace`, `--shuffle`, anything after `--` — naming the first word that is
+    not allowed, else None. Defined here once: `verify-scoped.py` asks it for the full gate, and `declined` for the stamp.
+    The word is printed with its control characters escaped and cut short, so it cannot forge a line."""
+    environ = os.environ if environ is None else environ
+    for name in ("MAKEFLAGS", "GNUMAKEFLAGS"):
+        words = environ.get(name, "").split()
+        for index, word in enumerate(words):
+            if word == "--" and all(FORCING.fullmatch(after) for after in words[index + 1:]):
+                break  # only `VERIFY_FORCE=<value>` follows (D147): the documented forced run
+            if QUIET_WORD.fullmatch(word) or (index == 0 and word.isalpha() and set(word) <= QUIET_LETTERS):
+                continue
+            shown_word = word.encode("unicode_escape").decode("ascii")[:80].replace("`", "\\x60")
+            return NOT_THE_FACTORYS.format(word=shown_word)
+    return None
+
+
 def ratcheting() -> bool:
     """Whether this run makes the gate write the tree it judges (`RATCHET_TIGHTEN`): it reads no stamp, writes none and
     removes none (D80), so a stamp that stood stands."""
@@ -697,7 +726,8 @@ def declined() -> bool:
     """Whether this run writes no stamp for what it is, whoever it is run by: a ratchet run touches nothing (D80); under
     `-n`, `-t` or `-q` the checks do not run; under `-i` a check that fails still lets the run go on and the sub-make
     exit 0, so `reuse` removes the stamp that stood, and this run records nothing."""
-    return ratcheting() or any(letter in make_flags() for letter in DECLINING_FLAGS)
+    return ratcheting() or any(letter in make_flags() for letter in DECLINING_FLAGS) or (
+        makeflags_problem() is not None)
 
 
 def idle() -> bool:
@@ -800,7 +830,11 @@ def reuse(options: Options) -> int:
             return 1  # a ratchet run reads, writes and removes nothing (D80): a stamp that stood is for a key that passed
         if declined():
             # `-i`: the checks run and may fail with the run still exiting 0, so no stamp may stand to be reused
-            # afterwards; this run records nothing (`record` declines it too)
+            # afterwards; text or conditions the factory did not write (D146): no stamp may vouch for a tree they
+            # judged. Either way this run records nothing (`record` declines it too)
+            conditions = makeflags_problem()
+            if conditions is not None:
+                print(NOT_RECORDED_LINE.format(reason=conditions))
             return begin_full_run({NOTHING: True}, options.token)
         problem = index_problem(top_level())
         if problem is not None:
