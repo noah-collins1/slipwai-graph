@@ -235,6 +235,15 @@ def go(path: str, files: list[str]) -> Result:
     return Result(subprocess.run(command, close_fds=False, check=False).returncode, sorted(keep), left)
 
 
+# The setup message of each placeholder backend: the line `make mutation-full` prints for it, held equal to the factory's by a test.
+PLACEHOLDERS = {
+    "typescript": "Configure the repository-selected Stryker mutator, then run its checked-in configuration.",
+    "python": "install and configure mutmut for the selected production packages",
+    "java-quarkus": "Configure PIT for the domain packages only — see the note above this target — then run it.",
+}
+WIRED = ("go", "java-spring")
+
+
 class Unreadable(Exception):
     """A pattern or a file this script cannot read as the tool reads it: the service's run is then the sweep."""
 
@@ -325,6 +334,15 @@ def spring(path: str, files: list[str], execute: Any) -> Result:
     return Result(status, keep, left)
 
 
+def refusal(backend: str, path: str, files: list[str]) -> Result:
+    """A backend with no tool wired up: the placeholder's own setup message, then what the scope would have mutated."""
+    named = ", ".join(shown(f"{path}/{name}") for name in files)
+    if backend not in PLACEHOLDERS:
+        return Result(2, [], [], f"no runner for {backend}")
+    said = PLACEHOLDERS[backend].rstrip(".")
+    return Result(2, [], [], f"{said}; the scope will apply once a tool is wired; it would mutate: {named}")
+
+
 class Tools:
     """The runner of the wired backends. Any other backend refuses until its tool is wired, so the target can fail but
     never pass for it."""
@@ -337,7 +355,7 @@ class Tools:
             return go(path, files)
         if backend == "java-spring":
             return spring(path, files, self.execute)
-        return Result(2, [], [], f"no runner for {backend}")
+        return refusal(backend, path, files)
 
     def sweep(self, backend: str, path: str) -> Result:
         """The service's whole run, as `make mutation-full` would: no scope."""
@@ -346,7 +364,7 @@ class Tools:
             return Result(subprocess.run(command, close_fds=False, check=False).returncode, [], [])
         if backend == "java-spring":
             return Result(self.execute(PIT, path)[0], [], [])
-        return Result(2, [], [], f"no runner for {backend}")
+        return refusal(backend, path, [])
 
 
 def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], runner: Runner) -> int:
@@ -386,7 +404,8 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
             say(f"skip {root} — no changed production file")
             counts["skipped"] += 1
             continue
-        say(f"scope {root} — {', '.join(shown(name) for name in files)}")
+        if backend in WIRED:
+            say(f"scope {root} — {', '.join(shown(name) for name in files)}")
         result = runner.run(backend, root, files)
         swept = result.unreadable is not None
         if swept:  # what the tool is configured to take cannot be told, so the service sweeps
