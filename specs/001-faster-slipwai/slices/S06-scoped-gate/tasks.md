@@ -1070,6 +1070,145 @@ step. Each one leaves `rules.json` matching, and a test names each.
 **Files:** `assets/backing-services/prune.py`, `tests/test_verify_scoped_rules.py` (and the prune test module that
 covers `prune()`, named by the implementer).
 
+*Appended by T017, converge pass 4 (2026-10-05), over `58a9aed..b3b51c0`.* Pass 3's two T033 reproductions and T034's
+`GoalConditional` now each run the full gate. Each new test has teeth: dropping `override` from `rules.COMPARED`,
+dropping the unwritten-variable cause, ignoring the exports digest, returning None from `under_the_full_gate`, not
+giving the goal or the level, or skipping `refingerprint` each fails its module. What follows is what pass 4 found
+still open. Probes: `/tmp/s06-c4/probe4/probe_p4.py`, `probe_specials.py` (run from a clone at `b3b51c0` with
+`PYTHONPATH=src:tests:/tmp/s06-c4/probe4`).
+
+### T036 — [US2] CRITICAL — A rule make applies that no fingerprint holds: implicit rules, special targets, `vpath` (R4, R5 · AC-S06-2, -5; D127 items 2, 4, 7)
+
+- [ ] **Finding.** T030 and D127 item 7 hold "every rule reachable from `verify`". Reachable means through *explicit*
+  prerequisites only (`rules.reach`, `rules.py` 205–214; `ruled` 217–220; `fingerprint` 277–282). But make also
+  applies rules that no explicit prerequisite names. None of them is compared, and none of them is the full gate.
+  (1) **Implicit rules.** A pattern rule, a suffix rule, a match-anything `%::` rule or a `.DEFAULT:` recipe whose
+  target matches a reached name that has no recipe of its own. That includes reached files such as
+  `scripts/event-model/package.json`, the prerequisite of `scripts/event-model/node_modules/.installed`, which
+  `check-drawio` waits for. (2) **Special targets** that change how every recipe runs or whether it runs:
+  `.ONESHELL`, `.POSIX` (it gives `.SHELLFLAGS` `-e`), `.SECONDEXPANSION`, `.SUFFIXES`, `.DEFAULT`, `.DELETE_ON_ERROR`,
+  `.PRECIOUS`, `.INTERMEDIATE`, `.SECONDARY`, `.NOTINTERMEDIATE`, `.NOTPARALLEL`, `.SILENT`, `.LOW_RESOLUTION_TIME`,
+  and `.PHONY` membership of a reached target, which also turns implicit-rule search on or off. (3) **`vpath`
+  directives**, which the database prints in its own *VPATH Search Paths* section and `record.database` never reads.
+  **Reproduced** (probe `PatternRule`, TS service + web starter). On `main`, commit
+  `scripts/event-model/%.json: FORCE` / `\t@! grep -rq FORBIDDEN apps/web/src` / `FORCE:`. On `slice/S1` with a
+  baseline, append `// FORBIDDEN` to `apps/web/src/App.tsx`. The result is `skip check-drawio — none of its inputs
+  changed`, then `15 run, 7 skipped, …; passed`, exit 0. Meanwhile the full gate's sub-make (`make verify-checks
+  VERIFY_ORDER=1`) exits 2 with `*** [Makefile:262: scripts/event-model/package.json] Error 1`. The rule has no
+  condition: it is T030's class. A project's own `%.json: %.yaml`-style rule is ordinary Makefile writing, not an attack.
+  `probe_specials` appends each of `.ONESHELL:`, `.POSIX:`, `.SECONDEXPANSION:`, `.DELETE_ON_ERROR:`,
+  `.NOTPARALLEL:`, `.SUFFIXES: .x .y` with a suffix rule, `.SILENT:`, `.DEFAULT:`, `%::`, a pattern rule, `vpath`,
+  `.PRECIOUS:`, `.INTERMEDIATE:` and a `.PHONY` line. Each gives `skip check-drawio — none of its inputs changed`,
+  exit 0: neither compared nor the full gate. (`.IGNORE:` is the full gate today only because it adds `i` to `MAKEFLAGS`.)
+
+**RED** (a new `tests/test_verify_scoped_implicit.py`; `test_verify_scoped_rules.py` is at 132 lines, so it may hold this if it stays under 350):
+- e1: the reproduction above. `check-drawio` runs, or the run is the full gate. *(fails today)*
+- e2: a match-anything rule (`%:: FORCE` with a recipe) and a `.DEFAULT:` recipe are each the full gate. *(fails today)*
+- e3: each special target in (2) that the factory did not write is the full gate, with its own reason. *(fails today)*
+- e4: a `vpath` directive whose pattern matches a reached name is the full gate. *(fails today)*
+- e5: a project pattern rule whose target pattern matches no reached name, and a `.PHONY` line naming only targets
+  `verify` does not reach (a project's `deploy`), charge nothing. This is the scoping a project keeps (D131's reasoning).
+- e6 **hold**: for every shape in `test_scoped_targets.SHAPES`, plus two-service and a cloud shape, the factory's own
+  `.PHONY` lines, its built-in implicit rules (under the make on the machine and, where present, 3.81) and its special
+  targets give no difference.
+
+**GREEN — the class.** Every rule make can apply while it builds a name `verify` reaches is held. Held means one of
+three things: a fingerprint, a charge, or the full gate. "Reached" covers the names make *searches* for as well as
+the names prerequisites list. Read the database's implicit rules (pattern and suffix rules whose definition comes from
+a makefile, not `(built-in)`), its special targets and its *VPATH Search Paths* section. A makefile-origin implicit
+rule whose target pattern matches a reached name, or that matches anything, is charged per D127 item 4 to the members
+that reach the matched name. Where no single member can be charged, it is the full gate. A special target the factory
+did not write, or a reached target's `.PHONY` membership that differs from the factory's, is the full gate. `vpath`
+is the full gate wherever its pattern matches a reached name. **The sweep:** a test lists every special target GNU Make
+4.4 documents and every section header `make -p` prints. For each one it names whether it is compared, the full gate,
+or provably unable to change a recipe that runs (with the reason, for example `.NOTPARALLEL` orders and never adds),
+and it fails on a header nobody classified. Before GREEN, the host records in the decision log what a project's own
+pattern rule matching no reached name, and a project's own `.PHONY` line, are charged to (recommended: nothing, per e5).
+
+**Verify:** `make test TESTS="test_verify_scoped_implicit test_verify_scoped_rules test_verify_scoped_variables test_verify_scoped_goal test_scoped_targets"`,
+then `make lint typecheck check-structure`. Level line: MINOR, already carried. Catch-up: the fragment gains one sentence
+naming a pattern rule, a special target and `vpath`, in the words the decision gives.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/rules.py`, `assets/toolkit/scripts/verify_scoped/record.py`,
+`changelog.d/scoped-gate.md`, `tests/test_verify_scoped_implicit.py` (new), `specs/001-faster-slipwai/decisions.md`
+(host only).
+
+### T037 — [US2] HIGH — The conditions a scoped run reads are not the conditions any real run has (R4, R5 · AC-S06-2, -5; D127 item 2; T034 closed one instance)
+
+- [ ] **Finding.** T034 reads the database a second time, with `MAKECMDGOALS=verify-checks` given *on the command
+  line*, `MAKELEVEL` 1 and `VERIFY_GROUP` (`record.py` 69–80, 301–317). Every read still carries `-npq`. That models
+  the real sub-make (`gate.py` 36: `"$(MAKE)" $(VERIFY_GROUP) --no-print-directory -f … verify-checks VERIFY_ORDER=1`)
+  for the one conditional per variable that T034's sweep tried (`test_verify_scoped_goal.py` 24–28). It differs from
+  the real runs in five ways, and each is a route T034's GREEN named as its class:
+  (a) **`VERIFY_ORDER=1` is never given.** Real runs get it: the full gate's sub-make, and the scoped run's own call
+  (`verify-scoped.py` 246). The factory's own `ifeq ($(origin VERIFY_ORDER),command line)` block is skipped by
+  `from_text` (`rules.py` 40, 87–89) and absent from both reads, so nothing written inside it, or under the same idiom
+  that the generated Makefile shows the project, is ever compared.
+  (b) **The `n`, `p`, `q` flags are visible to the Makefile in every read and in no real run.**
+  (c) **`MAKECMDGOALS` has origin `command line` in T034's read and `default` in make's.** `MAKEFLAGS` also gains
+  `-- MAKECMDGOALS=verify-checks`.
+  (d) **The scoped run's own call has the chosen units as its goals.** No read models those, so a conditional on them
+  changes a unit that *runs*.
+  (e) **`MAKEFLAGS += -e` in the Makefile is printed with origin `environment under -e`.** `ORIGIN` (`record.py` 34)
+  takes it as `environment` and `compared_variables` drops it (`rules.py` 186). It is the one Makefile flag that hides,
+  and it hands every factory variable to the environment. Of the others, `n`, `p`, `q`, `--no-print-directory` and
+  `-O…` hide in `own_flags` (`rules.py` 168–173), but each applies equally to the scoped call and to `make verify`, so
+  none can make one pass where the other fails. `-k`, `-B`, `-r`, `--trace` and `-i` show in the value and are the full gate.
+  **Reproduced** (probe `probe_p4.py`, TS service + web starter, a `lint-docs` that greps `apps/web/src` for
+  `FORBIDDEN`). On `main`, commit one of the following; on `slice/S1` with a baseline, append to `App.tsx`. Each of
+  (a)–(d) gives `skip check-drawio — none of its inputs changed` (or `run lint-web`), then `…; passed`, exit 0. The
+  full gate's sub-make exits 2 each time:
+  (a) `ifeq ($(origin VERIFY_ORDER),command line)` / `check-drawio: lint-docs` / `endif`, which is the factory's own idiom;
+  (b) `ifeq (,$(findstring n,$(filter-out --%,$(firstword $(MAKEFLAGS)))))` around the same line;
+  (c) `ifneq ($(origin MAKECMDGOALS),command line)` around T034's own goal conditional;
+  (a′) unconditional `check-drawio: $(if $(VERIFY_ORDER),lint-docs)`;
+  (d) `ifneq ($(filter lint-web,$(MAKECMDGOALS)),)` / `override SHELL := /bin/true` / `endif`, with web lint failing
+  (`STANDIN_NPM_FAIL`). The output says `run  lint-web — apps/web/src/App.tsx changed`, then `passed`, exit 0, while
+  the full gate fails at `lint`. The unit that *ran* passed vacuously.
+  Graded HIGH, as T034 was: each case needs a rule that exists only under conditions the merge root's full gate gives
+  it, and the merge root runs that gate (owner priority 1). (a) is the likeliest shape, because the factory prints the idiom.
+
+**RED** (`tests/test_verify_scoped_goal.py`, or a new module if it nears 350): e1 is (a) through (d) as above, each the
+full gate. *(fails today)* e2: `MAKEFLAGS += -e` is the full gate. *(fails today)* e3 **hold**: T034's e2, together with
+the factory's own `VERIFY_ORDER` block, gives no difference in any shape.
+
+**GREEN — the class.** A Makefile's parse can branch on anything that differs between a database read and a real run:
+the goals, the flags, the command-line variables, `MAKELEVEL`, `MAKE_RESTARTS`, the clock, the environment. No read
+under `-n` can reproduce all of them. A real goal under `-n` runs `$(MAKE)` lines, as T034 found and pass 4 confirmed:
+`make -npq verify-checks` runs a `$(MAKE)` line and a `+` line. So hold the branch points by **text**, as D133 item 3
+holds `exports`. `rules.json` gains `conditionals`: one digest over every conditional directive (`ifeq`, `ifneq`,
+`ifdef`, `ifndef`, `else`, `endif`), together with the lines they enclose, and over every non-recipe line that names a
+run-varying name (`MAKECMDGOALS`, `MAKEFLAGS`, `MFLAGS`, `MAKEOVERRIDES`, `MAKELEVEL`, `MAKE_RESTARTS`, `VERIFY_ORDER`)
+or calls `$(origin` or `$(flavor`. The digest covers every file in `MAKEFILE_LIST`, read like `export_lines`, with the
+factory's own `VERIFY_ORDER` block included. A difference is the full gate. `MAKEFLAGS` of origin `environment under -e`
+is compared like `file`. T034's second read then stays only as a hold, or goes, as the decision says. **The sweep:** a
+test names each of (a)–(e), plus `MAKE_RESTARTS` and a `$(shell date)` condition, and each is the full gate. Before
+GREEN, the host records in the decision log the text rule and its cost: a project's own `ifdef CI` block then makes
+every scoped run the full gate, and the decision weighs that against a reader that models each real run.
+
+**Verify:** `make test TESTS="test_verify_scoped_goal test_verify_scoped_rules test_verify_scoped_variables test_verify_scoped_prune test_scoped_targets"`,
+then `make lint typecheck check-structure`. Level line: MINOR, already carried; the fragment's Catch-up gains the
+decision's sentence.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/rules.py`, `assets/toolkit/scripts/verify_scoped/record.py`,
+`changelog.d/scoped-gate.md`, `tests/test_verify_scoped_goal.py`, `specs/001-faster-slipwai/decisions.md` (host only).
+
+### T038 — [US2] LOW — D127 item 4's per-member charge of a changed factory variable has an example (R4 · AC-S06-2)
+
+- [ ] **Finding.** `rules.used` (`rules.py` 323–333) charges a changed factory variable to the one member whose reached
+  recipes name it. Disabling it (`… is not None and False`) leaves all 205 tests of the 18 `test_verify_scoped_*`
+  modules green. With the reader off, every such change is the full gate. That is the safe direction, but nothing
+  holds D127 item 4's decided scoping.
+
+**RED/GREEN** (`tests/test_verify_scoped_variables.py`): a factory variable that exactly one named check's recipe names
+(directly, and through another variable's value) is given a new value on the trunk. That check runs with
+`its rule is not the one the factory wrote …` and the run is not the full gate. The same mutation must then fail the
+example. Tests only: reaches no user.
+
+**Verify:** `make test TESTS="test_verify_scoped_variables"`, then `make lint typecheck check-structure`.
+
+**Files:** `tests/test_verify_scoped_variables.py`.
+
 ---
 
 ## Phase 4: After acceptance (host tasks)
@@ -1192,6 +1331,47 @@ skipped check runs and is never compared; **T034 HIGH** — the database is read
 made, until `migrate`. Principles: I (met in what changed; the *passed* line overclaims in T033, T034), II (T035's
 re-write must rename), VIII (`rules.py` 24 `SCHEMA = 1`; an unknown schema is the full gate, 216–218), IX (`rules.json`
 holds digests only, 148–150).
+
+### Pass 4 — iteration 23, `drive-converge` · model: host (claude-opus-5-5) · delegated, fresh context · over `58a9aed..b3b51c0`
+
+**Not converged — one CRITICAL re-opens the loop again.** T033, T034 and T035 are confirmed closed. Pass 3's `override
+SHELL`, `export PATH` and `GoalConditional` reproductions now run the full gate. A prune re-fingerprints a matching
+`rules.json` (`prune.py` 1282–1309, 1336–1338). Seven mutations, one to each new guard, each fail their own module, and
+each closing commit ships its test with its code (`bc39ad7`, `0b429e6`, `043d696`). New:
+**T036 CRITICAL**: the fingerprint follows explicit prerequisites only. A project pattern rule on a reached file
+(`scripts/event-model/%.json`) makes `check-drawio` fail under `make verify` while the scoped run says *passed*. Special
+targets (`.ONESHELL`, `.POSIX`, …) and `vpath` are neither compared nor the full gate.
+**T037 HIGH**: the database reads carry `-npq`, never `VERIFY_ORDER=1`, and give the goal as a command-line variable.
+Conditionals on the factory's own `VERIFY_ORDER` idiom, on the dry-run flags, on `MAKECMDGOALS`' origin and on the scoped
+call's own unit goals each give a false *passed* (five reproductions). `MAKEFLAGS += -e` hides as origin
+`environment under -e`.
+**T038 LOW**: D127 item 4's per-member variable charge has no example; the safe mutant survives 205 tests.
+**Leads.** Lead 4 is graded LOW with no task: after a conflicted `migrate`, the resolved rule *is* the project's, and
+D127 item 5 chose those words. `./init` records its answers, so replay matches a pruned project
+(`test_verify_scoped_prune` e7). Lead 5 is a note only: `check-structure.py` bounds `src/slipwai` and `tests` (109,
+150) and nothing under `assets/`, so `record.py` at 545 lines and `rules.py` at 392 break no rule. D127 item 3's "inside
+check-structure's budget" was a premise no rule held.
+**The class, each route.** Compared: rule text (`rules.py` 223–225), variables of origin `file` and `override` (186),
+export lines (232–246, 379), `MAKEFLAGS` letters outside `npq` (168–173), `include`d and `-include`d files, which the
+read remakes as make does and which are in `MAKEFILE_LIST` and the database. Not compared, and taken by T036: implicit
+rules, special targets and `vpath`. Not compared, and taken by T037: conditionals on goals, flags, origin and
+`VERIFY_ORDER`, and `-e`. Left to D116's baseline: `MAKEFILES` and a recipe's run-time environment, held by the stamp's
+closed `VARIABLES` (`verify-stamp.py` 115–119) and the tools' versions, the same trust S05's stamp reuse extends.
+Provably unable to change a recipe that runs: `-n`/`-q`/`-O`/`--no-print-directory` in a Makefile's `MAKEFLAGS`, which
+apply alike to the scoped call and to `make verify`.
+**Levels.** No domain or screen. The selection (use case: `choose.py`, `rules.judge`) is proved for explicit rules,
+variables and exports; T036 and T037 are open. The adapter (the generated Makefile): `verify` and `ci` are unchanged
+(`gate.py` 36), and the scoped section is unchanged in this range. The published contract: the record (ADR 0004) is
+untouched. `rules.json` (ADR 0005, Proposed) gains `exports`, and T036 and T037 will add keys while it is unreleased
+schema 1. The fragment's Catch-up carries D133 item 7.
+**Principles.** I: additive. Merge root and CI still run `make verify` (`gate.py` 36). Nothing under CI, `tools/`, the
+root `Makefile` or `VERSION` changed; `delivery/` gained ADR records only. `changelog.d/scoped-gate.md` line 1 is
+`MINOR`. A prune rewrites `rules.json` only inside a command the maintainer ran, and only where it matched (`prune.py`
+1282–1291). The *passed* line still overclaims (T036, T037). II: the rewrite is by temporary file and rename
+(`prune.py` 1302–1307; `test_verify_scoped_prune` e5). VIII: `SCHEMA = 1` (`rules.py` 27); a file without `exports` or
+of an unknown schema is the full gate (`rules.py` 317–319, `record.py` 328–329). IX: `rules.json` holds names and
+digests only (`rules.py` 200–202, 277–287); exported values are never stored. XIII (not in force) and XIV: tests ship
+in each code commit, and the mutations above fail them. No money, time or identity value is touched.
 
 ## Differences from plan.md
 
