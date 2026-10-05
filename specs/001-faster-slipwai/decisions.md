@@ -2356,3 +2356,15 @@
 - **Confidence:** high · **Would reverse if:** the owner wants the scoped run on branches other than `slice/<id>`.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (S06's criteria)
 - **Status:** standing
+
+## D118 — The owner's note after S33's second patch: bytecode a converge probe left in the toolkit is a finding on S33, guarded by a test
+- **Stage:** converge finding (a person's note through `/cruise-tell`, received at the start of iteration 18) · **Slice:** S33-factory-gate-stamp · **When:** 2026-10-05T02:55:48Z · **Iteration:** 18
+- **Scope:** S33-factory-gate-stamp
+- **Question:** The factory gate went red after `d92f908` only because `assets/toolkit/scripts/__pycache__/verify-stamp.cpython-314.pyc`, written at 19:27 local (00:27:31Z) during iteration 16, made `test_toolkit` fail reading every toolkit file as text. The owner deleted it. What does the run owe?
+- **Options:** the owner's word, as given.
+- **Decision:** As the owner wrote it: whatever imported `verify-stamp.py` from the toolkit during S33's converge must not leave bytecode there; it is recorded as a finding on S33 and guarded by a test. The importer was converge pass 1's own ad-hoc probe (`drive-converge`, agent `a088209f36b01e597`, iteration 16), a `python3 -c` that loaded the script with `importlib` and bytecode writing on, not a test in the suite. That is S33's T021. The guard is `tests/test_assets_bytecode.py`: the toolkit tree holds no interpreter cache, and the failure names it in one line; every test module that loads a script and names an asset tree in its code turns `sys.dont_write_bytecode` on; the scanner's teeth are shown on the probe's own code. Closing the class found one more test that did the same: `tests/test_mutation.py`, which left `assets/languages/go/scripts/__pycache__/` on every run, now turns the switch on. A probe typed by hand that imports a script under `assets/` runs as `python3 -B`, and every delegate brief that may probe says so.
+- **Why:** A cache in the toolkit makes the factory's own gate fail with an error that reads like a broken asset. `asset_files` keeps one out of every generated project, so no user met it, but a red gate for a reason the change did not make is a gate nobody trusts (the owner brief's taste: a gate says what it checked and why it failed).
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** the owner says otherwise.
+- **Written to:** `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/tasks.md` (T021); `tests/test_assets_bytecode.py`; `tests/test_mutation.py`; `specs/001-faster-slipwai/cruise-carry.md` (the lesson)
+- **Status:** standing

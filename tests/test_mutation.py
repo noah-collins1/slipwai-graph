@@ -11,6 +11,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -34,7 +35,12 @@ def script(relative: str) -> Any:
     specification = importlib.util.spec_from_file_location(path.stem.replace("-", "_"), path)
     assert specification is not None and specification.loader is not None
     module = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(module)
+    # Loaded from the factory's own tree: no `__pycache__` left beside the asset (test_assets_bytecode).
+    written, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+    try:
+        specification.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = written
     return module
 
 

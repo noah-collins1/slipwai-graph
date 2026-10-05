@@ -244,7 +244,7 @@ scratch worktree, an exported patch, then a person applies it. A task that chang
 
 ### T015 — CRITICAL: an environment variable that narrows the suite is neither keyed nor a bypass (Principle I; owner priority 5)
 
-- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `tests/support.py:31` reads `FACTORY_BACKENDS` and cuts the matrix down (`FACTORY_BACKENDS=python` → 1 backend
+- [x] *(In `s33-2.patch`; applied by the owner at `d92f908`, D113.)* `tests/support.py:31` reads `FACTORY_BACKENDS` and cuts the matrix down (`FACTORY_BACKENDS=python` → 1 backend
   out of 5). `.github/workflows/verify.yml:57` calls it, beside `TESTS`/`SKIP`, *how a slice is named*. The key
   holds only the script's `VARIABLES` (`verify-stamp.py:115`). Root `Makefile:46` bypasses the stamp for `TESTS` and
   `SKIP` and nothing else. **Evidence:** `key_parts()` over this tree gives `646104d6449f41a4` both with and without
@@ -265,7 +265,7 @@ scratch worktree, an exported patch, then a person applies it. A task that chang
 
 ### T016 — HIGH: tools whose presence changes what the suite runs are missing from `VERIFY_TOOLS` (AC-S33-6's class)
 
-- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `VERIFY_TOOLS` (`Makefile:42`) is a list someone wrote by hand. The suite looks for more than it holds:
+- [x] *(In `s33-2.patch`; applied by the owner at `d92f908`, D113.)* `VERIFY_TOOLS` (`Makefile:42`) is a list someone wrote by hand. The suite looks for more than it holds:
   `ko` (`tests/test_images.py:61,179` skip the Go image without it); `mvn` (`tests/test_wrappers.py:103` asserts
   only when `mvn` is absent); the Docker Compose plugin (`tests/test_postgres.py:208-211` skips without
   `docker compose version`, and `docker --version` stays the same when the plugin is installed). Install `ko`
@@ -283,7 +283,7 @@ scratch worktree, an exported patch, then a person applies it. A task that chang
 
 ### T017 — MEDIUM: clauses of AC-S33-6 and the root recipe's make-flag paths have no example (AC-S33-10)
 
-- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `tests/test_factory_gate_stamp.py` has no example of a listed tool **leaving** `PATH`. Its "one missing, still
+- [x] *(In `s33-2.patch`; applied by the owner at `d92f908`, D113.)* `tests/test_factory_gate_stamp.py` has no example of a listed tool **leaving** `PATH`. Its "one missing, still
   written and reused" example (`:226`) holds only on a machine where some listed tool really is missing. Nothing
   runs the root recipe under `-i`, `-n`, `-q` or `-k`, although its exit handling (`Makefile:49`, the
   `rc -eq 1` silence) is its own and not the generated one. In a scratch `GateCase` probe each one already behaves:
@@ -300,7 +300,7 @@ The three tasks below are what is left. None of them re-opens the loop.
 
 ### T018 — MEDIUM: AC-S33-12 e3 keys the probe file as an untracked file, never through `tree_records`/`EXEMPT`
 
-- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `GateCase` writes the fixture's `.gitignore` as `__pycache__/` only (`tests/test_factory_gate_stamp.py:59`). So in
+- [x] *(In `s33-2.patch`; applied by the owner at `d92f908`, D113.)* `GateCase` writes the fixture's `.gitignore` as `__pycache__/` only (`tests/test_factory_gate_stamp.py:59`). So in
   the fixture `.factory-work/verify-probes` is untracked and *not* ignored. `covered_files` lists it, and it is keyed
   as a file. The real tree takes a different route: `.gitignore:4` ignores it, and it reaches the key only through
   `tree_records` and `exempt_entry` (`assets/toolkit/scripts/verify-stamp.py:334`, `:57`). That route is the one D112
@@ -315,7 +315,7 @@ The three tasks below are what is left. None of them re-opens the loop.
 
 ### T019 — MEDIUM: the two scanners see only literal forms, and one live probe gets past them
 
-- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `reads()` and `probed()` (`tests/test_factory_gate_stamp_inputs.py:62`, `:113`) do catch a new
+- [x] *(In `s33-2.patch`; applied by the owner at `d92f908`, D113.)* `reads()` and `probed()` (`tests/test_factory_gate_stamp_inputs.py:62`, `:113`) do catch a new
   `os.environ.get("X")`, `os.environ.get("X", d)`, `shutil.which("y")` and a `NEEDS` map entry. Each was proven
   with a throwaway `tests/test_zz_mut.py` that made e1 fail, then removed. They pass over the following forms, and
   e1 stays green with each one added: `"X" in os.environ`; `os.environ.setdefault("X", …)`; `os.environ.get(NAME)`
@@ -331,12 +331,28 @@ The three tasks below are what is left. None of them re-opens the loop.
 
 ### T020 — LOW: the probe file is written under `make -n` and `make -q`
 
-- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* The stamped branch is one recipe line that contains `$(MAKE)`, so GNU make runs it under `-n` and `-q`. In a
+- [x] *(In `s33-2.patch`; applied by the owner at `d92f908`, D113.)* The stamped branch is one recipe line that contains `$(MAKE)`, so GNU make runs it under `-n` and `-q`. In a
   `/tmp` clone, `make -n verify` (exit 0) and `make -q verify` (exit 1) each wrote `.factory-work/verify-probes`
   where there was none. The bypass branch wrote nothing. What gets written is the probe's true answer, to an ignored
   file, and the stamp is untouched (T017's `-n` hold). So no stamp can go wrong. The problem is that a dry run writes a
   file. **Do:** say so in the `Makefile` comment above `VERIFY_STAMP_SCRIPT` (a person, by patch), or accept it in
   the convergence note. No test is owed.
+
+### T021 — The converge probe left bytecode in the toolkit (the owner's note, D118)
+
+- [x] *(Iteration 18: `tests/test_assets_bytecode.py`; `tests/test_mutation.py`.)* The factory gate went red after
+  `d92f908` for one reason: `assets/toolkit/scripts/__pycache__/verify-stamp.cpython-314.pyc`, which `test_toolkit`
+  reads as text and fails on. It was written at 00:27:31Z in iteration 16 by T008's first converge pass. To read the
+  key, that pass typed a `python3 -c` that loaded `assets/toolkit/scripts/verify-stamp.py` through
+  `importlib.util.spec_from_file_location` with bytecode writing on. No test in the suite did it; the owner deleted the
+  file. **Done:** `tests/test_assets_bytecode.py` holds three things. The toolkit tree has no `__pycache__` or `.pyc`,
+  and the failure says what made one and what to do. Every test module that loads a script and names an asset tree
+  in its code turns `sys.dont_write_bytecode` on. And the scan flags the probe as it was typed, and passes it with the
+  switch on. Teeth shown: a `.pyc` planted under `assets/toolkit/scripts/__pycache__/` fails the first, and the
+  pre-fix `tests/test_mutation.py` fails the second. That module was the one other loader in the class: it left
+  `assets/languages/go/scripts/__pycache__/` on every run, and it now turns the switch on around its load. A probe
+  that imports a script under `assets/` by hand runs as `python3 -B`; every brief this run writes for a delegate
+  that may probe says so. `tests/` only, so it reaches no user and raises no number.
 
 ## Convergence
 
@@ -353,7 +369,8 @@ held by `tests/test_factory_gate_stamp_inputs.py` and `tests/test_factory_gate_s
 read a stamp (`assets/toolkit/scripts/verify-stamp.py`, unchanged); **V** — every example observed failing, or a
 hold shown to have teeth; **VIII** — no bump, the root `Makefile` and `tests/` reach no user. **The slice is ⛔ on a
 person again (D113)**: `s33-2.patch` changes the root `Makefile`, a control. T009 onwards run on the tree it
-produces.
+produces. *(The owner applied it at `d92f908`; T021, the owner's note on a converge probe's bytecode, followed in
+iteration 18.)*
 
 ## Differences from plan.md
 
