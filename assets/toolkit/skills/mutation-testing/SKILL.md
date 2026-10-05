@@ -86,7 +86,7 @@ git diff <review-base>...HEAD --name-only
 
 - Identify the package manager, test runner, affected package(s), and existing Stryker config.
 - Use the actual review boundary: the detected default branch for a single PR, or the immediately lower branch for a stacked PR layer.
-- Diff-scoped mutation intentionally covers committed branch changes only. Require a clean working tree before running it. If `git status --porcelain` is non-empty, stop and explain that staged, unstaged, and untracked work is excluded; do not silently commit, stash, or claim a complete diff result.
+- Diff-scoped mutation covers the whole change under review: staged, unstaged and untracked production files are included and mutated, and nothing is committed or stashed to run it. The working tree does not need to be clean.
 - For a stacked slice, mutate the focused layer against its parent. The top also runs the cumulative acceptance and repository gates required by `stack-pull-requests`.
 - In monorepos, start in the smallest affected package, then widen to the repo-level command when the targeted run is healthy.
 - If no Stryker setup exists in a JS/TS project, recommend adding it before doing manual mutation analysis.

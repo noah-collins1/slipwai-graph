@@ -45,20 +45,20 @@ SHAPES["integration-billing"] = (
 # sha256 of each shape's Makefile before this slice's section, from the commit that came before it (R3 e5). A gate
 # that changes on purpose regenerates these; this slice adds text after everything and moves nothing before it.
 PRE_SLICE: dict[str, str] = {
-    "standard-python": "d272521a2e3f5b79a2293bc612537ce4eb0075f9d451534942c25fd6be249cd7",
-    "model-typescript-web": "b02bed88ee424ab535fc1fadc8eab8c377bd45a4229039dd474c72f966c7eaad",
-    "model-typescript-web-cloud": "33eb46ca8a6469d29d1a08e416a7ed56ba1adfd777c207d4a989f8a7a2f98d8d",
-    "model-python-sqlite": "41e9c26ea7455b8a58764363c8d1f239f04d9c3aa5aeda0976271492b625189e",
-    "model-go-azure": "f03c52ada112412728deb36983dddedb2ff03932db7aee7bd42db791dfcc9fe2",
-    "standard-quarkus": "40f4aa4a900f0e19552b8292c716b051f86920b6ce384ffeb9ae013f0973bb8d",
-    "standard-spring-web": "9b25b188ad7b99207aecce883e33d6ee292cb3ff34397de2de2ecd648c010973",
-    "two-python": "5ae475f0449138b4ec5819e4fec736626def232b132114cbca6af42709b90b86",
-    "go-web": "fb2a5ae43dbcdc06d28c1153e80928247a146a74a19834ac3cd896e84754aabd",
-    "java-go": "91439e0158ad4333bb3c6ca6caea3f8c46425b8289b8e232381262b5a90a8f1a",
-    "java-python-web": "28e23c370215aec902144c033757e928cfde04d157554fbf9bedb745a1d7b6e4",
-    "two-go": "acd9970dd3731a80989b27b70bfa0e8bea7e03ad4d9396bf6318c05a95c88ff0",
-    "integration": "616de75d01e2f454041dc8befe2f7bd5fe694303ba0de1c8c1e0fbd2e62d3d17",
-    "integration-billing": "7a42ce84c11c40e20689a618e58034cdfb3e5a4575885aa19e176fb5d28198aa",
+    "standard-python": "271f9d8bd980c18d6405d8ab20f826aee49ec24a8d50157da86c3258c9b66f0f",
+    "model-typescript-web": "30417a2d68cb6fc504091b4621e2a0aaf1b12312e681d0854f3813bc8e8fb057",
+    "model-typescript-web-cloud": "ec55059af3e34d7ac3f888d9759d95c7977e489431a9b404a60bc043c156c203",
+    "model-python-sqlite": "9dc642b98b96d6ff6a489067a1aed0ae3d4725e68caedddfb7d0726495281f8b",
+    "model-go-azure": "c387b7363e609e81f8eab738e5592dd714e0f70ddd1f2f2f7be3049fa8f5eb09",
+    "standard-quarkus": "1fa0b5257555553e13dfc8e70c782d1cc3a18f452cb2cf0b69de3ca39d1d883d",
+    "standard-spring-web": "30d1d20fc24255fb8ef7686522e17e619d8be41483a3de215c8e44afdf53a74c",
+    "two-python": "7ba65932847c5d4c0d51caf1260f3a5365771202b2a5c626f534ab2b989fa079",
+    "go-web": "447f9e3c3d00964e57f71d2cbf95aa354fbe6a7aa3698a213538bb3048cde449",
+    "java-go": "1622a01557c08ca815f55d97e383939d937bd4daaa3035d27420218bea400529",
+    "java-python-web": "2de1dbbb3c478e782dfccda17b33db3fd406f7640ed9feee93659234f85c6e5b",
+    "two-go": "899f4d825f3c8f79b3fdf8529a5d516e38eef0648da8d907c1c51cc698533f7c",
+    "integration": "d6e2968ca8bd9e0d1096b64744d3491000e096375e006f33065da948987b85cc",
+    "integration-billing": "59e01a20389c3632efe527d273733c7cc7ba34f4ae48e4ab019288e821c8e01c",
 }
 
 

@@ -124,7 +124,7 @@ class MutationTargetsTest(FactoryTestCase):
                 text = self.text(name)
                 self.assertEqual(recipe_of(text, "mutation-full"), full_recipe(words))
                 self.assertRegex(text, r"(?m)^mutation-full: ## \S.*$")
-                self.assertRegex(text, r"(?m)^\.PHONY: test .*\badversarial mutation mutation-full audit$")
+                self.assertRegex(text, r"(?m)^\.PHONY: mutation-full\nmutation-full: ")
                 helped = subprocess.run(["make", "-s", "help"], cwd=self.project(name), env=clean_environment(),
                                         text=True, capture_output=True, timeout=60).stdout
                 self.assertRegex(helped, r"(?m)^  mutation-full +\S")

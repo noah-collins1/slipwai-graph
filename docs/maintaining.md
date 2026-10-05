@@ -170,7 +170,7 @@ src/slipwai/
 │                        were waiting for
 │   ├── adopted_ci.py    the gate's CI configuration for a repository the factory did not make, per forge found
 │   ├── adopted_targets.py  the Make targets an adopted repository has and a generated project does not
-│   ├── mutation.py      what `make mutation` does per backend, and why
+│   ├── mutation.py      what `make mutation` and `make mutation-full` do per backend, and why
 │   ├── native_commands.py  what each backend runs for the Makefile's targets, per service
 │   ├── service_layouts.py  which adapter file lands at which path, per backend
 │   ├── read_side_layouts.py  the same for the read side's, merged into that table

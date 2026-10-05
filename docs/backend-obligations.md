@@ -51,13 +51,15 @@ part worth reading before trusting one: **most of these are run by no gate.**
 | `integration` | generated `make ci` only | Green here, broken in the generated repo's CI |
 | `audit` | generated `make ci` only | Green here, broken in the generated repo's CI |
 | `adversarial` | **no gate at either level** | Committed green, stays green, never executed |
-| `mutation` | **no gate in a generated project**; the factory's suite runs Go's once, on a service importing a workspace module (`tests/test_matrix.py`) | Committed green, stays green, never executed — Go's excepted |
+| `mutation` | **no gate in a generated project**; the factory's suite runs Go's once, on a service importing a workspace module (`tests/test_matrix.py`), and each wired backend's scoped run once on a starter | Committed green, stays green, never executed — Go's and Spring's excepted |
 
 The factory's gate runs each generated project's `make verify`, and for Go one `make mutation` on the
 layout the architecture page prescribes for shared code (`tests/test_matrix.py`) — added after a downstream
 review found Gremlins scoring the build failure that layout caused as a kill, a false green no gate at either
 level could see (`project/mutation.py`). So the last four rows are otherwise claims, not proofs, until someone
 runs them by hand — which is why `add-language` section 10 requires exactly that before a backend is called done.
+
+`make mutation` scopes itself on a slice branch (to the production files that differ from the trunk commit the branch was cut from), `make mutation SINCE=<ref>` scopes it on any checkout, and `make mutation-full` is the sweep it was before; no gate runs `make mutation` or `make mutation-full`, and a backend with no tool wired (TypeScript, Python, `java-quarkus`) refuses a changed service until one is.
 
 A project with a production target gets a second set of targets beside these eight — `build`, `push`,
 `smoke-image`, `smoke`, `deploy`, `rollback`, `url`, and `migrate-remote` where a store is applied by a task

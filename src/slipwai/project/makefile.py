@@ -319,13 +319,14 @@ constitution-requirements: ## Print the normative text the constitution must cov
 \t@python3 scripts/check-constitution.py --requirements
 {model_targets(event)}{api_document}
 {service_targets}
-.PHONY: test test-integration {phony_integration + ' ' if phony_integration else ''}adversarial mutation mutation-full audit
+.PHONY: test test-integration {phony_integration + ' ' if phony_integration else ''}adversarial mutation audit
 test: ## Run the complete native test suite
 \t{native['test']}
 {integration_targets(suites, per_suite)}adversarial: ## Re-run tests named or tagged adversarial
 \t{native['adversarial']}
 {mutation_note}mutation: ## Run native mutation testing, or explain the missing project decision
 \t{native['mutation']}
+.PHONY: mutation-full
 mutation-full: ## Run native mutation testing over every service, as `make mutation` did before it was scoped
 \t{native['mutation-full']}
 audit: ## Run the ecosystem-native dependency vulnerability audit
