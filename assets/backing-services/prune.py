@@ -34,7 +34,9 @@ every file, and the author is the only one who knows.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -1252,6 +1254,60 @@ def _drop_compose_environment(root: Path, dropped: set[str], log) -> None:
     log(f"  docker-compose.yml: dropped {', '.join(keys)} from the app service")
 
 
+RULES_FILE = "scripts/verify_scoped/rules.json"  # what the factory wrote for the Makefile, beside the reader of it
+RULES_READER = "scripts/verify_scoped/rules.py"
+
+
+def _rules_reader(root: Path, delivery: str):
+    """The project's own `rules.py`, loaded without writing a cache beside it; None where the project has none."""
+    source = root / placed(RULES_READER, delivery)
+    if not source.is_file():
+        return None
+    spec = importlib.util.spec_from_file_location("backing_services_rules", source)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    previous = sys.dont_write_bytecode
+    try:
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(module)
+    except (OSError, SyntaxError, ImportError):
+        return None
+    finally:
+        sys.dont_write_bytecode = previous
+    return module
+
+
+def matching_rules(root: Path, delivery: str, makefile: str):
+    """The `rules.json` path and `rules.py` where the file holds exactly what the factory writes for this `Makefile`
+    text; None where it does not (no file, no reader, an edited Makefile, or text the reader cannot read)."""
+    path = root / placed(RULES_FILE, delivery)
+    reader = _rules_reader(root, delivery)
+    if reader is None or not path.is_file():
+        return None
+    try:
+        held = json.loads(path.read_text(encoding="utf-8"))
+        return (path, reader) if held == reader.from_text(makefile) else None
+    except (OSError, ValueError):
+        return None
+
+
+def refingerprint(path: Path, reader, makefile: str) -> None:
+    """`rules.json` rewritten for the pruned `Makefile` by temporary file and rename (Principle II). A text the reader
+    cannot read leaves the file as it was: stale is the full gate, which is safe."""
+    try:
+        text = json.dumps(reader.from_text(makefile), indent=2, sort_keys=True) + "\n"
+    except ValueError:
+        return
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        temporary.write_text(text, encoding="utf-8", newline="\n")
+        temporary.chmod(path.stat().st_mode & 0o777)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def prune(root: Path, keep: set[str], *, settled: set[str] | None = None, log=print) -> None:
     """Cut the project down to `keep`. Idempotent: pruning what is already absent does nothing.
 
@@ -1267,11 +1323,19 @@ def prune(root: Path, keep: set[str], *, settled: set[str] | None = None, log=pr
     keep = keep & present
     dropped = present - keep
 
-    for path in marked_paths(root, services, project_web_apps(root), delivery_of(root)):
+    delivery = delivery_of(root)
+    makefile = root / placed("Makefile", delivery)
+    recorded = None  # the rules file and its reader, where the Makefile is as the factory wrote it before the prune
+    for path in marked_paths(root, services, project_web_apps(root), delivery):
         text = path.read_text(encoding="utf-8")
         if not MARKER.search(text):
             continue
-        path.write_text(strip_markers(text, keep, settled), encoding="utf-8", newline="\n")
+        cut = strip_markers(text, keep, settled)
+        if path == makefile:
+            recorded = matching_rules(root, delivery, text)
+        path.write_text(cut, encoding="utf-8", newline="\n")
+        if path == makefile and recorded is not None:
+            refingerprint(recorded[0], recorded[1], cut)
 
     web = project_web_apps(root)
     for feature in sorted(dropped):
