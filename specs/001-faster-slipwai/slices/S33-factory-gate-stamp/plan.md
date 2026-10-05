@@ -30,6 +30,19 @@ git commit -m "S33: the factory's gate asks the verify stamp first (applied by h
 Until it is applied the slice is blocked (⛔), and the run takes `S05-xdist`. The iteration after it lands
 re-enters at convergence.
 
+**Applied by the owner at `cab6cda`. Converge (iteration 16) found what it let through, and the fix is a second
+patch, [`s33-2.patch`](s33-2.patch), over the tree as it stands after `e997a5f` (D113):**
+
+```sh
+git apply specs/001-faster-slipwai/slices/S33-factory-gate-stamp/s33-2.patch
+make lint typecheck check-structure && make test TESTS="test_factory_gate_stamp test_factory_gate_stamp_inputs test_factory_gate_stamp_scan test_factory_repository test_extensions"
+git add tests/test_factory_gate_stamp_inputs.py tests/test_factory_gate_stamp_scan.py
+git commit -m "S33: the stamp's bypass and key close what converge found (applied by hand; no bump — reaches no user)" -- Makefile tests/test_factory_gate_stamp.py tests/test_factory_gate_stamp_inputs.py tests/test_factory_gate_stamp_scan.py
+```
+
+Until it is applied the slice is ⛔ again, and the run takes `S06-scoped-gate`; the iteration after it lands
+re-enters at T009 (after-converge gaps).
+
 ## The example map
 
 | Rule | Criteria | What it says | Examples |

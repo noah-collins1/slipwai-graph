@@ -1,0 +1,443 @@
+diff --git a/Makefile b/Makefile
+index 4dc1bcc..e2b5dd6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -34,19 +34,24 @@ test: ## Run the factory's test suite, or a slice: TESTS="test_a test_b", or SKI
+ # A tree that already passed is not judged again: the verify stamp every generated project carries answers first, from
+ # where it ships, so the factory's own gate is the one it generates. The four checks are `verify-checks`; CI never reads
+ # a stamp, because the script stands down under a CI marker and on the trunk. A slice of the suite (`TESTS`, `SKIP`)
+-# is not the gate, so it never asks the script: nothing reads, writes or removes a stamp for a run that skipped checks.
++# is not the gate, and nor is `FACTORY_BACKENDS`, which cuts the backend matrix: neither asks the script, so nothing reads,
++# writes or removes a stamp for a run that skipped checks. Every variable that narrows what the suite runs belongs here.
+ # The key also holds what each tool the suite looks for answers to `--version`, since a test skips when its tool is
+ # missing and a tool appearing or changing can change what the suite does. Only a tool this machine has is asked: the
+-# script cannot ask a missing one, and would then record nothing. `make` itself is always there, under the name it was run as.
++# script cannot ask a missing one, and would then record nothing. The Docker Compose plugin answers to `docker compose
++# version`, which the script cannot ask, so the recipe writes that answer (or `absent`) to the ignored `.factory-work/verify-probes`,
++# which the key reads like any ignored file. The line holds `$(MAKE)`, so `make -n verify` and `make -q verify` write that
++# file too: harmless, an ignored file with its true answer, and no stamp is touched. `make` itself is always there,
++# under the name it was run as.
+ VERIFY_STAMP_SCRIPT := assets/toolkit/scripts/verify-stamp.py
+-VERIFY_TOOLS := python3 git uv node npm go java docker pack tofu gh
++VERIFY_TOOLS := python3 git uv node npm npx go java docker pack ko mvn tofu gh codegraph
+ VERIFY_STAMP = --tool make --make "$(MAKE)" $(foreach tool,$(VERIFY_TOOLS),$(if $(shell command -v $(tool) 2>/dev/null),--tool $(tool)))
+ .PHONY: verify
+ verify: ## Full local gate — a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway
+-ifneq ($(strip $(TESTS)$(SKIP)),)
++ifneq ($(strip $(TESTS)$(SKIP)$(FACTORY_BACKENDS)),)
+ 	@"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks
+ else
+-	@run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
++	@mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; } > .factory-work/verify-probes; run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
+ endif
+ 
+ .PHONY: verify-checks
+diff --git a/tests/test_factory_gate_stamp.py b/tests/test_factory_gate_stamp.py
+index 7c6a04b..f04d4fd 100644
+--- a/tests/test_factory_gate_stamp.py
++++ b/tests/test_factory_gate_stamp.py
+@@ -24,6 +24,9 @@ sys.dont_write_bytecode = True
+ 
+ SCRIPTS = "assets/toolkit/scripts/"
+ COPIED = ("Makefile", SCRIPTS + "verify-stamp.py", SCRIPTS + "check-slice-scope.py")
++# Variables that make the root gate run its checks straight and touch no stamp: a run that skipped or narrowed them is
++# not the gate. `gate()` strips each from the child, so only an example that sets one holds it.
++BYPASS = ("TESTS", "SKIP", "FACTORY_BACKENDS")
+ FULL = ["verify --lint-only", "verify --typecheck-only", "check-structure", "test"]
+ VERIFY = (
+     "#!/bin/sh\necho \"verify $*\" >> \"$STANDIN_LOG\"\n"
+@@ -67,12 +70,14 @@ class GateCase(unittest.TestCase):
+         git(self.repo, "checkout", "-q", "-b", "topic")
+         self.log.write_text("", encoding="utf-8")
+ 
+-    def gate(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
+-        """`make verify` as a person types it; the log of what the stand-ins ran is kept between runs."""
++    def gate(self, *args: str, path: str = "", **env: str) -> subprocess.CompletedProcess[str]:
++        """`make verify` as a person types it; the log of what the stand-ins ran is kept between runs.
++
++        `path`, where given, is every `PATH` directory after the stand-ins' own: the machine's is then not consulted."""
+         # the outer `make test TESTS=...` exports its own variables to every child
+-        names = CI_MARKERS + MAKE_STATE + GIT_STATE + ("TESTS", "SKIP", "VERIFY_FORCE")
++        names = CI_MARKERS + MAKE_STATE + GIT_STATE + BYPASS + ("VERIFY_FORCE",)
+         full = {k: v for k, v in os.environ.items() if k not in names}
+-        full.update(PATH=f"{self.bin}{os.pathsep}{full.get('PATH', '')}", STANDIN_LOG=str(self.log),
++        full.update(PATH=f"{self.bin}{os.pathsep}{path or full.get('PATH', '')}", STANDIN_LOG=str(self.log),
+                     PYTHONDONTWRITEBYTECODE="1", **env)
+         return subprocess.run(["make", "verify", *args], cwd=self.repo, env=full, text=True, capture_output=True,
+                               timeout=180)
+@@ -240,7 +245,7 @@ class TestNothingElseMoves(GateCase):
+     def dry(self, *targets: str, **variables: str) -> list[str]:
+         arguments = [f"{name}={value}" for name, value in variables.items()]
+         done = subprocess.run(["make", "-n", *targets, *arguments], cwd=self.repo, text=True, capture_output=True,
+-                              env={k: v for k, v in os.environ.items() if k not in MAKE_STATE + ("TESTS", "SKIP")})
++                              env={k: v for k, v in os.environ.items() if k not in MAKE_STATE + BYPASS})
+         return done.stdout.splitlines()
+ 
+     def test_help_says_a_passed_tree_is_not_judged_again(self) -> None:  # e1
+diff --git a/tests/test_factory_gate_stamp_inputs.py b/tests/test_factory_gate_stamp_inputs.py
+new file mode 100644
+index 0000000..33ae707
+--- /dev/null
++++ b/tests/test_factory_gate_stamp_inputs.py
+@@ -0,0 +1,224 @@
++"""What the suite reads from the environment and probes on `PATH` is accounted for by the root gate's stamp (S33).
++
++Two class-closing tables, each checked against the tests as they are written: a name a test starts reading, or a tool a
++test starts looking for, that is in neither the table nor the gate's own lists fails here, so the stamp cannot go on
++reusing a pass over a suite the new input changes. The examples run the root `Makefile` in `GateCase`'s throwaway repo.
++"""
++from __future__ import annotations
++
++import importlib.util
++import os
++import re
++import shutil
++import subprocess
++import sys
++from functools import partial
++
++from test_factory_gate_stamp import BYPASS, FULL, GateCase
++from test_factory_gate_stamp_scan import probed, reads, unreadable
++
++from slipwai.assets import ROOT
++
++sys.dont_write_bytecode = True
++
++# Every name `tests/*.py` reads from the environment. A name that narrows or redirects what the suite runs
++# BYPASSES the stamp (the checks run straight, nothing is read or written), with a value that shows it. The rest
++# change nothing the suite runs, with the reason.
++BYPASSES = {"TESTS": "test_x", "SKIP": "test_nothing", "FACTORY_BACKENDS": "python"}
++UNCHANGING = {
++    "PATH": "the tools a run finds are keyed by `--version` answers, and a stand-in PATH is built by the test",
++    "SLIPWAI_NO_INSTALL": "`support.py` sets it for its own process; it stops an installer, not a test",
++    "SLIPWAI_INDEX": "a registry URL `test_upgrade.py` hands its own child and clears around it; asserted the same",
++    "S02_TEST_CI": "a test sets it for its own child, with a CI marker the test itself names",
++    "UV_INDEX_SLIPWAI_USERNAME": "a test sets it for its own child; the same tests run with or without it",
++    "UV_INDEX_SLIPWAI_PASSWORD": "a test sets it for its own child; the same tests run with or without it",
++    "GITHUB_REF_NAME": "only labels the image tag a test builds; every assertion is the same under any label",
++    "IMAGE_REGISTRY": "names where the pack image test pushes, a throwaway local one otherwise; the test runs "
++                      "and asserts the same, and a wrong registry fails it, never passes it",
++    "PACK_FLAGS": "extra flags for the pack build the test runs anyway; the same assertions, and a bad flag fails "
++                  "the build",
++}
++
++
++# Every tool a test looks for, other than the gate's own `VERIFY_TOOLS`: a test skips, or asserts, on whether one is
++# there, so a tool that can appear belongs in the key. These do not change what runs, with the reason; `make` is keyed
++# by the recipe itself, and `docker compose` through the probe file the recipe writes (D112).
++EXEMPT_TOOLS = {
++    "sh": "always there, and the key's own runner needs it (D100); `--version` is not asked of it",
++    "chmod": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "dirname": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "cat": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "mkdir": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "touch": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "rm": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "mv": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "mkfifo": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "echo": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "sleep": "coreutils a stand-in PATH is built from; asserted present, never a reason to skip",
++    "init": "the generated repository's own `init` script, asserted executable: a file its test lands, not a tool",
++    "make": "keyed by the recipe itself: `--tool make --make \"$(MAKE)\"`, under the name it was run as",
++}
++PROBE_FILE = ".factory-work/verify-probes"
++KEYED_THROUGH_THE_PROBE_FILE = {"docker compose"}
++
++
++# Every site whose name the scanners cannot read as literals, `file: code`, with the reason it is not a gap: the name is
++# a parameter whose callers' literals are read at their own call, or the path is a file the test's repository holds.
++UNREADABLE = {
++    "stamp_fixture.py: os.environ.get(name)": "`variable()` sets one name for one block and restores it; it is the "
++                                              "generated gate's own input, held in-process, not what the suite runs",
++    "stamp_fixture.py: os.environ.pop(name, None)": "the same helper, restoring",
++    "stamp_fixture.py: os.environ[name]": "the same helper, setting",
++    "test_cruise_index.py: shutil.which(tool)": "`bare_path`'s parameter: its callers' tools are read as arguments",
++    "test_wrappers.py: shutil.which(tool)": "`_on_path`'s parameter: every caller's tool is read as its argument",
++    "test_images.py: shutil.which(NEEDS[tool])": "`NEEDS`' values, read where the map is assigned",
++    "test_monorepos.py: os.access(landed, os.X_OK)": "a file the generated repository holds, not a tool",
++    "test_parallel_slices.py: os.access(gate, os.X_OK)": "a file the generated repository holds, not a tool",
++}
++
++
++class TestEveryVariableTheSuiteReadsIsAccountedFor(GateCase):
++    def test_a_site_the_scanners_cannot_read_is_listed_with_its_reason(self) -> None:  # AC-S33-11 e1
++        self.assertEqual(sorted(set(unreadable()) - set(UNREADABLE)), [], "a name the scanner cannot resolve")
++        self.assertEqual(sorted(set(UNREADABLE) - set(unreadable())), [], "an entry nothing needs any more")
++
++    def test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one(self) -> None:  # AC-S33-11 e1
++        self.assertEqual(sorted(reads() - set(BYPASSES) - set(UNCHANGING)), [])
++        self.assertEqual(set(BYPASSES), set(BYPASS), "the fixture strips exactly the bypasses")
++        self.assertFalse(set(BYPASSES) & set(UNCHANGING))
++
++    def test_each_bypass_runs_the_checks_straight_and_leaves_the_stamp_alone(self) -> None:  # AC-S33-11 e2
++        self.passes()
++        before = self.stamps()
++        self.assertTrue(before)
++        for name, value in BYPASSES.items():
++            # in the environment, then on make's command line
++            for how, run in (("environment", partial(self.gate, **{name: value})),
++                             ("command line", partial(self.gate, f"{name}={value}"))):
++                with self.subTest(name, how=how):
++                    done = run()
++                    self.assertEqual(done.returncode, 0, done.stderr)
++                    self.assertEqual((self.ran(), self.stamps()), (FULL, before))
++        done = self.gate()
++        self.assertEqual((done.returncode, self.ran()), (0, []))
++
++    def test_a_bypass_writes_no_stamp_and_the_next_plain_run_is_full(self) -> None:  # AC-S33-11 e3
++        for name, value in BYPASSES.items():
++            with self.subTest(name):
++                self.assertEqual(self.gate(**{name: value}).returncode, 0)
++                self.assertEqual((self.ran(), self.stamps()), (FULL, {}))
++                self.passes()
++                self.gate()
++                self.ran()
++                shutil.rmtree(self.repo / ".git" / "slipwai")
++
++
++
++class TestEveryToolTheSuiteLooksForIsAccountedFor(GateCase):
++    def listed(self) -> list[str]:
++        words = re.search(r"^VERIFY_TOOLS\s*:?=(.*)$", (self.repo / "Makefile").read_text(encoding="utf-8"), re.M)
++        self.assertIsNotNone(words)
++        return words.group(1).split() if words else []
++
++    def test_a_tool_the_tests_look_for_is_keyed_exempt_with_its_reason_or_keyed_through_the_probe_file(self) -> None:
++        accounted = set(self.listed()) | set(EXEMPT_TOOLS) | KEYED_THROUGH_THE_PROBE_FILE  # AC-S33-12 e1
++        self.assertEqual(sorted(probed() - accounted), [])
++        text = (self.repo / "Makefile").read_text(encoding="utf-8")
++        self.assertIn(PROBE_FILE, text)
++        self.assertIn("docker compose version", text)
++
++    def test_the_tools_whose_absence_skips_an_image_or_wrapper_test_are_listed(self) -> None:  # AC-S33-12 e2
++        self.assertTrue({"ko", "mvn", "pack", "java", "docker"} <= set(self.listed()))
++
++    def test_the_plugin_arriving_puts_the_next_run_in_full_and_the_run_after_reuses(self) -> None:  # AC-S33-12 e3
++        """A stand-in `docker` answers `--version` the same throughout and fails `compose version` until it is told."""
++        docker = self.bin / "docker"
++        docker.write_text('#!/bin/sh\ncase "$1" in\n  --version) echo "Docker version 27.0 (stand-in)" ;;\n'
++                          '  compose) [ -f "$0.compose" ] && cat "$0.compose" || exit 1 ;;\nesac\n', encoding="utf-8")
++        docker.chmod(0o755)
++        with (self.repo / ".gitignore").open("a", encoding="utf-8") as ignores:
++            ignores.write(".factory-work/\n")  # as the real `.gitignore` does
++        self.passes()
++        self.assertEqual(self.gate().returncode, 0)
++        self.assertEqual(self.ran(), [])
++        (self.bin / "docker.compose").write_text("Docker Compose version v2.29.0\n", encoding="utf-8")
++        self.passes()
++        self.assertEqual(self.gate().returncode, 0)
++        self.assertEqual(self.ran(), [])
++
++    def test_the_real_tree_ignores_the_probe_file_and_the_key_does_not_exempt_it(self) -> None:  # AC-S33-12 e3
++        ignored = subprocess.run(["git", "check-ignore", PROBE_FILE], cwd=ROOT, text=True, capture_output=True)
++        self.assertEqual(ignored.returncode, 0, "the real `.gitignore` ignores the probe file")
++        spec = importlib.util.spec_from_file_location("verify_stamp", ROOT / "assets/toolkit/scripts/verify-stamp.py")
++        assert spec is not None and spec.loader is not None
++        stamp = importlib.util.module_from_spec(spec)
++        spec.loader.exec_module(stamp)
++        self.assertIsNone(stamp.exempt_entry(PROBE_FILE), "an ignored file, but one the key reads by its bytes")
++
++    def test_a_slice_of_the_suite_writes_no_probe_file(self) -> None:  # AC-S33-12 e4
++        self.assertEqual(self.gate("TESTS=test_x").returncode, 0)
++        self.assertFalse((self.repo / PROBE_FILE).exists())
++
++
++class TestAListedToolLeavingPutsTheNextRunInFull(GateCase):
++    def test_a_stand_in_tool_removed_from_a_path_that_holds_none_other_is_a_full_run(self) -> None:  # AC-S33-6 hold
++        """The `PATH` is built here so `tofu` is certainly absent after, whatever the host has installed."""
++        bare = self.bin.parent / "bare"
++        bare.mkdir()
++        for name in ("make", "git", "python3", "sh", "mkdir", "echo"):
++            (bare / name).symlink_to(shutil.which(name) or name)
++        path = str(bare)
++        tofu = self.bin / "tofu"
++        tofu.write_text('#!/bin/sh\necho "OpenTofu v1.8.0"\n', encoding="utf-8")
++        tofu.chmod(0o755)
++        done = self.gate(path=path)
++        self.assertEqual((done.returncode, self.ran()), (0, FULL), done.stdout + done.stderr)
++        self.assertEqual((self.gate(path=path).returncode, self.ran()), (0, []))
++        tofu.unlink()
++        self.assertIsNone(shutil.which("tofu", path=f"{self.bin}{os.pathsep}{path}"))
++        done = self.gate(path=path)
++        self.assertEqual((done.returncode, self.ran()), (0, FULL), done.stdout)
++        self.assertNotIn("not found", done.stderr, "the probe line is silent where there is no `docker`")
++        self.assertEqual((self.gate(path=path).returncode, self.ran()), (0, []))
++
++
++class TestTheRootRecipeUnderMakesOwnFlags(GateCase):
++    """The recipe's exit handling is its own, not the generated one's: each flag below is a hold (AC-S33-10)."""
++
++    def test_i_with_a_failing_check_exits_0_writes_no_stamp_and_the_next_run_is_full(self) -> None:
++        done = self.gate("-i", STANDIN_FAIL="test")
++        self.assertEqual(done.returncode, 0, done.stderr)
++        self.assertEqual(self.ran(), FULL)
++        self.assertEqual([n for n in self.stamps() if n.endswith(".json")], [])
++        self.passes()
++
++    def test_n_starts_no_check_and_leaves_every_stamp_byte_alone(self) -> None:
++        self.passes()
++        before = self.stamps()
++        self.append("src/mod.py")
++        for tree in ("changed", "unchanged"):
++            with self.subTest(tree):
++                self.assertEqual(self.gate("-n").returncode, 0)
++                self.assertEqual((self.ran(), self.stamps()), ([], before))
++                if tree == "changed":
++                    (self.repo / "src/mod.py").write_text("X = 1\n", encoding="utf-8")
++
++    def test_q_exits_1_and_says_nothing_on_a_tree_that_needs_the_checks(self) -> None:
++        for tree in ("fresh", "changed"):
++            with self.subTest(tree):
++                before = self.stamps()
++                done = self.gate("-q")
++                self.assertEqual((done.returncode, done.stdout, done.stderr, self.ran()), (1, "", "", []))
++                self.assertEqual(self.stamps(), before)
++                if tree == "fresh":
++                    self.passes()
++                    self.append("src/mod.py")
++
++    def test_k_with_a_failing_check_exits_2_names_the_failure_and_writes_no_stamp(self) -> None:
++        done = self.gate("-k", STANDIN_FAIL="check-structure")
++        self.assertEqual(done.returncode, 2, done.stderr)
++        self.assertIn("did not pass", done.stdout + done.stderr)
++        self.assertIn("check-structure", done.stdout + done.stderr)
++        self.assertEqual([n for n in self.stamps() if n.endswith(".json")], [])
++        self.ran()
++        self.passes()
+diff --git a/tests/test_factory_gate_stamp_scan.py b/tests/test_factory_gate_stamp_scan.py
+new file mode 100644
+index 0000000..8f8563d
+--- /dev/null
++++ b/tests/test_factory_gate_stamp_scan.py
+@@ -0,0 +1,131 @@
++"""The two scanners behind S33's class-closing tables: what `tests/*.py` read from the
++environment, and look for on `PATH`.
++
++A scanner that only sees literal forms goes green past a form it cannot read, so these fail the other way: every form
++handled below is read, and any site whose name cannot be resolved to literal strings (a parameter, a computed value)
++is returned as an `unreadable` entry, which the table test must account for by file and expression, with a reason.
++"""
++from __future__ import annotations
++
++import ast
++import sys
++from pathlib import Path
++
++sys.dont_write_bytecode = True
++
++TESTS_DIR = Path(__file__).resolve().parent
++ENVIRONS = ("os.environ", "environ")
++ENV_GETTERS = tuple(f"{o}.{m}" for o in ENVIRONS for m in ("get", "setdefault", "pop")) + ("os.getenv", "getenv")
++WHICH = ("shutil.which", "which", "_on_path")
++SPAWNS = ("run", "Popen", "call", "check_call", "check_output")
++
++
++class Names:
++    """Resolves an expression to the literal strings it can be, or None. A name is what the nearest enclosing `for` or
++    comprehension over literals makes it, else what its one assignment in the file makes it; a parameter, a name bound
++    twice or anything computed is None."""
++
++    def __init__(self, tree: ast.AST) -> None:
++        self.parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
++        self.assigned: dict[str, list[ast.AST]] = {}
++        for node in ast.walk(tree):
++            if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
++                self.assigned.setdefault(node.targets[0].id, []).append(node.value)
++
++    def literals(self, node: ast.AST) -> set[str] | None:
++        if isinstance(node, ast.Constant):
++            return {node.value} if isinstance(node.value, str) else None
++        if isinstance(node, ast.Tuple | ast.List):
++            return self.each(node)
++        if isinstance(node, ast.Name):
++            loop = self.loop(node)
++            if loop is not None:
++                return self.each(loop)
++            values = self.assigned.get(node.id, [])
++            return self.literals(values[0]) if len(values) == 1 else None
++        return None
++
++    def each(self, node: ast.AST) -> set[str] | None:
++        """The strings an iterable of literals holds."""
++        if isinstance(node, ast.Name):
++            values = self.assigned.get(node.id, [])
++            return self.each(values[0]) if len(values) == 1 else None
++        if not isinstance(node, ast.Tuple | ast.List):
++            return None
++        parts = [self.literals(e) for e in node.elts]
++        return None if any(p is None for p in parts) else set().union(*parts)  # type: ignore[arg-type]
++
++    def loop(self, name: ast.Name) -> ast.AST | None:
++        """The iterable of the nearest enclosing `for` or comprehension that binds `name`, if there is one."""
++        child: ast.AST = name
++        while child in self.parents:
++            parent = self.parents[child]
++            binders = parent.generators if isinstance(parent, ast.ListComp | ast.SetComp | ast.GeneratorExp
++                                                      | ast.DictComp) else [parent]
++            for binder in binders:
++                if isinstance(binder, ast.For | ast.comprehension) and isinstance(binder.target, ast.Name) \
++                        and binder.target.id == name.id and child is not binder.iter:
++                    return binder.iter
++            child = parent
++        return None
++
++
++def sites(directory: Path) -> tuple[set[str], set[str], list[str]]:
++    """The environment names read, the tools looked for, and each site whose name cannot be read as `file: code`."""
++    env: set[str] = set()
++    tools: set[str] = set()
++    unreadable: list[str] = []
++    for path in sorted(directory.glob("*.py")):
++        tree = ast.parse(path.read_text(encoding="utf-8"))
++        names = Names(tree)
++
++        def take(into: set[str], node: ast.AST, whole: ast.AST, file: str = path.name, names: Names = names) -> None:
++            found = names.literals(node)
++            if found is None:
++                unreadable.append(f"{file}: {ast.unparse(whole)}")
++            else:
++                into.update(found)
++
++        for node in ast.walk(tree):
++            if isinstance(node, ast.Call) and node.args:
++                function, first = ast.unparse(node.func), node.args[0]
++                if function in ENV_GETTERS:
++                    take(env, first, node)
++                elif function in WHICH:
++                    take(tools, first, node)
++                elif function == "bare_path":
++                    for argument in node.args[1:]:
++                        take(tools, argument, node)
++                elif function == "os.access" and len(node.args) > 1 and ast.unparse(node.args[1]) == "os.X_OK":
++                    named = first.right if isinstance(first, ast.BinOp) and isinstance(first.op, ast.Div) else first
++                    take(tools, named, node)
++                elif function.split(".")[-1] in SPAWNS and isinstance(first, ast.List | ast.Tuple):
++                    words = names.literals(first) or {str(e.value) for e in first.elts if isinstance(e, ast.Constant)}
++                    if words >= {"docker", "compose"}:
++                        tools.add("docker compose")
++                    elif "--version" in words and isinstance(first.elts[0], ast.Constant):
++                        tools.add(str(first.elts[0].value))
++            elif isinstance(node, ast.Subscript) and ast.unparse(node.value) in ENVIRONS:
++                take(env, node.slice, node)
++            elif isinstance(node, ast.Compare) and any(ast.unparse(c) in ENVIRONS for c in node.comparators):
++                take(env, node.left, node)
++            elif isinstance(node, ast.Assign) and ast.unparse(node.targets[0]) == "NEEDS" and isinstance(
++                    node.value, ast.Dict):
++                for value in node.value.values:
++                    take(tools, value, node)
++    return env, {t for t in tools if "/" not in t and "." not in t}, unreadable
++
++
++def reads(directory: Path = TESTS_DIR) -> set[str]:
++    """Every name some `tests/*.py` reads from `os.environ` or `getenv`, or sets there for itself."""
++    return sites(directory)[0]
++
++
++def probed(directory: Path = TESTS_DIR) -> set[str]:
++    """Every tool some `tests/*.py` looks for: `which`, `os.access(... / tool, os.X_OK)`, a `--version` probe, `NEEDS`,
++    a stand-in `PATH` built from named tools, `docker compose` run as a probe."""
++    return sites(directory)[1]
++
++
++def unreadable(directory: Path = TESTS_DIR) -> list[str]:
++    return sites(directory)[2]

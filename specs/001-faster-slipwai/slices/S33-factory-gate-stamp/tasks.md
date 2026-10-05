@@ -178,7 +178,7 @@ and `--make "$(MAKE)"`. The list is written once.
 
 ### T008 — Converge (host task)
 
-- [ ] `drive-converge` over the applied diff against the constitution; the verdict goes under `## Convergence`;
+- [x] *(Two passes, iteration 16: pass 1 not converged — T015 CRITICAL, T016 HIGH, T017 MEDIUM; pass 2 converged — T018, T019 MEDIUM, T020 LOW; all six built into `s33-2.patch`.)* `drive-converge` over the applied diff against the constitution; the verdict goes under `## Convergence`;
   any finding it appends becomes a task under *Phase 4*, in the order found.
 
 ### T009 — After-converge gaps pass (host task)
@@ -244,7 +244,7 @@ scratch worktree, an exported patch, then a person applies it. A task that chang
 
 ### T015 — CRITICAL: an environment variable that narrows the suite is neither keyed nor a bypass (Principle I; owner priority 5)
 
-- [ ] `tests/support.py:31` reads `FACTORY_BACKENDS` and cuts the matrix down (`FACTORY_BACKENDS=python` → 1 backend
+- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `tests/support.py:31` reads `FACTORY_BACKENDS` and cuts the matrix down (`FACTORY_BACKENDS=python` → 1 backend
   out of 5). `.github/workflows/verify.yml:57` calls it, beside `TESTS`/`SKIP`, *how a slice is named*. The key
   holds only the script's `VARIABLES` (`verify-stamp.py:115`). Root `Makefile:46` bypasses the stamp for `TESTS` and
   `SKIP` and nothing else. **Evidence:** `key_parts()` over this tree gives `646104d6449f41a4` both with and without
@@ -265,7 +265,7 @@ scratch worktree, an exported patch, then a person applies it. A task that chang
 
 ### T016 — HIGH: tools whose presence changes what the suite runs are missing from `VERIFY_TOOLS` (AC-S33-6's class)
 
-- [ ] `VERIFY_TOOLS` (`Makefile:42`) is a list someone wrote by hand. The suite looks for more than it holds:
+- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `VERIFY_TOOLS` (`Makefile:42`) is a list someone wrote by hand. The suite looks for more than it holds:
   `ko` (`tests/test_images.py:61,179` skip the Go image without it); `mvn` (`tests/test_wrappers.py:103` asserts
   only when `mvn` is absent); the Docker Compose plugin (`tests/test_postgres.py:208-211` skips without
   `docker compose version`, and `docker --version` stays the same when the plugin is installed). Install `ko`
@@ -283,7 +283,7 @@ scratch worktree, an exported patch, then a person applies it. A task that chang
 
 ### T017 — MEDIUM: clauses of AC-S33-6 and the root recipe's make-flag paths have no example (AC-S33-10)
 
-- [ ] `tests/test_factory_gate_stamp.py` has no example of a listed tool **leaving** `PATH`. Its "one missing, still
+- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `tests/test_factory_gate_stamp.py` has no example of a listed tool **leaving** `PATH`. Its "one missing, still
   written and reused" example (`:226`) holds only on a machine where some listed tool really is missing. Nothing
   runs the root recipe under `-i`, `-n`, `-q` or `-k`, although its exit handling (`Makefile:49`, the
   `rc -eq 1` silence) is its own and not the generated one. In a scratch `GateCase` probe each one already behaves:
@@ -293,9 +293,67 @@ scratch worktree, an exported patch, then a person applies it. A task that chang
   "missing", build the `PATH` so at least one listed tool is certainly absent instead of depending on the host.
   Tests only. No Makefile change.
 
+### Converge pass 2: what pass 1's fix (`s33-fix`, `s33-2.patch`) still owes
+
+Pass 2 found no CRITICAL or HIGH. T015's bypass, T016's `ko`/`mvn`/probe file and T017's holds close what they name.
+The three tasks below are what is left. None of them re-opens the loop.
+
+### T018 — MEDIUM: AC-S33-12 e3 keys the probe file as an untracked file, never through `tree_records`/`EXEMPT`
+
+- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `GateCase` writes the fixture's `.gitignore` as `__pycache__/` only (`tests/test_factory_gate_stamp.py:59`). So in
+  the fixture `.factory-work/verify-probes` is untracked and *not* ignored. `covered_files` lists it, and it is keyed
+  as a file. The real tree takes a different route: `.gitignore:4` ignores it, and it reaches the key only through
+  `tree_records` and `exempt_entry` (`assets/toolkit/scripts/verify-stamp.py:334`, `:57`). That route is the one D112
+  rests on, and it is D112's own *would reverse if*. **Evidence:** with `(".factory-work/", CACHE, ())` added to
+  `EXEMPT`, `test_the_plugin_arriving_puts_the_next_run_in_full_and_the_run_after_reuses` still passes (restored).
+  The real tree is correct today. In a `/tmp` clone of `s33-fix`, `git check-ignore` names `.gitignore:4`, and
+  `key_parts()`'s `ignored` digest moves from `122e0a182a1e` (`absent`) to `d9a3de6e3723` (a Compose version line)
+  and stays put after a `touch` of a different mtime. So the behaviour holds and only its guard is missing.
+  **Do:** in `tests/` only, make the example run the real route. Either the fixture's `.gitignore` gains
+  `.factory-work/` for this example, or a second example asserts that the root `.gitignore` ignores the path and
+  that `exempt_entry(".factory-work/verify-probes")` is `None`. Show the teeth with the same `EXEMPT` mutation.
+
+### T019 — MEDIUM: the two scanners see only literal forms, and one live probe gets past them
+
+- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* `reads()` and `probed()` (`tests/test_factory_gate_stamp_inputs.py:62`, `:113`) do catch a new
+  `os.environ.get("X")`, `os.environ.get("X", d)`, `shutil.which("y")` and a `NEEDS` map entry. Each was proven
+  with a throwaway `tests/test_zz_mut.py` that made e1 fail, then removed. They pass over the following forms, and
+  e1 stays green with each one added: `"X" in os.environ`; `os.environ.setdefault("X", …)`; `os.environ.get(NAME)`
+  where `NAME` is a constant; `shutil.which(TOOL)` where `TOOL` is a constant; `subprocess.run(["y", "--version"])`
+  as a probe for any tool but `docker compose`; `os.access(dir / "y", os.X_OK)`. The tree already has one live case
+  of the last form. `tests/test_extensions.py:209-212` skips its test when `codegraph` or `npx` shares a
+  directory with `sh`. Neither name is in `VERIFY_TOOLS`, in `EXEMPT_TOOLS` or in `probed()`. Here `npx` is
+  `/usr/bin/npx`, so the test always skips on this machine. The false-green direction needs `npx` to leave `sh`'s
+  directory while `npm --version` (keyed) answers the same. That is rare, which is why this is MEDIUM. **Do:**
+  in `tests/` only, either extend both scanners to these forms or make them fail on any non-literal argument
+  to a getter or `which`/`os.access`. Then put `codegraph` and `npx` in the tools table, keyed or with a reason.
+  Show the teeth with one added line per form.
+
+### T020 — LOW: the probe file is written under `make -n` and `make -q`
+
+- [x] *(In `s33-2.patch`, unapplied — a person applies it, D113.)* The stamped branch is one recipe line that contains `$(MAKE)`, so GNU make runs it under `-n` and `-q`. In a
+  `/tmp` clone, `make -n verify` (exit 0) and `make -q verify` (exit 1) each wrote `.factory-work/verify-probes`
+  where there was none. The bypass branch wrote nothing. What gets written is the probe's true answer, to an ignored
+  file, and the stamp is untouched (T017's `-n` hold). So no stamp can go wrong. The problem is that a dry run writes a
+  file. **Do:** say so in the `Makefile` comment above `VERIFY_STAMP_SCRIPT` (a person, by patch), or accept it in
+  the convergence note. No test is owed.
+
 ## Convergence
 
-*(to be written by T008)*
+**Verdict (T008, iteration 16): converged at the bound of two passes** — `drive-converge` · model: host (claude-opus-5-5) · delegated, fresh context, twice.
+
+Pass 1, over `cab6cda~1..e997a5f`, was not converged. It found one CRITICAL and one HIGH, both places where a stamp
+could stand over a run that skipped work (owner priority 5). `FACTORY_BACKENDS` narrows the suite and was neither
+keyed nor a bypass (T015, reproduced by the host: `tests/support.py:31`). `ko`, `mvn` and the Compose plugin change
+what the suite runs and were unkeyed (T016; D112 keys Compose through `.factory-work/verify-probes`). Pass 2, over the
+scratch branch that fixed them, converged: each class closed with its teeth shown, and what was left (T018, T019
+MEDIUM; T020 LOW) was built before the patch went to a person rather than left for a third round. Principles the diff
+touches: **I** (line 33, a memoised gate is additive) — `Makefile` bypass line and `VERIFY_TOOLS` in `s33-2.patch`,
+held by `tests/test_factory_gate_stamp_inputs.py` and `tests/test_factory_gate_stamp_scan.py`; the trunk and CI never
+read a stamp (`assets/toolkit/scripts/verify-stamp.py`, unchanged); **V** — every example observed failing, or a
+hold shown to have teeth; **VIII** — no bump, the root `Makefile` and `tests/` reach no user. **The slice is ⛔ on a
+person again (D113)**: `s33-2.patch` changes the root `Makefile`, a control. T009 onwards run on the tree it
+produces.
 
 ## Differences from plan.md
 

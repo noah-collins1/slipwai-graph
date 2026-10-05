@@ -2228,3 +2228,15 @@
 - **Confidence:** high · **Would reverse if:** the script's `EXEMPT` list gains `.factory-work/`, or the key stops reading ignored files. The probe would then be invisible to the key, and (d), through S32, becomes the route.
 - **Written to:** `specs/001-faster-slipwai/spec.md` (S33's gaps note: Compose keyed through the probe file; the criterion that holds it is numbered by the host); `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/tasks.md` (T016 part c); `Makefile` (by patch, a person applies it); `tests/test_factory_gate_stamp.py`
 - **Status:** standing
+
+## D113 — S33's converge fixes change the root Makefile again: who applies them?
+- **Stage:** converge (S33, after pass 2) · **Slice:** S33-factory-gate-stamp · **When:** 2026-10-05T00:59:40Z · **Iteration:** 16
+- **Scope:** S33-factory-gate-stamp
+- **Question:** Converge's fixes for T015, T016, T019 and T020 change the root `Makefile`, which the cruise guard refuses an iteration to edit. How do they land?
+- **Options:** (a) recommended, as D101: the fixes are built and checked in a scratch worktree and exported as one patch a person applies; the slice is ⛔ until then and the run takes the next ready slice · (b) park the run until a person writes the change.
+- **Decision:** (a). `slices/S33-factory-gate-stamp/s33-2.patch` (`Makefile` and three test modules; `git apply --check` clean over this branch at the time of writing, its own tests green in the scratch worktree), applied by the commands in plan.md's *Summary*. The run takes `S06-scoped-gate`; S33 re-enters at T009 once the patch is committed.
+- **Why:** The same answer D101 gave for the first patch, and the run is not idle while it waits: S06 is ready.
+- **Decided by:** host (standing decision D101)
+- **Confidence:** high · **Would reverse if:** the owner would rather the run park than carry a second unapplied patch.
+- **Written to:** `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/plan.md`; `specs/001-faster-slipwai/slices/S33-factory-gate-stamp/tasks.md`; `specs/001-faster-slipwai/story-split.md`
+- **Status:** standing
