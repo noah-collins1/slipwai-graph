@@ -179,7 +179,9 @@ and its word on the `.PHONY` line; `changelog.d/scoped-mutation.md` first draft.
 
 **Files:** `assets/toolkit/scripts/mutation-scope.py` (new), `src/slipwai/project/mutation.py`,
 `src/slipwai/project/native_commands.py`, `src/slipwai/project/makefile.py`, `changelog.d/scoped-mutation.md` (new),
-`tests/test_mutation_targets.py` (new).
+`tests/test_mutation_targets.py` (new), `tests/test_scoped_targets.py` (**`PRE_SLICE` hashes only**, added by the host at
+implementation: `test_e5_hold_the_text_before_the_section_is_what_the_gate_was` hashes the Makefile above `# Scoped gate`,
+which holds the `mutation` rule, its note and the `.PHONY` line; the sweep at planning missed the hash pin).
 
 ### T003 — [US2] The checkouts that sweep say so, then sweep (R2 · AC-S08-1, AC-S08-15)
 
@@ -481,7 +483,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 **Files:** `src/slipwai/project/mutation.py`, `assets/toolkit/skills/mutation-testing/SKILL.md`,
 `docs/backend-obligations.md` (and any other `docs/` page naming `make mutation`: `docs/requirements.md`,
 `docs/maintaining.md`, `docs/verification.md` — the delegate lists exactly the ones it edits), `changelog.d/scoped-mutation.md`,
-`tests/test_mutation.py` (named lines only), `tests/test_mutation_words.py` (new), `tests/test_mutation_migrate.py` (new).
+`tests/test_mutation.py` (named lines only), `tests/test_mutation_words.py` (new), `tests/test_mutation_migrate.py` (new), `tests/test_scoped_targets.py` (`PRE_SLICE` hashes only — the notes above `mutation:` move them).
 
 ---
 
