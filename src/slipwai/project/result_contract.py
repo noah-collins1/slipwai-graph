@@ -7,6 +7,8 @@ import a script a project runs.
 """
 from __future__ import annotations
 
+import textwrap
+
 from ..layout import Layout
 from .cruise_agents import DECISIONS
 
@@ -24,6 +26,14 @@ STATUSES: dict[str, tuple[str, ...]] = {
     "drive-slice": ("converged", "stopped"),
     "drive-tasks": ("written", "contradiction"),
 }
+
+
+# Which stages owe the record a block, and which word names a stage in it (T012: the count and the ladder agree).
+OWES = ("A stage owes a block only when a typed `drive-*` delegate that belongs to the stage ran: the untyped "
+        "helpers it started (Explore, general-purpose) and a `drive-slice`'s own context owe none, and a delegate the "
+        "harness could not attribute is said so and never a finding.")
+STAGE = ("`<stage>` is the name of the stage's open benchmark entry — the word `benchmark.py start` was given — so "
+         "the record and `benchmark.json` name a stage the same way.")
 
 
 def spelled(words: tuple[str, ...]) -> str:
@@ -56,7 +66,7 @@ python3 scripts/check-decisions.py --hand-back <dir> <type> <stage>   # the whol
 
 `<dir>` is the slice's own folder, `specs/<feature>/slices/<id>`, for the slice's stages, and `specs/<feature>` for
 the feature-level ones: the split, the ready set's `drive-slice` delegates (stage `ready-set`) and the completion
-audit. The verb checks the block with the gate's own function, writes the heading itself, and appends nothing when a
+audit. {STAGE} The verb checks the block with the gate's own function, writes the heading itself, and appends nothing when a
 field fails — it prints the field. `{layout.make} check-decisions` holds every record to the same shape.
 
 A hand-back with no block, or one the verb refused, gets **one continuation** of the same delegate asking only for the
@@ -70,6 +80,8 @@ The reason is `refused: <the delegate's words>`, `malformed: <field>` or `no con
 stopped is recorded `stopped: <reason>`. The stage is never re-run for a block, and this session never writes a block
 for a delegate — one it wrote would be the session grading the work it was handed.
 A stage run in this context has no delegate, so it has no entry and nothing to record.
+
+{OWES}
 
 Two stops check the record, and a miss at either is a task, closed with one continuation, and never re-opens converge.
 Before the hand, at the demo stop, read the hand-backs since the last converge pass; at the adversary stop, those of
@@ -89,6 +101,7 @@ def converge_sentence(layout: Layout, indent: str = "") -> str:
         "a `Missing:` line or nothing. A delegated stage without a passing `result-contract` block is a finding,",
         "naming the stage and the delegate type, graded `MEDIUM`: one continuation of that delegate closes it before",
         "Phase 4.",
+        *textwrap.wrap(OWES, 112),
         f"`{layout.make} check-decisions` holds what is recorded to the shape.",
     )
     return f"\n{indent}".join(lines)
@@ -100,14 +113,15 @@ def cruise_sentences(layout: Layout) -> str:
 goes to `{DECISIONS}` as above, and its `result-contract` block — the entry's `D<n>` in `decisions` — to the record with
 `python3 scripts/check-decisions.py --hand-back <dir> drive-skipper <stage>`; the hand's and the bosun's blocks the
 same, each before the stage's benchmark entry closes. *What every delegate hands back* in `commands/drive.md` has
-the continuation and the `Missing:` forms; `{layout.make} check-decisions` holds the record to the shape."""
+the continuation and the `Missing:` forms, and the `<stage>` is the name of the stage's open benchmark entry
+(`skipper`, `hand`, `bosun`); `{layout.make} check-decisions` holds the record to the shape."""
 
 
 def slice_record_sentence() -> str:
     """What `drive-slice` adds: inside its worktree it is the dispatching session, and its own block goes up."""
-    return """**Your sub-delegates' hand-backs.** Inside your worktree you are the session that delegated them: append each
+    return f"""**Your sub-delegates' hand-backs.** Inside your worktree you are the session that delegated them: append each
 block to this slice's record, `specs/<feature>/slices/<id>/hand-backs.md`, with
 `python3 scripts/check-decisions.py --hand-back specs/<feature>/slices/<id> <type> <stage>` before you close the
 stage's benchmark entry. Your own block goes to the session above you, which appends it to
 `specs/<feature>/hand-backs.md`, stage `ready-set` — never to this slice's record, which two branches would both
-write."""
+write. {STAGE}"""

@@ -177,6 +177,22 @@ class LadderTest(FactoryTestCase):
                     self.assertIn(words, sentence)
 
 
+    def test_every_reader_of_the_delegation_says_what_owes_a_block_and_which_word_is_the_stage(self) -> None:
+        owes = "owes a block only when a typed `drive-*` delegate that belongs to the stage ran"
+        stage = "`<stage>` is the name of the stage's open benchmark entry"
+        for layout in (AT_ROOT, ADOPTED):
+            with self.subTest(layout=layout.delivery):
+                section = command("drive", layout).split("## What every delegate hands back", 1)[1]
+                section = section.split("\n## ", 1)[0]
+                rung = command("drive", layout).split("**Convergence**", 1)[1].split("**Demo**", 1)[0]
+                for text in (section, " ".join(rung.split()), " ".join(brief("drive-converge", layout).split())):
+                    self.assertIn(owes, " ".join(text.split()))
+                self.assertIn("untyped helpers", section)
+                self.assertIn(stage, section)
+                self.assertIn("open benchmark entry", " ".join(command("cruise", layout).split()))
+                self.assertIn("open benchmark entry", " ".join(brief("drive-slice", layout).split()))
+
+
 PAGE = TOOLKIT_ROOT / "docs/result-contract.md"
 
 
@@ -209,6 +225,13 @@ class PageTest(FactoryTestCase):
             "scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>",
             "scripts/check-decisions.py --hand-backs <slice-dir>", "```result-contract",
         ):
+            self.assertIn(words, text)
+
+    def test_the_page_says_what_owes_a_block_and_what_the_finding_line_names(self) -> None:
+        text = " ".join(PAGE.read_text(encoding="utf-8").split())
+        for words in ("owes a block only when a typed `drive-*` delegate that belongs to the stage ran",
+                      "untyped helpers", "`drive-slice`", "the stage and the type(s)", "a finding for converge",
+                      "the name of the stage's open benchmark entry"):
             self.assertIn(words, text)
 
     def test_the_docs_index_lists_the_page_under_a_heading_of_its_own_kind(self) -> None:

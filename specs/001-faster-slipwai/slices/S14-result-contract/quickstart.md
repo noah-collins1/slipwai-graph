@@ -39,7 +39,7 @@ that carried a passing block** (n of m).
 
 - **No block** — a `benchmark.json` with one delegated `gaps` entry and a record with nothing for it:
   `python3 scripts/check-decisions.py --hand-backs specs/f/slices/S2` prints
-  `gaps …: nothing recorded — a finding for converge` and `with a result contract: 0 of 1`.
+  `gaps … drive-gaps: nothing recorded — a finding for converge` and `with a result contract: 0 of 1`.
 - **Malformed** — a record whose block has `"status": "green"` for `drive-hand`: `make check-decisions` exits 1 with
   one line naming `hand-backs.md`, the entry's heading and `status`.
 

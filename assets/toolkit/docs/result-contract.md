@@ -84,7 +84,15 @@ All three are `scripts/check-decisions.py`; `<dir>` is `specs/<feature>` or `spe
 | `scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>` | nothing | the heading and `- **Missing:** <reason>` | 0, 2 usage |
 | `scripts/check-decisions.py --hand-backs <slice-dir>` | `benchmark.json` and `hand-backs.md` | nothing | 0, 2 usage |
 
-`--hand-backs` lists, for each ended benchmark entry that was delegated, whether the record holds a passing block for
-that stage, a `Missing:` line, or nothing; converge reads it, and `make benchmark` prints the count per slice.
+`--hand-backs` lists, for each ended benchmark entry that owes a block, whether the record holds a passing block for
+that stage, a `Missing:` line, or nothing; converge reads it, and `make benchmark` prints the count per slice. A stage
+owes a block only when a typed `drive-*` delegate that belongs to the stage ran (`implement` to `drive-implement`,
+`converge` to `drive-converge`, and so on, the table in `scripts/agents/benchmark.py`): the untyped helpers it started
+(Explore, general-purpose) and a `drive-slice`'s own context owe none, because the slice delegate's block goes to the
+feature record under `ready-set`. A stage that was delegated but whose entry names no agent types, or whose tokens the
+harness could not read, is listed as not attributable and counted as neither owed nor held; it is never a finding.
+Each line names the stage and the type(s), and the one for nothing recorded reads `nothing recorded — a finding for
+converge`. The `<stage>` you pass `--hand-back` is the name of the stage's open benchmark entry, so the record and
+`benchmark.json` agree.
 `make check-decisions` holds every `hand-backs.md` to the shape above and prints one line per fault, naming the file,
 the entry's heading and the field. A project with no `hand-backs.md` gets the gate it always had.

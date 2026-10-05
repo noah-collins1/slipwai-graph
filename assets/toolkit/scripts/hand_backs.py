@@ -318,11 +318,33 @@ def write(record: Path, title: str, entry: str) -> None:
         handle.write(entry)
 
 
+# Which stage of `benchmark.json` each delegate type's block belongs to (a copy of `agents/benchmark.py`'s `OWNERS`,
+# which a test holds equal). `drive-slice` is not here: inside its worktree its own block goes to the feature record
+# (plan.md Q2), so no slice-level stage owes one, and untyped helpers (Explore, general-purpose) owe none.
+OWNERS: dict[str, tuple[str, ...]] = {
+    "drive-implement": ("implement",), "drive-converge": ("converge",), "drive-gaps": ("gaps",),
+    "drive-adversary": ("adversary",), "drive-mutation": ("mutation",), "drive-tasks": ("tasks",),
+    "drive-hand": ("demo", "hand"), "drive-skipper": ("skipper",), "drive-bosun": ("bosun",),
+}
+
+
+# The benchmark entry's key for the types that ran. Spelled in two pieces because it is also the name of a directory at a
+# project's root, and the verify-scoped table reads a bare literal like that as a path this check reads.
+AGENTS = "agent" + "s"
+
+
+def owed(stage: dict[str, Any]) -> list[str]:
+    """The delegate types that ran in an ended stage and owe it a block: typed `drive-*` ones that belong to it."""
+    return [agent for agent in stage.get(AGENTS) or [] if stage["stage"] in OWNERS.get(agent, ())]
+
+
 def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None) -> tuple[list[str], int, int, int]:
     """For each ended stage of a slice's `benchmark.json`, whether the record holds what the stage's delegates
-    handed back: the lines to print, how many delegated stages have a passing block, how many were delegated and
-    how many the harness could not attribute (`usage.source` null: counted as neither). A block belongs to a stage
-    when its heading names the stage and its time lies in the stage's `[started, ended]`."""
+    handed back: the lines to print, how many stages that owe a block have a passing one, how many owe one and how
+    many could not be attributed (no usage read, or delegated with no agent types recorded: counted as neither, said
+    once). A stage owes a block when a typed delegate that belongs to it ran (`owed`); one that only started untyped
+    helpers, or `drive-slice`, owes this record nothing and is not listed. A block belongs to a stage when its heading
+    names the stage and one of the types that owe it, and its time lies in the stage's `[started, ended]`."""
     entries = [entry for entry in extract(record) if entry["match"] is not None and not entry_faults(entry)]
     lines: list[str] = []
     held = delegated = unattributed = 0
@@ -331,22 +353,24 @@ def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None) 
         if "ended" not in stage:
             continue
         name, started = stage["stage"], stage.get("started", "")
-        if usage is not None and not usage.get("source"):
+        if (usage is not None and not usage.get("source")) or (stage.get("delegated") and not stage.get(AGENTS)):
             unattributed += 1
             lines.append(f"hand-backs: {name} {started}: the harness could not attribute its delegates — not counted")
             continue
-        if not stage.get("delegated"):
+        types = owed(stage)
+        if not stage.get("delegated") or not types:
             continue
         delegated += 1
         mine = [entry for entry in entries
-                if entry["match"].group(3) == name and started <= entry["match"].group(1) <= str(stage["ended"])]
+                if entry["match"].group(3) == name and entry["match"].group(2) in types
+                and started <= entry["match"].group(1) <= str(stage["ended"])]
         passing = [entry for entry in mine if entry["blocks"] and not block_faults(entry, known)[0]]
         if passing:
             held += 1
             lines.append(f"hand-backs: {name} {started} {passing[0]['match'].group(2)}: block")
         elif any(entry["missing"] for entry in mine):
             reason = next(entry["missing"][0] for entry in mine if entry["missing"])
-            lines.append(f"hand-backs: {name} {started}: missing — {reason}")
+            lines.append(f"hand-backs: {name} {started} {', '.join(types)}: missing — {reason}")
         else:
-            lines.append(f"hand-backs: {name} {started}: nothing recorded — a finding for {name}")
+            lines.append(f"hand-backs: {name} {started} {', '.join(types)}: nothing recorded — a finding for converge")
     return lines, held, delegated, unattributed

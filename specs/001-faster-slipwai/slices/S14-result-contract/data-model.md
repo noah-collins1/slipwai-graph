@@ -103,12 +103,17 @@ with two: `… two result-contract blocks …`.
 
 ```text
 hand-backs: implement 2026-10-05T17:01:02Z drive-implement: block
-hand-backs: converge 2026-10-05T18:00:00Z: nothing recorded — a finding for converge
-hand-backs: gaps 2026-10-05T18:30:00Z: missing — refused: out of budget
+hand-backs: converge 2026-10-05T18:00:00Z drive-converge: nothing recorded — a finding for converge
+hand-backs: gaps 2026-10-05T18:30:00Z drive-gaps: missing — refused: out of budget
 hand-backs: tasks 2026-10-05T16:00:00Z: the harness could not attribute its delegates — not counted
 hand-backs: with a result contract: 1 of 3
 ```
 
-Entries the transcript shows were not delegated are not listed. `make benchmark` (and the overview page) carry the
+A stage is listed only when a typed `drive-*` delegate that belongs to it ran (`OWNERS` in `benchmark.py`, copied as
+`hand_backs.OWNERS` and held equal by a test): entries run in the host's context, stages whose only sub-agents were
+untyped helpers (Explore, general-purpose), and `drive-slice`'s own context (its block goes to the feature record, plan
+Q2) owe none and are not listed. A delegated entry whose `agents` is null or empty is *could not attribute*, never a
+finding. Each line names the stage and the type(s); the finding for nothing recorded always reads `a finding for
+converge`. The `<stage>` passed to `--hand-back` is the open benchmark entry's stage name. `make benchmark` (and the overview page) carry the
 last line per slice, as `<slice>: hand-backs with a result contract: <n> of <m>` with
 `; <k> stage(s) the harness could not attribute — not counted` where k > 0, and print nothing for a slice with m = k = 0.
