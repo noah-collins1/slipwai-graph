@@ -106,14 +106,22 @@ class PathTest(TwoCase):
         self.reached(self.scoped(), self.path_cause(f"{SERVICE}/src/win.ts", "apps/billing/src"))
 
     def test_e8_a_tsconfig_that_extends_a_root_file_is_the_full_gate(self) -> None:
-        self.trunk({f"{SERVICE}/tsconfig.extra.json": '{ "extends": "../../tsconfig.base.json" }\n'})
+        self.trunk({f"{SERVICE}/tsconfig.extra.json": '{ "extends": "../../tsconfig.base.json" }\n',
+                    "tsconfig.base.json": "{}\n"})
         self.edit("apps/billing/src/rate.ts", "x\n")
         self.reached(self.scoped(), self.path_cause(f"{SERVICE}/tsconfig.extra.json", "tsconfig.base.json"))
 
     def test_e8_a_config_is_read_against_the_deployables_root_as_well_as_its_own_directory(self) -> None:
-        self.trunk({f"{SERVICE}/sub/tsconfig.json": '{ "extends": "../shared.json" }\n'})
+        self.trunk({f"{SERVICE}/sub/tsconfig.json": '{ "extends": "../shared.json" }\n', "apps/shared.json": "{}\n"})
         self.edit("apps/billing/src/rate.ts", "x\n")
         self.reached(self.scoped(), self.path_cause(f"{SERVICE}/sub/tsconfig.json", "apps/shared.json"))
+
+    def test_e8_a_string_that_climbs_out_and_is_no_deployable_and_no_path_says_so(self) -> None:
+        """T055 (A7): a traversal test's input is a string, not a path that is reached; the gate is still the full one."""
+        self.trunk({f"{SERVICE}/src/traversal.test.ts": 'const attack = "../../etc/passwd";\n'})
+        self.edit("apps/billing/src/rate.ts", "x\n")
+        self.reached(self.scoped(), f"`{SERVICE}/src/traversal.test.ts` holds a string that climbs out of `{SERVICE}` "
+                     f"onto `apps/etc/passwd`, which is no deployable and no path in the repository, {ENDING}")
 
     def test_e8_a_path_that_names_the_other_deployable_from_the_root_is_the_full_gate(self) -> None:
         self.trunk({f"{SERVICE}/scripts.json": '{ "read": "apps/billing/src" }\n'})

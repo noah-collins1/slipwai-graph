@@ -289,6 +289,10 @@ def scan_one(root: Path, name: str, deployables: dict[str, dict[str, Any]], pack
             raise Unsure(f"cannot read `{shown(file)}` ({error.strerror or type(error).__name__})") from error
         landed = path_reach(file, text, name, deployables, packages, readers)
         if landed is not None:
+            if not (root / landed).exists() and not (root / landed).is_symlink() and not any(
+                    inside(landed, str(item["path"])) for item in deployables.values()):
+                return (f"{here} holds a string that climbs out of `{shown(directory)}` onto `{shown(landed)}`, "
+                        f"which is no deployable and no path in the repository, {ENDING}")
             return f"{here} reaches `{shown(landed)}`, {outside}"
         named = identity_reach(file, text, name, deployables, readers)
         if named is not None:
