@@ -1218,7 +1218,7 @@ example. Tests only: reaches no user.
 
 ### T039 — [US2] MEDIUM — Text and conditions that reach every make through `MAKEFLAGS` are compared by nobody (R4, R5, R7 · AC-S06-2, -5, -8; D140 point 2, D116 rule 5)
 
-- [ ] **Finding.** D140 point 2 makes a non-empty `MAKEFILES` the full gate because it "adds makefiles the factory did not
+- [x] **Finding.** D140 point 2 makes a non-empty `MAKEFILES` the full gate because it "adds makefiles the factory did not
   write". `MAKEFLAGS` carries the same kind of text and conditions, and it reaches every make the script starts.
   - Nothing reads it beyond the idle letters (`verify-scoped.py` 65–67, `verify-stamp.py` 683–687).
   - The database read strips it (`record.py` 35, 75), so the comparison reads clean factory text.
@@ -1296,7 +1296,7 @@ command line —" in the words the decision gives.
 
 ### T040 — [US2] MEDIUM — The factory-text hold covers the units and named checks only, and does not assert what makes its ordering exception sound (R4 · AC-S06-2; D140 point 4)
 
-- [ ] **Finding.** D140 point 4 rests the class on one finite argument: the factory's text reads the same under the
+- [x] **Finding.** D140 point 4 rests the class on one finite argument: the factory's text reads the same under the
   scoped call, the full gate's sub-make and the database read, for everything a scoped run can run. The test falls
   short of that in two ways.
 
@@ -1343,7 +1343,7 @@ reaches no user.
 
 ### T041 — [US2] MEDIUM — The record's contract still describes D127's charges: `differs`, a named check's `always`, "each charged difference marked" (R10 · AC-S06-13; ADR 0004, data-model *The printed record*; D140 point 3)
 
-- [ ] **Finding.** D140 point 3 removed the per-check `inputs: null` and per-gate Makefile charges.
+- [x] **Finding.** D140 point 3 removed the per-check `inputs: null` and per-gate Makefile charges.
   - The record now sets `whole` only where a recipe is not the sum of its units (`record.py` 286–289), and it never
     emits `differs`.
   - A Makefile difference on matching text is the full gate, charged to no check (`record.py` 319–323,
@@ -1383,7 +1383,7 @@ changed, only the text that describes the keys.
 
 ### T042 — [US2] LOW — D140 point 2 as written: a `rules.json` that cannot be read lets the project's `Makefile` be parsed, and the name check is exact on a case-insensitive filesystem (R5 · AC-S06-5; D140 point 2)
 
-- [ ] **Finding.** Two places where the code is weaker than D140 point 2's words.
+- [x] **Finding.** Two places where the code is weaker than D140 point 2's words.
 
   **(1) An unreadable `rules.json` lets the Makefile be parsed.** Where `rules.json` is missing or is not JSON,
   `text_problem` returns None (`rules.py` 230–234). `run` then reads the database with `make -npq`
@@ -1414,7 +1414,7 @@ changed, only the text that describes the keys.
 
 ### T043 — [US2] HIGH — One deployable reading another's source is invisible to the selection (after-converge gaps G1 · AC-S06-2, -3, -5)
 
-- [ ] **Finding** (T018's `drive-gaps`, reproduced in `/tmp/s06-g/two/two`). A TypeScript service plus `add-service billing`. On `main`, `apps/service/src/uses-billing.ts` imports `../../billing/src/rate.js`. On `slice/S2`, `rate` becomes a string, and `verify-scoped` prints `skip typecheck-service — none of its inputs changed`, then *passed*, while `make verify`'s `tsc` fails (noEmit, no `rootDir`). `check-imports.py` allows service-to-service imports. The same hole exists for npm workspace dependencies between apps, Go modules in one `go.work`, and uv path dependencies. The page's "chosen when a changed file is one it reads" is untrue here. **Decided — D148 (d): a reach outside the deployable is the full gate, read by the three ways a resolver can reach a file (a path, another deployable's identity read in the tree and at the base, a link).** Read `## D148 ` in decisions.md in full: its eight points are this task's GREEN, and point 8 its RED, holds and teeth; the reader is a new `scripts/verify_scoped/reach.py`. The same commits update data-model.md *How a unit is chosen* (the new cause), add to the Catch-up in `changelog.d/scoped-gate.md`:
+- [x] **Finding** (T018's `drive-gaps`, reproduced in `/tmp/s06-g/two/two`). A TypeScript service plus `add-service billing`. On `main`, `apps/service/src/uses-billing.ts` imports `../../billing/src/rate.js`. On `slice/S2`, `rate` becomes a string, and `verify-scoped` prints `skip typecheck-service — none of its inputs changed`, then *passed*, while `make verify`'s `tsc` fails (noEmit, no `rootDir`). `check-imports.py` allows service-to-service imports. The same hole exists for npm workspace dependencies between apps, Go modules in one `go.work`, and uv path dependencies. The page's "chosen when a changed file is one it reads" is untrue here. **Decided — D148 (d): a reach outside the deployable is the full gate, read by the three ways a resolver can reach a file (a path, another deployable's identity read in the tree and at the base, a link).** Read `## D148 ` in decisions.md in full: its eight points are this task's GREEN, and point 8 its RED, holds and teeth; the reader is a new `scripts/verify_scoped/reach.py`. The same commits update data-model.md *How a unit is chosen* (the new cause), add to the Catch-up in `changelog.d/scoped-gate.md`:
 
 > If a deployable's source, config or manifest reaches into another deployable's path, or names another deployable's package or module, `make verify-scoped` now runs the full gate and names the file; to scope again, move what they share into a package under `packages/` or behind a published contract.
 
@@ -1427,7 +1427,7 @@ changed, only the text that describes the keys.
 
 ### T044 — [US2] MEDIUM — An index the stamp will not vouch for is not a border of the selection (G2 · AC-S06-1, -5)
 
-- [ ] **Finding.** With `git update-index --assume-unchanged` (or skip-worktree, or sparse checkout) on a changed service file, the scoped run skips every service unit and says *passed*. `make verify` runs everything, because the stamp's `index_problem` refuses that index. `verify-scoped.py` calls `index_problem` only inside `standing()` (136), never before selecting. **RED:** assume-unchanged, skip-worktree and a sparse checkout are each the full gate, with the stamp's words. **GREEN — the class:** every reason the stamp gives for not vouching for a tree is a border before `changed_files`, through one shared predicate. **Files:** `assets/toolkit/scripts/verify-scoped.py`, `tests/test_verify_scoped_borders.py`.
+- [x] **Finding.** With `git update-index --assume-unchanged` (or skip-worktree, or sparse checkout) on a changed service file, the scoped run skips every service unit and says *passed*. `make verify` runs everything, because the stamp's `index_problem` refuses that index. `verify-scoped.py` calls `index_problem` only inside `standing()` (136), never before selecting. **RED:** assume-unchanged, skip-worktree and a sparse checkout are each the full gate, with the stamp's words. **GREEN — the class:** every reason the stamp gives for not vouching for a tree is a border before `changed_files`, through one shared predicate. **Files:** `assets/toolkit/scripts/verify-scoped.py`, `tests/test_verify_scoped_borders.py`.
 
 ### T045 — [US2] MEDIUM — The generated gates page says what D140 and D146 do (G3, G8, G9 · AC-S06-15, -18)
 
@@ -1439,7 +1439,7 @@ changed, only the text that describes the keys.
 
 ### T047 — LOW — AC-S06-5's words after D140, the record's tools, the Catch-up's contradiction (G6, G7, G10)
 
-- [ ] (G6, host) AC-S06-5 in spec.md says "dependency knowledge was incomplete for …" per file. Under D140, a changed `Makefile` prints only the Makefile line. Amend the criterion to say the first cause is printed. (G7) In a Go starter with no web app, the record names `node`/`npm` for `check-ux-gates`, but `VERIFY_STAMP` asks only `make git python3 go`. Add a test that the record's tools are a subset of what the baseline asks for, across shapes, and make it so. (G10) The Catch-up says "nothing else asks anything of it" and then asks for a constitution amendment: reword it so it stands alone without contradicting itself. **Files:** `assets/toolkit/scripts/verify_scoped/record.py` or `table.py`, `tests/test_verify_scoped_record.py`, `changelog.d/scoped-gate.md`; spec.md (host).
+- [x] (G6, host) AC-S06-5 in spec.md says "dependency knowledge was incomplete for …" per file. Under D140, a changed `Makefile` prints only the Makefile line. Amend the criterion to say the first cause is printed. (G7) In a Go starter with no web app, the record names `node`/`npm` for `check-ux-gates`, but `VERIFY_STAMP` asks only `make git python3 go`. Add a test that the record's tools are a subset of what the baseline asks for, across shapes, and make it so. (G10) The Catch-up says "nothing else asks anything of it" and then asks for a constitution amendment: reword it so it stands alone without contradicting itself. **Files:** `assets/toolkit/scripts/verify_scoped/record.py` or `table.py`, `tests/test_verify_scoped_record.py`, `changelog.d/scoped-gate.md`; spec.md (host).
 
 
 ## Phase 4: After acceptance (host tasks)
