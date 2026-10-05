@@ -26,7 +26,10 @@ from slipwai.assets import ROOT
 sys.dont_write_bytecode = True
 
 MODEL = "docs/event-model/model.yaml"
+ADR = ROOT / "delivery/docs/adr/0004-verification-dependency-record.md"
 DATA_MODEL = ROOT / "specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md"
+# a key the text gives a value: `key: true`, `key` false, `key` is also present, and true
+VALUED = re.compile(r"`(\w+)(?:: |`\s+(?:is\s+(?:also\s+)?(?:present,\s+and\s+)?)?`?)(?:true|false|null)\b")
 EDGE = ("slices:\n  - id: Bill\n    service: billing\n    frames:\n      - {type: evt, name: Billed}\n"
         "  - id: Ship\n    service: service\n    reads: [Billed]\n")
 
@@ -162,7 +165,16 @@ class PrintedRecordTest(RecordCase):
     """T031: one test holds the published shape against the emitted one, so the next change to the record changes its
     contract in the same commit."""
 
+    keys: set[str] | None = None
+
     def emitted(self) -> set[str]:
+        """Every key some example's record prints, taken once for the class."""
+        keys = type(self).keys
+        if keys is None:
+            keys = type(self).keys = self.collect()
+        return keys
+
+    def collect(self) -> set[str]:
         found: set[str] = set()
         plain = self.project("model-typescript-web")
         found |= keys_of(loaded(plain))
@@ -201,6 +213,20 @@ class PrintedRecordTest(RecordCase):
             self.assertIn(key, emitted, "the examples no longer produce a key the contract must name")
         for key in sorted(emitted):
             self.assertTrue(f'"{key}"' in section or f"`{key}`" in section, f"data-model.md does not name `{key}`")
+
+    def test_e1_every_key_the_texts_give_a_value_is_a_key_some_record_prints(self) -> None:
+        """T041: ADR 0004's record bullets and data-model's *printed record* describe keys, and a reader built from them
+        looks for each. `differs` and a charge for a Makefile difference went with D140 (point 3)."""
+        adr = ADR.read_text(encoding="utf-8")
+        texts = {"ADR 0004": adr[adr.index("\n## Decision"):adr.index("\n## Consequences")],
+                 "data-model.md": published("The printed record")}
+        emitted = self.emitted()
+        for name, text in texts.items():
+            with self.subTest(name):
+                valued = set(VALUED.findall(text))
+                self.assertTrue(valued, "no key is given a value")
+                self.assertEqual(valued - emitted, set(), "a key no record prints")
+                self.assertNotIn("charged difference", text)
 
     def test_e2_each_row_of_the_published_table_is_the_row_the_script_holds(self) -> None:
         table = importlib.import_module("verify_scoped.table")

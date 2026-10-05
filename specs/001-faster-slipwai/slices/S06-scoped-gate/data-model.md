@@ -203,16 +203,12 @@ indent:
   table says so: under `apps/` and `packages/`, a check that is not a deployable's unit (`check-flags`, `check-imports`,
   `check-migrations`, `check-model`, `check-openapi`) never makes a path there known, only a unit or a contract does,
   so a reader that rebuilds R5 from the record must apply the same rule. `always` is the reason it runs on every scoped
-  run, else `null`. A named check whose rule is not the one the factory wrote (D127) is printed with `inputs` `null`,
-  `claims` false and `always` `its rule is not the one the factory wrote (scripts/verify_scoped/rules.json)`.
+  run, else `null`.
 - `whole` is present, and true, on every unit of a gate (`lint`, `typecheck` or `test`) that runs whole: its recipe is
-  not the sum of its units' and family targets' lines, or its rule or a unit's is not the factory's. In that case
-  `targets` names the gate, not the unit, and choosing any one unit runs the gate under its own name. `differs` is also
-  present, and true, where the sum holds and the factory's rule does not (D127), and only beside `whole`; the reason
-  printed then is `its rule is not the one the factory wrote (scripts/verify_scoped/rules.json)` in place of
-  `its recipe is not the sum of its per-deployable targets`. Both keys are absent otherwise.
-- A Makefile that differs from the factory's where no one check or gate can be charged (`verify`, `verify-checks`'
-  recipe, a shared prerequisite) is the full gate; the record is still printed, with each charged difference marked.
+  not the sum of its units' and family targets' lines. In that case `targets` names the gate, not the unit, and
+  choosing any one unit runs the gate under its own name. The key is absent otherwise.
+- No key marks a Makefile difference. A `Makefile` that is not the factory's text is the full gate, charged to no
+  check; the record is printed as it is, and the run says *dependency knowledge was incomplete* (D140 point 3).
 - `contracts[].kind` is `openapi`, `package` or `event` (`event` carries `"event": "<name>"`, `owner` the producer).
 - Readers tolerate unknown keys; a new key is MINOR, a renamed or removed one needs `schema` raised and a catch-up note.
 - A record the script cannot build prints nothing on stdout, one line on stderr, and exits 1.

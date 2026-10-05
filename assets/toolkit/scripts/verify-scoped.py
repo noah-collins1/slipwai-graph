@@ -275,7 +275,7 @@ def record(make: str, makefile: str) -> int:
         scope = load("verify_stamp_for_the_scope", "verify-stamp.py").trunk_module()
         try:
             built = records.build(make, makefile, scope)
-        except records.FullGate as error:  # the record is still what it is, with each charged difference marked
+        except records.FullGate as error:  # the record is still what it is: no key marks a Makefile difference (D140)
             built = error.built
         text = records.render(built)
     except records.RecordError as error:
