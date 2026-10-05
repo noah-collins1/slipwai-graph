@@ -452,6 +452,12 @@ that cannot delegate takes the earliest ready slice in split order and names the
   stamp a plain run reuses. Behind S32, because that closed list owes the split first (D91, D100). Older (S03's
   mechanism), read and not run end to end; the trunk and CI never read a stamp meanwhile.
 
+- **A gate's own output written into the tree (D122, S33's A2), a method slice queued after `S32-verify-stamp-split`.**
+  `make verify > .factory-work/verify.log` or `| tee build/verify.log` writes an ignored file the key covers and the
+  run grows, so the pass is never recorded and the line says the next run records. To decide: whether the shipped
+  script exempts a run's own output (and how it would know it), or its line says where a log may go. Meanwhile S33's
+  quickstart says a log goes outside the checkout. Not a false green: the stamp declines to vouch.
+
 - **A harness's own worktree directory and the stamp (D120), a method slice queued after `S32-verify-stamp-split`, not
   inside it.** Claude Code's `.claude/worktrees/` (and its counterparts in other harnesses) makes every stamped gate
   unrecordable while a worktree exists there: where the directory is ignored, `tree_records` refuses it as an ignored

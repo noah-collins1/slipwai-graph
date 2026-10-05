@@ -431,6 +431,29 @@ change `tests/` only and are below, in the order found.
 - [ ] From a tree with nothing under `assets/` named `__pycache__`, `*.pyc` or `*.pyo`: `make verify` (full), then
   `make verify` measured — under 5 s, the reuse line — and no cache under `assets/` after either. By `drive-hand`.
 
+
+## Phase 4: Adversary findings (D122, iteration 19)
+
+### T030 — MEDIUM (A3, D122): the suite reads `GITEA_*` through a script it loads, and the key does not
+
+- [ ] `tests/test_gitea_pages.py` loads `scripts/gitea-pages.py`, which reads `GITEA_REPOS_DIR`, `GITEA_PAGES_ROOT`,
+  `_HOST`, `_PORT`, `_BRANCH` and `_POLL_SECONDS` at import; `GITEA_PAGES_HOST=0.0.0.0` in the shell fails the module,
+  `GITEA_PAGES_PORT=x` errors it, and the key is the same either way. **Do:** an example that sets each in the
+  environment before the module runs and expects it green (RED first); `load_daemon` removes every `GITEA_*` name
+  from the environment around the load except one an example set itself (GREEN); the scan in
+  `tests/test_factory_gate_stamp_scan.py` reads `scripts/*.py` as it reads `src/slipwai/`, and each name it then finds
+  is classed in the table, so the next one fails the suite until it is.
+
+### T031 — MEDIUM (A1, A5, D122): the probe file is written or the run stops; a failed listing is unique to the run — BLOCKED on a person (⛔)
+
+- [ ] In a sibling worktree, the root `Makefile`'s stamped branch: the probe step joined with `&&` to the stamp's
+  call, so a probe that cannot be written fails the gate with the shell's line; a `.factory-work` that is a symlink or
+  not a directory refused in one line; the cache listing's fallback taken whenever `find` exits non-zero. Examples on
+  `GateCase` in `tests/test_factory_gate_stamp.py` (or a new module under 350 lines): a read-only probe file after a
+  pass, a symlinked `.factory-work`, an unreadable directory under `assets/` — each observed failing first, teeth
+  shown. Exported as `s33-4.patch`, `git apply --check`ed against `adopt-method`; **a person applies it** (D101).
+  After it: T029 (demo 2) and T013, one full gate each.
+
 ## Convergence
 
 **Verdict (T008, iteration 16): converged at the bound of two passes** — `drive-converge` · model: host (claude-opus-5-5) · delegated, fresh context, twice.

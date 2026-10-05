@@ -422,3 +422,32 @@ Findings: eight — one `HIGH`, three `MEDIUM` counting T018's class, four `LOW`
 | B2 | B | LOW | A project with no Python service has a page sentence saying `project.json` carries the mark `true`, whatever it carries. New | D108; T024 | fixed at 39f41ea |
 | B3 | B | LOW | A mark `1e400` is rewritten as `Infinity`, which is not JSON. Older mechanism, newly reachable | D108; T024 | fixed at 39f41ea |
 | A5 | A | LOW | With the mark `false` a test that calls `os._exit(0)` ends the serial run green part way; parallel is red. Older; S05 makes it stricter | Declined: not this slice's; the cruise report | declined |
+
+## S33 · b7ad13e · 2026-10-05
+
+Slice `S33-factory-gate-stamp` (cruise iterations 13–19), diff: the root `Makefile` (`cab6cda`, `d92f908`, `63d529d`, owner-applied
+patches), `src/slipwai/assets.py` (`dbbc0ef`: the pruner loads with bytecode writing off), the test modules
+`tests/test_factory_gate_stamp.py`, `tests/test_factory_gate_stamp_inputs.py`, `tests/test_assets_bytecode.py` and the
+suite's fixes (`e3bc084`, `e997a5f`, `2a8c10c`, `f35f981`, `f326372`, `d69f345`, `d26bb55`, `3b9cd90`), one fragment.
+`assets/toolkit/scripts/verify-stamp.py` is unchanged and run from where it ships.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | The maintainer's `make verify` at the root now asks the stamp first and can return without a check (`Makefile`, the `verify` and `verify-checks` targets) |
+| driven adapter or the provider types behind one | not present | No new dependency; the stamp script is the one the S03 row covers, unchanged |
+| authorisation decision (who can reach one that already exists) | not present | The diff decides nothing about who may do what |
+| concurrency, idempotency, ordering, retention, or time | widened | The slice's claim: an unchanged tree is not judged twice, a changed one always is; the recipe writes `.factory-work/verify-probes` on every run, which the key reads; two runs at once, an interrupted run, a tool or cache changing under a run (`Makefile`; the script's own locking and interruption rules are the S03 row's) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: two triggers `widened`.
+
+Spawned: seam A — the root recipe asking the stamp: a reuse for a tree whose full gate would now say something different, or no reuse where one is owed · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `Makefile`, `assets/toolkit/scripts/verify-stamp.py` (read), `src/slipwai/assets.py`, `tests/test_factory_gate_stamp.py`, `tests/test_factory_gate_stamp_inputs.py`, `tests/test_assets_bytecode.py`, `.gitignore`
+Omitted: the script's own locking, interruption and key rules (the S03 row, unchanged); two terminals with different Docker set-ups racing the probe file, variables reaching the generated gates under `test_matrix`, and `JAVA_HOME` against `PATH` (time). Windows and macOS
+Findings: five — three `MEDIUM` counting A3, two `LOW`. What held: 19 asset-touching modules (195 tests) run with bytecode writing on leave no cache under `assets/` after D121; two runs at once leave one stamp and the next run reuses it; a blank `FACTORY_BACKENDS` is refused (T022); every tool the suite looks for outside `VERIFY_TOOLS` is stubbed or not run by the gate; the Docker daemon's state fails the Postgres test rather than skipping it.
+
+| # | Seam | Severity | Finding | Triage | State |
+|---|---|---|---|---|---|
+| A1 | A | MEDIUM | A probe file the recipe cannot write (left by a run as root) or a symlinked `.factory-work` turns D112's and D119's keying off: a cache planted under `assets/` is reused past while the forced run fails. The step ends in `;`, and the script keys a link, not what is behind it. New | D122; T031 (`s33-4.patch`, a person applies) | open ⛔ |
+| A2 | A | MEDIUM | A gate whose output is written into an ignored, non-exempt file in the tree (`make verify > .factory-work/verify.log`, `tee build/…`) never records, and its line says the next run will. New in the root's set-up | D122: the quickstart says where a log goes; the general question behind S32 (Parking Lot) | stated |
+| A3 | A | MEDIUM | `tests/test_gitea_pages.py` loads `scripts/gitea-pages.py`, which reads `GITEA_PAGES_*` at import; a value in the maintainer's shell fails the suite but is not keyed, so a pass is reused past it. The scan reads no `scripts/*.py`. New | D122; T030 | open |
+| A4 | A | LOW | `MAKE=/bin/true` in the environment makes the root gate a stamped no-op. Same class as S03's C8 (D83) | Declined on D83; the cruise report | declined |
+| A5 | A | LOW | Where `find` fails part-way the probe lists nothing and does not fall back to a line unique to the run, as the `Makefile`'s comment promises; no false green reached. New | D122; T031 (`s33-4.patch`) | open ⛔ |

@@ -11,6 +11,10 @@ stamp declining to vouch, not a fault. The gate's own first run on a fresh check
 `assets/backing-services/__pycache__/` (the pruner, D119), which the key lists, so on a fresh checkout run it a third
 time before measuring.
 
+**A log of the gate goes outside the checkout** (`make verify 2>&1 | tee /tmp/verify.log`), or to the terminal. A log
+written into the tree — under `.factory-work/` or `build/` — is an ignored file the key covers, growing while the
+checks run, so the pass is never recorded (D122).
+
 ```sh
 make verify            # the full gate, about forty minutes; ends `verify: all gates passed`
 make verify            # unchanged tree: one line saying it already passed, and when; well under a second
