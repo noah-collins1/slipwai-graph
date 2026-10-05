@@ -29,7 +29,7 @@ RULE_LINE = re.compile(r"^([^\s:=][^:=]*?)\s*:(?![:=])\s*(.*)$")
 PHONY = re.compile(r"^\.PHONY:\s*(.*)$")
 EXPORT = re.compile(r"^(un)?export\s+[\w.]+\s*$")
 UNSET_BY_COMMAND = "ifeq ($(origin VERIFY_ORDER),command line)"  # false under `make -npq`, which gets no variable
-REFERENCE = re.compile(r"\$[({]([A-Za-z_][\w.-]*)[)}]|\$([A-Za-z_])")
+REFERENCES = re.compile(r"\$(\$|[({]\s*([A-Za-z_][\w.-]*))")  # group 2 is the name; `$$` is a dollar sign
 
 
 class Parsed(NamedTuple):
@@ -192,3 +192,87 @@ def from_text(text: str) -> dict[str, Any]:
 def from_database(data: Any, units: list[str]) -> dict[str, Any]:
     """The same form read from the make database of a project's own `Makefile`; `units` are the scoped units."""
     return fingerprint(from_database_parsed(data, units))
+
+
+class Unreadable(ValueError):
+    """`rules.json` is missing, is not JSON, or is a schema this script does not know: what the factory wrote is not known."""
+
+
+class Judgement(NamedTuple):
+    """What the comparison charges: the first cause that makes the run the full gate (its words, after `the Makefile's`),
+    the named checks that always run, and the gates with units that run whole."""
+    full: str | None
+    checks: frozenset[str]
+    gates: frozenset[str]
+
+
+def load(path: str) -> dict[str, Any]:
+    """The file's content; `Unreadable` where it is not a schema-1 file. Fields it does not know are ignored."""
+    try:
+        with open(path, encoding="utf-8") as handle:
+            found = json.load(handle)
+    except (OSError, ValueError) as error:
+        raise Unreadable(f"{path} cannot be read ({type(error).__name__})") from error
+    if not (isinstance(found, dict) and found.get("schema") == SCHEMA and isinstance(found.get("rules"), dict)
+            and isinstance(found.get("variables"), dict)):
+        raise Unreadable(f"{path} is not a schema {SCHEMA} rules file")
+    return found
+
+
+def used(parsed: Parsed, target: str, variables: dict[str, str]) -> set[str]:
+    """The variables a target's recipe lines name, directly and through the values of the variables they name."""
+    names = {name for line in parsed.recipes.get(target, []) for found in REFERENCES.finditer(line)
+             if (name := found.group(2)) is not None}
+    pending = list(names)
+    while pending:
+        for found in REFERENCES.finditer(variables.get(pending.pop(), "")):
+            if found.group(2) is not None and found.group(2) not in names:
+                names.add(found.group(2))
+                pending.append(found.group(2))
+    return names
+
+
+def changed_variables(held: dict[str, Any], found: dict[str, Any], data: Any, reading: dict[str, set[str]]) -> list[str]:
+    """The variables the project's `Makefile` assigns that are not the factory's: a value that differs, or one a rule
+    `make verify` reaches names and the factory never fingerprinted; and one the factory assigned that is gone. A variable
+    the environment or the command line gives is the baseline's (D116), not compared here."""
+    named = set().union(*reading.values()) if reading else set()
+    changed = [name for name, held_digest in found["variables"].items()
+               if held["variables"].get(name) != held_digest and (name in held["variables"] or name in named)]
+    changed += [name for name in held["variables"] if name not in found["variables"] and name not in data.origins]
+    return sorted(changed)
+
+
+def judge(held: dict[str, Any], data: Any, units: list[str], members: list[str],
+          gates: dict[str, list[str]]) -> Judgement:
+    """Every difference between the factory's text and the project's, each charged to the one member of `verify-checks`
+    that reaches it: a named check, or a gate with units; one that no member or two or more reach, and any in `verify` or
+    `verify-checks`, is the full gate. A fingerprinted rule the project no longer has is a difference in `verify-checks`."""
+    parsed = from_database_parsed(data, units)
+    found = fingerprint(parsed)
+    reached = {member: set(reach(parsed, [member, *gates.get(member, [])])) for member in members}
+    # a check of the project's own (`verify-checks: check-licences`, with a rule of its own) is a check the factory never
+    # wrote and not a change to one: it is judged on its own rule below, and `verify-checks` as the factory wrote it
+    own = [need for need in parsed.needs.get(ROOTS[1], []) if need not in held["rules"] and ruled(parsed, need)]
+    if own and ROOTS[1] in found["rules"]:
+        kept = {**parsed.needs, ROOTS[1]: [need for need in parsed.needs[ROOTS[1]] if need not in own]}
+        found["rules"][ROOTS[1]] = rule_digest(parsed._replace(needs=kept), ROOTS[1])
+    rules = [target for target, held_digest in found["rules"].items()
+             if held["rules"].get(target) != held_digest and target not in own]
+    rules += [ROOTS[1]] if any(target not in found["rules"] for target in held["rules"]) else []
+    reading = {target: used(parsed, target, data.variables) | {"SHELL"} for target in found["rules"]}
+    causes: list[str] = []
+    charged: set[str] = set()
+
+    def charge(owners: list[str], cause: str) -> None:
+        causes.append(cause) if len(owners) != 1 else charged.add(owners[0])
+
+    for target in sorted(set(rules), key=lambda name: (name not in ROOTS, name)):
+        charge([] if target in ROOTS else [member for member in members if target in reached[member]],
+               f"`{target}` rule")
+    for name in changed_variables(held, found, data, reading):
+        users = [target for target, names in reading.items() if name in names]
+        charge([] if any(target in ROOTS for target in users) else
+               [member for member in members if any(target in reached[member] for target in users)], f"variable `{name}`")
+    return Judgement(None if not causes else causes[0], frozenset(charged - set(gates)),
+                     frozenset(charged & set(gates)))

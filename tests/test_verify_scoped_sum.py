@@ -7,10 +7,13 @@ unit holds. Examples run the real `make` over a generated project on a slice bra
 """
 from __future__ import annotations
 
+import json
 import sys
 from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 
-from scoped_fixture import ShapeCase
+from scoped_fixture import FULL, ShapeCase
 from stamp_fixture import git
 from test_scoped_targets import SHAPES
 from test_verify_scoped_record import RecordCase, loaded, record
@@ -22,6 +25,16 @@ OWN_LINE = "\tnpm --workspace apps/service run lint\n"
 FORBIDDEN = "\t@! grep -rq FORBIDDEN apps/web/src\n"
 GATE = "lint: ## Run the native formatting and static-analysis gate\n"
 DRY: dict[str, str | None] = {"STANDIN_DRY": "1"}
+RULES = "scripts/verify_scoped/rules.json"
+WHY = "its rule is not the one the factory wrote (scripts/verify_scoped/rules.json)"
+INCOMPLETE = FULL + "dependency knowledge was incomplete"
+LINT_DOCS = "\n.PHONY: lint-docs\nlint-docs:\n" + FORBIDDEN
+DRAWIO = "\tnode scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check\n"
+CLOSING = "\t@echo 'verify: all gates passed'\n"
+
+
+def full(target: str) -> str:
+    return FULL + f"the Makefile's `{target}` rule is not the one the factory wrote"
 
 
 class SumCase(ShapeCase):
@@ -118,3 +131,130 @@ class EveryShapeTest(RecordCase):
         makefile.write_text(text.replace(vet + staticcheck, staticcheck + vet, 1), encoding="utf-8")
         checks = loaded(project)["checks"]
         self.assertEqual({unit for unit, check in checks.items() if check.get("whole")}, {"lint-service", "lint-web"})
+
+
+class RuleCase(ShapeCase):
+    shape = "model-typescript-web"
+
+    def trunk(self, edit: Callable[[str], str] | None = None, change: Callable[[Path], None] | None = None) -> None:
+        """What the project's trunk holds, changed and committed, and the branch cut from it again with its baseline."""
+        git(self.repo, "checkout", "-q", "main")
+        if edit is not None:
+            makefile = self.repo / "Makefile"
+            makefile.write_text(edit(makefile.read_text(encoding="utf-8")), encoding="utf-8")
+        if change is not None:
+            change(self.repo)
+        git(self.repo, "commit", "-qam", "a project's own change to what the factory wrote")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        self.write_baseline()
+
+    def forbidden(self) -> None:
+        self.edit("apps/web/src/App.tsx", "\n// FORBIDDEN\n")
+
+
+class NamedCheckTest(RuleCase):
+    def test_e1_a_line_added_to_a_named_checks_recipe_runs_it_and_the_run_fails(self) -> None:
+        self.trunk(lambda text: text.replace(DRAWIO, DRAWIO + FORBIDDEN, 1))
+        self.forbidden()
+        run = self.scoped()
+        ran, skipped = self.decided(run)
+        self.assertEqual(ran.get("check-drawio"), WHY, run.stdout)
+        self.assertNotIn("check-drawio", skipped)
+        self.assertNotEqual(run.returncode, 0, run.stdout)
+
+    def test_e1_the_record_says_the_check_has_no_recorded_inputs_and_claims_nothing(self) -> None:
+        self.trunk(lambda text: text.replace(DRAWIO, DRAWIO + FORBIDDEN, 1))
+        entry = loaded(self.repo)["checks"]["check-drawio"]
+        self.assertEqual((entry["inputs"], entry["claims"], entry["always"]), (None, False, WHY))
+
+    def test_e2_a_prerequisite_a_project_gave_a_named_check_runs_it_and_the_run_fails(self) -> None:
+        self.trunk(lambda text: text + LINT_DOCS + "check-decisions: lint-docs\n")
+        self.forbidden()
+        run = self.scoped()
+        ran, skipped = self.decided(run)
+        self.assertEqual(ran.get("check-decisions"), WHY, run.stdout)
+        self.assertNotIn("check-decisions", skipped)
+        self.assertNotEqual(run.returncode, 0, run.stdout)
+
+    def test_e2_one_charged_check_does_not_make_the_others_run(self) -> None:
+        self.trunk(lambda text: text + LINT_DOCS + "check-decisions: lint-docs\n")
+        self.forbidden()
+        _, skipped = self.decided(self.scoped())
+        self.assertIn("check-drawio", skipped)
+        self.assertIn("lint-service", skipped)
+
+    def test_e3_an_order_only_prerequisite_of_a_gate_is_part_of_its_sum(self) -> None:
+        self.trunk(lambda text: text + LINT_DOCS + "lint: | lint-docs\n")
+        self.forbidden()
+        run = self.scoped()
+        ran, _ = self.decided(run)
+        self.assertEqual({unit: why for unit, why in ran.items() if unit.startswith("lint-")},
+                         {"lint-service": WHOLE, "lint-web": WHOLE}, run.stdout)
+        self.assertNotEqual(run.returncode, 0, run.stdout)
+
+
+class FullGateTest(RuleCase):
+    def assert_full(self, target: str, run: Any) -> None:
+        self.assertEqual(self.scoped_lines(run)[0], full(target), run.stdout)
+        self.assertEqual(self.lines(run), [], "a unit line was said beside the full gate")
+        self.assertEqual(len(self.verify_calls()), 1, "`make verify` was not run exactly once")
+
+    def test_e4_a_prerequisite_of_verify_is_the_full_gate(self) -> None:
+        self.trunk(lambda text: text + LINT_DOCS + "verify: lint-docs\n")
+        self.forbidden()
+        run = self.scoped()
+        self.assert_full("verify", run)
+        self.assertNotEqual(run.returncode, 0, run.stdout)
+
+    def test_e4_a_line_in_verify_checks_is_the_full_gate(self) -> None:
+        self.trunk(lambda text: text.replace(CLOSING, FORBIDDEN + CLOSING, 1))
+        self.forbidden()
+        self.assert_full("verify-checks", self.scoped())
+
+    def test_e7_a_rule_two_members_reach_is_the_full_gate(self) -> None:
+        self.trunk(lambda text: text + LINT_DOCS + "check-python: lint-docs\n")
+        self.forbidden()
+        self.assert_full("check-python", self.scoped())
+
+    def assert_variable(self, name: str, run: Any) -> None:
+        self.assertEqual(self.scoped_lines(run)[0], FULL + f"the Makefile's variable `{name}` is not the one the "
+                         "factory wrote", run.stdout)
+
+    def test_e8_a_variable_the_verify_recipe_reads_is_the_full_gate(self) -> None:
+        self.trunk(lambda text: text.replace("VERIFY_STAMP := ", "VERIFY_STAMP := --tool git ", 1))
+        self.forbidden()
+        self.assert_variable("VERIFY_STAMP", self.scoped())
+
+    def test_e8_the_shell_every_recipe_runs_in_is_the_full_gate(self) -> None:
+        self.trunk(lambda text: text.replace("SHELL := /bin/bash", "SHELL := /bin/sh", 1))
+        self.forbidden()
+        self.assert_variable("SHELL", self.scoped())
+
+    def test_e9_a_check_the_project_removed_is_a_difference_in_verify_checks(self) -> None:
+        self.trunk(lambda text: text.replace(" check-decisions test", " test", 1))
+        self.forbidden()
+        self.assert_full("verify-checks", self.scoped())
+
+    def test_e6_no_rules_file_is_the_full_gate_for_want_of_knowledge(self) -> None:
+        self.trunk(change=lambda repo: (repo / RULES).unlink(missing_ok=True))
+        self.forbidden()
+        run = self.scoped()
+        self.assertEqual(self.scoped_lines(run)[-1], INCOMPLETE, run.stdout)
+        self.assertEqual(self.lines(run), [])
+
+    def test_e6_a_rules_file_of_a_schema_it_does_not_know_is_the_same(self) -> None:
+        def write(repo: Path) -> None:
+            (repo / RULES).write_text(json.dumps({"schema": 2, "rules": {}, "variables": {}}), encoding="utf-8")
+
+        self.trunk(change=write)
+        self.forbidden()
+        run = self.scoped()
+        self.assertEqual(self.scoped_lines(run)[-1], INCOMPLETE, run.stdout)
+
+    def test_e6_a_rules_file_that_is_not_json_is_the_same(self) -> None:
+        def write(repo: Path) -> None:
+            (repo / RULES).write_text("{not json", encoding="utf-8")
+
+        self.trunk(change=write)
+        self.forbidden()
+        self.assertEqual(self.scoped_lines(self.scoped())[-1], INCOMPLETE)

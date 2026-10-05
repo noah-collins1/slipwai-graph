@@ -9,7 +9,8 @@ the first reason that holds winning. After the paths come the machine's: a tool 
 (`<tool> answers differently from the baseline`) or a variable whose digest differs (`<NAME> differs from the baseline`),
 for the units whose recorded inputs name it; a unit that shares a recipe with one of those runs with it. A gate whose
 recipe is not the sum of its units' (the record marks its units `whole`) runs whole under its own name when any one of
-them is chosen, and every one of its units says `its recipe is not the sum of its per-deployable targets`.
+them is chosen, and every one of its units says `its recipe is not the sum of its per-deployable targets`, or, where the
+sum holds and the factory's rule for the gate or a unit does not (`differs`), `its rule is not the one the factory wrote`.
 """
 from __future__ import annotations
 
@@ -28,6 +29,7 @@ CONSUMING = ("typecheck", "test")  # what a contract's consumer re-proves when t
 BUILD_DIRECTORY_FAMILIES = ("go", "java")  # whose three units build in one directory
 UNCHANGED = "none of its inputs changed"
 WHOLE = "its recipe is not the sum of its per-deployable targets"
+DIFFERS = "its rule is not the one the factory wrote (scripts/verify_scoped/rules.json)"
 MAKEFILES = ("Makefile", "GNUmakefile", "makefile")
 PROJECT_JSON = "project.json"
 SHARED = ("apps/", "packages/")  # what units build: a check beside them that reads a path there chooses itself, and no more
@@ -169,8 +171,8 @@ def choose(record: dict[str, Any], data: Database, changed: list[str], drifted: 
     take(lambda unit, check: moved(check, drifted))
     take(along)
     for unit in [unit for unit in reasons if checks[unit].get("whole")]:  # one unit of a whole gate runs them all
-        reasons.update({other: WHOLE for other, check in checks.items() if check.get("whole")
-                        and check["gate"] == checks[unit]["gate"]})
+        reasons.update({other: DIFFERS if check.get("differs") else WHOLE for other, check in checks.items()
+                        if check.get("whole") and check["gate"] == checks[unit]["gate"]})
     return [Choice(unit, unit in reasons, reasons.get(unit, UNCHANGED)) for unit in checks]
 
 

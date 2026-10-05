@@ -9,7 +9,8 @@ branch or no commit, the trunk itself, a branch that is no `slice/<id>`, a branc
 cannot tell. A scoped selection is built on top of them, in later rules; until then a slice branch with a usable base is
 the full gate as well, so the target is never wrong in between.
 
-Nothing here writes the stamp or any file. `verify-stamp.py` and `check-slice-scope.py` beside this script are loaded,
+Nothing here writes the stamp or a file of this script's own; the one write beside it is the model loader's, which may
+install `yaml` into `.delivery-tools` where `check-model` would. `verify-stamp.py` and `check-slice-scope.py` beside this script are loaded,
 never copied, so the trunk, the base and the stamp's own words are the ones the gate uses.
 """
 from __future__ import annotations
@@ -211,6 +212,8 @@ def run(make: str, makefile: str) -> int:
             data = records.database(make, makefile)  # the same words the record gives, where it cannot be read
         record = records.build(make, makefile, ground.scope, data, base)
         changed = sorted(ground.scope.changed_files(base))
+    except records.FullGate as error:  # a difference from the factory's Makefile that no one check can be charged with
+        return broaden(make, makefile, str(error))
     except records.ObligationError as error:  # a person's declaration is named on a line of its own
         return broaden(make, makefile, INCOMPLETE, [str(error).replace("\n", " ")])
     except records.RecordError as error:
@@ -260,7 +263,11 @@ def record(make: str, makefile: str) -> int:
     """Print the record; where it cannot be built, one line on stderr, nothing on stdout, and status 1."""
     try:
         scope = load("verify_stamp_for_the_scope", "verify-stamp.py").trunk_module()
-        text = records.render(records.build(make, makefile, scope))
+        try:
+            built = records.build(make, makefile, scope)
+        except records.FullGate as error:  # the record is still what it is, with each charged difference marked
+            built = error.built
+        text = records.render(built)
     except records.RecordError as error:
         print(LINE + "the record cannot be built — " + str(error).replace("\n", " "), file=sys.stderr)
         return 1

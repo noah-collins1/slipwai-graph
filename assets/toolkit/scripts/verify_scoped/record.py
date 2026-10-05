@@ -18,9 +18,12 @@ from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
 
+from . import rules  # noqa: E402
 from .table import CHECKS, GATE_UNITS, NO_INPUTS, UNITS, Row  # noqa: E402
 
 SCHEMA = 1
+RULES_FILE = "scripts/verify_scoped/rules.json"
+DIFFERS = f"its rule is not the one the factory wrote ({RULES_FILE})"
 MODEL = "docs/event-model/model.yaml"
 DATABASE = ("-npq", ".DEFAULT")
 RULE = re.compile(r"^([^\s#:=%][^:=]*?)::?(?!=)\s*(.*)$")
@@ -33,6 +36,15 @@ ALWAYS_TOOLS = ("make", "python3")
 
 class RecordError(Exception):
     """The record cannot be built: the words say why, on one line."""
+
+
+class FullGate(RecordError):
+    """The Makefile differs from the factory's where no one check or gate can be charged: the words say what, after
+    `the Makefile's`; `built` is the record, with every difference that could be charged marked."""
+
+    def __init__(self, words: str, built: dict[str, Any]) -> None:
+        super().__init__(words)
+        self.built = built
 
 
 class ObligationError(RecordError):
@@ -186,6 +198,7 @@ def sum_of(gate: str, units: list[str], data: Database) -> tuple[list[list[str]]
                 taken.add(target)
                 parts.append(data.recipes.get(target, []))
                 needs.update(data.needs.get(target, []))
+                needs.update(data.order_only.get(target, []))  # make builds these too
     return parts, needs - taken
 
 
@@ -198,7 +211,8 @@ def whole_gates(gates: dict[str, list[str]], data: Database) -> set[str]:
         parts, needs = sum_of(gate, units, data)
         lines = data.recipes.get(gate, [])
         places = [[lines.index(line) if line in lines else -1 for line in part] for part in parts]
-        if sorted(line for part in parts for line in part) != sorted(lines) or set(data.needs.get(gate, [])) != needs \
+        waits = {*data.needs.get(gate, []), *data.order_only.get(gate, [])}
+        if sorted(line for part in parts for line in part) != sorted(lines) or waits != needs \
                 or any(place != sorted(place) for place in places):
             found.add(gate)
     return found
@@ -223,10 +237,33 @@ def checks_of(data: Database, deployables: dict[str, dict[str, Any]], context: C
     units: dict[str, list[str]] = {}
     for unit, entry in checks.items():
         units.setdefault(entry["gate"], []).append(unit) if entry["gate"] in GATE_UNITS else None
-    for gate in whole_gates(units, data):  # the gate runs whole, under its own name, wherever one of its units is chosen
+    summed = whole_gates(units, data)
+    for gate in summed:  # the gate runs whole, under its own name, wherever one of its units is chosen
         for unit in units[gate]:
             checks[unit].update(whole=True, targets=[gate])
     return checks
+
+
+def compared(root: Path, data: Database, checks: dict[str, Any]) -> str | None:
+    """What the Makefile has that the factory did not write (`rules.json`): a named check charged is one with no recorded
+    inputs that always runs, a gate with units charged runs whole, and the words of a difference nobody can be charged
+    with are returned, to be the full gate. A file that cannot be read is a `RecordError`."""
+    try:
+        held = rules.load(str(root / RULES_FILE))
+    except rules.Unreadable as error:
+        raise RecordError(str(error)) from error
+    units: dict[str, list[str]] = {}
+    for unit, entry in checks.items():
+        units.setdefault(entry["gate"], []).append(unit) if entry["gate"] in GATE_UNITS else None
+    judged = rules.judge(held, data, [unit for each in units.values() for unit in each], data.needs["verify-checks"],
+                         units)
+    for name in judged.checks:
+        if name in checks:
+            checks[name].update(inputs=None, claims=False, always=DIFFERS)
+    for gate in judged.gates:
+        for unit in units[gate]:
+            checks[unit].update({"differs": True} if "whole" not in checks[unit] else {}, whole=True, targets=[gate])
+    return None if judged.full is None else f"the Makefile's {judged.full} is not the one the factory wrote"
 
 
 def packages_of(root: Path, scope: Any, base: str | None) -> list[str]:
@@ -420,12 +457,16 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
     base = base or base_of(scope)
     context = Context(deployables, data, packages_of(root, scope, base))
     checks = checks_of(data, deployables, context)
+    full = compared(root, data, checks)
     services = [name for name, item in deployables.items() if item["kind"] == "service"]
     models = models_of(root, scope, base) if len(services) > 1 or "check-model" in checks else []
     with_named(checks, root, models)
     obligations = obligations_of(declared(root, scope, base), deployables, checks)
-    return {"schema": SCHEMA, "deployables": deployables, "checks": checks,
-            "contracts": contracts_of(deployables, context, models), "obligations": obligations}
+    built = {"schema": SCHEMA, "deployables": deployables, "checks": checks,
+             "contracts": contracts_of(deployables, context, models), "obligations": obligations}
+    if full is not None:
+        raise FullGate(full, built)
+    return built
 
 
 def render(record: dict[str, Any]) -> str:
