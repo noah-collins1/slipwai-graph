@@ -118,6 +118,19 @@ project's `Makefile` is never parsed by a scoped run. On matching text any diffe
 *dependency knowledge was incomplete*, charged to no one check; the cost is permanent for a project that edits its
 `Makefile` and nothing for one that does not.
 
+After the text and before any path is chosen (D148), a deployable that reads outside its own path is the full gate,
+naming the file: `reach.py` reads every file git lists under each deployable (tracked or untracked, not ignored) for the
+three ways a resolver reaches another file. (1) A path: a quoted string, or a path token in a manifest or config, that
+starts with `../` and lands outside the deployable (a manifest or config is read against the deployable's root as well
+as its own directory), or any path that names another deployable's path from the root; a target that is one of the
+deployable's own row file inputs, or a package it consumes under `packages/`, is not a reach. (2) Another
+deployable's identity, read from its manifest in the tree and at the base: its npm `name` in any file of an npm-family
+deployable, its Go `module` path in any file of a Go one, its normalised `[project] name` in a Python one's
+`pyproject.toml`, `uv.lock` or `requirements*.txt`, its `artifactId` in a Java one's `pom.xml` or Gradle files. (3) A
+symlink whose target resolves outside the deployable. Where it cannot tell — an identity unreadable in both trees, a
+file it cannot open, a link it cannot resolve, a path that climbs above the repository — the full gate runs with
+*what `<path>` reads outside its path cannot be established: …*. No edge is charged to a unit.
+
 A recipe-sum guard: where a gate check's recipe lines (from the make database) are not exactly its units' and family
 targets' lines, the check runs whole under its gate name whenever any of its units is chosen, with the reason
 *its recipe is not the sum of its per-deployable targets*. On the factory's own text the sum always holds.

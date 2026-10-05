@@ -222,6 +222,8 @@ def run(make: str, makefile: str) -> int:
             data = records.database(make, makefile)  # the same words the record gives, where it cannot be read
         record = records.build(make, makefile, ground.scope, data, base)
         changed = sorted(ground.scope.changed_files(base))
+    except records.Reach as error:  # a deployable reads outside its path: the words are the reason (D148)
+        return broaden(make, makefile, str(error).replace("\n", " "))
     except records.FullGate as error:  # matching text that make reads differently: knowledge this script does not have
         return incomplete(make, makefile, str(error).replace("\n", " "))
     except records.ObligationError as error:  # a person's declaration is named on a line of its own

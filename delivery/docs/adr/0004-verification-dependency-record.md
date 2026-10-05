@@ -41,7 +41,9 @@ wraps each application's recorded commands through `ratchet.py` and has no `veri
   `migrate` merges as the project's own.
 - A change on the branch to `project.json`, to the script or to any other gate script runs the full gate, and so
   does a malformed or unresolvable obligation, a file no deployable or check claims, or a record the script cannot
-  build. Each says its reason in one line.
+  build — and a deployable whose files reach outside its own path, through a relative path, another deployable's
+  package or module identity (read in the tree and at the base), or a symlink, or whose reach cannot be established
+  (D148). Each says its reason in one line.
 - An adopted repository's `verify-scoped` runs the full gate and says this layout has no record yet.
 
 ### The printed shape (schema 1)
@@ -96,6 +98,8 @@ The record can never be staler than the tree it judges, and a person edits one f
 root and CI still run everything. Every scoped run pays a JSON read and a table join; any edit to `project.json` on
 a branch costs a full gate; a check a project adds itself always runs; a Python project with several services gets
 no per-service narrowing until `scripts/verify` filters by service; any change in a producing service runs every
-event consumer's tests; an adopted repository gets no speedup from this slice. The `project.json` key and the
+event consumer's tests; a project whose deployables share source directly, rather than through `packages/` or a
+published contract, gets the full gate on every scoped run, and every scoped run reads every deployable's listed
+files once; an adopted repository gets no speedup from this slice. The `project.json` key and the
 printed shape are published contracts: renaming either, or moving components to bounded contexts later, needs a
 `migrate` catch-up note.

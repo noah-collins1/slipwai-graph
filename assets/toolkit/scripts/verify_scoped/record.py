@@ -18,7 +18,7 @@ from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
 
-from . import rules  # noqa: E402
+from . import reach, rules  # noqa: E402
 from .table import CHECKS, GATE_UNITS, NO_INPUTS, UNITS, Row  # noqa: E402
 
 SCHEMA = 1
@@ -48,6 +48,10 @@ class FullGate(RecordError):
     def __init__(self, words: str, built: dict[str, Any]) -> None:
         super().__init__(words)
         self.built = built
+
+
+class Reach(FullGate):
+    """A deployable reads outside its own path (D148): the words are the whole reason the full gate runs."""
 
 
 class ObligationError(RecordError):
@@ -521,6 +525,7 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
     context = Context(deployables, data, packages_of(root, scope, base))
     checks = checks_of(data, deployables, context)
     full = compared(root, data, checks) or under_the_full_gate(make, makefile, data)
+    reached = None if full is not None else reach.find(root, deployables, context.packages, base)
     services = [name for name, item in deployables.items() if item["kind"] == "service"]
     models = models_of(root, scope, base) if len(services) > 1 or "check-model" in checks else []
     with_named(checks, root, models)
@@ -529,6 +534,8 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
              "contracts": contracts_of(deployables, context, models), "obligations": obligations}
     if full is not None:
         raise FullGate(full, built)
+    if reached is not None:
+        raise Reach(reached, built)
     return built
 
 
