@@ -9,6 +9,7 @@ import contextlib
 import hashlib
 import io
 import os
+import re
 
 from mutation_scope_fixture import ScopeCase
 from test_mutation_borders import calls, clean_environment, loaded
@@ -37,6 +38,11 @@ SWEEP = ["./mvnw", "-B", "-q", "test-compile", "org.pitest:pitest-maven:mutation
 
 def params(*names: str) -> str:
     return "".join(f"<param>{name}</param>" for name in names)
+
+
+NOTHING = ("mutation: no mutant to run — "
+           "every changed production file is outside the tools' targets")
+SKIPPED = "mutation: skip {} — no changed production file within the tool's targets"
 
 
 class FakeExecute:
@@ -110,7 +116,9 @@ class SpringRunnerTest(SpringCase):
         for name in ("other/Outside", "health/WiringConfig"):
             self.assertIn(f"mutation: not mutated apps/spring/src/main/java/{PACKAGE}/{name}.java"
                           " — outside PIT's configured targets", lines)
-        self.assertIn("mutation: no mutant to run — every changed production file is outside the tools' targets", lines)
+        self.assertEqual(lines[0], NOTHING)
+        self.assertEqual([line for line in lines if " apps/spring —" in line and not line.startswith(
+            "mutation: not mutated")], [SKIPPED.format("apps/spring")])
 
     def test_e4_an_unreadable_pom_or_pattern_is_reported_as_unreadable_naming_the_file(self) -> None:
         self.java("health/HealthStatus")
@@ -127,6 +135,28 @@ class SpringRunnerTest(SpringCase):
                 finally:
                     os.chdir(here)
                 self.assertIn("apps/spring/pom.xml", result.unreadable or "")
+
+    def test_t020_an_unreadable_pom_is_the_sweep_named_once_and_opens_the_run_so(self) -> None:
+        self.java("health/HealthStatus")
+        self.write("apps/spring/pom.xml", "<project><unclosed>")
+        execute = FakeExecute()
+        status, lines = self.run_spring(execute)
+        self.assertTrue(lines[0].startswith("mutation: the sweep runs — apps/spring/pom.xml: "), lines)
+        named = [line for line in lines if re.match(r"mutation: (scope|skip|sweep|refuse) apps/spring —", line)]
+        self.assertEqual(len(named), 1, lines)
+        self.assertTrue(named[0].startswith("mutation: sweep apps/spring — apps/spring/pom.xml: "), named)
+        self.assertEqual(lines[-1], "mutation: 0 scoped, 1 swept, 0 skipped, 0 refused; passed")
+        self.assertEqual(execute.seen, [(SWEEP, "apps/spring")])
+        self.assertEqual(status, 0)
+
+    def test_t020_hold_pit_finding_nothing_keeps_the_scope_line_first_and_the_service_named_once(self) -> None:
+        self.pom(("com.example.x.*",))
+        self.java("health/EventVisitor")
+        _, lines = self.run_spring(FakeExecute(1, NO_MUTATIONS))
+        self.assertTrue(lines[0].startswith("mutation: scoped to 1 changed file(s) since "), lines)
+        named = [line for line in lines if re.match(r"mutation: (scope|skip|sweep|refuse) apps/spring —", line)]
+        self.assertEqual(len(named), 1, lines)
+        self.assertEqual(lines[-1], "mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed")
 
     def test_e5_pits_no_mutations_text_on_a_scoped_run_is_the_no_mutant_line(self) -> None:
         self.pom(("com.example.x.*",))

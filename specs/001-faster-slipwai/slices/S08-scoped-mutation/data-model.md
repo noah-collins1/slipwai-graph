@@ -88,9 +88,16 @@ Then each service once, in service order:
 
 - `mutation: scope <path> — <file>, …`
 - `mutation: sweep <path> — \`<file>\` changed`
-- `mutation: skip <path> — no changed production file`
+- `mutation: skip <path> — no changed production file` · `skip <path> — no changed production file within the tool's targets`
 - `mutation: refuse <path> — <the placeholder's setup message>; the scope will apply once a tool is wired; it
   would mutate: <file>, …`
+
+What each tool will take of the changed files is decided for every service before the first line is printed, so the
+first line is the form the outcome is: `no mutant to run — every changed production file is outside the tools' targets`
+when no service has a file left, and `the sweep runs — <reason>` when only sweeps remain (a service whose configuration
+cannot be read is named once, as `sweep <path> — <why>`). A run with only placeholder services changed, and a Spring run
+PIT finds nothing to mutate in, keep `scoped to <n> changed file(s) since <base>: …` — the scope was computed and is
+true; the `refuse` line and the `no mutant to run in <path>` line say why nothing ran.
 
 Each changed production file that is not mutated, once: `mutation: not mutated <file> — <reason>`.
 

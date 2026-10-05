@@ -70,6 +70,18 @@ class PlaceholderTest(ScopeCase):
                 self.assertFalse([line for line in lines if line.startswith("mutation: scope ")], lines)
                 self.commit()
 
+    def test_t020_only_placeholders_changed_keeps_the_scope_line_first_and_each_service_named_once(self) -> None:
+        self.write(FILES["typescript"])
+        self.write(FILES["python"].replace("apps/service", "apps/other"))
+        _, lines, _ = self.run_mixed("typescript:apps/service", "python:apps/other", "java-quarkus:apps/third")
+        self.assertTrue(lines[0].startswith("mutation: scoped to 2 changed file(s) since "), lines)
+        for path, word in (("apps/service", "refuse"), ("apps/other", "refuse"), ("apps/third", "skip")):
+            named = [line for line in lines if re.match(rf"mutation: (scope|skip|sweep|refuse) {path} —", line)]
+            self.assertEqual(len(named), 1, lines)
+            self.assertTrue(named[0].startswith(f"mutation: {word} {path} — "), named)
+        self.assertEqual(lines[-1],
+                         "mutation: 0 scoped, 0 swept, 1 skipped, 2 refused; failed: apps/service, apps/other")
+
     def test_e1_the_scripts_table_is_the_text_the_sweep_echoes_today(self) -> None:
         """HOLD (teeth: change a string in the script's table): one source of the setup sentence per placeholder."""
         module = loaded(self.repo / "scripts/mutation-scope.py")

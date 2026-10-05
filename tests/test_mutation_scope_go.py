@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import io
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -17,6 +18,11 @@ from test_go_mutation_file import FakeTools
 from test_mutation_borders import clean_environment, loaded
 
 TWO = ("go:apps/service", "go:apps/billing")
+
+
+NOTHING = ("mutation: no mutant to run — "
+           "every changed production file is outside the tools' targets")
+SKIPPED = "mutation: skip {} — no changed production file within the tool's targets"
 
 
 class GoScopeTest(ScopeCase):
@@ -40,6 +46,11 @@ class GoScopeTest(ScopeCase):
             os.environ.clear()
             os.environ.update(saved)
         return status, out.getvalue().splitlines(), tools
+
+    @staticmethod
+    def service_lines(lines: list[str], path: str) -> list[str]:
+        """The per-service lines that name `path`: every service is named once."""
+        return [line for line in lines if re.match(rf"mutation: (scope|skip|sweep|refuse) {path} —", line)]
 
     def test_e4_one_changed_file_starts_gremlins_once_and_only_for_its_service(self) -> None:
         git(self.repo, "checkout", "-q", "main")
@@ -67,7 +78,10 @@ class GoScopeTest(ScopeCase):
         self.assertEqual(status, 0, "\n".join(lines))
         self.assertIn("mutation: not mutated apps/service/cmd/serve/main.go — outside Gremlins' configured targets",
                       lines)
-        self.assertIn("mutation: no mutant to run — every changed production file is outside the tools' targets", lines)
+        self.assertEqual(lines[0], NOTHING)
+        self.assertEqual(self.service_lines(lines, "apps/service"), [
+            SKIPPED.format("apps/service")])
+        self.assertEqual(lines[-1], "mutation: 0 scoped, 0 swept, 2 skipped, 0 refused; passed")
         self.assertEqual(tools.runs(), [])
 
     def test_e4_the_tools_failure_is_the_services_failure(self) -> None:

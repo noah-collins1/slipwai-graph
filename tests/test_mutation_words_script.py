@@ -6,10 +6,22 @@ line, so a Python, a TypeScript and a mixed project are the Go project's tree wi
 from __future__ import annotations
 
 import re
+from types import SimpleNamespace
+from typing import Any
 
-from mutation_scope_fixture import HEALTH, ScopeCase
+import mutation_scope_fixture
+from mutation_scope_fixture import HEALTH, FakeRunner, ScopeCase
 
 FIRST = re.compile(r"^mutation: scoped to (\d+) changed file\(s\) since `main` at ([0-9a-f]{7,}): (.+)$")
+
+
+class PlanningRunner(FakeRunner):
+    """The fake with the tool's other half: what it would take is decided before the run, as the real tools' is."""
+
+    def plan(self, backend: str, path: str, files: list[str]) -> Any:
+        kept = files if self.mutable is None else self.mutable.get(path, [])
+        return SimpleNamespace(keep=list(kept), unreadable=None,
+                               left=[(name, "outside the tool's targets") for name in files if name not in kept])
 
 
 class WordsTest(ScopeCase):
@@ -49,10 +61,12 @@ class WordsTest(ScopeCase):
 
     def test_e6_no_file_the_tool_will_mutate_says_so(self) -> None:
         self.write("apps/service/a.go")
+        self.addCleanup(setattr, mutation_scope_fixture, "FakeRunner", FakeRunner)
+        setattr(mutation_scope_fixture, "FakeRunner", PlanningRunner)  # noqa: B010 -- the run site reads this name
         ran = self.run_in_process(runner_args={"mutable": {}})
         self.assertIn("mutation: not mutated apps/service/a.go — outside the tool's targets", ran.lines)
         every = "mutation: no mutant to run — every changed production file is outside the tools' targets"
-        self.assertIn(every, ran.lines)
+        self.assertEqual(ran.first, every)
         self.assertEqual(ran.status, 0)
         self.assertEqual(ran.last, "mutation: 0 scoped, 0 swept, 1 skipped, 0 refused; passed")
 

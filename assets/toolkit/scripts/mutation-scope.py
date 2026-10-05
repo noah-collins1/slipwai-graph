@@ -42,6 +42,15 @@ class Result(NamedTuple):
     unreadable: str | None = None
 
 
+class Plan(NamedTuple):
+    """What a wired service's tool would take of the changed files, decided before any tool starts: the files it will
+    mutate, each it will not with the reason, and, where its configuration cannot be read, the words of that."""
+
+    keep: list[str]
+    left: list[tuple[str, str]]
+    unreadable: str | None = None
+
+
 class Runner(Protocol):
     """What runs one service's tool; a test's fake stands in for it, and the default is the real tool."""
 
@@ -323,21 +332,32 @@ def classify(path: str, status: str, services: list[tuple[str, str]]) -> tuple[s
     return ("deleted" if status == "D" and kind == "production" else kind), root, inside
 
 
-def go(path: str, files: list[str]) -> Result:
-    """Gremlins over the given files only: the exclusions `.gremlins.yaml` carries are `go-mutation.py`'s to read, and a
-    file they take is named and left out, so a run with nothing left starts no tool."""
+def go_plan(path: str, files: list[str]) -> Plan:
+    """The files Gremlins will take within the given ones: the exclusions `.gremlins.yaml` carries are `go-mutation.py`'s
+    to read. A configuration it refuses to read plans every file, and the run then fails with its words."""
     tool = load("go-mutation.py")
     try:
         keep = tool.mutable(set(files), tool.excluded(Path(path) / tool.CONFIG))
+    except SystemExit:
+        return Plan(list(files), [])
+    return Plan(sorted(keep), [(name, "outside Gremlins' configured targets") for name in files if name not in keep])
+
+
+def go(path: str, files: list[str]) -> Result:
+    """Gremlins over the given files only; a file the exclusions take is named and left out, so a run with nothing left
+    starts no tool."""
+    tool = load("go-mutation.py")
+    try:
+        tool.excluded(Path(path) / tool.CONFIG)
     except SystemExit as stop:  # a configuration go-mutation.py refuses to read is a failed run, with its words
         print(stop.code, file=sys.stderr)
         return Result(2, [], [])
-    left = [(name, "outside Gremlins' configured targets") for name in files if name not in keep]
-    if not keep:
-        return Result(0, [], left)
+    plan = go_plan(path, files)
+    if not plan.keep:
+        return Result(0, [], plan.left)
     command = [sys.executable, os.path.join(HERE, "go-mutation.py"), path]
-    command += [word for name in sorted(keep) for word in ("--file", name)]
-    return Result(subprocess.run(command, close_fds=False, check=False).returncode, sorted(keep), left)
+    command += [word for name in plan.keep for word in ("--file", name)]
+    return Result(subprocess.run(command, close_fds=False, check=False).returncode, plan.keep, plan.left)
 
 
 # The setup message of each placeholder backend: the line `make mutation-full` prints for it, held equal to the factory's by a test.
@@ -418,25 +438,32 @@ PIT = ["./mvnw", "-B", "-q", "test-compile", "org.pitest:pitest-maven:mutationCo
 NO_MUTATIONS = "No mutations found"
 
 
-def spring(path: str, files: list[str], execute: Any) -> Result:
-    """PIT over the changed classes only — `-DtargetClasses=Foo,Foo$*` on the sweep's own command, the pom untouched —
-    within the pom's targets. A class outside them is named and left out, and a run with nothing left starts no Maven."""
+def spring_plan(path: str, files: list[str]) -> Plan:
+    """The classes PIT will take within the changed ones, by the pom's own `targetClasses`/`excludedClasses`."""
     pom = f"{path}/pom.xml"
     try:
         targets, excluded = pit_targets(pom)
         keep = [name for name in files if any(pit_matches(t, class_name(name)) for t in targets)
                 and not any(pit_matches(x, class_name(name)) for x in excluded)]
     except Unreadable as why:
-        return Result(0, [], [], None, f"{pom}: {why}")
-    left = [(name, "outside PIT's configured targets") for name in files if name not in keep]
-    if not keep:
-        return Result(0, [], left)
-    classes = [class_name(name) for name in keep]
+        return Plan([], [], f"{pom}: {why}")
+    return Plan(keep, [(name, "outside PIT's configured targets") for name in files if name not in keep])
+
+
+def spring(path: str, files: list[str], execute: Any) -> Result:
+    """PIT over the changed classes only — `-DtargetClasses=Foo,Foo$*` on the sweep's own command, the pom untouched —
+    within the pom's targets. A class outside them is named and left out, and a run with nothing left starts no Maven."""
+    plan = spring_plan(path, files)
+    if plan.unreadable is not None:
+        return Result(0, [], [], None, plan.unreadable)
+    if not plan.keep:
+        return Result(0, [], plan.left)
+    classes = [class_name(name) for name in plan.keep]
     status, text = execute([*PIT, "-DtargetClasses=" + ",".join(c for name in classes for c in (name, name + "$*"))], path)
     if status != 0 and NO_MUTATIONS in text:  # PIT's own failure for a scope with nothing to mutate, which is no failure
         say(f"no mutant to run in {path} — PIT found no code to mutate in {', '.join(classes)}; no report was written")
         status = 0
-    return Result(status, keep, left)
+    return Result(status, plan.keep, plan.left)
 
 
 def refusal(backend: str, path: str, files: list[str]) -> Result:
@@ -454,6 +481,14 @@ class Tools:
 
     def __init__(self, execute: Any = None) -> None:
         self.execute = execute or stream
+
+    def plan(self, backend: str, path: str, files: list[str]) -> Plan:
+        """What the tool will take of `files`, before anything runs; a backend with no tool takes them all."""
+        if backend == "go":
+            return go_plan(path, files)
+        if backend == "java-spring":
+            return spring_plan(path, files)
+        return Plan(list(files), [])
 
     def run(self, backend: str, path: str, files: list[str]) -> Result:
         if backend == "go":
@@ -478,8 +513,9 @@ def said(paths: list[str]) -> str:
 
 def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], runner: Runner,
           causes: dict[str, list[str]]) -> int:
-    """The scoped run: what changed, classified, then each service once in service order, then the closing line. A
-    service in `causes` is swept and its production files are not additionally scoped."""
+    """The scoped run: what changed, classified, what each tool will take of it decided for every service, then the first
+    line, each service once in service order, and the closing line. A service in `causes` is swept and its production
+    files are not additionally scoped; so is one whose configuration cannot be read."""
     handled = {path for found in causes.values() for path in found}
     shared: list[str] = []
     deleted: list[str] = []
@@ -495,14 +531,22 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
             tests.append(path)
         elif kind == "production" and root not in causes:
             production.setdefault(root, []).append(inside)
-    named = sorted(f"{root}/{inside}" for root, found in production.items() for inside in found)
+    plans: dict[str, Plan] = {}
+    for backend, root in services:  # a runner with no plan takes every file, and says what it left out when it runs
+        if root in production:
+            plans[root] = getattr(runner, "plan", lambda *_: Plan(production[root], []))(backend, root, production[root])
+    unread = {root: plan.unreadable for root, plan in plans.items() if plan.unreadable is not None}
+    named = sorted(f"{root}/{inside}" for root, plan in plans.items() if root not in unread for inside in plan.keep)
+    outside = any(plan.left for plan in plans.values())
     if named:
         say(f"scoped to {len(named)} changed file(s) since {words}: {', '.join(shown(name) for name in named)}")
-    elif causes:
-        say(SWEEPS.format(reason=said(sorted(handled))))
+    elif causes or unread:
+        say(SWEEPS.format(reason=", ".join([*([said(sorted(handled))] if handled else []), *map(str, unread.values())])))
     elif tests:
         say(f"no mutant to run — only tests changed: {', '.join(shown(name) for name in tests)}; "
             "`make mutation-full` is the run that measures them")
+    elif outside:
+        say("no mutant to run — every changed production file is outside the tools' targets")
     else:
         say("no mutant to run — no production file changed")
     for path in shared:
@@ -513,22 +557,27 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     failed: list[str] = []
     status = 0
     for backend, root in services:
-        files = production.get(root, [])
+        plan = plans.get(root)
         if root in causes:
             say(f"sweep {root} — {said(causes[root])}")
             result, kind = runner.sweep(backend, root), "swept"
-        elif not files:
+        elif root in unread:
+            say(f"sweep {root} — {unread[root]}")
+            result, kind = runner.sweep(backend, root), "swept"
+        elif plan is None:
             say(f"skip {root} — no changed production file")
+            counts["skipped"] += 1
+            continue
+        elif not plan.keep and plan.left:
+            say(f"skip {root} — no changed production file within the tool's targets")
+            for name, why in plan.left:
+                say(f"not mutated {shown(root + '/' + name)} — {why}")
             counts["skipped"] += 1
             continue
         else:
             if backend in WIRED:
-                say(f"scope {root} — {', '.join(shown(name) for name in files)}")
-            result = runner.run(backend, root, files)
-            kind = "scoped"
-            if result.unreadable is not None:  # what the tool is configured to take cannot be told, so the service sweeps
-                say(f"sweep {root} — {result.unreadable}")
-                result, kind = runner.sweep(backend, root), "swept"
+                say(f"scope {root} — {', '.join(shown(name) for name in production[root])}")
+            result, kind = runner.run(backend, root, production[root]), "scoped"
         for name, why in result.skipped:
             say(f"not mutated {shown(root + '/' + name)} — {why}")
         if result.refusal is not None:
@@ -540,8 +589,6 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         if result.status != 0:
             failed.append(root)
             status = status or result.status
-    if named and not counts["scoped"] and not counts["swept"] and not failed:
-        say("no mutant to run — every changed production file is outside the tools' targets")
     ended = "passed" if not failed else "failed: " + ", ".join(failed)
     say(f"{counts['scoped']} scoped, {counts['swept']} swept, {counts['skipped']} skipped, {counts['refused']} refused; {ended}")
     return status
