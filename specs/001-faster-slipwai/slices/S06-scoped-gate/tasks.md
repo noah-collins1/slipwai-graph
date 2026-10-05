@@ -598,7 +598,208 @@ names the new text).
 
 ## Phase 3: Findings appended by converge and gaps
 
-*(Empty until T017/T018 append tasks here, in the shape of the Phase 1 tasks.)*
+*Appended by T017, converge pass 1 (2026-10-05).* Each finding is a run of `make verify-scoped` that printed `passed`,
+or skipped a check, where `make verify` on the same tree runs that check and it fails. Reproductions are probes over
+`tests/scoped_fixture.ShapeCase` (the fixture's stand-in `npm`/`node`, the real `python3` and `make`), kept outside the
+tree; each RED below restates one as an example.
+
+### T024 — [US2] CRITICAL — A check's row is as wide as what the check walks and what its data names (R4, R10 e4 · AC-S06-2, -5, -6, -13)
+
+- [ ] **Finding.** Some rows in `table.py` are narrower than the paths their checks read. When another row claims
+  the changed path, R5's safety net never fires, and the narrow check is skipped. Three checks are shown:
+  `check-migrations` walks **every** `apps/*/` and `packages/*/` (`check-migrations.py` 16, 157), but its row is
+  `{dep}`. `check-imports` walks every directory under `apps/` and `packages/` (`check-imports.py` 142, 284), but its
+  row is `{dep}`, `{npm}`. `check-model` requires every path an implemented slice names in `gwt`, `code` (and a
+  mockup's `at`) to exist (`event-model/check.py` 336–340, 376), and the documented `gwt` is under `specs/`
+  (`docs/event-model/README.md` 72). Its row is `docs/event-model/`, `{dep}`. **Why the e4 hold did not catch it:**
+  `tests/test_verify_scoped_record.covered()` counts a literal as covered when *any entry lies under it*
+  (`entry.startswith(literal + "/")`). So `"packages"` is "covered" by `packages/api-client/`, which accepts a row
+  narrower than the read, against the data-model's rule. The scan also reads only literals, never paths the model
+  names. **Reproduced:**
+  (a) In the TS service + web starter on `slice/S1` with a baseline, add `packages/api-client/migrations/202610051200_drop.sql`
+  holding `ALTER TABLE orders DROP COLUMN status;`. The run says `skip check-migrations — none of its inputs changed`,
+  then `13 run, 9 skipped, compared with \`main\` at …; passed` and exits 0. `python3 scripts/check-migrations.py` on
+  the same tree exits 1 (*drops a column…*).
+  (b) Commit to `main` an implemented slice with `gwt: specs/001-ordering/slices/S1.md` (`check-model: valid`). On the
+  branch, `git rm` that file and add `S1-moved.md`. The run says `run check-decisions`/`check-benchmark —
+  specs/…-moved.md changed`, then `skip check-model — none of its inputs changed`, then `passed`. Run directly,
+  `check-model` exits 1: *S1: implemented slice has missing gwt evidence*.
+
+**RED** (extend `tests/test_verify_scoped_record.py`; new `tests/test_verify_scoped_walks.py` if it nears 350):
+- e1 (a) above as an example: `check-migrations` is `run — packages/api-client/migrations/… changed`. *(fails today)*
+- e2 (b) above: `check-model` runs when a path the model names changes, at the base or in the working tree.
+  *(fails today)*
+- e3 `packages/shared/src/domain/x.ts` with no `package.json`, in a project where something else claims
+  `packages/` (T027's case): `check-imports` runs. *(fails today under a target)*
+- e4 the hold is made honest: `covered()` loses its `entry.startswith(literal + "/")` arm, so a directory literal is
+  covered only by an entry at or above it. The scan also gains the walk roots, `ROOT / <literal>` and a `for area in
+  (…)` tuple of literals, and is run red first against today's table. *(fails today on `check-migrations`,
+  `check-imports`)*
+
+**GREEN — the class, not the instance.** Hold **every** row of `CHECKS` against every way its script finds a path: a
+literal, a walk root, a path read from `project.json`, and a path read from the model. Widen each row the sweep
+contradicts: `check-migrations` → `apps/`, `packages/`; `check-imports` → `apps/`, `packages/`; `check-model` →
+`docs/event-model/`, `{dep}`, plus every path the model at the base and in the working tree names (derived in
+`record.py` from `check-slice-scope`'s `load_model`, or `specs/` if that is all the sweep can prove). Do the same for
+`check-flags` and `check-deploy-role` under a target shape, and for `check-styles`/`check-ux-gates` over each web app's
+`screens/` and `src/`. Run the e4 scan over every shape in `test_scoped_targets.SHAPES`, including a cloud shape. If a
+row cannot be bounded, it becomes `inputs: null` (it always runs), never narrower.
+
+**Verify:** `make test TESTS="test_verify_scoped_record test_verify_scoped_choose test_verify_scoped_contracts test_verify_scoped_incomplete test_verify_scoped_always"`
+(plus the new module), then `make lint typecheck check-structure`. Level line: MINOR, already carried.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/table.py`, `assets/toolkit/scripts/verify_scoped/record.py`,
+`tests/test_verify_scoped_record.py`, `tests/test_verify_scoped_walks.py` (new, if needed).
+
+### T025 — [US2] CRITICAL — The recipe-sum guard: a check whose recipe is not the sum of its units runs whole (R3, R4 · AC-S06-2, -4; data-model *How a unit is chosen*, last paragraph)
+
+- [ ] **Finding.** The data-model specifies a recipe-sum guard: where a gate check's recipe lines (from the make database)
+  are not exactly its units' and family targets' lines, the check runs whole under its gate name. **It is not
+  built.** Nothing in `record.py` or `choose.py` compares the two. T002 e4 proves the sum only for the generated text,
+  at generate time. A project owns its `Makefile` (Principle I), and a project that adds a line to `lint:` is the case
+  the guard exists for. A `Makefile` change on the branch broadens (`it is the Makefile`), but once that change is on
+  the trunk, every later slice branch skips the project's line. **Reproduced:** on `main` of the TS service + web
+  starter, add `@! grep -rq FORBIDDEN apps/web/src` as a second line of `lint:` and commit. On `slice/S1` (baseline
+  written), append `// FORBIDDEN` to `apps/web/src/App.tsx`. The run says `run lint-web — apps/web/src/App.tsx
+  changed`, then `15 run, 7 skipped, …; passed`, and exits 0. `make lint` on the same tree exits 2 (`*** [Makefile:95:
+  lint] Error 1`).
+
+**RED** (new `tests/test_verify_scoped_sum.py`, on the fixture):
+- e1 the reproduction above: `lint` runs whole with the reason `its recipe is not the sum of its per-deployable
+  targets`, and the run fails. *(fails today)*
+- e2 a prerequisite a project added to a gate check (`lint: lint-docs`, with `lint-docs` failing) is part of the sum:
+  the same reason, and the run fails. *(fails today)*
+- e3 a merged-recipe line *removed* (a unit runs a line `lint` no longer has): the same reason. *(fails today)*
+- e4 **hold**, every generated shape in `test_scoped_targets.SHAPES` plus two-service: no check carries the reason.
+  *(teeth: drop one unit line in `scoped_targets.py` and see e4 fail)*
+
+**GREEN — the class.** `record.py` compares, for every gate in `verify-checks` that has units, the recipe lines and the
+non-order-only prerequisites of the gate target against the union of its units' and family targets' lines and
+prerequisites, in order, from the same `make -npq` database. On a mismatch the record marks the gate `whole: true` and
+gives the reason. In `choose.py`, a chosen unit of a `whole` gate puts the gate's own name in the make call in place
+of its units, and the line printed for each of its units carries the reason. The sweep covers all three gates, every
+family (npm, Python, Go, Java), and a project-added prerequisite.
+
+**Verify:** `make test TESTS="test_verify_scoped_sum test_verify_scoped_record test_verify_scoped_choose test_verify_scoped_run test_scoped_targets"`,
+then `make lint typecheck check-structure`. Level line: MINOR, already carried.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/record.py`, `assets/toolkit/scripts/verify_scoped/choose.py`,
+`assets/toolkit/scripts/verify-scoped.py`, `tests/test_verify_scoped_sum.py` (new).
+
+### T026 — [US2] CRITICAL — Every part of the stamp's key is compared by the selection, the ignored files included (R4, R7 · AC-S06-5, -8, -9)
+
+- [ ] **Finding.** The stamp's key holds the ignored part: every file git ignores under the project, except
+  `EXEMPT` (`verify-stamp.py` 42–48, 499). It holds it because a check reads those files: `.env` (Vite and Vitest
+  load it from the app's root), `node_modules/.package-lock.json` (kept in the key on purpose, line 79), the UX kit
+  under `tools/ux-gates/` and `skills/ui-ux-pro-max/` (ignored, run by `check-ux-gates`), and a new test file excluded
+  by `.git/info/exclude`. The selection reads only `check-slice-scope.changed_files(base)`, which is `git diff` plus
+  `ls-files --others --exclude-standard`, so ignored files are invisible to it. The baseline records tools and
+  variables, not the ignored part. **Reproduced:** on `slice/S1` of the TS service + web starter with a baseline,
+  write `apps/web/.env` and change `node_modules/.package-lock.json`. `git status --ignored` lists both. The run says
+  `skip lint-web`, `skip typecheck-web`, `skip test-web`, `skip check-ux-gates — none of its inputs changed`, then
+  `7 run, 15 skipped, …; passed`. `make verify` on the same tree finds the stamp's key moved and runs every check.
+
+**RED** (new `tests/test_verify_scoped_ignored.py`):
+- e1 the reproduction above: the run says the ignored part differs from the baseline, and is the full gate, or runs
+  every check whose `{own}` holds the ignored path, whichever the host's decision picks (below). *(fails today)*
+- e2 an ignored file under an `EXEMPT` entry (`.venv/`, `dist/`, `coverage/`) changes: nothing is selected.
+  *(hold, teeth)*
+- e3 the class: a test that lists `key_parts`' part names (`files`, `scripts`, `index`, `history`, `ignored`,
+  `variables`, `tools`) and requires each to map to what the selection compares. A part with no mapping fails.
+  *(fails today on `ignored`)*
+
+**GREEN — the class.** Have `write_baseline` also record the stamp's `ignored` digest (and, if the decision
+needs per-path selection, the per-path digests, never a name the constitution's persisted-data rule forbids). Have
+`verify-scoped.py` compute it through `verify-stamp.py`'s own function, never a copy, and compare it. Before GREEN,
+the host records in the decision log whether a moved ignored part broadens to the full gate (simplest; the stamp's
+own choice) or selects by path. Either way, the sweep is e3: every part of the key is compared.
+
+**Verify:** `make test TESTS="test_verify_scoped_ignored test_verify_scoped_baseline test_verify_scoped_compare test_verify_stamp_pinned"`
+and every `test_verify_stamp_*`, because `verify-stamp.py` is the root `Makefile`'s stamp. Then `make lint typecheck
+check-structure`. Level line: MINOR, already carried.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `assets/toolkit/scripts/verify-scoped.py`,
+`assets/toolkit/scripts/verify_scoped/choose.py`, `tests/test_verify_scoped_ignored.py` (new).
+
+### T027 — [US2] HIGH — A claim means every reader of the path is chosen: `check-flags`' `packages/` (R5 · AC-S06-5)
+
+- [ ] **Finding.** A check's file inputs claim a path for R5. That is safe only if every unit reading the path is then
+  chosen. `check-flags` (present under any target) claims all of `packages/`, so a change in a package without a
+  `package.json` is no longer unclaimed, and nothing broadens. Examples: a Python path dependency, a
+  `go.work` member, a shared migrations package. Only `check-flags` runs. The deployables that build the package,
+  `check-imports` and `check-migrations` are skipped. **Reproduced:** in the `model-typescript-web-cloud` shape on
+  `slice/S1`, change `packages/shared-py/shared/__init__.py` and add `packages/shared/migrations/202610051200_drop.sql`.
+  The run says `run check-flags — packages/shared-py/shared/__init__.py changed`, skips every other check with inputs,
+  and prints `8 run, 16 skipped, …; passed`. Without a target, the same paths broaden (T009 e4). T024 closes the
+  `check-imports`/`check-migrations` half; this task closes the consumer half.
+
+**RED** (in `tests/test_verify_scoped_incomplete.py`, or the new module of T024):
+- e1 the reproduction under a target: `dependency knowledge was incomplete for packages/shared-py/… — no deployable
+  or contract consumes it`, then the full gate. *(fails today)*
+- e2 the same path without a target: unchanged (it broadens). *(hold)*
+
+**GREEN — the class.** A path under `packages/<p>/` with no `package.json` is unknown unless a contract or deployable
+consumes it, whatever a check's row claims. More generally, `claimed()` holds that only a deployable or a contract
+can stand for its consumers, so a check row that is not a unit can make a path *chosen* but never *known* for the
+units it does not name. Sweep every row whose files reach outside its own deployable (`check-flags`,
+`check-imports`, `check-migrations`, `check-model`, `check-benchmark`, `check-decisions`, `check-ux-gates`) with one
+example each, and leave every row whose claim covers only what it alone reads unchanged.
+
+**Verify:** `make test TESTS="test_verify_scoped_incomplete test_verify_scoped_choose test_verify_scoped_always test_verify_scoped_contracts"`,
+then `make lint typecheck check-structure`. Level line: MINOR, already carried.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/choose.py`, `assets/toolkit/scripts/verify_scoped/table.py`,
+`tests/test_verify_scoped_incomplete.py`.
+
+### T028 — [US2] MEDIUM — The words say what the comparison is (R11, R13 · AC-S06-15, -18; D123)
+
+- [ ] **Finding.** The gates page (`scoped_targets.SCOPED_PAGE`, line 41), both constitution templates (D123's
+  sentence) and the fragment's **Catch-up.** say the scoped gate runs *every check whose inputs changed since the
+  branch last passed the full gate*. The code compares changed **paths** with the trunk's merge base
+  (`records.base_of`, `changed_files(base)`), and only **tools and variables** with the baseline that the last green
+  full run left. The run's own last line says so: `compared with \`main\` at <short>`. The two differ after a rebase
+  or a trunk merge, and they differ in what a reader may assume: the skipped checks are taken to pass because the
+  **trunk** passed them, not because this branch did. That is a product sentence (D123), so it goes back to the host.
+  Do not reword it here.
+
+**RED** (`tests/test_scoped_page.py`, `tests/test_scoped_migrate.py`): the page, both templates and the Catch-up
+paragraph name what paths are compared with and what tools and variables are compared with, in the words the host's
+decision fixes *(fails today)*.
+
+**GREEN — the class.** Every published place that describes the comparison takes the same words: the page, the
+adopted sentence, both templates, the planning skill, the implement/converge briefs, the ladder and the fragment.
+Sweep them with `grep -rn "since the branch last passed" src assets changelog.d`. If D123's sentence changes, the
+decision log entry comes first.
+
+**Verify:** `make test TESTS="test_scoped_page test_scoped_migrate test_scoped_ladder test_commit_boundaries test_changelog"`,
+then `make lint typecheck check-structure`.
+
+**Files:** `src/slipwai/project/scoped_targets.py`, the two `constitution-template.md` files,
+`changelog.d/scoped-gate.md`, `tests/test_scoped_page.py`, `tests/test_scoped_migrate.py`, and
+`specs/001-faster-slipwai/decisions.md` (host only).
+
+### T029 — [US2] LOW — The tests claim what they hold: a migrate from the real last factory, a jobserver example with teeth (R9, R13 · AC-S06-12, -17)
+
+- [ ] **Finding.** (1) `tests/test_scoped_migrate.made_before_the_slice` builds its "made before" project by
+  stripping the scoped section from a project this checkout generated. That project still has the stamp, the new
+  `verify-stamp.py` and today's every other line, which is not what any earlier factory made. A real migrate passes:
+  `git archive 58a9aed` → `slipwai generate product --profile event-modelling --backend typescript --frontend
+  react-vite`, then this checkout's `slipwai migrate` gives one commit, `verify-scoped` and `lint-web` in the `Makefile`,
+  `scripts/verify_scoped/` complete, and the Catch-up paragraph in `.slipwai/catch-up.md`. But no test holds that.
+  (2) `tests/test_verify_scoped_run.py`'s fifo-jobserver example passes on GNU Make 4.4.1 whatever `close_fds` is,
+  so it is a hold with no teeth. Only the `--jobserver-style=pipe` example discriminates.
+
+**RED/GREEN:** (1) the migrate example generates with the factory at the commit before the slice, or at the last
+release tag where one is fetched, through `git archive` into a temporary directory. It covers the TS + web shape and
+the two-Python shape, and asserts the same four facts. (2) The fifo example is renamed and documented as a hold over
+make's own fifo jobserver, or dropped, so the module claims teeth only where it has them. The sweep covers every
+`test_verify_scoped_*`/`test_scoped_*` example named as a hold: each is seen to fail under the mutation its docstring
+names.
+
+**Verify:** `make test TESTS="test_scoped_migrate test_verify_scoped_run"`, then `make lint typecheck check-structure`.
+Tests only: reaches no user.
+
+**Files:** `tests/test_scoped_migrate.py`, `tests/test_verify_scoped_run.py`.
 
 ---
 
@@ -671,7 +872,24 @@ No screen in this slice
 
 ## Convergence
 
-*(Written by the converge stage, at the end of this file, after Phase 4.)*
+### Pass 1 — iteration 22, `drive-converge` · model: host (claude-opus-5-5) · delegated, fresh context · over `58a9aed..aa7e45a`
+
+**Not converged.** Three CRITICAL findings and one HIGH, each reproduced: `make verify-scoped` prints *passed* while a
+check `make verify` runs on the same tree fails or is never run — table rows narrower than what their checks read
+(T024), the data-model's recipe-sum guard never built (T025), ignored files the selection never sees (T026), and
+`check-flags`' claim on `packages/` turning off R5's broadening (T027). MEDIUM T028 (the published sentence names a
+comparison the code does not make; D123's words, so a decision) and LOW T029 (the migrate test and the fifo jobserver
+example claim more than they hold). Leads cleared: deployables read from the working tree and obligations at the base
+(a `project.json` change broadens); a `Makefile` change on a slice branch has its end-to-end example
+(`tests/test_verify_scoped_incomplete.py`); T002 e5's sha256 pins cost only a test update; T006/T007's contract suite has
+teeth. Levels: the generated Makefile (`verify`, `verify-checks`, `ci` byte for byte, `makefile.py` 334,
+`scoped_targets.py` 38; a project's later Makefile edits unguarded, T025), the script (T024, T026, T027), the baseline
+(`verify-stamp.py` written 907, removed 770 and 798, digests never values 733–735; lacks the ignored part, T026), the
+published words (T028), migrate (works from the pre-slice commit; untested, T029). Principles touched: I (additive —
+the gate's own rules unchanged, nothing under CI, `delivery/`, `tools/`, the root `Makefile` or `VERSION`; versioning —
+`changelog.d/scoped-gate.md` line 1 `MINOR`), II (the baseline written by temporary file and rename), VIII (the record's
+`schema: 1`, `record.py` 211; an unreadable baseline broadens, `choose.py` 53–56), IX (variable digests, never values,
+`verify-stamp.py` 733–735). Pass 2 follows once T024–T029 are closed.
 
 ## Differences from plan.md
 
