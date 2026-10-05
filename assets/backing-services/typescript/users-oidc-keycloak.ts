@@ -5,7 +5,7 @@
  * Keycloak container as the staff realm `app`, plus the environment variables that name it. The token
  * validation is deliberately not written here.
  *
- * The browser app (`apps/web`) performs the login — Authorization Code flow with PKCE, through
+ * The browser app performs the login — Authorization Code flow with PKCE, through
  * react-oidc-context — and sends the access token as a bearer token. This service is a resource server
  * for the `customers` realm: it validates that token on every request before trusting a byte of it.
  * Before implementing, load `skills/secure-oauth-oidc/SKILL.md` — it covers what this file must get

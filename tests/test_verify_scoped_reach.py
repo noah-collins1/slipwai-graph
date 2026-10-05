@@ -263,6 +263,24 @@ class FactoryShapesTest(RecordCase):
                 found = reach.find(project, record.deployables_of(project), packages, "HEAD")
                 self.assertIsNone(found)
 
+    def test_e8_hold_every_starter_combination_scopes_users_keycloak_with_the_browser_app_included(self) -> None:
+        """T054 (C1): `make starters` builds each profile and backend; the browser app with `--users keycloak` is the
+        shape whose identity assets once named `apps/web` and so never scoped."""
+        from slipwai.catalog import CATALOG  # noqa: PLC0415
+
+        record, reach = (importlib.import_module(f"verify_scoped.{name}") for name in ("record", "reach"))
+        parent = Path(tempfile.mkdtemp(prefix="scoped-starters-"))
+        self.addCleanup(shutil.rmtree, parent, ignore_errors=True)
+        variants = (("none", {}), ("react-vite", {"users": "keycloak"}))
+        for profile in CATALOG["profiles"]:
+            for backend in CATALOG["backends"]:
+                for frontend, axes in variants:
+                    with self.subTest(profile=profile, backend=backend, frontend=frontend, axes=axes):
+                        name = f"p{len(list(parent.iterdir()))}"
+                        project = self.generate(parent, name, profile, backend, frontend, **axes)
+                        found = reach.find(project, record.deployables_of(project), [], None)
+                        self.assertIsNone(found)
+
     def test_e8_the_reader_finds_a_reach_in_a_tree_with_one_deployable(self) -> None:
         """It runs whatever the number of deployables: a lone service whose test reads the model has the same hole."""
         record, reach = (importlib.import_module(f"verify_scoped.{name}") for name in ("record", "reach"))
