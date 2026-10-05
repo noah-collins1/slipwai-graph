@@ -45,27 +45,43 @@ run, each with the verdict it had (D89). `check-imports` enumerates at most 100 
 
 ---
 
-### User Story 2 - A slice branch runs the gate for what it touched (Priority: P1)
+### User Story 2 - A slice branch runs the checks whose inputs changed (Priority: P1)
 
-On a `slice/<id>` branch the developer runs `make verify-scoped`: ruff, byte-compile, imports and migrations on
-the changed files, mypy from its incremental cache, and the tests of the contexts the slice touched plus the
-contract tests of its `depends_on` neighbours. The merge root and CI still run the whole gate, with xdist.
+*Revised 2026-10-04 (owner, after external review): selection is by verification dependency, not by touched
+context; incomplete knowledge broadens the run.*
 
-**Why this priority**: The branch gate is what the merge tree (Story 3) relies on; it also makes the per-slice
-mutation run proportional to the change.
+On a `slice/<id>` branch the developer runs `make verify-scoped`. It selects checks from a
+**verification-dependency record**: for each check, the inputs it reads (files, contract versions, tools,
+configuration, environment variables) and the components whose behaviour it asserts, including downstream
+consumers of a changed contract and any multi-component integration obligation. A check runs when any of its
+inputs changed against the slice's base. **Where the record cannot establish which checks are affected** (a
+changed file no check claims, a check with no recorded inputs, an input the record never saw), the scheduler
+broadens: first to the checks of every component that file could reach, and up to the full gate. The output
+names every check it skipped and why. The merge root and CI always run the full gate, with xdist.
 
-**Independent Test**: On a branch touching one context, `make verify-scoped` runs only that context's tests and
-its neighbours' contract tests; on `main`, `make verify-scoped` is the full gate; the full gate's findings on
-the same tree are identical before and after.
+**Why this priority**: The branch gate is what the merge tree (Story 3) and peer reconciliation (Story 10)
+rely on. Conservative broadening lets it deliver speedups while dependency coverage is still incomplete.
+
+**Independent Test**: On a branch changing one file that exactly one context's checks claim, only those checks
+and the contract tests of that context's consumers run. On a branch changing a file no check claims,
+`verify-scoped` runs the full gate and says why. On `main` it is the full gate. The full gate's findings on the
+same tree are identical before and after.
 
 **Acceptance Scenarios**:
 
-1. **Given** a slice branch that changed one context, **When** `make verify-scoped` runs, **Then** only files
-   of that context are linted and only its tests and its neighbours' contract tests run.
-2. **Given** `main`, **When** `make verify-scoped` runs, **Then** it is `make verify`.
-3. **Given** a branch that changed one production module, **When** `make mutation` runs, **Then** only that
+1. **Given** a change to a file one check set claims, **When** `make verify-scoped` runs, **Then** those checks
+   run, plus the contract tests of every consumer of a contract the file implements, and every skipped check is
+   named with its reason.
+2. **Given** a change to a file no recorded check claims, **When** `make verify-scoped` runs, **Then** it runs
+   the full gate and prints that dependency knowledge was incomplete for that file.
+3. **Given** a change to a tool version, a configuration file or an environment variable a check reads,
+   **When** `make verify-scoped` runs, **Then** every check that reads it runs.
+4. **Given** a change touching a component named in a multi-component integration obligation, **When**
+   `make verify-scoped` runs, **Then** that obligation's checks run.
+5. **Given** `main`, **When** `make verify-scoped` runs, **Then** it is `make verify`.
+6. **Given** a branch that changed one production module, **When** `make mutation` runs, **Then** only that
    module's mutants run, for every backend, and `make mutation-full` still runs the whole module.
-4. **Given** the merge root, **When** `make verify` runs, **Then** pytest runs with xdist and the pass/fail set
+7. **Given** the merge root, **When** `make verify` runs, **Then** pytest runs with xdist and the pass/fail set
    equals the serial run's.
 
 ---
@@ -247,6 +263,51 @@ unchanged either way.
 
 ---
 
+### User Story 10 - Neighbouring slices reconcile their contracts with versioned evidence (Priority: P2)
+
+*Added 2026-10-04 (owner, after external review). Supersedes the idea that pairwise agreement alone implies
+consistency, or that an edge-colouring schedule bounds reconciliation time.*
+
+Workers start against explicit contract versions. When a change actually affects a boundary, the two slices on
+that edge negotiate directly: they exchange structured proposals (contract diff, assumptions, affected input
+fingerprints, failing examples, evidence references), never reasoning transcripts. The current contract owner
+decides within the spec; a change to a requirement escalates. An agreement is recorded as **evidence**: the
+contract version and checks that passed, pinned to **local input fingerprints** of the components, contract
+versions, tools and dependencies those checks read, not to the repository's commit. A change to any input of a
+piece of evidence invalidates it and every obligation that depends on it; an unrelated change leaves it
+reusable. Local negotiation has a small configurable budget of rounds, after which the unresolved coupled
+subgraph escalates to a coordinator. **Multi-component invariants** (for example an order, payment and stock
+reservation committing together) carry a declared owner and an integration obligation that peer agreement
+cannot discharge. Integration accepts one coherent revision set: every required invariant must be covered by
+recorded evidence or an integration obligation, and the full acceptance gate runs on the exact integrated tree,
+whose complete manifest is kept.
+
+**Why this priority**: It moves most contract reconciliation off the central coordinator without trading away
+correctness. It depends on the verification-dependency record (Story 2) and the result contract (Story 6).
+
+**Independent Test**: The milestone demonstration: two agents produce compatible changes on an edge; evidence is
+recorded; a relevant input changes; the affected evidence is invalidated; the disagreement is resolved or
+escalated; the resulting revision passes acceptance.
+
+**Acceptance Scenarios** (protocol correctness, independent of performance):
+
+1. **Given** evidence pinned to inputs that have since changed, **When** integration is attempted, **Then** the
+   stale evidence cannot authorise it.
+2. **Given** a change to a file none of a piece of evidence's inputs include, **When** the evidence is checked,
+   **Then** it is reused, not re-run.
+3. **Given** a relevant input change, **When** invalidation runs, **Then** every dependent piece of evidence and
+   every dependent integration obligation is invalidated.
+4. **Given** three slices whose pairwise proposals cannot all hold together (A = B, B = C, C ≠ A), **When** the
+   local budget is spent, **Then** the coupled subgraph escalates explicitly; it is never accepted.
+5. **Given** a change for which dependency information is missing, **When** verification is selected, **Then**
+   it broadens, up to the full gate.
+6. **Given** a revision set accepted for integration, **When** the integrated tree is built, **Then** acceptance
+   runs on that exact tree and its manifest is recorded.
+7. **Given** a required invariant with no evidence and no integration obligation covering it, **When**
+   integration is attempted, **Then** it is refused and the uncovered invariant is named.
+
+---
+
 ### Edge Cases
 
 - A stamped tree whose toolchain changed (new ruff, new mypy): the gate re-runs. A tool a committed lock pins
@@ -282,9 +343,12 @@ unchanged either way.
 - **FR-004**: `check-imports` and `check-migrations` MUST prune `.venv`, `node_modules`, `target/`,
   `__pycache__` and `.git` before descending, and read `project.json` once.
 - **FR-005**: `model.yaml` MUST be parsed once per verify into a sidecar every consumer reads.
-- **FR-006**: `make verify-scoped` MUST exist, MUST equal `make verify` on `main`, and on a `slice/<id>` branch
-  MUST run per-file checks on changed files, mypy incrementally, and tests of touched contexts plus
-  `depends_on` neighbours' contract tests.
+- **FR-006** *(revised 2026-10-04)*: `make verify-scoped` MUST exist and MUST equal `make verify` on `main`. On
+  a `slice/<id>` branch it MUST select checks from a verification-dependency record (each check's inputs:
+  files, contract versions, tools, configuration, environment variables; the components it asserts, including
+  consumers of changed contracts and multi-component obligations), run every check with a changed input, name
+  every skipped check with its reason, and broaden, up to the full gate, wherever the record cannot establish
+  which checks are affected. Selecting tests by touched context alone is not sufficient.
 - **FR-007**: The drive ladder MUST call `verify-scoped` at slice start and before the push, and the full gate
   once at the merge root.
 - **FR-008**: `make mutation` MUST scope to the diff against merge-base for every backend; `mutation-full` MUST
@@ -321,8 +385,9 @@ unchanged either way.
 - **FR-022**: `check-codegraph` MUST hash only files git reports changed since the last sync and run the
   SQLite integrity check in CI only; `check-ux-gates` MUST default `UX_GATES_SINCE` to the merge-base on
   `slice/<id>` branches and to everything on `main`.
-- **FR-023**: `check-agents`, `check-speckit`, `check-extensions` and `check-constitution` MUST run only when
-  their inputs changed since the stamp on a branch, and always on `main` and in CI.
+- **FR-023** *(revised 2026-10-04)*: `check-agents`, `check-speckit`, `check-extensions` and
+  `check-constitution` MUST declare their inputs in the verification-dependency record and run on a branch only
+  when one of them changed; a check with undeclared or unreadable inputs MUST run. Always on `main` and in CI.
 - **FR-024**: The runner MUST compute `controls_signature()` once per iteration from mtimes, and run one
   codegraph sync per iteration unless a delegate reports changed files. *Read by D56:* each control file's content
   is read at most once per iteration unless its size, times or identity changed; what the run parks on stays a
@@ -364,6 +429,28 @@ unchanged either way.
   against the prediction.
 - **FR-038**: With the open-source backend, no spec text MUST leave the machine.
 
+- **FR-039**: Agreements between neighbouring slices MUST be recorded as evidence: the contract version and the
+  checks that passed, pinned to local input fingerprints (component contents, contract versions, tools,
+  dependencies), not to the repository commit.
+- **FR-040**: A change to any input of a piece of evidence MUST invalidate it and every evidence record and
+  integration obligation that depends on it; a change outside its inputs MUST leave it reusable.
+- **FR-041**: Peer negotiation MUST exchange structured proposals only (contract diff, assumptions, affected
+  fingerprints, failing examples, evidence references); the contract owner decides within the spec; a
+  requirement change escalates.
+- **FR-042**: Local negotiation MUST stop after a configurable round budget and escalate the unresolved coupled
+  subgraph to a coordinator; it MUST never accept a set of agreements that cannot all hold together.
+- **FR-043**: Every multi-component invariant MUST have a declared owner and an integration obligation; peer
+  agreement MUST NOT discharge it.
+- **FR-044**: Integration MUST accept one coherent revision set only when every required invariant is covered by
+  current evidence or an integration obligation, MUST run the full acceptance gate on the exact integrated tree,
+  and MUST record that tree's complete manifest.
+- **FR-045**: Performance claims for the merge tree (Story 3) and peer reconciliation (Story 10) MUST be
+  established by a comparison under the same worker budget and acceptance criteria: optimised gates with existing
+  integration; plus the merge tree; plus versioned peer reconciliation; on fixtures of disjoint changes,
+  dependency chains, cyclic disagreements and shared-file changes; measuring accepted changes per hour, median
+  and tail completion time, cost per accepted change, invalidations, escalations and independently detected
+  integration defects. Protocol acceptance (Story 10's scenarios) is separate from and precedes it.
+
 ### Key Entities
 
 - **Verify stamp**: tree hash, gate script hash, tool versions, timestamp, result. The tree hash is of the working
@@ -395,6 +482,11 @@ unchanged either way.
   unratified provisional decision past its date parks the run rather than ending it.
 - **SC-012**: Over one feature with `route_by_difficulty: model`, the classifier's predicted tier and the
   realised outcome are joined per task in `make benchmark`, with the fallback rate reported.
+- **SC-013**: The Story 10 milestone runs end to end: compatible changes, evidence recorded, a relevant input
+  changes, the affected evidence is invalidated, the disagreement is resolved or escalated, and the resulting
+  revision passes acceptance.
+- **SC-014**: The FR-045 comparison is run and reported; no performance figure for Stories 3 or 10 is stated as
+  a result before it.
 - **SC-010**: After one feature, `make benchmark` prints K-effective, Gini, top-3 share and the
   context-expansion count per slice.
 
