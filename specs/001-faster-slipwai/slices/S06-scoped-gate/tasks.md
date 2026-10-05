@@ -1079,7 +1079,7 @@ still open. Probes: `/tmp/s06-c4/probe4/probe_p4.py`, `probe_specials.py` (run f
 
 ### T036 — [US2] CRITICAL — A rule make applies that no fingerprint holds: implicit rules, special targets, `vpath` (R4, R5 · AC-S06-2, -5; D127 items 2, 4, 7)
 
-- [ ] **Finding.** T030 and D127 item 7 hold "every rule reachable from `verify`". Reachable means through *explicit*
+- [x] **Finding.** T030 and D127 item 7 hold "every rule reachable from `verify`". Reachable means through *explicit*
   prerequisites only (`rules.reach`, `rules.py` 205–214; `ruled` 217–220; `fingerprint` 277–282). But make also
   applies rules that no explicit prerequisite names. None of them is compared, and none of them is the full gate.
   (1) **Implicit rules.** A pattern rule, a suffix rule, a match-anything `%::` rule or a `.DEFAULT:` recipe whose
@@ -1140,7 +1140,7 @@ naming a pattern rule, a special target and `vpath`, in the words the decision g
 
 ### T037 — [US2] HIGH — The conditions a scoped run reads are not the conditions any real run has (R4, R5 · AC-S06-2, -5; D127 item 2; T034 closed one instance)
 
-- [ ] **Finding.** T034 reads the database a second time, with `MAKECMDGOALS=verify-checks` given *on the command
+- [x] **Finding.** T034 reads the database a second time, with `MAKECMDGOALS=verify-checks` given *on the command
   line*, `MAKELEVEL` 1 and `VERIFY_GROUP` (`record.py` 69–80, 301–317). Every read still carries `-npq`. That models
   the real sub-make (`gate.py` 36: `"$(MAKE)" $(VERIFY_GROUP) --no-print-directory -f … verify-checks VERIFY_ORDER=1`)
   for the one conditional per variable that T034's sweep tried (`test_verify_scoped_goal.py` 24–28). It differs from
