@@ -140,6 +140,16 @@ class FragmentTest(unittest.TestCase):
             self.assertIn(sentence, catch_up)
         self.assertTrue(re.match(r"^\*\*[^*]+[.!?]\*\*", text.split("\n\n")[1]), "a bold lead sentence")
 
+    def test_d149_the_fragment_says_python_is_refused_until_s42_wires_mutmut_and_the_sweep_runs_it(self) -> None:
+        text = FRAGMENT.read_text(encoding="utf-8")
+        catch_up = " ".join(next(block for block in text.split("\n\n") if block.startswith("**Catch-up.**")).split())
+        for where, words in (("body", " ".join(text.split())), ("catch-up", catch_up)):
+            with self.subTest(where=where):
+                self.assertIn("`S42-mutmut-mutation`", words)
+                self.assertIn("whether or not mutmut is installed", words)
+                self.assertIn("`make mutation-full` runs mutmut today where it is installed", words)
+        self.assertNotIn("until you wire a tool", text)
+
 
 if __name__ == "__main__":
     unittest.main()

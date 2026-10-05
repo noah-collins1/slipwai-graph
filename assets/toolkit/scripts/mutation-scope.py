@@ -393,6 +393,9 @@ PLACEHOLDERS = {
     "java-quarkus": "Configure PIT for the domain packages only — see the note above this target — then run it.",
 }
 WIRED = ("go", "java-spring")
+# D149: the scoped run refuses a Python service whether or not mutmut is installed; only the sweep runs the tool today.
+PYTHON_REFUSED = ("a Python service is refused until `S42-mutmut-mutation` wires the tool, whether or not mutmut is "
+                  "installed; `make mutation-full` runs mutmut today where it is installed")
 
 
 class Unreadable(Exception):
@@ -498,7 +501,8 @@ def refusal(backend: str, path: str, files: list[str]) -> Result:
     if backend not in PLACEHOLDERS:
         return Result(2, [], [], f"no runner for {backend}")
     said = PLACEHOLDERS[backend].rstrip(".")
-    return Result(2, [], [], f"{said}; the scope will apply once a tool is wired; it would mutate: {named}")
+    return Result(2, [], [], f"{said}; the scope will apply once a tool is wired; it would mutate: {named}"
+                  + (" (" + PYTHON_REFUSED + ")" if backend == "python" else ""))
 
 
 class Tools:

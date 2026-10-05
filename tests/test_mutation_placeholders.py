@@ -21,6 +21,8 @@ from slipwai.project.native_commands import service_commands
 
 SETUP = "the scope will apply once a tool is wired; it would mutate: "
 ECHO = re.compile(r"echo '([^']+)'")
+PYTHON_ENDING = ("a Python service is refused until `S42-mutmut-mutation` wires the tool, whether or not mutmut is "
+                 "installed; `make mutation-full` runs mutmut today where it is installed")
 FILES = {
     "typescript": "apps/service/src/x.ts",
     "python": "apps/service/src/pkg/x.py",
@@ -64,7 +66,8 @@ class PlaceholderTest(ScopeCase):
                 self.write(path)
                 status, lines, _ = self.run_mixed(f"{backend}:apps/service")
                 message = PLACEHOLDER_MESSAGES[backend].rstrip(".")
-                self.assertIn(f"mutation: refuse apps/service — {message}; {SETUP}{path}", lines)
+                ending = " (" + PYTHON_ENDING + ")" if backend == "python" else ""
+                self.assertIn(f"mutation: refuse apps/service — {message}; {SETUP}{path}{ending}", lines)
                 self.assertEqual(status, 2)
                 self.assertEqual(lines[-1], "mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/service")
                 self.assertFalse([line for line in lines if line.startswith("mutation: scope ")], lines)
@@ -90,6 +93,21 @@ class PlaceholderTest(ScopeCase):
             recipe = service_commands(backend, "apps/service")["mutation"]
             said = ECHO.findall(recipe)
             self.assertEqual(module.PLACEHOLDERS[backend], said[0], backend)
+
+    def test_d149_a_python_refusal_says_until_which_slice_and_what_the_sweep_runs_today(self) -> None:
+        self.write(FILES["python"])
+        _, lines, _ = self.run_mixed("python:apps/service")
+        refusal = next(line for line in lines if line.startswith("mutation: refuse apps/service — "))
+        self.assertIn(f"{PLACEHOLDER_MESSAGES['python'].rstrip('.')}; {SETUP}{FILES['python']}", refusal)
+        for words in ("`S42-mutmut-mutation`", "whether or not mutmut is installed",
+                      "`make mutation-full` runs mutmut today where it is installed"):
+            self.assertIn(words, refusal)
+
+    def test_d149_hold_the_other_refusals_do_not_name_mutmut(self) -> None:
+        for backend in ("typescript", "java-quarkus"):
+            self.write(FILES[backend])
+            _, lines, _ = self.run_mixed(f"{backend}:apps/service")
+            self.assertNotIn("mutmut", " ".join(lines).lower().replace("mutation:", ""), backend)
 
     def test_e3_a_placeholder_first_no_longer_stops_a_wired_service(self) -> None:
         self.write("apps/billing/b.go")
