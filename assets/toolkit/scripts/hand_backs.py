@@ -42,9 +42,90 @@ def newer(block: object) -> bool:
     return isinstance(contract, int) and not isinstance(contract, bool) and contract > SCHEMA
 
 
+def whole(value: object) -> bool:
+    """An integer, which JSON's `true` (a `bool`, an `int` subclass) is not."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def text_fault(value: object) -> str | None:
+    if not isinstance(value, str):
+        return f"{value!r} is not a string"
+    return None if value.strip() else "is empty; it says something"
+
+
+def list_fault(value: object) -> str | None:
+    if not isinstance(value, list):
+        return f"{value!r} is not a list of strings"
+    odd = [item for item in value if not isinstance(item, str)]
+    return f"{odd[0]!r} is not a string; every item of the list is one" if odd else None
+
+
+def path_fault(path: str) -> str | None:
+    """A path is repository-relative: no leading `/` or `\\`, no `X:` drive, no `..` segment."""
+    if path.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", path):
+        return f"{path!r} is absolute; a path is repository-relative"
+    if ".." in re.split(r"[/\\]", path):
+        return f"{path!r} has a `..` segment; a path stays inside the repository"
+    return None
+
+
+def difficulty_fault(value: object) -> str | None:
+    shape = "is an object of exactly an integer `score` 1-5 and a non-empty string `reason`"
+    if not isinstance(value, dict) or set(value) != {"score", "reason"}:
+        return f"{value!r} is not an object of exactly `score` and `reason`; it {shape}"
+    score, reason = value["score"], value["reason"]
+    if not whole(score) or not 1 <= score <= 5 or not isinstance(reason, str) or not reason.strip():
+        return f"{value!r} is not valid; it {shape}"
+    return None
+
+
+def decision_fault(item: object, known: set[str] | None) -> str | None:
+    if not isinstance(item, str) or not re.fullmatch(r"D[0-9]+", item):
+        return f"{item!r} is not a decision id `D<n>`"
+    if known is not None and item not in known:
+        return f"{item!r} names no `## {item} — ` entry in the feature's decisions.md"
+    return None
+
+
+def items_faults(name: str, items: list[str], known: set[str] | None) -> list[str]:
+    """The faults of each item of a list field whose items mean something beyond being strings."""
+    if name == "files_changed":
+        return [fault for fault in map(path_fault, items) if fault]
+    if name == "decisions":
+        return [fault for fault in (decision_fault(item, known) for item in items) if fault]
+    return []
+
+
+def field_faults(name: str, kind: str, value: object, block: dict[str, Any], heading_type: str,
+                 known: set[str] | None) -> list[str]:
+    """The faults of one present field."""
+    if name == "contract":
+        return [] if whole(value) and value == SCHEMA else [f"{value!r} is not the integer {SCHEMA}"]
+    if name == "delegate":
+        if not isinstance(value, str) or value not in STATUSES:
+            return [f"{value!r} is not one of {', '.join(STATUSES)}"]
+        return [] if value == heading_type else [f"{value!r} differs from the heading's {heading_type!r}"]
+    if name == "status":
+        delegate = block.get("delegate")
+        allowed = STATUSES.get(delegate, ()) if isinstance(delegate, str) else ()
+        return [] if not allowed or value in allowed else [f"{value!r} is not one of {', '.join(allowed)}"]
+    fault = difficulty_fault(value) if kind == "object" else text_fault(value) if kind == "string" else list_fault(value)
+    if fault:
+        return [fault]
+    return items_faults(name, value, known) if kind == "list" else []  # type: ignore[arg-type]
+
+
 def check_block(block: object, heading_type: str, known: set[str] | None) -> list[str]:
     """The faults of one parsed block, each `<field>: <fault>`; `known` is the feature's `D<n>` ids."""
-    return []
+    if not isinstance(block, dict):
+        return [f"block: {block!r} is not a JSON object"]
+    faults: list[str] = []
+    for name, kind in FIELDS:
+        if name not in block:
+            faults.append(f"{name}: absent; the block holds all {len(FIELDS)} fields")
+            continue
+        faults += [f"{name}: {fault}" for fault in field_faults(name, kind, block[name], block, heading_type, known)]
+    return faults
 
 
 def extract(text: str) -> list[dict[str, Any]]:
