@@ -116,7 +116,7 @@ class PathTest(TwoCase):
         self.edit("apps/billing/src/rate.ts", "x\n")
         self.reached(self.scoped(), self.path_cause(f"{SERVICE}/sub/tsconfig.json", "apps/shared.json"))
 
-    def test_e8_a_string_that_climbs_out_and_is_no_deployable_and_no_path_says_so(self) -> None:
+        """T055 (A7): a traversal test's input is a string, not a path that is reached; still the full gate."""
         """T055 (A7): a traversal test's input is a string, not a path that is reached; the gate is still the full one."""
         self.trunk({f"{SERVICE}/src/traversal.test.ts": 'const attack = "../../etc/passwd";\n'})
         self.edit("apps/billing/src/rate.ts", "x\n")
