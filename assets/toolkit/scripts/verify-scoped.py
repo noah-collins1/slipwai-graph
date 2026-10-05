@@ -107,8 +107,14 @@ def told(ground: Ground) -> str | None:
     return None if problem is None else f"the trunk cannot be told — {problem}"
 
 
+def index(ground: Ground) -> str | None:
+    """An index the stamp will not vouch for — `assume-unchanged`, `skip-worktree` (a sparse checkout), a submodule — is
+    one git does not look at, so a change to it would never be seen: the stamp's own predicate, its own words."""
+    return ground.stamp.not_vouched()
+
+
 # In the order they are asked: a case where two hold prints the first only.
-BORDERS: tuple[Border, ...] = (idle, ci, forced, head, trunk, slice_branch, base, told)
+BORDERS: tuple[Border, ...] = (idle, ci, forced, head, trunk, slice_branch, base, told, index)
 
 
 def reason(ground: Ground) -> str | None:
@@ -133,7 +139,7 @@ def standing(ground: Ground, make: str, data: records.Database | None) -> str | 
         usable, cannot = stamp.standing()
         if found is None or cannot is not None or not usable or stamp.ratcheting() or stamp.declined():
             return None
-        if stamp.index_problem(stamp.top_level()) is not None:
+        if stamp.not_vouched() is not None:
             return None
         key = stamp.build_key(stamp.machine_tools(stamp.Options(["--make", make, *found.split()])))
     except (stamp.CannotTell, ValueError, OSError, subprocess.SubprocessError):

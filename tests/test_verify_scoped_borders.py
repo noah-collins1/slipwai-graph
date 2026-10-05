@@ -16,7 +16,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scoped_fixture import FULL, SLICE, ScopedCase
+from scoped_fixture import FULL, SLICE, ScopedCase, ShapeCase
 from stamp_fixture import CI_MARKERS, CLOSING, git
 from support import FactoryTestCase
 from test_scoped_targets import SHAPES, build
@@ -131,6 +131,52 @@ class BordersTest(ScopedCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(git(self.repo, "status", "--porcelain"), "", "importing the script left a file")
         self.assertEqual(list(Path(self.repo).rglob("__pycache__")), [])
+
+
+class IndexBorderTest(ShapeCase):
+    """T044 (G2 · AC-S06-1, -5): an index the stamp will not vouch for is the full gate, in the stamp's own words. Git
+    does not look at such an entry, so a change to it would be skipped and `passed` said of a tree no check read."""
+
+    def full(self, reason: str) -> None:
+        run = self.scoped()
+        self.assertEqual(self.scoped_lines(run), [FULL + reason], run.stdout + run.stderr)
+        self.assertEqual(len(self.verify_calls()), 1)
+        self.assertEqual(self.lines(run), [])
+
+    def changed(self) -> str:
+        path = "apps/service/src/main.ts"
+        self.edit(path, "\n// a change git is told not to look at\n")
+        return path
+
+    def test_e12_an_entry_marked_assume_unchanged_is_the_full_gate(self) -> None:
+        path = self.changed()
+        git(self.repo, "update-index", "--assume-unchanged", path)
+        self.full(f"{path} is marked assume-unchanged, so git does not look at it")
+
+    def test_e12_an_entry_marked_skip_worktree_is_the_full_gate(self) -> None:
+        path = self.changed()
+        git(self.repo, "update-index", "--skip-worktree", path)
+        self.full(f"{path} is marked skip-worktree, so git does not look at it")
+
+    def test_e12_a_sparse_checkout_is_the_full_gate(self) -> None:
+        self.changed()
+        git(self.repo, "sparse-checkout", "set", "--no-cone", "/*", "!/apps/web/")
+        run = self.scoped()
+        (line,) = self.scoped_lines(run)
+        self.assertRegex(line, r"^verify-scoped: the full gate runs, as `make verify` — apps/web/\S+ is marked "
+                               r"skip-worktree, so git does not look at it$")
+        self.assertEqual(len(self.verify_calls()), 1)
+
+    def test_e12_a_submodule_is_the_full_gate(self) -> None:
+        self.changed()
+        git(self.repo, "update-index", "--add", "--cacheinfo", "160000," + git(self.repo, "rev-parse", "HEAD").strip()
+            + ",vendor/lib")
+        self.full("vendor/lib is a submodule (an index entry of mode 160000)")
+
+    def test_e12_an_index_the_stamp_would_vouch_for_stays_scoped(self) -> None:
+        self.changed()
+        run = self.scoped()
+        self.assertEqual(self.verify_calls(), [], run.stdout)
 
 
 class SuffixHoldsTest(unittest.TestCase):

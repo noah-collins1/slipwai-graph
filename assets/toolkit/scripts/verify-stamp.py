@@ -275,6 +275,16 @@ def index_problem(top: str) -> str | None:
     return None
 
 
+def not_vouched() -> str | None:
+    """Why the stamp will not vouch for this tree: `index_problem` of the repository's top level, or why that cannot be
+    asked. The one predicate `reuse` and the scoped gate's border both take, so the two cannot come to different
+    answers about an index."""
+    try:
+        return index_problem(top_level())
+    except CannotTell as reason:
+        return str(reason)
+
+
 def file_record(path: bytes, top: str) -> bytes:
     """One covered file as the key sees it, whatever it is: a regular file by its executable bit and the SHA-256 of
     its raw bytes, a link by its target as written and never followed, a file that is not there as missing. `path` is
@@ -836,7 +846,7 @@ def reuse(options: Options) -> int:
             if conditions is not None:
                 print(NOT_RECORDED_LINE.format(reason=conditions))
             return begin_full_run({NOTHING: True}, options.token)
-        problem = index_problem(top_level())
+        problem = not_vouched()
         if problem is not None:
             raise CannotTell(problem)
         key, parts = key_parts(machine_tools(options))
