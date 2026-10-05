@@ -121,8 +121,13 @@ def rule(target: str, needs: list[str], lines: list[str]) -> str:
 
 def order_rules(apps: list[App]) -> str:
     """What `gate_order` gives the gate, per service: Java's three in a chain, and Go's typecheck and test after
-    its lint. Under the gate's own `VERIFY_ORDER` only, so a unit typed alone is what it was."""
+    its lint. Under the gate's own `VERIFY_ORDER` only, so a unit typed alone is what it was.
+
+    Go's lint writes the workspace's `go.work.sum`, which every Go service shares, so with several the gate's whole order
+    (D96) is every lint before any typecheck or test: each Go typecheck and test also waits for whichever Go lint is among
+    the goals of this run, and for no other, so that a lint that was skipped is not run for its order."""
     rules = ""
+    go = [service for service in services_of(apps) if service.language == "go" and has_units(service)]
     for service in services_of(apps):
         if not has_units(service):
             continue
@@ -131,6 +136,10 @@ def order_rules(apps: list[App]) -> str:
             rules += f"{unit_of('test', service)}: {unit_of('typecheck', service)}\n"
         elif service.language == "go":
             rules += f"{unit_of('typecheck', service)} {unit_of('test', service)}: {unit_of('lint', service)}\n"
+    if len(go) > 1:
+        later = " ".join(unit_of(check, service) for service in go for check in ("typecheck", "test"))
+        lints = " ".join(unit_of("lint", service) for service in go)
+        rules += f"{later}: $(filter {lints},$(MAKECMDGOALS))\n"
     return f"{ORDER}\n{rules}endif\n" if rules else ""
 
 

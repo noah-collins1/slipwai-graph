@@ -24,12 +24,15 @@ ESCAPED = r"--eval=scripts/event-model/%.json:\ FORCE\ ;\ @!\ grep\ -rq\ FORBIDD
 ALLOWED = ("", "s -- VERIFY_FORCE=1", "-- VERIFY_FORCE=", "k -j2 -- VERIFY_FORCE=0 VERIFY_FORCE=1",
            "k", "s", "w", "ks", "i", "n", "t", "q", "-j4", "-j", "--jobserver-auth=3,4",
            "--jobserver-fifo=/tmp/fifo", "--no-print-directory", "-Otarget", "--output-sync=recurse", "-O",
-           "ks --no-print-directory -j4 --jobserver-auth=3,4 -Otarget", "-k", "-ks")
+           "ks --no-print-directory -j4 --jobserver-auth=3,4 -Otarget", "-k", "-ks",
+           "-l", "-l2", "-l2.5", "--load-average", "--load-average=2.5", "--max-load", "--max-load=3", "-j4 -l2",
+           "k -l0.5 -- VERIFY_FORCE=1")  # D152: the load limit changes when a job starts, never what a recipe runs
 REFUSED = {
     "--eval=x:": "--eval=x:", "e": "e", "ke": "ke", "r": "r", "R": "R", "B": "B", "W": "W", "o": "o", "L": "L",
     "s -- VERIFY_FORCE=1 A=1": "--", "-- VERIFY_FORCE_NOT=1": "--", "k -- A=1 VERIFY_FORCE=1": "--",
     "k -I inc": "-I", "--include-dir=inc": "--include-dir=inc", "-W foo": "-W", "-o foo": "-o",
-    "--trace": "--trace", "--shuffle": "--shuffle", "k -- A=1": "--", "-j4 -- A=1": "--", "-Onone -e": "-e",
+    "--trace": "--trace", "-lx": "-lx", "--load-average=x": "--load-average=x", "--load-averages": "--load-averages",
+    "-l2 -e": "-e", "--shuffle": "--shuffle", "k -- A=1": "--", "-j4 -- A=1": "--", "-Onone -e": "-e",
 }
 
 

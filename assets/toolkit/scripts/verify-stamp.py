@@ -700,11 +700,11 @@ def make_flags() -> str:
 
 # What make hands every recipe in `MAKEFLAGS` (and reads from `GNUMAKEFLAGS`) that adds no text and no condition the
 # factory did not write (D146): the letters that change no recipe (`k`, `s`, `w`, and the idle ones, which the borders
-# take themselves), a job count, the jobserver's words, `--no-print-directory` and an output-sync word. Nothing
-# else.
+# take themselves), a job count, the load limit (D152), the jobserver's words, `--no-print-directory` and an
+# output-sync word. Nothing else.
 QUIET_LETTERS = frozenset("kswntqi")
 QUIET_WORD = re.compile(r"-[kswntqi]+|-j[0-9]*|--jobserver-(?:auth|fifo|fds)=\S*|--no-print-directory|-O[a-z]*"
-                        r"|--output-sync(?:=[a-z]+)?")
+                        r"|--output-sync(?:=[a-z]+)?|-l[0-9.]*|--(?:load-average|max-load)(?:=[0-9.]+)?")
 FORCING = re.compile(r"VERIFY_FORCE=\S*")  # the one command-line variable allowed, by name and any value (D147)
 NOT_THE_FACTORYS = "make was run with `{word}`, which can add text or conditions the factory did not write"
 
