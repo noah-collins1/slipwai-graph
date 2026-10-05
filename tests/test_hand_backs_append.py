@@ -18,7 +18,7 @@ PRETTY = "```result-contract\n" + json.dumps(valid(), indent=1) + "\n```\n"
 HEAD = re.compile(r"^## \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ — drive-gaps — gaps\n\n", re.M)
 
 
-class AppendTest(unittest.TestCase):
+class Scratch(unittest.TestCase):
     def setUp(self) -> None:
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
@@ -29,6 +29,8 @@ class AppendTest(unittest.TestCase):
                stage: str = "gaps") -> subprocess.CompletedProcess[str]:
         return run(self.repo, "--hand-back", folder, htype, stage, stdin=stdin)
 
+
+class AppendTest(Scratch):
     def test_e1_prose_and_a_valid_block_append_the_heading_and_the_fence_byte_for_byte(self) -> None:
         result = self.append(f"I read the diff; two gaps.\n\n{PRETTY}\nThat is all.\n")
         self.assertEqual(0, result.returncode, result.stderr)
@@ -130,6 +132,48 @@ class AppendTest(unittest.TestCase):
         self.record.write_text("# Hand-backs — S1", encoding="utf-8")
         self.assertEqual(0, self.append(PRETTY).returncode)
         self.assertEqual(0, run(self.repo).returncode)
+
+
+class RetryTest(Scratch):
+    """Constitution II: a retry cannot duplicate the side effect of either write verb."""
+
+    def missing(self, reason: str, stage: str = "gaps") -> subprocess.CompletedProcess[str]:
+        return run(self.repo, "--hand-back-missing", SLICE, "drive-gaps", stage, reason)
+
+    def test_e8_the_same_block_again_is_a_noop_with_a_note_and_exit_zero(self) -> None:
+        self.assertEqual(0, self.append(PRETTY).returncode)
+        before = self.record.read_bytes()
+        result = self.append(f"retried\n\n{PRETTY}")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("already", result.stderr)
+        self.assertEqual(before, self.record.read_bytes())
+
+    def test_e8_a_different_block_is_still_appended_and_then_the_first_again_is_too(self) -> None:
+        self.assertEqual(0, self.append(PRETTY).returncode)
+        other = fence(valid() | {"scope": "a correction"})
+        self.assertEqual(0, self.append(other).returncode)
+        self.assertEqual(0, self.append(PRETTY).returncode)  # not the last entry for the type and stage any more
+        self.assertEqual(3, self.record.read_text(encoding="utf-8").count("\n## "))
+
+    def test_e8_the_same_block_under_another_stage_or_type_is_appended(self) -> None:
+        self.assertEqual(0, self.append(PRETTY).returncode)
+        self.assertEqual(0, self.append(PRETTY, stage="converge").returncode)
+        self.assertEqual(2, self.record.read_text(encoding="utf-8").count("\n## "))
+
+    def test_e9_the_same_missing_reason_again_is_a_noop_with_a_note(self) -> None:
+        self.assertEqual(0, self.missing("refused: out of budget").returncode)
+        before = self.record.read_bytes()
+        result = self.missing("refused: out of budget")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("already", result.stderr)
+        self.assertEqual(before, self.record.read_bytes())
+
+    def test_e9_a_different_reason_or_a_block_after_it_is_appended(self) -> None:
+        self.assertEqual(0, self.missing("refused").returncode)
+        self.assertEqual(0, self.missing("refused again").returncode)
+        self.assertEqual(0, self.append(PRETTY).returncode)
+        self.assertEqual(0, self.missing("refused again").returncode)
+        self.assertEqual(4, self.record.read_text(encoding="utf-8").count("\n## "))
 
 
 if __name__ == "__main__":

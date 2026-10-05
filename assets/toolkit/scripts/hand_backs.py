@@ -243,34 +243,57 @@ def blocks_in(text: str) -> tuple[list[str], int | None]:
     return found, (start[1] + 1 if start is not None and start[0] == FENCE else None)
 
 
+def repeats(record: Path, htype: str, stage: str, body: str | None, reason: str | None = None) -> bool:
+    """Whether the record's last entry for this type and stage already holds this block (`body`, byte for byte) or
+    this reason: a retry of a write that went through. A different one, or the same after another, is not."""
+    if not record.is_file():
+        return False
+    same = [entry for entry in extract(record.read_text(encoding="utf-8"))
+            if entry["match"] is not None and entry["match"].group(2) == htype and entry["match"].group(3) == stage]
+    if not same:
+        return False
+    last = same[-1]
+    if body is not None:
+        return len(last["blocks"]) == 1 and not last["missing"] and last["blocks"][0][1] == body
+    return not last["blocks"] and last["missing"][:1] == [reason]
+
+
 def append(record: Path, title: str, htype: str, stage: str, text: str, known: set[str] | None,
-           now: str) -> list[str]:
+           now: str) -> tuple[list[str], bool]:
     """Append one entry to `record` when the hand-back `text` holds exactly one block and the block passes the
-    checks the gate makes; otherwise append nothing and return the faults. `title` heads a file made here."""
+    checks the gate makes; otherwise append nothing and return the faults. `title` heads a file made here. The
+    second item is whether anything was written: a block the record's last entry for this type and stage already
+    holds is a retry, and writes nothing."""
     fences, unclosed = blocks_in(text)
     if unclosed is not None:
-        return [f"the {FENCE} fence opened on line {unclosed} of the hand-back is not closed"]
+        return [f"the {FENCE} fence opened on line {unclosed} of the hand-back is not closed"], False
     if not fences:
-        return [f"no {FENCE} block in the hand-back"]
+        return [f"no {FENCE} block in the hand-back"], False
     if len(fences) > 1:
-        return [f"two {FENCE} blocks in the hand-back; it holds one"]
+        return [f"two {FENCE} blocks in the hand-back; it holds one"], False
     body = "\n".join(fences[0].split("\n")[1:-2])
     try:
         block = json.loads(body)
     except ValueError as error:
-        return [f"block: the body is not JSON ({error})"]
+        return [f"block: the body is not JSON ({error})"], False
     if not isinstance(block, dict):
-        return [f"block: the body is {block!r}, not one JSON object"]
+        return [f"block: the body is {block!r}, not one JSON object"], False
     faults = [] if newer(block) else check_block(block, htype, known)
     if faults:
-        return faults
+        return faults, False
+    if repeats(record, htype, stage, body):
+        return [], False
     write(record, title, f"## {now} — {htype} — {stage}\n\n{fences[0]}\n")
-    return []
+    return [], True
 
 
-def append_missing(record: Path, title: str, htype: str, stage: str, reason: str, now: str) -> None:
-    """Append an entry saying no block was handed back, and why."""
+def append_missing(record: Path, title: str, htype: str, stage: str, reason: str, now: str) -> bool:
+    """Append an entry saying no block was handed back, and why; False when the record's last entry for this type
+    and stage already says exactly this (a retry)."""
+    if repeats(record, htype, stage, None, reason):
+        return False
     write(record, title, f"## {now} — {htype} — {stage}\n\n- **Missing:** {reason}\n\n")
+    return True
 
 
 def write(record: Path, title: str, entry: str) -> None:

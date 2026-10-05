@@ -577,12 +577,16 @@ def hand_back_verb(arguments: list[str]) -> int:
     title = folder.group(2) or folder.group(1)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if missing:
-        module.append_missing(record, title, arguments[2], arguments[3], " ".join(arguments[4:]).strip(), now)
-        return 0
-    faults = module.append(record, title, arguments[2], arguments[3], sys.stdin.read(),
-                           decision_ids(ROOT / "specs" / folder.group(1)), now)
+        wrote = module.append_missing(record, title, arguments[2], arguments[3], " ".join(arguments[4:]).strip(), now)
+        faults: list[str] = []
+    else:
+        faults, wrote = module.append(record, title, arguments[2], arguments[3], sys.stdin.read(),
+                                      decision_ids(ROOT / "specs" / folder.group(1)), now)
     for fault in faults:
         print(f"check-decisions: {fault}", file=sys.stderr)
+    if not faults and not wrote:
+        print(f"check-decisions: note: {arguments[1]}/{HAND_BACKS} already ends this {arguments[2]} {arguments[3]} "
+              "entry with the same content; nothing appended", file=sys.stderr)
     return 1 if faults else 0
 
 
