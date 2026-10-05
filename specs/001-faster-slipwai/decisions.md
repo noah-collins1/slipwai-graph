@@ -2545,3 +2545,67 @@
 - **Confidence:** high · **Would reverse if:** it turns out a generated project's trunk can take a commit that never passed the full gate. In that case *"because the trunk passed it"* is false, and option (b), comparing paths with the branch's last green full run, becomes the safe one. If the owner says rewording a MUST in a generated template is theirs to approve (D123's reversal), only items 1 and 4's quote park. Items 3 and 5 still land.
 - **Written to:** `specs/001-faster-slipwai/decisions.md` (this entry); `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T028's RED and GREEN take these words); `src/slipwai/project/scoped_targets.py`; `assets/profiles/standard/.specify/presets/standard/templates/constitution-template.md`; `assets/profiles/event-modelling/.specify/presets/event-modelling/templates/constitution-template.md`; `changelog.d/scoped-gate.md`; `specs/001-faster-slipwai/slices/S06-scoped-gate/plan.md` (R11 e3 and R13 now cite D126's sentence instead of D123's)
 - **Status:** standing
+
+## D127 — Where `verify-scoped` gets the factory's text for every rule `make verify` reaches
+
+- **Stage:** converge (pass 2, finding T030) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T14:31:43Z · **Iteration:** 22
+- **Scope:** S06-scoped-gate
+- **Question:** T030 shows `make verify-scoped` trusting Makefile text that the project owns and nothing compares. It is wrong in these cases:
+  - a line or prerequisite added to a named check (`check-drawio`, `check-decisions`, any row in `table.py`'s `CHECKS`);
+  - an order-only prerequisite (`record.database` drops everything after `|`);
+  - a prerequisite of `verify`;
+  - a recipe line of `verify-checks`.
+
+  In each case the scoped run says *passed* while `make verify` fails. T030's GREEN needs "the factory's text" for every rule `make verify` reaches that is not a unit gate. The script runs inside a generated project, which has no `makefile.py`. Where does that text come from?
+- **Options:**
+  - **(a)** The generator writes a fingerprint of every rule reachable from `verify` into a file next to the scripts. The code that writes the Makefile writes it, so `generate`, `add-service` and `migrate` keep the two in step. A named check that differs gets `inputs: null`. A difference in `verify` or `verify-checks`, or a rule with no fingerprint, makes the run the full gate. **The host's recommendation, and decided.**
+  - **(b)** Each table row records a property of its rule: the one script each recipe line must call and the prerequisites it may have. The script checks the database against that property. No new file.
+  - **(c)** No comparison. The scoped gate always runs every named check and scopes only the three unit gates.
+- **Decision:** (a). Seven points, so that GREEN has nothing left to ask:
+  1. **Where the text lives.** A new generated file, `scripts/verify_scoped/rules.json`, written only for a stamped layout. An adopted layout's `verify-scoped` is already the full gate, so it gets no file.
+     - `scaffold.project_files` adds it next to `"Makefile"` in the same mapping and from the same `makefile()` result. That makes `generate`, `replay`/`migrate` and `add-service` (`add_service.regenerate`, which writes every file whose regenerated content changed) carry it together with the Makefile, with no extra code in any of them.
+     - Shape (schema 1): `{"schema": 1, "rules": {"<target>": "<sha256>"}, "variables": {"<name>": "<sha256>"}}`.
+     - Readers ignore fields they do not know (Principle VIII).
+     - It stores only target names, variable names and digests. Target names are the Makefile's own and true on any machine, so no runtime path is stored.
+  2. **What is fingerprinted.**
+     - **Rules:** every rule reachable from `verify` through normal and order-only prerequisites, plus every rule the scoped section writes (units and family targets). One digest per rule, over a canonical JSON of `{"needs": [normal prerequisites in order], "order_only": [...in order], "recipe": [recipe lines as make stores them, unexpanded]}`. Repeated rule lines for the same target are merged, the way make merges them. An `ifeq ($(origin X),command line)` block is read as false, which is how the script's `make -npq` call (no command-line variables) sees it.
+     - **Variables:** every variable the factory's Makefile assigns (`SHELL`, `VERIFY_STAMP`, `GO_MODULES`, `CI_DATABASE`, `DATABASE_URL`, `INTEGRATION_TEST`, …), each digested over its flavour and its value as written. These are all fixed text with no `$(shell …)`, so they are true on any machine.
+  3. **One canonical form, two readers, one test between them.**
+     - The canonical form and the digest are defined once, in a new stdlib-only toolkit module, `scripts/verify_scoped/rules.py`. A new module keeps `record.py` (420 lines) inside `check-structure`'s budget.
+     - The module has two readers. `from_text` reads the Makefile text `makefile()` writes. `from_database` reads `record.database`'s output, which T030 already requires to keep order-only prerequisites and each Makefile variable's origin.
+     - The factory loads the module through `importlib.util.spec_from_file_location`, as `assets.py` already does for other toolkit modules. No second spelling of the canonical form exists.
+     - T030's e5 becomes: for every shape in `test_scoped_targets.SHAPES`, plus two-service and a cloud shape, `from_text(makefile(...))` equals `from_database(make -npq)`, and no check carries the new reason.
+     - e5's teeth: make one reader stop merging repeated rule lines (the generated `lint typecheck … : check-python` line), or drop `|` handling, and see e5 fail.
+     - Something new in `makefile()` that `from_text` cannot read raises at generate time, so it fails the factory's tests and never reaches a project.
+  4. **What each difference does.** The script compares each rule and variable in the make database with the file.
+     - A rule counts as different when its digest does not match, or when it is reachable from `verify` and has no fingerprint.
+     - A Makefile-origin variable counts as different when its value does not match, or when a reachable rule's recipe references it (directly or through another variable's value) and it has no fingerprint.
+     - Variables whose origin is the environment or the command line are not compared here. They belong to the stamp's `variables` and the baseline (D116).
+
+     Each difference is charged to the members of `verify-checks`' prerequisite list that reach it:
+
+     - **Reached by exactly one named check:** that check gets `inputs: null`, `claims: false`, always runs and claims nothing. It never gets a narrower row. The reason printed is `its rule is not the one the factory wrote (scripts/verify_scoped/rules.json)`.
+     - **Reached by exactly one gate with units, or a difference in one of its units or family targets:** the gate runs whole (T025's `whole: true`), with the same reason. T025's sum guard stays as written.
+     - **Anything else is the full gate through `make verify`.** That covers a difference in `verify` or `verify-checks` themselves, in a prerequisite of `verify` outside `verify-checks`, in anything reached by two or more members (`check-python`, `sync`, `build-packages`, `SHELL`), and in anything reached by none. The first line reads `the full gate runs, as \`make verify\` — the Makefile's \`<target>\` rule is not the one the factory wrote`, or `… variable \`<name>\` …`.
+     - **A missing, unreadable or unknown-schema `rules.json`** is the full gate with the reason *dependency knowledge was incomplete*, like any record that cannot be built (D117 rule 4).
+     - **A rule the factory fingerprinted that the database no longer has** (the project removed a check) counts as a difference in `verify-checks`, so the full gate runs.
+  5. **What changes the file.**
+     - Only the factory writes it, through `generate`, `add-service`, `replay` and `migrate`. No command lets a project "bless" its own Makefile edits.
+     - The file is under `scripts/`, so a change to it on a slice branch is a gate-script change under D117 rule 4: the full gate. A project that edits it by hand on the trunk has chosen to trust its own text (Principle I). That is its call, and no factory tool offers it.
+     - `migrate` is a three-way merge. A project that never touched either file gets both new versions, still in step. A project that edited a check the factory also changed resolves the Makefile conflict, while `rules.json` merges cleanly to the factory's side. The project's version of that check then differs and always runs. That is safe and visible on the check's own line.
+  6. **Level and words.**
+     - A new generated file is MINOR, and the slice's fragment `changelog.d/scoped-gate.md` already carries MINOR. Nothing is deleted or renamed, so nothing on *Always ask a person* is touched.
+     - The fragment's **Catch-up** gains one sentence: *"A line or prerequisite you added to a check the factory wrote now makes that check run on every scoped run; one you added to `verify` or `verify-checks` makes every scoped run the full gate. To scope it again, put your step in a check of your own, which runs every time with no recorded inputs."*
+     - The data-model's *How a unit is chosen* (last paragraph) and *The table* gain the file, the charge rule and the reasons.
+  7. **The sweep T030 asks for.** A test walks the database and fails on any rule reachable from `verify` that is not held by the sum (T025), by this comparison, or by an always-run check. With (a), every reachable rule has a fingerprint or is a difference, so that test holds by construction, and the test is there to keep it so.
+- **Why:**
+  - **The developer has to be able to trust a *passed*.** Every T030 reproduction says *passed* while `make verify` fails, which is exactly the false green priority 5 forbids. Only (a) compares the text make actually runs with the text whose inputs the table describes. A project's added line is caught wherever it was added: a named check, an order-only prerequisite, a variable, `verify` or `verify-checks`.
+  - **(a) is not a second spelling.** The fingerprints come from the one `makefile()` output that is the Makefile, through one canonical form, and a test holds that form against real make for every shape. T030's GREEN asks for exactly this: the factory's text "from where `makefile.py` writes it … never a second spelling that drifts".
+  - **(b) fails both T030's rule and the finding.** Writing each rule's allowed prerequisites and scripts into `table.py` repeats `makefile.py` in a second file, which is the drift T030 forbids. A property like "calls `check-drawio.mjs`" also passes a project line that calls the same script differently, or a prerequisite the property did not foresee. And (b) has nothing to say about `verify`, `verify-checks` or Makefile variables, which have no row.
+  - **(c) gives up too much and solves too little.** It gives up scoping of every named check in every project, forever. That spends priority 2's saving on projects that never edited their Makefile, which is most of them. It also still needs a comparison for `verify` and `verify-checks` (T030 cases d and e). Under (a), a project that did edit a check gets (c)'s behaviour for that check only. The cost falls on the project that made the edit, not on everyone.
+  - **The project keeps its files (Principle I).** Nothing in (a) overwrites the project's Makefile or refuses its edits. The edits simply stop being skipped on trust. `migrate` is the ordinary three-way merge that already carries every generated file.
+  - Priority 1 is untouched: the merge root and CI run `make verify` exactly as before.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high on (a) over (b) and (c). Medium on the `from_text` reader (point 3). · **Would reverse if:** `from_text` cannot be made to equal `from_database` across the make versions the factory supports (GNU Make 3.81, as D89 rule 7 notes, through 4.4), because make prints the database differently in a way no canonical form can absorb. Then point 3's reader changes: the fingerprint is computed from the database of the written Makefile wherever make is present, and point 4's charge rule stands. Only if no generate path can have make present does (b) come back, with a test holding each row's property against `makefile.py`.
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (this entry); `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T030: the decision, e5's new teeth, Files gains `src/slipwai/scaffold.py`, `src/slipwai/project/makefile.py` and the new toolkit module rules.py); `specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md` (*How a unit is chosen*, *The table*, the new reasons); `changelog.d/scoped-gate.md` (the Catch-up sentence in point 6); `delivery/docs/adr/0005-generated-makefile-rules-fingerprinted.md` (at Proposed)
+- **Status:** standing

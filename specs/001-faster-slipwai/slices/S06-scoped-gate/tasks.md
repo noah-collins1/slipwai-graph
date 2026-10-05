@@ -868,10 +868,35 @@ fails on a reachable rule held by none of the three.
 **Verify:** `make test TESTS="test_verify_scoped_sum test_verify_scoped_record test_verify_scoped_choose test_verify_scoped_run test_scoped_targets test_verify_scoped_contracts"`
 (plus the new module), then `make lint typecheck check-structure`. Level line: MINOR, already carried.
 
-**Files:** `assets/toolkit/scripts/verify_scoped/record.py`, `assets/toolkit/scripts/verify_scoped/choose.py`,
-`assets/toolkit/scripts/verify_scoped/table.py`, `assets/toolkit/scripts/verify-scoped.py`,
-`tests/test_verify_scoped_sum.py` (or the new module), and `specs/001-faster-slipwai/decisions.md` (host only, if a
-choice is needed).
+**Decided — D127 (a), ADR 0005 at Proposed.** The generator writes `scripts/verify_scoped/rules.json` (schema 1:
+`rules` and `variables`, target or variable name → sha256; stamped layouts only) from the same `makefile()` output,
+added beside `"Makefile"` in `scaffold.project_files`, so `generate`, `add-service` and `migrate` carry the two
+together. Fingerprinted: every rule reachable from `verify` through normal **and order-only** prerequisites plus
+every rule the scoped section writes — one digest over canonical JSON `{"needs", "order_only", "recipe"}`
+(unexpanded lines, repeated rule lines merged as make merges them, `ifeq ($(origin X),command line)` read as false) —
+and every variable the factory's Makefile assigns (flavour and value as written). The canonical form lives once, in
+a new stdlib toolkit module `scripts/verify_scoped/rules.py` with two readers, `from_text` (the Makefile text, used by
+the factory through `importlib.util.spec_from_file_location`) and `from_database` (`record.database`'s output, which
+now keeps order-only prerequisites and each variable's origin). The charge rule (D127 item 4): a difference reached by
+exactly one named check → that check `inputs: null`, `claims: false`, reason `its rule is not the one the factory
+wrote (scripts/verify_scoped/rules.json)`; by exactly one unit gate (or its units/family targets) → that gate whole
+(T025's `whole`), same reason; anything else (`verify`, `verify-checks`, a prerequisite of `verify` outside
+`verify-checks`, anything two or more members reach — `check-python`, `sync`, `build-packages`, `SHELL` — or none) →
+the full gate, `the Makefile's \`<target>\` rule is not the one the factory wrote` (or `variable \`<name>\``); a
+missing, unreadable or unknown-schema file → the full gate, *dependency knowledge was incomplete*; a fingerprinted
+rule the database lacks → a difference in `verify-checks`. Environment- and command-line-origin variables are the
+baseline's (D116), not compared here. **e5 becomes:** for every shape in `test_scoped_targets.SHAPES`, plus two-service
+and a cloud shape, `from_text(makefile(...))` equals `from_database(make -npq)` and no check carries the new reason;
+**teeth:** make one reader stop merging repeated rule lines, or drop `|` handling, and see e5 fail. The sweep (item 7):
+a test walks the database and fails on a reachable rule held by none of the sum, this comparison, or an always-run
+check. The fragment's **Catch-up.** gains D127 item 6's sentence word for word.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/rules.py` (new), `assets/toolkit/scripts/verify_scoped/record.py`,
+`assets/toolkit/scripts/verify_scoped/choose.py`, `assets/toolkit/scripts/verify_scoped/table.py`,
+`assets/toolkit/scripts/verify-scoped.py`, `src/slipwai/scaffold.py`, `src/slipwai/project/makefile.py` or
+`src/slipwai/project/scoped_targets.py` (the factory's call of `from_text`), `changelog.d/scoped-gate.md` (the one
+Catch-up sentence), `tests/test_verify_scoped_sum.py`, `tests/test_verify_scoped_rules.py` (new), and an existing test
+that lists a generated project's files only where the new file changes it (named).
 
 ### T031 — [US2] MEDIUM — The record's contract says what the record now holds (R10 · AC-S06-13; ADR 0004, data-model *The printed record*)
 

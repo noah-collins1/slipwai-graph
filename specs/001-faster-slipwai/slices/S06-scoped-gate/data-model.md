@@ -103,6 +103,23 @@ A recipe-sum guard: where a gate check's recipe lines (from the make database) a
 targets' lines, the check runs whole under its gate name whenever any of its units is chosen, with the reason
 *its recipe is not the sum of its per-deployable targets*.
 
+## The rules fingerprint: `scripts/verify_scoped/rules.json` (D127, ADR 0005)
+
+Written by the generator from the same `makefile()` output as the `Makefile`, for a stamped layout only; carried by
+`generate`, `add-service` and `migrate` with the `Makefile`; never written by the project's own tools.
+
+```json
+{ "schema": 1,
+  "rules": { "verify": "<sha256>", "check-drawio": "<sha256>", "lint-web": "<sha256>", "…": "…" },
+  "variables": { "SHELL": "<sha256>", "VERIFY_STAMP": "<sha256>", "…": "…" } }
+```
+
+- A rule's digest is over canonical JSON `{"needs": [...], "order_only": [...], "recipe": [unexpanded lines]}`; a
+  variable's over its flavour and value as written. Defined once in `scripts/verify_scoped/rules.py`
+  (`from_text`, `from_database`).
+- A difference charged to one named check: it always runs and claims nothing. To one unit gate: the gate runs whole.
+  Anything else, or a missing or unreadable file: the full gate.
+
 ## What a run prints
 
 All lines begin `verify-scoped: `.
@@ -111,7 +128,8 @@ All lines begin `verify-scoped: `.
   `\`<branch>\` is not a slice/<id> branch`, `HEAD is detached` (or `names no commit`), `<MARKER> is set, so this is
   a CI run`, `VERIFY_FORCE=<value>`, `make was run with -<flags>`, `slice/<id> has no usable base — <check-slice-scope's
   words>`, `the trunk cannot be told — <verify-stamp's words>`, `every check was chosen`, `a file git ignores differs
-  from the baseline` (D125; followed by the stamp's hint that `git status --ignored` shows it).
+  from the baseline`, `the Makefile's \`<target>\` rule is not the one the factory wrote` or `… variable \`<name>\` …`
+  (D127) (D125; followed by the stamp's hint that `git status --ignored` shows it).
 - Incomplete: `dependency knowledge was incomplete for <path> — <it is project.json | it is the Makefile | it is a
   gate script under scripts/ | no deployable, contract or check claims it>`, once per path; or `dependency knowledge
   was incomplete — <why the record cannot be built>`; or `obligation <n> (\`<name>\`) in project.json's
