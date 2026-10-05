@@ -17,6 +17,7 @@ from test_candidates import adopted, slipwai
 
 from slipwai.assets import ROOT
 from slipwai.layout import Layout
+from slipwai.project.scoped_targets import adopted_scoped_sentence
 from slipwai.scaffold import project_files
 from slipwai.selection import Selection
 from slipwai.services import default_apps
@@ -32,7 +33,9 @@ class AnUnstampedProjectsPageSaysNothingOfAStampTest(FactoryTestCase):
     def assert_page_is_the_one_it_was(self, page: str) -> None:
         for word in ("stamp", "VERIFY_FORCE", "ci.branch", "CI=1"):
             self.assertNotIn(word, page)
-        self.assertIn(INTRO_END + "`make check-codegraph` is in the gate", page)
+        # R13's one sentence (`test_scoped_page.py`) sits between those two paragraphs
+        sentence = adopted_scoped_sentence(Layout("delivery"))
+        self.assertIn(INTRO_END + sentence + "`make check-codegraph` is in the gate", page)
 
     def test_an_adopted_repositorys_page_has_no_paragraph_about_a_stamp(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -48,7 +51,9 @@ class AnUnstampedProjectsPageSaysNothingOfAStampTest(FactoryTestCase):
         before, _, rest = stamped.partition("A tree that already passed `make verify` is not judged again.")
         self.assertTrue(rest, "the stamped page has its paragraph")
         after = rest.partition("`make check-codegraph`")[2]
-        self.assertEqual(moved.split("`make check-codegraph`")[0].replace("docs/", "delivery/docs/"),
+        sentence = adopted_scoped_sentence(Layout("delivery"))
+        head = moved.split("`make check-codegraph`")[0].replace(sentence, "")
+        self.assertEqual(head.replace("docs/", "delivery/docs/"),
                          before.replace("docs/", "delivery/docs/"))
         self.assertTrue(after)
 

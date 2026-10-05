@@ -21,6 +21,7 @@ from .gate import stamped
 from .parallel_gate import PAGE as PARALLEL_PAGE
 from .parallel_tests import parallel_tests_page
 from .pins import pin_list
+from .scoped_targets import scoped_page
 from .skills_page import skills_page
 
 STAMP_PAGE = """A tree that already passed `make verify` is not judged again. A full passing run on a branch that is not the trunk
@@ -141,7 +142,7 @@ keeps missing measurements visibly unbracketed. `make help` lists integration,
 adversarial, mutation, model, benchmark and dependency-audit targets. Mutation and dependency audit remain
 explicit end-of-phase/CI operations, not hidden costs in every local increment.
 
-{stamp_paragraphs}`make check-codegraph` is in the gate for a project that has adopted a code index and a no-op for one that
+{stamp_paragraphs}{scoped_page(apps, layout)}`make check-codegraph` is in the gate for a project that has adopted a code index and a no-op for one that
 has not: it fails when `.codegraph/` no longer describes the tracked source — files it has never seen, or
 files that changed after it read them. CodeGraph indexes only while a client is attached to its daemon, so a
 checkout opened where that tooling is missing keeps a database nothing updates, and a stale index answers

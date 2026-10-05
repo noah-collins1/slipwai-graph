@@ -38,6 +38,37 @@ HEADER = """
 # a line shared by several. Nothing above this line names them, so `make verify` and `make ci` are what they were.
 """
 
+SCOPED_PAGE = """`make verify-scoped` runs only the checks whose inputs changed since the branch last passed the full gate, and
+prints a line for each check, run or skipped, with the reason. It scopes on a `slice/<id>` branch with a usable base, outside CI:
+every deployable's `lint-`, `typecheck-` and `test-` is a check, and each is chosen when a changed file is one it reads,
+when a contract it consumes changed, when an obligation names it, or when the machine differs from the baseline,
+and everywhere else it is the full gate, `make verify`, and says why on its first line, so it is never wrong where it cannot
+tell: on the trunk, on a branch that is no `slice/<id>`, with no usable base, in CI, under `VERIFY_FORCE`, and wherever
+the checkout cannot be read. Dependency knowledge it does not have broadens it to the full gate as well: a changed
+`Makefile`, `project.json` or gate script under `scripts/`, a changed path no check or contract claims, and a record
+that cannot be built. The baseline beside the stamp is a record under the git directory, never in the working tree: the
+tools the machine answered for and the variables' digests, written by a green full run on a `slice/<id>` branch and
+removed by any full run, so a full run that fails leaves none. A tool or variable that differs from the baseline chooses
+every check that reads it, and with no baseline, or another branch's, every check that reads a tool or a variable runs.
+`verification.obligations` in `project.json` declares an integration obligation: a name, two or more components, and the
+checks (`lint`, `typecheck`, `test`, or a unit's name) that run when either component changes. The default is none, and
+the factory never writes it; it is read as `project.json` stands at the branch's base. Declare one when two components
+agree on something no file of either shows and no contract path covers, such as a service and the web app that calls
+it. `make -j verify-scoped` runs the chosen checks at the same time, as `make -j verify` does.
+
+"""
+
+
+def adopted_scoped_sentence(layout: Layout) -> str:
+    """The one sentence an unstamped page says of the target: it is the full gate, because nothing here records what a
+    check reads."""
+    return (f"`{layout.make} verify-scoped` is the full gate: {NO_RECORD.split(' — ')[0]}, so it says so and runs "
+            f"`{layout.make} verify`.\n\n")
+
+
+def scoped_page(apps: list[App], layout: Layout) -> str:
+    return SCOPED_PAGE if stamped(apps, layout) else adopted_scoped_sentence(layout)
+
 
 def unit_of(check: str, app: App) -> str:
     return f"{check}-{app.name}"
