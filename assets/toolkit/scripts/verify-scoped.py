@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import re
 import subprocess
 import sys
 from typing import Any, Callable
@@ -25,7 +26,10 @@ sys.dont_write_bytecode = True  # an untracked file under scripts/ would make ev
 HERE = os.path.dirname(os.path.abspath(__file__))
 LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — {reason}"
-NOT_BUILT = "every check is chosen until the selection is built"
+EVERY = LINE + "every check runs, as no selection is built yet; the stamp is left as it is"
+DATABASE = ("-npq", ".DEFAULT")
+ASSIGNED = re.compile(r"^VERIFY_STAMP :?= (.*)$", re.MULTILINE)
+MAKE_STATE = ("MAKEFLAGS", "MFLAGS", "MAKELEVEL", "MAKEOVERRIDES")
 
 
 def load(name: str, filename: str) -> Any:
@@ -102,24 +106,71 @@ def told(ground: Ground) -> str | None:
 BORDERS: tuple[Border, ...] = (idle, ci, forced, head, trunk, slice_branch, base, told)
 
 
-def reason() -> str:
-    """Why the full gate runs, from the first border that holds; and where none does, that nothing is selected yet."""
+def reason(ground: Ground) -> str | None:
+    """Why the full gate runs, from the first border that holds; None where none does."""
     try:
-        ground = Ground()
         for border in BORDERS:
             found = border(ground)
             if found is not None:
                 return found
     except Exception as error:  # a checkout this script cannot read is one it cannot scope
         return "the checkout could not be read (" + str(error).replace("\n", " ")[:120] + ")"
-    return NOT_BUILT
+    return None
+
+
+def stamp_arguments(make: str, makefile: str) -> list[str]:
+    """What the project's `verify` recipe hands `verify-stamp.py` — its tools and environments — read from the make
+    database as `VERIFY_STAMP`, so the key is built from the project's own list and this script holds none."""
+    environment = {key: value for key, value in os.environ.items() if key not in MAKE_STATE}
+    done = subprocess.run([make, "-f", makefile, *DATABASE], capture_output=True, text=True, check=False,
+                          env=environment, timeout=60, encoding="utf-8")
+    found = ASSIGNED.search(done.stdout)
+    if found is None:
+        raise ValueError("the make database holds no VERIFY_STAMP")
+    return found.group(1).split()
+
+
+def standing(ground: Ground, make: str, makefile: str) -> str | None:
+    """verify-stamp's reuse line where its stamp stands for this tree and this machine; nothing is written or removed."""
+    stamp = ground.stamp
+    try:
+        usable, cannot = stamp.standing()
+        if cannot is not None or not usable or stamp.ratcheting() or stamp.declined():
+            return None
+        if stamp.index_problem(stamp.top_level()) is not None:
+            return None
+        key = stamp.build_key(stamp.machine_tools(stamp.Options(["--make", make, *stamp_arguments(make, makefile)])))
+    except (stamp.CannotTell, ValueError, OSError, subprocess.SubprocessError):
+        return None
+    held = stamp.read_stamp(stamp.stamp_path())
+    if held is None or held["key"] != key["key"]:
+        return None
+    return str(stamp.REUSE_LINE.format(passed=held["passed"], abbreviated=str(key["key"])[:12]))
+
+
+def full_gate(make: str, makefile: str, *goals: str) -> int:
+    # close_fds=False keeps the jobserver's descriptors for the sub-make, so `make -j verify-scoped` still runs at once
+    command = [make, "--no-print-directory", "-f", makefile, *goals]
+    return subprocess.run(command, close_fds=False, check=False).returncode
 
 
 def run(make: str, makefile: str) -> int:
-    print(FULL.format(reason=reason()), flush=True)
-    # close_fds=False keeps the jobserver's descriptors for the sub-make, so `make -j verify-scoped` still runs at once
-    command = [make, "--no-print-directory", "-f", makefile, "verify"]
-    return subprocess.run(command, close_fds=False, check=False).returncode
+    try:
+        ground = Ground()
+    except Exception as error:  # a checkout this script cannot read is one it cannot scope
+        words = "the checkout could not be read (" + str(error).replace("\n", " ")[:120] + ")"
+        print(FULL.format(reason=words), flush=True)
+        return full_gate(make, makefile, "verify")
+    found = reason(ground)
+    if found is not None:
+        print(FULL.format(reason=found), flush=True)
+        return full_gate(make, makefile, "verify")
+    reused = standing(ground, make, makefile)
+    if reused is not None:
+        print(reused, flush=True)
+        return 0
+    print(EVERY, flush=True)
+    return full_gate(make, makefile, "verify-checks", "VERIFY_ORDER=1")
 
 
 def main(argv: list[str]) -> int:
