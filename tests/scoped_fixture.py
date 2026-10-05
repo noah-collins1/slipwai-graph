@@ -94,7 +94,17 @@ class ScopedCase(StampTestCase):
 _NPM = """#!/bin/sh
 printf 'npm\\t%s\\n' "$*" >> "$STANDIN_LOG"
 [ "$1" = --version ] && echo "${STANDIN_NPM_VERSION:-10.9.0}"
+case "$*" in *"${STANDIN_NPM_FAIL:-no failure is asked for}"*) echo "npm: failed (stand-in)" >&2; exit 1;; esac
+if [ -n "$STANDIN_RENDEZVOUS" ] && [ "$3" = run ] && [ "$4" = lint ]; then  # waits, bounded, for another lint to start
+  : > "$STANDIN_RENDEZVOUS/$(basename "$2")"
+  started() { ls "$STANDIN_RENDEZVOUS" | grep -vc '^timeout$'; }
+  n=0; while [ "$(started)" -lt 2 ] && [ "$n" -lt 200 ]; do sleep 0.05; n=$((n+1)); done
+  if [ "$(started)" -lt 2 ]; then : > "$STANDIN_RENDEZVOUS/timeout"; exit 1; fi
+fi
 case "$1" in ci|install) mkdir -p node_modules; : > node_modules/.package-lock.json;; esac
+[ "$1" = --prefix ] && mkdir -p "$2/node_modules"
+# what the routes say is what is committed
+case "$*" in *" openapi -- "*) for last; do :; done; cp apps/service/openapi.json "$last";; esac
 exit 0
 """
 _NODE = """#!/bin/sh

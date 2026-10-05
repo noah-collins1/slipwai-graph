@@ -226,10 +226,24 @@ def run(make: str, makefile: str) -> int:
         print(LINE + (f"run  {choice.unit} — " if choice.runs else f"skip {choice.unit} — ") + choice.reason,
               flush=True)
     targets = [target for choice in choices if choice.runs for target in record["checks"][choice.unit]["targets"]]
-    if not targets:
-        return 0
-    command = [make, *targets, "VERIFY_ORDER=1", "--no-print-directory", "-f", makefile]
-    return subprocess.run(command, close_fds=False, check=False).returncode
+    status = 0
+    if targets:
+        # the gate's own output grouping, where this make has it; close_fds=False hands the sub-make the jobserver
+        group = data.variables.get("VERIFY_GROUP", "").split()
+        command = [make, *group, "--no-print-directory", "-f", makefile, *targets, "VERIFY_ORDER=1"]
+        status = subprocess.run(command, close_fds=False, check=False).returncode
+    ran = sum(choice.runs for choice in choices)
+    print(LINE + closing(ground.scope, base, ran, len(choices) - ran, status == 0), flush=True)
+    return status
+
+
+def closing(scope: Any, base: str | None, ran: int, skipped: int, passed: bool) -> str:
+    """The last line: what was run and skipped, what it was compared with, and how it ended."""
+    named = scope.printable(str(scope.merge_base().named))
+    short = ((scope.git("rev-parse", "--short", base) if base else None) or str(base)[:7]).strip()
+    ended = "passed" if passed else ("the scoped gate did not pass — each failed check is named above on a line "
+                                     "carrying ***")
+    return f"{ran} run, {skipped} skipped, compared with `{named}` at {short}; {ended}"
 
 
 def record(make: str, makefile: str) -> int:
