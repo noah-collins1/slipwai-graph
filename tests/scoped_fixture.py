@@ -15,7 +15,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from stamp_fixture import StampTestCase, git, write_stand_ins
+from stamp_fixture import PYVENV_CFG, StampTestCase, git, write_stand_ins
 from support import FactoryTestCase, commit_all
 from test_scoped_targets import build
 
@@ -28,6 +28,22 @@ LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — "
 
 
+# What a green full run on a slice branch leaves beside the stamp, without the run: the baseline, written by
+# `verify-stamp.py`'s own functions from what the project's recipe hands the stamp, with the tools the environment
+# answers. Run in the project, as the interpreter that runs the tests (the stand-in `python3` is for the gate's calls).
+_BASELINE = """
+import importlib.util, sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, "scripts")
+from verify_scoped import record
+spec = importlib.util.spec_from_file_location("stamp", "scripts/verify-stamp.py")
+stamp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(stamp)
+found = record.database("make", "Makefile").variables["VERIFY_STAMP"]
+stamp.write_baseline(stamp.machine_tools(stamp.Options(["--make", "make", *found.split()])))
+"""
+
+
 class ScopedCase(StampTestCase):
     """The stamp fixture's project, checked out on `slice/S1` with `main` behind it."""
 
@@ -38,6 +54,16 @@ class ScopedCase(StampTestCase):
 
     def checkout(self, *args: str) -> None:
         git(self.repo, "checkout", "-q", *args)
+
+    def write_baseline(self, env: dict[str, str | None] | None = None) -> None:
+        """The baseline a green `make verify` would leave on this branch, taken under `env`; the log is cleared."""
+        subprocess.run([sys.executable, "-B", "-c", _BASELINE], cwd=self.repo, env=self.environment(env), check=True,
+                       capture_output=True, timeout=60)
+        self.forget_log()
+
+    def baseline_file(self) -> Path:
+        (found,) = sorted((self.repo / ".git" / "slipwai").glob("verify-baseline-*.json"))
+        return found
 
     def scoped(
         self, env: dict[str, str | None] | None = None, args: list[str] | None = None,
@@ -67,11 +93,13 @@ class ScopedCase(StampTestCase):
 # selection is read without those toolchains.
 _NPM = """#!/bin/sh
 printf 'npm\\t%s\\n' "$*" >> "$STANDIN_LOG"
+[ "$1" = --version ] && echo "${STANDIN_NPM_VERSION:-10.9.0}"
 case "$1" in ci|install) mkdir -p node_modules; : > node_modules/.package-lock.json;; esac
 exit 0
 """
 _NODE = """#!/bin/sh
 printf 'node\\t%s\\n' "$*" >> "$STANDIN_LOG"
+[ "$1" = --version ] && [ -n "$STANDIN_NODE_FAIL" ] && exit 1
 [ "$1" = --version ] && echo "${STANDIN_NODE_VERSION:-v22.1.0}"
 exit 0
 """
@@ -129,6 +157,11 @@ class ShapeCase(ScopedCase):
             (self.bin / name).chmod(0o755)
         self.log = scratch / "standin.log"
         self.checkout("-b", SLICE)
+        for pyproject in sorted(self.repo.glob("apps/*/pyproject.toml")):  # what `uv sync` leaves
+            config = pyproject.parent / ".venv" / "pyvenv.cfg"
+            config.parent.mkdir(exist_ok=True)
+            config.write_text(PYVENV_CFG, encoding="utf-8")
+        self.write_baseline()  # as a green run on this branch, on this machine, left it
 
     def edit(self, path: str, text: str = "\n# an edit\n") -> None:
         """Make `path` differ from the base, as a person editing it would, uncommitted."""

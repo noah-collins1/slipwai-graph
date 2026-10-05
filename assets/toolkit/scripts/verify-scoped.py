@@ -31,6 +31,7 @@ from verify_scoped import record as records  # noqa: E402
 LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — {reason}"
 INCOMPLETE = "dependency knowledge was incomplete"
+EVERY = "every check was chosen"
 
 
 def load(name: str, filename: str) -> Any:
@@ -140,6 +141,27 @@ def standing(ground: Ground, make: str, data: records.Database | None) -> str | 
     return str(stamp.REUSE_LINE.format(passed=held["passed"], abbreviated=str(key["key"])[:12]))
 
 
+def compared(ground: Ground, make: str, data: records.Database) -> tuple[choose.Drift | None, str]:
+    """How the machine stands against the baseline a green full run left: the drift, or None with why there is no
+    baseline to compare with. The tools are asked once, as the stamp asks them, and nothing is written."""
+    stamp = ground.stamp
+    try:
+        path = stamp.baseline_path()
+        found, why = choose.baseline_of(stamp.read_own(path), ground.branch, os.path.lexists(path))
+    except stamp.CannotTell:
+        return None, "it cannot be read"
+    if found is None:
+        return None, why
+    named = data.variables.get("VERIFY_STAMP")
+    if named is None:
+        return None, "the gate does not name the tools the stamp asks"
+    try:
+        tools = stamp.machine_tools(stamp.Options(["--make", make, *named.split()]))
+    except (stamp.CannotTell, OSError, subprocess.SubprocessError) as error:
+        return None, words(error)
+    return choose.drift(found, tools, stamp.variable_digests()), ""
+
+
 def full_gate(make: str, makefile: str, *goals: str) -> int:
     # close_fds=False keeps the jobserver's descriptors for the sub-make, so `make -j verify-scoped` still runs at once
     command = [make, "--no-print-directory", "-f", makefile, *goals]
@@ -193,7 +215,13 @@ def run(make: str, makefile: str) -> int:
         record, changed, lambda path: bool(gate(path.encode("utf-8", "surrogateescape"))))]
     if notes:
         return broaden(make, makefile, INCOMPLETE, notes)
-    choices = choose.choose(record, data, changed)
+    drifted, why = compared(ground, make, data)
+    if drifted is None:  # with no baseline every reader runs, and every check reads `make`
+        note = f"no usable baseline ({why}) — every check that reads a tool or a variable runs"
+        return broaden(make, makefile, EVERY, [note])
+    choices = choose.choose(record, data, changed, drifted)
+    if all(choice.runs for choice in choices):
+        return broaden(make, makefile, EVERY)
     for choice in choices:
         print(LINE + (f"run  {choice.unit} — " if choice.runs else f"skip {choice.unit} — ") + choice.reason,
               flush=True)

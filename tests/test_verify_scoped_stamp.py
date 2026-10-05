@@ -79,6 +79,7 @@ class StampTest(ScopedCase):
         self.assertIsNone(self.stamp_path(), "a failed scoped run wrote a stamp")
 
     def test_e3_a_scoped_pass_writes_no_stamp_either(self) -> None:
+        self.write_baseline()  # without one the run is the full gate, which writes both (R7)
         (self.repo / "apps" / "service" / "extra.txt").write_text("an edit\n", encoding="utf-8")
         self.assertEqual(self.scoped().returncode, 0)
         self.assertIsNone(self.stamp_path(), "a scoped run wrote a stamp")

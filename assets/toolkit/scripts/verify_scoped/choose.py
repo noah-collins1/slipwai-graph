@@ -5,13 +5,16 @@ that reason whatever changed, and claims nothing. Any other unit runs when, in t
 file inputs (`<path> changed`), a contract it consumes changed (`consumes <contract> (<path>)`), or a unit it shares a
 recipe or a build directory with runs (`shares one recipe with <unit>`, `shares a build directory with <unit>`). Changed
 paths are taken in sorted order, so the reason a unit names is the first path that chose it; every unit is named once,
-the first reason that holds winning.
+the first reason that holds winning. After the paths come the machine's: a tool the baseline saw answer differently
+(`<tool> answers differently from the baseline`) or a variable whose digest differs (`<NAME> differs from the baseline`),
+for the units whose recorded inputs name it; a unit that shares a recipe with one of those runs with it.
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
@@ -30,6 +33,36 @@ class Choice(NamedTuple):
     unit: str
     runs: bool
     reason: str
+
+
+class Drift(NamedTuple):
+    """What differs between the machine and the baseline: the tools that answer differently, the variables that differ."""
+    tools: frozenset[str]
+    variables: frozenset[str]
+
+
+def baseline_of(text: str | None, branch: str, exists: bool) -> tuple[dict[str, Any] | None, str]:
+    """The baseline a file holds as a dict, or None with why it cannot be used: none yet on this branch (no file at
+    all), another branch's, or one that is no file, does not parse or has not the shape `verify-stamp.py` writes."""
+    if text is None:
+        return None, "it cannot be read" if exists else "none yet on this branch"
+    try:
+        found = json.loads(text)
+    except ValueError:
+        return None, "it cannot be read"
+    if not (isinstance(found, dict) and isinstance(found.get("branch"), str)
+            and all(isinstance(found.get(key), dict) and all(isinstance(item, str) for item in found[key].values())
+                    for key in ("tools", "variables"))):
+        return None, "it cannot be read"
+    return (found, "") if found["branch"] == branch else (None, f"it was taken on {found['branch']}")
+
+
+def drift(baseline: Mapping[str, Any], tools: Mapping[str, str], variables: Mapping[str, str]) -> Drift:
+    """The tools the machine answers for otherwise than the baseline recorded, and the variables whose digests differ;
+    a name only one side has differs."""
+    moved = {name for name in baseline["tools"].keys() | tools.keys() if baseline["tools"].get(name) != tools.get(name)}
+    return Drift(frozenset(moved), frozenset(name for name in baseline["variables"].keys() | variables.keys()
+                                             if baseline["variables"].get(name) != variables.get(name)))
 
 
 def is_input(path: str, entry: str) -> bool:
@@ -79,21 +112,38 @@ def first_reason(check: dict[str, Any], contracts: list[dict[str, Any]], paths: 
     return f"{path} changed" if path is not None else consumed(check, contracts, paths)
 
 
-def choose(record: dict[str, Any], data: Database, changed: list[str]) -> list[Choice]:
-    """Every unit of the record, in its order, with whether it runs and why."""
+def moved(check: dict[str, Any], drifted: Drift | None) -> str | None:
+    """Why the machine chooses the check: the first of its tools that answers differently, else the first of its
+    variables that differs; None for a check with no recorded inputs, or where nothing moved."""
+    if drifted is None or check["inputs"] is None:
+        return None
+    tool = next((name for name in check["inputs"]["tools"] if name in drifted.tools), None)
+    if tool is not None:
+        return f"{tool} answers differently from the baseline"
+    name = next((name for name in check["inputs"]["variables"] if name in drifted.variables), None)
+    return None if name is None else f"{name} differs from the baseline"
+
+
+def choose(record: dict[str, Any], data: Database, changed: list[str], drifted: Drift | None = None) -> list[Choice]:
+    """Every unit of the record, in its order, with whether it runs and why: a path, a contract, then what the machine
+    says, each pass followed by the units that share a recipe or a build with a unit chosen so far."""
     paths = sorted(changed)
     checks: dict[str, dict[str, Any]] = record["checks"]
     reasons: dict[str, str] = {}
-    for unit, check in checks.items():
-        found = check["always"] or first_reason(check, record["contracts"], paths)
-        if found is not None:
-            reasons[unit] = found
-    chosen = list(reasons)
-    for unit, check in checks.items():
-        if unit not in reasons and check["gate"] in GATE_UNITS:
-            found = sharing(unit, check, record, data, chosen)
+
+    def take(why: Callable[[str, dict[str, Any]], str | None]) -> None:
+        for unit, check in checks.items():
+            found = None if unit in reasons else why(unit, check)
             if found is not None:
                 reasons[unit] = found
+
+    def along(unit: str, check: dict[str, Any]) -> str | None:
+        return sharing(unit, check, record, data, list(reasons)) if check["gate"] in GATE_UNITS else None
+
+    take(lambda unit, check: check["always"] or first_reason(check, record["contracts"], paths))
+    take(along)
+    take(lambda unit, check: moved(check, drifted))
+    take(along)
     return [Choice(unit, unit in reasons, reasons.get(unit, UNCHANGED)) for unit in checks]
 
 
