@@ -358,3 +358,155 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
     argument.
   - **Sweep:** `hand_back_verb` and `coverage_verb`.
   - Files: `assets/toolkit/scripts/check-decisions.py`, `tests/test_hand_backs_append.py`.
+
+### Converge pass 2
+
+2026-10-05, cruise iteration 23, `drive-converge` over `git diff c3c760b..b06f79f` (pass 1's fixes are
+`0d9032a..b06f79f`). This is the confirming pass at the ladder's bound of two. There is no `.codegraph/` in this tree,
+so every symbol question went to text search. Each mutation was made on the committed tree and restored with
+`git checkout -- <path>` before the next one. Probes ran in `/tmp/s14/p2/`: a project generated from this branch, and
+`merged/`, a `git archive` of `git merge-tree --write-tree adopt-method slice/S14-result-contract` (tree `527df81`,
+S06 at `d7b24a1`).
+
+**Verdict: stopped at its bound, with no CRITICAL.** T012–T019 each closed its whole sweep. Nothing re-opens the loop.
+T020 (MEDIUM) and T021–T023 (LOW) go to Phase 4.
+
+**Sweep confirmations.** The six S14 modules run 105 tests, all OK. Each mutation below turned its tests red, and the
+tests were green again after the restore:
+
+| Task | Mutation | Result |
+|---|---|---|
+| T012 | `owed` ignores `OWNERS` | 3 of `test_hand_backs_coverage` red |
+| T012 | the finding names `{name}` instead of `converge` | 2 red |
+| T012 | `AGENTS` → `"agent" + "x"` | 16 red, so the key cannot drift unseen |
+| T015 | the preamble-fence entry dropped | 3 of `test_hand_backs_record` red |
+| T017 | `append`'s `repeats` removed | 1 red |
+| T017 | `append_missing`'s `repeats` removed | 1 red |
+| T018 | `benchmark.py` passes `known=None` | 1 red |
+| T019 | `rstrip("/")` removed | 2 of `test_hand_backs_append` red |
+| T016 | the helper sentence cut from `brief_paragraph` | 20 of `test_result_contract_briefs` red |
+
+The probes agreed with the code:
+- **T013:** on `merged/`, `test_verify_scoped_record`, including `TableHeldTest`, and the four `hand_backs` modules
+  pass. The only 3 errors are `NothingRecordedTest` e1's `git show`, because the archive has no history. S06's working
+  tree in the main checkout holds uncommitted `verify_scoped` changes; T013 is green against S06's committed tip only.
+- **T014:** in the generated project, quickstart step 3's fixture prints exactly the two lines the quickstart gives. So
+  do `S2/` and `./specs/f/slices/S2`. `benchmark.py` prints `S2: hand-backs with a result contract: 0 of 1`.
+- **T012:** stages whose only agents are `drive-slice` or `Explore` print nothing and count nothing.
+
+**Levels.**
+- **Domain** (`hand_backs.py`): R1–R3 hold, and so do the T015 preamble rule and the T017 `repeats` rule. Not proven:
+  - retry safety for a CRLF hand-back (T021);
+  - a foreign fence left unclosed inside an entry (T023).
+- **Use case:** the coverage reading and `make benchmark` count the same stages. Both use one `decision_ids`, at
+  `hand_backs.py:87`, and the T018 mutation shows they now share it. The gate's answer is byte-identical when no record
+  exists (`check-decisions.py:542`).
+  - Under Q2, `drive-slice` is in no `OWNERS`, and no ladder opens a `ready-set` benchmark entry. So a feature-level
+    `drive-slice` block is counted nowhere. That matches AC-S14-15's per-slice wording. It is Q2's to confirm.
+- **Delivery adapter (CLI):** a refusal names its argument. Folders are normalised. A retry is a no-op with a note,
+  exit 0. `--hand-backs specs/f` is refused with `is not specs/<feature>/slices/<id>`, exit 2.
+- **Screen:** none.
+- **Published contract:** the helper sentence holds in all ten briefs, in both layouts. The `OWES` and `STAGE` sentences
+  reach the page, the ladder, converge and cruise.
+  - `STAGE` contradicts `ready-set` (T022).
+  - The fragment still says *delegated stages*, where the count is now the stages a typed delegate that belongs to
+    them ran (T022).
+- **AC-S14-18:** `git diff --name-only 0d9032a..b06f79f` lists nothing outside the allowed paths.
+
+**Constitution.**
+- **I:**
+  - The no-record gate is byte-identical: `check-decisions.py:542`, held by `test_hand_backs_record.py:151`.
+  - The catch-up note is `changelog.d/result-contract.md:5`.
+  - `hand_backs.py` is loaded with bytecode off (`check-decisions.py:486`), and no `__pycache__` is left under `assets/`.
+  - The scoped-gate table is held, but by splitting a literal (`hand_backs.py:333`; T020).
+- **II:**
+  - Retry safety: `hand_backs.py:258-270` (`repeats`), `:296` and `:305`, held by `test_hand_backs_append.py:172-200`.
+    Not held for CRLF input (T021).
+  - Concurrency: each slice appends only to its own folder's record (`check-decisions.py` `folder_of`), in append mode
+    (`hand_backs.py:317`), and the feature record has one writer, the host.
+- **III:** `OWNERS` (`hand_backs.py:324`) is a second copy of `benchmark.py:78`, and `OwnersTest`
+  (`test_hand_backs_coverage.py:70`) holds the two equal. No task: see below.
+- **V:** pass 1's fixes each came with a test, and every one of those tests fails under the mutations above.
+- **VII:** the verb writes the UTC time, never the delegate (`check-decisions.py:598`), and entries are append-only
+  (`hand_backs.py:311-318`).
+- **VIII:** readers tolerate unknown fields (`check_block` iterates only `FIELDS`, `hand_backs.py:137`). A later
+  `contract` is passed with a note (`:41`, `:236`).
+- **IX:** paths are repository-relative (`hand_backs.py:65-71`, D135).
+- **IV, VI and X:** not touched.
+
+**`OWNERS` as a copy.** Keep it. `hand_backs.py` cannot load `benchmark.py`: S06's scanner would then read
+`benchmark.py`'s literals as check-decisions inputs — `.claude/projects`, `agents/`, `commands/`, `skills/`,
+`.specify/` — which is a real widening. And `benchmark.py` loads `hand_backs.py` only optionally (`benchmark.py:861`).
+Both files are factory-written, and a factory test holds them equal.
+
+**Q1 and Q2 are still the host's.** T012's `owed` and `OWNERS` follow Q2: if `drive-slice`'s block moves, the rule for
+which stages count moves with it.
+
+- [ ] T020 [US6] **MEDIUM (Phase 4) — `hand_backs.py:333` passes S06's scanner by splitting a literal, not by satisfying
+  it.**
+  - **Evidence:**
+    - With `AGENTS = "agents"`, `TableHeldTest` fails 12 shapes with `check-decisions reads agents, under none of
+      ['docs/event-model/model.yaml', 'specs/']`.
+    - The finding is check-decisions, which loads `hand_backs.py`. It is not check-benchmark: check-benchmark's row
+      holds `agents/`, and `benchmark.py` uses the bare `"agents"` at `:421`, `:441`, `:507`, `:531`, `:587`, `:953`.
+      The code comment does not say which check it means.
+    - The property the scanner measures holds: `"agents"` is a key of a `benchmark.json` stage, and check-decisions
+      reads nothing under `agents/`. But S06 built the route for exactly this case — `NOT_AN_INPUT`, with a reason and
+      a staleness check (`test_verify_scoped_record.py:42`, `:330`). The split bypasses that audit trail. It would also
+      fire again the day the scanner folds constants.
+    - `hand_backs.py:69`'s `os.pardir` (T013) is the same class of case. It is the idiomatic name for the segment, so
+      it is less evasive.
+  - **Alternatives inside S14's scope (D129 forbids editing S06's table or test):**
+    - (a) Keep the split and the comment as they are. Rejected: it evades the scanner silently.
+    - (b) Pass the types into `coverage` from the caller. Rejected: the literal would move into `check-decisions.py`,
+      and the same finding follows it.
+    - (c) Move `coverage` into `benchmark.py`, whose row covers `agents/`. Rejected: `--hand-backs` is a published
+      `check-decisions` verb (AC-S14-15, the page), so this changes the contract.
+    - (d) Recommended: keep the split for now. Correct its comment to name check-decisions and the false positive, and
+      say the split goes when S06 records the key. Report to the host, for S06: add `NOT_AN_INPUT["agents"] = "a key of
+      a benchmark.json stage that hand_backs.py reads (check-decisions), not a path"`. Once that is on `adopt-method`,
+      S14 reverts to `stage.get("agents")`.
+  - **GREEN:**
+    - the comment names check-decisions;
+    - the host has relayed the false positive to S06;
+    - after S06 records it, `hand_backs.py` reads the bare key, and `TableHeldTest` is green on the rebased branch.
+  - **Sweep:** every string in `hand_backs.py`, `check-decisions.py` and `agents/benchmark.py` that S14 changed in shape
+    to avoid the scanner. Today that is `:333` and `:69`. Each is either recorded in S06's `NOT_AN_INPUT` or argued to
+    be the idiomatic spelling.
+  - Files: `assets/toolkit/scripts/hand_backs.py`. S06's table and test belong to S06.
+
+- [ ] T021 [US6] **LOW (Phase 4) — a CRLF hand-back retried is appended twice** (constitution II).
+  - **Evidence:** `/tmp/s14/p2/probe.py` calls `append` twice with the same CRLF text. Both calls return `([], True)`,
+    and the record holds two headings. `body` keeps the `\r` (`hand_backs.py:286`), while `extract` reads through
+    `read_text`'s universal newlines (`:263`), so `repeats` never matches.
+  - **Reach:** Windows text-mode stdin already translates CRLF, so the case is a CRLF capture file piped in on POSIX.
+    The gate passes both entries.
+  - **GREEN:** `repeats` compares newline-normalised bodies, and a CRLF retry test is added beside e8.
+  - **Sweep:** both write verbs, and every comparison between the hand-back and the record.
+  - Files: `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_append.py`.
+
+- [ ] T022 [US6] **LOW (Phase 4) — the `STAGE` sentence contradicts `ready-set`, and the fragment's count sentence
+  predates T012.**
+  - **Evidence:**
+    - `STAGE` (`result_contract.py:35`) says `<stage>` is the open benchmark entry's name. It sits right after
+      "stage `ready-set`" (`:71`, `:128`; generated `agents/drive-slice.md:36-37`, `commands/drive.md:283-284`). No
+      ladder opens a `ready-set` entry.
+    - `changelog.d/result-contract.md:3` says *how many delegated stages handed back a block*.
+  - **GREEN:**
+    - `STAGE` names `ready-set` as the one stage with no benchmark entry, or is scoped to a slice's stages.
+    - The fragment says a stage counts when a typed delegate that belongs to it ran.
+    - `test_result_contract_briefs.py:197` pins both.
+  - **Sweep:** every place `STAGE` is spliced, and the page's `--hand-backs` paragraph.
+  - Files: `src/slipwai/project/result_contract.py`, `assets/toolkit/docs/result-contract.md`,
+    `changelog.d/result-contract.md`, `tests/test_result_contract_briefs.py`.
+
+- [ ] T023 [US6] **LOW (Phase 4) — an unclosed foreign fence inside an entry silently hides the next entry from the
+  gate and from coverage** (AC-S14-6).
+  - **Evidence:** in the probe, an entry was followed by a ` ```text ` fence left unclosed, then a valid `--hand-back`
+    append, then a malformed entry. The valid entry vanished: the next closing fence closed the `text` fence. The gate
+    counted 2 and named only the malformed one.
+  - **Reach:** only a hand edit, because the verbs write result-contract fences only.
+  - **GREEN:** a line matching `HEADING` inside a foreign fence is a finding naming both lines, and so is a foreign
+    fence left unclosed at the end of the file.
+  - **Sweep:** `extract` and `blocks_in`.
+  - Files: `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_record.py`.
