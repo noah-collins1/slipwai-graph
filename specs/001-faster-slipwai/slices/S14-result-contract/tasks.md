@@ -236,7 +236,7 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
 - **The tree was not clean at the start.** `benchmark.json` in this folder was already modified (the host's
   `start converge` bracket). This pass left it untouched.
 
-- [ ] T012 [US6] **HIGH — `--hand-backs` gives the wrong reading of what was delegated, and its finding line names
+- [x] T012 [US6] **HIGH — `--hand-backs` gives the wrong reading of what was delegated, and its finding line names
   the stage instead of converge and the type** (AC-S14-11, -13, -15).
   - **Evidence (wrong line):** `hand_backs.py:303` prints `nothing recorded — a finding for {name}`, where `name` is
     the stage. `test_hand_backs_coverage.py:90` pins `a finding for implement`, which is the same bug. Changing the
@@ -269,7 +269,7 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
     `tests/test_hand_backs_coverage.py`, `tests/test_result_contract_briefs.py`, this folder's `data-model.md` and
     `quickstart.md`.
 
-- [ ] T013 [US6] **HIGH — the rebase onto S06's tip is textually clean and leaves the suite red.**
+- [x] T013 [US6] **HIGH — the rebase onto S06's tip is textually clean and leaves the suite red.**
   - **Evidence:** `git merge-tree --write-tree adopt-method slice/S14-result-contract` reports no conflict (tree
     `2a85658`). On that tree, `test_verify_scoped_record.TableHeldTest.test_e4_every_path_a_check_script_reads_lies_under_one_of_its_recorded_inputs`
     fails with `<shape>: check-benchmark reads .., under none of ['.specify/', … 'specs/']` for every shape.
@@ -286,7 +286,7 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
   - Files: `assets/toolkit/scripts/hand_backs.py` (and the other two scripts, only if the sweep finds a literal
     there).
 
-- [ ] T014 [US6] **HIGH — the demo script cannot be run as written** (AC-S14-19).
+- [x] T014 [US6] **HIGH — the demo script cannot be run as written** (AC-S14-19).
   - **Evidence:**
     - Step 1 generates with `--no-init`. In `/tmp/s14/c1/demo`, step 2's `make agents` then fails with `agent
       projection failed: cannot determine the selected integration; rerun ./init --integration <agent>`.
@@ -299,7 +299,7 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
   - **Sweep:** every expected-output line in `quickstart.md`, checked against the code that prints it.
   - Files: this folder's `quickstart.md`.
 
-- [ ] T015 [US6] **MEDIUM — the gate crashes with a traceback on a record whose preamble holds an unclosed
+- [x] T015 [US6] **MEDIUM — the gate crashes with a traceback on a record whose preamble holds an unclosed
   `result-contract` fence** (AC-S14-6).
   - **Evidence:** the record `# T`, then an unclosed fence opened with the `result-contract` info string, then
     `{`, then `## 2026-10-05T10:00:00Z — drive-gaps — gaps`, then `- **Missing:** no continuation`. Running
@@ -313,7 +313,7 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
       an unclosed one, another info string) placed before the first heading, and asserts no traceback on stderr.
   - Files: `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_record.py`.
 
-- [ ] T016 [US6] **MEDIUM — AC-S14-14's first half is neither stated nor pinned.**
+- [x] T016 [US6] **MEDIUM — AC-S14-14's first half is neither stated nor pinned.**
   - **Evidence:**
     - `result_contract.py:41`'s paragraph says *Whatever you started and did not finish … goes inside that one
       block*. That covers unfinished work, not the untyped helpers a delegate dispatches (Explore, general-purpose,
@@ -325,7 +325,7 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
   - Files: `src/slipwai/project/result_contract.py`, `assets/toolkit/docs/result-contract.md`,
     `tests/test_result_contract_briefs.py`.
 
-- [ ] T017 [US6] **MEDIUM — retrying `--hand-back` duplicates the entry** (constitution II: *a retry MUST NOT be
+- [x] T017 [US6] **MEDIUM — retrying `--hand-back` duplicates the entry** (constitution II: *a retry MUST NOT be
   able to duplicate a side effect; a test proving this MUST accompany each new write path*).
   - **Evidence:** `append` and `write` (`hand_backs.py:233-270`) append without looking at what is there. A session
     that retries after an interrupted stage close writes the same block twice, with two headings.
@@ -336,7 +336,7 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
   - Files: `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`,
     `tests/test_hand_backs_append.py`.
 
-- [ ] T018 [US6] **LOW — `make benchmark` and `--hand-backs` can count different blocks** (AC-S14-15).
+- [x] T018 [US6] **LOW — `make benchmark` and `--hand-backs` can count different blocks** (AC-S14-15).
   - **Evidence:** `benchmark.py:877` passes `known=None`, while `check-decisions.py` (`coverage_verb`) passes the
     feature's `D<n>` ids. A block naming an absent `D9999` therefore counts in `n` for the benchmark and fails the
     gate.
@@ -349,7 +349,7 @@ branch, and on `/tmp/s14/merged`, a `git archive` of `git merge-tree --write-tre
   - Files: `assets/toolkit/scripts/agents/benchmark.py`, `assets/toolkit/scripts/check-decisions.py`,
     `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_coverage.py`.
 
-- [ ] T019 [US6] **LOW — the three verbs refuse a directory with a trailing slash or a leading `./`, and print only
+- [x] T019 [US6] **LOW — the three verbs refuse a directory with a trailing slash or a leading `./`, and print only
   the usage text.**
   - **Evidence:** in the generated project, `--hand-back specs/f/slices/S1/ …` and `--hand-back ./specs/f/slices/S1
     …` both exit 2. A stage name such as `after_converge` is refused the same way, without the line saying which
