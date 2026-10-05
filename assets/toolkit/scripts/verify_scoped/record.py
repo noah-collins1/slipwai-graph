@@ -27,8 +27,11 @@ DIFFERS = f"its rule is not the one the factory wrote ({RULES_FILE})"
 MODEL = "docs/event-model/model.yaml"
 DATABASE = ("-npq", ".DEFAULT")
 RULE = re.compile(r"^([^\s#:=%][^:=]*?)::?(?!=)\s*(.*)$")
-ASSIGNED = re.compile(r"^(\w+) (:?=) (.*)$")
-ORIGIN = re.compile(r"^# (makefile \(from |'override' directive|environment|command line|default|automatic|makefile$)")
+ASSIGNED = re.compile(r"^([^\s#:=%][^\s:=]*) ([:?!+]*=) (.*)$")
+TARGET_VARIABLE = re.compile(r"^([^\s#:=%][^:=]*?):\s+(\S+) (:?=|\+=) (.*)$")
+DEFINE = re.compile(r"^define (\S+)$")
+ORIGIN = re.compile(r"^# (makefile(?: private)? \(from |'override' directive|environment|command line|default|automatic|makefile$)")
+PATTERNS_END = re.compile(r"^# (\d+|No) pattern-specific variable values")
 MAKE_STATE = ("MAKEFLAGS", "MFLAGS", "MAKELEVEL", "MAKEOVERRIDES")
 SERVICE_KINDS = ("service", "web")
 ALWAYS_TOOLS = ("make", "python3")
@@ -58,6 +61,8 @@ class Database(NamedTuple):
     order_only: dict[str, list[str]] = {}  # target -> what it waits for without being rebuilt by it (`a: | b`)
     origins: dict[str, str] = {}  # variable -> `file` where the Makefile assigns it, else the kind make prints
     flavours: dict[str, str] = {}  # variable -> `:=` (simple) or `=` (recursive)
+    target_vars: dict[str, list[tuple[str, str, str]]] = {}  # target -> (name, flavour, value) of `target: NAME := value`
+    patterns: dict[str, list[str]] = {}  # pattern -> the variables a Makefile sets for it (origin `file` or `override`)
 
 
 def database(make: str, makefile: str) -> Database:
@@ -69,37 +74,72 @@ def database(make: str, makefile: str) -> Database:
                               env=environment, timeout=60, encoding="utf-8", errors="replace")
     except (OSError, subprocess.SubprocessError) as error:
         raise RecordError(f"the make database cannot be read: {error}") from error
-    needs: dict[str, list[str]] = {}
-    recipes: dict[str, list[str]] = {}
-    variables: dict[str, str] = {}
-    order_only: dict[str, list[str]] = {}
-    origins: dict[str, str] = {}
-    flavours: dict[str, str] = {}
+    found = Database({}, {}, {}, {}, {}, {}, {}, {})
     current: list[str] = []
     origin = ""
+    body: list[str] | None = None  # the lines of a `define` being read
+    last = ""  # the variable the previous line assigned: a line that follows it with no note is the rest of its value
+    section = False  # inside the pattern-specific variable values
+    pattern = ""
+    private = False
+    files = False  # past the variables: a line there is a rule's, never an assignment
     for line in done.stdout.splitlines():
+        if body is not None:
+            body.append(line) if line != "endef" else None
+            if line == "endef":
+                found.variables[last] = "\n".join(body)
+                body = None
+            continue
         if line.startswith("\t"):
             for target in current:
-                recipes.setdefault(target, []).append(line[1:])
+                found.recipes.setdefault(target, []).append(line[1:])
+            last = ""
             continue
         if line.startswith("#"):  # the database's own notes: the one that heads each recipe, and each variable's origin
-            origin = "file" if line.startswith("# makefile (from") else line[2:] if ORIGIN.match(line) else origin
+            last = ""
+            files = files or line == "# Files"
+            section = section or line == "# Pattern-specific Variable Values"
+            section = section and PATTERNS_END.match(line) is None
+            if ORIGIN.match(line):
+                private = " private " in line
+                origin = ("file" if line.startswith("# makefile") and "(from" in line else
+                          "override" if line.startswith("# 'override'") else line[2:])
+            elif section and origin in ("file", "override") and (held := ASSIGNED.match(line[2:])):
+                found.patterns.setdefault(pattern, []).append(held.group(1))
             continue
-        assigned = ASSIGNED.match(line)
-        if assigned:
-            name = assigned.group(1)
-            variables[name], flavours[name], origins[name] = assigned.group(3), assigned.group(2), origin
+        if section:
+            pattern = line.removesuffix(" :") if line.endswith(" :") else pattern
+            continue
+        assigned = None if files else ASSIGNED.match(line)
+        defined = None if files else DEFINE.match(line)
+        if assigned or defined:
+            name = assigned.group(1) if assigned else str(defined and defined.group(1))
+            found.variables[name] = assigned.group(3) if assigned else ""
+            found.flavours[name] = ":=" if assigned and assigned.group(2).startswith(":") else "="
+            found.origins[name] = origin
+            last, current = name, []
+            body = [] if defined else None
+            continue
+        if last:  # the lines after a multi-line value that is not a `define`
+            found.variables[last] += "\n" + line if line else ""
+            continue
+        targeted = TARGET_VARIABLE.match(line)
+        if targeted:
+            flavour = {":=": "simple", "=": "recursive", "+=": "append"}[targeted.group(3)]
+            kind = "override " if origin == "override" else "private " if private else ""
+            for target in targeted.group(1).split():
+                found.target_vars.setdefault(target, []).append((targeted.group(2), kind + flavour, targeted.group(4)))
             current = []
             continue
         rule = RULE.match(line)
         current = rule.group(1).split() if rule else []
         normal, _, ordered = (rule.group(2) if rule else "").partition("|")
         for target in current:
-            known = needs.setdefault(target, [])
+            known = found.needs.setdefault(target, [])
             known.extend(word for word in normal.split() if word not in known)
-            later = order_only.setdefault(target, [])
+            later = found.order_only.setdefault(target, [])
             later.extend(word for word in ordered.split() if word not in later and word not in known)
-    return Database(needs, recipes, variables, order_only, origins, flavours)
+    return found
 
 
 def family_of(deployable: dict[str, Any]) -> str:
@@ -244,26 +284,32 @@ def checks_of(data: Database, deployables: dict[str, dict[str, Any]], context: C
     return checks
 
 
+def units_of(checks: dict[str, Any]) -> dict[str, list[str]]:
+    """The units of each gate that has them, as the record's checks hold them."""
+    units: dict[str, list[str]] = {}
+    for unit, entry in checks.items():
+        units.setdefault(entry["gate"], []).append(unit) if entry["gate"] in GATE_UNITS else None
+    return units
+
+
 def compared(root: Path, data: Database, checks: dict[str, Any]) -> str | None:
     """What the Makefile has that the factory did not write (`rules.json`): a named check charged is one with no recorded
     inputs that always runs, a gate with units charged runs whole, and the words of a difference nobody can be charged
     with are returned, to be the full gate. A file that cannot be read is a `RecordError`."""
     try:
         held = rules.load(str(root / RULES_FILE))
+        judged = rules.judge(held, data, [unit for each in units_of(checks).values() for unit in each],
+                             data.needs["verify-checks"], units_of(checks), rules.project_exports(data, str(root)))
     except rules.Unreadable as error:
         raise RecordError(str(error)) from error
-    units: dict[str, list[str]] = {}
-    for unit, entry in checks.items():
-        units.setdefault(entry["gate"], []).append(unit) if entry["gate"] in GATE_UNITS else None
-    judged = rules.judge(held, data, [unit for each in units.values() for unit in each], data.needs["verify-checks"],
-                         units)
+    units = units_of(checks)
     for name in judged.checks:
         if name in checks:
             checks[name].update(inputs=None, claims=False, always=DIFFERS)
     for gate in judged.gates:
         for unit in units[gate]:
             checks[unit].update({"differs": True} if "whole" not in checks[unit] else {}, whole=True, targets=[gate])
-    return None if judged.full is None else f"the Makefile's {judged.full} is not the one the factory wrote"
+    return judged.full
 
 
 def packages_of(root: Path, scope: Any, base: str | None) -> list[str]:
