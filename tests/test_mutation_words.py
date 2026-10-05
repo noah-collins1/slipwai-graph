@@ -56,6 +56,11 @@ class NoteTest(unittest.TestCase):
                 self.assertIn("make mutation-full", note)
                 self.assertNotIn("__APP__", note)
                 self.assertNotIn("Without SINCE", note)
+                self.assertIn("scopes itself on a `slice/<id>` branch", note)
+                self.assertIn("make mutation SINCE=<", note)
+                self.assertRegex(note, r"`make mutation-full` is the sweep|sweep, `make mutation-full`")
+                self.assertRegex(note, r"CI(,| and) the trunk")
+                self.assertIn("Phase 4 on `main` runs `make mutation SINCE=<the commit before the merge>`", note)
                 if backend == "java-quarkus":
                     self.assertIn("once a tool is wired", note)
 

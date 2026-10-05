@@ -89,7 +89,8 @@ GO_MUTATION_NOTE = """\
 # trunk and a checkout the script cannot read run the sweep, `make mutation-full`, which is also what an empty
 # `SINCE` runs. That is the difference between a stage priced per repository and one priced per change: every
 # mutant costs a run of this module's suite, so a sweep re-proves every file that shipped weeks ago at full price,
-# and a stage that expensive gets routed around rather than read. A change to `__APP__/.gremlins.yaml` or to
+# and a stage that expensive gets routed around rather than read. Phase 4 on `main` runs `make mutation SINCE=<the
+# commit before the merge>`, so the check is priced by the change that merged. A change to `__APP__/.gremlins.yaml` or to
 # `scripts/go-mutation.py` sweeps the service, since no scope can be trusted across it. The scope is computed from
 # git before staging, not handed to Gremlins' own `--diff`:
 # `--diff` resolves changed paths against the repository root and matches them against paths within the
@@ -163,9 +164,10 @@ JAVA_QUARKUS_MUTATION_NOTE = """\
 #
 # Then run it, look at the survivors, and only afterwards let anything depend on the score.
 #
-# `make mutation` scopes itself on a `slice/<id>` branch, and `make mutation-full` is the sweep; until PIT is
-# wired here `make mutation` refuses a changed service with the message above, and the scope will apply once a
-# tool is wired.
+# `make mutation` scopes itself on a `slice/<id>` branch, and `make mutation SINCE=<ref>` does the same on any
+# checkout; `make mutation-full` is the sweep, and CI and the trunk get the sweep. Phase 4 on `main` runs
+# `make mutation SINCE=<the commit before the merge>`. Until PIT is wired here `make mutation` refuses a changed
+# service with the message above, and the scope will apply once a tool is wired.
 """
 
 # What `make mutation` does on the Spring backend, where it is a working target rather than a placeholder.
@@ -191,9 +193,11 @@ JAVA_SPRING_MUTATION_NOTE = """\
 # The report lands in `target/pit-reports/`. It fails rather than passes when it finds nothing to mutate,
 # which is deliberate: `failWhenNoMutations` is `true` in the pom because "0 mutations" here can only mean
 # a misconfigured run, and a silent pass on a target no gate runs is worse than a red one. A scoped run is the
-# exception: `make mutation` on a `slice/<id>` branch (or with `SINCE=<ref>`) narrows PIT to the changed classes,
-# `Foo` and `Foo$*`, within the targets above, and a class PIT finds nothing to mutate in (an interface, a record
-# with no logic) is reported as no mutant to run, not as a failure. `make mutation-full` is the sweep, unchanged.
+# exception: `make mutation` scopes itself on a `slice/<id>` branch, and `make mutation SINCE=<ref>` does the same on
+# any checkout, narrowing PIT to the changed classes, `Foo` and `Foo$*`, within the targets above; a class PIT finds
+# nothing to mutate in (an interface, a record with no logic) is reported as no mutant to run, not as a failure.
+# `make mutation-full` is the sweep, unchanged, and CI and the trunk get the sweep. Phase 4 on `main` runs
+# `make mutation SINCE=<the commit before the merge>`.
 #
 # So a clean run here does NOT mean the adapters are well tested; it means the rules are. Widen
 # `targetClasses` as use cases arrive, and leave the adapters out — their tests are about wiring, and
