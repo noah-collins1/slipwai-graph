@@ -21,7 +21,7 @@ from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
 
-from .record import Database  # noqa: E402
+from .record import Database, printable  # noqa: E402
 from .table import GATE_UNITS  # noqa: E402
 
 CONSUMING = ("typecheck", "test")  # what a contract's consumer re-proves when the contract changes
@@ -54,14 +54,14 @@ def baseline_of(text: str | None, branch: str, exists: bool) -> tuple[dict[str, 
         return None, "it cannot be read" if exists else "none yet on this branch"
     try:
         found = json.loads(text)
-    except ValueError:
+    except (ValueError, RecursionError):  # a file this script did not write: what its parser raises is "cannot be read"
         return None, "it cannot be read"
     if not (isinstance(found, dict) and isinstance(found.get("branch"), str)
             and isinstance(found.get("ignored"), str)
             and all(isinstance(found.get(key), dict) and all(isinstance(item, str) for item in found[key].values())
                     for key in ("tools", "variables"))):
         return None, "it cannot be read"
-    return (found, "") if found["branch"] == branch else (None, f"it was taken on {found['branch']}")
+    return (found, "") if found["branch"] == branch else (None, f"it was taken on {printable(found['branch'])}")
 
 
 def drift(baseline: Mapping[str, Any], tools: Mapping[str, str], variables: Mapping[str, str], ignored: str) -> Drift:
@@ -94,7 +94,7 @@ def consumed(check: dict[str, Any], contracts: list[dict[str, Any]], paths: list
             continue
         path = next((path for path in paths if any(is_input(path, entry) for entry in contract["paths"])), None)
         if path is not None:
-            return f"consumes {contract['id']} ({path})"
+            return f"consumes {printable(contract['id'])} ({printable(path, 200)})"
     return None
 
 
@@ -123,7 +123,7 @@ def bound(unit: str, record: dict[str, Any], paths: list[str]) -> str | None:
         under = [record["deployables"][name]["path"] + "/" for name in obligation["components"]]
         path = next((path for path in paths if any(is_input(path, entry) for entry in under)), None)
         if path is not None:
-            return f"obligation {obligation['name']} ({path})"
+            return f"obligation {printable(obligation['name'])} ({printable(path, 200)})"
     return None
 
 
@@ -132,7 +132,7 @@ def first_reason(unit: str, check: dict[str, Any], record: dict[str, Any], paths
     contract, then an obligation a person declared names it."""
     path = read_by(check, paths)
     if path is not None:
-        return f"{path} changed"
+        return f"{printable(path, 200)} changed"
     return consumed(check, record["contracts"], paths) or bound(unit, record, paths)
 
 

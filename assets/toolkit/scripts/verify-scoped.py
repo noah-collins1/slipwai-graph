@@ -87,13 +87,13 @@ def head(ground: Ground) -> str | None:
 
 def trunk(ground: Ground) -> str | None:
     named = str(ground.scope.merge_base().named)
-    return f"this is the trunk (`{ground.scope.printable(named)}`)" if ground.branch == named else None
+    return f"this is the trunk (`{records.printable(named)}`)" if ground.branch == named else None
 
 
 def slice_branch(ground: Ground) -> str | None:
     if ground.scope.SLICE_BRANCH.match(ground.branch):
         return None
-    return f"`{ground.scope.printable(ground.branch)}` is not a slice/<id> branch"
+    return f"`{records.printable(ground.branch)}` is not a slice/<id> branch"
 
 
 def base(ground: Ground) -> str | None:
@@ -126,7 +126,7 @@ def reason(ground: Ground) -> str | None:
             if found is not None:
                 return found
     except Exception as error:  # a checkout this script cannot read is one it cannot scope
-        return "the checkout could not be read (" + str(error).replace("\n", " ")[:120] + ")"
+        return "the checkout could not be read (" + records.printable(error, 120, False) + ")"
     return None
 
 
@@ -197,7 +197,7 @@ def incomplete(make: str, makefile: str, why: str) -> int:
 
 
 def words(error: BaseException) -> str:
-    return str(error).replace("\n", " ")[:160]
+    return records.printable(error, 160, False)
 
 
 def run(make: str, makefile: str) -> int:
@@ -221,7 +221,10 @@ def run(make: str, makefile: str) -> int:
         data: records.Database | None = records.database(make, makefile)
     except records.RecordError:
         data = None
-    reused = standing(ground, make, data)
+    try:
+        reused = standing(ground, make, data)
+    except (RecursionError, UnicodeError) as error:  # the stamp is a file this script did not write (T052)
+        return broaden(make, makefile, "the stamp could not be read (" + type(error).__name__ + ")")
     if reused is not None:
         print(reused, flush=True)
         return 0
@@ -233,13 +236,13 @@ def run(make: str, makefile: str) -> int:
         changed = changes.changed(ground.scope, base)
         span = changes.unpushed(ground.scope, base)  # the trunk's commits the forge does not carry count as changed (D153)
     except records.Reach as error:  # a deployable reads outside its path: the words are the reason (D148)
-        return broaden(make, makefile, str(error).replace("\n", " "))
+        return broaden(make, makefile, records.printable(error, 400, False))
     except records.FullGate as error:  # matching text that make reads differently: knowledge this script does not have
-        return incomplete(make, makefile, str(error).replace("\n", " "))
+        return incomplete(make, makefile, records.printable(error, 400, False))
     except records.ObligationError as error:  # a person's declaration is named on a line of its own
-        return broaden(make, makefile, INCOMPLETE, [str(error).replace("\n", " ")])
+        return broaden(make, makefile, INCOMPLETE, [records.printable(error, 400, False)])
     except records.RecordError as error:
-        return incomplete(make, makefile, str(error).replace("\n", " "))
+        return incomplete(make, makefile, records.printable(error, 400, False))
     except Exception as error:  # what cannot be read is knowledge this script does not have
         return incomplete(make, makefile, words(error))
     if span.failure is not None:
@@ -247,7 +250,7 @@ def run(make: str, makefile: str) -> int:
     own = set(changed)
     changed = sorted(own | span.paths)
     gate = ground.stamp.is_gate_script
-    notes = [f"{INCOMPLETE} for {ground.scope.printable(path)} — {why}" for path, why in choose.unknown(
+    notes = [f"{INCOMPLETE} for {records.printable(path)} — {why}" for path, why in choose.unknown(
         record, changed, lambda path: bool(gate(path.encode("utf-8", "surrogateescape"))))]
     if notes:
         return broaden(make, makefile, INCOMPLETE, notes)
@@ -278,7 +281,7 @@ def run(make: str, makefile: str) -> int:
 
 def closing(scope: Any, base: str | None, ran: int, skipped: int, passed: bool, unpushed: str = "") -> str:
     """The last line: what was run and skipped, what it was compared with, and how it ended."""
-    named = scope.printable(str(scope.merge_base().named))
+    named = records.printable(str(scope.merge_base().named))
     short = ((scope.git("rev-parse", "--short", base) if base else None) or str(base)[:7]).strip()
     ended = "passed" if passed else ("the scoped gate did not pass — each failed check is named above on a line "
                                      "carrying ***")
@@ -296,7 +299,7 @@ def record(make: str, makefile: str) -> int:
             built = error.built
         text = records.render(built)
     except records.RecordError as error:
-        print(LINE + "the record cannot be built — " + str(error).replace("\n", " "), file=sys.stderr)
+        print(LINE + "the record cannot be built — " + records.printable(error, 400, False), file=sys.stderr)
         return 1
     except Exception as error:  # a checkout this script cannot read is one it cannot record
         print(LINE + "the record cannot be built — " + words(error), file=sys.stderr)

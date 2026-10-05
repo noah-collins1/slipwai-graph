@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -22,6 +23,7 @@ from . import reach, rules  # noqa: E402
 from .table import CHECKS, GATE_UNITS, NO_INPUTS, UNITS, Row  # noqa: E402
 
 SCHEMA = 1
+LIMIT = 80
 RULES_FILE = "scripts/verify_scoped/rules.json"
 MODEL = "docs/event-model/model.yaml"
 DATABASE = ("-npq", ".DEFAULT")
@@ -52,6 +54,20 @@ class FullGate(RecordError):
 
 class Reach(FullGate):
     """A deployable reads outside its own path (D148): the words are the whole reason the full gate runs."""
+
+
+def printable(value: object, limit: int = LIMIT, quote: bool = True) -> str:
+    """The one printer for a word that is not the script's own — a path, a name from `project.json`, a branch from the
+    baseline, an error's text: a character that is a control or a line separator dropped (a lone surrogate, which a path
+    that is not UTF-8 decodes to, is one), a backtick made an apostrophe where `quote`, and cut to `limit`; so it can
+    forge no line and end no span early, and it can be written to any stream."""
+    kept = []
+    for char in str(value):
+        if unicodedata.category(char)[0] == "C" or unicodedata.category(char) in ("Zl", "Zp"):
+            kept.append("" if quote else " ")
+        else:
+            kept.append("'" if char == "`" and quote else char)
+    return "".join(kept)[:limit]
 
 
 class ObligationError(RecordError):
@@ -161,7 +177,7 @@ def deployables_of(root: Path) -> dict[str, dict[str, Any]]:
     try:
         document = json.loads((root / "project.json").read_text(encoding="utf-8"))
         listed = document["deployables"]
-    except (OSError, ValueError, KeyError, TypeError) as error:
+    except (OSError, ValueError, KeyError, TypeError, RecursionError) as error:
         raise RecordError(f"project.json lists no deployables that can be read ({type(error).__name__})") from error
     found: dict[str, dict[str, Any]] = {}
     for name, item in listed.items():
@@ -461,14 +477,14 @@ def declared(root: Path, scope: Any, base: str | None) -> object:
     else:
         try:
             document = json.loads((root / "project.json").read_text(encoding="utf-8"))
-        except (OSError, ValueError):
+        except (OSError, ValueError, RecursionError):
             document = {}
     return document.get("verification") if isinstance(document, dict) else None
 
 
 def shown(position: int, entry: object) -> str:
     name = entry.get("name") if isinstance(entry, dict) else None
-    return f"obligation {position} ({'`' + name + '`' if isinstance(name, str) and name else 'unnamed'})"
+    return f"obligation {position} ({'`' + printable(name) + '`' if isinstance(name, str) and name else 'unnamed'})"
 
 
 def obligations_of(verification: object, deployables: dict[str, dict[str, Any]],
@@ -496,12 +512,14 @@ def obligations_of(verification: object, deployables: dict[str, dict[str, Any]],
             first = next(index for index, item in enumerate(found, 1) if item["name"] == name)
             raise ObligationError(f"{who} repeats the name of obligation {first}")
         components = entry.get("components")
+        if isinstance(components, list) and not all(isinstance(item, str) for item in components):
+            raise ObligationError(f"{who} names a component that is not a name")
         distinct = list(dict.fromkeys(components)) if isinstance(components, list) else []
         if len(distinct) < 2:
             raise ObligationError(f"{who} names fewer than two distinct components")
         unknown = next((item for item in distinct if item not in deployables), None)
         if unknown is not None:
-            raise ObligationError(f"{who} names the component `{unknown}`, which is not among the deployables")
+            raise ObligationError(f"{who} names the component `{printable(unknown)}`, which is not among the deployables")
         wanted = entry.get("checks")
         if not isinstance(wanted, list) or not wanted:
             raise ObligationError(f"{who} names no checks")
@@ -512,7 +530,7 @@ def obligations_of(verification: object, deployables: dict[str, dict[str, Any]],
             held = [unit for unit, item in checks.items() if item["gate"] == check] if check in GATE_UNITS \
                 else [check] if check in checks else []
             if not held:
-                raise ObligationError(f"{who} names the check `{check}`, which the record does not hold")
+                raise ObligationError(f"{who} names the check `{printable(check)}`, which the record does not hold")
             units.update(held)
         found.append({"name": name, "components": distinct, "checks": sorted(units)})
     return found

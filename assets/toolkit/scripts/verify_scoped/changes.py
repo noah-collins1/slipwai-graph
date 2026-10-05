@@ -16,6 +16,8 @@ import subprocess
 import sys
 from typing import Any, NamedTuple
 
+from .record import printable
+
 sys.dont_write_bytecode = True
 
 BLOB = "blob"
@@ -120,7 +122,7 @@ def unpushed(scope: Any, base: str) -> Span:
     Nothing when there is no remote at all (D117 stands) or when `origin/<trunk>` carries the base; the full gate's
     reason where a remote has no `origin/<trunk>` or the range cannot be walked."""
     named = str(scope.merge_base().named)
-    trunk = scope.printable(named)
+    trunk = printable(named)
     if not (scope.git("remote") or "").split():
         return Span()
     ref = f"refs/remotes/origin/{named}"
@@ -154,11 +156,11 @@ def unpushed(scope: Any, base: str) -> Span:
 
 def unpushed_words(choices: list[Any], own: set[str], span: Span, scope: Any) -> list[Any]:
     """A unit chosen only by a file the unpushed range changed says so, with the commit nobody's push has gated."""
-    trunk = scope.printable(str(scope.merge_base().named))
+    trunk = printable(str(scope.merge_base().named))
     for number, choice in enumerate(choices):
-        path = choice.reason.removesuffix(" changed")
-        if choice.runs and choice.reason.endswith(" changed") and path in span.paths and path not in own:
+        path = next((name for name in span.paths if choice.reason == f"{printable(name, 200)} changed"), None)
+        if choice.runs and path is not None and path not in own:
             choices[number] = choice._replace(
-                reason=f"{scope.printable(path)} changed on `{trunk}` since `origin/{trunk}` at {span.pushed}, which "
+                reason=f"{printable(path, 200)} changed on `{trunk}` since `origin/{trunk}` at {span.pushed}, which "
                        "nobody's push has gated")
     return choices
