@@ -2633,3 +2633,15 @@
 - **Confidence:** high · **Would reverse if:** the owner says otherwise
 - **Written to:** `specs/001-faster-slipwai/decisions.md` (this entry; D12 stands except for concurrency), `specs/001-faster-slipwai/cruise-carry.md` (the next iteration's plan)
 - **Status:** standing
+
+## D130 — After an external code review: coordination as an executable tool, write and read sets, the factory's own test selection, and elapsed-time measures (spec e11c0d1, FR-046 to FR-049)
+- **Stage:** split (owner's message through /cruise-tell) · **Slice:** S34a-evidence-records, S34b-evidence-lifecycle, S35-negotiation-budget, S36-integration-invariants · **When:** 2026-10-05T16:15:00Z · **Iteration:** 22
+- **Scope:** global
+- **Question:** The owner's message, 2026-10-05, after an external review of the code, with spec commit e11c0d1 adding FR-046 to FR-049 and SC-015, SC-016: how do these change the split?
+- **Options:** (a) as the owner set out — the owner's word · (b) leave the split as it was
+- **Decision:** (a), as the owner decided. (1) S34a, S34b, S35 and S36 are built as an executable coordination tool with explicit versioned state (FR-046: ready, claim, evidence, invalidate, eligible), called by agents and checked by a gate, not as new drive.md prose; the recursion's leaf is a verification unit inside a story-boundary delegate (drive.json defaults), not a fresh delegate per leaf. (2) S36 also carries FR-047: each active slice's write set and read set are recorded, and overlapping or read-after-write pairs are not both eligible until serialised or escalated. (3) A new slice, S38-factory-test-selection (FR-048, SC-016): the factory's own make test selects test modules by generation dependency, broadening to the full matrix where the effect cannot be established, the merge root and CI keeping the full matrix; it is placed right after S06-scoped-gate closes, ahead of S07-scoped-checks, and any root Makefile edit comes as a patch a person applies, as S33 did. (4) A small method slice, S39-benchmark-elapsed (FR-049), taken with the fan-out (D129): elapsed ready-to-accepted time, accumulated stage time, waiting by cause, and cost with rework, so the first concurrent slices are measured honestly; S37 uses these measures. It lands in the factory's assets/toolkit/scripts/agents/benchmark.py and reaches this repository through slipwai migrate, since an iteration does not edit delivery/scripts/.
+- **Why:** Every later slice pays the forty-minute factory gate, so test selection pays back first; coordination held in prose cannot be checked by a gate; and concurrent slices measured only by wall time would hide waiting as work.
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** the owner says otherwise
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (rows for S34a, S34b, S35, S36; new rows and graph rows for S38 and S39; S07 now after S38; S37 reads S39), `specs/001-faster-slipwai/spec.md` (FR-046 to FR-049, the owner's commit e11c0d1)
+- **Status:** standing
