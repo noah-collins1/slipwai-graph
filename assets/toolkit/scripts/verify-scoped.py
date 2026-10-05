@@ -30,7 +30,7 @@ from verify_scoped import record as records  # noqa: E402
 
 LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — {reason}"
-EVERY = LINE + "every check runs, as no selection is built yet; the stamp is left as it is"
+INCOMPLETE = "dependency knowledge was incomplete"
 
 
 def load(name: str, filename: str) -> Any:
@@ -146,26 +146,30 @@ def full_gate(make: str, makefile: str, *goals: str) -> int:
     return subprocess.run(command, close_fds=False, check=False).returncode
 
 
-def selected(
-    ground: Ground, make: str, makefile: str, data: records.Database,
-) -> tuple[list[choose.Choice], dict[str, Any]]:
-    """What the change since the base chooses, in the record's order, and the record it was chosen from."""
-    base = records.base_of(ground.scope)
-    record = records.build(make, makefile, ground.scope, data, base)
-    return choose.choose(record, data, sorted(ground.scope.changed_files(base))), record
+def broaden(make: str, makefile: str, reason: str, notes: list[str] | None = None) -> int:
+    """The full gate, `make verify`, with its status: what is said first (one line each), then why it runs."""
+    for note in notes or []:
+        print(LINE + note, flush=True)
+    print(FULL.format(reason=reason), flush=True)
+    return full_gate(make, makefile, "verify")
+
+
+def incomplete(make: str, makefile: str, why: str) -> int:
+    return broaden(make, makefile, INCOMPLETE, [f"{INCOMPLETE} — {why}"])
+
+
+def words(error: BaseException) -> str:
+    return str(error).replace("\n", " ")[:160]
 
 
 def run(make: str, makefile: str) -> int:
     try:
         ground = Ground()
     except Exception as error:  # a checkout this script cannot read is one it cannot scope
-        words = "the checkout could not be read (" + str(error).replace("\n", " ")[:120] + ")"
-        print(FULL.format(reason=words), flush=True)
-        return full_gate(make, makefile, "verify")
+        return broaden(make, makefile, "the checkout could not be read (" + words(error) + ")")
     found = reason(ground)
     if found is not None:
-        print(FULL.format(reason=found), flush=True)
-        return full_gate(make, makefile, "verify")
+        return broaden(make, makefile, found)
     try:
         data: records.Database | None = records.database(make, makefile)
     except records.RecordError:
@@ -175,11 +179,21 @@ def run(make: str, makefile: str) -> int:
         print(reused, flush=True)
         return 0
     try:
-        assert data is not None
-        choices, record = selected(ground, make, makefile, data)
-    except Exception:  # until the borders of an unreadable record are drawn, every check runs
-        print(EVERY, flush=True)
-        return full_gate(make, makefile, "verify-checks", "VERIFY_ORDER=1")
+        base = records.base_of(ground.scope)
+        if data is None:
+            data = records.database(make, makefile)  # the same words the record gives, where it cannot be read
+        record = records.build(make, makefile, ground.scope, data, base)
+        changed = sorted(ground.scope.changed_files(base))
+    except records.RecordError as error:
+        return incomplete(make, makefile, str(error).replace("\n", " "))
+    except Exception as error:  # what cannot be read is knowledge this script does not have
+        return incomplete(make, makefile, words(error))
+    gate = ground.stamp.is_gate_script
+    notes = [f"{INCOMPLETE} for {ground.scope.printable(path)} — {why}" for path, why in choose.unknown(
+        record, changed, lambda path: bool(gate(path.encode("utf-8", "surrogateescape"))))]
+    if notes:
+        return broaden(make, makefile, INCOMPLETE, notes)
+    choices = choose.choose(record, data, changed)
     for choice in choices:
         print(LINE + (f"run  {choice.unit} — " if choice.runs else f"skip {choice.unit} — ") + choice.reason,
               flush=True)
@@ -199,7 +213,7 @@ def record(make: str, makefile: str) -> int:
         print(LINE + "the record cannot be built — " + str(error).replace("\n", " "), file=sys.stderr)
         return 1
     except Exception as error:  # a checkout this script cannot read is one it cannot record
-        print(LINE + "the record cannot be built — " + str(error).replace("\n", " ")[:160], file=sys.stderr)
+        print(LINE + "the record cannot be built — " + words(error), file=sys.stderr)
         return 1
     sys.stdout.write(text)
     return 0

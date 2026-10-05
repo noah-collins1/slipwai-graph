@@ -113,10 +113,11 @@ class StampTest(ScopedCase):
         was = self.plant_stamp()
         self.forget_log()
         self.assert_reused(self.scoped(), was)
+        line = self.reuse_line()  # a full gate removes the stamp, so the line is read before the run that follows
         config.write_text("home = /usr/bin\nversion_info = 3.13.9\nuv = 0.12.20\n", encoding="utf-8")
         self.forget_log()
         run = self.scoped()
-        self.assertNotIn(self.reuse_line(), run.stdout, "the second environment was not part of the key")
+        self.assertNotIn(line, run.stdout, "the second environment was not part of the key")
 
 
 if __name__ == "__main__":

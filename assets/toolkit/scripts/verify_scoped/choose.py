@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 import sys
+from collections.abc import Callable
 from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
@@ -21,6 +22,8 @@ from .table import GATE_UNITS  # noqa: E402
 CONSUMING = ("typecheck", "test")  # what a contract's consumer re-proves when the contract changes
 BUILD_DIRECTORY_FAMILIES = ("go", "java")  # whose three units build in one directory
 UNCHANGED = "none of its inputs changed"
+MAKEFILES = ("Makefile", "GNUmakefile", "makefile")
+PROJECT_JSON = "project.json"
 
 
 class Choice(NamedTuple):
@@ -92,3 +95,28 @@ def choose(record: dict[str, Any], data: Database, changed: list[str]) -> list[C
             if found is not None:
                 reasons[unit] = found
     return [Choice(unit, unit in reasons, reasons.get(unit, UNCHANGED)) for unit in checks]
+
+
+def claimed(path: str, record: dict[str, Any]) -> bool:
+    """Whether a deployable, a contract or a claiming check's file inputs hold the path: a check that always runs and
+    one with no recorded inputs claim nothing, however much they read."""
+    if any(is_input(path, entry) for contract in record["contracts"] for entry in contract["paths"]):
+        return True
+    return any(check["claims"] and any(is_input(path, entry) for entry in (check["inputs"] or {}).get("files", []))
+               for check in record["checks"].values())
+
+
+def unknown(record: dict[str, Any], changed: list[str], is_gate_script: Callable[[str], bool]) -> list[tuple[str, str]]:
+    """The changed paths this script cannot reason about, in sorted order, each with what makes it so: the project's
+    record, a makefile or a gate script (the gate itself changed), or a path nothing claims."""
+    found = []
+    for path in sorted(changed):
+        if path == PROJECT_JSON:
+            found.append((path, "it is project.json"))
+        elif path in MAKEFILES:
+            found.append((path, "it is the Makefile"))
+        elif is_gate_script(path):
+            found.append((path, "it is a gate script under scripts/"))
+        elif not claimed(path, record):
+            found.append((path, "no deployable, contract or check claims it"))
+    return found
