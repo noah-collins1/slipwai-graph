@@ -1,9 +1,11 @@
 """Which units a change runs, and the reason printed for each: the selection `verify-scoped.py` makes from the record.
 
-A unit runs when, in this order, a changed path is one of its file inputs (`<path> changed`), a contract it consumes
-changed (`consumes <contract> (<path>)`), or a unit it shares a recipe or a build directory with runs (`shares one recipe
-with <unit>`, `shares a build directory with <unit>`). Changed paths are taken in sorted order, so the reason a unit
-names is the first path that chose it; every unit is named once, the first reason that holds winning.
+A check that always runs (the record's `always`: why it runs on every scoped run, or `no recorded inputs`) is chosen with
+that reason whatever changed, and claims nothing. Any other unit runs when, in this order, a changed path is one of its
+file inputs (`<path> changed`), a contract it consumes changed (`consumes <contract> (<path>)`), or a unit it shares a
+recipe or a build directory with runs (`shares one recipe with <unit>`, `shares a build directory with <unit>`). Changed
+paths are taken in sorted order, so the reason a unit names is the first path that chose it; every unit is named once,
+the first reason that holds winning.
 """
 from __future__ import annotations
 
@@ -80,17 +82,13 @@ def choose(record: dict[str, Any], data: Database, changed: list[str]) -> list[C
     checks: dict[str, dict[str, Any]] = record["checks"]
     reasons: dict[str, str] = {}
     for unit, check in checks.items():
-        if check["always"] or check["inputs"] is None:
-            continue
-        found = first_reason(check, record["contracts"], paths)
+        found = check["always"] or first_reason(check, record["contracts"], paths)
         if found is not None:
             reasons[unit] = found
     chosen = list(reasons)
     for unit, check in checks.items():
-        if unit in reasons or check["gate"] not in GATE_UNITS or check["inputs"] is None:
-            continue
-        found = sharing(unit, check, record, data, chosen)
-        if found is not None:
-            reasons[unit] = found
-    return [Choice(unit, unit in reasons, reasons.get(unit, UNCHANGED)) for unit, check in checks.items()
-            if not (check["always"] or check["inputs"] is None)]
+        if unit not in reasons and check["gate"] in GATE_UNITS:
+            found = sharing(unit, check, record, data, chosen)
+            if found is not None:
+                reasons[unit] = found
+    return [Choice(unit, unit in reasons, reasons.get(unit, UNCHANGED)) for unit in checks]

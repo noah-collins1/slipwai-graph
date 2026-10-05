@@ -57,11 +57,12 @@ class TypescriptTest(ShapeCase):
         self.assertEqual(ran["lint-web"], "apps/web/src/App.tsx changed")
         self.assertEqual(ran["lint-service"], "apps/service/src/Moved.tsx changed")
 
-    def test_e1_nothing_changed_is_nothing_run(self) -> None:
+    def test_e1_nothing_changed_runs_no_unit_that_reads_a_path(self) -> None:
         run = self.scoped()
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
-        self.assertEqual(self.decided(run)[0], {})
-        self.assertEqual(self.called(), [])
+        ran, skipped = self.decided(run)
+        self.assertEqual({unit for unit, reason in ran.items() if reason.endswith(" changed")}, set())
+        self.assertTrue(set(skipped) >= WEB_RUNS | WEB_SKIPPED)
 
 
 class PinningFilesTest(ShapeCase):
