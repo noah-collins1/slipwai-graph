@@ -14,10 +14,12 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 import unicodedata
 from pathlib import Path
+from xml.etree import ElementTree
 from typing import Any, Mapping, NamedTuple, Protocol
 
 sys.dont_write_bytecode = True  # an untracked file under scripts/ would make every later scoped run the full gate
@@ -37,6 +39,7 @@ class Result(NamedTuple):
     files: list[str]
     skipped: list[tuple[str, str]]
     refusal: str | None = None
+    unreadable: str | None = None
 
 
 class Runner(Protocol):
@@ -232,13 +235,117 @@ def go(path: str, files: list[str]) -> Result:
     return Result(subprocess.run(command, close_fds=False, check=False).returncode, sorted(keep), left)
 
 
+class Unreadable(Exception):
+    """A pattern or a file this script cannot read as the tool reads it: the service's run is then the sweep."""
+
+
+# What PIT's `Glob` escapes or turns into a regex operator, character by character; `*` and `**.` are split off first.
+GLOB = {"?": ".", ".": r"\.", "$": r"\$", "+": r"\+", "\\": r"\\", "(": r"\(", ")": r"\)", "[": r"\[", "]": r"\]"}
+
+
+def pit_regex(pattern: str) -> re.Pattern[str]:
+    """A `targetClasses`/`excludedClasses` pattern as PIT's `Glob` reads it (pitest 1.25.9): matched whole; `*` any run of
+    characters including `.`, `?` one character, `$` and `.` literal, `**.` zero or more packages, a leading `~` a raw
+    regular expression. A `${property}` is Maven's to expand and not this script's to guess."""
+    if "${" in pattern:
+        raise Unreadable(f"the pattern `{shown(pattern)}` names a property")
+    try:
+        if pattern.startswith("~"):
+            return re.compile(pattern[1:])
+        words = {"**.": r"(?:.*\.)*", "*": ".*"}
+        return re.compile("".join(words.get(word) or "".join(GLOB.get(char, char) for char in word)
+                                  for word in re.split(r"(\*\*\.|\*)", pattern)))
+    except re.error as error:
+        raise Unreadable(f"the pattern `{shown(pattern)}` cannot be read ({error})") from error
+
+
+def pit_matches(pattern: str, name: str) -> bool:
+    return pit_regex(pattern).fullmatch(name) is not None
+
+
+def local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def pit_targets(pom: str) -> tuple[list[str], list[str]]:
+    """The `targetClasses` and `excludedClasses` of the `pitest-maven` plugin in a pom, read and never written."""
+    try:
+        tree = ElementTree.parse(pom)
+    except (OSError, ElementTree.ParseError) as error:
+        raise Unreadable(f"the pom cannot be read ({str(error)[:80]})") from error
+    for plugin in (el for el in tree.iter() if local(el.tag) == "plugin"):
+        if any(local(child.tag) == "artifactId" and (child.text or "").strip() == "pitest-maven" for child in plugin):
+            settings = next((child for child in plugin if local(child.tag) == "configuration"), None)
+            lists = {local(child.tag): [(param.text or "").strip() for param in child]
+                     for child in (settings if settings is not None else [])}
+            if not lists.get("targetClasses"):
+                raise Unreadable("the pitest-maven plugin names no targetClasses")
+            return lists["targetClasses"], lists.get("excludedClasses", [])
+    raise Unreadable("the pom has no pitest-maven plugin")
+
+
+def class_name(path: str) -> str:
+    """`src/main/java/com/x/Foo.java` as `com.x.Foo`."""
+    return path.removeprefix("src/main/java/").removesuffix(".java").replace("/", ".")
+
+
+def stream(argv: list[str], cwd: str) -> tuple[int, str]:
+    """A command run in `cwd`, its output echoed as it comes and returned whole."""
+    seen: list[str] = []
+    with subprocess.Popen(argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8",
+                          errors="replace", close_fds=False) as process:
+        for line in process.stdout or []:
+            print(line, end="", flush=True)
+            seen.append(line)
+    return process.returncode, "".join(seen)
+
+
+PIT = ["./mvnw", "-B", "-q", "test-compile", "org.pitest:pitest-maven:mutationCoverage"]
+NO_MUTATIONS = "No mutations found"
+
+
+def spring(path: str, files: list[str], execute: Any) -> Result:
+    """PIT over the changed classes only — `-DtargetClasses=Foo,Foo$*` on the sweep's own command, the pom untouched —
+    within the pom's targets. A class outside them is named and left out, and a run with nothing left starts no Maven."""
+    pom = f"{path}/pom.xml"
+    try:
+        targets, excluded = pit_targets(pom)
+        keep = [name for name in files if any(pit_matches(t, class_name(name)) for t in targets)
+                and not any(pit_matches(x, class_name(name)) for x in excluded)]
+    except Unreadable as why:
+        return Result(0, [], [], None, f"{pom}: {why}")
+    left = [(name, "outside PIT's configured targets") for name in files if name not in keep]
+    if not keep:
+        return Result(0, [], left)
+    classes = [class_name(name) for name in keep]
+    status, text = execute([*PIT, "-DtargetClasses=" + ",".join(c for name in classes for c in (name, name + "$*"))], path)
+    if status != 0 and NO_MUTATIONS in text:  # PIT's own failure for a scope with nothing to mutate, which is no failure
+        say(f"no mutant to run in {path} — PIT found no code to mutate in {', '.join(classes)}; no report was written")
+        status = 0
+    return Result(status, keep, left)
+
+
 class Tools:
     """The runner of the wired backends. Any other backend refuses until its tool is wired, so the target can fail but
     never pass for it."""
 
+    def __init__(self, execute: Any = None) -> None:
+        self.execute = execute or stream
+
     def run(self, backend: str, path: str, files: list[str]) -> Result:
         if backend == "go":
             return go(path, files)
+        if backend == "java-spring":
+            return spring(path, files, self.execute)
+        return Result(2, [], [], f"no runner for {backend}")
+
+    def sweep(self, backend: str, path: str) -> Result:
+        """The service's whole run, as `make mutation-full` would: no scope."""
+        if backend == "go":
+            command = [sys.executable, os.path.join(HERE, "go-mutation.py"), path]
+            return Result(subprocess.run(command, close_fds=False, check=False).returncode, [], [])
+        if backend == "java-spring":
+            return Result(self.execute(PIT, path)[0], [], [])
         return Result(2, [], [], f"no runner for {backend}")
 
 
@@ -270,7 +377,7 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         say(f"not mutated {shown(path)} — not mutated by this target")
     for path in deleted:
         say(f"not mutated {shown(path)} — deleted, no mutants")
-    counts = {"scoped": 0, "skipped": 0, "refused": 0}
+    counts = {"scoped": 0, "swept": 0, "skipped": 0, "refused": 0}
     failed: list[str] = []
     status = 0
     for backend, root in services:
@@ -281,20 +388,22 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
             continue
         say(f"scope {root} — {', '.join(shown(name) for name in files)}")
         result = runner.run(backend, root, files)
+        swept = result.unreadable is not None
+        if swept:  # what the tool is configured to take cannot be told, so the service sweeps
+            say(f"sweep {root} — {result.unreadable}")
+            result = runner.sweep(backend, root)
         for name, why in result.skipped:
             say(f"not mutated {shown(root + '/' + name)} — {why}")
         if result.refusal is not None:
             say(f"refuse {root} — {result.refusal}")
-            counts["refused"] += 1
-        else:
-            counts["scoped" if result.files else "skipped"] += 1
+        counts["swept" if swept else "refused" if result.refusal is not None else "scoped" if result.files else "skipped"] += 1
         if result.status != 0:
             failed.append(root)
             status = status or result.status
     if named and not counts["scoped"] and not failed:
         say("no mutant to run — every changed production file is outside the tools' targets")
     ended = "passed" if not failed else "failed: " + ", ".join(failed)
-    say(f"{counts['scoped']} scoped, 0 swept, {counts['skipped']} skipped, {counts['refused']} refused; {ended}")
+    say(f"{counts['scoped']} scoped, {counts['swept']} swept, {counts['skipped']} skipped, {counts['refused']} refused; {ended}")
     return status
 
 
