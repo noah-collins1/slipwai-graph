@@ -24,6 +24,9 @@ sys.dont_write_bytecode = True
 
 SCRIPTS = "assets/toolkit/scripts/"
 COPIED = ("Makefile", SCRIPTS + "verify-stamp.py", SCRIPTS + "check-slice-scope.py")
+# Variables that make the root gate run its checks straight and touch no stamp: a run that skipped or narrowed them is
+# not the gate. `gate()` strips each from the child, so only an example that sets one holds it.
+BYPASS = ("TESTS", "SKIP", "FACTORY_BACKENDS")
 FULL = ["verify --lint-only", "verify --typecheck-only", "check-structure", "test"]
 VERIFY = (
     "#!/bin/sh\necho \"verify $*\" >> \"$STANDIN_LOG\"\n"
@@ -67,12 +70,14 @@ class GateCase(unittest.TestCase):
         git(self.repo, "checkout", "-q", "-b", "topic")
         self.log.write_text("", encoding="utf-8")
 
-    def gate(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
-        """`make verify` as a person types it; the log of what the stand-ins ran is kept between runs."""
+    def gate(self, *args: str, path: str = "", **env: str) -> subprocess.CompletedProcess[str]:
+        """`make verify` as a person types it; the log of what the stand-ins ran is kept between runs.
+
+        `path`, where given, is every `PATH` directory after the stand-ins' own: the machine's is then not consulted."""
         # the outer `make test TESTS=...` exports its own variables to every child
-        names = CI_MARKERS + MAKE_STATE + GIT_STATE + ("TESTS", "SKIP", "VERIFY_FORCE")
+        names = CI_MARKERS + MAKE_STATE + GIT_STATE + BYPASS + ("VERIFY_FORCE",)
         full = {k: v for k, v in os.environ.items() if k not in names}
-        full.update(PATH=f"{self.bin}{os.pathsep}{full.get('PATH', '')}", STANDIN_LOG=str(self.log),
+        full.update(PATH=f"{self.bin}{os.pathsep}{path or full.get('PATH', '')}", STANDIN_LOG=str(self.log),
                     PYTHONDONTWRITEBYTECODE="1", **env)
         return subprocess.run(["make", "verify", *args], cwd=self.repo, env=full, text=True, capture_output=True,
                               timeout=180)
@@ -240,7 +245,7 @@ class TestNothingElseMoves(GateCase):
     def dry(self, *targets: str, **variables: str) -> list[str]:
         arguments = [f"{name}={value}" for name, value in variables.items()]
         done = subprocess.run(["make", "-n", *targets, *arguments], cwd=self.repo, text=True, capture_output=True,
-                              env={k: v for k, v in os.environ.items() if k not in MAKE_STATE + ("TESTS", "SKIP")})
+                              env={k: v for k, v in os.environ.items() if k not in MAKE_STATE + BYPASS})
         return done.stdout.splitlines()
 
     def test_help_says_a_passed_tree_is_not_judged_again(self) -> None:  # e1

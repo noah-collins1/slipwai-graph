@@ -34,19 +34,24 @@ test: ## Run the factory's test suite, or a slice: TESTS="test_a test_b", or SKI
 # A tree that already passed is not judged again: the verify stamp every generated project carries answers first, from
 # where it ships, so the factory's own gate is the one it generates. The four checks are `verify-checks`; CI never reads
 # a stamp, because the script stands down under a CI marker and on the trunk. A slice of the suite (`TESTS`, `SKIP`)
-# is not the gate, so it never asks the script: nothing reads, writes or removes a stamp for a run that skipped checks.
+# is not the gate, and nor is `FACTORY_BACKENDS`, which cuts the backend matrix: neither asks the script, so nothing reads,
+# writes or removes a stamp for a run that skipped checks. Every variable that narrows what the suite runs belongs here.
 # The key also holds what each tool the suite looks for answers to `--version`, since a test skips when its tool is
 # missing and a tool appearing or changing can change what the suite does. Only a tool this machine has is asked: the
-# script cannot ask a missing one, and would then record nothing. `make` itself is always there, under the name it was run as.
+# script cannot ask a missing one, and would then record nothing. The Docker Compose plugin answers to `docker compose
+# version`, which the script cannot ask, so the recipe writes that answer (or `absent`) to the ignored `.factory-work/verify-probes`,
+# which the key reads like any ignored file. The line holds `$(MAKE)`, so `make -n verify` and `make -q verify` write that
+# file too: harmless, an ignored file with its true answer, and no stamp is touched. `make` itself is always there,
+# under the name it was run as.
 VERIFY_STAMP_SCRIPT := assets/toolkit/scripts/verify-stamp.py
-VERIFY_TOOLS := python3 git uv node npm go java docker pack tofu gh
+VERIFY_TOOLS := python3 git uv node npm npx go java docker pack ko mvn tofu gh codegraph
 VERIFY_STAMP = --tool make --make "$(MAKE)" $(foreach tool,$(VERIFY_TOOLS),$(if $(shell command -v $(tool) 2>/dev/null),--tool $(tool)))
 .PHONY: verify
 verify: ## Full local gate — a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway
-ifneq ($(strip $(TESTS)$(SKIP)),)
+ifneq ($(strip $(TESTS)$(SKIP)$(FACTORY_BACKENDS)),)
 	@"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks
 else
-	@run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
+	@mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; } > .factory-work/verify-probes; run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
 endif
 
 .PHONY: verify-checks
