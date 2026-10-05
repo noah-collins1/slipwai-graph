@@ -493,7 +493,7 @@ test section's `.PHONY` line stays untouched, so `migrate`'s three-way merge no 
 ## Phase 2: Host closing tasks
 
 ### T010 — Every suite that reads a generated gate, once, before the gates (host task)
-- [ ] After T009 is committed and the chain T002 … T008 is: `make test TESTS="$(ls tests | grep -E '^test_(verify_stamp|parallel_gate|model_|gate_|verify_scoped|scoped_|mutation)' | sed 's/\.py$//' | tr '\n' ' ') test_matrix test_commands test_commit_boundaries test_monorepos test_layout test_changelog"`, then `make lint typecheck check-structure`. Not `make verify`.
+- [x] *(Done at `3e7aa4f`: 775 tests OK, 1 skipped, 1441 s; lint, typecheck, structure green at T009.)* After T009 is committed and the chain T002 … T008 is: `make test TESTS="$(ls tests | grep -E '^test_(verify_stamp|parallel_gate|model_|gate_|verify_scoped|scoped_|mutation)' | sed 's/\.py$//' | tr '\n' ' ') test_matrix test_commands test_commit_boundaries test_monorepos test_layout test_changelog"`, then `make lint typecheck check-structure`. Not `make verify`.
 
 ### T011 — Converge, passes as needed (host task)
 - [ ] `drive-converge` over the slice's range; findings append as tasks below.
