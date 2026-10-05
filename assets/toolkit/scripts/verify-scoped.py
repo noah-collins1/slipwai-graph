@@ -227,7 +227,8 @@ def run(make: str, makefile: str) -> int:
     for choice in choices:
         print(LINE + (f"run  {choice.unit} — " if choice.runs else f"skip {choice.unit} — ") + choice.reason,
               flush=True)
-    targets = [target for choice in choices if choice.runs for target in record["checks"][choice.unit]["targets"]]
+    targets = list(dict.fromkeys(  # a whole gate's units all name the gate, once
+        target for choice in choices if choice.runs for target in record["checks"][choice.unit]["targets"]))
     status = 0
     if targets:
         # the gate's own output grouping, where this make has it; close_fds=False hands the sub-make the jobserver

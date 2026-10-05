@@ -7,7 +7,9 @@ declared names it (`obligation <name> (<path>)`), or a unit it shares a recipe o
 (`shares one recipe with <unit>`, `shares a build directory with <unit>`). Changed paths are taken in sorted order, so the reason a unit names is the first path that chose it; every unit is named once,
 the first reason that holds winning. After the paths come the machine's: a tool the baseline saw answer differently
 (`<tool> answers differently from the baseline`) or a variable whose digest differs (`<NAME> differs from the baseline`),
-for the units whose recorded inputs name it; a unit that shares a recipe with one of those runs with it.
+for the units whose recorded inputs name it; a unit that shares a recipe with one of those runs with it. A gate whose
+recipe is not the sum of its units' (the record marks its units `whole`) runs whole under its own name when any one of
+them is chosen, and every one of its units says `its recipe is not the sum of its per-deployable targets`.
 """
 from __future__ import annotations
 
@@ -25,6 +27,7 @@ from .table import GATE_UNITS  # noqa: E402
 CONSUMING = ("typecheck", "test")  # what a contract's consumer re-proves when the contract changes
 BUILD_DIRECTORY_FAMILIES = ("go", "java")  # whose three units build in one directory
 UNCHANGED = "none of its inputs changed"
+WHOLE = "its recipe is not the sum of its per-deployable targets"
 MAKEFILES = ("Makefile", "GNUmakefile", "makefile")
 PROJECT_JSON = "project.json"
 WALKS = ("apps/", "packages/")  # directories a check walks whole: a changed path there chooses it, and is not known by it
@@ -161,6 +164,9 @@ def choose(record: dict[str, Any], data: Database, changed: list[str], drifted: 
     take(along)
     take(lambda unit, check: moved(check, drifted))
     take(along)
+    for unit in [unit for unit in reasons if checks[unit].get("whole")]:  # one unit of a whole gate runs them all
+        reasons.update({other: WHOLE for other, check in checks.items() if check.get("whole")
+                        and check["gate"] == checks[unit]["gate"]})
     return [Choice(unit, unit in reasons, reasons.get(unit, UNCHANGED)) for unit in checks]
 
 

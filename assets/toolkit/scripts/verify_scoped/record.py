@@ -160,6 +160,37 @@ def check_entry(gate: str, row: Row | None, own: str | None, context: Context, t
             "claims": row.claims, "always": row.always, "targets": targets}
 
 
+def sum_of(gate: str, units: list[str], data: Database) -> tuple[list[list[str]], set[str]]:
+    """What a gate's recipe and prerequisites are when they are the sum of its units: the lines of each target that
+    holds some (the units, and the family targets they wait for, each once), and everything those wait for but the
+    targets themselves."""
+    parts: list[list[str]] = []
+    needs: set[str] = set()
+    taken: set[str] = set()
+    for unit in units:
+        for target in (*[need for need in data.needs.get(unit, []) if re.fullmatch(rf"{gate}_\w+", need)], unit):
+            if target not in taken:
+                taken.add(target)
+                parts.append(data.recipes.get(target, []))
+                needs.update(data.needs.get(target, []))
+    return parts, needs - taken
+
+
+def whole_gates(gates: dict[str, list[str]], data: Database) -> set[str]:
+    """The gates whose recipe lines or prerequisites are not exactly what their units and family targets hold: a line a
+    project added to `lint:`, a prerequisite it gave it, a line a unit runs that the gate no longer does. The gate has
+    the same lines, each target's own in the order it has them; which target's come first is the gate's choice."""
+    found = set()
+    for gate, units in gates.items():
+        parts, needs = sum_of(gate, units, data)
+        lines = data.recipes.get(gate, [])
+        places = [[lines.index(line) if line in lines else -1 for line in part] for part in parts]
+        if sorted(line for part in parts for line in part) != sorted(lines) or set(data.needs.get(gate, [])) != needs \
+                or any(place != sorted(place) for place in places):
+            found.add(gate)
+    return found
+
+
 def checks_of(data: Database, deployables: dict[str, dict[str, Any]], context: Context) -> dict[str, Any]:
     if "verify-checks" not in data.needs:
         raise RecordError("the make database has no `verify-checks`")
@@ -176,6 +207,12 @@ def checks_of(data: Database, deployables: dict[str, dict[str, Any]], context: C
             if row is None:
                 raise RecordError(f"the deployable `{name}` is in a family this script does not know: {item['family']}")
             checks[unit] = check_entry(gate, row, name, context, [unit])
+    units: dict[str, list[str]] = {}
+    for unit, entry in checks.items():
+        units.setdefault(entry["gate"], []).append(unit) if entry["gate"] in GATE_UNITS else None
+    for gate in whole_gates(units, data):  # the gate runs whole, under its own name, wherever one of its units is chosen
+        for unit in units[gate]:
+            checks[unit].update(whole=True, targets=[gate])
     return checks
 
 
