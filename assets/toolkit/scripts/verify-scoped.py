@@ -25,6 +25,7 @@ sys.dont_write_bytecode = True  # an untracked file under scripts/ would make ev
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+from verify_scoped import choose  # noqa: E402
 from verify_scoped import record as records  # noqa: E402
 
 LINE = "verify-scoped: "
@@ -118,26 +119,20 @@ def reason(ground: Ground) -> str | None:
     return None
 
 
-def stamp_arguments(make: str, makefile: str) -> list[str]:
-    """What the project's `verify` recipe hands `verify-stamp.py` — its tools and environments — read from the make
-    database as `VERIFY_STAMP`, so the key is built from the project's own list and this script holds none."""
-    found = records.database(make, makefile).variables.get("VERIFY_STAMP")
-    if found is None:
-        raise ValueError("the make database holds no VERIFY_STAMP")
-    return found.split()
-
-
-def standing(ground: Ground, make: str, makefile: str) -> str | None:
-    """verify-stamp's reuse line where its stamp stands for this tree and this machine; nothing is written or removed."""
+def standing(ground: Ground, make: str, data: records.Database | None) -> str | None:
+    """verify-stamp's reuse line where its stamp stands for this tree and this machine; nothing is written or removed.
+    The key is built with the tools and environments the project's own `verify` recipe hands the stamp script, which
+    the make database holds as `VERIFY_STAMP`."""
     stamp = ground.stamp
     try:
+        found = data.variables.get("VERIFY_STAMP") if data is not None else None
         usable, cannot = stamp.standing()
-        if cannot is not None or not usable or stamp.ratcheting() or stamp.declined():
+        if found is None or cannot is not None or not usable or stamp.ratcheting() or stamp.declined():
             return None
         if stamp.index_problem(stamp.top_level()) is not None:
             return None
-        key = stamp.build_key(stamp.machine_tools(stamp.Options(["--make", make, *stamp_arguments(make, makefile)])))
-    except (stamp.CannotTell, ValueError, OSError, subprocess.SubprocessError, records.RecordError):
+        key = stamp.build_key(stamp.machine_tools(stamp.Options(["--make", make, *found.split()])))
+    except (stamp.CannotTell, ValueError, OSError, subprocess.SubprocessError):
         return None
     held = stamp.read_stamp(stamp.stamp_path())
     if held is None or held["key"] != key["key"]:
@@ -151,6 +146,15 @@ def full_gate(make: str, makefile: str, *goals: str) -> int:
     return subprocess.run(command, close_fds=False, check=False).returncode
 
 
+def selected(
+    ground: Ground, make: str, makefile: str, data: records.Database,
+) -> tuple[list[choose.Choice], dict[str, Any]]:
+    """What the change since the base chooses, in the record's order, and the record it was chosen from."""
+    base = records.base_of(ground.scope)
+    record = records.build(make, makefile, ground.scope, data, base)
+    return choose.choose(record, data, sorted(ground.scope.changed_files(base))), record
+
+
 def run(make: str, makefile: str) -> int:
     try:
         ground = Ground()
@@ -162,12 +166,28 @@ def run(make: str, makefile: str) -> int:
     if found is not None:
         print(FULL.format(reason=found), flush=True)
         return full_gate(make, makefile, "verify")
-    reused = standing(ground, make, makefile)
+    try:
+        data: records.Database | None = records.database(make, makefile)
+    except records.RecordError:
+        data = None
+    reused = standing(ground, make, data)
     if reused is not None:
         print(reused, flush=True)
         return 0
-    print(EVERY, flush=True)
-    return full_gate(make, makefile, "verify-checks", "VERIFY_ORDER=1")
+    try:
+        assert data is not None
+        choices, record = selected(ground, make, makefile, data)
+    except Exception:  # until the borders of an unreadable record are drawn, every check runs
+        print(EVERY, flush=True)
+        return full_gate(make, makefile, "verify-checks", "VERIFY_ORDER=1")
+    for choice in choices:
+        print(LINE + (f"run  {choice.unit} — " if choice.runs else f"skip {choice.unit} — ") + choice.reason,
+              flush=True)
+    targets = [target for choice in choices if choice.runs for target in record["checks"][choice.unit]["targets"]]
+    if not targets:
+        return 0
+    command = [make, *targets, "VERIFY_ORDER=1", "--no-print-directory", "-f", makefile]
+    return subprocess.run(command, close_fds=False, check=False).returncode
 
 
 def record(make: str, makefile: str) -> int:

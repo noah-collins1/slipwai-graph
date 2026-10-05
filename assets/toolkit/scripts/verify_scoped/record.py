@@ -247,15 +247,21 @@ def contracts_of(deployables: dict[str, dict[str, Any]], context: Context, model
     return contracts
 
 
-def build(make: str, makefile: str, scope: Any) -> dict[str, Any]:
-    """The record, or a `RecordError` saying why there is none."""
+def base_of(scope: Any) -> str | None:
+    """The commit the branch is compared with; None where there is none to be had."""
+    try:
+        return scope.merge_base().commit  # type: ignore[no-any-return]
+    except Exception:
+        return None
+
+
+def build(make: str, makefile: str, scope: Any, data: Database | None = None, base: str | None = None) -> dict[str, Any]:
+    """The record, or a `RecordError` saying why there is none. Where the caller has read the database or found the
+    base already, it hands them over."""
     root = Path(scope.ROOT)
     deployables = deployables_of(root)
-    data = database(make, makefile)
-    try:
-        base = scope.merge_base().commit
-    except Exception:
-        base = None
+    data = data or database(make, makefile)
+    base = base or base_of(scope)
     context = Context(deployables, data, packages_of(root, scope, base))
     checks = checks_of(data, deployables, context)
     services = [name for name, item in deployables.items() if item["kind"] == "service"]
