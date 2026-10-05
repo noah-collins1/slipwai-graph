@@ -111,7 +111,7 @@ Each task starts from the green committed suite.
 
 ### T001 — Pin: the generated gate before anything moves (host task)
 
-- [ ] **Host task; no story; no commit.** Before the first increment: run the pin set once and record that it is green:
+- [x] **Host task; no story; no commit.** Before the first increment: run the pin set once and record that it is green:
   `make test TESTS="test_verify_stamp_pinned test_verify_stamp_recipe test_verify_stamp_scan test_parallel_gate_reads test_commit_boundaries test_commands test_matrix"`.
   Then `make starters` and keep `build/` aside (untracked output, not a tracked file) so the last task's diff of that tree
   is the change a user sees (`docs/maintaining.md`, *Browse the starters*): a `Makefile` suffix, the new scripts,
@@ -119,7 +119,7 @@ Each task starts from the green committed suite.
 
 ### T002 — [US2] A component is a deployable with targets of its own (R3 · AC-S06-2, -4, -14)
 
-- [ ] **Rule R3.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first line
+- [x] **Rule R3.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first line
   `MINOR`, one lead sentence, a **Catch-up.** paragraph that stands alone: a project made before gains `make
   verify-scoped` and the per-deployable targets after `slipwai migrate`, its merge root and CI still run `make verify`,
   and an optional `verification.obligations` key in `project.json` declares an integration obligation; T015 completes
@@ -162,7 +162,7 @@ command from the constraints, then `make lint typecheck check-structure`. Commit
 
 ### T003 — [US2] `make verify-scoped` is the full gate wherever it cannot read the branch (R1 · AC-S06-1, -14)
 
-- [ ] **Rule R1.** Needs T002 (`scoped_section` gains the `verify-scoped` rule). Creates `scripts/verify-scoped.py` with
+- [x] **Rule R1.** Needs T002 (`scoped_section` gains the `verify-scoped` rule). Creates `scripts/verify-scoped.py` with
   verb `run` and only R1's borders: everything past them is later tasks, and until then a slice branch with a usable base
   also runs `make verify` (said as one line), so the target is never wrong in between. Follow *the Makefile-recipe search*.
 
@@ -201,7 +201,7 @@ if the import needs it), `src/slipwai/project/scoped_targets.py`, `tests/scoped_
 
 ### T004 — [US2] A stamp is stronger than any scoped run (R2 · AC-S06-10)
 
-- [ ] **Rule R2.** Needs T003.
+- [x] **Rule R2.** Needs T003.
 
 **RED** (new `tests/test_verify_scoped_stamp.py`; `tests/stamp_fixture.py`; the fixture of T003):
 - e1 after a green `make verify` on `slice/a`, `make verify-scoped` prints verify-stamp's `REUSE_LINE`, starts no check
@@ -226,7 +226,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 
 ### T005 — [P] [US2] A full green run on a slice branch leaves the baseline; any full run removes it (R7, first half · AC-S06-9)
 
-- [ ] **Rule R7, the writing half** (the comparison is T010). Needs T002 only for the fragment's existence; the manifest
+- [x] **Rule R7, the writing half** (the comparison is T010). Needs T002 only for the fragment's existence; the manifest
   is disjoint from T003/T004. **Edits `assets/toolkit/scripts/verify-stamp.py`, which the root `Makefile` runs as the
   factory's own stamp**: run every `test_verify_stamp_*` suite and say so. The stamp's and the `verify` rule's bytes do
   not change (AC-S06-14).
@@ -257,7 +257,7 @@ level line as above (this is an `assets/` change).
 
 ### T006 — [US2] The record prints as JSON (R10 · AC-S06-13, AC-S06-6's table half)
 
-- [ ] **Rule R10.** Needs T002 (units in the make database) and T003 (the script). Obligations in the record are T012's
+- [x] **Rule R10.** Needs T002 (units in the make database) and T003 (the script). Obligations in the record are T012's
   (R10 e2 moves there). The table is the one place the factory's knowledge of what each check reads lives; a row the scan
   contradicts is corrected by widening it, never by narrowing below what the script reads (data-model, *The table*).
 
@@ -292,7 +292,7 @@ Go one):
 
 ### T007 — [US2] A change selects its readers and its consumers (R4 · AC-S06-2, -3, -4, -7)
 
-- [ ] **Rule R4.** Needs T004 and T006. First task that reads the changes: `verify_scoped/choose.py` (changed paths from
+- [x] **Rule R4.** Needs T004 and T006. First task that reads the changes: `verify_scoped/choose.py` (changed paths from
   `check-slice-scope`'s `changed_files(base)`, the selection, the reasons) and the first line-per-unit printing and one
   `$(MAKE)` call for the chosen units (plain; T011 adds the jobserver and the last line). Always-run checks are T008's,
   incomplete knowledge T009's, tools and variables T010's: until then a run names only what a changed path chose, and the
@@ -334,7 +334,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 
 ### T008 — [US2] Checks that always run claim nothing (R6 · AC-S06-6)
 
-- [ ] **Rule R6.** Needs T007.
+- [x] **Rule R6.** Needs T007.
 
 **RED** (new `tests/test_verify_scoped_always.py`):
 - e1 a web-only change: `check-python`, `check-slice-scope`, `check-codegraph` (their *Always* reasons) and
@@ -357,7 +357,7 @@ scoped run with their reason, and never contribute a claim.
 
 ### T009 — [US2] What cannot be established runs the full gate (R5 · AC-S06-5)
 
-- [ ] **Rule R5.** Needs T008.
+- [x] **Rule R5.** Needs T008.
 
 **RED** (new `tests/test_verify_scoped_incomplete.py`):
 - e1 `README.md` changed: one line `dependency knowledge was incomplete for README.md — no deployable, contract or check
@@ -383,7 +383,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 
 ### T010 — [US2] Tools and variables are compared with the baseline (R7, second half · AC-S06-8, -9)
 
-- [ ] **Rule R7, the comparison.** Needs T005 (the baseline) and T009.
+- [x] **Rule R7, the comparison.** Needs T005 (the baseline) and T009.
 
 **RED** (new `tests/test_verify_scoped_compare.py`; a stand-in `node` whose `--version` the test sets, a baseline written
 through a green `make verify` of T005):
@@ -410,7 +410,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 
 ### T011 — [US2] Every unit named once, in one make call that keeps the jobserver (R9 · AC-S06-12)
 
-- [ ] **Rule R9.** Needs T010.
+- [x] **Rule R9.** Needs T010.
 
 **RED** (new `tests/test_verify_scoped_run.py`):
 - e1 `make -j2 verify-scoped` with two stand-in checks that each wait (bounded, by a marker file and a timeout) for the
@@ -434,7 +434,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 
 ### T012 — [US2] Obligations a person declares (R8 · AC-S06-11, R10 e2)
 
-- [ ] **Rule R8.** Needs T011. Also the record's `obligations` array (R10 e2).
+- [x] **Rule R8.** Needs T011. Also the record's `obligations` array (R10 e2).
 
 **RED** (new `tests/test_verify_scoped_obligations.py`; `project.json` committed on `main`, branch rebased):
 - e1 `{"name": "checkout", "components": ["orders","billing"], "checks": ["test-orders","test-billing"]}` and a change in
@@ -460,7 +460,7 @@ then `make lint typecheck check-structure`. Commit by path; level line as above.
 
 ### T013 — [P] [US2] An adopted repository runs its full gate and says it has no record (R12 · AC-S06-16)
 
-- [ ] **Rule R12.** Needs T002/T003 for `scoped_section`; disjoint by manifest from the script chain T004–T012, but it
+- [x] **Rule R12.** Needs T002/T003 for `scoped_section`; disjoint by manifest from the script chain T004–T012, but it
   shares `scoped_targets.py` with T002/T003 (already committed) and with T015. Follow *the Makefile-recipe search*.
 
 **RED** (new `tests/test_scoped_adopted.py`; an adopted fixture as `tests/test_parallel_gate_adopted.py` makes one):
@@ -482,7 +482,7 @@ and the every-gate-suite command, then `make lint typecheck check-structure`. Co
 
 ### T014 — [P] [US2] The ladder, the settings, the templates and the briefs say the scoped gate (R11 · AC-S06-15, D123, D124)
 
-- [ ] **Rule R11.** Needs only that `make verify-scoped` is a target's name; disjoint from the script chain and from T013.
+- [x] **Rule R11.** Needs only that `make verify-scoped` is a target's name; disjoint from the script chain and from T013.
   Every other word in each file stays as it is (D123).
 
 **RED** (new `tests/test_scoped_ladder.py`; generated projects of both profiles):
@@ -524,7 +524,7 @@ the others to add), then `make lint typecheck check-structure`. Commit by path; 
 
 ### T015 — [US2] What a project already made gets, and the words (R13 · AC-S06-17, -18, D123 item 5, D124 item 3)
 
-- [ ] **Rule R13.** Needs T012 and T013 (the page and the fragment describe the whole), and T014 (the quoted sentence).
+- [x] **Rule R13.** Needs T012 and T013 (the page and the fragment describe the whole), and T014 (the quoted sentence).
   Completes `changelog.d/scoped-gate.md`.
 
 **RED** (new `tests/test_scoped_page.py` for the page, `tests/test_scoped_migrate.py` for migrate and the fragment):
