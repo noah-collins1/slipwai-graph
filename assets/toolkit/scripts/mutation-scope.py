@@ -163,6 +163,21 @@ def resolved(scope: Any, ref: str) -> str:
     return str(found.strip())
 
 
+def project_changes(scope: Any, base: str) -> dict[str, str]:
+    """Every path that differs from `base` with its status, each relative to the project's root, which is where every
+    other path this script compares starts. `changed_files` is not used: it gives tracked paths from the top of the
+    repository and untracked ones from the project, and a project inside a subdirectory would match neither rule."""
+    changes: dict[str, str] = {}
+    fields = scope.git_must("diff", "--name-status", "-z", "--no-renames", "--relative", base).split("\0")
+    for status, path in zip(fields[0::2], fields[1::2]):
+        if path:
+            changes[path] = status[:1]
+    for path in scope.git_must("ls-files", "-z", "--others", "--exclude-standard").split("\0"):
+        if path:
+            changes[path] = "A"
+    return changes
+
+
 def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str], Any, str]:
     """What the run is compared with, in words, the paths that differ from it with their status, the module that read
     them and the commit they differ from. The borders are asked unless `SINCE` names a commit, which scopes on any
@@ -179,9 +194,9 @@ def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str], Any, str]:
             scope = where.scope
             base = scope.merge_base()
             short = (scope.git("rev-parse", "--short", base.commit) or str(base.commit)[:7]).strip()
-            return f"`{shown(str(base.named))}` at {short}", dict(scope.changed_files(base.commit)), scope, base.commit
+            return f"`{shown(str(base.named))}` at {short}", project_changes(scope, base.commit), scope, base.commit
         commit = resolved(where.scope, since)
-        return f"`{shown(since)}`", dict(where.scope.changed_files(commit)), where.scope, commit
+        return f"`{shown(since)}`", project_changes(where.scope, commit), where.scope, commit
     except (Sweep, Refused):
         raise
     except Exception as error:
@@ -256,7 +271,7 @@ def read(path: str) -> str | None:
 def pom_changed(tool: Any, commit: str, path: str) -> bool:
     """Whether a pom's `pitest-maven` plugin differs from the base's as parsed structure; a side that cannot be parsed does.
     A pom the base does not have belongs to a service that is new, whose every file is in the scope already."""
-    then = tool.git("show", f"{commit}:{path}")
+    then = tool.git("show", f"{commit}:./{path}")
     if then is None:
         return False
     try:
@@ -276,7 +291,7 @@ def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool:
     whole: list[str] = []
     per: dict[str, list[str]] = {}
     for path in sorted(changes):
-        if path == rule and mutation_rule(tool.git("show", f"{commit}:{path}") or "") != mutation_rule(read(path) or ""):
+        if path == rule and mutation_rule(tool.git("show", f"{commit}:./{path}") or "") != mutation_rule(read(path) or ""):
             whole.insert(0, path)
         elif path == here:
             whole.append(path)
