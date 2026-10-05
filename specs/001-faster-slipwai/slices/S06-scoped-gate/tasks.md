@@ -1292,6 +1292,8 @@ command line —" in the words the decision gives.
 
 **Decided — D146:** (1a) a command-line variable after `--` is the full gate; (2a) the stamp's own `declined()` takes the same predicate, so `verify-stamp.py`'s stamp writer is in this task's files too. Read `## D146 ` in decisions.md.
 
+**Decided — D147:** `VERIFY_FORCE` after `--` is on the allowlist, by name (the page's `make verify VERIFY_FORCE=1`); relayed to the implementer.
+
 ### T040 — [US2] MEDIUM — The factory-text hold covers the units and named checks only, and does not assert what makes its ordering exception sound (R4 · AC-S06-2; D140 point 4)
 
 - [ ] **Finding.** D140 point 4 rests the class on one finite argument: the factory's text reads the same under the
@@ -1409,6 +1411,27 @@ changed, only the text that describes the keys.
 **Files:** `assets/toolkit/scripts/verify_scoped/rules.py`, `tests/test_verify_scoped_text.py`.
 
 ---
+
+### T043 — [US2] HIGH — One deployable reading another's source is invisible to the selection (after-converge gaps G1 · AC-S06-2, -3, -5)
+
+- [ ] **Finding** (T018's `drive-gaps`, reproduced in `/tmp/s06-g/two/two`). A TypeScript service plus `add-service billing`. On `main`, `apps/service/src/uses-billing.ts` imports `../../billing/src/rate.js`. On `slice/S2`, `rate` becomes a string, and `verify-scoped` prints `skip typecheck-service — none of its inputs changed`, then *passed*, while `make verify`'s `tsc` fails (noEmit, no `rootDir`). `check-imports.py` allows service-to-service imports. The same hole exists for npm workspace dependencies between apps, Go modules in one `go.work`, and uv path dependencies. The page's "chosen when a changed file is one it reads" is untrue here. **Decide before GREEN: D148** (skipper, pending at the time of writing). Its decision is this task's GREEN, with a RED example per language it names.
+
+### T044 — [US2] MEDIUM — An index the stamp will not vouch for is not a border of the selection (G2 · AC-S06-1, -5)
+
+- [ ] **Finding.** With `git update-index --assume-unchanged` (or skip-worktree, or sparse checkout) on a changed service file, the scoped run skips every service unit and says *passed*. `make verify` runs everything, because the stamp's `index_problem` refuses that index. `verify-scoped.py` calls `index_problem` only inside `standing()` (136), never before selecting. **RED:** assume-unchanged, skip-worktree and a sparse checkout are each the full gate, with the stamp's words. **GREEN — the class:** every reason the stamp gives for not vouching for a tree is a border before `changed_files`, through one shared predicate. **Files:** `assets/toolkit/scripts/verify-scoped.py`, `tests/test_verify_scoped_borders.py`.
+
+### T045 — [US2] MEDIUM — The generated gates page says what D140 and D146 do (G3, G8, G9 · AC-S06-15, -18)
+
+- [ ] **Finding.** `scoped_targets.SCOPED_PAGE` (48–67) names only "a changed `Makefile`" as broadening. It does not say that any text differing from the factory's, a `GNUmakefile`/`makefile`/`MAKEFILES`, or a make option that adds text or conditions makes every scoped run the full gate, nor how to scope again (`make -f deploy.mk`). Its obligation example (a service and the web app that calls it) is one the `openapi:<service>` contract already joins, so name a service pair instead (G8). "The trunk's own full gate passed it there" overstates a base that may be a local `main` nobody gated: say "the base" and what that is (G9). **RED:** `test_scoped_page.py` asserts each sentence. **GREEN:** the page says each, in the Catch-up's words where they overlap. **Files:** `src/slipwai/project/scoped_targets.py`, `tests/test_scoped_page.py`.
+
+### T046 — MEDIUM — The quickstart's last step prints what it promises (G4 · AC-S06-19; host, records)
+
+- [ ] **Finding.** At quickstart.md line 36, the README edit makes the full gate fail at `check-slice-scope` (outside every deployable). The failed run removes the baseline, so line 40 prints "no usable baseline" and not "check-ux-gates runs: UX_GATES_SINCE differs from the baseline". **GREEN:** use a path the slice may write that nothing claims, or run `make verify` once on the restored tree before line 40. Follow every step by hand before T019. **Files:** `quickstart.md` (host).
+
+### T047 — LOW — AC-S06-5's words after D140, the record's tools, the Catch-up's contradiction (G6, G7, G10)
+
+- [ ] (G6, host) AC-S06-5 in spec.md says "dependency knowledge was incomplete for …" per file. Under D140, a changed `Makefile` prints only the Makefile line. Amend the criterion to say the first cause is printed. (G7) In a Go starter with no web app, the record names `node`/`npm` for `check-ux-gates`, but `VERIFY_STAMP` asks only `make git python3 go`. Add a test that the record's tools are a subset of what the baseline asks for, across shapes, and make it so. (G10) The Catch-up says "nothing else asks anything of it" and then asks for a constitution amendment: reword it so it stands alone without contradicting itself. **Files:** `assets/toolkit/scripts/verify_scoped/record.py` or `table.py`, `tests/test_verify_scoped_record.py`, `changelog.d/scoped-gate.md`; spec.md (host).
+
 
 ## Phase 4: After acceptance (host tasks)
 

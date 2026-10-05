@@ -3219,3 +3219,16 @@
 - **Confidence:** high · **Would reverse if:** the ladder or CI is found to hand `verify` or `verify-scoped` a command-line variable on every run, which would make every scoped run full; then that one variable is named on the allowlist by its own entry.
 - **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md`
 - **Status:** standing
+
+## D147 — VERIFY_FORCE on make's command line: on D146's allowlist
+
+- **Stage:** after-converge gaps (T018, finding G5) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T18:53:54Z · **Iteration:** 23
+- **Scope:** S06-scoped-gate
+- **Question:** The generated gates page tells a reader to force a run with `make verify VERIFY_FORCE=1`, which make hands every recipe as `MAKEFLAGS=[s -- VERIFY_FORCE=1]`; under D146 a command-line variable is the full gate and no stamp or baseline is written, so the documented forced run would never stamp and every later scoped run would be full.
+- **Options:** (a) `VERIFY_FORCE` after `--` is on the allowlist, by name and with any value — D146's own *Would reverse if*; (b) the page and every text that says it switch to `VERIFY_FORCE=1 make verify`.
+- **Decision:** (a). Only `VERIFY_FORCE`, named; every other command-line variable stays the full gate.
+- **Why:** `VERIFY_FORCE` makes the gate run everything and changes no recipe, so a stamp written after a forced green run vouches for exactly what ran; the published spelling keeps working for every developer who already types it.
+- **Decided by:** host (standing decision D146)
+- **Confidence:** high · **Would reverse if:** a recipe the factory writes is found to read `VERIFY_FORCE` for anything but forcing the run.
+- **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md`
+- **Status:** standing
