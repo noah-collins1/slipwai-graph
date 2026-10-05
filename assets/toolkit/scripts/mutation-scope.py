@@ -151,9 +151,10 @@ def resolved(scope: Any, ref: str) -> str:
     return str(found.strip())
 
 
-def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str]]:
-    """What the run is compared with, in words, and the paths that differ from it with their status. The borders are
-    asked unless `SINCE` names a commit, which scopes on any checkout; a checkout that cannot be read is a sweep."""
+def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str], Any, str]:
+    """What the run is compared with, in words, the paths that differ from it with their status, the module that read
+    them and the commit they differ from. The borders are asked unless `SINCE` names a commit, which scopes on any
+    checkout; a checkout that cannot be read is a sweep."""
     since = env.get("SINCE")
     if since == "":
         raise Sweep(EMPTY_SINCE)
@@ -166,12 +167,88 @@ def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str]]:
             scope = where.scope
             base = scope.merge_base()
             short = (scope.git("rev-parse", "--short", base.commit) or str(base.commit)[:7]).strip()
-            return f"`{shown(str(base.named))}` at {short}", dict(scope.changed_files(base.commit))
-        return f"`{shown(since)}`", dict(where.scope.changed_files(resolved(where.scope, since)))
+            return f"`{shown(str(base.named))}` at {short}", dict(scope.changed_files(base.commit)), scope, base.commit
+        commit = resolved(where.scope, since)
+        return f"`{shown(since)}`", dict(where.scope.changed_files(commit)), where.scope, commit
     except (Sweep, Refused):
         raise
     except Exception as error:
         raise Sweep(unreadable(error)) from error
+
+
+def mutation_rule(text: str) -> list[str]:
+    """The `mutation` rule of a Makefile as written: its target line and the recipe lines under it."""
+    found: list[str] = []
+    following = False
+    for line in text.splitlines():
+        if re.match(r"mutation:(?!=)", line):
+            following = True
+            found.append(line)
+        elif following and line.startswith("\t"):
+            found.append(line)
+        else:
+            following = False
+    return found
+
+
+def shape(element: Any) -> Any:
+    """An element as comparable structure: tags, attributes, text and children, never comments or layout."""
+    return (local(element.tag), tuple(sorted(element.attrib.items())), (element.text or "").strip(),
+            tuple(shape(child) for child in element))
+
+
+def pitest_block(text: str | None) -> Any:
+    """The `pitest-maven` plugin of a pom as structure; None where there is no pom or no such plugin. Text that does not
+    parse raises, because a side that cannot be read cannot be called equal."""
+    if text is None:
+        return None
+    for plugin in (el for el in ElementTree.fromstring(text).iter() if local(el.tag) == "plugin"):
+        if any(local(child.tag) == "artifactId" and (child.text or "").strip() == "pitest-maven" for child in plugin):
+            return shape(plugin)
+    return None
+
+
+def read(path: str) -> str | None:
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return handle.read()
+    except OSError:
+        return None
+
+
+def pom_changed(tool: Any, commit: str, path: str) -> bool:
+    """Whether a pom's `pitest-maven` plugin differs from the base's as parsed structure; a side that cannot be parsed does.
+    A pom the base does not have belongs to a service that is new, whose every file is in the scope already."""
+    then = tool.git("show", f"{commit}:{path}")
+    if then is None:
+        return False
+    try:
+        return bool(pitest_block(then) != pitest_block(read(path)))
+    except Exception:
+        return True
+
+
+def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool: Any, commit: str,
+                 makefile: str) -> tuple[list[str], dict[str, list[str]]]:
+    """The changed files no scope can be trusted across, in the order of data-model's table: those that sweep the whole
+    run (the `mutation` rule's text, this script), and per service those that sweep it (Go's script and yaml, a Spring
+    pom whose `pitest-maven` block differs)."""
+    here = os.path.relpath(os.path.abspath(__file__))
+    backend_script = os.path.join(os.path.dirname(here), "go-mutation.py")
+    rule = os.path.normpath(makefile)
+    whole: list[str] = []
+    per: dict[str, list[str]] = {}
+    for path in sorted(changes):
+        if path == rule and mutation_rule(tool.git("show", f"{commit}:{path}") or "") != mutation_rule(read(path) or ""):
+            whole.insert(0, path)
+        elif path == here:
+            whole.append(path)
+        for backend, root in services:
+            wired = (backend == "go" and path in (backend_script, f"{root}/.gremlins.yaml")) or (
+                backend == "java-spring" and path == f"{root}/pom.xml" and pom_changed(tool, commit, path))
+            if wired:
+                per.setdefault(root, []).append(path)
+    return whole, per
 
 
 def go_kind(path: str) -> str:
@@ -367,13 +444,20 @@ class Tools:
         return refusal(backend, path, [])
 
 
-def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], runner: Runner) -> int:
-    """The scoped run: what changed, classified, then each service once in service order, then the closing line."""
+def said(paths: list[str]) -> str:
+    return ", ".join(f"`{shown(path)}` changed" for path in paths)
+
+
+def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], runner: Runner,
+          causes: dict[str, list[str]]) -> int:
+    """The scoped run: what changed, classified, then each service once in service order, then the closing line. A
+    service in `causes` is swept and its production files are not additionally scoped."""
+    handled = {path for found in causes.values() for path in found}
     shared: list[str] = []
     deleted: list[str] = []
     tests: list[str] = []
     production: dict[str, list[str]] = {}
-    for path in sorted(changes):
+    for path in sorted(set(changes) - handled):
         kind, root, inside = classify(path, changes[path], services)
         if kind == "shared":
             shared.append(path)
@@ -381,11 +465,13 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
             deleted.append(path)
         elif kind == "test":
             tests.append(path)
-        elif kind == "production":
+        elif kind == "production" and root not in causes:
             production.setdefault(root, []).append(inside)
     named = sorted(f"{root}/{inside}" for root, found in production.items() for inside in found)
     if named:
         say(f"scoped to {len(named)} changed file(s) since {words}: {', '.join(shown(name) for name in named)}")
+    elif causes:
+        say(SWEEPS.format(reason=said(sorted(handled))))
     elif tests:
         say(f"no mutant to run — only tests changed: {', '.join(shown(name) for name in tests)}; "
             "`make mutation-full` is the run that measures them")
@@ -400,26 +486,33 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     status = 0
     for backend, root in services:
         files = production.get(root, [])
-        if not files:
+        if root in causes:
+            say(f"sweep {root} — {said(causes[root])}")
+            result, kind = runner.sweep(backend, root), "swept"
+        elif not files:
             say(f"skip {root} — no changed production file")
             counts["skipped"] += 1
             continue
-        if backend in WIRED:
-            say(f"scope {root} — {', '.join(shown(name) for name in files)}")
-        result = runner.run(backend, root, files)
-        swept = result.unreadable is not None
-        if swept:  # what the tool is configured to take cannot be told, so the service sweeps
-            say(f"sweep {root} — {result.unreadable}")
-            result = runner.sweep(backend, root)
+        else:
+            if backend in WIRED:
+                say(f"scope {root} — {', '.join(shown(name) for name in files)}")
+            result = runner.run(backend, root, files)
+            kind = "scoped"
+            if result.unreadable is not None:  # what the tool is configured to take cannot be told, so the service sweeps
+                say(f"sweep {root} — {result.unreadable}")
+                result, kind = runner.sweep(backend, root), "swept"
         for name, why in result.skipped:
             say(f"not mutated {shown(root + '/' + name)} — {why}")
         if result.refusal is not None:
             say(f"refuse {root} — {result.refusal}")
-        counts["swept" if swept else "refused" if result.refusal is not None else "scoped" if result.files else "skipped"] += 1
+            kind = "refused"
+        elif kind == "scoped" and not result.files:
+            kind = "skipped"
+        counts[kind] += 1
         if result.status != 0:
             failed.append(root)
             status = status or result.status
-    if named and not counts["scoped"] and not failed:
+    if named and not counts["scoped"] and not counts["swept"] and not failed:
         say("no mutant to run — every changed production file is outside the tools' targets")
     ended = "passed" if not failed else "failed: " + ", ".join(failed)
     say(f"{counts['scoped']} scoped, {counts['swept']} swept, {counts['skipped']} skipped, {counts['refused']} refused; {ended}")
@@ -443,14 +536,17 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
     try:
         if not services:
             raise Sweep(NO_SERVICE)
-        words, changes = change_set(os.environ)
+        words, changes, tool, commit = change_set(os.environ)
+        whole, causes = sweep_causes(changes, services, tool, commit, makefile)
+        if whole:
+            raise Sweep(said(whole))
     except Sweep as why:
         say(SWEEPS.format(reason=why))
         return full(make, makefile)
     except Refused as why:
         say(str(why))
         return 2
-    return scope(services, words, changes, runner or Tools())
+    return scope(services, words, changes, runner or Tools(), causes)
 
 
 if __name__ == "__main__":
