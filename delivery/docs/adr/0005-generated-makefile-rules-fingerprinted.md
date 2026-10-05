@@ -20,6 +20,7 @@ The run never accepts its own architecture decision; the word `Accepted` here is
 - One stdlib toolkit module defines the canonical form. It reads the form from the Makefile text at generate time and from `make -npq` at run time, and a test holds the two readings equal for every starter shape.
 - A difference charged to one named check makes that check run every time and claim nothing. Charged to one gate with units, the gate runs whole. Anything else is the full gate.
 - `generate`, `add-service` and `migrate` write the file together with the Makefile. No command lets a project re-fingerprint its own edits.
+- Amended by D133 (iteration 22, converge pass 3, T033): every variable of origin `file` or `override`, dot-names and make's specials included, `define` blocks too, is compared; an override is held with its own flavour; a rule's canonical form gains `"vars"` for its target-specific variables; the file gains an `exports` digest over every `export`, `unexport`, `.EXPORT_ALL_VARIABLES` and `$(eval` line in the files make read. A variable the factory did not write, a pattern-specific variable, a changed exported factory variable, or a changed export line is the full gate; environment and command-line origins stay the baseline's (D116).
 
 ## Consequences
 
@@ -28,3 +29,4 @@ The run never accepts its own architecture decision; the word `Accepted` here is
 - A new construct in `makefile()` needs `from_text` to understand it before the factory's tests pass.
 - A project that edits `rules.json` by hand can silence the guard on its own trunk. That is Principle I's price, and no factory tool offers it.
 - Removing this file later is a generated-file deletion with a catch-up note, decided by a person.
+- A project-wide variable of the project's own makes every scoped run the full gate until it is moved onto the rule that uses it (`deploy: IMAGE := …`); the printed line says so (D133).

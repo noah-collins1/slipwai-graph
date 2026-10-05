@@ -994,7 +994,21 @@ compared. Each one is either an origin D116 gives the baseline, or a test names 
 **Verify:** `make test TESTS="test_verify_scoped_rules test_verify_scoped_sum test_verify_scoped_record test_scoped_targets"`
 (plus any new module), then `make lint typecheck check-structure`. Level line: MINOR, already carried.
 
-**Files:** `assets/toolkit/scripts/verify_scoped/rules.py`, `assets/toolkit/scripts/verify_scoped/record.py`,
+**Decided — D133 (a), tightened; ADR 0005 amended at Proposed.** Read `## D133 ` in
+`specs/001-faster-slipwai/decisions.md` in full — its seven items are this task's GREEN: (1) every database variable of
+origin `file` or `override` is compared, dot-names and specials (`MAKEFLAGS`, `VPATH`, `GPATH`, `MAKEFILES`,
+`MAKESHELL`) included, `define` blocks read; only `environment`, `environment override`, `command line`, `default`,
+`automatic`, bare `makefile` (`CURDIR`) and `MAKEFILE_LIST` are left out, each named in the sweep test; an override
+keeps its own flavour; (2) a variable the factory did not write is the full gate; a changed fingerprinted one is
+charged per D127 item 4, except a factory-exported one (`DATABASE_URL`, `WEB_HOST`) and `SHELL`/`.SHELLFLAGS`, which are
+the full gate; a pattern-specific variable is the full gate; a target-specific variable becomes the rule's `"vars"` key;
+(3) `rules.json` gains `exports`, one digest over every `export`/`unexport`/`.EXPORT_ALL_VARIABLES`/`$(eval` line of the
+files in `MAKEFILE_LIST`; a difference is the full gate, an unreadable file or a missing key *dependency knowledge was
+incomplete*; (4) the factory's `override VERIFY_GROUP` is held by its written text through a table in `rules.py`; (5)
+the printed lines, word for word; (6) e2 widened, e5–e7 added, e4 extended, teeth; (7) the Catch-up sentence, word for
+word. Not here: a project's `.ONESHELL:` or `.POSIX:` (rule text, T030's class) — the next converge pass.
+
+**Files:** `changelog.d/scoped-gate.md` (D133 item 7),  `assets/toolkit/scripts/verify_scoped/rules.py`, `assets/toolkit/scripts/verify_scoped/record.py`,
 `tests/test_verify_scoped_rules.py` (or the new module), `specs/001-faster-slipwai/decisions.md` (host only).
 
 ### T034 — [US2] HIGH — The rules are read under the goal the full gate gives them (R4, R5 · AC-S06-2, -5; D127 item 2)

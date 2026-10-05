@@ -2669,3 +2669,73 @@
 - **Confidence:** high · **Would reverse if:** the owner says otherwise
 - **Written to:** `specs/001-faster-slipwai/story-split.md` (the Includes of S16, S17, S26, S27, S28, S30, S34a, S34b, S36 and S39), `specs/001-faster-slipwai/spec.md` (FR-050 to FR-057, the owner's commit a462166)
 - **Status:** standing
+
+## D133 — What an unnamed project variable is charged to: every Makefile variable, export line and special variable make can hand a recipe is compared, and one the factory did not write is the full gate
+
+- **Stage:** converge (pass 3, finding T033) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T16:36:01Z · **Iteration:** 22
+- **Scope:** S06-scoped-gate
+- **Question:** D127 item 4 compares a Makefile-origin variable only in two cases: its value differs from the fingerprint, or a reachable rule's recipe uses it and it has no fingerprint. `rules.py` also skips `override` variables (origin `'override' directive`) and names that begin with a dot (`.SHELLFLAGS`). So `override SHELL := ./tools/shell` or `export PATH := $(CURDIR)/tools/bin:$(PATH)` on the trunk changes what a skipped check runs, and the scoped run says *passed* (T033 a, b). What is a variable the factory did not write charged to?
+- **Options:**
+  - **(a)** The full gate for any variable in the make database whose origin is `file` or `override`, including the special variables make reads and dot-names, that the fingerprint does not hold. Whether anything uses or exports it does not matter, and no export reader is needed. The factory's `override VERIFY_GROUP`, whose value depends on the make version, is held by its written text. **The host's recommendation, and decided, tightened below.**
+  - **(b)** The full gate only where the variable is exported or used. This needs a reader for export status, which `make -p` does not print.
+  - **(c)** Something else.
+- **Decision:** (a), with five additions, so that GREEN has nothing left to ask.
+  1. **Which variables are compared.** Every variable in `record.database`'s output whose origin is one of these two:
+     - `file`: the database note `# makefile (from …)`, including files the Makefile `include`s;
+     - `'override' directive`.
+
+     Assignments with `define … endef` count too. `record.database` must read the database's `define NAME` … `endef` blocks, origin included. Today it reads neither.
+
+     Dot-names are compared like any other name: `.SHELLFLAGS`, `.RECIPEPREFIX`, `.EXTRA_PREREQS`, `.DEFAULT_GOAL`. So are the specials make reads that have ordinary names: `MAKEFLAGS`, `VPATH`, `GPATH`, `MAKEFILES`, `MAKESHELL`.
+
+     Only these are left out, each named in the sweep test with its reason:
+     - `environment`, `environment override` and `command line`: they belong to D116's baseline;
+     - `default` and `automatic`: make's own values, and an assignment in the Makefile makes them `file`;
+     - the bare `# makefile` note: `CURDIR`, which make sets from the working directory;
+     - `MAKEFILE_LIST`: the existing `MAKE_OWN` entry.
+
+     `from_database_parsed` and `assign` stop dropping `override` variables and dot-names. An override is held with its own flavour, `override simple` or `override recursive`, so `override SHELL := /bin/bash` differs from the factory's `SHELL := /bin/bash`.
+  2. **What each difference is charged to.**
+     - **A compared variable the fingerprint does not hold is the full gate.** It does not matter whether a recipe uses it or it is exported. This replaces D127 item 4's "used" rule for variables the factory did not write. It is D127's existing "reached by none → full gate" applied to every such name.
+     - **A fingerprinted variable whose digest differs, or that is gone,** is charged as D127 item 4 says: to the one member whose reached recipes use it, otherwise the full gate. There is one exception. If the factory's export lines export the variable (today `DATABASE_URL` and `WEB_HOST`), it reaches every recipe through the environment, so it is always the full gate.
+     - `SHELL` and `.SHELLFLAGS` count as read by every recipe, as `SHELL` already does, so any difference in either is the full gate.
+     - **A pattern-specific variable** (the database's *Pattern-specific Variable Values* section, origin `file` or `override`) is the full gate. The factory writes none, and `%` matches every target.
+     - **A target-specific variable** stays part of its rule. On a reachable rule it changes that rule's digest, and that check is charged as for any rule difference (D127 item 4). GREEN makes this deliberate: the target-specific variable is read into the rule's canonical form as a fourth key, `"vars"`, instead of passing by accident as prerequisite words. The key is in the digest and both readers produce it, and e5 holds them equal. On a rule `verify` does not reach, a target-specific variable cannot reach a check, and nothing is charged.
+  3. **Export lines are fingerprinted from text.** Neither the make database nor any make version the factory supports (3.81 to 4.4) gives export status without running a recipe under the project's own `SHELL`. And a name that is also in the environment is exported anyway, which depends on the machine. So:
+     - `rules.json` (schema 1, still unreleased) gains `"exports": "<sha256>"`. It is the digest over the sorted, whitespace-collapsed list of every non-recipe, non-comment line, with backslash continuations joined, that does any of these:
+       - its first word (after any `override`) is `export` or `unexport`;
+       - it names `.EXPORT_ALL_VARIABLES`;
+       - it calls `$(eval` or `${eval`.
+     - One function in `rules.py` produces the list. `from_text` applies it to the factory's text.
+     - At run time it is applied to every file in the database's `MAKEFILE_LIST`, read relative to the project root.
+     - Any difference is the full gate, because an export reaches every recipe. A file in `MAKEFILE_LIST` that cannot be read, or a `rules.json` without `exports`, is the full gate with *dependency knowledge was incomplete* (D127 item 4).
+     - The rule fails closed. A project's `export` inside an `ifdef` is counted whether or not the branch is taken.
+  4. **The factory's own version-dependent override.** `override VERIFY_GROUP := $(if $(filter output-sync,$(.FEATURES)),--output-sync=target)` is digested as its written text with flavour `override simple`. `rules.py` holds a table keyed by that exact written text, the only reference-bearing simple assignment the factory writes. It gives the value that text expands to under a given `.FEATURES`.
+     - `from_database` swaps the database's expanded value for the written text only where the value equals the table's answer under the database's own `.FEATURES`. Otherwise the value stays as it is, and it differs.
+     - `from_text` keeps raising on any other `:=` with a `$`. If `gate.py` changes that text, the factory's tests fail before anything ships.
+  5. **The printed line.** Only the first cause is printed, as today.
+     - A variable the factory did not write: `the full gate runs, as \`make verify\` — the Makefile sets variable \`<name>\`, which the factory did not write and make can hand to any check; set it on the rule that uses it (\`<rule>: <name> := …\`) to scope again`.
+     - A pattern-specific variable: the same words with `variable \`<name>\` for pattern \`<pattern>\``.
+     - A changed factory variable: D127's words, `the Makefile's variable \`<name>\` is not the one the factory wrote`.
+     - Export lines: `the full gate runs, as \`make verify\` — the Makefile's export lines are not the ones the factory wrote`.
+  6. **Tests.**
+     - T033's e1–e3 stand, and e2 fails for the unexported case too: plain `FOO := x` with no references is the full gate.
+     - Add e5: `unexport DATABASE_URL`, `.EXPORT_ALL_VARIABLES:`, and `%: SHELL := ./tools/shell` are each the full gate.
+     - Add e6: a `define` variable is the full gate.
+     - Add e7: `deploy: IMAGE := foo` on a rule `verify` does not reach charges nothing.
+     - The e4 hold (T030's e5) extends to `exports` and to the factory's `VERIFY_GROUP`, `.DEFAULT_GOAL`, `export DATABASE_URL` and `export WEB_HOST`. It must give no difference on every shape, under the make on the machine and, where the machine has it, 3.81.
+     - Teeth: drop the override flavour from the digest, or drop one line from the export scan, and e4 or e1 fails.
+     - The sweep test lists each origin from item 1 that is not compared, with its reason.
+  7. **Catch-up.** The fragment `changelog.d/scoped-gate.md` gains one sentence after D127's: *"A variable your Makefile sets for every rule that the factory did not write, an `override`, or an `export` line of your own makes every scoped run the full gate, because make can hand it to any check; to scope again, set the variable on the rule that uses it (`deploy: IMAGE := …`)."* The level stays MINOR, already carried, and nothing on *Always ask a person* is touched.
+- **Why:**
+  - **The developer has to be able to trust a *passed*.** Both T033 reproductions say *passed* while `make check-drawio` exits 2. That is the false green priority 5 and the brief's "the one thing that would make it pointless" forbid.
+  - **(b) cannot be deterministic.** Make prints no export status. The only way to read it is to run a recipe under the project's own `SHELL`, which is the variable under suspicion. And a Makefile assignment to a name that happens to be in the environment is exported, so "unexported" would depend on the shell that ran the scoped run. That machine-dependent answer is exactly what priority 5 rules out. (a) needs no reader: the database already holds origin and value.
+  - **It is D127's rule, applied evenly.** D127 already sends a changed factory variable that no member uses to the full gate. A variable the factory never wrote is the same case.
+  - **The cost falls on the project that made the edit.** How often a generated Makefile gains a global variable of the project's own is not measured. The likely case is a team that adds `deploy`, `docker` or `release` targets with `IMAGE`, `TAG` or `REGISTRY` variables. Most projects that never edit their Makefile pay nothing.
+  - **Those that do get a one-line fix that changes nothing they run.** A target-specific variable on a rule `verify` does not reach cannot reach a check. That is why the printed line names that fix, and why the cost to priority 2 is a move rather than a permanent loss of scoping. D131 kept the scoped gate on for project-added checks for the same reason.
+  - **Export lines and special variables are the routes T033 names (2) and (3).** Without item 3, (a) as the host put it would still pass `unexport DATABASE_URL` or `.EXPORT_ALL_VARIABLES:` silently, because a value the factory fingerprinted is unchanged while what the recipe receives changes.
+  - Priority 1 is untouched: the merge root and CI run `make verify` exactly as before.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high on (a) over (b). Medium on the export-line scan (item 3), which reads text rather than make's own state. · **Would reverse if:** every make version the factory supports could report a variable's export status without running a recipe (for example in the `-p` database). Then a variable no reached recipe uses and that is provably not exported is charged to nothing, and item 3's text scan is replaced by that reading.
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (this entry); `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T033: the decision, e2 widened, e5–e7, Files gains `changelog.d/scoped-gate.md` and `delivery/docs/adr/0005-generated-makefile-rules-fingerprinted.md`); `changelog.d/scoped-gate.md` (the Catch-up sentence in item 7); `delivery/docs/adr/0005-generated-makefile-rules-fingerprinted.md` (amended at Proposed)
+- **Status:** standing
