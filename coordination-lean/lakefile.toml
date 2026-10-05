@@ -1,0 +1,6 @@
+name = "coordination"
+version = "0.1.0"
+defaultTargets = ["Coordination"]
+
+[[lean_lib]]
+name = "Coordination"
