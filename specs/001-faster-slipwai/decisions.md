@@ -3206,3 +3206,16 @@
 - **Confidence:** medium · **Would reverse if:** no headless harness can run on the demo project (D136's own condition), when the line alone is shown and the gap is said.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D146 — Text and conditions handed to make through MAKEFLAGS or the command line: the full gate, and no stamp or baseline written under them
+
+- **Stage:** converge (pass 5, finding T039) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T18:43:32Z · **Iteration:** 23
+- **Scope:** S06-scoped-gate
+- **Question:** T039 holds `MAKEFLAGS` by an allowlist and leaves two things to the log: (1) is a command-line variable after `--` the full gate, or the baseline's (D116)? (2) does the verify stamp's own `declined()` take the same predicate, so that a full green `make verify --eval='override SHELL := /bin/true'` writes no stamp?
+- **Options:** (1a) the full gate, failing closed — the converge pass's recommendation; (1b) the baseline's, compared against what the last full green run had. (2a) the stamp declines under the same predicate, defined once and loaded by both scripts; (2b) the stamp keeps reading letters only.
+- **Decision:** (1a) and (2a). The predicate is T039's allowlist: the letters `k`, `s`, `w` and the idle letters the borders already take, a job count, the jobserver's words, `--no-print-directory` and an output-sync word; anything else — `--eval`, `-I`, `-e`, `-r`, `-R`, `-B`, `-W`, `-o`, `-L`, `--trace`, `--shuffle`, anything after `--` — makes the scoped run the full gate with T039's words, and makes `make verify` run without writing its stamp or the scoped baseline, saying so in one line. The fix to the stamp rides in S06 as part of the same predicate; it changes no answer a stamp gave on a tree no flag touched.
+- **Why:** The stage recommended (1a); for (2), the owner brief answers outright: priority 5 says a stamp or cache that could cache a false green is wrong, and a stamp written under `--eval` that swapped the shell vouches for a tree on which no check ran — the next plain `make verify` would reuse it. A developer who types a flag for a one-off run pays one full gate, never a false *passed*.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** the ladder or CI is found to hand `verify` or `verify-scoped` a command-line variable on every run, which would make every scoped run full; then that one variable is named on the allowlist by its own entry.
+- **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md`
+- **Status:** standing

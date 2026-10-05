@@ -1290,6 +1290,8 @@ command line —" in the words the decision gives.
 `tests/test_verify_scoped_text.py`, `tests/test_verify_scoped_baseline.py`, `specs/001-faster-slipwai/decisions.md`
 (host only).
 
+**Decided — D146:** (1a) a command-line variable after `--` is the full gate; (2a) the stamp's own `declined()` takes the same predicate, so `verify-stamp.py`'s stamp writer is in this task's files too. Read `## D146 ` in decisions.md.
+
 ### T040 — [US2] MEDIUM — The factory-text hold covers the units and named checks only, and does not assert what makes its ordering exception sound (R4 · AC-S06-2; D140 point 4)
 
 - [ ] **Finding.** D140 point 4 rests the class on one finite argument: the factory's text reads the same under the
