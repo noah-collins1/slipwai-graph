@@ -436,7 +436,7 @@ change `tests/` only and are below, in the order found.
 
 ### T030 — MEDIUM (A3, D122): the suite reads `GITEA_*` through a script it loads, and the key does not
 
-- [ ] `tests/test_gitea_pages.py` loads `scripts/gitea-pages.py`, which reads `GITEA_REPOS_DIR`, `GITEA_PAGES_ROOT`,
+- [x] *(Iteration 19, `06d0732`: RED 7 errors under odd values, GREEN, teeth shown; `load_daemon(**overrides)` replaces the `mock.patch.dict`; the widened scan classed `GITEA_*`, `GITEA_PRIVATE`, `GITEA_URL`, `GITEA_USERNAME` and `PYPI_TOKEN` as unchanging after running the suites that load those scripts under odd values.)* `tests/test_gitea_pages.py` loads `scripts/gitea-pages.py`, which reads `GITEA_REPOS_DIR`, `GITEA_PAGES_ROOT`,
   `_HOST`, `_PORT`, `_BRANCH` and `_POLL_SECONDS` at import; `GITEA_PAGES_HOST=0.0.0.0` in the shell fails the module,
   `GITEA_PAGES_PORT=x` errors it, and the key is the same either way. **Do:** an example that sets each in the
   environment before the module runs and expects it green (RED first); `load_daemon` removes every `GITEA_*` name
@@ -446,7 +446,7 @@ change `tests/` only and are below, in the order found.
 
 ### T031 — MEDIUM (A1, A5, D122): the probe file is written or the run stops; a failed listing is unique to the run — BLOCKED on a person (⛔)
 
-- [ ] In a sibling worktree, the root `Makefile`'s stamped branch: the probe step joined with `&&` to the stamp's
+- [ ] *(Built in iteration 19 as `s33-4.patch` — branch `s33-patch-4`, `37d444a`; four examples in `tests/test_factory_gate_stamp_probes.py`, all four red against today's `Makefile` and green with the patch (checked by the host); `git apply --check` clean against `adopt-method` after T030. ⛔ until a person applies it; then T029 and T013.)* In a sibling worktree, the root `Makefile`'s stamped branch: the probe step joined with `&&` to the stamp's
   call, so a probe that cannot be written fails the gate with the shell's line; a `.factory-work` that is a symlink or
   not a directory refused in one line; the cache listing's fallback taken whenever `find` exits non-zero. Examples on
   `GateCase` in `tests/test_factory_gate_stamp.py` (or a new module under 350 lines): a read-only probe file after a
