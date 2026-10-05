@@ -1,0 +1,4 @@
+## step 7 2026-10-05T07:50:48Z
+$ make verify
+verify: the full gate did not run; this tree already passed it at 2026-10-05T07:49:48Z (key 3088a37ef6a8); VERIFY_FORCE=1 runs it anyway
+exit=0 wall=1256ms

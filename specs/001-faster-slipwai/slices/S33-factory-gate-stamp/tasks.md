@@ -412,6 +412,25 @@ change `tests/` only and are below, in the order found.
   after `S32-verify-stamp-split`; `cruise-carry.md`'s lesson gains no `isolation: worktree` delegate while S33's
   measurement or demo is pending. No code.
 
+
+## Phase 4: The owner's finding during the demo (D121, iteration 19)
+
+### T028 — HIGH (D121): the suite writes the pruner's bytecode under `assets/`, so the key moves after every pass from a tree without it
+
+- [ ] `src/slipwai/assets.py` `_load_pruner` runs `assets/backing-services/prune.py` with bytecode writing on, at import, so
+  any test (and `slipwai` itself) writes `assets/backing-services/__pycache__/`; D119 keys those paths, so a pass from a
+  tree without the cache is never reused (owner: 41.5 min, then 41.5 min again). **Do:** first, in
+  `tests/test_assets_bytecode.py`, widen the tree check to every path under `assets/` and add an example that a fresh
+  interpreter (subprocess, `PYTHONDONTWRITEBYTECODE` removed from its environment) importing `slipwai.assets` leaves
+  no new cache under `assets/` — observed failing (RED) with the cache deleted; then turn `sys.dont_write_bytecode` on
+  around the pruner's load as `_load_style_checker` does (GREEN); delete the existing cache. A PATCH fragment in
+  `changelog.d/` says the CLI no longer writes an interpreter cache beside its bundled assets.
+
+### T029 — Demo 2: reuse from a tree without a cache under `assets/` (D121)
+
+- [ ] From a tree with nothing under `assets/` named `__pycache__`, `*.pyc` or `*.pyo`: `make verify` (full), then
+  `make verify` measured — under 5 s, the reuse line — and no cache under `assets/` after either. By `drive-hand`.
+
 ## Convergence
 
 **Verdict (T008, iteration 16): converged at the bound of two passes** — `drive-converge` · model: host (claude-opus-5-5) · delegated, fresh context, twice.

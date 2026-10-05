@@ -1,0 +1,3 @@
+$ make help | grep verify
+  verify             Full local gate — a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway
+  test-adoption      Adopt each fixture repository, re-survey, verify, migrate from a newer factory, verify again (experimental)

@@ -1,0 +1,16 @@
+$ CI=1 make verify   # started 2026-10-05T07:50:00Z
+./scripts/verify --lint-only
+All checks passed!
+python3 -m compileall -q src scripts tests
+./scripts/verify --typecheck-only
+Success: no issues found in 430 source files
+python3 scripts/check-structure.py
+check-structure: 151 modules, 7 tiers, no upward imports and no cycles
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+test_both_commands_send_the_agent_to_the_factory_and_to_the_user (test_add_commands.AddCommandsTest.test_both_commands_send_the_agent_to_the_factory_and_to_the_user) ... created: /tmp/tmpj2y3ato6/grow
+created: /tmp/tmp7_64p_r3/grown
+ok
+test_the_commands_list_what_is_there_after_an_application_is_added (test_add_commands.AddCommandsTest.test_the_commands_list_what_is_there_after_an_application_is_added)
+Both files name the applications, so they are among the files the list drives — `add-service` ... created: /tmp/tmpsi3lvlu0/regrown
+...
+(stopped by PID at 2026-10-05T07:50:14Z: make 1618300 and descendants)

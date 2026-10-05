@@ -1,0 +1,32 @@
+$ VERIFY_FORCE=1 make verify   # started 2026-10-05T07:07:33Z
+verify: the full gate runs, forced by VERIFY_FORCE=1
+./scripts/verify --lint-only
+All checks passed!
+python3 -m compileall -q src scripts tests
+./scripts/verify --typecheck-only
+Success: no issues found in 430 source files
+python3 scripts/check-structure.py
+check-structure: 151 modules, 7 tiers, no upward imports and no cycles
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+test_both_commands_send_the_agent_to_the_factory_and_to_the_user (test_add_commands.AddCommandsTest.test_both_commands_send_the_agent_to_the_factory_and_to_the_user) ... created: /tmp/tmpqkgwxe2t/grown
+created: /tmp/tmph17xoow4/grown
+ok
+test_the_commands_list_what_is_there_after_an_application_is_added (test_add_commands.AddCommandsTest.test_the_commands_list_what_is_there_after_an_application_is_added)
+Both files name the applications, so they are among the files the list drives — `add-service` ... created: /tmp/tmpn08sur1m/regrown
+ok
+test_a_project_with_nowhere_to_deploy_is_not_told_a_push_is_a_release (test_add_commands.CatchUpCommandTest.test_a_project_with_nowhere_to_deploy_is_not_told_a_push_is_a_release) ... created: /tmp/tmp4iyyil9e/local-catch-up
+ok
+test_the_command_points_at_the_code_index_when_the_project_has_one (test_add_commands.CatchUpCommandTest.test_the_command_points_at_the_code_index_when_the_project_has_one)
+`./init --extension codegraph` indexes the project and appends a block to `AGENTS.md` telling an ... created: /tmp/tmpctnihdsc/indexed
+ok
+test_the_command_sends_the_agent_to_the_factory_and_names_the_three_answers (test_add_commands.CatchUpCommandTest.test_the_command_sends_the_agent_to_the_factory_and_names_the_three_answers)
+A failing gate after a migration is one of three things and the response differs for each, so ... created: /tmp/tmp_ml0m1dj/caught-up
+ok
+test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate (test_add_service.AddServiceTest.test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate)
+A Go project generated with no frontend gets one; a TypeScript project with one gets a second, ... created: /tmp/tmp48hyujtx/headless
+npm ci
+
+added 154 packages, and audited 157 packages in 2s
+
+...
+(stopped by PID at 2026-10-05T07:08:02Z: kill of make 1360898 and its 10 descendants)

@@ -1,0 +1,141 @@
+$ CI=1 make verify   # started 2026-10-05T07:50:00Z
+./scripts/verify --lint-only
+All checks passed!
+python3 -m compileall -q src scripts tests
+./scripts/verify --typecheck-only
+Success: no issues found in 430 source files
+python3 scripts/check-structure.py
+check-structure: 151 modules, 7 tiers, no upward imports and no cycles
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+test_both_commands_send_the_agent_to_the_factory_and_to_the_user (test_add_commands.AddCommandsTest.test_both_commands_send_the_agent_to_the_factory_and_to_the_user) ... created: /tmp/tmpj2y3ato6/grown
+created: /tmp/tmp7_64p_r3/grown
+ok
+test_the_commands_list_what_is_there_after_an_application_is_added (test_add_commands.AddCommandsTest.test_the_commands_list_what_is_there_after_an_application_is_added)
+Both files name the applications, so they are among the files the list drives — `add-service` ... created: /tmp/tmpsi3lvlu0/regrown
+ok
+test_a_project_with_nowhere_to_deploy_is_not_told_a_push_is_a_release (test_add_commands.CatchUpCommandTest.test_a_project_with_nowhere_to_deploy_is_not_told_a_push_is_a_release) ... created: /tmp/tmpaerfk_e1/local-catch-up
+ok
+test_the_command_points_at_the_code_index_when_the_project_has_one (test_add_commands.CatchUpCommandTest.test_the_command_points_at_the_code_index_when_the_project_has_one)
+`./init --extension codegraph` indexes the project and appends a block to `AGENTS.md` telling an ... created: /tmp/tmpko19oz7d/indexed
+ok
+test_the_command_sends_the_agent_to_the_factory_and_names_the_three_answers (test_add_commands.CatchUpCommandTest.test_the_command_sends_the_agent_to_the_factory_and_names_the_three_answers)
+A failing gate after a migration is one of three things and the response differs for each, so ... created: /tmp/tmpcwdacp_c/caught-up
+ok
+test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate (test_add_service.AddServiceTest.test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate)
+A Go project generated with no frontend gets one; a TypeScript project with one gets a second, ... created: /tmp/tmpk3lwi_xj/headless
+npm ci
+
+added 154 packages, and audited 157 packages in 2s
+
+33 packages are looking for funding
+  run `npm fund` for details
+
+6 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.yaml --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.yaml → file:///tmp/tmpk3lwi_xj/headless/packages/api-client/src/schema.ts [16ms]
+test -z "$(gofmt -l apps/service)"
+cd apps/service && go vet ./...
+cd apps/service && go tool staticcheck ./...
+npm --workspace apps/web run lint
+
+> headless-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+cd apps/service && go test -run '^$' ./...
+ok  	example.com/headless/service/adapters/driven/checkpointstorememory	0.002s [no tests to run]
+?   	example.com/headless/service/adapters/driven/checkpointstorepostgres	[no test files]
+ok  	example.com/headless/service/adapters/driven/eventstorememory	0.001s [no tests to run]
+?   	example.com/headless/service/adapters/driven/eventstorepostgres	[no test files]
+ok  	example.com/headless/service/adapters/driving/http	0.002s [no tests to run]
+?   	example.com/headless/service/application/ports/events	[no test files]
+?   	example.com/headless/service/application/ports/readmodels	[no test files]
+?   	example.com/headless/service/checkpointstorecontract	[no test files]
+ok  	example.com/headless/service/cmd/migrate	0.002s [no tests to run]
+?   	example.com/headless/service/cmd/serve	[no test files]
+ok  	example.com/headless/service/config	0.002s [no tests to run]
+?   	example.com/headless/service/eventstorecontract	[no test files]
+ok  	example.com/headless/service/health	0.001s [no tests to run]
+?   	example.com/headless/service/migrations	[no test files]
+ok  	example.com/headless/service/observability	0.002s [no tests to run]
+ok  	example.com/headless/service/projections	0.002s [no tests to run]
+npm --workspace apps/web run typecheck
+
+> headless-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (92 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (92 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+go tool covdata percent -i=. >/dev/null 2>&1 || true
+cd apps/service && go test -coverpkg=./... -coverprofile=coverage.out ./...
+ok  	example.com/headless/service/adapters/driven/checkpointstorememory	0.004s	coverage: 16.0% of statements in ./...
+	example.com/headless/service/adapters/driven/checkpointstorepostgres		coverage: 0.0% of statements
+ok  	example.com/headless/service/adapters/driven/eventstorememory	0.004s	coverage: 40.5% of statements in ./...
+	example.com/headless/service/adapters/driven/eventstorepostgres		coverage: 0.0% of statements
+ok  	example.com/headless/service/adapters/driving/http	0.006s	coverage: 4.6% of statements in ./...
+	example.com/headless/service/application/ports/events		coverage: 0.0% of statements
+?   	example.com/headless/service/application/ports/readmodels	[no test files]
+	example.com/headless/service/checkpointstorecontract		coverage: 0.0% of statements
+ok  	example.com/headless/service/cmd/migrate	0.006s	coverage: 0.5% of statements in ./...
+	example.com/headless/service/cmd/serve		coverage: 0.0% of statements
+ok  	example.com/headless/service/config	0.004s	coverage: 2.0% of statements in ./...
+	example.com/headless/service/eventstorecontract		coverage: 0.0% of statements
+ok  	example.com/headless/service/health	0.006s	coverage: 0.1% of statements in ./...
+?   	example.com/headless/service/migrations	[no test files]
+ok  	example.com/headless/service/observability	0.004s	coverage: 1.5% of statements in ./...
+ok  	example.com/headless/service/projections	0.964s	coverage: 10.9% of statements in ./...
+python3 scripts/go-coverage.py apps/service 70
+  example.com/headless/service/adapters/driven/checkpointstorememory     100.0%  (11/11 statements)
+  example.com/headless/service/adapters/driven/eventstorememory           98.8%  (167/169 statements)
+  example.com/headless/service/adapters/driving/http                      94.2%  (81/86 statements)
+  example.com/headless/service/application/ports/events                   96.4%  (27/28 statements)
+  example.com/headless/service/checkpointstorecontract                    86.9%  (186/214 statements)
+  example.com/headless/service/config                                     94.6%  (35/37 statements)
+  example.com/headless/service/eventstorecontract                         86.3%  (536/621 statements)
+  example.com/headless/service/health                                    100.0%  (1/1 statements)
+  example.com/headless/service/observability                              89.7%  (26/29 statements)
+  example.com/headless/service/projections                                91.5%  (86/94 statements)
+  example.com/headless/service/adapters/driven/checkpointstorepostgres  not counted: tests run under make test-integration
+  example.com/headless/service/adapters/driven/eventstorepostgres       not counted: tests run under make test-integration
+  example.com/headless/service/cmd/migrate                              not counted: entry point
+  example.com/headless/service/cmd/serve                                not counted: entry point
+coverage: 89.6% of 1290 statements, at or above the 70% minimum
+npm --workspace apps/web test
+make[1]: *** [Makefile:32: test] Terminated
+make: *** [Makefile:56: verify] Terminated
+make[2]: *** [Makefile:275: verify] Terminated
+make[3]: *** [Makefile:206: test] Terminated

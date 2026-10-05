@@ -1,0 +1,119 @@
+## before run 1 2026-10-05T05:37:07Z
+total 12
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 00:35:02.915741758 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 00:36:58.911743832 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 00:35:02.915286005 -0500 verify-stamp-e3b0c44298fc1c14.json
+--- .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+{
+  "key": "c56fe25dfc9350688eff2a56de4900a720858f849319d0825b181ca6677dc514",
+  "passed": "2026-10-05T05:35:02Z",
+  "result": "pass",
+  "scripts": "f7a70ad90e4ccf449ab0ca9ee97f17f3711e9974d1c3f640eac6aeb39650341c",
+  "tools": {
+    "codegraph": "1.6.0 [answer 9ae3c5d52b1f97c0]",
+    "docker": "[answer b4f8912fb901f291]",
+    "gh": "2.46.0 [answer 52544e639beddfdc]",
+    "git": "2.53.0 [answer 46b31b17db8e684a]",
+    "go": "[answer be618190febc7262]",
+    "java": "25.0.4.1 [answer 292342078e7a9d50]",
+    "make": "4.4.1 [answer 268cdd1fee3838e9]",
+    "node": "v22.22.1 [answer b58f2d61bbad34ff]",
+    "npm": "9.2.0 [answer a99c8ff469e946de]",
+    "npx": "9.2.0 [answer a99c8ff469e946de]",
+    "python3": "3.14.4 [answer d629b9bbeb3eb13f]",
+    "uv": "0.12.20 [answer 259c9ceedc36130a]"
+  },
+  "tree": "0b906fc6a53c39cf50df02bf496b25b0652a414ad67cd7c38e6ae9395fa80a8d"
+}
+
+## after run 1 2026-10-05T07:07:01Z
+total 12
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:06:42.025280064 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 01:55:33.049429735 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 02:06:42.025072975 -0500 verify-stamp-e3b0c44298fc1c14.json
+{
+  "key": "3088a37ef6a82677343b83e6c818d3ec2a2472983064e793dc3c818061fdcae5",
+  "passed": "2026-10-05T07:06:42Z",
+  "result": "pass",
+  "scripts": "f7a70ad90e4ccf449ab0ca9ee97f17f3711e9974d1c3f640eac6aeb39650341c",
+  "tools": {
+    "codegraph": "1.6.0 [answer 9ae3c5d52b1f97c0]",
+    "docker": "[answer b4f8912fb901f291]",
+    "gh": "2.46.0 [answer 52544e639beddfdc]",
+    "git": "2.53.0 [answer 46b31b17db8e684a]",
+    "go": "[answer be618190febc7262]",
+    "java": "25.0.4.1 [answer 292342078e7a9d50]",
+    "make": "4.4.1 [answer 268cdd1fee3838e9]",
+    "node": "v22.22.1 [answer b58f2d61bbad34ff]",
+    "npm": "9.2.0 [answer a99c8ff469e946de]",
+    "npx": "9.2.0 [answer a99c8ff469e946de]",
+    "python3": "3.14.4 [answer d629b9bbeb3eb13f]",
+    "uv": "0.12.20 [answer 259c9ceedc36130a]"
+  },
+  "tree": "96a657d94604cb53e6b0e119b46303559d08d23e79afe1d64e0981dc7d0d4de9"
+}
+
+## after interrupted forced run 2026-10-05T07:08:02Z
+total 12
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:07:35.003950295 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 02:07:01.137275788 -0500 ..
+-rw------- 1 noahc noahc 1131 2026-10-05 02:07:35.003950295 -0500 verify-stamp-e3b0c44298fc1c14.pending
+--- .git/slipwai/verify-stamp-e3b0c44298fc1c14.pending
+{"key": "3088a37ef6a82677343b83e6c818d3ec2a2472983064e793dc3c818061fdcae5", "tools": {"make": "4.4.1 [answer 268cdd1fee3838e9]", "python3": "3.14.4 [answer d629b9bbeb3eb13f]", "git": "2.53.0 [answer 46b31b17db8e684a]", "uv": "0.12.20 [answer 259c9ceedc36130a]", "node": "v22.22.1 [answer b58f2d61bbad34ff]", "npm": "9.2.0 [answer a99c8ff469e946de]", "npx": "9.2.0 [answer a99c8ff469e946de]", "go": "[answer be618190febc7262]", "java": "25.0.4.1 [answer 292342078e7a9d50]", "docker": "[answer b4f8912fb901f291]", "gh": "2.46.0 [answer 52544e639beddfdc]", "codegraph": "1.6.0 [answer 9ae3c5d52b1f97c0]"}, "parts": {"history": "76201a9da8f2d9c98f619377226b4b54fd8faf2f6e23e6a9ad02796191757d74", "index": "c2ae23dc70c93b794675743369f1adfea0b309c02f12f6d4830f0cba00f63235", "ignored": "76f91cffbf8dea9c675005e66dcdaa6865c6082e95b5a98cf071e54dc0fa0e39", "variables": "7e3f9bbbdfaa3f441c009225c5d1d359ff755ce5e3ffdbc968e9ba8399f6c6ff", "files": "e425c6b0f86142b879d325fbe98b618602a4ec52e0c8b0f83fb46be3d4f0b0d0", "scripts": "f7a70ad90e4ccf449ab0ca9ee97f17f3711e9974d1c3f640eac6aeb39650341c"}, "token": "62a06cc693cdf5e8818284961ecddd79"}
+
+## after re-establishing pass 2026-10-05T07:49:52Z
+total 12
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:49:48.944695110 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 02:38:39.313807420 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 02:49:48.944105720 -0500 verify-stamp-e3b0c44298fc1c14.json
+{
+  "key": "3088a37ef6a82677343b83e6c818d3ec2a2472983064e793dc3c818061fdcae5",
+  "passed": "2026-10-05T07:49:48Z",
+  "result": "pass",
+  "scripts": "f7a70ad90e4ccf449ab0ca9ee97f17f3711e9974d1c3f640eac6aeb39650341c",
+  "tools": {
+    "codegraph": "1.6.0 [answer 9ae3c5d52b1f97c0]",
+    "docker": "[answer b4f8912fb901f291]",
+    "gh": "2.46.0 [answer 52544e639beddfdc]",
+    "git": "2.53.0 [answer 46b31b17db8e684a]",
+    "go": "[answer be618190febc7262]",
+    "java": "25.0.4.1 [answer 292342078e7a9d50]",
+    "make": "4.4.1 [answer 268cdd1fee3838e9]",
+    "node": "v22.22.1 [answer b58f2d61bbad34ff]",
+    "npm": "9.2.0 [answer a99c8ff469e946de]",
+    "npx": "9.2.0 [answer a99c8ff469e946de]",
+    "python3": "3.14.4 [answer d629b9bbeb3eb13f]",
+    "uv": "0.12.20 [answer 259c9ceedc36130a]"
+  },
+  "tree": "96a657d94604cb53e6b0e119b46303559d08d23e79afe1d64e0981dc7d0d4de9"
+}
+### before CI=1 2026-10-05T07:50:00Z
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:49:48.944695110 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 02:49:53.840694914 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 02:49:48.944105720 -0500 verify-stamp-e3b0c44298fc1c14.json
+eddb592c98ee08f7333f2965cc610b569ac36dd8d24f31224db4a38c449d7268  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+### after CI=1 (stopped) 2026-10-05T07:50:14Z
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:49:48.944695110 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 02:49:53.840694914 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 02:49:48.944105720 -0500 verify-stamp-e3b0c44298fc1c14.json
+eddb592c98ee08f7333f2965cc610b569ac36dd8d24f31224db4a38c449d7268  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+### before TESTS=test_changelog 2026-10-05T07:50:19Z
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:49:48.944695110 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 02:49:53.840694914 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 02:49:48.944105720 -0500 verify-stamp-e3b0c44298fc1c14.json
+eddb592c98ee08f7333f2965cc610b569ac36dd8d24f31224db4a38c449d7268  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+### after TESTS=test_changelog 2026-10-05T07:50:22Z
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:49:48.944695110 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 02:50:20.456693851 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 02:49:48.944105720 -0500 verify-stamp-e3b0c44298fc1c14.json
+eddb592c98ee08f7333f2965cc610b569ac36dd8d24f31224db4a38c449d7268  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+### before FACTORY_BACKENDS=python 2026-10-05T07:50:30Z
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:49:48.944695110 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 02:50:20.456693851 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 02:49:48.944105720 -0500 verify-stamp-e3b0c44298fc1c14.json
+eddb592c98ee08f7333f2965cc610b569ac36dd8d24f31224db4a38c449d7268  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json
+### after FACTORY_BACKENDS=python (stopped) 2026-10-05T07:50:45Z
+drwxrwxr-x 2 noahc noahc 4096 2026-10-05 02:49:48.944695110 -0500 .
+drwxrwxr-x 8 noahc noahc 4096 2026-10-05 02:50:20.456693851 -0500 ..
+-rw------- 1 noahc noahc  876 2026-10-05 02:49:48.944105720 -0500 verify-stamp-e3b0c44298fc1c14.json
+eddb592c98ee08f7333f2965cc610b569ac36dd8d24f31224db4a38c449d7268  .git/slipwai/verify-stamp-e3b0c44298fc1c14.json

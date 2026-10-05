@@ -1,0 +1,18 @@
+## precondition 2026-10-05T05:36:58Z
+$ git rev-parse HEAD
+580a2fd55654c88e9b7bd66407e12c53ee662b2a
+$ git worktree list
+/home/noahc/math/slipwai-graph 580a2fd [adopt-method]
+$ git status --porcelain
+?? specs/cruise-log.jsonl
+$ pgrep -fa "make verify"
+856151 /bin/bash -c source /home/noahc/.claude/shell-snapshots/snapshot-bash-1791178507699-vs9cng.sh 2>/dev/null || true && shopt -u extglob 2>/dev/null || true && { \builtin unalias -- 'unsetenv'; \builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || true && eval 'mkdir -p /tmp/s33-demo; cd /home/noahc/math/slipwai-graph; { echo "## precondition $(date -u +%FT%TZ)"; echo '"'"'$ git rev-parse HEAD'"'"'; git rev-parse HEAD; echo '"'"'$ git worktree list'"'"'; git worktree list; echo '"'"'$ git status --porcelain'"'"'; git status --porcelain; echo '"'"'$ pgrep -fa "make verify"'"'"'; pgrep -fa '"'"'make verify'"'"' || echo '"'"'(none)'"'"'; echo '"'"'$ ls -d assets/backing-services/__pycache__'"'"'; ls -d assets/backing-services/__pycache__; echo '"'"'$ env | grep -E "^(CI|GITHUB_ACTIONS|GITLAB_CI)="'"'"'; env | grep -E '"'"'^(CI|GITHUB_ACTIONS|GITLAB_CI)='"'"' || echo '"'"'(none)'"'"'; } > /tmp/s33-demo/precondition.txt 2>&1; cat /tmp/s33-demo/precondition.txt' < /dev/null && pwd -P >| /tmp/claude-104a-cwd
+$ ls -d assets/backing-services/__pycache__
+assets/backing-services/__pycache__
+$ env | grep -E "^(CI|GITHUB_ACTIONS|GITLAB_CI)="
+(none)
+
+## note
+The pgrep -fa 'make verify' line above matched only the shell running this precondition command itself (its command line contains the words); `pgrep -a make` at the same moment listed no process.
+Deviation from an empty status: ?? specs/cruise-log.jsonl, the cruise runner's log, written only between iterations.
+The stamp directory held a pass from 2026-10-05T05:35:02Z for an earlier tree (two records-only commits landed after it), so run 1 was a full run.
