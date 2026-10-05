@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -67,14 +67,18 @@ class AssetsBytecodeTest(unittest.TestCase):
         )
 
     def test_importing_slipwai_assets_in_a_fresh_interpreter_writes_no_cache(self) -> None:
-        # The in-process import may have written one; clear it so the fresh interpreter is the one asked.
-        for stale in ASSETS.rglob("__pycache__"):
-            shutil.rmtree(stale)
-        self.assertEqual(caches(), [])
-        env = {key: value for key, value in os.environ.items() if key != "PYTHONDONTWRITEBYTECODE"}
-        env["PYTHONPATH"] = str(REPO / "src")
-        subprocess.run([sys.executable, "-c", "import slipwai.assets"], env=env, check=True, cwd=REPO)
-        self.assertEqual(caches(), [])
+        # The fresh interpreter writes whatever bytecode it would write under a prefix of its own, so the tree is
+        # neither touched nor cleared: a cache for a file under assets/ appearing there is one it would have left.
+        with tempfile.TemporaryDirectory() as prefix:
+            env = {key: value for key, value in os.environ.items() if key != "PYTHONDONTWRITEBYTECODE"}
+            env.update(PYTHONPATH=str(REPO / "src"), PYTHONPYCACHEPREFIX=prefix)
+            subprocess.run([sys.executable, "-c", "import slipwai.assets"], env=env, check=True, cwd=REPO)
+            mirrored = Path(prefix + str(ASSETS))
+            written = sorted(path.relative_to(mirrored).as_posix() for path in mirrored.rglob("*.pyc"))
+            source = sorted(path.relative_to(Path(prefix + str(REPO))).as_posix()
+                            for path in Path(prefix + str(REPO / "src")).rglob("*.pyc"))
+        self.assertNotEqual(source, [], "the probe wrote no bytecode at all, so it shows nothing")
+        self.assertEqual(written, [], "importing slipwai.assets compiles a script under assets/ with bytecode on")
 
     def test_every_test_that_loads_a_script_from_an_asset_tree_turns_bytecode_off(self) -> None:
         modules = sorted(path for path in TESTS.glob("*.py") if path.name != Path(__file__).name)
