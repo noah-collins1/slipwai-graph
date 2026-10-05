@@ -41,7 +41,7 @@ Evaluated in this order; the first that holds wins.
 
 | Class | Rule | Effect |
 |---|---|---|
-| `rule-text` | `Makefile`'s `mutation` rule (target line and recipe lines) differs from the base's | the whole run sweeps |
+| `rule-text` | `Makefile`'s `mutation` or `mutation-full` rule (target line and recipe lines) differs from the base's | the whole run sweeps |
 | `scope-script` | `scripts/mutation-scope.py` | the whole run sweeps |
 | `backend-script` | `scripts/go-mutation.py` | every Go service sweeps |
 | `config` | a service's `.gremlins.yaml` (any status); its `pom.xml` whose `pitest-maven` plugin element differs as parsed structure, or cannot be parsed on either side | that service sweeps |
@@ -77,6 +77,9 @@ Every line starts `mutation: `. The first line is exactly one of:
   `` `<file>` changed `` for a whole-run sweep
   — this form also opens a run where no service is scoped and only some services sweep for a configuration change;
   the per-service lines below it say which swept and which were skipped (settled by the host at implementation)
+- `mutation: the sweep runs — \`mutation-full\`'s recipe is not the one the factory wrote, so it runs as written` —
+  the current `mutation-full` recipe lines (unexpanded) differ from the lines the factory writes for the services the
+  script was handed, in order and deduplicated; checked after the classification, on the trunk as on a branch
 - `mutation: no mutant to run — <why>` — `only tests changed: <files>; \`make mutation-full\` is the run that
   measures them` · `no production file changed` · `every changed production file is outside the tools' targets`
 - `mutation: this layout has no mutation scope — the recorded command runs` (adopted layout only)

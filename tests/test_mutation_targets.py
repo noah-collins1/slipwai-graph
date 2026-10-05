@@ -21,6 +21,7 @@ from typing import Any
 from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE
 from support import FactoryTestCase
 from test_layout import DELIVERY
+from test_mutation_borders import loaded
 from test_scoped_targets import build, database
 from test_verify_stamp_pinned import gate_prerequisites
 
@@ -128,6 +129,15 @@ class MutationTargetsTest(FactoryTestCase):
                 helped = subprocess.run(["make", "-s", "help"], cwd=self.project(name), env=clean_environment(),
                                         text=True, capture_output=True, timeout=60).stdout
                 self.assertRegex(helped, r"(?m)^  mutation-full +\S")
+
+    def test_e2_the_scripts_reconstruction_of_the_recipe_is_the_generated_one_for_every_shape(self) -> None:
+        """T018 (D138 item 3): what the script compares `mutation-full` with is what the factory wrote there. Teeth:
+        change the Go or Spring line in `native_commands.py` and this fails."""
+        module = loaded(SCRIPT)
+        for name, words in SERVICES.items():
+            with self.subTest(shape=name):
+                services = [tuple(word.split(":", 1)) for word in words]
+                self.assertEqual(module.factory_recipe(services), recipe_of(self.text(name), "mutation-full"))
 
     def test_e3_hold_neither_target_is_reachable_from_the_gate_or_the_ci_rule(self) -> None:
         """HOLD (teeth: add `mutation` as a prerequisite of `verify-checks`): the gate's rules do not reach either."""

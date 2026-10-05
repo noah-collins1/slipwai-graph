@@ -41,6 +41,7 @@ class Mixed:
 
 class PlaceholderTest(ScopeCase):
     def run_mixed(self, *services: str, **arguments: Any) -> tuple[int, list[str], Mixed]:
+        self.fit_recipe(services)
         module = loaded(self.repo / "scripts/mutation-scope.py")
         runner = Mixed(module, **arguments)
         wanted, saved, here = clean_environment(), dict(os.environ), os.getcwd()

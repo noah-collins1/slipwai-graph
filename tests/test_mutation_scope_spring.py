@@ -63,6 +63,7 @@ class SpringCase(ScopeCase):
         """The script with the Spring runner over `execute`, in this process and the project."""
         module = loaded(self.repo / "scripts/mutation-scope.py")
         words = services or ("java-spring:apps/spring",)
+        self.fit_recipe(words)
         arguments = ["--make", str(self.make), "--makefile", "Makefile", *words]
         wanted, saved, here = clean_environment(), dict(os.environ), os.getcwd()
         os.environ.clear()

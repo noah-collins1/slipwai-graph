@@ -50,6 +50,7 @@ class SweepsTest(ScopeCase):
         git(self.repo, "checkout", "-q", "-B", SLICE)
 
     def run_recording(self, *services: str, env: dict[str, str] | None = None) -> tuple[int, list[str], Recording]:
+        self.fit_recipe(services)
         module = loaded(self.repo / "scripts/mutation-scope.py")
         recording = Recording(module)
         wanted, saved, here = (clean_environment() if env is None else env), dict(os.environ), os.getcwd()
@@ -150,6 +151,7 @@ class SweepsTest(ScopeCase):
                         encoding="utf-8")
 
     def test_e3_a_change_elsewhere_in_the_makefile_does_not_sweep(self) -> None:
+        self.fit_recipe(TWO_GO)
         path = self.repo / "Makefile"
         path.write_text(path.read_text(encoding="utf-8") + "\nelsewhere:\n\t@true\n", encoding="utf-8")
         self.write("apps/service/health/more.go")
@@ -170,6 +172,7 @@ class SweepsTest(ScopeCase):
 
     def test_e5_hold_a_since_run_sweeps_on_the_same_triggers(self) -> None:
         git(self.repo, "checkout", "-q", "main")
+        self.fit_recipe(TWO_GO)
         self.write(YAML, "unleash: {}\n")
         self.commit("yaml")
         status, lines, recording = self.run_recording(*TWO_GO, env=clean_environment(SINCE="HEAD~1"))

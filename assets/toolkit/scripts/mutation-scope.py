@@ -64,6 +64,7 @@ BORDERS = ("ci", "head", "trunk", "slice_branch", "base", "told")
 NO_SCOPE = "this layout has no mutation scope — the recorded command runs"
 NO_SERVICE = "no generated service to scope"
 EMPTY_SINCE = "SINCE is set and empty"
+NOT_FACTORY = "`mutation-full`'s recipe is not the one the factory wrote, so it runs as written"
 
 
 def say(text: str) -> None:
@@ -176,12 +177,12 @@ def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str], Any, str]:
         raise Sweep(unreadable(error)) from error
 
 
-def mutation_rule(text: str) -> list[str]:
-    """The `mutation` rule of a Makefile as written: its target line and the recipe lines under it."""
+def rule_of(text: str, target: str) -> list[str]:
+    """One rule of a Makefile as written: its target line and the recipe lines under it."""
     found: list[str] = []
     following = False
     for line in text.splitlines():
-        if re.match(r"mutation:(?!=)", line):
+        if re.match(re.escape(target) + r":(?!=)", line):
             following = True
             found.append(line)
         elif following and line.startswith("\t"):
@@ -189,6 +190,31 @@ def mutation_rule(text: str) -> list[str]:
         else:
             following = False
     return found
+
+
+def mutation_rule(text: str) -> list[str]:
+    """The `mutation` and `mutation-full` rules of a Makefile as written: the latter holds the tool's invocation."""
+    return rule_of(text, "mutation") + rule_of(text, "mutation-full")
+
+
+def factory_recipe(services: list[tuple[str, str]]) -> list[str]:
+    """The recipe lines of `mutation-full` as the factory writes them for these services: each backend's own line with its
+    path, in service order, each distinct line once as the factory merges them. The Go and Spring lines are the ones
+    this script's own runs are held equal to; a placeholder's is its setup message."""
+    lines: list[str] = []
+    for backend, path in services:
+        if backend == "go":
+            line = f"python3 scripts/go-mutation.py {path} $(if $(SINCE),--since $(SINCE))"
+        elif backend == "java-spring":
+            line = f"cd {path} && " + " ".join(PIT)
+        elif backend == "python":
+            line = ("@command -v mutmut >/dev/null 2>&1 || { echo '" + PLACEHOLDERS[backend] +
+                    "' >&2; exit 2; }; mutmut run")
+        else:
+            line = f"@echo '{PLACEHOLDERS[backend]}'; exit 2"
+        if line not in lines:
+            lines.append(line)
+    return lines
 
 
 def shape(element: Any) -> Any:
@@ -540,6 +566,8 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
         whole, causes = sweep_causes(changes, services, tool, commit, makefile)
         if whole:
             raise Sweep(said(whole))
+        if [line[1:] for line in rule_of(read(makefile) or "", "mutation-full")[1:]] != factory_recipe(services):
+            raise Sweep(NOT_FACTORY)
     except Sweep as why:
         say(SWEEPS.format(reason=why))
         return full(make, makefile)

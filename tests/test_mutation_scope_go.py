@@ -23,6 +23,7 @@ class GoScopeTest(ScopeCase):
     def run_default(self, *services: str) -> tuple[int, list[str], FakeTools]:
         """The script with its own runners, `go` faked, in the project: status, the lines it said, the tools' log."""
         tools = FakeTools(Path(tempfile.mkdtemp(dir=self.parent)), git=False)
+        self.fit_recipe(services or TWO)
         module = loaded(self.repo / "scripts/mutation-scope.py")
         arguments = ["--make", str(self.make), "--makefile", "Makefile", *(services or TWO)]
         saved, here = dict(os.environ), os.getcwd()
@@ -70,6 +71,7 @@ class GoScopeTest(ScopeCase):
         self.assertEqual(tools.runs(), [])
 
     def test_e4_the_tools_failure_is_the_services_failure(self) -> None:
+        self.fit_recipe(TWO)
         (self.repo / HEALTH).write_text("package health\n// edited\n", encoding="utf-8")
         tools = FakeTools(Path(tempfile.mkdtemp(dir=self.parent)), git=False)
         fake = tools.bin / "go"
