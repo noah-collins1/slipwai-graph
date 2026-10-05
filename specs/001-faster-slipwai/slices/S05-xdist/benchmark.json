@@ -1276,5 +1276,13 @@
         "driver": "cruise"
       }
     }
-  ]
+  ],
+  "shape": {
+    "tasks": 25,
+    "files": 82,
+    "added": 5806,
+    "removed": 64,
+    "from": "b2eda135e07fdc0ec50f68948101cfb4989e6d97",
+    "to": "d8645414ba8cc01f164cf299912fadda4a5c7460"
+  }
 }

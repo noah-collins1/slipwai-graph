@@ -298,14 +298,14 @@ by path; level line as above.
 
 ### T012 — Both full gates on the final tip (host task)
 
-- [ ] On the tree after the last task above: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile
+- [x] On the tree after the last task above: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile
   verify` **once**, both green (Principle XIV); `make test TESTS="test_toolkit test_utf8_io test_changelog"` first as the
   slice touches `assets/`. Confirm `VERSION` is `1.6.0.dev0`, `assets/toolkit/scripts/verify-stamp.py` is not among the
   changed files, and nothing under `tools/`, the root `Makefile` or this repository's CI changed.
 
 ### T013 — Register row and benchmark close (host task)
 
-- [ ] The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in this slice's own
+- [x] The slice's row in the register and `benchmark.json` closed, after-acceptance commits riding in this slice's own
   pull request (`AGENTS.md`).
 
 ---
