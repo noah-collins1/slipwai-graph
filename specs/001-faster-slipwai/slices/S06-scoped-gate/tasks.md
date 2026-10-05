@@ -1414,7 +1414,16 @@ changed, only the text that describes the keys.
 
 ### T043 — [US2] HIGH — One deployable reading another's source is invisible to the selection (after-converge gaps G1 · AC-S06-2, -3, -5)
 
-- [ ] **Finding** (T018's `drive-gaps`, reproduced in `/tmp/s06-g/two/two`). A TypeScript service plus `add-service billing`. On `main`, `apps/service/src/uses-billing.ts` imports `../../billing/src/rate.js`. On `slice/S2`, `rate` becomes a string, and `verify-scoped` prints `skip typecheck-service — none of its inputs changed`, then *passed*, while `make verify`'s `tsc` fails (noEmit, no `rootDir`). `check-imports.py` allows service-to-service imports. The same hole exists for npm workspace dependencies between apps, Go modules in one `go.work`, and uv path dependencies. The page's "chosen when a changed file is one it reads" is untrue here. **Decide before GREEN: D148** (skipper, pending at the time of writing). Its decision is this task's GREEN, with a RED example per language it names.
+- [ ] **Finding** (T018's `drive-gaps`, reproduced in `/tmp/s06-g/two/two`). A TypeScript service plus `add-service billing`. On `main`, `apps/service/src/uses-billing.ts` imports `../../billing/src/rate.js`. On `slice/S2`, `rate` becomes a string, and `verify-scoped` prints `skip typecheck-service — none of its inputs changed`, then *passed*, while `make verify`'s `tsc` fails (noEmit, no `rootDir`). `check-imports.py` allows service-to-service imports. The same hole exists for npm workspace dependencies between apps, Go modules in one `go.work`, and uv path dependencies. The page's "chosen when a changed file is one it reads" is untrue here. **Decided — D148 (d): a reach outside the deployable is the full gate, read by the three ways a resolver can reach a file (a path, another deployable's identity read in the tree and at the base, a link).** Read `## D148 ` in decisions.md in full: its eight points are this task's GREEN, and point 8 its RED, holds and teeth; the reader is a new `scripts/verify_scoped/reach.py`. The same commits update data-model.md *How a unit is chosen* (the new cause), add to the Catch-up in `changelog.d/scoped-gate.md`:
+
+> If a deployable's source, config or manifest reaches into another deployable's path, or names another deployable's package or module, `make verify-scoped` now runs the full gate and names the file; to scope again, move what they share into a package under `packages/` or behind a published contract.
+
+  and amend ADR 0004 (`delivery/docs/adr/0004-verification-dependency-record.md`, at Proposed):
+
+  - **Decision, the bullet listing what runs the full gate:** add "a deployable whose files reach outside its own path, through a relative path, another deployable's package or module identity (read in the tree and at the base), or a symlink, or whose reach cannot be established (D148)".
+  - **Consequences, as a cost:** "a project whose deployables share source directly, rather than through `packages/` or a published contract, gets the full gate on every scoped run, and every scoped run reads every deployable's listed files once."
+
+  **Files:** `assets/toolkit/scripts/verify_scoped/reach.py` (new), `record.py`, `tests/test_verify_scoped_reach.py` (new), data-model.md, `changelog.d/scoped-gate.md`, ADR 0004.
 
 ### T044 — [US2] MEDIUM — An index the stamp will not vouch for is not a border of the selection (G2 · AC-S06-1, -5)
 

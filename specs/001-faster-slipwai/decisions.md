@@ -3232,3 +3232,61 @@
 - **Confidence:** high · **Would reverse if:** a recipe the factory writes is found to read `VERIFY_FORCE` for anything but forcing the run.
 - **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md`
 - **Status:** standing
+
+## D148 — A deployable whose source, config or manifest reaches another deployable: the full gate, read by what a resolver can follow
+
+- **Stage:** after-converge gaps (T018, finding G1 HIGH) · **Slice:** S06-scoped-gate · **When:** 2026-10-05T19:04:29Z · **Iteration:** 23
+- **Scope:** S06-scoped-gate
+- **Question:** One deployable's source can read another deployable's source, and the selection cannot see it. In a TypeScript service plus `add-service billing`, `apps/service/src/uses-billing.ts` imports `../../billing/src/rate.js`. A branch changes `rate` to a string. `verify-scoped` prints `skip typecheck-service — none of its inputs changed` and then *passed*, while `make verify`'s `tsc` fails. The same hole exists for npm workspace members, Go modules under one `go.work` and uv path dependencies. The record's contracts (`openapi:`, `package:`, `event:`) cannot see any of these edges. How does the scoped gate close it?
+- **Options:**
+  - **(a)** Charge A's checks with B's changes for every edge found: relative imports, workspace or path dependencies, `go.work` plus `require`. Where the scan is unsure, run the full gate. One test per language.
+  - **(b)** Any import or dependency that leaves a deployable's path is the full gate, with words that name the file.
+  - **(c)** `check-imports` refuses the edge.
+  - **(d)** Something else.
+- **Decision:** (d). It is (b)'s verdict over a reader defined by the three ways a resolver can reach another file, not by the import syntax of each language. No edge is charged to a unit; any reach outside the deployable is the full gate. Eight points:
+  1. **What is scanned.** For every deployable A in `project.json`, the scan reads every file git lists under A's path, tracked or untracked and not ignored (ignored files remain D125's). It runs whatever the number of deployables, because a lone deployable whose test reads `docs/event-model/model.yaml` has the same hole against `check-model`'s claim. Files are read as text with errors replaced, so unreadable bytes can only widen the run.
+  2. **Mechanism 1: a path.** Any quoted string, or path token in a manifest or config, that starts with `../` (or `..\`) is resolved against the file's own directory. It is also resolved against A's root when the file is a manifest or a config. If either resolution lands outside A's path, it is a reach.
+     - Two targets are not a reach: one of A's own row file inputs in `table.py` (for example the root `package.json`, `package-lock.json`, `.nvmrc`, `biome.jsonc`, `go.work`), and a path under `packages/<p>/` that A already consumes as a `package:` contract.
+     - Everything else is a reach: another deployable, a root config A's `tsconfig` extends, a file another check claims.
+     - Any path that names another deployable's path from the root is also a reach. `record.names()` already makes that match.
+  3. **Mechanism 2: another deployable's identity.** For every other deployable B, B's identities are read from its manifest in the working tree **and at the base**, taking the union. That way a branch that renames B still finds A's reference to the old name.
+     - B's npm `name` is searched for in every file of an npm-family A, because hoisted workspace links resolve a bare import that A never declares.
+     - B's Go `module` path, with a `/` boundary, is searched for in every file of a Go A, because `go.work` resolves it without a `require`.
+     - B's PEP 503-normalised `[project] name` is searched for in a Python A's `pyproject.toml`, `uv.lock` and `requirements*.txt`, because a Python A can only import what its own environment installs from those files.
+     - B's `artifactId` is searched for in a Java A's `pom.xml` and Gradle files, for the same reason.
+  4. **Mechanism 3: a link.** A symlink under A whose target resolves outside A is a reach.
+  5. **Where the reader cannot tell, the full gate runs.** That covers:
+     - B's identity cannot be read in either tree;
+     - a file under A cannot be opened;
+     - git cannot list A;
+     - a link cannot be resolved;
+     - a path climbs above the repository root.
+  6. **Where it sits.** A new `scripts/verify_scoped/reach.py` keeps `record.py` inside its structure budget. `record.build` calls it after `compared()` and `under_the_full_gate()`, and a reach raises `FullGate`, so the record is still printed. Record schema 1 is unchanged. `verify`, `check-imports`, the merge root and CI are unchanged, and nothing gains a refusal.
+  7. **The words.** Only the first cause is printed, as today.
+     - A reach: ``the full gate runs, as `make verify` — `apps/service/src/uses-billing.ts` reaches `apps/billing/src/rate.js`, outside its deployable `apps/service`, and the scoped gate scopes only a deployable that reads nothing outside its own path; share code through a package under `packages/` or a published contract to scope again``
+     - An identity: the same, with ``… names `<B's name>`, the package of the deployable `billing`, …``
+     - Unsure: ``the full gate runs, as `make verify` — what `apps/service` reads outside its path cannot be established: <why>``
+  8. **Tests (RED first).** Each language example below must give the full gate on a change to B, with the words above:
+     - G1 as reproduced;
+     - a bare workspace import in TypeScript with no `package.json` dependency;
+     - a Go import of B's module under `go.work` with no `require`;
+     - a uv path dependency, and a uv workspace dependency by name;
+     - a Maven dependency on B's `artifactId`;
+     - a symlink;
+     - a `tsconfig` `extends` to a root file;
+     - B's npm `name` renamed on the branch while A still imports the old one.
+
+     The factory-owned hold, as in D140 point 4: every shape in `test_scoped_targets.SHAPES`, plus two-service and service-plus-web, has zero reaches and keeps scoping.
+
+     The teeth: dropping the base identities makes the rename example fail, and dropping the hoisted-name search makes the bare-import example fail.
+- **Why:**
+  - **(c) is not available to the run.** It adds a refusal to a gate, which the owner brief keeps for a person (*Always ask a person*: removing or changing a check). It would also turn red a project that passes today, against D65. It is not available, and I am not choosing it as the least bad option.
+  - **(a) repeats the failure D140 closed.** A list of edge syntaxes per language fails open on the first form nobody listed. The example: a workspace import that A never declares, which (a)'s *workspace or path dependency in A's manifest* misses. Charging edges precisely would also put an edge graph into `choose.py` to save time only for projects that are off the factory's architecture.
+  - **Why the reader is finite.** A compiler, type checker or package manager reaches another deployable's files only through a path, a package identity or a link. Holding those three mechanisms is an argument that ends, where listing constructs is not.
+  - **What it costs ordinary projects.** Starters reach nothing outside their own paths. I resolved every quoted `../` string under `build/starters/*/*/apps/`, and none leaves its app. Factory identities are `<project>-<name>`, which do not collide with ordinary words. So ordinary projects keep every saving, and only a project that crosses deployables pays, exactly what `make verify` costs it today. That is D140's trade, and owner priority 5 taken literally.
+  - **D115 stands.** The component is still the deployable. A deployable that reaches another is not one component the record can reason about, and the record says so, rather than silently treating the two as one.
+  - **The residual, stated.** A path composed at run time (`filepath.Join(dir, "..", "..", …)`, which the event-modelling Go starter uses inside its own app) is not resolved. Every `table.py` row already rests on this premise, since a test can open any file at run time. Treating every lone `".."` as a reach would put that starter on the full gate. Owner priority 1 is the backstop: the merge root and CI run the full gate, so this residual costs a red merge root, never a defect on `main`.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high on failing closed with the full gate over (a), and on (c) being unavailable; medium that the three mechanisms cover every resolver this factory's families ship (the run-time residual is named above). · **Would reverse if:** a benchmark or a person's survey shows that cross-deployable reaches are the common case in multi-deployable generated projects, more than half of them. Then the scoped gate saves those actors nothing, and (a)'s per-edge charge returns as its own MINOR slice, built over this same three-mechanism reader and never over a list of import syntaxes.
+- **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T043: the decision as its GREEN, which carries data-model.md *How a unit is chosen*, the fragment's Catch-up sentence and ADR 0004's two amendments at Proposed)
+- **Status:** standing
