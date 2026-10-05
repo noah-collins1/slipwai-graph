@@ -3141,3 +3141,68 @@
 - **Confidence:** high on (a) over (b) and (c). Medium on the cost, because nobody has measured how many generated projects carry an edited trunk Makefile. · **Would reverse if:** measurement shows that a Makefile edited away from `rules.json`'s digest is the common case, more than half of the generated repositories the run's benchmark or a person's survey covers. Then the scoped gate would save nothing for most actors, and (c) returns as its own MINOR slice: a factory-written project-additions file read under a fail-closed grammar. It would never return as a further enumeration of make's features.
 - **Written to:** `specs/001-faster-slipwai/decisions.md` (this entry; D131's status); `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T036 and T037: the decision as their GREEN, which carries plan.md R6 e2, data-model.md *How a unit is chosen* and the fragment's Catch-up; T038 closed as superseded); `delivery/docs/adr/0005-generated-makefile-rules-fingerprinted.md` (amended at Proposed)
 - **Status:** standing
+
+## D141 — S14: what grade is a converge finding for a hand-back with no result-contract block?
+
+- **Stage:** plan (open question Q1, handed back by drive-slice) · **Slice:** S14-result-contract · **When:** 2026-10-05T18:16:23Z · **Iteration:** 23
+- **Scope:** S14-result-contract
+- **Question:** FR-017 makes a missing block a converge finding; the ladder's bound re-opens the loop only on HIGH or CRITICAL. What grade does the finding carry?
+- **Options:** (a) MEDIUM — recorded and closed by D136's one continuation, never re-opening the loop on its own — the plan's recommendation; (b) HIGH.
+- **Decision:** (a) MEDIUM.
+- **Why:** A missing summary is closed by one short continuation (D136); re-opening a converge pass for it would spend the time this feature exists to save, and SC-008 still counts the miss.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** SC-008's measurement shows delegates routinely omit the block, so that a MEDIUM never gets closed before the demo.
+- **Written to:** S14-result-contract's plan.md, on the slice branch until it merges
+- **Status:** standing
+
+## D142 — S14: where does a drive-slice delegate's own block go?
+
+- **Stage:** plan (open question Q2, handed back by drive-slice) · **Slice:** S14-result-contract · **When:** 2026-10-05T18:16:23Z · **Iteration:** 23
+- **Scope:** S14-result-contract
+- **Question:** A `drive-slice` delegate is dispatched by the main session, which D134 says appends the block; writing it into the slice's own folder from `main` would conflict with the slice branch at merge.
+- **Options:** (a) `specs/<feature>/hand-backs.md` under stage `ready-set` — the plan's recommendation; (b) the slice's own `hand-backs.md` after the merge.
+- **Decision:** (a).
+- **Why:** The feature-level record is the main session's alone (D134 item 1), so the block lands where nothing else writes and no merge meets it.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** S10a's merge tree moves the dispatch of slice delegates off the main session.
+- **Written to:** S14-result-contract's plan.md, on the slice branch until it merges
+- **Status:** standing
+
+## D143 — S14: in what order does a skipper's entry and block arrive, and where does its number go?
+
+- **Stage:** after-converge gaps (Q3, handed back by drive-slice) · **Slice:** S14-result-contract · **When:** 2026-10-05T18:16:23Z · **Iteration:** 23
+- **Scope:** S14-result-contract
+- **Question:** The cruise text does not say whether the skipper's decision entry precedes its block, nor where the entry's own number is named.
+- **Options:** (a) the entry first, then the block, the number in `change_summary` and never in `decisions` — D134 item 4 as written; (b) the block first.
+- **Decision:** (a), stated in the cruise text. Whether an `unavailable` answer is an entry stays the cruise protocol's: it is never decided, so it is no entry, and the block's `status` is `unavailable`.
+- **Why:** D134 item 4 already answers it; the text has only to say so, so the host can append the entry and the block without reading either twice.
+- **Decided by:** host (standing decision D134)
+- **Confidence:** high · **Would reverse if:** D134 is overridden.
+- **Written to:** S14-result-contract's tasks.md, on the slice branch until it merges
+- **Status:** standing
+
+## D144 — S14: AC-S14-18's file list and the three modules the plan needed
+
+- **Stage:** after-converge gaps (Q4, handed back by drive-slice) · **Slice:** S14-result-contract · **When:** 2026-10-05T18:16:23Z · **Iteration:** 23
+- **Scope:** S14-result-contract
+- **Question:** The slice wrote `cruise.py`, `docs_index.py` and a new `result_contract.py` under `src/slipwai/project/`, which AC-S14-18 does not list.
+- **Options:** (a) amend AC-S14-18 to list them — the drive-slice's recommendation; (b) record a deviation.
+- **Decision:** (a). All three are factory modules inside the surface D129 gives a slice; none is a control or a shared record.
+- **Why:** The criterion's purpose is to keep the slice off shared records and S06's paragraphs; these modules are neither.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** one of them proves to be a file S06 or S08 also writes.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D145 — S14: what the demo runs to show a missing block as a converge finding
+
+- **Stage:** after-converge gaps (Q5, handed back by drive-slice) · **Slice:** S14-result-contract · **When:** 2026-10-05T18:16:23Z · **Iteration:** 23
+- **Scope:** S14-result-contract
+- **Question:** AC-S14-19's seeded no-block fixture can show the finding as a `--hand-backs` line or inside a real converge verdict.
+- **Options:** (a) a real `drive-converge` delegate over the no-block fixture, so the finding appears in a verdict — the drive-slice's recommendation; (b) the `--hand-backs` line alone.
+- **Decision:** (a), beside the `--hand-backs` line.
+- **Why:** The row's first example is that converge reports it; only a verdict shows the developer what they will meet.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** no headless harness can run on the demo project (D136's own condition), when the line alone is shown and the gap is said.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

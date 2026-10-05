@@ -2497,10 +2497,10 @@ to the session that dispatched it; *the block* is the fenced `result-contract` b
   nothing is asked of existing logs and slices without a record are not refused; the same holds for an adopted
   repository under `delivery/`.
 - **AC-S14-18** — *D129, the shared-surface rule.* S14's branch writes only under `assets/toolkit/`, `src/slipwai/project/`
-  (`agents.py`, `cruise_agents.py`, the drive and cruise text in `commands.py`, `converge_stage.py`), `tests/`,
+  (`agents.py`, `cruise_agents.py`, the drive and cruise text in `commands.py`, `converge_stage.py`, `cruise.py`, `docs_index.py` and a new `result_contract.py` — D144), `tests/`,
   `docs/`, `changelog.d/result-contract.md` and its own slice folder; never `delivery/`, `decisions.md`, `spec.md`,
   `story-split.md` or the register; and stays off the paragraphs S06's D123 rewords.
 - **AC-S14-19** — *D136 item 3.* The demo runs on a project generated from the slice branch: real delegates through
   its own headless harness produce hand-backs, and two seeded fixtures (no block; a malformed block) show the converge
-  finding and the field-naming refusal; the share of real hand-backs carrying a block is written into the quickstart
+  finding — in a real `drive-converge` verdict over the no-block fixture (D145) — and the field-naming refusal; the share of real hand-backs carrying a block is written into the quickstart
   with the project's axes, the harness and the number.

@@ -34,6 +34,7 @@ field, so the shape is fixed before anything is planned.
   delegate type, keeping the verdict words people already act on.
 - Readers ignore unknown keys. A block whose `contract` is greater than 1 is passed with a note. Changes are additive
   only; removing or retyping a field needs `contract: 2` and a reader that maps version 1 forward.
+- The shape is written once for a generated project's readers, on its `docs/result-contract.md` (S14).
 - `check-decisions` refuses a malformed block, a malformed heading and an entry with neither a block nor a `Missing:`
   line, each on one line naming the file, the entry and the field. It does not refuse a slice with no `hand-backs.md`;
   a missing entry is a converge finding, not a gate failure (D60, D65).
