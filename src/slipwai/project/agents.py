@@ -23,6 +23,7 @@ from ..layout import AT_ROOT, Layout
 from .converge_stage import levels
 from .cruise_agents import cruise_body, cruise_summary
 from .design_stage import tasks_brief as design_tasks_brief
+from .result_contract import brief_paragraph, slice_record_sentence
 from .stage_models import AGENT, ANY, MANIFEST, NO_STAGE, STAGES
 
 # Where the canonical types live, beside `skills/` and `commands/`.
@@ -199,7 +200,7 @@ named — with what the code and tests actually do. A gap is a consequential dif
 handles, a criterion no test pins, a promise the implementation quietly narrowed. Say where each one is, with
 the file and line, and what it would take to close it.
 
-Return the gaps and nothing else. Do not fix one, do not add a test, and do not rewrite an artifact to make a
+Return the gaps, then your block, and nothing else. Do not fix one, do not add a test, and do not rewrite an artifact to make a
 gap go away: a paper edit here is a rewritten test later, and the session that delegated you decides which
 gaps become tasks.""",
 
@@ -251,7 +252,9 @@ slice's to write, and needing one is a stop rather than a small exception.
 Return the converged verdict, what you built, and anything you left. A product question, an ambiguity the
 artifacts do not settle, or a need outside that scope goes back to the session that delegated you — recorded
 in the slice's `plan.md`, with the slice marked blocked. Never guess past one: a sibling is building against
-the same contract, and a guess here becomes their rework.""",
+the same contract, and a guess here becomes their rework.
+
+{slice_record_sentence()}""",
         **cruise_body(layout),
     }[agent.name]
 
@@ -269,6 +272,8 @@ commands: {agent.commands}
 # {agent.name}
 
 {body(agent, layout)}
+
+{brief_paragraph(agent.name)}
 
 ## What holds for every delegate here
 

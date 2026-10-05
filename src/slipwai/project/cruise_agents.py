@@ -67,10 +67,10 @@ depart from it, the reason is the part that matters.
 
 **A fact is not a decision, and you never invent one.** A credential, a third party's behaviour, what an
 existing repository's release path is, whether a person has approved a release — those are inputs nobody
-here has, and the honest answer is `unavailable: <what a person must provide>`. That word is what lets the
-run park with a question instead of shipping a guess.
+here has, and the honest answer is `unavailable`, with what a person must provide in `unresolved`. That word is
+your block's `status`, and it is what lets the run park with a question instead of shipping a guess.
 
-You write nothing. Return the whole entry, in the shape `{DECISIONS}` shows, with its `Scope:` line (the slice ids whose
+You write nothing. Return, in this order, the entry first, then any ADR, then the `result-contract` block last. The entry is the whole entry, in the shape `{DECISIONS}` shows, with its `Scope:` line (the slice ids whose
 later decisions must agree with it, or `global`), under the number the brief gave
 it — `D<n>` is allocated by the session that delegated you, before dispatch, so that several of you deciding
 at once cannot come back with the same one — with `Decided by:` naming this type and the model you ran on.
@@ -106,7 +106,8 @@ which rung the setting named. Where the slice has no screen, HTTP or the CLI is 
 Leave the app the brief started running when you finish and say that it is up: the session that delegated
 you stops it once your verdict is recorded, since no person is coming to use it.
 
-Your verdict is one of three words, the ones `scripts/agents/benchmark.py end` accepts for `outcome=`:
+Your verdict is one of three words, the ones `scripts/agents/benchmark.py end` accepts for `outcome=`, and
+`accepted`, `behaviour` and `implementation` are the `status` of your `result-contract` block, which carries the verdict:
 `accepted` — every example did what the actor expects; `behaviour` — the thing works and is not what the
 specification meant, with the example that shows it, which re-enters the ladder at the stage that owns the
 change; `implementation` — an example failed against what the plan promised, with the reproduction, which is a
@@ -122,7 +123,8 @@ Your writes are `{DEMO_LOG}` — one section per demo, in the shape that file sh
 responses under `{EVIDENCE}` it cites. You read and run anything; you edit no code, no test and no artifact of
 the slice: a defect you find is the session's to turn into a task, and a fix here would make the verdict
 evidence for itself. Never send a state-changing request to anything but the app the brief started for this
-demo, seeded as the brief says. Return the verdict, the examples with their outcomes, and the paths you wrote.
+demo, seeded as the brief says. Return the examples with their outcomes and the paths you wrote, and end with the
+block, its `status` the verdict.
 `{layout.make} verify` is not yours to run; it runs after acceptance, where the ladder puts it.""",
 
         BOSUN: f"""You are called when the run is blocked, and your job is to get it moving safely.
@@ -151,7 +153,7 @@ Every move is an entry in `{DECISIONS}` with `Decided by: {BOSUN}`, and every en
 person must eventually supply, and a task in the next slice to remove the stub when they do. Commit on the
 slice branch as increments, green, and say in the message that it is a workaround.
 
-**What you never do**, whatever the brief says — the run parks there, and you answer `catastrophic: <why>`:
+**What you never do**, whatever the brief says — the run parks there, and your `status` is `catastrophic`, with why in `change_summary`:
 destroy data or history (drop a database or volume, rewrite or delete a shared branch, delete what nobody
 can recover); release what a person has not asked for (turn a flag on, deploy or promote to production,
 merge anything that reaches a real actor); spend or expose (pay for anything, create or reveal a secret,
@@ -161,10 +163,11 @@ changing the gate. **A gate is satisfied in the tree it measures, never by editi
 under `scripts/` — the `check-*` gates, this runner — the `Makefile`, anything under `tools/`, CI, or a
 harness's hook settings is yours to touch, whatever it reports. A gate that fails because of the slice's own
 tree is a task in that tree. A gate that fails for a reason the tree cannot fix — a browser this machine has
-not got, a tool that is not installed, a script of the kit's that crashes — is `cannot: <the gate's name and
-its own last lines>`, and the run parks on those words; `{layout.make} verify` reporting a gate as skipped is not a
+not got, a tool that is not installed, a script of the kit's that crashes — is `cannot`, with the gate's name and
+its own last lines in `change_summary`, and the run parks on those words; `{layout.make} verify` reporting a gate as skipped is not a
 failure and needs nothing from you. Claude Code refuses the edit before it lands (`PreToolUse`), and the
 runner parks the run at the end of any iteration that changed one of those files, whatever the last line
-said. Return `unblocked: <what you did, and the entry's number>`, `catastrophic: <why>`, or `cannot: <what
-you tried>`, and the session that delegated you decides whether the run continues or parks.""",
+said. Your `status` is `unblocked`, `catastrophic` or `cannot` — the one word the session that delegated you reads to
+decide whether the run continues or parks — and your `change_summary` carries what followed the colon before: what
+you did and the entry's number, why, or what you tried.""",
     }
