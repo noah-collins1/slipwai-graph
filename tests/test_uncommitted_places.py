@@ -8,6 +8,7 @@ no placement needs code of its own.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -19,6 +20,18 @@ from test_adopt_next import in_terminal
 from test_candidates import MONOREPO, adopted
 from test_replay import git
 from test_uncommitted_subdirectory import PAGE
+
+
+class GitSeesNothingAboveTheTemporaryDirectory(FactoryTestCase):
+    """Where the temporary directory is cannot decide what these tests do: git is told not to look in it or above it, so
+    a copy "in no repository" is in none, and a corrupt `.git` is the only one git finds, whatever `TMPDIR` is."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        kept = os.environ.get("GIT_CEILING_DIRECTORIES")
+        os.environ["GIT_CEILING_DIRECTORIES"] = str(Path(tempfile.gettempdir()).resolve())
+        self.addCleanup(lambda: os.environ.pop("GIT_CEILING_DIRECTORIES", None) if kept is None
+                        else os.environ.__setitem__("GIT_CEILING_DIRECTORIES", kept))
 
 
 def placed(parent: Path, at: str) -> tuple[Path, Path]:
@@ -114,7 +127,7 @@ class PlacementChecks(FactoryTestCase):
             self.check(top, self.link_to(project, top / "other" / "shortcut"), "shop", "sub/")
 
 
-class WhereNothingChanges(FactoryTestCase):
+class WhereNothingChanges(GitSeesNothingAboveTheTemporaryDirectory):
     """Holds (S23, R6; AC-S23-7, -8): green before the slice's production change and after, none a RED."""
 
     def test_hold_at_the_top_of_the_repository_the_recorded_keys_are_spelled_as_before(self) -> None:
@@ -137,9 +150,7 @@ class WhereNothingChanges(FactoryTestCase):
             repo = adopted(Path(directory))
             copy = Path(elsewhere) / "shop"
             shutil.copytree(repo, copy, ignore=shutil.ignore_patterns(".git"))
-            probe = subprocess.run(["git", "rev-parse"], cwd=copy, capture_output=True)
-            if probe.returncode == 0:
-                self.skipTest("the temporary directory sits inside a git repository on this machine")
+            self.assertNotEqual(subprocess.run(["git", "rev-parse"], cwd=copy, capture_output=True).returncode, 0)
             (copy / PAGE).write_text((copy / PAGE).read_text() + "\nA note of mine.\n")
             result = slipwai(copy, "adopt", "--refresh")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -148,7 +159,7 @@ class WhereNothingChanges(FactoryTestCase):
             self.assertFalse((copy / ".delivery-tools/written.json").exists(), "nothing to record without git")
 
 
-class WhereGitCannotAnswer(FactoryTestCase):
+class WhereGitCannotAnswer(GitSeesNothingAboveTheTemporaryDirectory):
     """Holds (S23, R6; AC-S23-8, T010): every way `changed()` answers None, at the top and in a subdirectory.
 
     As today the refresh runs, exits 0, refuses nothing, records nothing, and writes over a person's edit to a
@@ -175,9 +186,8 @@ class WhereGitCannotAnswer(FactoryTestCase):
         with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as elsewhere:
             top, project = placed(Path(directory), at) if at else (adopted(Path(directory)),) * 2
             run_in = self.STATES[state](self, top, project, Path(elsewhere))
-            probe = subprocess.run(["git", "rev-parse"], cwd=run_in, capture_output=True)
-            if state == "no repository" and probe.returncode == 0:
-                self.skipTest("the temporary directory sits inside a git repository on this machine")
+            if state == "no repository":
+                self.assertNotEqual(subprocess.run(["git", "rev-parse"], cwd=run_in, capture_output=True).returncode, 0)
             page = run_in / PAGE
             page.write_text(page.read_text() + "\nA note of mine.\n")
             result = slipwai(run_in, "adopt", "--refresh")

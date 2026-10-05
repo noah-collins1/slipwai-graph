@@ -14,6 +14,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 TESTS_DIR = Path(__file__).resolve().parent
+SRC_DIR = TESTS_DIR.parent / "src" / "slipwai"  # run in the suite's own process by the tests that call into it
 ENVIRONS = ("os.environ", "environ")
 ENV_GETTERS = tuple(f"{o}.{m}" for o in ENVIRONS for m in ("get", "setdefault", "pop")) + ("os.getenv", "getenv")
 WHICH = ("shutil.which", "which", "_on_path")
@@ -70,16 +71,18 @@ class Names:
         return None
 
 
-def sites(directory: Path) -> tuple[set[str], set[str], list[str]]:
-    """The environment names read, the tools looked for, and each site whose name cannot be read as `file: code`."""
+def sites(directory: Path, pattern: str = "*.py", label: str = "") -> tuple[set[str], set[str], list[str]]:
+    """The environment names read, the tools looked for, and each site whose name cannot be read as `file: code`,
+    the file as its path under `directory`, after `label`."""
     env: set[str] = set()
     tools: set[str] = set()
     unreadable: list[str] = []
-    for path in sorted(directory.glob("*.py")):
+    for path in sorted(directory.glob(pattern)):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         names = Names(tree)
 
-        def take(into: set[str], node: ast.AST, whole: ast.AST, file: str = path.name, names: Names = names) -> None:
+        def take(into: set[str], node: ast.AST, whole: ast.AST, names: Names = names,
+                 file: str = label + path.relative_to(directory).as_posix()) -> None:
             found = names.literals(node)
             if found is None:
                 unreadable.append(f"{file}: {ast.unparse(whole)}")
@@ -116,16 +119,24 @@ def sites(directory: Path) -> tuple[set[str], set[str], list[str]]:
     return env, {t for t in tools if "/" not in t and "." not in t}, unreadable
 
 
-def reads(directory: Path = TESTS_DIR) -> set[str]:
-    """Every name some `tests/*.py` reads from `os.environ` or `getenv`, or sets there for itself."""
-    return sites(directory)[0]
+def everything() -> tuple[set[str], set[str], list[str]]:
+    """`sites` over the tests and over `src/slipwai/**/*.py`, which the tests run in the suite's own process: a name
+    the package reads decides what a test does as surely as one the test reads. Its files carry `src/slipwai/`."""
+    tests, package = sites(TESTS_DIR), sites(SRC_DIR, "**/*.py", "src/slipwai/")
+    return tests[0] | package[0], tests[1] | package[1], tests[2] + package[2]
 
 
-def probed(directory: Path = TESTS_DIR) -> set[str]:
-    """Every tool some `tests/*.py` looks for: `which`, `os.access(... / tool, os.X_OK)`, a `--version` probe, `NEEDS`,
-    a stand-in `PATH` built from named tools, `docker compose` run as a probe."""
-    return sites(directory)[1]
+def reads() -> set[str]:
+    """Every name some `tests/*.py` or `src/slipwai/**/*.py` reads from `os.environ` or `getenv`, or a test sets there
+    for itself."""
+    return everything()[0]
 
 
-def unreadable(directory: Path = TESTS_DIR) -> list[str]:
-    return sites(directory)[2]
+def probed() -> set[str]:
+    """Every tool some `tests/*.py` or `src/slipwai/**/*.py` looks for: `which`, `os.access(... / tool, os.X_OK)`, a
+    `--version` probe, `NEEDS`, a stand-in `PATH` built from named tools, `docker compose` run as a probe."""
+    return everything()[1]
+
+
+def unreadable() -> list[str]:
+    return everything()[2]

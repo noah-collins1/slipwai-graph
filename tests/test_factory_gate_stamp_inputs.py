@@ -38,6 +38,15 @@ UNCHANGING = {
                       "and asserts the same, and a wrong registry fails it, never passes it",
     "PACK_FLAGS": "extra flags for the pack build the test runs anyway; the same assertions, and a bad flag fails "
                   "the build",
+    "GITEA_OWNER": "`event_model_page_url` reads it; its one test sets it and clears it around the call, and no "
+                   "other test asserts the address it makes",
+    "GITEA_PAGES_URL": "the same call and the same test, which sets it and clears it around the call",
+    "GITEA_TOKEN": "`preflight` reads it, and every `generate` the suite runs passes `--skip-checks`; the one test "
+                   "that names it asserts a refusal's wording, not whether one happens",
+    "GIT_CEILING_DIRECTORIES": "`test_uncommitted_places.py` sets it for its own process and restores it; it makes "
+                               "git blind to what sits above the temporary directory, so the tests behave the same",
+    "TMPDIR": "where `tempfile` makes directories; no test's outcome turns on it since T023 (git is given "
+              "`GIT_CEILING_DIRECTORIES` where it could see above one)",
 }
 
 
@@ -73,6 +82,17 @@ UNREADABLE = {
     "test_cruise_index.py: shutil.which(tool)": "`bare_path`'s parameter: its callers' tools are read as arguments",
     "test_wrappers.py: shutil.which(tool)": "`_on_path`'s parameter: every caller's tool is read as its argument",
     "test_images.py: shutil.which(NEEDS[tool])": "`NEEDS`' values, read where the map is assigned",
+    "src/slipwai/preflight.py: shutil.which(probe[0])": "`preflight` is skipped by every `generate` the suite runs "
+                                                        "(`--skip-checks`); its tools are `targets.TOOLS`, keyed",
+    "src/slipwai/preflight.py: shutil.which(tool)": "the same: a parameter of the skipped `preflight`, read from "
+                                                    "`targets.TOOLS`, whose names are listed tools",
+    "src/slipwai/preflight.py: os.environ.get(variable)": "the same: the target's region variable, which only the "
+                                                         "skipped `preflight` reads",
+    "src/slipwai/upgrade.py: os.environ.get(f'{stem}_USERNAME')": "`UV_INDEX_SLIPWAI_USERNAME`, decided above; the "
+                                                                 "stem is the one index name `test_upgrade.py` uses",
+    "src/slipwai/upgrade.py: os.environ.get(f'{stem}_PASSWORD')": "`UV_INDEX_SLIPWAI_PASSWORD`, decided above",
+    "src/slipwai/wrappers.py: shutil.which(tool)": "the tools a recorded command runs; `test_wrappers.py` names them "
+                                                   "as literals at its own call, and every one is listed or exempt",
     "test_monorepos.py: os.access(landed, os.X_OK)": "a file the generated repository holds, not a tool",
     "test_parallel_slices.py: os.access(gate, os.X_OK)": "a file the generated repository holds, not a tool",
 }
