@@ -2293,7 +2293,9 @@ checks* are this project's `verify-checks` prerequisites; and *the record* is wh
 - **AC-S06-5** — *D114, D117, scenario 2.* Given a changed file no deployable's path and no check's recorded inputs
   claim, or a change to `project.json`, the `Makefile`, anything under `scripts/`, then `make verify-scoped` runs
   `make verify` and prints, once per such file, that dependency knowledge was incomplete for it; so does a record
-  the script cannot build, naming why.
+  the script cannot build, naming why. *(Amended by D140, D146, D148:)* a `Makefile` that is not the factory's text,
+  a make option that adds text or conditions, or a deployable reaching another's path is a cause checked first, and
+  only the first cause found is printed.
 - **AC-S06-6** — *D117.* `check-slice-scope` runs on every scoped run and claims no file; a check with no recorded
   inputs — until `S07-scoped-checks`, `check-agents`, `check-speckit`, `check-extensions` and `check-constitution` —
   runs on every scoped run, named with *no recorded inputs*, and broadens nothing else.
