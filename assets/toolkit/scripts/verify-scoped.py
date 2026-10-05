@@ -231,6 +231,7 @@ def run(make: str, makefile: str) -> int:
             data = records.database(make, makefile)  # the same words the record gives, where it cannot be read
         record = records.build(make, makefile, ground.scope, data, base)
         changed = changes.changed(ground.scope, base)
+        span = changes.unpushed(ground.scope, base)  # the trunk's commits the forge does not carry count as changed (D153)
     except records.Reach as error:  # a deployable reads outside its path: the words are the reason (D148)
         return broaden(make, makefile, str(error).replace("\n", " "))
     except records.FullGate as error:  # matching text that make reads differently: knowledge this script does not have
@@ -241,6 +242,10 @@ def run(make: str, makefile: str) -> int:
         return incomplete(make, makefile, str(error).replace("\n", " "))
     except Exception as error:  # what cannot be read is knowledge this script does not have
         return incomplete(make, makefile, words(error))
+    if span.failure is not None:
+        return broaden(make, makefile, span.failure)
+    own = set(changed)
+    changed = sorted(own | span.paths)
     gate = ground.stamp.is_gate_script
     notes = [f"{INCOMPLETE} for {ground.scope.printable(path)} — {why}" for path, why in choose.unknown(
         record, changed, lambda path: bool(gate(path.encode("utf-8", "surrogateescape"))))]
@@ -252,7 +257,7 @@ def run(make: str, makefile: str) -> int:
         return broaden(make, makefile, EVERY, [note])
     if drifted.ignored:  # a check reads a file git ignores, and no changed path names one: as the stamp's key has it (D125)
         return broaden(make, makefile, IGNORED, then=ground.stamp.WRITTEN_IGNORED.removeprefix(" — "))
-    choices = choose.choose(record, data, changed, drifted)
+    choices = changes.unpushed_words(choose.choose(record, data, changed, drifted), own, span, ground.scope)
     if all(choice.runs for choice in choices):
         return broaden(make, makefile, EVERY)
     for choice in choices:
@@ -267,17 +272,18 @@ def run(make: str, makefile: str) -> int:
         command = [make, *group, "--no-print-directory", "-f", makefile, *targets, "VERIFY_ORDER=1"]
         status = subprocess.run(command, close_fds=False, check=False).returncode
     ran = sum(choice.runs for choice in choices)
-    print(LINE + closing(ground.scope, base, ran, len(choices) - ran, status == 0), flush=True)
+    print(LINE + closing(ground.scope, base, ran, len(choices) - ran, status == 0, span.note), flush=True)
     return status
 
 
-def closing(scope: Any, base: str | None, ran: int, skipped: int, passed: bool) -> str:
+def closing(scope: Any, base: str | None, ran: int, skipped: int, passed: bool, unpushed: str = "") -> str:
     """The last line: what was run and skipped, what it was compared with, and how it ended."""
     named = scope.printable(str(scope.merge_base().named))
     short = ((scope.git("rev-parse", "--short", base) if base else None) or str(base)[:7]).strip()
     ended = "passed" if passed else ("the scoped gate did not pass — each failed check is named above on a line "
                                      "carrying ***")
-    return f"{ran} run, {skipped} skipped, compared with `{named}` at {short}; {ended}"
+    said = f"; {unpushed}" if unpushed else ""
+    return f"{ran} run, {skipped} skipped, compared with `{named}` at {short}{said}; {ended}"
 
 
 def record(make: str, makefile: str) -> int:

@@ -48,8 +48,10 @@ HEADER = """
 SCOPED_PAGE = """`make verify-scoped` runs only the checks whose inputs changed, and prints a line for each check, run or skipped, with
 the reason. It compares two things. Files, committed or not, are compared with the trunk commit the branch is built on,
 the one its last line names (`compared with `main` at <short>`); that commit moves when the branch is rebased onto the
-trunk or merges it. The base is the newer of local `main` and `origin/main`, so a check it skips is taken as passing on the
-word of that commit, and a local commit nobody gated can be it. Tools,
+trunk or merges it. The base is the newer of local `main` and `origin/main`. Where local `main` has commits `origin/main` does not, every
+file those commits changed counts as changed too, so a check is skipped only on the word of a commit the forge's trunk
+carries. With a remote but no `origin/main` it is the full gate. With no remote at all, local `main` is the word, and only
+the merge root's `make verify` stands behind it. Tools,
 variables and the files git ignores are compared with the baseline the branch's last green full run left. It scopes on a `slice/<id>` branch with a usable base, outside CI:
 every deployable's `lint-`, `typecheck-` and `test-` is a check, and each is chosen when a changed file is one it reads,
 when a contract it consumes changed, when an obligation names it, or when the machine differs from the baseline,

@@ -108,6 +108,15 @@ it — `obligation <name> (<path>)`; (4) a family rule — `shares one recipe wi
 `<NAME> differs from the baseline`. Always-run units carry their *Always* reason. Otherwise: `none of its inputs
 changed`. Where every unit is chosen, the run is `make verify`.
 
+The changed paths are the slice's own plus, as a union, every file changed on a commit between the newest the forge's
+trunk carries and the base (D153): `pushed = git merge-base <base> refs/remotes/origin/<trunk>`, the paths of every
+commit in `pushed..<base>` (a merge against each parent, deletions and both sides of a rename included, so a file added
+and reverted still counts). They go through the whole selector, borders included; a unit chosen only by one of them says
+*`<path>` changed on `<trunk>` since `origin/<trunk>` at `<short>`, which nobody's push has gated*, and the last line
+adds *`<trunk>` at `<short>` has `<n>` commits `origin/<trunk>` at `<short>` does not, and every file they changed
+counts as changed*. With a remote but no `origin/<trunk>`, or where the range cannot be walked, the full gate runs; with
+no remote at all, the local trunk is the base (D117).
+
 Before any of that, and before any make call, the `Makefile` is held by its text (D140, ADR 0005): `rules.json` carries
 `makefile`, the sha256 of the exact text the factory wrote (a CRLF read as LF, nothing else changed). Each of these is
 the full gate, and only the first that holds is printed: the root directory's own entry list names `GNUmakefile` or

@@ -14,7 +14,7 @@ import os
 import stat
 import subprocess
 import sys
-from typing import Any
+from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
 
@@ -98,3 +98,67 @@ def changed(scope: Any, base: str) -> list[str]:
         if raw_differs(scope, base, entry, path, os.path.join(top, path)):
             found.add(path)
     return sorted(found)
+
+
+class Span(NamedTuple):
+    """What the trunk's unpushed commits changed (D153): their paths, the `compared with` clause that says so and the
+    commit the forge's trunk carries; or, where that cannot be established, the reason the full gate runs."""
+
+    paths: frozenset[str] = frozenset()
+    failure: str | None = None
+    note: str = ""
+    pushed: str = ""
+
+
+def unestablished(trunk: str, base: str, short: str, why: str) -> Span:
+    return Span(failure=f"`{trunk}` at {short} has commits `origin/{trunk}` does not, and what they changed cannot be "
+                        f"established: {why}")
+
+
+def unpushed(scope: Any, base: str) -> Span:
+    """Every file changed on the commits between the newest the forge's trunk carries and the base (D153 points 1-4).
+    Nothing when there is no remote at all (D117 stands) or when `origin/<trunk>` carries the base; the full gate's
+    reason where a remote has no `origin/<trunk>` or the range cannot be walked."""
+    named = str(scope.merge_base().named)
+    trunk = scope.printable(named)
+    if not (scope.git("remote") or "").split():
+        return Span()
+    ref = f"refs/remotes/origin/{named}"
+    short = (scope.git("rev-parse", "--short", base) or base[:7]).strip()
+    if scope.git("rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}") is None:
+        command = scope.fetch_command(trunk)
+        said = f"there is a remote but no `origin/{trunk}` to say which of `{trunk}`'s commits were pushed"
+        return Span(failure=said + (f"; run `{command}` to scope again" if command else ""))
+    found, why = scope.run_git("merge-base", base, ref)
+    if found is None or not found.strip():
+        return unestablished(trunk, base, short, why or "no history in common with `origin/" + trunk + "`")
+    pushed = found.strip()
+    if pushed == base:
+        return Span()
+    listed, why = scope.run_git("rev-list", f"{pushed}..{base}")
+    if listed is None:
+        return unestablished(trunk, base, short, why)
+    commits = listed.split()
+    done = subprocess.run(["git", "diff-tree", "-r", "-m", "-z", "--root", "--no-renames", "--name-only",
+                           "--no-commit-id", "--stdin"], cwd=scope.ROOT, input="\n".join(commits) + "\n", text=True,
+                          errors="surrogateescape", capture_output=True, check=False)
+    if done.returncode:
+        lines = done.stderr.strip().splitlines()
+        return unestablished(trunk, base, short, lines[0] if lines else f"git exited with status {done.returncode}")
+    count = len(commits)
+    abbreviated = (scope.git("rev-parse", "--short", pushed) or pushed[:7]).strip()
+    note = (f"`{trunk}` at {short} has {count} commits `origin/{trunk}` at {abbreviated} does not, and every file they "
+            "changed counts as changed")
+    return Span(frozenset(path for path in done.stdout.split("\0") if path), None, note, abbreviated)
+
+
+def unpushed_words(choices: list[Any], own: set[str], span: Span, scope: Any) -> list[Any]:
+    """A unit chosen only by a file the unpushed range changed says so, with the commit nobody's push has gated."""
+    trunk = scope.printable(str(scope.merge_base().named))
+    for number, choice in enumerate(choices):
+        path = choice.reason.removesuffix(" changed")
+        if choice.runs and choice.reason.endswith(" changed") and path in span.paths and path not in own:
+            choices[number] = choice._replace(
+                reason=f"{scope.printable(path)} changed on `{trunk}` since `origin/{trunk}` at {span.pushed}, which "
+                       "nobody's push has gated")
+    return choices
