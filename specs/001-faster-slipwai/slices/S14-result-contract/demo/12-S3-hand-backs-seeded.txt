@@ -1,0 +1,7 @@
+# Hand-backs — S3
+
+## 2026-10-05T19:00:00Z — drive-hand — demo
+
+```result-contract
+{"contract": 1, "delegate": "drive-hand", "scope": "S3 demo", "status": "green", "contracts_changed": [], "invariants_checked": [], "tests": [], "decisions": [], "assumptions": [], "unresolved": [], "change_summary": "Walked the examples.", "files_changed": [], "difficulty_observed": {"score": 2, "reason": "two examples"}}
+```

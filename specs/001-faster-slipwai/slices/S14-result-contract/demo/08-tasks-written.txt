@@ -1,0 +1,33 @@
+# Tasks: S1
+
+Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
+
+Each task is one RED-GREEN-REFACTOR increment, one per commit. Run `make verify` before declaring it done.
+
+## Tasks
+
+- [ ] T001 Rule R1 — an empty name is refused.
+  - RED: in `apps/service/src/items/add-item.test.ts`, assert `addItem({ name: "" })` returns a refusal and appends no event. It fails because `add-item.ts` does not exist.
+  - GREEN: in `apps/service/src/items/add-item.ts`, add the decider with the smallest code that refuses an empty name and emits no event.
+  - REFACTOR: tidy the decider and its test with the suite green. The decider stays free of adapter and persistence types.
+  - Files: `apps/service/src/items/add-item.ts`, `apps/service/src/items/add-item.test.ts`.
+
+## Layers
+
+The plan names only the decider (`apps/service/src/items/`). It names no HTTP route, projection, screen or event-model entry, so no task is scheduled for any of them. See *Contradictions and gaps* below.
+
+## Design review
+
+No screen in this slice
+
+## Parallel opportunities
+
+There is one task, so there is no `[P]` and no parallel batch. Spawn a single implementation delegate for T001.
+
+## Contradictions and gaps
+
+- `spec.md` says a visitor can add an item, but `plan.md` holds only R1 (the refusal). No rule covers the successful add or the event it appends, and no example map exists. This is not resolved here. Add the rule to the plan and map first.
+- `docs/event-model/model.yaml` has `slices: []`, so S1 has no model entry. `check-model` refuses an implemented slice without one, and without the white-box state mockups. No mockup task is scheduled because the plan names no white box.
+- `hand-backs.md` records unresolved product questions (list identity, duplicate names, visitor identity). None is answered in the plan.
+
+## Convergence

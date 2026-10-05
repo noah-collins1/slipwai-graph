@@ -1,0 +1,14 @@
+# Hand-backs — S1
+
+## 2026-10-05T22:36:50Z — drive-gaps — gaps
+
+```result-contract
+{"contract": 1, "delegate": "drive-gaps", "scope": "specs/f/slices/S1/spec.md artifact review (pre-planning)", "status": "gaps", "contracts_changed": [], "invariants_checked": ["spec.md lines 3-4 against implied states: item shape, list identity, empty definition, length bound, duplicates, success/refusal observability, actor identity, failure/concurrency, testability"], "tests": [], "decisions": [], "assumptions": ["No implementation exists for S1: text search of apps/ for 'item' in .ts/.tsx found nothing, so this is a spec-only review", "No .codegraph/ index is present; text search was the route used"], "unresolved": ["List identity/ownership (gap 2) needs a product decision", "Duplicate-name policy (gap 5) needs a product decision", "Visitor identity and authorisation (gap 8) needs a product decision", "Slice has no example map, plan, tasks or decisions.md to cross-check"], "change_summary": "Read the two-line S1 spec and found ten gaps: item shape, list identity, empty-name definition, length bound, duplicates, success and refusal observability, actor identity, failure and concurrency, and no testable criteria. No code exists to compare against.", "files_changed": [], "difficulty_observed": {"score": 1, "reason": "two-line artifact, no code to trace"}}
+```
+
+## 2026-10-05T22:37:36Z — drive-tasks — tasks
+
+```result-contract
+{"contract": 1, "delegate": "drive-tasks", "scope": "specs/f/slices/S1/tasks.md from plan.md", "status": "contradiction", "contracts_changed": [], "invariants_checked": ["one task per example-map rule (R1)", "no batched tests/implementation split", "design review heading present, no screen", "Convergence heading present"], "tests": [], "decisions": [], "assumptions": ["No example map exists, so plan.md's single rule R1 was treated as the rule list", "Wrote tasks.md directly instead of running the Spec Kit tasks command", "No .codegraph/ used; text search and ls only"], "unresolved": ["spec.md success path (add an item) has no rule in plan.md and no example map exists", "model.yaml has no S1 slice entry, so check-model will refuse an implemented slice and no white-box mockup task could be scheduled", "Plan leaves list identity, duplicate-name policy and visitor identity undecided (from hand-backs.md gaps)"], "change_summary": "Wrote tasks.md with one RED-GREEN-REFACTOR task for rule R1, no parallel batch and no screen, and recorded the plan, spec and model gaps for the host to resolve.", "files_changed": ["specs/f/slices/S1/tasks.md"], "difficulty_observed": {"score": 1, "reason": "one rule, one file pair, but the plan is thin against the spec"}}
+```
+

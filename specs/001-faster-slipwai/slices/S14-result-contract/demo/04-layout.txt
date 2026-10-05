@@ -1,0 +1,32 @@
+$ ls agents | wc -l
+10
+drive-adversary.md
+drive-bosun.md
+drive-converge.md
+drive-gaps.md
+drive-hand.md
+drive-implement.md
+drive-mutation.md
+drive-skipper.md
+drive-slice.md
+drive-tasks.md
+$ ls .claude/agents
+drive-adversary.md
+drive-bosun.md
+drive-converge.md
+drive-gaps.md
+drive-hand.md
+drive-implement.md
+drive-mutation.md
+drive-skipper.md
+drive-slice.md
+drive-tasks.md
+$ ls docs/result-contract.md scripts/hand_backs.py
+docs/result-contract.md
+scripts/hand_backs.py
+$ grep -c "What every delegate hands back" commands/drive.md
+1
+$ grep -l "What you hand back" agents/*.md | wc -l
+10
+$ grep -l "What you hand back" .claude/agents/drive-*.md | wc -l
+10

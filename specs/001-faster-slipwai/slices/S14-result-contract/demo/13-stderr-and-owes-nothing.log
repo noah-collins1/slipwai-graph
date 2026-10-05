@@ -1,0 +1,13 @@
+$ python3 scripts/check-decisions.py 2>/dev/null   (stdout only)
+exit 1
+$ python3 scripts/check-decisions.py >/dev/null  (stderr only)
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/f/slices/S3/hand-backs.md:3: ## 2026-10-05T19:00:00Z — drive-hand — demo — status: 'green' is not one of accepted, behaviour, implementation
+
+exit 1
+$ python3 scripts/check-decisions.py --hand-backs specs/f/slices/S2x   (agents only Explore / drive-slice)
+hand-backs: with a result contract: 0 of 0
+exit 0
+$ python3 scripts/agents/benchmark.py | grep hand-backs
+  S2: hand-backs with a result contract: 0 of 1

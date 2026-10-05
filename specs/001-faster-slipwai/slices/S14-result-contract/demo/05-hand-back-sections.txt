@@ -1,0 +1,110 @@
+== agents/drive-adversary.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-adversary` and `status` is
+`broken` or `held`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-bosun.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-bosun` and `status` is
+`unblocked`, `cannot` or `catastrophic`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-converge.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-converge` and `status` is
+`converged`, `not-converged` or `incomplete`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-gaps.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-gaps` and `status` is
+`gaps` or `none`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-hand.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-hand` and `status` is
+`accepted`, `behaviour` or `implementation`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-implement.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-implement` and `status` is
+`green`, `partial` or `stopped`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-mutation.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-mutation` and `status` is
+`scored` or `failed-run`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-skipper.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-skipper` and `status` is
+`decided` or `unavailable`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-slice.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-slice` and `status` is
+`converged` or `stopped`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+
+== agents/drive-tasks.md
+## What you hand back
+
+End your hand-back with one fenced block whose info string is exactly `result-contract`, holding one JSON object:
+the thirteen fields [docs/result-contract.md](docs/result-contract.md) lists, in that order. In yours `delegate` is `drive-tasks` and `status` is
+`written` or `contradiction`. Whatever you started and did not finish, decided, assumed or left open goes inside that
+one block — `unresolved`, `decisions`, `assumptions` — and nowhere after it: the block is the last thing you write.
+Helpers you start (Explore, general-purpose, a fan-out group) get no block and no entry of their own; what they did
+is reported in your own block.
+The session that delegated you appends it, verbatim, to the record; it never writes a block for you.
+

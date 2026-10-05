@@ -1,0 +1,8 @@
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+exit 0
+$ make benchmark
+python3 scripts/agents/benchmark.py
+benchmark: no record yet — /drive writes specs/<feature>/slices/<id>/benchmark.json from its next stage
+exit 0

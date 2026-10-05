@@ -179,6 +179,8 @@ once T002 is committed (the status table they compare against is final then).
 
 AC-S14-19 (the demo) is not a task: the demo is the next stage, scripted by [quickstart.md](quickstart.md).
 
+- [ ] **T028 — LOW · The demo's notes (drive-hand, demo 1, iteration 23).** (1) quickstart §2's command says it is the registry's but passes only `--permission-mode acceptEdits`; it needs the registry's `--allowedTools` and `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, or a fresh untrusted project refuses every shell call (say the registry's command, or read it from `registry.json`). (2) the `check-decisions` summary does not count `Missing:` entries as hand-backs — say "n hand-backs, m missing". (3) the `docs/result-contract.md` link in each agent brief is root-relative and breaks when a viewer opens `agents/` (the safety-page link beside it has the same shape; fix both or neither, named). **Files:** `quickstart.md`, `assets/toolkit/scripts/check-decisions.py`, `src/slipwai/project/result_contract.py`, their tests.
+
 ## Dependencies and order
 
 T001 → T002 → T003 → T004 → T005 → T006 (one file pair, in order) · T007 → T008 → T009 (one test module and one

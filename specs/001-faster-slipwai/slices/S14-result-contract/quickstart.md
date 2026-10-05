@@ -81,7 +81,7 @@ passing block** (n of m).
 
 | Axes | Harness | Hand-backs with a block |
 |---|---|---|
-| *(filled at the demo)* | | |
+| event-modelling profile; service TypeScript, fastify, postgres event store, auth none; web react-vite; target none; delivery at the root | Claude Code 2.1.289, `claude -p --agent <type>` with the registry's flags | 4 of 4 (`drive-gaps` ×1, `drive-tasks` ×1, `drive-converge` ×2) — demo 1, iteration 23 |
 
 ## 3. The two seeded fixtures (the checker paths)
 

@@ -1,0 +1,25 @@
+$ python3 scripts/check-decisions.py --hand-backs specs/f/slices/S2
+hand-backs: gaps 2026-10-05T18:30:00Z drive-gaps: nothing recorded — a finding for converge
+hand-backs: with a result contract: 0 of 1
+exit 0
+$ python3 scripts/check-decisions.py --hand-backs specs/f/slices/S2/
+hand-backs: gaps 2026-10-05T18:30:00Z drive-gaps: nothing recorded — a finding for converge
+hand-backs: with a result contract: 0 of 1
+exit 0
+$ python3 scripts/agents/benchmark.py
+f — 1 slice(s) recorded, 10m00s in all
+  slice  delegate/cycle  wall    in             out  models  sessions  converge  +tasks  gaps  mutation  adversary  demo  verify✗  rework  tasks  files  ±lines
+  S2     —               10m00s  0 (+1 unread)  0    —       0         0         0       0/0   —         0          —     0        0       —      —      —     
+  S2: hand-backs with a result contract: 0 of 1
+
+delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes wall a floor because an unbracketed stage is missing; tokens are not prices
+exit 0
+$ make benchmark
+python3 scripts/agents/benchmark.py
+f — 1 slice(s) recorded, 10m00s in all
+  slice  delegate/cycle  wall    in             out  models  sessions  converge  +tasks  gaps  mutation  adversary  demo  verify✗  rework  tasks  files  ±lines
+  S2     —               10m00s  0 (+1 unread)  0    —       0         0         0       0/0   —         0          —     0        0       —      —      —     
+  S2: hand-backs with a result contract: 0 of 1
+
+delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes wall a floor because an unbracketed stage is missing; tokens are not prices
+exit 0

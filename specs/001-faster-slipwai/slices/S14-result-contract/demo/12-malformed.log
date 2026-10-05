@@ -1,0 +1,8 @@
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/f/slices/S3/hand-backs.md:3: ## 2026-10-05T19:00:00Z — drive-hand — demo — status: 'green' is not one of accepted, behaviour, implementation
+
+make: *** [Makefile:87: check-decisions] Error 1
+exit 2

@@ -1,0 +1,18 @@
+$ python3 scripts/check-decisions.py --hand-back specs/f/slices/S1 drive-tasks tasks < handback-tasks.txt
+exit 0
+$ python3 scripts/check-decisions.py
+check-decisions: 0 decision(s) in 0 file(s), 0 demo(s) in 0 log(s), 2 hand-back(s) in 1 record(s), every field present and every path in the tree, every done slice in the adversary log
+exit 0
+# (scratch slice S1m so the real S1 record keeps only real hand-backs)
+$ python3 scripts/check-decisions.py --hand-back-missing specs/f/slices/S1m drive-tasks tasks no continuation
+exit 0
+$ cat specs/f/slices/S1m/hand-backs.md
+# Hand-backs — S1m
+
+## 2026-10-05T22:37:37Z — drive-tasks — tasks
+
+- **Missing:** no continuation
+
+$ python3 scripts/check-decisions.py
+check-decisions: 0 decision(s) in 0 file(s), 0 demo(s) in 0 log(s), 2 hand-back(s) in 2 record(s), every field present and every path in the tree, every done slice in the adversary log
+exit 0
