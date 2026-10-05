@@ -32,6 +32,8 @@ def backends_under_test() -> list[str]:
     if not chosen:
         return list(CATALOG["backends"])
     names = {name.strip() for name in chosen.split(",") if name.strip()}
+    if not names:
+        raise ValueError(f"FACTORY_BACKENDS={chosen!r} names no backend: an empty slice would pass over nothing")
     unknown = sorted(names - set(CATALOG["backends"]))
     if unknown:
         raise ValueError(f"FACTORY_BACKENDS names backends the catalog does not have: {', '.join(unknown)}")

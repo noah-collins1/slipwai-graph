@@ -14,6 +14,7 @@ import subprocess
 import sys
 from functools import partial
 
+from support import backends_under_test
 from test_factory_gate_stamp import BYPASS, FULL, GateCase
 from test_factory_gate_stamp_scan import probed, reads, unreadable
 
@@ -112,6 +113,25 @@ class TestEveryVariableTheSuiteReadsIsAccountedFor(GateCase):
                 self.ran()
                 shutil.rmtree(self.repo / ".git" / "slipwai")
 
+
+
+class TestABackendSliceThatNamesNoBackendIsAnError(GateCase):
+    def test_a_value_that_is_blank_or_only_commas_is_refused_not_an_empty_matrix(self) -> None:  # T022
+        """make's `$(strip ...)` sees these as empty, so the stamped path runs; the suite must not pass over nothing."""
+        kept = os.environ.get("FACTORY_BACKENDS")
+        try:
+            for value in (" ", ",", " , "):
+                with self.subTest(value=value):
+                    os.environ["FACTORY_BACKENDS"] = value
+                    with self.assertRaises(ValueError):
+                        backends_under_test()
+            os.environ["FACTORY_BACKENDS"] = "python"
+            self.assertEqual(backends_under_test(), ["python"])
+        finally:
+            if kept is None:
+                os.environ.pop("FACTORY_BACKENDS", None)
+            else:
+                os.environ["FACTORY_BACKENDS"] = kept
 
 
 class TestEveryToolTheSuiteLooksForIsAccountedFor(GateCase):
