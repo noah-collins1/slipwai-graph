@@ -2657,3 +2657,15 @@
 - **Confidence:** high · **Would reverse if:** a project-added prerequisite of verify-checks could change what a factory check runs without its own rule differing
 - **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T030), `assets/toolkit/scripts/verify_scoped/rules.py`
 - **Status:** standing
+
+## D132 — FR-050 to FR-057 from the author's updated material: which slices carry them (spec a462166)
+- **Stage:** split (owner's message through /cruise-tell) · **Slice:** S16-contract-edges, S17-locality-report, S26-reversibility-line, S27-provisional-decisions, S28-ratify-revert, S30-route-classifier, S34a-evidence-records, S34b-evidence-lifecycle, S36-integration-invariants, S39-benchmark-elapsed · **When:** 2026-10-05T16:35:35Z · **Iteration:** 22
+- **Scope:** global
+- **Question:** The owner's message, 2026-10-05, with spec commit a462166 adding FR-050 to FR-057 (SC-017, SC-018): where does each land?
+- **Options:** (a) as the owner set out, each slice's criteria amended before it starts — the owner's word · (b) leave the split as it was
+- **Decision:** (a), as the owner decided. FR-050 (hashed, versioned, append-only records) goes to FR-046's coordination tool, S34a and S36. FR-051 (a fail-closed factual reversibility classifier: booleans and enums, rollback_complexity trivial, hours, days or needs-migration, missing or unknown classed hard, size and urgency excluded, a test per rule) goes to S26. FR-052 (contract-first edge changes: the consumer's failing expectation first, the provider's gate running every consumer expectation against the real provider, expand then contract) goes to S16 and S34b. FR-053 (shadow, advisory and enforced rollout modes) goes to S27, S28 and S30. FR-054 (calibrated hot-spot triggers: top 3 over 50 per cent, Gini over 0.6, K-effective under 0.4K, two consecutive features, calibrated to K) goes to S17. FR-055 (sizing prompts in the story-splitting skill: about one day of agent work, more than ten contract operations, more than five reads from one neighbour) goes to S17, or a small method slice if it grows. FR-056 (one-tier escalation, and a proposed rule after three same-shape decisions in one feature) goes to the skipper's brief with S26. FR-057 (decision-health metrics: escalation band 5 to 15 per cent, a misclassification flag over 5 per cent, median wait by tier) goes to the benchmark extension S39 (FR-049). None of these slices has started, so each row's Includes is amended and each slice's gaps stage writes the criteria.
+- **Why:** The author's updated material makes these requirements; placing each on the slice that already owns its surface keeps the split's order and adds no slice.
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** the owner says otherwise
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (the Includes of S16, S17, S26, S27, S28, S30, S34a, S34b, S36 and S39), `specs/001-faster-slipwai/spec.md` (FR-050 to FR-057, the owner's commit a462166)
+- **Status:** standing

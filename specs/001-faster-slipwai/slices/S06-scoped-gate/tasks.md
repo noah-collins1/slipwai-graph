@@ -948,6 +948,114 @@ Tests only: reaches no user.
 
 **Files:** `tests/test_scoped_migrate.py`.
 
+*Appended by T017, converge pass 3 (2026-10-05), over `58a9aed..47cb343`.* Pass 2's five T030 reproductions now each
+run the check or the full gate and exit 2. What follows is what pass 3 found still open.
+
+### T033 — [US2] CRITICAL — A variable the comparison never reads changes what a skipped check runs (R4, R5 · AC-S06-2, -5; D127 item 4)
+
+- [ ] **Finding.** T030 closed the class for rule text. It is still open for variables. `rules.py` keeps a variable from
+  the make database only when its origin is `file` and its name does not begin with a dot (`rules.py` 144). It compares a
+  variable the factory never assigned only when a reached recipe names it (`rules.py` 241). That leaves three ways a
+  project can change what a factory check runs, and the comparison never sees any of them.
+  (1) **An `override` directive.** Its origin is `'override' directive`, so `from_database_parsed` drops it. It is in
+  `data.origins`, so `changed_variables` does not count it as removed (242). D127 item 4 compares every variable the
+  Makefile assigns and excludes only environment and command-line origins. Dropping `override` is a gap in the
+  implementation, not in the decision.
+  (2) **A variable that reaches every recipe without being named in one.** An exported variable reaches every recipe
+  through the environment: `PATH`, `BASH_ENV`, `NODE_OPTIONS`, `PYTHONPATH`, anything `export`ed. So does one that
+  came from the environment and is reassigned in the Makefile. None of them is "referenced" under D127 item 4.
+  (3) **Dot-names** (`.SHELLFLAGS`, `.EXTRA_PREREQS`), which `rules.py` 123/144 skip on both sides.
+  **Reproduced** in the TS service + web starter, with the pass-2 shape (probe
+  `/home/noahc/math/.s06-tmp-main/probe3/probe_p3.py`). On `main`, commit one project edit and a 4-line wrapper that exits 1 when its command line
+  names `render-drawio` and `apps/web/src` holds `FORBIDDEN`. Then on `slice/S1`, with a baseline, append
+  `// FORBIDDEN` to `apps/web/src/App.tsx`. Two edits each give `skip check-drawio — none of its inputs changed`,
+  then `15 run, 7 skipped, …; passed`, exit 0, while `make check-drawio` exits 2 (`veto: FORBIDDEN in apps/web/src`):
+  (a) `override SHELL := ./tools/shell`;
+  (b) `export PATH := $(CURDIR)/tools/bin:$(PATH)`, with the wrapper as `tools/bin/node`.
+
+**RED** (`tests/test_verify_scoped_rules.py`, or a new `tests/test_verify_scoped_variables.py` if it nears 350):
+- e1 (a): an `override` of a factory variable is a difference. For `SHELL`, which every recipe reads, that is the full
+  gate with `variable \`SHELL\``. *(fails today)*
+- e2 (b): a Makefile assignment of a variable the factory never assigned, where the variable is exported or born in
+  the environment, is a difference. *(fails today)*
+- e3: a `.SHELLFLAGS` the factory did not write is a difference. *(fails today)*
+- e4 **hold**: T030's e5. For every shape in `test_scoped_targets.SHAPES`, plus two-service and a cloud shape, the
+  factory's own `override VERIFY_GROUP` and its dot-names give no difference.
+
+**GREEN — the class.** Every variable make can hand a recipe is compared. That covers a Makefile assignment of any
+origin except environment and command line (D116's), `override` included. It also covers the special variables
+make reads, and every variable that reaches a recipe through the environment. Item (1) is D127 as written. Items (2)
+and (3) widen D127 item 4's *referenced* rule. Before GREEN, the host records in the decision log what an unnamed,
+exported project variable is charged to: the full gate, or nothing where it is provably unexported. `make -p` does
+not print export status, so "provably" needs a reader, for example a `--eval` target that prints `$(.VARIABLES)`
+with their exported values. The sweep covers each place `rules.py` and `record.database` decide a variable is not
+compared. Each one is either an origin D116 gives the baseline, or a test names why make cannot hand it to a recipe.
+
+**Verify:** `make test TESTS="test_verify_scoped_rules test_verify_scoped_sum test_verify_scoped_record test_scoped_targets"`
+(plus any new module), then `make lint typecheck check-structure`. Level line: MINOR, already carried.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/rules.py`, `assets/toolkit/scripts/verify_scoped/record.py`,
+`tests/test_verify_scoped_rules.py` (or the new module), `specs/001-faster-slipwai/decisions.md` (host only).
+
+### T034 — [US2] HIGH — The rules are read under the goal the full gate gives them (R4, R5 · AC-S06-2, -5; D127 item 2)
+
+- [ ] **Finding.** `record.database` reads the make database with the goal `.DEFAULT` (`record.py` 28). `make verify`
+  hands its sub-make the goal `verify-checks`. A conditional on `MAKECMDGOALS`, or on `MAKELEVEL`, can add a
+  prerequisite or a line that the full gate runs and the comparison never sees. **Reproduced** (probe
+  `GoalConditional`). On `main`, commit
+  `ifneq ($(filter verify-checks,$(MAKECMDGOALS)),)` / `check-drawio: lint-docs` / `endif`, plus a `lint-docs` that
+  greps `apps/web/src` for `FORBIDDEN`. On `slice/S1`, the same edit to `App.tsx` gives `skip check-drawio`, then
+  `passed`, exit 0. `make -n verify-checks` plans `lint-docs`, and `make lint-docs` exits 2.
+  Graded HIGH, not CRITICAL: the rule has to exist only under the full gate's own goal, and the merge root runs that
+  gate (owner priority 1).
+
+**RED:** e1 is the reproduction above: `check-drawio` runs, or the run is the full gate. *(fails today)* e2 **hold**:
+for every shape, the database read under `verify-checks` (at `MAKELEVEL=1`) and the one read under `.DEFAULT` agree.
+
+**GREEN:** compare under the full gate's conditions. Read the database under the goal and level `verify`'s recipe gives
+its sub-make. Where that read differs from the read under the scoped run's own goals, the run is the full gate, with
+its reason. The sweep covers each conditional a project's Makefile can branch on that differs between the two runs:
+`MAKECMDGOALS`, `MAKELEVEL` and `MAKEFLAGS`. A test names each one.
+
+**Verify:** `make test TESTS="test_verify_scoped_rules test_verify_scoped_incomplete test_scoped_targets"`, then
+`make lint typecheck check-structure`.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/record.py`, `assets/toolkit/scripts/verify_scoped/rules.py`,
+`tests/test_verify_scoped_rules.py`.
+
+### T035 — [US2] MEDIUM — A prune the project ran is not a Makefile the project wrote (R5, R13 · AC-S06-5, -18)
+
+- [ ] **Finding.** `generate` writes `rules.json` from the Makefile it has already pruned. With or without explicit
+  answers (`--event-store memory --http none`, postgres + fastify + keycloak, python + fastapi), and after
+  `add-service`, the database matches and nothing is charged. A later `./init --event-store …` or `--http none`
+  behaves differently. The project README offers it under *Changing your mind*, with the example
+  `./init --event-store memory --http none`. The prune cuts marked regions from the Makefile through
+  `prune.prune` → `strip_markers` (`assets/backing-services/prune.py` 1270–1274), but leaves `rules.json` alone.
+  - `--event-store memory` from a postgres-holding Makefile → every scoped run is the full gate, with
+    `the Makefile's variable \`CI_DATABASE\` is not the one the factory wrote`.
+  - `--http none` → the full gate, with `` `verify-checks` rule `` (it drops `verify-checks: check-openapi`).
+
+  Measured in all four generated starters. No false green: the run is safe and only slow. It lasts until the next
+  `slipwai migrate`, which regenerates `rules.json` for the recorded answers; a merge that keeps the pruned Makefile
+  then matches. Meanwhile the scoped gate never scopes, and its words blame an edit the person never made.
+
+**RED** (`tests/test_verify_scoped_rules.py`): generate a starter that keeps the postgres and fastify regions. Run
+`scripts/backing-services.py --event-store memory` and, separately, `--http none`. `rules.judge` then charges nothing.
+*(fails today)* **Hold:** a Makefile edited by the project before the prune still gives its difference after the
+prune.
+
+**GREEN:** the prune that edits the Makefile re-fingerprints it, but only when the Makefile matched `rules.json` before
+the prune. It uses `scripts/verify_scoped/rules.py`'s `from_text` over the pruned text, written by temporary file and
+rename (Principle II). A Makefile that already differed is left differing. The sweep covers every code path that
+writes the Makefile of a stamped project: `generate`, `add-service`, `migrate`/`replay`, `prune`, and any `./init`
+step. Each one leaves `rules.json` matching, and a test names each.
+
+**Verify:** `make test TESTS="test_verify_scoped_rules"` plus the prune's own suite, then
+`make lint typecheck check-structure`. Level line: PATCH-sized, already carried by the MINOR.
+
+**Files:** `assets/backing-services/prune.py`, `tests/test_verify_scoped_rules.py` (and the prune test module that
+covers `prune()`, named by the implementer).
+
 ---
 
 ## Phase 4: After acceptance (host tasks)
@@ -1055,6 +1163,21 @@ not move, 899–908; removed by any full run, 771), the record (T031), the words
 I (satisfied in what changed; unmet in what a project's own `Makefile` edit gets — T030), II (`write_file`,
 `verify-stamp.py` 747), VIII (`schema: 1`, `record.py` 23, 414; contract text drifted, T031), IX (digests,
 `verify-stamp.py` 740–746). A pass 3 follows T030.
+
+### Pass 3 — iteration 22, `drive-converge` · model: host (claude-opus-5-5) · delegated, fresh context · over `58a9aed..47cb343`
+
+**Not converged — one CRITICAL re-opens the loop again.** T030 confirmed closed: pass 2's five reproductions now run
+the changed check, run the gate whole, or run the full gate, each exit 2. Leads: `generate` (default and pruning
+answers) and `add-service` leave `rules.json` matching the Makefile, so a real project scopes; D131 holds (a project's
+prerequisite of `verify-checks` always runs and changes no factory check's rule without charging it); `rules.json` is
+written on every stamped path and on no adopted one (`scaffold.py` 120, `gate.py` 48–50). New: **T033 CRITICAL** — an
+`override` variable or an exported variable no recipe names (`override SHELL`, `export PATH := …`) changes what a
+skipped check runs and is never compared; **T034 HIGH** — the database is read under `.DEFAULT`, not the
+`verify-checks` goal the full gate runs (`record.py` 28), so a goal-conditional rule is unseen; **T035 MEDIUM** — a later
+`./init` prune leaves `rules.json` stale: every scoped run is then full (safe) and its message blames an edit nobody
+made, until `migrate`. Principles: I (met in what changed; the *passed* line overclaims in T033, T034), II (T035's
+re-write must rename), VIII (`rules.py` 24 `SCHEMA = 1`; an unknown schema is the full gate, 216–218), IX (`rules.json`
+holds digests only, 148–150).
 
 ## Differences from plan.md
 
