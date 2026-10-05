@@ -182,6 +182,22 @@ class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
         self.assertIn(NEW_SENTENCE, self.note)
         self.assertNotIn("since the branch last passed", self.note)
 
+    def test_the_note_says_the_makefile_is_held_by_its_text_in_the_words_d140_gives(self) -> None:
+        for words in (
+            "`make verify-scoped` scopes only the `Makefile` the factory wrote.",
+            "or if make would also read a `GNUmakefile`, a `makefile` or a file named in `MAKEFILES`, every scoped run "
+            "is the full gate, `make verify`, and says so on its first line, until the file is the factory's text "
+            "again.",
+            "`slipwai migrate` carries the factory's changes into your `Makefile` but never makes your edits count as "
+            "the factory's.",
+            "To keep scoping, put targets of your own in a file `make verify` does not read and run them with "
+            "`make -f deploy.mk <target>`. Your merge root and CI run `make verify` either way.",
+        ):
+            self.assertIn(words, self.note)
+        retired = ("set it on the rule", "which runs every time with no recorded inputs", "check run on every")
+        for words in retired:
+            self.assertNotIn(words, self.note)
+
     def test_the_note_stands_alone_in_one_paragraph(self) -> None:
         for reference in ("T0", "AC-S06", "D12", "above", "the page"):
             self.assertNotIn(reference, self.note)

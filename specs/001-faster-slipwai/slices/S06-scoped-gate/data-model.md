@@ -108,9 +108,19 @@ it — `obligation <name> (<path>)`; (4) a family rule — `shares one recipe wi
 `<NAME> differs from the baseline`. Always-run units carry their *Always* reason. Otherwise: `none of its inputs
 changed`. Where every unit is chosen, the run is `make verify`.
 
+Before any of that, and before any make call, the `Makefile` is held by its text (D140, ADR 0005): `rules.json` carries
+`makefile`, the sha256 of the exact text the factory wrote (a CRLF read as LF, nothing else changed). Each of these is
+the full gate, and only the first that holds is printed: the root directory's own entry list names `GNUmakefile` or
+`makefile`; `MAKEFILES` is set non-empty in the environment; `Makefile`'s digest differs from the file's, or `Makefile`
+cannot be read, or `rules.json` has no `makefile` key. Only text that matches is then read with `make -npq`, so a
+project's `Makefile` is never parsed by a scoped run. On matching text any difference the database comparison finds
+(a rule's fingerprint, a variable, the export lines, the second read under the full gate's goal) is the full gate with
+*dependency knowledge was incomplete*, charged to no one check; the cost is permanent for a project that edits its
+`Makefile` and nothing for one that does not.
+
 A recipe-sum guard: where a gate check's recipe lines (from the make database) are not exactly its units' and family
 targets' lines, the check runs whole under its gate name whenever any of its units is chosen, with the reason
-*its recipe is not the sum of its per-deployable targets*.
+*its recipe is not the sum of its per-deployable targets*. On the factory's own text the sum always holds.
 
 ## The rules fingerprint: `scripts/verify_scoped/rules.json` (D127, ADR 0005)
 
