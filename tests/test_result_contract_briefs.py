@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import subprocess
 import sys
 import tempfile
@@ -12,8 +13,10 @@ from test_stage_models import installed
 
 from slipwai.assets import TOOLKIT_ROOT
 from slipwai.layout import AT_ROOT, Layout
+from slipwai.project import result_contract
 from slipwai.project.agents import agent_file, types
 from slipwai.project.commands import command_files
+from slipwai.project.docs_index import docs_index
 
 ADOPTED = Layout(delivery="delivery")
 SECTION = "## What you hand back"
@@ -172,3 +175,48 @@ class LadderTest(FactoryTestCase):
                     f"{where}scripts/check-decisions.py --hand-back <dir>", "What every delegate hands back",
                 ):
                     self.assertIn(words, sentence)
+
+
+PAGE = TOOLKIT_ROOT / "docs/result-contract.md"
+
+
+def rows(section: str) -> list[list[str]]:
+    """The cells of each table row under the page's `## <section>` heading, header and rule lines left out."""
+    body = PAGE.read_text(encoding="utf-8").split(f"\n## {section}", 1)[-1].split("\n## ", 1)[0]
+    table = [line for line in body.splitlines() if line.startswith("| `")]
+    return [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in table]
+
+
+class PageTest(FactoryTestCase):
+    def test_the_pages_field_table_is_the_scripts_thirteen_fields_in_order(self) -> None:
+        fields = hand_backs().FIELDS
+        self.assertEqual(len(fields), 13)
+        self.assertEqual([(cell[0].strip("`"), cell[1]) for cell in rows("The fields")], list(fields))
+        self.assertTrue(all(cell[2] for cell in rows("The fields")), "every field carries its rule")
+
+    def test_the_pages_status_table_and_the_factorys_copy_are_the_scripts_statuses(self) -> None:
+        statuses = hand_backs().STATUSES
+        page = {cell[0].strip("`"): tuple(re.findall(r"`([a-z-]+)`", cell[1])) for cell in rows("Status, per type")}
+        self.assertEqual(page, statuses)
+        self.assertEqual(result_contract.STATUSES, statuses)
+
+    def test_the_page_names_the_heading_the_missing_forms_and_the_three_verbs(self) -> None:
+        text = PAGE.read_text(encoding="utf-8")
+        for words in (
+            "## <UTC time> — drive-<name> — <stage>", "- **Missing:** <reason>", "`refused: <the delegate's words>`",
+            "`malformed: <field>`", "`no continuation`", "`stopped: <reason>`", "specs/<feature>/hand-backs.md",
+            "scripts/check-decisions.py --hand-back <dir> <type> <stage>",
+            "scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>",
+            "scripts/check-decisions.py --hand-backs <slice-dir>", "```result-contract",
+        ):
+            self.assertIn(words, text)
+
+    def test_the_docs_index_lists_the_page_under_a_heading_of_its_own_kind(self) -> None:
+        index = docs_index({"docs/result-contract.md": PAGE.read_text(encoding="utf-8")})
+        self.assertNotIn("## Also here", index)
+        self.assertIn("- [`result-contract.md`](result-contract.md) — ", index)
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "indexed", "standard", "python")
+            listed = (repo / "docs/README.md").read_text(encoding="utf-8")
+            self.assertIn("[`result-contract.md`](result-contract.md) — ", listed)
+            self.assertNotIn("## Also here", listed)

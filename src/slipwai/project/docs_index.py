@@ -22,6 +22,7 @@ DOC_HOOKS: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = (
         ("skills-and-commands.md", "the skill catalogue and the commands adapted to this project"),
         ("agent-harnesses.md", "how `skills/`, `commands/` and `agents/` are projected into each coding agent"),
         ("delegated-agent-safety.md", "the standing safety boundary every delegated brief references"),
+        ("result-contract.md", "the block every delegated agent ends its hand-back with, and where the session records it"),
         ("speckit-preset.md", "how this project's templates are installed into Spec Kit without editing it"),
         ("evolving-the-project.md", "this repository owns every file: change anything, and merge a newer factory's output when offered"),
     )),
