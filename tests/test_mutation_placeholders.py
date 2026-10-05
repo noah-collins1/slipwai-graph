@@ -21,7 +21,7 @@ from slipwai.project.native_commands import service_commands
 
 SETUP = "the scope will apply once a tool is wired; it would mutate: "
 ECHO = re.compile(r"echo '([^']+)'")
-PYTHON_ENDING = ("a Python service is refused until `S42-mutmut-mutation` wires the tool, whether or not mutmut is "
+PYTHON_ENDING = ("a Python service is refused until a later slipwai release wires mutmut, whether or not mutmut is "
                  "installed; `make mutation-full` runs mutmut today where it is installed")
 FILES = {
     "typescript": "apps/service/src/x.ts",
@@ -99,7 +99,7 @@ class PlaceholderTest(ScopeCase):
         _, lines, _ = self.run_mixed("python:apps/service")
         refusal = next(line for line in lines if line.startswith("mutation: refuse apps/service — "))
         self.assertIn(f"{PLACEHOLDER_MESSAGES['python'].rstrip('.')}; {SETUP}{FILES['python']}", refusal)
-        for words in ("`S42-mutmut-mutation`", "whether or not mutmut is installed",
+        for words in ("until a later slipwai release wires mutmut", "whether or not mutmut is installed",
                       "`make mutation-full` runs mutmut today where it is installed"):
             self.assertIn(words, refusal)
 

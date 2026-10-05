@@ -394,7 +394,7 @@ PLACEHOLDERS = {
 }
 WIRED = ("go", "java-spring")
 # D149: the scoped run refuses a Python service whether or not mutmut is installed; only the sweep runs the tool today.
-PYTHON_REFUSED = ("a Python service is refused until `S42-mutmut-mutation` wires the tool, whether or not mutmut is "
+PYTHON_REFUSED = ("a Python service is refused until a later slipwai release wires mutmut, whether or not mutmut is "
                   "installed; `make mutation-full` runs mutmut today where it is installed")
 
 

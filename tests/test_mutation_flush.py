@@ -1,7 +1,8 @@
-"""S08 T033 (LOW note): the Go scoped line precedes Gremlins output in a pipe."""
+"""S08 T033 (LOW notes): the Go scoped line precedes Gremlins output in a pipe; the help line for scoping."""
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -13,9 +14,20 @@ from test_go_mutation_file import FakeTools, executable
 from test_mutation_uncovered import FAKE_GO
 
 from slipwai.assets import LANGUAGE_ROOT
+from slipwai.project.makefile import makefile
+from slipwai.services import App
 
 sys.dont_write_bytecode = True
 SCRIPT = LANGUAGE_ROOT / "go" / "scripts/go-mutation.py"
+
+
+class HelpTest(unittest.TestCase):
+    def test_e1_the_mutation_full_help_line_says_make_mutation_scopes_on_a_slice_branch(self) -> None:
+        text = makefile("demo", "standard", [App("service", "apps/service", "service", "go", None, 3000)])
+        (line,) = re.findall(r"(?m)^mutation-full: ## (.*)$", text)
+        self.assertIn("`make mutation` scopes on a slice branch", line)
+        self.assertEqual(re.findall(r"(?m)^mutation: ## (.*)$", text),
+                         ["Run native mutation testing, or explain the missing project decision"])
 
 
 class FlushTest(unittest.TestCase):

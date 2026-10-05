@@ -327,7 +327,7 @@ test: ## Run the complete native test suite
 {mutation_note}mutation: ## Run native mutation testing, or explain the missing project decision
 \t{native['mutation']}
 .PHONY: mutation-full
-mutation-full: ## Run native mutation testing over every service, as `make mutation` did before it was scoped
+mutation-full: ## Run native mutation testing over every service, the whole run; `make mutation` scopes on a slice branch
 \t{native['mutation-full']}
 audit: ## Run the ecosystem-native dependency vulnerability audit
 \t{native['audit']}
