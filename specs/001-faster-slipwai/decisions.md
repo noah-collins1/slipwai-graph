@@ -3152,7 +3152,7 @@
 - **Why:** A missing summary is closed by one short continuation (D136); re-opening a converge pass for it would spend the time this feature exists to save, and SC-008 still counts the miss.
 - **Decided by:** host (stage recommendation)
 - **Confidence:** high · **Would reverse if:** SC-008's measurement shows delegates routinely omit the block, so that a MEDIUM never gets closed before the demo.
-- **Written to:** S14-result-contract's plan.md, on the slice branch until it merges
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (and the slice's plan.md on slice/S14-result-contract until it merges)
 - **Status:** standing
 
 ## D142 — S14: where does a drive-slice delegate's own block go?
@@ -3165,7 +3165,7 @@
 - **Why:** The feature-level record is the main session's alone (D134 item 1), so the block lands where nothing else writes and no merge meets it.
 - **Decided by:** host (stage recommendation)
 - **Confidence:** high · **Would reverse if:** S10a's merge tree moves the dispatch of slice delegates off the main session.
-- **Written to:** S14-result-contract's plan.md, on the slice branch until it merges
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (and the slice's plan.md on slice/S14-result-contract until it merges)
 - **Status:** standing
 
 ## D143 — S14: in what order does a skipper's entry and block arrive, and where does its number go?
@@ -3178,7 +3178,7 @@
 - **Why:** D134 item 4 already answers it; the text has only to say so, so the host can append the entry and the block without reading either twice.
 - **Decided by:** host (standing decision D134)
 - **Confidence:** high · **Would reverse if:** D134 is overridden.
-- **Written to:** S14-result-contract's tasks.md, on the slice branch until it merges
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (and the slice's tasks.md on slice/S14-result-contract until it merges)
 - **Status:** standing
 
 ## D144 — S14: AC-S14-18's file list and the three modules the plan needed
