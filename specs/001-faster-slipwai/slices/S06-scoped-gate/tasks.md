@@ -818,6 +818,111 @@ Tests only: reaches no user.
 
 **Files:** `tests/test_scoped_migrate.py`, `tests/test_verify_scoped_run.py`.
 
+*Appended by T017, converge pass 2 (2026-10-05), over `58a9aed..c3694ae`.* T024–T029's reproductions all now hold;
+what follows is what pass 2 found still open.
+
+### T030 — [US2] CRITICAL — Every rule `make verify` reaches is read, not only the three gates with units (R3, R4, R5 · AC-S06-2, -4, -5; data-model *How a unit is chosen*, last paragraph)
+
+- [ ] **Finding.** T025 closed its instance: a line or a normal prerequisite a project gives `lint`, `typecheck` or
+  `test`. The class is wider. *The selection trusts a rule's text that the project owns and that nothing compares*
+  (Principle I: the project owns its `Makefile`; a `Makefile` change broadens only while it is on the branch). Four
+  rules `make verify` reaches are still taken on trust. (1) **A named check's recipe and prerequisites.** `table.py`'s
+  row says what the factory's recipe reads. A line or a prerequisite a project adds to `check-drawio`,
+  `check-decisions` or any row in `CHECKS` is never read. (2) **Order-only prerequisites.** `record.database` drops
+  everything after `|` (`record.py` 76), but make still builds an order-only prerequisite, so `lint: | lint-docs` runs
+  `lint-docs` under `make lint` and is outside the sum. (3) **`verify`'s own prerequisites.** (4) **`verify-checks`'
+  own recipe lines.** The scoped run names only `verify-checks`' prerequisites. **Reproduced** in the TS service + web
+  starter. On `main`, commit one Makefile edit; on `slice/S1` with a baseline, append `// FORBIDDEN` to
+  `apps/web/src/App.tsx`. Each of the four edits gives `run  lint-web — apps/web/src/App.tsx changed`, then
+  `15 run, 7 skipped, compared with \`main\` at …; passed`, exit 0:
+  (a) `\t@! grep -rq FORBIDDEN apps/web/src` as a second line of `check-drawio:` (`skip check-drawio — none of its
+  inputs changed`);
+  (b) `lint-docs:` with that line, and `check-decisions: lint-docs` (`skip check-decisions`; `make check-decisions`
+  exits 2, `*** [Makefile:263: lint-docs] Error 1`);
+  (c) the same `lint-docs`, and `lint: | lint-docs` (`make lint` exits 2 at `lint-docs`);
+  (d) the same `lint-docs`, and `verify: lint-docs`;
+  (e) the grep line before `@echo 'verify: all gates passed'` in `verify-checks:`.
+
+**RED** (extend `tests/test_verify_scoped_sum.py`, or new `tests/test_verify_scoped_rules.py` if it nears 350):
+- e1 (a): `check-drawio` runs, with a reason saying its recipe is not the one its row describes, and the run fails.
+  *(fails today)*
+- e2 (b): the same for a prerequisite a project gave a named check. *(fails today)*
+- e3 (c): an order-only prerequisite of a gate with units is part of the sum, so `lint` runs whole. *(fails today)*
+- e4 (d) and (e): a prerequisite of `verify` or a recipe line of `verify-checks` that the factory did not write makes
+  the run the full gate, with its reason. *(fails today)*
+- e5 **hold**: every shape in `test_scoped_targets.SHAPES` plus two-service and a cloud shape. No named check, no
+  `verify` and no `verify-checks` carries the new reason. *(teeth: add one line to one generated check's recipe in
+  `makefile.py` and see e5 fail)*
+
+**GREEN — the class.** No rule that `make verify` reaches may be skipped on the strength of text the selection never
+compared. Parse order-only prerequisites (make builds them) for units, family targets and gates alike. For each
+named check, compare its recipe lines and every prerequisite with what its row stands for. Where they differ, the
+check gets `inputs: null` with its reason, so it always runs and claims nothing. It never gets a narrower row. Give
+`verify` and `verify-checks` the same comparison, where a difference is the full gate. The factory's text for each
+rule must come from where `makefile.py` writes it, or from a property the row records (for example, the one script
+each line must call). It must never be a second spelling that drifts. If that needs a product choice, the host
+records the choice in the decision log first. The sweep is every rule reachable from `verify` in the make database:
+each one is held by the sum (T025), by this comparison, or is an always-run check. A test walks the database and
+fails on a reachable rule held by none of the three.
+
+**Verify:** `make test TESTS="test_verify_scoped_sum test_verify_scoped_record test_verify_scoped_choose test_verify_scoped_run test_scoped_targets test_verify_scoped_contracts"`
+(plus the new module), then `make lint typecheck check-structure`. Level line: MINOR, already carried.
+
+**Files:** `assets/toolkit/scripts/verify_scoped/record.py`, `assets/toolkit/scripts/verify_scoped/choose.py`,
+`assets/toolkit/scripts/verify_scoped/table.py`, `assets/toolkit/scripts/verify-scoped.py`,
+`tests/test_verify_scoped_sum.py` (or the new module), and `specs/001-faster-slipwai/decisions.md` (host only, if a
+choice is needed).
+
+### T031 — [US2] MEDIUM — The record's contract says what the record now holds (R10 · AC-S06-13; ADR 0004, data-model *The printed record*)
+
+- [ ] **Finding.** ADR 0004 says the printed shape is the contract its readers use (S07, S34–S36). Three things the
+  record now does are written nowhere in that contract:
+  (1) T025 added a `whole: true` key to units (`record.py` 215). In that case `targets` names the gate, not the unit.
+  Neither ADR 0004's shape (lines 60–80) nor data-model.md's (lines 126–169) names the key.
+  (2) T027 changed what `claims: true` means. A row that is not a unit no longer makes a path under `apps/` or
+  `packages/` known (`choose.claimed`). The contract still says only that `claims: false` marks a check whose files
+  never make a path known. So a reader that rebuilds R5 from the record broadens less than the script does.
+  (3) data-model.md's table (lines 55–76) still gives the rows as they were before T024: `check-imports`
+  `<dep>/, packages/<p>/`, `check-migrations` `<dep>/`, `check-flags` without `apps/`, `check-model` without the
+  paths the model names, and `check-benchmark` with `.specify/integration.json` alone.
+  An added key is MINOR under the ADR's own rule (line 82), so nothing breaks today. But a contract that leaves out
+  what changes a reader's answer is the drift Principle VIII guards against.
+
+**RED** (`tests/test_verify_scoped_contracts.py`): every key a record of every shape emits, at every depth, is named in
+data-model.md's *printed record* section. *(fails today on `whole`)*. Each row of data-model.md's table equals
+`table.py`'s row for that check. *(fails today on the five rows above)*
+
+**GREEN — the class.** One test holds the published shape against the emitted one, keys and rows, so the next change
+to the record changes its contract in the same commit. Bring data-model.md up to date, and have the host bring
+ADR 0004's *printed shape* up to date too: `whole`, and what `claims` means under `apps/` and `packages/`. The ADR
+is Proposed, so its wording is the host's.
+
+**Verify:** `make test TESTS="test_verify_scoped_contracts test_verify_scoped_record"`, then `make lint typecheck check-structure`.
+Records and tests only: reaches no user.
+
+**Files:** `tests/test_verify_scoped_contracts.py`, `specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md`,
+`delivery/docs/adr/0004-verification-dependency-record.md` (host only).
+
+### T032 — [US2] MEDIUM — The migrate example cannot pass by being skipped (R13 · AC-S06-17)
+
+- [ ] **Finding.** T029 builds the "made before" project from `git archive 58a9aed`, and it skips the class when that
+  commit is not in the clone (`tests/test_scoped_migrate.py` 39, 76–83). `58a9aed` lies on this feature branch only:
+  it is not reachable from `main` or from any remote branch (`git merge-base --is-ancestor 58a9aed main` fails), and
+  the clone has no `v*` tag. After a squash or rebase merge, CI's clone of `main` never has the commit, even with
+  `fetch-depth: 0` (`verify.yml` 144). Every later run then reports `OK` with AC-S06-17's only end-to-end example
+  skipped, and no line in the run's output says so.
+
+**RED/GREEN:** the factory before the change comes from something every clone that runs the suite holds: the last
+`v*` tag where one is fetched, otherwise `git merge-base HEAD <trunk>`, never a hash on a branch. Where none can be
+found, the class fails under a CI marker (`CI`, `GITHUB_ACTIONS`) and skips only outside CI. The sweep covers every
+`skipUnless`/`skipIf` in `tests/test_verify_scoped_*` and `tests/test_scoped_*`: none may skip in CI on a condition
+the CI clone always meets or never meets.
+
+**Verify:** `make test TESTS="test_scoped_migrate"`, and once with `CI=true`. Then `make lint typecheck check-structure`.
+Tests only: reaches no user.
+
+**Files:** `tests/test_scoped_migrate.py`.
+
 ---
 
 ## Phase 4: After acceptance (host tasks)
@@ -907,6 +1012,24 @@ the gate's own rules unchanged, nothing under CI, `delivery/`, `tools/`, the roo
 `changelog.d/scoped-gate.md` line 1 `MINOR`), II (the baseline written by temporary file and rename), VIII (the record's
 `schema: 1`, `record.py` 211; an unreadable baseline broadens, `choose.py` 53–56), IX (variable digests, never values,
 `verify-stamp.py` 733–735). Pass 2 follows once T024–T029 are closed.
+
+### Pass 2 — iteration 22, `drive-converge` · model: host (claude-opus-5-5) · delegated, fresh context · over `58a9aed..c3694ae`
+
+**Not converged — one CRITICAL re-opens the loop past its bound.** Pass 1's T024, T026, T027, T028 closed, each
+re-run from pass 1's probes; T025 closed its instance and T029 closed in part. New: **T030 CRITICAL** — the recipe-sum
+guard reads only the three gates with units, so a project's own line or prerequisite on a named check, an order-only
+prerequisite, a prerequisite of `verify` or a line of `verify-checks` is trusted unread, and the run says *passed* while
+`make verify` fails (five reproductions); **T031 MEDIUM** — ADR 0004 and data-model.md do not name the record's `whole`
+key or T027's claim rule; **T032 MEDIUM** — the only end-to-end migrate example skips silently where `58a9aed` is not in
+the clone. Leads cleared: `load_model` installing `yaml` happens before the ignored digest is computed, so the run is
+the full gate and the key moves with it (the script's docstring overstates; T031 carries it); a check that rewrites an
+ignored file makes the next run full only after a real rewrite (`verify-stamp.py` 899–900); T025's multiset keeps each
+target's own line order (`record.py` 187–189). Levels: the generated Makefile (gate rules unchanged; later project edits
+outside the three unit gates unheld, T030), the selection (proved but T030), the baseline (written only when the key did
+not move, 899–908; removed by any full run, 771), the record (T031), the words (T028 closed), migrate (T032). Principles:
+I (satisfied in what changed; unmet in what a project's own `Makefile` edit gets — T030), II (`write_file`,
+`verify-stamp.py` 747), VIII (`schema: 1`, `record.py` 23, 414; contract text drifted, T031), IX (digests,
+`verify-stamp.py` 740–746). A pass 3 follows T030.
 
 ## Differences from plan.md
 
