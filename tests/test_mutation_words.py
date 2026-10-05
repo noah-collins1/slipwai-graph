@@ -90,6 +90,19 @@ class SkillAndPagesTest(unittest.TestCase):
         self.assertRegex(text, r"staged, unstaged and untracked production files are included and mutated")
         self.assertIn("nothing is committed or stashed to run it", text)
 
+    def test_e3_the_skills_commands_collect_the_working_tree_and_untracked_files_too(self) -> None:
+        """The sentence says the working tree is included; the commands the section runs have to do as it says."""
+        text = SKILL.read_text(encoding="utf-8")
+        self.assertNotIn("...HEAD", text, "a three-dot diff collects committed changes only")
+        self.assertNotIn("git status --porcelain` is non-empty", text)
+        lines = text.splitlines()
+        diffs = [line for line in lines if "git diff" in line]
+        listings = [line for line in lines
+                    if "git ls-files" in line and "--others" in line and "--exclude-standard" in line]
+        self.assertEqual((len(diffs), len(listings)), (2, 2), (diffs, listings))
+        for line in diffs:
+            self.assertIn("<merge-base>", line)
+
     def test_e3_hold_the_neighbouring_sentences_of_the_skill_are_untouched(self) -> None:
         text = SKILL.read_text(encoding="utf-8")
         for kept in ("- Use the actual review boundary: the detected default branch for a single PR, or the",
