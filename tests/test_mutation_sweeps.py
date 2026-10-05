@@ -13,7 +13,7 @@ from typing import Any
 
 from mutation_scope_fixture import SLICE, ScopeCase
 from stamp_fixture import git
-from test_mutation_borders import calls, clean_environment, loaded
+from test_mutation_borders import FULL, calls, clean_environment, loaded
 from test_mutation_scope_spring import POM, params
 
 YAML = "apps/billing/.gremlins.yaml"
@@ -178,3 +178,27 @@ class SweepsTest(ScopeCase):
         status, lines, recording = self.run_recording(*TWO_GO, env=clean_environment(SINCE="HEAD~1"))
         self.assertIn(f"mutation: sweep apps/billing — `{YAML}` changed", lines)
         self.assertEqual(recording.swept, ["apps/billing"])
+
+    def test_t019_a_whole_run_sweep_under_since_clears_since_for_the_sub_make(self) -> None:
+        """Go's `$(if $(SINCE),--since …)` would scope a sweep: the command line `SINCE=` beats the environment and
+        `MAKEFLAGS` alike, from either source of the variable."""
+        self.fit_recipe(TWO_GO)
+        for name, edit in (("script", self.edit_script), ("rule", self.edit_rule)):
+            for source, extra in (("environment", {}), ("make's command line", {"MAKEFLAGS": "-- SINCE=main"})):
+                with self.subTest(change=name, since=source):
+                    git(self.repo, "checkout", "-q", "-B", SLICE, "main")
+                    git(self.repo, "checkout", "-q", "--", ".")
+                    edit()
+                    status, lines, recording = self.run_recording(*TWO_GO, env=clean_environment(SINCE="main", **extra))
+                    self.assertTrue(lines[0].startswith("mutation: the sweep runs — "), lines)
+                    self.assertEqual(calls(self.log), [[*FULL, "SINCE="]], lines)
+                    self.assertEqual((recording.scoped, recording.swept, status), ([], [], 0))
+                    self.log.unlink()
+
+    def test_t019_hold_an_adopted_layout_under_since_keeps_the_recorded_command_as_it_is(self) -> None:
+        project = self.repo / "project.json"
+        project.write_text(project.read_text(encoding="utf-8").rstrip().removesuffix("}")
+                           + ', "layout": {"delivery": "delivery"}}', encoding="utf-8")
+        _, lines, _ = self.run_recording(*TWO_GO, env=clean_environment(SINCE="main"))
+        self.assertEqual(lines[0], "mutation: this layout has no mutation scope — the recorded command runs")
+        self.assertEqual(calls(self.log), [FULL])

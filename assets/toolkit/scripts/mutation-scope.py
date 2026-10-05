@@ -123,9 +123,11 @@ def delivery_moved() -> bool:
     return isinstance(layout, dict) and layout.get("delivery", ".") != "."
 
 
-def full(make: str, makefile: str) -> int:
-    """The sweep: `make mutation-full`, its status the run's. close_fds=False keeps a jobserver's descriptors."""
-    command = [make, "--no-print-directory", "-f", makefile, "mutation-full"]
+def full(make: str, makefile: str, clear_since: bool = False) -> int:
+    """The sweep: `make mutation-full`, its status the run's. close_fds=False keeps a jobserver's descriptors. Under a
+    set `SINCE` the sub-make gets `SINCE=` on its command line, which beats the environment and `MAKEFLAGS`, so Go's
+    `$(if $(SINCE),--since $(SINCE))` cannot scope a run that is announced as the sweep."""
+    command = [make, "--no-print-directory", "-f", makefile, "mutation-full", *(["SINCE="] if clear_since else [])]
     return subprocess.run(command, close_fds=False, check=False).returncode
 
 
@@ -570,7 +572,7 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
             raise Sweep(NOT_FACTORY)
     except Sweep as why:
         say(SWEEPS.format(reason=why))
-        return full(make, makefile)
+        return full(make, makefile, bool(os.environ.get("SINCE")))
     except Refused as why:
         say(str(why))
         return 2

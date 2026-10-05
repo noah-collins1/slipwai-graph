@@ -48,7 +48,7 @@ class RecipeTest(ScopeCase):
     def swept_whole(self, status: int, lines: list[str], recording: Recording) -> None:
         self.assertEqual((recording.scoped, recording.swept), ([], []), lines)
         self.assertEqual(len(calls(self.log)), 1, lines)
-        self.assertEqual(calls(self.log)[0][-1], "mutation-full")
+        self.assertEqual(calls(self.log)[0][3], "mutation-full")
         self.assertEqual(status, 0)
 
     def test_e1_an_edit_to_mutation_fulls_recipe_line_sweeps_the_whole_run_for_each_wired_backend(self) -> None:
