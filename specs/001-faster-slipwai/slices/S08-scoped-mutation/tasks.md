@@ -130,7 +130,7 @@ Each task starts from the green committed suite.
 
 ### T001 — Pin: the generated Makefile and gate before anything moves (host task)
 
-- [ ] **Host task; no story; no commit.** Run the pin set once and record that it is green:
+- [x] **Host task; no story; no commit.** *(Done 2026-10-05 at `2007688`: 67 tests OK, 1 skipped, 54 s. `make starters` not run here — the change is user-visible by construction, and T016's `build/` diff is the host's.)* Run the pin set once and record that it is green:
   `make test TESTS="test_mutation test_monorepos test_verify_stamp_pinned test_verify_scoped_rules test_scoped_targets test_scoped_adopted test_layout test_adopted_manifest test_changelog"`.
   Then `make starters` and keep `build/` aside (untracked) so T016's diff of that tree is the change a user sees
   (`docs/maintaining.md`): a `Makefile` with a new rule, one new script, a changed Go script, a changed command text.
