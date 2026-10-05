@@ -1,0 +1,6 @@
+$ make mutation
+mutation: scoped to 1 changed file(s) since `main` at bae5072: apps/service/src/demo_py/adapters/driven/event_store_memory.py
+mutation: refuse apps/service — install and configure mutmut for the selected production packages; the scope will apply once a tool is wired; it would mutate: apps/service/src/demo_py/adapters/driven/event_store_memory.py (a Python service is refused until a later slipwai release wires mutmut, whether or not mutmut is installed; `make mutation-full` runs mutmut today where it is installed)
+mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/service
+make: *** [Makefile:227: mutation] Error 2
+exit 2

@@ -1,0 +1,18 @@
+diff --git a/apps/service/health/health.go b/apps/service/health/health.go
+index fe2e4ef..32b769f 100644
+--- a/apps/service/health/health.go
++++ b/apps/service/health/health.go
+@@ -4,4 +4,12 @@ type Status struct {
+ 	Status string `json:"status"`
+ }
+ 
+-func Check() Status { return Status{Status: "ok"} }
++func Check() Status { return Status{Status: label(0)} }
++
++// label names the health for a count of failed dependency checks.
++func label(failures int) string {
++	if failures > 0 {
++		return "degraded"
++	}
++	return "ok"
++}

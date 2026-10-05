@@ -1,0 +1,5 @@
+$ make -n mutation-full (slice/demo)
+cd apps/service && ./mvnw -B -q test-compile org.pitest:pitest-maven:mutationCoverage
+$ make help | grep mutation
+  mutation               Run native mutation testing, or explain the missing project decision
+  mutation-full          Run native mutation testing over every service, the whole run; `make mutation` scopes on a slice branch

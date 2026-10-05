@@ -1,0 +1,101 @@
+npm ci
+
+added 154 packages, and audited 157 packages in 2s
+
+33 packages are looking for funding
+  run `npm fund` for details
+
+6 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.yaml --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.yaml → file:///tmp/s08-demo2/demo-go/packages/api-client/src/schema.ts [18ms]
+go tool covdata percent -i=. >/dev/null 2>&1 || true
+cd apps/service && go test -coverpkg=./... -coverprofile=coverage.out ./...
+ok  	example.com/demo-go/service/adapters/driven/checkpointstorememory	0.005s	coverage: 16.0% of statements in ./...
+	example.com/demo-go/service/adapters/driven/checkpointstorepostgres		coverage: 0.0% of statements
+ok  	example.com/demo-go/service/adapters/driven/eventstorememory	0.007s	coverage: 40.5% of statements in ./...
+	example.com/demo-go/service/adapters/driven/eventstorepostgres		coverage: 0.0% of statements
+ok  	example.com/demo-go/service/adapters/driving/http	0.006s	coverage: 4.6% of statements in ./...
+	example.com/demo-go/service/application/ports/events		coverage: 0.0% of statements
+?   	example.com/demo-go/service/application/ports/readmodels	[no test files]
+	example.com/demo-go/service/checkpointstorecontract		coverage: 0.0% of statements
+ok  	example.com/demo-go/service/cmd/migrate	0.008s	coverage: 0.5% of statements in ./...
+	example.com/demo-go/service/cmd/serve		coverage: 0.0% of statements
+ok  	example.com/demo-go/service/config	0.009s	coverage: 2.0% of statements in ./...
+	example.com/demo-go/service/eventstorecontract		coverage: 0.0% of statements
+ok  	example.com/demo-go/service/health	0.004s	coverage: 0.1% of statements in ./...
+?   	example.com/demo-go/service/migrations	[no test files]
+ok  	example.com/demo-go/service/observability	0.004s	coverage: 1.5% of statements in ./...
+ok  	example.com/demo-go/service/projections	0.957s	coverage: 10.9% of statements in ./...
+python3 scripts/go-coverage.py apps/service 70
+  example.com/demo-go/service/adapters/driven/checkpointstorememory     100.0%  (11/11 statements)
+  example.com/demo-go/service/adapters/driven/eventstorememory           98.8%  (167/169 statements)
+  example.com/demo-go/service/adapters/driving/http                      94.2%  (81/86 statements)
+  example.com/demo-go/service/application/ports/events                   96.4%  (27/28 statements)
+  example.com/demo-go/service/checkpointstorecontract                    86.9%  (186/214 statements)
+  example.com/demo-go/service/config                                     94.6%  (35/37 statements)
+  example.com/demo-go/service/eventstorecontract                         86.3%  (536/621 statements)
+  example.com/demo-go/service/health                                     50.0%  (1/2 statements)
+  example.com/demo-go/service/observability                              89.7%  (26/29 statements)
+  example.com/demo-go/service/projections                                91.5%  (86/94 statements)
+  example.com/demo-go/service/adapters/driven/checkpointstorepostgres  not counted: tests run under make test-integration
+  example.com/demo-go/service/adapters/driven/eventstorepostgres       not counted: tests run under make test-integration
+  example.com/demo-go/service/cmd/migrate                              not counted: entry point
+  example.com/demo-go/service/cmd/serve                                not counted: entry point
+coverage: 89.5% of 1291 statements, at or above the 70% minimum
+cd apps/billing && go test -coverpkg=./... -coverprofile=coverage.out ./...
+ok  	example.com/demo-go/billing/adapters/driven/checkpointstorememory	0.005s	coverage: 16.0% of statements in ./...
+	example.com/demo-go/billing/adapters/driven/checkpointstorepostgres		coverage: 0.0% of statements
+ok  	example.com/demo-go/billing/adapters/driven/eventstorememory	0.004s	coverage: 40.5% of statements in ./...
+	example.com/demo-go/billing/adapters/driven/eventstorepostgres		coverage: 0.0% of statements
+ok  	example.com/demo-go/billing/adapters/driving/http	0.006s	coverage: 4.6% of statements in ./...
+	example.com/demo-go/billing/application/ports/events		coverage: 0.0% of statements
+?   	example.com/demo-go/billing/application/ports/readmodels	[no test files]
+	example.com/demo-go/billing/checkpointstorecontract		coverage: 0.0% of statements
+ok  	example.com/demo-go/billing/cmd/migrate	0.010s	coverage: 0.5% of statements in ./...
+	example.com/demo-go/billing/cmd/serve		coverage: 0.0% of statements
+ok  	example.com/demo-go/billing/config	0.010s	coverage: 2.0% of statements in ./...
+	example.com/demo-go/billing/eventstorecontract		coverage: 0.0% of statements
+ok  	example.com/demo-go/billing/health	0.008s	coverage: 0.1% of statements in ./...
+?   	example.com/demo-go/billing/migrations	[no test files]
+ok  	example.com/demo-go/billing/observability	0.004s	coverage: 1.5% of statements in ./...
+ok  	example.com/demo-go/billing/projections	0.957s	coverage: 10.9% of statements in ./...
+python3 scripts/go-coverage.py apps/billing 70
+  example.com/demo-go/billing/adapters/driven/checkpointstorememory     100.0%  (11/11 statements)
+  example.com/demo-go/billing/adapters/driven/eventstorememory           98.8%  (167/169 statements)
+  example.com/demo-go/billing/adapters/driving/http                      94.2%  (81/86 statements)
+  example.com/demo-go/billing/application/ports/events                   96.4%  (27/28 statements)
+  example.com/demo-go/billing/checkpointstorecontract                    86.9%  (186/214 statements)
+  example.com/demo-go/billing/config                                     94.6%  (35/37 statements)
+  example.com/demo-go/billing/eventstorecontract                         86.3%  (536/621 statements)
+  example.com/demo-go/billing/health                                    100.0%  (1/1 statements)
+  example.com/demo-go/billing/observability                              89.7%  (26/29 statements)
+  example.com/demo-go/billing/projections                                91.5%  (86/94 statements)
+  example.com/demo-go/billing/adapters/driven/checkpointstorepostgres  not counted: tests run under make test-integration
+  example.com/demo-go/billing/adapters/driven/eventstorepostgres       not counted: tests run under make test-integration
+  example.com/demo-go/billing/cmd/migrate                              not counted: entry point
+  example.com/demo-go/billing/cmd/serve                                not counted: entry point
+coverage: 89.6% of 1290 statements, at or above the 70% minimum
+npm --workspace apps/web test
+
+> demo-go-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s08-demo2/demo-go/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  18:35:49
+   Duration  1.07s (transform 72ms, setup 298ms, import 102ms, tests 308ms, environment 1.68s)
+
+exit 0

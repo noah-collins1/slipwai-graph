@@ -1,0 +1,23 @@
+diff --git a/apps/service/health/health.go b/apps/service/health/health.go
+index fe2e4ef..35e52aa 100644
+--- a/apps/service/health/health.go
++++ b/apps/service/health/health.go
+@@ -5,3 +5,5 @@ type Status struct {
+ }
+ 
+ func Check() Status { return Status{Status: "ok"} }
++
++// Degraded reporting arrives with the dependency checks.
+$ make mutation
+mutation: scoped to 1 changed file(s) since `main` at d8a0229: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: scoped to 1 given file(s): health/health.go
+Starting...
+Gathering coverage... done in 1.766987728s
+
+No results to report.
+mutation: Gremlins found nothing to mutate. A module with no mutable code, or a misconfigured run — either way a pass on nothing is not a pass.
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; failed: apps/service
+make: *** [Makefile:306: mutation] Error 1
+exit 2

@@ -1,0 +1,20 @@
+mutation: scoped to 1 changed file(s) since `main` at d8a0229: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: scoped to 1 given file(s): health/health.go
+Starting...
+Gathering coverage... done in 1.829736747s
+      KILLED CONDITIONALS_NEGATION at health/health.go:9:52
+       LIVED CONDITIONALS_BOUNDARY at health/health.go:9:52
+
+Mutation testing completed in 2 seconds 158 milliseconds
+Killed: 1, Lived: 1, Not covered: 0
+Timed out: 0, Not viable: 0, Skipped: 0
+Test efficacy: 50.00%
+Mutator coverage: 100.00%
+ERROR: below efficacy-threshold
+exit status 10
+mutation: report written to apps/service/gremlins.json
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; failed: apps/service
+make: *** [Makefile:306: mutation] Error 1
+exit 2
