@@ -1426,7 +1426,7 @@ changed, only the text that describes the keys.
 
 ### T046 — MEDIUM — The quickstart's last step prints what it promises (G4 · AC-S06-19; host, records)
 
-- [ ] **Finding.** At quickstart.md line 36, the README edit makes the full gate fail at `check-slice-scope` (outside every deployable). The failed run removes the baseline, so line 40 prints "no usable baseline" and not "check-ux-gates runs: UX_GATES_SINCE differs from the baseline". **GREEN:** use a path the slice may write that nothing claims, or run `make verify` once on the restored tree before line 40. Follow every step by hand before T019. **Files:** `quickstart.md` (host).
+- [x] **Finding.** At quickstart.md line 36, the README edit makes the full gate fail at `check-slice-scope` (outside every deployable). The failed run removes the baseline, so line 40 prints "no usable baseline" and not "check-ux-gates runs: UX_GATES_SINCE differs from the baseline". **GREEN:** use a path the slice may write that nothing claims, or run `make verify` once on the restored tree before line 40. Follow every step by hand before T019. **Files:** `quickstart.md` (host).
 
 ### T047 — LOW — AC-S06-5's words after D140, the record's tools, the Catch-up's contradiction (G6, G7, G10)
 

@@ -34,8 +34,10 @@ make verify-scoped                   # service's three, check-openapi, and typec
 
 printf 'note\n' >> README.md
 make verify-scoped                   # "dependency knowledge was incomplete for README.md — no deployable, contract or
-                                     # check claims it", then the full gate
+                                     # check claims it", then the full gate, which fails at check-slice-scope
+                                     # ("README.md: outside every deployable") and removes the baseline
 git checkout README.md apps/service/src/main.ts
+make verify                          # green again on the restored tree: writes the baseline anew
 
 UX_GATES_SINCE=main make verify-scoped   # check-ux-gates runs: "UX_GATES_SINCE differs from the baseline"
 ```
