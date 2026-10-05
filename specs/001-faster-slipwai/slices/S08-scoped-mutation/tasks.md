@@ -548,6 +548,10 @@ The scratch is removed. No file of this worktree was mutated.
   `tests/test_mutation_targets.py` generates, the script's reconstruction equals the generated `mutation-full` recipe
   (teeth: change `native_commands.py:177`, see it fail, `git checkout --` it). Files add `tests/test_mutation_targets.py`
   (or the new hold file) and `data-model.md` (*Classification* and *The words*: the new first-line reason).
+  **Manifest extended by the host at implementation:** `tests/mutation_scope_fixture.py`, `tests/test_mutation_scope_go.py`,
+  `tests/test_mutation_scope_spring.py`, `tests/test_mutation_placeholders.py` — each run site commits the `mutation-full`
+  recipe of the services it hands the script, so its scoped example stays scoped (the check is not weakened). Wrapped
+  applications are left out of the reconstruction on purpose: they exist only in an adopted layout, which never scopes.
 
 ### T019 — [US2] MEDIUM · A whole-run sweep under `SINCE` is a sweep for every backend, Go included (D138 items 3–4, AC-S08-8, AC-S08-12 · partial)
 - [ ] **The surface:** every whole-run sweep cause that can co-occur with a set `SINCE` — `scope-script` and `rule-text`
