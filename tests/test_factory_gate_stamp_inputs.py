@@ -150,6 +150,10 @@ class TestEveryToolTheSuiteLooksForIsAccountedFor(GateCase):
     def test_the_tools_whose_absence_skips_an_image_or_wrapper_test_are_listed(self) -> None:  # AC-S33-12 e2
         self.assertTrue({"ko", "mvn", "pack", "java", "docker"} <= set(self.listed()))
 
+    def test_every_tool_acceptance_criterion_6_names_is_listed_with_ko_and_mvn(self) -> None:  # AC-S33-6 hold
+        named = {"python3", "git", "uv", "node", "npm", "go", "java", "docker", "pack", "tofu", "gh", "ko", "mvn"}
+        self.assertEqual(sorted(named - set(self.listed())), [])
+
     def test_the_plugin_arriving_puts_the_next_run_in_full_and_the_run_after_reuses(self) -> None:  # AC-S33-12 e3
         """A stand-in `docker` answers `--version` the same throughout and fails `compose version` until it is told."""
         docker = self.bin / "docker"
