@@ -40,6 +40,10 @@ class RunTest(ShapeCase):
         self.assertNotIn("jobserver unavailable", run.stderr)
 
     def test_e1_two_checks_that_wait_for_each_other_both_start_before_either_ends(self) -> None:
+        """Make's own jobserver, the named pipe of GNU Make 4.4 and later, reaches the sub-make through `MAKEFLAGS`.
+        Its teeth are that: a sub-make started without `MAKEFLAGS` runs at -j1 and the wait times out. It has none
+        against `close_fds=True`, because a sub-make opens the fifo by its path and needs no inherited descriptor;
+        the next example, with the pipe style, is the one that discriminates that."""
         self.assert_together(["-j2"], self.rendezvous())
 
     def test_e1_the_pipe_jobserver_of_an_older_make_is_kept_too(self) -> None:
