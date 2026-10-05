@@ -26,6 +26,7 @@ sys.dont_write_bytecode = True  # an untracked file under scripts/ would make ev
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+from verify_scoped import changes  # noqa: E402
 from verify_scoped import choose  # noqa: E402
 from verify_scoped import record as records  # noqa: E402
 from verify_scoped import rules  # noqa: E402
@@ -174,7 +175,9 @@ def compared(ground: Ground, make: str, data: records.Database) -> tuple[choose.
 
 def full_gate(make: str, makefile: str, *goals: str) -> int:
     # close_fds=False keeps the jobserver's descriptors for the sub-make, so `make -j verify-scoped` still runs at once
-    command = [make, "--no-print-directory", "-f", makefile, *goals]
+    # always the project's own `Makefile`, never the file the scoped target was read from: under `MAKEFILES` that is the first
+    # file in `MAKEFILE_LIST`, which is not a makefile that has `verify` (adversary B8)
+    command = [make, "--no-print-directory", "-f", "Makefile", *goals]
     return subprocess.run(command, close_fds=False, check=False).returncode
 
 
@@ -227,7 +230,7 @@ def run(make: str, makefile: str) -> int:
         if data is None:
             data = records.database(make, makefile)  # the same words the record gives, where it cannot be read
         record = records.build(make, makefile, ground.scope, data, base)
-        changed = sorted(ground.scope.changed_files(base))
+        changed = changes.changed(ground.scope, base)
     except records.Reach as error:  # a deployable reads outside its path: the words are the reason (D148)
         return broaden(make, makefile, str(error).replace("\n", " "))
     except records.FullGate as error:  # matching text that make reads differently: knowledge this script does not have
