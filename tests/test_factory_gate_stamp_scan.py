@@ -1,5 +1,5 @@
-"""The two scanners behind S33's class-closing tables: what `tests/*.py` read from the
-environment, and look for on `PATH`.
+"""The two scanners behind S33's class-closing tables: what `tests/*.py`, `src/slipwai/` and `scripts/*.py`
+read from the environment, and look for on `PATH`.
 
 A scanner that only sees literal forms goes green past a form it cannot read, so these fail the other way: every form
 handled below is read, and any site whose name cannot be resolved to literal strings (a parameter, a computed value)
@@ -15,6 +15,7 @@ sys.dont_write_bytecode = True
 
 TESTS_DIR = Path(__file__).resolve().parent
 SRC_DIR = TESTS_DIR.parent / "src" / "slipwai"  # run in the suite's own process by the tests that call into it
+SCRIPTS_DIR = TESTS_DIR.parent / "scripts"  # loaded in the suite's own process, or run by a test as a child
 ENVIRONS = ("os.environ", "environ")
 ENV_GETTERS = tuple(f"{o}.{m}" for o in ENVIRONS for m in ("get", "setdefault", "pop")) + ("os.getenv", "getenv")
 WHICH = ("shutil.which", "which", "_on_path")
@@ -120,21 +121,24 @@ def sites(directory: Path, pattern: str = "*.py", label: str = "") -> tuple[set[
 
 
 def everything() -> tuple[set[str], set[str], list[str]]:
-    """`sites` over the tests and over `src/slipwai/**/*.py`, which the tests run in the suite's own process: a name
-    the package reads decides what a test does as surely as one the test reads. Its files carry `src/slipwai/`."""
-    tests, package = sites(TESTS_DIR), sites(SRC_DIR, "**/*.py", "src/slipwai/")
-    return tests[0] | package[0], tests[1] | package[1], tests[2] + package[2]
+    """`sites` over the tests, over `src/slipwai/**/*.py`, which the tests run in the suite's own process, and over
+    `scripts/*.py`, which a test loads or runs: a name either reads decides what a test does as surely as one the test
+    reads. Their files carry `src/slipwai/` and `scripts/`."""
+    parts = (sites(TESTS_DIR), sites(SRC_DIR, "**/*.py", "src/slipwai/"), sites(SCRIPTS_DIR, "*.py", "scripts/"))
+    return (set().union(*(p[0] for p in parts)), set().union(*(p[1] for p in parts)),
+            [site for p in parts for site in p[2]])
 
 
 def reads() -> set[str]:
-    """Every name some `tests/*.py` or `src/slipwai/**/*.py` reads from `os.environ` or `getenv`, or a test sets there
-    for itself."""
+    """Every name some `tests/*.py`, `src/slipwai/**/*.py` or `scripts/*.py` reads from `os.environ` or `getenv`, or
+    a test sets there for itself."""
     return everything()[0]
 
 
 def probed() -> set[str]:
-    """Every tool some `tests/*.py` or `src/slipwai/**/*.py` looks for: `which`, `os.access(... / tool, os.X_OK)`, a
-    `--version` probe, `NEEDS`, a stand-in `PATH` built from named tools, `docker compose` run as a probe."""
+    """Every tool some `tests/*.py`, `src/slipwai/**/*.py` or `scripts/*.py` looks for: `which`,
+    `os.access(... / tool, os.X_OK)`, a `--version` probe, `NEEDS`, a stand-in `PATH` built from named tools,
+    `docker compose` run as a probe."""
     return everything()[1]
 
 

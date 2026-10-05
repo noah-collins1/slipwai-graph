@@ -45,6 +45,17 @@ UNCHANGING = {
                    "that names it asserts a refusal's wording, not whether one happens",
     "GIT_CEILING_DIRECTORIES": "`test_uncommitted_places.py` sets it for its own process and restores it; it makes "
                                "git blind to what sits above the temporary directory, so the tests behave the same",
+    "GITEA_PRIVATE": "`scripts/publish-to-gitea.py` reads it; the one test that runs it passes `--list`, which exits "
+                     "before the value is used, and the suite is green with a bad one",
+    "GITEA_URL": "the same script's `--url` default; `--list` never contacts a forge, and the suite is green with any",
+    "GITEA_USERNAME": "`tag-release.py` hands it to its own child's push; no test pushes, and the suite is green "
+                      "with any",
+    "PYPI_TOKEN": "`publish-wheel.py` reads it in `main`; `test_versions.py` loads the module for its pure functions "
+                  "only, and the suite is green with any",
+    **{name: "read by `scripts/gitea-pages.py` at load, which the suite pins out of the process (T030): "
+             "`test_gitea_pages_environment.py` runs its tests with an odd value for each"
+       for name in ("GITEA_REPOS_DIR", "GITEA_PAGES_ROOT", "GITEA_PAGES_HOST", "GITEA_PAGES_PORT",
+                    "GITEA_PAGES_BRANCH", "GITEA_PAGES_POLL_SECONDS")},
     "TMPDIR": "where `tempfile` makes directories; no test's outcome turns on it since T023 (git is given "
               "`GIT_CEILING_DIRECTORIES` where it could see above one)",
 }
@@ -95,6 +106,11 @@ UNREADABLE = {
     "src/slipwai/upgrade.py: os.environ.get(f'{stem}_PASSWORD')": "`UV_INDEX_SLIPWAI_PASSWORD`, decided above",
     "src/slipwai/wrappers.py: shutil.which(tool)": "the tools a recorded command runs; `test_wrappers.py` names them "
                                                    "as literals at its own call, and every one is listed or exempt",
+    "scripts/test-adoption.py: shutil.which(tool)": "`verify`'s parameter in a script only `make test-adoption` runs; "
+                                                    "the suite never runs it",
+    "test_gitea_pages.py: os.environ.pop(name, None)": "`load_daemon` restoring the names its caller handed it",
+    "test_gitea_pages.py: os.environ[name]": "`load_daemon` taking its `GITEA_*` names out of the environment for "
+                                             "the load, so the shell's value never reaches the script (T030)",
     "test_monorepos.py: os.access(landed, os.X_OK)": "a file the generated repository holds, not a tool",
     "test_parallel_slices.py: os.access(gate, os.X_OK)": "a file the generated repository holds, not a tool",
 }

@@ -21,7 +21,6 @@ from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from types import ModuleType
-from unittest import mock
 
 from slipwai.assets import ROOT
 
@@ -29,12 +28,23 @@ SCRIPT = ROOT / "scripts/gitea-pages.py"
 INSTALLER = ROOT / "scripts/install-gitea-pages"
 
 
-def load_daemon() -> ModuleType:
-    specification = importlib.util.spec_from_file_location("gitea_pages", SCRIPT)
-    assert specification is not None and specification.loader is not None
-    module = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(module)
-    return module
+def load_daemon(**overrides: str) -> ModuleType:
+    """The script as it reads with no `GITEA_*` from the shell: every such name is out of the environment for the
+    load and back after it, and the overrides an example hands in are the only ones set."""
+    held = {k: v for k, v in os.environ.items() if k.startswith("GITEA_")}
+    for name in held:
+        del os.environ[name]
+    os.environ.update(overrides)
+    try:
+        specification = importlib.util.spec_from_file_location("gitea_pages", SCRIPT)
+        assert specification is not None and specification.loader is not None
+        module = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(module)
+        return module
+    finally:
+        for name in overrides:
+            os.environ.pop(name, None)
+        os.environ.update(held)
 
 
 class SiteCaseTest(unittest.TestCase):
@@ -69,8 +79,7 @@ class SiteCaseTest(unittest.TestCase):
 
     def test_the_bind_address_is_an_override_with_loopback_as_its_default(self) -> None:
         self.assertEqual(self.module.HOST, "127.0.0.1")
-        with mock.patch.dict(os.environ, {"GITEA_PAGES_HOST": "0.0.0.0"}):
-            self.assertEqual(load_daemon().HOST, "0.0.0.0")
+        self.assertEqual(load_daemon(GITEA_PAGES_HOST="0.0.0.0").HOST, "0.0.0.0")
 
 
 class ServingTest(unittest.TestCase):
