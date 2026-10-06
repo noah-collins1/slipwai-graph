@@ -646,8 +646,9 @@ SPELLING = {
     "tiers": ("easy", "guarded", "hard"),           # the first of these on the line is the entry's tier
     "escalation": re.compile(r"\b(?:easy|guarded)\s*(?:→|->)\s*hard\b"),
     "status_line": re.compile(r"^- \*\*Status:\*\*(.*)$", re.M),
-    "reviewed": ("ratified", "reverted"),           # a review's verdict, as the Status line says it
+    "reviewed": ("ratified", "reverted"),           # a review's verdict: the Status line's first word
     "reverted": "reverted",
+    "verdict": re.compile(r"\s*(\w+)"),
     "when": re.compile(r"\*\*When:\*\*\s*(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)"),
 }
 NO_TIER = "no decision entry carries a Reversibility: line"
@@ -667,6 +668,12 @@ def decision_entries(text: str) -> list[dict[str, Any]]:
         found.append({"tier": words[0] if words else None, "escalated": bool(SPELLING["escalation"].search(value)),
                       "status": status.group(1) if status else "", "when": epoch(when.group(1)) if when else None})
     return found
+
+
+def verdict(status: str) -> str:
+    """A status's first word, lowered: `ratified`, `reverted`, `standing`... — never a word further along the line."""
+    found = SPELLING["verdict"].match(status)
+    return found.group(1).lower() if found else ""
 
 
 def share(numerator: int, denominator: int, none: str, flagged: Callable[[int, int], bool], why: str) -> dict[str, Any]:
@@ -693,21 +700,21 @@ def decision_health(text: str, skippers: list[tuple[int, int, int]]) -> dict[str
     if not tiered:
         return {key: unknown(NO_TIER) for key in ("escalation_share", "misclassification_rate", "median_wait")}
     scored = [entry for entry in tiered if entry["tier"] != "hard"]
-    reviewed = [entry for entry in tiered if any(word in entry["status"] for word in SPELLING["reviewed"])]
+    reviewed = [entry for entry in tiered if verdict(entry["status"]) in SPELLING["reviewed"]]
     waits: dict[str, Any] = {}
     for tier in SPELLING["tiers"]:
         mine = [entry for entry in tiered if entry["tier"] == tier]
         # The shortest bracket holding the moment is the skipper that decided it, not an enclosing one.
         reads = [min(held, key=lambda span: span[1] - span[0])[2] for entry in mine if entry["when"] is not None
                  if (held := [span for span in skippers if span[0] <= entry["when"] <= span[1]])]
-        waits[tier] = median(reads) if reads else unknown(
+        waits[tier] = {"median": median(reads), "read": len(reads), "of": len(mine)} if reads else unknown(
             f"no {tier} entry" if not mine else f"no skipper bracket holds the When: moment of any {tier} entry")
     return {
         "escalation_share": share(sum(entry["escalated"] for entry in scored), len(scored),
                                   "no entry is scored easy or guarded",
                                   lambda top, bottom: not BAND[0] * bottom <= top * 100 <= BAND[1] * bottom,
                                   f"outside the healthy band {BAND[0]}–{BAND[1]}%"),
-        "misclassification_rate": share(sum(SPELLING["reverted"] in entry["status"] for entry in reviewed),
+        "misclassification_rate": share(sum(verdict(entry["status"]) == SPELLING["reverted"] for entry in reviewed),
                                         len(reviewed), "no tiered entry was ratified or reverted",
                                         lambda top, bottom: top * 100 > OVER * bottom, f"over {OVER}%"),
         "median_wait": waits,
@@ -731,7 +738,8 @@ def health_lines(health: dict[str, Any], wall: Callable[[int], str]) -> list[str
         wait = f"median wait: unknown — {waits['unknown']}"
     else:
         wait = "median wait: " + ", ".join(
-            f"{tier} unknown ({figure['unknown']})" if is_unknown(figure) else f"{tier} {wall(round(figure))}"
+            f"{tier} unknown ({figure['unknown']})" if is_unknown(figure)
+            else f"{tier} {wall(round(figure['median']))} ({figure['read']} of {figure['of']})"
             for tier, figure in waits.items())
     return [rate(health["escalation_share"], "escalation share", "entries scored easy or guarded"),
             rate(health["misclassification_rate"], "misclassification rate", "reviewed"), wait]

@@ -204,10 +204,26 @@ class DecisionHealthTest(unittest.TestCase):
         entries = [(stamp(1, "10:01:00"), "easy", "ratified"), (stamp(1, "11:04:00"), "easy", "ratified"),
                    (stamp(1, "12:00:00"), "guarded", "ratified")]
         lines, found = self.health(log(entries), a, b)
-        self.assertIn("median wait: easy 3m30s", lines[2])
+        self.assertIn("median wait: easy 3m30s (2 of 2)", lines[2])
         self.assertIn("guarded unknown (no skipper bracket holds the When: moment of any guarded entry)", lines[2])
-        self.assertEqual(210, found["median_wait"]["easy"])
+        self.assertEqual({"median": 210, "read": 2, "of": 2}, found["median_wait"]["easy"])
         self.assertEqual("no hard entry", found["median_wait"]["hard"]["unknown"])
+
+    def test_e1_a_median_over_two_of_ten_entries_says_so_in_the_line_and_in_json(self) -> None:
+        a = entry("skipper", stamp(1, "10:00:00"), stamp(1, "10:06:00"))
+        held = [(stamp(1, "10:03:00"), "easy", "ratified")] * 2
+        lines, found = self.health(log(held + [(stamp(1, "12:00:00"), "easy", "ratified")] * 8), a)
+        self.assertIn("easy 6m00s (2 of 10)", lines[2])
+        self.assertEqual({"median": 360, "read": 2, "of": 10}, found["median_wait"]["easy"])
+
+    def test_e2_a_status_that_only_mentions_ratified_is_not_a_review(self) -> None:
+        when = stamp(1, "10:30:00")
+        lines, found = self.health(log([(when, "easy", "standing — to be ratified at S28")] * 3))
+        self.assertIn("misclassification rate: unknown — no tiered entry was ratified or reverted", lines[1])
+        self.assertEqual({"unknown": "no tiered entry was ratified or reverted"}, found["misclassification_rate"])
+        mixed = log([(when, "easy", "reverted — it was ratified once")] + [(when, "easy", "Ratified by a person")]
+                    + [(when, "easy", "standing — to be reverted at S28")])
+        self.assertIn("misclassification rate: 50% (1 of 2 reviewed)", self.health(mixed)[0][1])
 
 
 WAITING = ("dependency", "worker", "review", "integration", "unattributed")
