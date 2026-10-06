@@ -477,11 +477,38 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
     return {"worked": in_worked, "waiting": seconds, "read_from": read_from}
 
 
-def sources(moved: dict[str, Any], parts: dict[str, Any], ended: int, reworked: int, transcripts: bool) -> dict[str, str]:
+TRANSCRIPTS = "the transcripts, by delegate and bracket"
+RECORDED = "the entries' recorded usage"
+
+
+def cost_source(read: dict[str, int] | None, ended: int) -> str:
+    """Where a record's cost was read from, by the entries each source supplied: both, with counts, where it is
+    mixed; `none present` where no ended entry's cost could be read."""
+    read = read or {}
+    transcripts, recorded, unread = (read.get(key, 0) for key in ("transcripts", "recorded", "unread"))
+    entries = lambda count: f"{count} entr{'y' if count == 1 else 'ies'}"  # noqa: E731
+    if transcripts and recorded:
+        said = f"{TRANSCRIPTS} ({entries(transcripts)}) and {RECORDED} ({entries(recorded)})"
+    elif transcripts or recorded:
+        said = TRANSCRIPTS if transcripts else RECORDED
+    else:
+        return "none present: no bracket ended" if not ended else "none present: no ended entry's cost could be read"
+    return said + (f"; {entries(unread)} unread" if unread else "")
+
+
+def entry_source(source: str | None, tokens: Any) -> str:
+    """Where one entry's tokens were read from: its transcripts, its recorded usage, or what was found absent."""
+    if is_unknown(tokens):
+        return f"none present: {tokens['unknown']}"
+    return TRANSCRIPTS if source == "transcripts" else RECORDED
+
+
+def sources(moved: dict[str, Any], parts: dict[str, Any], ended: int, reworked: int,
+            cost_read: dict[str, int] | None) -> dict[str, str]:
     """`read_from` for every figure `--json` carries — a figure no record supports says what was looked at and found
     absent (`none present: …`), so a `0` is never the only word about it. `moved` and `parts` are `moments` and
-    `waiting`'s results; `reworked` counts the entries a refused demo sent back; `transcripts` is whether attribution
-    read the cost."""
+    `waiting`'s results; `reworked` counts the entries a refused demo sent back; `cost_read` is how many entries'
+    costs attribution read from the transcripts and from recorded usage."""
     found = {**moved["read_from"], **parts["read_from"]}
     if is_unknown(moved["elapsed"]):
         found["elapsed"] = f"none present: {moved['elapsed']['unknown']}"
@@ -493,8 +520,7 @@ def sources(moved: dict[str, Any], parts: dict[str, Any], ended: int, reworked: 
     found["stage_seconds"] = f"the record's brackets ({ended} ended)" if ended else "none present: no bracket ended"
     found["rework"] = (f"the {reworked} entr{'y' if reworked == 1 else 'ies'} after a refused demo's bracket" if reworked
                        else "none present: no demo was refused")
-    found["cost"] = ("the transcripts, by delegate and bracket" if transcripts else
-                     "the entries' recorded usage" if ended else "none present: no bracket ended")
+    found["cost"] = cost_source(cost_read, ended)
     return found
 
 

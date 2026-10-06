@@ -127,5 +127,38 @@ class ShareTest(unittest.TestCase):
                          {"unknown": "the transcripts are not on this machine"})
 
 
+class CostProvenanceTest(unittest.TestCase):
+    """AC-S39-9: `read_from.cost`, and each entry's, names what the cost was read from — never a transcript that was
+    not read."""
+
+    def setUp(self) -> None:
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.repo = project(Path(self.scratch.name))
+
+    def test_e1_no_transcript_on_the_machine_the_cost_is_the_recorded_usage_and_says_so(self) -> None:
+        record(self.repo, "S1", costed(entry("implement", stamp(1, "09:00:00"), stamp(1, "10:00:00")), 10, "gone"),
+               costed(entry("converge", stamp(1, "10:00:00"), stamp(1, "10:30:00")), 5, "gone"))
+        found = summaries(self.repo)["S1"]
+        self.assertEqual(found["cost"]["tokens"], 15)
+        self.assertEqual(found["read_from"]["cost"], "the entries' recorded usage")
+        self.assertNotIn("transcript", found["read_from"]["cost"])
+        for item in found["entries"]:
+            self.assertEqual(item["read_from"], "the entries' recorded usage")
+
+    def test_e2_one_session_present_and_one_absent_both_are_named_with_their_entries(self) -> None:
+        said = Session(self.repo)
+        cursor = said.open(None, "implement", P1)
+        said.say(None, "h1", 40, stamp(1, "09:01:00"))
+        record(self.repo, "S1", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "10:00:00"), cursor),
+               costed(entry("converge", stamp(1, "10:00:00"), stamp(1, "10:30:00")), 5, "gone"))
+        found = summaries(self.repo)["S1"]
+        self.assertEqual(found["cost"]["tokens"], 45)
+        self.assertEqual(found["read_from"]["cost"], "the transcripts, by delegate and bracket (1 entry) and "
+                         "the entries' recorded usage (1 entry)")
+        self.assertEqual([item["read_from"] for item in found["entries"]],
+                         ["the transcripts, by delegate and bracket", "the entries' recorded usage"])
+
+
 if __name__ == "__main__":
     unittest.main()

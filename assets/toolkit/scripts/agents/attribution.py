@@ -317,22 +317,29 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
     for key, record in by_key.items():
         shown: dict[int, dict[str, Any]] = {}
         figures: list[Figure] = []
+        read = {"transcripts": 0, "recorded": 0, "unread": 0}  # the entries the record's cost is made of, by source
         for index, entry in enumerate(record.get("stages", [])):
             done = entry.get("ended") is not None
+            source = "transcripts"
             if (key, index) in entries or any(item.path == key and item.index == index for item in held):
                 found = entries.get((key, index), Totals())
                 shown[index] = {"tokens": found.tokens, "delegates": sorted(found.delegates), "last_line": found.last}
             else:
+                source = "recorded"
                 figure = recorded(entry)
                 clash = overlapping(key, entry, others, labels) if isinstance(figure, int) else None
                 if clash is not None:
                     figure = unknown(f"brackets of {clash} overlap this one and the transcripts are not on this "
                                      "machine")
                 shown[index] = {"tokens": figure, "delegates": [], "last_line": None}
+            if not isinstance(shown[index]["tokens"], int):
+                source = "unread"
+            shown[index]["source"] = source
             if done or isinstance(shown[index]["tokens"], int):
                 figures.append(shown[index]["tokens"])
+                read[source] += 1
         bad = next((figure for figure in figures if isinstance(figure, dict)), None)
-        result["records"][key] = {"entries": shown, "cost": {
+        result["records"][key] = {"entries": shown, "cost_read": read, "cost": {
             "tokens": bad if bad is not None else sum(figures) + loose[key], "shared": None}}
     for feature in {str(record.get("feature")) for record in by_key.values()}:
         members = [key for key in keys if str(by_key[key].get("feature")) == feature]

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from elapsed_fixture import (
     FEATURE,
+    Session,
     bench,
     commit,
     entry,
@@ -183,7 +184,8 @@ class DecisionHealthTest(unittest.TestCase):
 WAITING = ("dependency", "worker", "review", "integration", "unattributed")
 FIGURES = ("elapsed", "stage_seconds", "worked_seconds", "cost", "rework")
 READ = ("elapsed", "stage_seconds", "worked_seconds", *WAITING[:4], "unattributed", "rework", "cost")
-SOURCES = ("commit", "specs/cruise-log.jsonl", "decisions.md", "transcript", "bracket", "none present")
+SOURCES = ("commit", "specs/cruise-log.jsonl", "decisions.md", "transcript", "bracket", "none present",
+           "recorded usage")
 
 
 def is_figure(value: object) -> bool:
@@ -235,6 +237,23 @@ class JsonKeysTest(unittest.TestCase):
         self.assertRegex(read["elapsed"], r"[0-9a-f]{7}")
         self.assertIn("bracket", read["worked_seconds"])
         self.assertTrue(read["worker"].startswith("none present"))
+
+    def test_e2_the_cost_says_what_it_was_read_from_with_the_transcripts_and_without(self) -> None:
+        repo = self.repo
+        said = Session(repo)
+        cursor = said.open(None, "implement", "specs/f/slices/S1/benchmark.json")
+        said.say(None, "h1", 40, stamp(3, "10:30:00"))
+        item = said.entry("implement", stamp(3, "10:00:00"), stamp(3, "12:00:00"), cursor)
+        item["usage"]["host"] = {"m": {"input": 40, "output": 0, "cache_read": 0, "cache_creation": 0}}
+        record(repo, "S1", item)
+        with_transcripts = summaries(repo)["S1"]
+        self.assertEqual("the transcripts, by delegate and bracket", with_transcripts["read_from"]["cost"])
+        self.assertEqual(40, with_transcripts["cost"]["tokens"])
+        shutil.rmtree(repo / ".home/.claude")  # the same record, on a machine that never had the session
+        without = summaries(repo)["S1"]
+        self.assertEqual("the entries' recorded usage", without["read_from"]["cost"])
+        self.assertEqual("the entries' recorded usage", without["entries"][0]["read_from"])
+        self.assertEqual(40, without["cost"]["tokens"])
 
     def test_e3_the_reading_paragraph_says_how_elapsed_differs_from_stage_time(self) -> None:
         self.assertEqual(0, bench(self.repo, "overview", FEATURE).returncode)
