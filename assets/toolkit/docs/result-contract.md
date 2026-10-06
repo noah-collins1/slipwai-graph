@@ -18,14 +18,15 @@ One JSON object inside a fence whose info string is exactly `result-contract`:
 ```
 ````
 
-Keys outside the thirteen are ignored, and a block that says `"contract": 2` or later is passed with a note and its
-fields are not held: a reader of this version does not refuse a newer one.
+Keys outside the thirteen are ignored. The gate reads a record already written forward: a block that says
+`"contract": 2` or later is passed with a note and its fields are not held. The verb that appends a block is not a
+reader of an old record and vouches only for the contract it knows: it refuses any `contract` other than `1`.
 
 ## The fields
 
 | Field | Kind | Rule (a fault names the field) |
 |---|---|---|
-| `contract` | integer | `1`, and not a boolean. Greater than 1: passed with a note, no field held. Anything else is a fault |
+| `contract` | integer | `1`, and not a boolean. In a record, greater than 1 is passed with a note, no field held; `--hand-back` refuses any value but 1. Anything else is a fault |
 | `delegate` | string | one of the ten types below, and equal to the type in the entry's heading |
 | `scope` | string | non-empty |
 | `status` | string | in the set for `delegate` |
@@ -104,6 +105,12 @@ start of the stage it is appended.
 A `<reason>` is one line of printable text: a line break of any kind or a control character is refused with usage
 (exit 2) and nothing is written, so the method's `refused: <the delegate's words>` keeps the first line of them. The
 `<type>` and `<stage>` are held to the same.
+
+`--hand-back` refuses a block whose `contract` is an integer other than 1 (exit 1, nothing written, one line:
+`contract: 2 is not a contract this checker can check (it checks 1); hand back a contract 1 block`), and a block with
+unknown keys beside contract 1 is still appended. In `--hand-backs`, a stage whose only block is of a later contract is
+listed as `block of contract <n> — this factory cannot check it; not counted as held`: it counts in the stages that owe
+one and not in those held, and it is information for converge, not a finding.
 
 `--hand-backs` lists, for each ended benchmark entry that owes a block, whether the record holds a passing block for
 that stage (an entry whose `started` is the stage's own), a `Missing:` line, or nothing; converge reads it, and `make benchmark` prints the count per slice. A stage

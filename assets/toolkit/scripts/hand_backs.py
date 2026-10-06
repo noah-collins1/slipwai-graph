@@ -324,7 +324,11 @@ def append(record: Path, title: str, htype: str, stage: str, text: str, known: s
         return [f"block: the body is not JSON ({error})"], False
     if not isinstance(block, dict):
         return [f"block: the body is {block!r}, not one JSON object"], False
-    faults = [] if newer(block) else check_block(block, htype, known)
+    contract = block.get("contract")
+    if whole(contract) and contract != SCHEMA:  # the gate reads a newer record forward; this verb vouches for no other
+        return [f"contract: {contract} is not a contract this checker can check (it checks {SCHEMA}); "
+                f"hand back a contract {SCHEMA} block"], False
+    faults = check_block(block, htype, known)
     if faults:
         return faults, False
     if repeats(record, htype, stage, started, body):
@@ -506,10 +510,15 @@ def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None,
         mine = [entry for entry in entries
                 if entry["match"].group(3) == name and entry["match"].group(2) in types
                 and entry["match"].group(4) == started]
-        passing = [entry for entry in mine if entry["blocks"] and not block_faults(entry, known)[0]]
+        checked = [(entry, *block_faults(entry, known)) for entry in mine if entry["blocks"]]
+        passing = [entry for entry, faults, block in checked if not faults and not newer(block)]
+        later = [block["contract"] for _, _, block in checked if newer(block)]
         if passing:
             held += 1
             lines.append(f"hand-backs: {name} {started} {passing[0]['match'].group(2)}: block")
+        elif later:  # a block is there and nothing here can check it: information, not a finding
+            lines.append(f"hand-backs: {name} {started} {', '.join(types)}: block of contract {later[0]} — "
+                         "this factory cannot check it; not counted as held")
         elif any(entry["missing"] for entry in mine):
             reason = next(entry["missing"][0] for entry in mine if entry["missing"])
             lines.append(f"hand-backs: {name} {started} {', '.join(types)}: missing — {reason}")

@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from typing import Any
 
-from hand_backs_fixture import HEADING, RECORD, entry, run, scratch, valid
+from hand_backs_fixture import HEADING, RECORD, entry, fence, run, scratch, valid
 
 
 class WellFormedBlockTest(unittest.TestCase):
@@ -43,6 +43,37 @@ class WellFormedBlockTest(unittest.TestCase):
         self.assertIn(HEADING, notes[0])
         self.assertIn(RECORD, notes[0])
         self.assertEqual("", result.stderr)
+
+
+class WriteVerbContractTest(unittest.TestCase):
+    """D162: the verb ships with contract 1 and vouches for no other; the gate's forward reading is for records."""
+
+    def append(self, block: dict[str, Any]) -> tuple[Any, str]:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = scratch(directory)
+            result = run(repo, "--hand-back", "specs/f/slices/S1", "drive-gaps", "gaps", stdin=fence(block))
+            record = repo / RECORD
+            return result, record.read_text(encoding="utf-8") if record.exists() else ""
+
+    def test_a_contract_other_than_one_is_refused_in_one_line_and_nothing_is_written(self) -> None:
+        for block in ({"contract": 2}, valid() | {"contract": 2}, valid() | {"contract": 99}, valid() | {"contract": 0}):
+            result, record = self.append(block)
+            self.assertEqual(1, result.returncode, block)
+            self.assertEqual([f"check-decisions: contract: {block['contract']} is not a contract this checker can check "
+                              "(it checks 1); hand back a contract 1 block"], result.stderr.splitlines())
+            self.assertEqual("", record)
+
+    def test_a_contract_one_block_with_unknown_keys_is_still_appended(self) -> None:
+        result, record = self.append(valid() | {"extra": "kept"})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn('"extra": "kept"', record)
+
+    def test_a_contract_that_is_not_an_integer_keeps_its_own_fault(self) -> None:
+        for value in ("1", True, 1.5, None):
+            result, record = self.append(valid() | {"contract": value})
+            self.assertEqual(1, result.returncode, value)
+            self.assertIn("is not the integer 1", result.stderr)
+            self.assertEqual("", record)
 
 
 class MalformedBlockTest(unittest.TestCase):

@@ -142,6 +142,21 @@ class CoverageVerbTest(unittest.TestCase):
         result = self.verb(TWO[:1], bad)
         self.assertEqual("hand-backs: with a result contract: 0 of 1", result.stdout.splitlines()[-1])
 
+    def test_a_block_of_a_contract_this_factory_cannot_check_is_said_and_not_held(self) -> None:
+        newer = entry({"contract": 2}, IMPLEMENT)
+        result = self.verb(TWO, newer)
+        self.assertEqual([
+            "hand-backs: implement 2026-10-05T17:00:00Z drive-implement: block of contract 2 — this factory cannot "
+            "check it; not counted as held",
+            "hand-backs: converge 2026-10-05T18:00:00Z drive-converge: nothing recorded — a finding for converge",
+            "hand-backs: with a result contract: 0 of 2"], result.stdout.splitlines())
+
+    def test_a_passing_contract_one_block_holds_the_stage_beside_a_newer_one(self) -> None:
+        result = self.verb(TWO[:1], entry({"contract": 2}, IMPLEMENT) + implement_block())
+        self.assertEqual("hand-backs: implement 2026-10-05T17:00:00Z drive-implement: block",
+                         result.stdout.splitlines()[0])
+        self.assertEqual("hand-backs: with a result contract: 1 of 1", result.stdout.splitlines()[-1])
+
     def test_e6_a_stage_whose_only_helpers_are_untyped_owes_nothing_and_is_not_listed(self) -> None:
         stages = [stage("gaps", "2026-10-05T16:00:00Z", "2026-10-05T16:10:00Z", agents=["Explore"])]
         result = self.verb(stages)

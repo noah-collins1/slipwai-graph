@@ -611,8 +611,6 @@ def hand_back_verb(arguments: list[str]) -> int:
     if refusal:
         print(f"check-decisions: {refusal}", file=sys.stderr)
         return 1
-    if note:
-        print(f"check-decisions: note: {note}", file=sys.stderr)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if missing:
         wrote = module.append_missing(record, title, arguments[2], arguments[3], " ".join(arguments[4:]).strip(), now,
@@ -624,6 +622,8 @@ def hand_back_verb(arguments: list[str]) -> int:
                                       started)
     for fault in faults:
         print(f"check-decisions: {fault}", file=sys.stderr)
+    if note and not faults:
+        print(f"check-decisions: note: {note}", file=sys.stderr)
     if not faults and not wrote:
         print(f"check-decisions: note: {where}/{HAND_BACKS} already ends this {arguments[2]} {arguments[3]} "
               "entry with the same content; nothing appended", file=sys.stderr)
