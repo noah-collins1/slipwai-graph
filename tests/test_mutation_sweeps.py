@@ -88,7 +88,7 @@ class SweepsTest(ScopeCase):
 
     def test_e2_the_pitest_block_changing_as_parsed_structure_sweeps_and_nothing_else_does(self) -> None:
         self.on_main("apps/spring/pom.xml", text=PIT)
-        self.write("apps/spring/src/main/java/com/example/x/A.java", "package x;\n")
+        self.write("apps/spring/src/main/java/com/example/x/A.java", "package com.example.x;\nclass A {}\n")
         cases = {
             "the pitest block's targets": (PIT.replace("com.example.x.*", "com.example.y.*"), True),
             "another plugin or dependency": (PIT.replace("</plugins>", f"{OTHER}</plugins>")
@@ -114,7 +114,7 @@ class SweepsTest(ScopeCase):
 
     def test_e3_go_mutation_py_sweeps_every_go_service_and_not_a_spring_one(self) -> None:
         self.edit("scripts/go-mutation.py")
-        self.write("apps/spring/src/main/java/com/example/x/A.java", "package x;\n")
+        self.write("apps/spring/src/main/java/com/example/x/A.java", "package com.example.x;\nclass A {}\n")
         self.write("apps/spring/pom.xml", PIT)
         self.commit("unrelated")
         git(self.repo, "checkout", "-q", "main")

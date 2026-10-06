@@ -317,6 +317,15 @@ def pom_changed(tool: Any, commit: str, path: str) -> bool:
         return True
 
 
+OTHER_JVM = (".kt", ".groovy", ".scala")
+
+
+def other_jvm(path: str, root: str) -> bool:
+    """A source under the service's `src/main/` in a JVM language other than Java: its classes cannot be read from it, so
+    the service sweeps and it is never counted as no production file."""
+    return path.startswith(f"{root}/src/main/") and path.endswith(OTHER_JVM)
+
+
 def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool: Any, commit: str,
                  makefile: str) -> tuple[list[str], dict[str, list[str]]]:
     """The changed files no scope can be trusted across, in the order of data-model's table: those that sweep the whole
@@ -334,7 +343,8 @@ def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool:
             whole.append(path)
         for backend, root in services:
             wired = (backend == "go" and path in (backend_script, f"{root}/.gremlins.yaml")) or (
-                backend == "java-spring" and path == f"{root}/pom.xml" and pom_changed(tool, commit, path))
+                backend == "java-spring" and (path == f"{root}/pom.xml" and pom_changed(tool, commit, path)
+                                              or other_jvm(path, root)))
             if wired:
                 per.setdefault(root, []).append(path)
     return whole, per
@@ -473,9 +483,62 @@ def pit_targets(pom: str) -> tuple[list[str], list[str]]:
     raise Unreadable("the pom has no pitest-maven plugin")
 
 
-def class_name(path: str) -> str:
-    """`src/main/java/com/x/Foo.java` as `com.x.Foo`."""
-    return path.removeprefix("src/main/java/").removesuffix(".java").replace("/", ".")
+class Undeclared(Unreadable):
+    """A Java file whose package and top-level types this script cannot read with certainty: its words name the file."""
+
+
+TYPE = re.compile(r"(?<![\w$.])(?:class|interface|enum|record)\s+([^\W\d][\w$]*)")
+PACKAGE = re.compile(r"(?<![\w$.])package\s+([^\W\d][\w$]*(?:\s*\.\s*[^\W\d][\w$]*)*)\s*;")
+ARGUMENTS = re.compile(r"\([^()]*\)")
+
+
+def declared(path: str, source: str) -> list[str]:
+    """The fully qualified name of every top-level type a Java source declares, from its own `package` line, never from its
+    path. Comments, strings, character and text-block literals are blanked first and only braces at depth zero are read; a
+    source that does not balance, or declares no type, is not read with certainty and raises `Undeclared` naming `path`."""
+    blanked: list[str] = []
+    depth = 0
+    index = 0
+    while index < len(source):
+        two, char = source[index:index + 2], source[index]
+        if two == "//":
+            end = source.find("\n", index)
+            index = len(source) if end < 0 else end
+        elif two == "/*":
+            end = source.find("*/", index + 2)
+            if end < 0:
+                raise Undeclared(f"{path}: a comment is never closed")
+            index = end + 2
+            blanked.append(" ")
+        elif source.startswith('"""', index) or char in "\"'":
+            quote = '"""' if source.startswith('"""', index) else char
+            index += len(quote)
+            while source[index:index + len(quote)] != quote:
+                if index >= len(source) or (len(quote) == 1 and source[index] == "\n"):
+                    raise Undeclared(f"{path}: a literal is never closed")
+                index += 2 if source[index] == "\\" else 1
+            index += len(quote)
+            blanked.append(" ")
+        else:
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth < 0:
+                    raise Undeclared(f"{path}: braces do not balance")
+            blanked.append(char if depth == 0 or char in "{}" else " ")
+            index += 1
+    if depth != 0:
+        raise Undeclared(f"{path}: braces do not balance")
+    text = "".join(blanked)
+    while ARGUMENTS.search(text):  # an annotation's arguments hold `Foo.class` and the like, never a declaration
+        text = ARGUMENTS.sub(" ", text)
+    package = PACKAGE.search(text)
+    prefix = "".join(package.group(1).split()) + "." if package else ""
+    names = [prefix + found.group(1) for found in TYPE.finditer(text)]
+    if not names:
+        raise Undeclared(f"{path}: no type declaration could be read")
+    return names
 
 
 def stream(argv: list[str], cwd: str) -> tuple[int, str]:
@@ -493,27 +556,54 @@ PIT = ["./mvnw", "-B", "-q", "test-compile", "org.pitest:pitest-maven:mutationCo
 NO_MUTATIONS = "No mutations found"
 
 
+def taken(name: str, targets: list[str], excluded: list[str]) -> bool:
+    """Whether PIT will mutate the top-level class `name` or a class nested in it, by its own rule: a name is matched whole,
+    so an exclusion of `Foo` leaves `Foo$Bar` in. `$0` stands for a nested name, which `Foo$*` and `Foo*` and `x.*` read the same."""
+    return any(any(pit_matches(t, each) for t in targets) and not any(pit_matches(x, each) for x in excluded)
+               for each in (name, name + "$0"))
+
+
+def spring_classes(path: str, files: list[str]) -> dict[str, list[str]]:
+    """Each changed file with the top-level classes PIT will take in it, decided class by class within the pom's
+    `targetClasses` and `excludedClasses`; a file none of whose classes qualify maps to an empty list."""
+    targets, excluded = pit_targets(f"{path}/pom.xml")
+    found: dict[str, list[str]] = {}
+    for name in files:
+        where = f"{path}/{name}"
+        try:
+            with open(where, encoding="utf-8") as handle:
+                names = declared(where, handle.read())
+        except (OSError, UnicodeDecodeError) as error:
+            raise Undeclared(f"{where}: the file cannot be read ({str(error)[:60]})") from error
+        found[name] = [each for each in names if taken(each, targets, excluded)]
+    return found
+
+
 def spring_plan(path: str, files: list[str]) -> Plan:
-    """The classes PIT will take within the changed ones, by the pom's own `targetClasses`/`excludedClasses`."""
+    """The classes PIT will take within the changed files, by the declared classes of each against the pom's own
+    `targetClasses`/`excludedClasses`."""
     pom = f"{path}/pom.xml"
     try:
-        targets, excluded = pit_targets(pom)
-        keep = [name for name in files if any(pit_matches(t, class_name(name)) for t in targets)
-                and not any(pit_matches(x, class_name(name)) for x in excluded)]
+        found = spring_classes(path, files)
+    except Undeclared as why:
+        return Plan([], [], str(why))
     except Unreadable as why:
         return Plan([], [], f"{pom}: {why}")
+    keep = [name for name in files if found[name]]
     return Plan(keep, [(name, "outside PIT's configured targets") for name in files if name not in keep])
 
 
 def spring(path: str, files: list[str], execute: Any) -> Result:
     """PIT over the changed classes only — `-DtargetClasses=Foo,Foo$*` on the sweep's own command, the pom untouched —
-    within the pom's targets. A class outside them is named and left out, and a run with nothing left starts no Maven."""
+    within the pom's targets. A file with no class inside them is named and left out, and a run with nothing left starts no
+    Maven."""
     plan = spring_plan(path, files)
     if plan.unreadable is not None:
         return Result(0, [], [], None, plan.unreadable)
     if not plan.keep:
         return Result(0, [], plan.left)
-    classes = [class_name(name) for name in plan.keep]
+    found = spring_classes(path, plan.keep)
+    classes = [each for name in plan.keep for each in found[name]]
     status, text = execute([*PIT, "-DtargetClasses=" + ",".join(c for name in classes for c in (name, name + "$*"))], path)
     if status != 0 and NO_MUTATIONS in text:  # PIT's own failure for a scope with nothing to mutate, which is no failure
         say(f"no mutant to run in {path} — PIT found no code to mutate in {', '.join(classes)}; no report was written")

@@ -55,6 +55,14 @@ For a wired service, a production file is then intersected with the tool's own c
 Go through `go-mutation.py`'s `excluded()`/`mutable()`, Spring through `targetClasses`/`excludedClasses` (research
 R2). A file the configuration excludes is named *outside <tool>'s configured targets*.
 
+Spring's intersection is per class, not per file (T036): the classes a changed `.java` file declares are read from the file —
+its `package` line and every top-level type, `class`, `interface`, `enum`, `record` and `@interface` — never from its path,
+and each is matched against `targetClasses` and `excludedClasses` with PIT's own glob rule, a class and the classes nested in
+it separately (an exclusion of `Foo` leaves `Foo$Bar` in). A file with no class inside the targets is *outside PIT's
+configured targets*. A `.java` file whose package and types cannot be read with certainty (no type, an unbalanced brace, an
+unreadable file) sweeps its service, and the line names the file; so does a changed `.kt`, `.groovy` or `.scala` source
+under the service's `src/main/` (`config` class, `` `<file>` changed ``), so it is never counted as no production file.
+
 ## Service outcome
 
 | Outcome | When | Run |

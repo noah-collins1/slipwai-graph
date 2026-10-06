@@ -63,7 +63,10 @@ class SpringCase(ScopeCase):
 
     def java(self, *names: str) -> None:
         for name in names:
-            self.write(f"apps/spring/src/main/java/{PACKAGE}/{name}.java", "package x;\n")
+            where, _, last = name.rpartition("/")
+            package = ".".join(["com.example.x", *([where.replace("/", ".")] if where else [])])
+            self.write(f"apps/spring/src/main/java/{PACKAGE}/{name}.java",
+                       f"package {package};\n\npublic class {last} {{}}\n")
 
     def run_spring(self, execute: FakeExecute, *services: str) -> tuple[int, list[str]]:
         """The script with the Spring runner over `execute`, in this process and the project."""
