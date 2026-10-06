@@ -30,6 +30,60 @@ REGISTER = f"specs/{FEATURE}/slices/README.md"
 MODEL = "docs/event-model/model.yaml"
 
 
+class BareIdTest(unittest.TestCase):
+    """A slice id is read the same way in every table the ladder writes: backticked or bare (AC-S39-1, -2)."""
+
+    def setUp(self) -> None:
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.repo = project(Path(self.scratch.name))
+
+    def chain(self, style: str, bare_register: bool = False) -> None:
+        """S1-a, S2-b after it: split on day 1, S1-a's row on day 3, S2-b's on day 5."""
+        repo = self.repo
+        write(repo, SPLIT, graph([("S1-a", []), ("S2-b", ["S1-a"])], style))
+        commit(repo, stamp(1), "split", SPLIT)
+        write(repo, REGISTER, register(["S1-a"], bare_register))
+        commit(repo, stamp(3), "S1-a done", REGISTER)
+        record(repo, "S2-b", entry("implement", stamp(4), stamp(4, "10:00:00")))
+        write(repo, REGISTER, register(["S1-a", "S2-b"], bare_register))
+        commit(repo, stamp(5), "S2-b done", REGISTER, f"specs/{FEATURE}/slices/S2-b/benchmark.json")
+
+    def test_e1_a_bare_depends_on_is_a_dependency(self) -> None:
+        self.chain("mixed")
+        found = summaries(self.repo)["S2-b"]
+        self.assertEqual((found["elapsed"], found["moments"]["ready"]), (2 * 86400, stamp(3)))
+
+    def test_e2_a_bare_register_row_is_an_accepted_slice(self) -> None:
+        self.chain("ticks", bare_register=True)
+        record(self.repo, "S1-a", entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")))
+        found = summaries(self.repo)
+        self.assertEqual(found["S1-a"]["moments"]["accepted"], stamp(3))
+        self.assertEqual(found["S2-b"]["elapsed"], 2 * 86400)
+
+    def test_e3_a_split_naming_the_slice_bare_makes_it_ready(self) -> None:
+        self.chain("bare")
+        found = summaries(self.repo)["S2-b"]
+        self.assertEqual((found["elapsed"], found["moments"]["ready"]), (2 * 86400, stamp(3)))
+
+    def test_e4_bare_s1_beside_s10_each_reads_its_own_moments(self) -> None:
+        repo = self.repo
+        write(repo, SPLIT, graph([("S10", [])], "bare"))
+        commit(repo, stamp(1), "S10 split", SPLIT)
+        write(repo, SPLIT, graph([("S10", []), ("S1", [])], "bare"))
+        commit(repo, stamp(2), "S1 split", SPLIT)
+        write(repo, REGISTER, register(["S10"], True))
+        commit(repo, stamp(3), "S10 done", REGISTER)
+        write(repo, REGISTER, register(["S10", "S1"], True))
+        commit(repo, stamp(5), "S1 done", REGISTER)
+        record(repo, "S1", entry("implement", stamp(2), stamp(2, "10:00:00")))
+        record(repo, "S10", entry("implement", stamp(1), stamp(1, "10:00:00")))
+        found = summaries(repo)
+        self.assertEqual((found["S1"]["moments"]["ready"], found["S1"]["moments"]["accepted"]), (stamp(2), stamp(5)))
+        self.assertEqual((found["S10"]["moments"]["ready"], found["S10"]["moments"]["accepted"]),
+                         (stamp(1), stamp(3)))
+
+
 class ElapsedTest(unittest.TestCase):
     def setUp(self) -> None:
         self.scratch = tempfile.TemporaryDirectory()

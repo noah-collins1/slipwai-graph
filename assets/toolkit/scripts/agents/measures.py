@@ -81,6 +81,28 @@ def subtract(intervals: list[Interval], taken: list[Interval]) -> list[Interval]
 Found = tuple[int, str, str]  # (committer time, short sha, where it was read)
 
 
+SLICE_ID = re.compile(r"[A-Za-z]+\d+(?![A-Za-z0-9_])(?:[.-][A-Za-z0-9._-]*[A-Za-z0-9])?")  # the head, then a slug
+
+
+def cell_ids(cell: str) -> list[str]:
+    """The slice ids a table cell names, in order: backticked as they are, bare where they have an id's shape;
+    `—`, `-`, an empty cell and prose name none."""
+    return [ticked or bare for ticked, bare in re.findall(r"`([^`]+)`|([^\s,;`]+)", cell)
+            if ticked or SLICE_ID.fullmatch(bare)]
+
+
+def first_id(cell: str) -> str:
+    """The slice a row's first cell names, backticked or bare (the rule `benchmark.py`'s `done_slices` applies)."""
+    ticked = re.match(r"\s*`([^`]+)`", cell)
+    found = SLICE_ID.match(cell.strip())
+    return ticked.group(1) if ticked else found.group(0) if found else ""
+
+
+def mentions(text: str, ident: str) -> bool:
+    """Whether `ident` appears in `text` as a whole id — `S1` is not in `S10` or `S1-a`."""
+    return re.search(r"(?<![A-Za-z0-9_.-])" + re.escape(ident) + r"(?![A-Za-z0-9_]|[.-][A-Za-z0-9])", text) is not None
+
+
 def graph_rows(text: str) -> list[tuple[str, list[str]]]:
     """The `## Slice graph` table of a `story-split.md`: each row's slice and its `depends_on` ids, in row order."""
     rows: list[tuple[str, list[str]]] = []
@@ -91,9 +113,9 @@ def graph_rows(text: str) -> list[tuple[str, list[str]]]:
             continue
         if inside and line.strip().startswith("|"):
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-            first = cells[0].strip("`")
-            if len(cells) > 1 and first and not set(first) <= set("-: ") and first.lower() != "slice":
-                rows.append((first, re.findall(r"`([^`]+)`", cells[1])))
+            first = first_id(cells[0])
+            if len(cells) > 1 and first and first.lower() != "slice":
+                rows.append((first, cell_ids(cells[1])))
     return rows
 
 
@@ -114,7 +136,7 @@ def block_dependencies(block: str) -> list[str]:
 
 
 def register_has(text: str, ident: str) -> bool:
-    return any(line.strip().startswith("|") and line.strip().strip("|").split("|")[0].strip().strip("`") == ident
+    return any(line.strip().startswith("|") and first_id(line.strip().strip("|").split("|")[0]) == ident
                for line in text.splitlines())
 
 
@@ -149,7 +171,7 @@ class Reader:
     def added(self, ident: str) -> Found | None:
         key = ("added", ident)
         if key not in self.kept:
-            found = self.first(self.split, f"`{ident}`", lambda text: f"`{ident}`" in text)
+            found = self.first(self.split, ident, lambda text: mentions(text, ident))
             where = f"story-split.md: {ident}"
             if found is None:
                 found = self.first(self.model, f"id: {ident}", lambda text: ident in model_blocks(text))
@@ -161,7 +183,7 @@ class Reader:
         """The slice's done mark: a register row, or `status: implemented` in the model — the earlier of the two."""
         key = ("done", ident)
         if key not in self.kept:
-            rows = self.first(self.register, f"`{ident}`", lambda text: register_has(text, ident))
+            rows = self.first(self.register, ident, lambda text: register_has(text, ident))
             marked = self.first(self.model, "status: implemented",
                                 lambda text: bool(re.search(r"^\s*status:\s*implemented\s*$",
                                                             model_blocks(text).get(ident, ""), re.M)))

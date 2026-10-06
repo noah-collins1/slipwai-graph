@@ -77,15 +77,22 @@ def merge(repo: Path, when: str, ident: str) -> str:
     return git(repo, "rev-parse", "--short", "HEAD")
 
 
-def graph(rows: list[tuple[str, list[str]]]) -> str:
+def graph(rows: list[tuple[str, list[str]]], style: str = "ticks") -> str:
+    """The split's `## Slice graph`. `ticks` backticks every id; `mixed` backticks the slice and writes its
+    `depends_on` bare, as the generated template does (`— or id list`); `bare` backticks none."""
+    def cell(ident: str, ticked: bool) -> str:
+        return f"`{ident}`" if ticked else ident
+
     lines = ["# Story split", "", "## Slice graph", "", "| Slice | depends_on | parallel_ok_with | Notes |",
              "|---|---|---|---|"]
-    lines += [f"| `{ident}` | {', '.join(f'`{dep}`' for dep in deps) or '—'} | — | n |" for ident, deps in rows]
+    first, others = style == "ticks" or style == "mixed", style == "ticks"
+    lines += [f"| {cell(ident, first)} | {', '.join(cell(dep, others) for dep in deps) or '—'} | — | n |"
+              for ident, deps in rows]
     return "\n".join(lines) + "\n"
 
 
-def register(done: list[str]) -> str:
-    rows = "".join(f"| `{ident}` | 2026-10-01 | x |\n" for ident in done)
+def register(done: list[str], bare: bool = False) -> str:
+    rows = "".join(f"| {ident if bare else f'`{ident}`'} | 2026-10-01 | x |\n" for ident in done)
     return "# Slices\n\n| Slice | Date | Demo |\n|---|---|---|\n" + rows
 
 
