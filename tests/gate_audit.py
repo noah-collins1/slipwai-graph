@@ -12,6 +12,9 @@ import os
 import subprocess
 from pathlib import Path
 
+# Runs the script a caller names inside the project a caller made; opens nothing of the repository.
+TEST_SELECTION: dict[str, object] = {}
+
 WRAPPER = """
 import json, os, runpy, sys
 seen = []

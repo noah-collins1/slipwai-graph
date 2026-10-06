@@ -21,6 +21,13 @@ from pathlib import Path
 
 from support import FactoryTestCase
 
+# `RenderCase.project` generates the default project: event-modelling, TypeScript, no frontend.
+TEST_SELECTION = {
+    "configurations": {"backend": ["typescript"], "frontend": ["none"], "profile": ["event-modelling"],
+                       "command": ["generate"]},
+    "reads": ["slipwai"],
+}
+
 LOG_VARIABLE = "STAND_IN_LOG"
 LAUNCH_FAILS_VARIABLE = "STAND_IN_LAUNCH_FAILS"
 """Set this and `puppeteer.launch` throws, as a browser that cannot be started does: `1` gives Puppeteer's opening

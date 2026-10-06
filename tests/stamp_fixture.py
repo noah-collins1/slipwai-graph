@@ -27,6 +27,12 @@ from types import ModuleType
 from slipwai.assets import ROOT
 from slipwai.project.gate import FAILED
 
+# The one project `template()` generates, through the `./slipwai` launcher.
+TEST_SELECTION = {
+    "configurations": {"backend": ["python"], "frontend": ["none"], "profile": ["standard"], "command": ["generate"]},
+    "reads": ["slipwai"],
+}
+
 sys.dont_write_bytecode = True
 
 CI_MARKERS = ("CI", "GITHUB_ACTIONS", "GITLAB_CI")

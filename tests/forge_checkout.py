@@ -22,6 +22,9 @@ from pathlib import Path
 
 from support import NO_MAINTENANCE
 
+# Runs git in directories its callers hand it; opens nothing of the repository and generates nothing.
+TEST_SELECTION: dict[str, object] = {}
+
 MERGE_REF = "refs/pull/1/merge"
 
 
