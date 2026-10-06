@@ -144,14 +144,14 @@ class BenchmarkBracketsTest(FactoryTestCase):
             self.assertNotIn("ended", converge)
             self.assertEqual(bench(repo, "end", slice_, "converge", env=later).returncode, 0)
             self.assertEqual(bench(repo, "check", env=later).returncode, 0)
-            self.assertIn("A1 implement: cut off — a new `converge` entry started while it was open; its wall is real, "
-                          "its signals were never reported", bench(repo, env=later).stdout)
+            self.assertIn("A1 implement: cut off — a new `converge` entry started while it was open; "
+                          "its stage time is real, its signals were never reported", bench(repo, env=later).stdout)
             note = bench(repo, env=later).stdout.split("A1 implement: cut off")[1].split("\n")[0]
             self.assertNotIn("tokens unknown", note)
 
     def test_the_runner_cuts_off_what_an_iteration_left_open_and_says_so(self) -> None:
         """An iteration that opens a bracket and ends without closing it — or is ended by `stop --now` — leaves
-        nothing open: the runner closes the entry with the reason, no tokens and no signals, its wall real, and
+        nothing open: the runner closes the entry with the reason, no tokens and no signals, its stage time real, and
         the overview's notes and the gate both read it as cut off rather than as a stage still running."""
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "cutoff", "standard", "python")

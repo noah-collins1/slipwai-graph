@@ -212,7 +212,7 @@ class BenchmarkTest(FactoryTestCase):
             self.assertRegex(row, r"\s+1\s+2\s+0/2\s+87%\s+0\s+accepted\s+1\s+1\s+5\s+2\s+\+6/-2\s*$")
             self.assertIn("tokens are not prices", aggregate.stdout)
             summary = json.loads(bench(repo, "--json", env=env).stdout)[0]
-            derived = (summary["converge_passes"], summary["tasks_appended"], summary["gaps"], summary["rework"])
+            derived = (summary["converge_passes"], summary["tasks_appended"], summary["gaps"], summary["reentered"])
             self.assertEqual(derived, (1, 2, {"before": 0, "after": 2}, ["example-map"]))
             page = (repo / "specs/shop/benchmark.md").read_text()
             self.assertIn("# Benchmark — shop", page)

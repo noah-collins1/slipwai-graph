@@ -105,7 +105,8 @@ and the shared-surface rule below. That type takes no stage's model, because *Wh
 chooses one stage by stage inside the delegate, where `[P]` tasks still fan out to `drive-implement`: the
 two levels nest. Inside one slice the stages stay strictly sequential. A delegate that meets a
 product question stops its slice with the question recorded in its `plan.md` and hands it here — a blocked
-slice is marked blocked, never guessed past.
+slice is marked blocked, never guessed past. Give each delegate the description `drive-slice <id>`, the slice's
+whole id: the benchmark reads that description to charge a delegate's requests to its slice.
 
 **The shared-surface rule**, which the delegates cannot infer and `{layout.make} check-slice-scope` holds on
 every `slice/<id>` branch: a slice's commits touch its own `specs/<feature>/slices/<id>/`, the feature's
@@ -126,7 +127,9 @@ its unpushed worktree in split order — never from `main`, never by pushing inc
 claim may already have pushed a lock ref from `main`; leave the increment commits local until the actor
 accepts. After acceptance: `codegraph sync` if the project has adopted a code index, `{layout.make} verify-scoped`
 green, then push the slice's commits and merge into `main` in split order — never in finishing order.
-That is the first implementation push, and it is what starts CI. The composition root and the cumulative
+That is the first implementation push, and it is what starts CI. The full gate run after each merge is that
+slice's `gate` stage, bracketed here by the host: `python3 scripts/agents/benchmark.py start
+specs/<feature>/slices/<id> gate` before it and `end` after it. The composition root and the cumulative
 artifacts are where two merges meet, and split order is what makes those resolutions predictable;
 regenerate the Mermaid diagrams (`{layout.make} model`) after a merge, never in a branch, and the canvas
 (`{layout.make} model-drawio`) after each merge as well, taking both sides' blocks. No slice's Phase 4 runs until its demo is

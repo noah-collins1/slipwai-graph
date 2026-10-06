@@ -39,7 +39,9 @@ def project(directory: str, stages: list[dict[str, Any]], record: str | None = N
     """A scratch project; its scripts are committed at `arrived` (D161), or it is no repository at all."""
     repo = scratch(directory, record)
     (repo / "scripts/agents").mkdir()
-    shutil.copy(SCRIPTS / "agents/benchmark.py", repo / "scripts/agents/benchmark.py")
+    # The toolkit ships `scripts/agents/` whole: benchmark.py loads measures.py and attribution.py from beside it.
+    for name in ("benchmark.py", "measures.py", "attribution.py"):
+        shutil.copy(SCRIPTS / "agents" / name, repo / "scripts/agents" / name)
     (repo / SLICE / "benchmark.json").write_text(
         json.dumps({"feature": "f", "slice": "S1", "stages": stages}), encoding="utf-8")
     if arrived:
