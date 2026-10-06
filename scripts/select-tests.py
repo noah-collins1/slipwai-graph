@@ -23,6 +23,23 @@ ROOT = Path(__file__).resolve().parent.parent
 UNITTEST = ("python3", "-m", "unittest")
 FULL_ARGUMENTS = ("discover", "-s", "tests", "-v")
 BACKENDS = "FACTORY_BACKENDS"
+KNOBS = ("SINCE", "FULL")  # what picks the selection: the tests it starts never read it (a project they build would)
+
+
+def without_knobs(env: dict[str, str]) -> None:
+    """Drop `SINCE` and `FULL` from `env` and from make's own copy: `MAKEFLAGS` and `MFLAGS` carry a command-line
+    `SINCE=<ref>` to every make a test starts, where a generated project's `make mutation` would read it as its own."""
+    for knob in KNOBS:
+        env.pop(knob, None)
+    for flags in ("MAKEFLAGS", "MFLAGS"):
+        if flags in env:
+            words = [word for word in env[flags].split() if word.partition("=")[0] not in KNOBS]
+            if "--" in words and words[-1] == "--":
+                words.pop()
+            if words:
+                env[flags] = " ".join(words)
+            else:
+                del env[flags]
 
 
 def run_unittest(arguments: tuple[str, ...], pythonpath: str, backends: str | None = None, *,
@@ -35,6 +52,7 @@ def run_unittest(arguments: tuple[str, ...], pythonpath: str, backends: str | No
         env[BACKENDS] = backends
     elif not keep:
         env.pop(BACKENDS, None)
+    without_knobs(env)
     return subprocess.Popen((*UNITTEST, *arguments), cwd=ROOT, env=env).wait()
 
 
