@@ -93,5 +93,56 @@ class ChainTest(unittest.TestCase):
         self.assertEqual(found["entries"][1]["delegates"], ["Implement T9"])
 
 
+class BrokenChainTest(unittest.TestCase):
+    """B3: a spawn chain that cannot be followed is not a host's: its requests are shared, and the note says why."""
+
+    def setUp(self) -> None:
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.repo = project(Path(self.scratch.name))
+        self.session = Session(self.repo)
+
+    def run_it(self) -> dict:
+        said = self.session
+        owner = said.agent("ds", "drive-slice S1", "drive-slice")
+        child = said.agent("ci", "Implement T1", "drive-implement", parent="ds")
+        c2 = said.open(None, "implement", P2)
+        c1 = said.open(owner, "implement", P1)
+        said.say(owner, "ra", 10, stamp(1, "09:01:00"), "drive-slice")
+        said.say(child, "ci", 5000, stamp(1, "09:02:00"), "drive-implement")
+        said.say(None, "h1", 170, stamp(1, "09:03:00"))
+        record(self.repo, "S1", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), c1))
+        record(self.repo, "S2", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), c2))
+        return {}
+
+    def test_e1_with_the_metadata_present_the_chain_is_followed(self) -> None:
+        self.run_it()
+        found = summaries(self.repo)
+        self.assertEqual((found["S1"]["cost"]["tokens"], found["S2"]["cost"]["tokens"]), (5010, 170))
+
+    def test_e2_a_missing_drive_slice_meta_sends_its_tree_to_the_shared_bucket_with_a_note(self) -> None:
+        self.run_it()
+        (self.session.agents / "agent-ds.meta.json").unlink()
+        found = summaries(self.repo)
+        self.assertEqual((found["S1"]["cost"]["tokens"], found["S2"]["cost"]["tokens"]), (0, 170))
+        self.assertEqual(found["S2"]["cost"]["shared"], 5010)
+        self.assertIn("agent-ds.meta.json", bench(self.repo).stdout)
+
+    def test_e3_a_corrupt_meta_is_the_same(self) -> None:
+        self.run_it()
+        (self.session.agents / "agent-ds.meta.json").write_text("{", encoding="utf-8")
+        found = summaries(self.repo)
+        self.assertEqual((found["S1"]["cost"]["tokens"], found["S2"]["cost"]["tokens"]), (0, 170))
+
+    def test_e4_a_parent_that_resolves_nowhere_is_the_same_and_names_it(self) -> None:
+        self.run_it()
+        meta = self.session.agents / "agent-ci.meta.json"
+        meta.write_text(meta.read_text(encoding="utf-8").replace('"ds"', '"ghost"'), encoding="utf-8")
+        found = summaries(self.repo)
+        self.assertEqual((found["S1"]["cost"]["tokens"], found["S2"]["cost"]["tokens"]), (10, 170))
+        self.assertEqual(found["S2"]["cost"]["shared"], 5000)
+        self.assertIn("ghost", bench(self.repo).stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

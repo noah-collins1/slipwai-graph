@@ -161,20 +161,28 @@ class Session:
             return None if file == self.main else Path(file).stem
         return str(found.get("description") or found.get("agentType") or Path(file).stem)
 
-    def chain(self, file: str) -> str | None:
-        """The description of the first `drive-slice` at or above this file; none where there is none."""
+    def chain(self, file: str) -> tuple[str | None, str | None]:
+        """`(description, broken)`: the description of the first `drive-slice` at or above this file, none where the
+        chain ends at a host-spawned agent; `broken` names the link where the chain cannot be followed — a metadata
+        file that is absent or unreadable, a parent that resolves nowhere, a loop."""
         path = Path(file)
         found = self.meta_of(file)
+        name = path.with_name(path.stem + ".meta.json").name
         seen: set[str] = set()
         while found is not None:
             if found.get("agentType") == "drive-slice":
-                return str(found.get("description") or "")
+                return str(found.get("description") or ""), None
             parent = found.get("parentAgentId")
-            if not isinstance(parent, str) or not parent or parent in seen:
-                return None
+            if parent is None or parent == "":
+                return None, None
+            if not isinstance(parent, str) or parent in seen:
+                return None, f"{name} names a parent, {parent!r}, that is not a chain it can follow"
             seen.add(parent)
-            found = self.meta(path.with_name(f"agent-{parent.removeprefix('agent-')}.meta.json"))
-        return None
+            name = f"agent-{parent.removeprefix('agent-')}.meta.json"
+            found = self.meta(path.with_name(name))
+        if file == self.main:
+            return None, None
+        return None, f"{name} is absent or unreadable, so the spawn chain of {path.name} cannot be followed"
 
     def opener(self, window_from: dict[str, int], needle: bytes) -> str | None:
         """The file, among those the window's cursor names, whose bytes there print the bracket's `started (` line."""
@@ -324,8 +332,9 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
         session = sessions[str(item.session)]
         needle = f"benchmark: {item.entry['stage']} started ({Path(item.path).relative_to(root).as_posix()}".encode()
         file = session.opener(item.window.from_, needle)
-        description = session.chain(file) if file else None
-        item.cls = None if description is None else (resolve(slice_word(description), slices) or UNRESOLVED)
+        description, broken = session.chain(file) if file else (None, None)
+        item.cls = UNRESOLVED if broken else None if description is None else (
+            resolve(slice_word(description), slices) or UNRESOLVED)
 
     far: tuple[dict[str, list[dict[str, Any]]], dict[str, str], str | None] | None = None
     abroad: list[Held] | None = None
@@ -351,7 +360,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                     needle = f"benchmark: {item['stage']} started ({fkey.split(':', 1)[1]}".encode()
                     file = sessions[who].opener(window.from_, needle)
                     other = Held(fkey, index, item, window, who)
-                    other.cls = None if not file or sessions[who].chain(file) is None else UNRESOLVED
+                    other.cls = None if not file or sessions[who].chain(file) == (None, None) else UNRESOLVED
                     other.label = label
                     abroad.append(other)
         return abroad
@@ -369,8 +378,10 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
             covering = [item for item in mine if item.window.covers(request.file, request.offset)]
             target: str | None = None
             chosen: Held | None = None
-            description = session.chain(request.file)
-            if description is not None:
+            description, broken = session.chain(request.file)
+            if broken:
+                notes[name].add(f"{broken} — its requests are in the shared bucket")
+            elif description is not None:
                 target = resolve(slice_word(description), slices)
                 if target is None:
                     notes[name].add(f'drive-slice "{description}" names no recorded slice — its requests are in the '
