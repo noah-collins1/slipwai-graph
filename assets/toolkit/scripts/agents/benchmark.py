@@ -110,6 +110,28 @@ def measures() -> Any:
     return _LOADED["measures"]
 
 
+def attribution() -> Any:
+    """`attribution.py` beside this script, loaded the same way and for the same reason as `measures.py`."""
+    if "attribution" not in _LOADED:
+        sys.dont_write_bytecode = True
+        spec = importlib.util.spec_from_file_location("attribution", Path(__file__).resolve().with_name("attribution.py"))
+        if spec is None or spec.loader is None:
+            raise RuntimeError("attribution.py cannot be loaded")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _LOADED["attribution"] = module
+    return _LOADED["attribution"]
+
+
+def attributed() -> dict[str, Any]:
+    """Every request of every session named in a record, counted in one record's entry or in the shared bucket —
+    read once per process, over every record, because one request can be claimed by brackets of several."""
+    if "attributed" not in _LOADED:
+        _LOADED["attributed"] = attribution().attribute(records(), ROOT, claude_transcripts, window_of,
+                                                         measures().recorded_tokens)
+    return _LOADED["attributed"]  # type: ignore[no-any-return]
+
+
 def cruise_log() -> list[dict[str, Any]]:
     """`specs/cruise-log.jsonl`'s rows, parsed once per run; none where the project has no log."""
     if "log" not in _LOADED:
@@ -780,9 +802,20 @@ def usage_unread(entry: dict[str, Any]) -> bool:
     return not (entry.get("ran") or [])
 
 
-def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None) -> dict[str, Any]:
-    """One row's worth of a record: what the entries add up to, and what they show by their sequence."""
+def summary_of(path: Path, record: dict[str, Any]) -> dict[str, Any]:
+    """`summarise()` with what attribution found for the record at `path`."""
+    return summarise(record, found=attributed()["records"].get(str(path)))
+
+
+def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
+              found: dict[str, Any] | None = None) -> dict[str, Any]:
+    """One row's worth of a record: what the entries add up to, and what they show by their sequence. `found` is
+    what attribution made of the record (its entries' tokens, delegates and last lines, its cost); without it the
+    entries' recorded usage stands in."""
     stages = record.get("stages", [])
+    shown = (found or {}).get("entries", {})
+    if last_lines is None and shown:
+        last_lines = {index: measures().epoch(item["last_line"]) for index, item in shown.items() if item["last_line"]}
     ended = [entry for entry in stages if "ended" in entry]
     total = empty_usage()
     for entry in ended:
@@ -806,9 +839,11 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None) 
     # The post-converge `/gaps` pass is the ladder, not rework; a stage above it, re-entered, is.
     rework = [entry["stage"] for index, entry in enumerate(ended)
               if index > first_implemented and order(entry["stage"]) < order("gaps")]
-    tokens = [measures().recorded_tokens(entry) for entry in stages]
-    found = measures().moments(reader(str(record.get("feature"))), record.get("slice"), stages)
-    parts = measures().waiting(found, reader(str(record.get("feature"))), str(record.get("slice")), stages, cruise_log())
+    tokens = [shown[index]["tokens"] if index in shown else measures().recorded_tokens(entry)
+              for index, entry in enumerate(stages)]
+    moved = measures().moments(reader(str(record.get("feature"))), record.get("slice"), stages)
+    parts = measures().waiting(moved, reader(str(record.get("feature"))), str(record.get("slice")), stages, cruise_log(),
+                               last_lines)
     last = {key: next((entry["signals"][key] for entry in reversed(ended) if key in entry.get("signals", {})), None)
             for key in ("mutation_score", "outcome")}
     return {
@@ -838,19 +873,23 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None) 
         }),
         "split": sum(entry["signals"].get("split", 0) for entry in ended),
         "reentered": rework, "shape": record.get("shape"),
-        "elapsed": found["elapsed"],
+        "elapsed": moved["elapsed"],
         "rework": measures().rework(stages, tokens, last_lines),
-        "cost": {"tokens": measures().sum_figures([figure for entry, figure in zip(stages, tokens, strict=True)
-                                                   if "ended" in entry]), "shared": measures().unknown("no transcript was read")},
+        "cost": (found or {}).get("cost") or {
+            "tokens": measures().sum_figures([figure for entry, figure in zip(stages, tokens, strict=True)
+                                              if "ended" in entry]),
+            "shared": measures().unknown("no transcript was read")},
         "entries": [{"stage": entry["stage"], "started": entry.get("started"),
                      "stage_seconds": measures().stage_seconds([entry], {0: last_lines[index]}
                                                                if last_lines and index in last_lines else None),
-                     "tokens": tokens[index], "delegates": []} for index, entry in enumerate(stages)],
-        "moments": {key: measures().printed(found[key]) for key in ("ready", "accepted", "demo_accepted", "merged")
-                    if key in found},
+                     "tokens": tokens[index],
+                     "delegates": shown.get(index, {}).get("delegates", [])} for index, entry in enumerate(stages)],
+        "moments": {key: measures().printed(moved[key]) for key in ("ready", "accepted", "demo_accepted", "merged")
+                    if key in moved},
         "worked_seconds": parts["worked"], "waiting": parts["waiting"],
-        "read_from": {**found["read_from"], **parts["read_from"]},
-        "_figures": {"slice": record.get("slice"), "ready": found["ready"], "accepted": found["accepted"],
+        "read_from": {**moved["read_from"], **parts["read_from"]},
+        "_last_lines": last_lines or {},
+        "_figures": {"slice": record.get("slice"), "ready": moved["ready"], "accepted": moved["accepted"],
                      "stage_seconds": measures().stage_seconds(stages, last_lines),
                      "worked": measures().worked(stages, last_lines)},
     }
@@ -973,8 +1012,9 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
               "are unknown until its done mark exists" for summary in summaries
               if summary["slice"] and isinstance(summary["elapsed"], dict)
               and summary["elapsed"]["unknown"].startswith("open since")]
-    for record in records_:
-        lines += measures().cut_off_notes(record.get("slice") or "(feature)", record.get("stages", []))
+    for summary, record in zip(summaries, records_, strict=True):
+        lines += measures().cut_off_notes(record.get("slice") or "(feature)", record.get("stages", []),
+                                          summary["_last_lines"])
         for entry in record.get("stages", []):
             usage = entry.get("usage")
             if "ended" in entry and usage is not None and not usage.get("source"):
@@ -988,6 +1028,8 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
                     f"{record.get('slice') or '(feature)'} {entry['stage']}: not bracketed around its work — "
                     "start and end were called in the same moment, so this stage's wall and tokens are missing, not zero."
                 )
+    if summaries:
+        lines += attributed()["features"].get(str(summaries[0]["feature"]), {}).get("notes", [])
     return lines + hand_back_lines(records_)
 
 
@@ -1010,7 +1052,7 @@ def aggregate() -> str:
         return "benchmark: no record yet — /drive writes specs/<feature>/slices/<id>/benchmark.json from its next stage"
     blocks = []
     for feature, entries in grouped.items():
-        summaries = [summarise(record) for _, record in entries]
+        summaries = [summary_of(path, record) for path, record in entries]
         slices = [summary for summary in summaries if summary["slice"]]
         head = f"{feature} — {len(slices)} slice(s) recorded, {feature_text(summaries)}"
         waits = waiting_rows(summaries)
@@ -1076,7 +1118,7 @@ def overview(feature: str | None = None) -> list[Path]:
     pages = []
     for name, entries in grouped.items():
         records_ = [record for _, record in entries]
-        summaries = [summarise(record) for record in records_]
+        summaries = [summary_of(path, record) for path, record in entries]
         slices = [summary for summary in summaries if summary["slice"]]
         parts = [
             f"# Benchmark — {name}",
@@ -1106,12 +1148,13 @@ def overview(feature: str | None = None) -> list[Path]:
 
 def json_records() -> list[dict[str, Any]]:
     """`--json`: every record's summary, and on each feature's own record that feature's figures."""
-    found = [{"path": str(path.relative_to(ROOT)), **summarise(record)} for path, record in records()]
+    found = [{"path": str(path.relative_to(ROOT)), **summary_of(path, record)} for path, record in records()]
     for name in {str(item["feature"]) for item in found}:
         mine = [item for item in found if str(item["feature"]) == name]
         for item in mine:
             if not item["slice"]:
                 item["feature_figures"] = figures(mine)
+                item["session_totals"] = attributed()["features"][str(item["feature"])]["sessions"]
     return [{key: value for key, value in item.items() if not key.startswith("_")} for item in found]
 
 

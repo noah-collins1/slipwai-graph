@@ -9,6 +9,7 @@ from pathlib import Path
 
 from elapsed_fixture import (
     FEATURE,
+    Session,
     bench,
     commit,
     entry,
@@ -157,6 +158,19 @@ class StageTimeTest(unittest.TestCase):
         notes = bench(self.repo).stdout
         self.assertIn(f"S2 implement: stage time ends at its recorded end {stamp(1, '14:00:00')} — its transcript's "
                       "last line could not be read", notes)
+
+    def test_e2_a_cut_off_entry_ends_at_its_last_attributed_line_and_the_note_names_both_moments(self) -> None:
+        session = Session(self.repo)
+        cursor = session.open(None, "implement", f"specs/{FEATURE}/slices/S2/benchmark.json")
+        session.say(None, "r1", 100, stamp(1, "10:30:00"))
+        cut = session.entry("implement", stamp(1, "10:00:00"), stamp(1, "13:30:00"), cursor)
+        cut["cut_off"] = "iteration 3 ended with the entry open"
+        self.accepted(cut)
+        found = summaries(self.repo)["S2"]
+        self.assertEqual((found["stage_seconds"], found["worked_seconds"]), (1800, 1800))
+        self.assertEqual(found["entries"][0]["tokens"], 100)
+        self.assertIn(f"S2 implement: stage time ends at its last transcript line {stamp(1, '10:30:00')}, not at "
+                      f"the recorded end {stamp(1, '13:30:00')}", bench(self.repo).stdout)
 
     def test_e4_stage_time_is_never_called_wall_and_no_heading_sums_it_as_elapsed(self) -> None:
         self.accepted(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")),

@@ -103,6 +103,56 @@ def costed(item: dict, tokens: int, session: str = "s1") -> dict:
     return item
 
 
+class Session:
+    """A fake Claude Code session under the project's fake `HOME`: a main transcript, sub-agent transcripts with
+    their `meta.json`, brackets laid over them by byte offset, as `benchmark.py start` and `end` record them."""
+
+    def __init__(self, repo: Path, name: str = "sess") -> None:
+        self.name = name
+        self.main = repo / ".home/.claude/projects/-x-p" / f"{name}.jsonl"
+        self.agents = self.main.parent / name / "subagents"
+        self.agents.mkdir(parents=True)
+        self.main.write_text("", encoding="utf-8")
+        self.repo = repo
+
+    def agent(self, ident: str, description: str, kind: str, parent: str | None = None) -> Path:
+        path = self.agents / f"agent-{ident}.jsonl"
+        path.write_text("", encoding="utf-8")
+        meta = {"agentType": kind, "description": description, "spawnDepth": 1 if parent is None else 2}
+        if parent:
+            meta["parentAgentId"] = parent
+        path.with_suffix(".meta.json").write_text(json.dumps(meta), encoding="utf-8")
+        return path
+
+    def say(self, path: Path | None, request: str, tokens: int, when: str, agent: str | None = None) -> None:
+        """One response as Claude Code writes it: a line per content block, the same usage on each."""
+        line = {"type": "assistant", "requestId": request, "timestamp": when.replace("Z", ".123Z"),
+                "message": {"model": "m", "usage": {"input_tokens": tokens, "output_tokens": 0,
+                                                    "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}}}
+        if agent:
+            line["attributionAgent"] = agent
+        with (path or self.main).open("a", encoding="utf-8") as handle:
+            handle.write((json.dumps(line) + "\n") * 2)
+
+    def snap(self) -> dict[str, int]:
+        return {str(path): path.stat().st_size for path in [self.main, *sorted(self.agents.glob("*.jsonl"))]}
+
+    def open(self, opener: Path | None, stage: str, record_path: str) -> dict[str, int]:
+        """The cursor `start` takes, then the line it prints into the transcript that ran it."""
+        cursor = self.snap()
+        with (opener or self.main).open("a", encoding="utf-8") as handle:
+            said = f"benchmark: {stage} started ({record_path}; usage from claude)"
+            handle.write(json.dumps({"type": "user", "message": {"content": said}}) + "\n")
+        return cursor
+
+    def entry(self, stage: str, started: str, ended: str, cursor: dict[str, int], **signals: object) -> dict:
+        item = entry(stage, started, ended, **signals)
+        item["span"] = {"from": cursor, "to": self.snap()}
+        item["usage"] = {"source": "claude", "session": self.name, "host": {}, "subagents": {}}
+        item["ran"] = ["m"]
+        return item
+
+
 def _epoch(text: str) -> int:
     return int(datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC).timestamp())
 
@@ -110,6 +160,12 @@ def _epoch(text: str) -> int:
 def record(repo: Path, ident: str, *stages: dict, feature: str = FEATURE) -> str:
     path = f"specs/{feature}/slices/{ident}/benchmark.json"
     write(repo, path, json.dumps({"feature": feature, "slice": ident, "stages": list(stages)}, indent=1) + "\n")
+    return path
+
+
+def feature_record(repo: Path, *stages: dict, feature: str = FEATURE) -> str:
+    path = f"specs/{feature}/benchmark.json"
+    write(repo, path, json.dumps({"feature": feature, "slice": None, "stages": list(stages)}, indent=1) + "\n")
     return path
 
 
