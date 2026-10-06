@@ -215,12 +215,16 @@ class Reader:
     def merged(self, ident: str) -> Found | None:
         key = ("merged", ident)
         if key not in self.kept:
-            listed = self.ask("log", "--merges", "--reverse", "--fixed-strings", f"--grep=slice/{ident}",
-                              "--format=%H %ct %s") or ""
-            pattern = re.compile(r"slice/" + re.escape(ident) + r"(?![A-Za-z0-9])")
+            # the first parent is the branch the merge landed on: a catch-up merge of the integration branch into the
+            # slice is on the slice's own line, and a subject saying `into slice/<ident>` is one wherever it is read
+            listed = self.ask("log", "--merges", "--first-parent", "--reverse", "--fixed-strings",
+                              f"--grep=slice/{ident}", "--format=%H %ct %s") or ""
+            name = r"slice/" + re.escape(ident) + r"(?![A-Za-z0-9])"
+            pattern, catching_up = re.compile(name), re.compile(r"\binto\s+['\"]?" + name)
             self.kept[key] = next(((int(parts[1]), parts[0][:7], "merge commit") for parts in
                                    (line.split(" ", 2) for line in listed.splitlines())
-                                   if len(parts) == 3 and pattern.search(parts[2])), None)
+                                   if len(parts) == 3 and pattern.search(parts[2]) and not catching_up.search(parts[2])),
+                                  None)
         return self.kept[key]
 
     def order(self) -> list[tuple[str, list[str]]]:
