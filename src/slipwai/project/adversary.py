@@ -1,6 +1,8 @@
 """`commands/adversary.md`: select and attack only the seams a slice widened."""
 from __future__ import annotations
 
+from .result_contract import adversary_sentence
+
 
 def adversary_command(event: bool) -> str:
     extra = (
@@ -117,6 +119,8 @@ on, with `Spawned:` empty. A `predates the adversary gate` row — written once 
 --adversary-baseline` for slices finished before the log was held — records that nothing was attacked, and is
 never a row a skip may rely on. Findings include **no findings**, since an empty result is exactly what makes the
 next slice's skip decidable.
+
+{adversary_sentence()}
 
 Once every adversary has reported, triage each finding as confirmed, question, duplicate or declined, then
 end the `adversary` benchmark entry with `findings=N` `seams=N` **before writing any fix**. `seams=N` is

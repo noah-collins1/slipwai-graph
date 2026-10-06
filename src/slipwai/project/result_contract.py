@@ -72,7 +72,9 @@ audit. {STAGE} The verb checks the block with the gate's own function, writes th
 field fails — it prints the field. `{layout.make} check-decisions` holds every record to the same shape.
 
 A hand-back with no block, or one the verb refused, gets **one continuation** of the same delegate asking only for the
-block. If that does not produce one, record the miss with a reason:
+block. A continuation recorded after the stage's benchmark entry has closed passes `--started <instant>` to either
+verb, the instant the `--hand-backs` line names (the converge, demo-stop or adversary-stop line); on time, the verb
+finds the open entry itself. If that does not produce one, record the miss with a reason:
 
 ```sh
 python3 scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>
@@ -121,6 +123,24 @@ so that number resolves; the report lists it among the entries a person has not 
 they override any entry. *What every delegate hands back* in `commands/drive.md` has
 the continuation and the `Missing:` forms, and the `<stage>` is the name of the stage's open benchmark entry
 (`skipper`, `hand`, `bosun`); `{layout.make} check-decisions` holds the record to the shape."""
+
+
+def adversary_sentence() -> str:
+    """`commands/adversary.md`: each adversary's block is appended before the `adversary` entry ends (B3, T032)."""
+    return f"""Each adversary ends its hand-back with a `result-contract` block ([{PAGE}]({PAGE})). **Append each one, verbatim,
+before you end the `adversary` benchmark entry**, with
+`python3 scripts/check-decisions.py --hand-back specs/<feature>/slices/<id> drive-adversary adversary`; a hand-back with
+no block, or one the verb refused, gets one continuation, and where that fails, `--hand-back-missing` records the miss.
+*What every delegate hands back* in `commands/drive.md` has both forms."""
+
+
+def audit_sentence() -> str:
+    """The completion audit: its delegates' blocks are appended, and its `drive-gaps` delegates are the backstop (T025)."""
+    return f"""Each audit `drive-gaps` delegate ends with a `result-contract` block ([{PAGE}]({PAGE})): append it, a
+feature-level stage, with `python3 scripts/check-decisions.py --hand-back specs/<feature> drive-gaps audit` before the
+audit is written up. The audit is also the backstop for the two stops above: each audit `drive-gaps` delegate also runs
+`python3 scripts/check-decisions.py --hand-backs` over every slice, and a delegated stage with neither a passing block
+nor a `Missing:` line is an audit finding."""
 
 
 def slice_record_sentence() -> str:

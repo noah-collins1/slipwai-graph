@@ -22,7 +22,7 @@ from .cruise_seat import watch_seat_body
 from .cruise_stops import LOG, REPORT, stop_table
 from .cruise_told import boundary_asks, told_argument
 from .cruise_unblock import unblock_section
-from .result_contract import cruise_sentences
+from .result_contract import audit_sentence, cruise_sentences
 
 # The last line of every iteration: the one thing the outer loop reads.
 LAST_LINES = ("cruise: continue", "cruise: done", "cruise: parked: <what a person must provide>",
@@ -206,7 +206,9 @@ concurrently, as the post-implementation pass is per seam — and put every find
 a criterion nothing built becomes a slice, appended to the split with `/story-splitting`, and the ladder is
 re-entered for it; a finding the owner rules out of scope is a decision entry saying so. Write
 `{REPORT}`: what the specification asked, what shipped, every out-of-scope decision, and every entry a person
-has not yet reviewed. Only an audit with nothing left to build ends with `cruise: done`.
+has not yet reviewed. {audit_sentence()}
+
+Only an audit with nothing left to build ends with `cruise: done`.
 
 ## The iteration contract
 
