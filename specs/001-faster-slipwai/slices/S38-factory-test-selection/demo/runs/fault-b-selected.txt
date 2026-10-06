@@ -1,0 +1,131 @@
+# Summary of a run's log: its header, the selector's lines, every FAIL/ERROR block with its traceback, and the tail. The full log (~0.8 MB) was in scratch and is not committed.
+# machine: noahc-server · commit: 005c4ed on slice/S38-demo-toolkit-fault · start: 2026-10-06T15:25:54Z
+# load at start: 1.12 1.16 1.41 · /tmp free: 8.4G
+$ time make test SINCE=52ecbd3
+PYTHONPATH=src python3 -B scripts/select-tests.py
+compared with `52ecbd3` at 52ecbd3, named by SINCE — taken as passing on the word of whoever named it
+skipped test_gitea_pages: reads no configuration
+skipped test_go_mutation_file: reads no configuration
+skipped test_migration_script: reads no configuration
+skipped test_mutation: reads no configuration
+skipped test_release: reads no configuration
+skipped test_versions: reads no configuration
+selected 335 of 341 modules against `52ecbd3` at 52ecbd3
+selected 335 of 341 modules against `52ecbd3` at 52ecbd3
+
+## Failures (module of each: test_factory_repository test_matrix test_mutation_java_classes test_pit_globs test_select_tests_real_audit )
+FAIL: test_the_factorys_own_gate_runs_the_same_checks_ci_does (test_factory_repository.FactoryRepositoryTest.test_the_factorys_own_gate_runs_the_same_checks_ci_does)
+`make verify` locally and CI run the same targets, which is the rule the factory generates.
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_factory_repository.py", line 223, in test_the_factorys_own_gate_runs_the_same_checks_ci_does
+    self.assertIn(gate, checks, f"`make verify` no longer runs {gate}")
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'test' not found in 'verify-checks: lint typecheck check-structure' : `make verify` no longer runs test
+
+FAIL: test_a_go_service_importing_a_workspace_module_is_mutation_tested (test_matrix.MatrixTest.test_a_go_service_importing_a_workspace_module_is_mutation_tested)
+`make mutation` on the layout `docs/architecture.md` prescribes for shared Go code.
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_matrix.py", line 151, in test_a_go_service_importing_a_workspace_module_is_mutation_tested
+    self.assertEqual(strong.returncode, 0, strong.stdout)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : make[1]: Entering directory '/tmp/tmpzqjdlt09/mutation-go'
+mutation: SINCE `52ecbd3` names no commit
+make[1]: *** [Makefile:194: mutation] Error 2
+make[1]: Leaving directory '/tmp/tmpzqjdlt09/mutation-go'
+
+
+FAIL: test_c_a_nested_class_of_an_exactly_excluded_class_is_still_targeted (test_mutation_java_classes.JavaClassesTest.test_c_a_nested_class_of_an_exactly_excluded_class_is_still_targeted) (excluded='com.example.x.a.Foo')
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_mutation_java_classes.py", line 79, in test_c_a_nested_class_of_an_exactly_excluded_class_is_still_targeted
+    self.assertEqual(self.classes(execute), wanted if taken else [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != ['com.example.x.a.Foo', 'com.example.x.a.Foo$*']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'com.example.x.a.Foo'
+
+- []
++ ['com.example.x.a.Foo', 'com.example.x.a.Foo$*']
+
+FAIL: test_a_bare_name_is_exact_and_never_a_prefix (test_pit_globs.GlobTest.test_a_bare_name_is_exact_and_never_a_prefix)
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 45, in test_a_bare_name_is_exact_and_never_a_prefix
+    self.holds("com.x.events.Tag", ["com.x.events.Tag"], ["com.x.events.TagQuery", "x.com.x.events.Tag"])
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 42, in holds
+    self.assertFalse(self.module.pit_matches(pattern, name), f"{pattern} should not match {name}")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : com.x.events.Tag should not match com.x.events.TagQuery
+
+FAIL: test_a_leading_tilde_is_a_raw_regular_expression (test_pit_globs.GlobTest.test_a_leading_tilde_is_a_raw_regular_expression)
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 63, in test_a_leading_tilde_is_a_raw_regular_expression
+    self.holds(r"~com\.x\.(A|B)", ["com.x.A", "com.x.B"], ["com.x.AB", "com.x.C"])
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 42, in holds
+    self.assertFalse(self.module.pit_matches(pattern, name), f"{pattern} should not match {name}")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : ~com\.x\.(A|B) should not match com.x.AB
+
+FAIL: test_double_star_dot_is_zero_or_more_packages (test_pit_globs.GlobTest.test_double_star_dot_is_zero_or_more_packages)
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 59, in test_double_star_dot_is_zero_or_more_packages
+    self.holds("**.Foo", ["Foo", "a.Foo", "a.b.Foo"], ["a.FooBar", "a.Bar"])
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 42, in holds
+    self.assertFalse(self.module.pit_matches(pattern, name), f"{pattern} should not match {name}")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : **.Foo should not match a.FooBar
+
+FAIL: test_question_mark_is_one_character (test_pit_globs.GlobTest.test_question_mark_is_one_character)
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 52, in test_question_mark_is_one_character
+    self.holds("com.x.Fo?", ["com.x.Foo", "com.x.Fox"], ["com.x.Fo", "com.x.Fooo"])
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 42, in holds
+    self.assertFalse(self.module.pit_matches(pattern, name), f"{pattern} should not match {name}")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : com.x.Fo? should not match com.x.Fooo
+
+FAIL: test_star_is_any_run_of_characters_including_dots (test_pit_globs.GlobTest.test_star_is_any_run_of_characters_including_dots)
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 49, in test_star_is_any_run_of_characters_including_dots
+    self.holds("com.x.*Test", ["com.x.FooTest", "com.x.a.b.BarTest"], ["com.x.FooTests"])
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/s38/f-b/tests/test_pit_globs.py", line 42, in holds
+    self.assertFalse(self.module.pit_matches(pattern, name), f"{pattern} should not match {name}")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : com.x.*Test should not match com.x.FooTests
+
+FAIL: test_no_module_opens_a_path_outside_src_and_tests_that_nothing_accounts_for (test_select_tests_real_audit.TestEveryReadsOnlyModuleOpensWhatItDeclares.test_no_module_opens_a_path_outside_src_and_tests_that_nothing_accounts_for) [test_pit_globs]
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_select_tests_real_audit.py", line 108, in test_no_module_opens_a_path_outside_src_and_tests_that_nothing_accounts_for
+    self.assertTrue(found["ok"] and found["ran"] > 0, f"{module} did not run clean under the hook: {found}")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : test_pit_globs did not run clean under the hook: {'ok': False, 'ran': 7, 'opened': ['VERSION', 'assets/backing-services/prune.py', 'assets/toolkit/scripts/check-styles.py', 'assets/toolkit/scripts/mutation-scope.py'], 'uncovered': []}
+
+FAIL: test_an_undeclared_load_of_a_sibling_script_is_named (test_select_tests_real_audit.TestTheAuditHasTeeth.test_an_undeclared_load_of_a_sibling_script_is_named)
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_select_tests_real_audit.py", line 129, in test_an_undeclared_load_of_a_sibling_script_is_named
+    self.assertTrue(found["ok"], found)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : {'ok': False, 'ran': 7, 'opened': ['VERSION', 'assets/backing-services/prune.py', 'assets/toolkit/scripts/check-styles.py', 'assets/toolkit/scripts/mutation-scope.py', 'assets/toolkit/scripts/verify-stamp.py'], 'uncovered': ['assets/toolkit/scripts/verify-stamp.py
+
+FAIL: test_the_unchanged_copy_opens_nothing_it_does_not_declare (test_select_tests_real_audit.TestTheAuditHasTeeth.test_the_unchanged_copy_opens_nothing_it_does_not_declare)
+Traceback (most recent call last):
+  File "/tmp/s38/f-b/tests/test_select_tests_real_audit.py", line 136, in test_the_unchanged_copy_opens_nothing_it_does_not_declare
+    self.assertTrue(found["ok"], found)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : {'ok': False, 'ran': 7, 'opened': ['VERSION', 'assets/backing-services/prune.py', 'assets/toolkit/scripts/check-styles.py', 'assets/toolkit/scripts/mutation-scope.py'], 'uncovered': []}
+
+
+## Tail
+Ran 2760 tests in 3256.700s
+FAILED (failures=11, skipped=8)
+make: *** [Makefile:35: test] Error 1
+real	54m18.995s
+user	60m7.387s
+sys	9m23.893s
+# exit: 2 · end: 2026-10-06T16:20:13Z · elapsed: 3259.0 s
+# load at end: 1.34 1.12 1.20

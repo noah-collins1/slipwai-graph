@@ -1,0 +1,5 @@
+$ make test SINCE=adopt-method   (stopped after its header and first tests: the header is the evidence)
+PYTHONPATH=src python3 -B scripts/select-tests.py
+full: `Makefile` changed — the root Makefile: its effect cannot be established
+…
+[stopped by its process group after about three minutes (the first kill missed; a second, by group id, stopped it)]

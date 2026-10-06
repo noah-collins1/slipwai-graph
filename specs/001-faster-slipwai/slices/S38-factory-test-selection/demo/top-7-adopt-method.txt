@@ -1,0 +1,23 @@
+$ git switch adopt-method && python3 -B scripts/select-tests.py --dry-run
+Switched to a new branch 'adopt-method'
+branch 'adopt-method' set up to track 'origin/adopt-method'.
+6e90d21 S39 Phase 4: adversary trigger table (three triggers widened, a pass owed) and the bracket opened (records only — reaches no user) (cruise iteration 25)
+python3: can't open file '/tmp/s38/c-am/scripts/select-tests.py': [Errno 2] No such file or directory
+[exit 2]
+
+# the merged state simulated: a local branch named adopt-method at the slice tip 52ecbd3
+$ git switch -C adopt-method 52ecbd3 && python3 -B scripts/select-tests.py --dry-run
+Reset branch 'adopt-method'
+Your branch and 'origin/adopt-method' have diverged,
+and have 59 and 118 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+full: not a slice branch (`adopt-method`)
+[exit 0]
+
+$ git switch --detach 52ecbd3 && python3 -B scripts/select-tests.py --dry-run
+full: HEAD is not on a branch
+[exit 0]
+
+$ git switch -c slice/S99-probe 52ecbd3 && CI=1 SINCE=adopt-method python3 -B scripts/select-tests.py --dry-run
+full: CI is set — a CI run is the full gate
+[exit 0]
