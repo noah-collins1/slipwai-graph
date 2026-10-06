@@ -280,7 +280,7 @@ class FactoryShapesTest(RecordCase):
         record, reach = (importlib.import_module(f"verify_scoped.{name}") for name in ("record", "reach"))
         parent = Path(tempfile.mkdtemp(prefix="scoped-starters-"))
         self.addCleanup(shutil.rmtree, parent, ignore_errors=True)
-        variants = (("none", {}), ("react-vite", {"users": "keycloak"}))
+        variants: tuple[tuple[str, dict[str, str]], ...] = (("none", {}), ("react-vite", {"users": "keycloak"}))
         for profile in CATALOG["profiles"]:
             for backend in CATALOG["backends"]:
                 for frontend, axes in variants:

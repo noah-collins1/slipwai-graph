@@ -1,7 +1,8 @@
-"""T052 (adversary A4, A5, B3, B4, B5): every word the script prints is printable, every unreadable input is the full gate.
+"""T052 (adversary A4, A5, B3, B4, B5): every word the script prints is printable; every unreadable input is the
+full gate.
 
-A path git lists, an obligation or check name, a baseline's branch: none of them is the script's own, so none may end the
-run on a traceback or start a line of its own that begins `verify-scoped: `. A baseline or a stamp that nests deeper
+A path git lists, an obligation or check name, a baseline's branch: none of them is the script's own, so none may end
+the run on a traceback or start a line of its own that begins `verify-scoped: `. A baseline or a stamp that nests deeper
 than a parser can read, or an obligation component that is not a name, is the full gate with words naming the file or
 the entry.
 """
