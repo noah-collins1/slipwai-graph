@@ -24,6 +24,8 @@ SHAPES = {"go two-service": (TWO_GO, GO_FILE), "spring": ((SPRING,), SPRING_FILE
 
 
 class RecipeBase(ScopeCase):
+    makefile_arg = "Makefile"
+
     def fit_recipe(self, words: tuple[str, ...]) -> None:
         """These examples set the recipe themselves, so the run does not fit it."""
 
@@ -200,4 +202,60 @@ class SinceTest(RecipeBase):
                 self.assertEqual(lines[0], "mutation: the sweep runs — `scripts/mutation-scope.py` changed", lines)
                 made = calls(self.log)
                 self.assertIn("SINCE=", made[0])
+                self.log.unlink()
+
+
+    """T041 (A5, B5, B6): the scoped run reads the Makefile make runs and sweeps where it cannot vouch for it."""
+    """T041 (A5, B5, B6): the scoped run reads the Makefile make runs, and sweeps where it cannot vouch for what runs."""
+
+    def test_t041_the_mutation_rule_changing_sweeps_whatever_form_the_makefile_is_named_in(self) -> None:
+        for form in ("Makefile", "./Makefile", "absolute", "sub/../Makefile"):
+            with self.subTest(form=form):
+                self.setUp()
+                self.makefile_arg = str(self.repo / "Makefile") if form == "absolute" else form
+                self.on_main(TWO_GO)
+                self.edit_line("mutation: ## Run", "mutation: ## (changed) Run")
+                self.write(GO_FILE)
+                status, lines, recording = self.run_recording(*TWO_GO)
+                self.assertEqual(lines[0], "mutation: the sweep runs — `Makefile` changed", lines)
+                self.swept_whole(status, lines, recording)
+                self.log.unlink()
+
+    def test_t041_a_makefile_that_includes_another_is_a_sweep_with_its_own_first_line(self) -> None:
+        for directive in ("include extra.mk", "-include extra.mk", "sinclude extra.mk", "  include extra.mk"):
+            with self.subTest(directive=directive):
+                self.setUp()
+                self.on_main(TWO_GO)
+                makefile = self.repo / "Makefile"
+                makefile.write_text(makefile.read_text(encoding="utf-8") + f"\n{directive}\n", encoding="utf-8")
+                self.commit("the trunk includes another makefile")
+                self.write(GO_FILE)
+                status, lines, recording = self.run_recording(*TWO_GO)
+                self.assertEqual(lines[0], "mutation: the sweep runs — `Makefile` includes another makefile, "
+                                 "which the factory cannot read, so it cannot vouch for what runs", lines)
+                self.swept_whole(status, lines, recording)
+                self.log.unlink()
+
+    def test_t041_hold_a_word_include_in_a_comment_or_a_recipe_is_not_an_include(self) -> None:
+        self.on_main(TWO_GO)
+        makefile = self.repo / "Makefile"
+        notes = "\n# include extra.mk\nnote:\n\t@echo include x\n"
+        makefile.write_text(makefile.read_text(encoding="utf-8") + notes, encoding="utf-8")
+        self.commit("comments")
+        self.write(GO_FILE)
+        _, lines, recording = self.run_recording(*TWO_GO)
+        self.assertTrue(lines[0].startswith("mutation: scoped to 1 changed file(s)"), lines)
+        self.assertEqual(recording.swept, [])
+
+    def test_t041_makefiles_in_the_environment_is_a_sweep_that_runs_the_projects_own_makefile(self) -> None:
+        self.on_main(TWO_GO)
+        self.write(GO_FILE)
+        for given in ("extra.mk", "Makefile"):  # make's `MAKEFILE_LIST` starts with the file `MAKEFILES` names
+            with self.subTest(first=given):
+                self.makefile_arg = given
+                status, lines, recording = self.run_recording(*TWO_GO, env=clean_environment(MAKEFILES="extra.mk"))
+                self.assertEqual(lines[0], "mutation: the sweep runs — `MAKEFILES` is set, so makefiles the factory "
+                                 "cannot read run beside `Makefile`", lines)
+                self.swept_whole(status, lines, recording)
+                self.assertEqual(calls(self.log)[0][:3], ["--no-print-directory", "-f", "Makefile"])
                 self.log.unlink()

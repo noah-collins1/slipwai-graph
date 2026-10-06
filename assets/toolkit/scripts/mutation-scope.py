@@ -73,6 +73,8 @@ BORDERS = ("ci", "head", "trunk", "slice_branch", "base", "told", "index")
 NO_SCOPE = "this layout has no mutation scope — the recorded command runs"
 NO_SERVICE = "no generated service to scope"
 EMPTY_SINCE = "SINCE is set and empty"
+INCLUDES = "`{makefile}` includes another makefile, which the factory cannot read, so it cannot vouch for what runs"
+MAKEFILES_SET = "`MAKEFILES` is set, so makefiles the factory cannot read run beside `{makefile}`"
 NOT_FACTORY = "`mutation-full`'s recipe is not the one the factory wrote, so it runs as written"
 
 
@@ -350,6 +352,19 @@ def other_jvm(path: str, root: str) -> bool:
     return path.startswith(f"{root}/src/main/") and path.endswith(OTHER_JVM)
 
 
+INCLUDE = re.compile(r"^ *(?:-include|include|sinclude)(?=[ \t])", re.MULTILINE)
+DEFAULT_MAKEFILES = ("GNUmakefile", "makefile", "Makefile")
+
+
+def own_makefile(makefile: str) -> str:
+    """The Makefile make runs: the one handed here, unless that is a file `MAKEFILES` names, which make lists first and
+    which is not the project's own; then the first of the names make looks for."""
+    named = [os.path.normpath(word) for word in os.environ.get("MAKEFILES", "").split()]
+    if os.path.normpath(makefile) not in named:
+        return makefile
+    return next((name for name in DEFAULT_MAKEFILES if os.path.exists(name)), "Makefile")
+
+
 def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool: Any, commit: str,
                  makefile: str) -> tuple[list[str], dict[str, list[str]]]:
     """The changed files no scope can be trusted across, in the order of data-model's table: those that sweep the whole
@@ -357,7 +372,7 @@ def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool:
     pom whose `pitest-maven` block differs)."""
     here = os.path.relpath(os.path.abspath(__file__))
     backend_script = os.path.join(os.path.dirname(here), "go-mutation.py")
-    rule = os.path.normpath(makefile)
+    rule = os.path.relpath(os.path.abspath(makefile))  # project-relative, whatever form `--makefile` takes (make's own)
     whole: list[str] = []
     per: dict[str, list[str]] = {}
     for path in sorted(changes):
@@ -781,7 +796,7 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
     if services is None or set(options) != {"--make", "--makefile"}:
         print(USAGE, file=sys.stderr)
         return 2
-    make, makefile = options["--make"], options["--makefile"]
+    make, makefile = options["--make"], own_makefile(options["--makefile"])
     flags = dry_flags()
     dry = bool(flags)
     if dry:
@@ -796,6 +811,10 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
         whole, causes = sweep_causes(changes, services, tool, commit, makefile)
         if whole:
             raise Sweep(said(whole))
+        if os.environ.get("MAKEFILES"):  # makefiles make reads beside the project's own, whose rules this script cannot see
+            raise Sweep(MAKEFILES_SET.format(makefile=shown(os.path.relpath(makefile))))
+        if INCLUDE.search(read(makefile) or ""):
+            raise Sweep(INCLUDES.format(makefile=shown(os.path.relpath(makefile))))
         written = rule_of(read(makefile) or "", "mutation-full")
         if [line[1:] for line in written[1:]] != factory_recipe(services) or prerequisites(written):
             handed = os.environ.get("SINCE")

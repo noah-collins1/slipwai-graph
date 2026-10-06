@@ -41,6 +41,8 @@ class Recording:
 
 
 class SweepsTest(ScopeCase):
+    makefile_arg = "Makefile"  # what the recipe's `$(firstword $(MAKEFILE_LIST))` is, which T041's examples vary
+
     def on_main(self, *names: str, text: str = "package x\n") -> None:
         """Files that exist at the base: committed on `main`, then the slice branch is cut again from it."""
         git(self.repo, "checkout", "-q", "main")
@@ -60,7 +62,7 @@ class SweepsTest(ScopeCase):
         out = io.StringIO()
         try:
             with contextlib.redirect_stdout(out):
-                status = module.main(["--make", str(self.make), "--makefile", "Makefile", *services], recording)
+                status = module.main(["--make", str(self.make), "--makefile", self.makefile_arg, *services], recording)
         finally:
             os.chdir(here)
             os.environ.clear()
