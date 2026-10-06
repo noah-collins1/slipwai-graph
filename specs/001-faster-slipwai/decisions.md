@@ -3424,3 +3424,57 @@
   - `tests/test_mutation_recipe.py` (the two source examples and the guard)
   - `changelog.d/scoped-mutation.md` (unchanged by T023; T024's clause uses the words below)
 - **Status:** standing
+
+## D155 — A threshold below "no survivor" is a share of the whole module: a scoped Go run that meets it hands the verdict to that service's sweep
+
+- **Stage:** adversary (Phase 4) · **Slice:** S08-scoped-mutation · **When:** 2026-10-06T03:33:59Z · **Iteration:** 24
+- **Scope:** S08-scoped-mutation
+- **Question:** B3 (`specs/001-faster-slipwai/adversary-log.md`, row S08), task T040. `judge_scoped` and `assess` in `assets/languages/go/scripts/go-mutation.py` apply Gremlins' `threshold: efficacy` from the service's `.gremlins.yaml` to the scoped subset of mutants. The factory writes 99.99, which means "no survivor". The file's comment tells a project to lower it only for an equivalent mutant named in the commit.
+  - **The false red.** In the repro, a project with one equivalent mutant and `efficacy: 99` gets 99.25% and exit 0 from `make mutation-full`. A comment-only edit to that file on `slice/S1` makes `make mutation` give 50.00%, "below efficacy-threshold", and exit 2.
+  - **The other direction.** Under a lowered threshold, a scoped subset can clear the number while the module does not.
+
+  What does a scoped run do with a threshold the project lowered?
+- **Options:**
+  - **(a)** Keep the threshold on the scoped subset, and the failing line says it was judged over the scoped mutants and that `make mutation-full` judges the module. Recommended by the host.
+  - **(b)** A scoped run ignores the threshold and fails on any lived mutant.
+  - **(c)** A service whose threshold is not the factory's 99.99 always sweeps.
+- **Decision:** none of the three as written. This is (c) narrowed to the only case where the threshold's verdict is needed, and it departs from the host's (a).
+  1. **When the scoped run judges alone.** A threshold is *scope-invariant* when `.gremlins.yaml` reads `efficacy` as a number of at least 99.99 and sets no `mutant-coverage`. Under such a threshold, one survivor fails any subset of fewer than ten thousand mutants, as it fails the module, and 100 or more fails both alike.
+     - With a scope-invariant threshold, the scoped verdict stays exactly as T033 and T034 left it.
+     - The threshold is read through the same reader as `exclude-files`, which T039 corrects. A value that is absent, unreadable or not a number is not scope-invariant, so the run fails closed.
+  2. **When the sweep decides.** The threshold is not scope-invariant, the scoped report can be read, and no mutant timed out. If any scoped mutant lived, or Gremlins failed the scoped run, the service's whole module is run, as `go-mutation.py <service>` runs it with no `--since` or `--file`. That run's verdict and report are this run's.
+     - One exception keeps T033: a not-covered-only result still passes when no `mutant-coverage` threshold is set.
+  3. **What stays as it is.**
+     - A timed-out mutant is still red before any of this.
+     - No report, or a report that cannot be read, is still red (T034, T038).
+     - A scoped run whose mutants were all killed passes under any threshold. Its changed files hold no survivor, which is the strictest claim the subset can make.
+  4. **The line** names the service, the cause and the threshold, and that the whole module now judges. The exact words are below.
+  5. **Level.** No new bump. It rides in S08's MINOR fragment and adds one clause to it.
+- **Why:**
+  - **(a)'s "never a false green" does not hold, because a threshold below "no survivor" is a weighted share.**
+    - Take `efficacy: 98.9` on the trunk. File F has 100 mutants, all killed. The rest of the module has 100 mutants, 2 of them equivalent and living. The module scores 99.0% and passes.
+    - A slice edits F and leaves 1 new survivor. The scoped run scores 99/100 = 99.0% and passes. The sweep scores 197/200 = 98.5% and fails.
+    - That is the faster loop letting through what today's gate catches, which the brief names as the one thing that would make this work pointless. Priority 5 rules it out.
+    - The same arithmetic gives the false red in B3. A lowered threshold is an allowance for the whole module. Spent on a subset of two mutants, it reds every touch of the file the project was told how to handle.
+  - **(a) also costs more runs, not fewer (priority 2).**
+    - Its red line tells the agent to run `make mutation-full`, so the sweep runs anyway, after a scoped run, by hand, and after a red result the loop may first try to "fix" a test for an equivalent mutant nobody can kill.
+    - Item 2 starts that same sweep itself, only when a survivor appears, and only for that service.
+  - **Why not (b).** It is never falsely green, but it is falsely red on every touch of the named equivalent mutant. That ignores a number the project chose and wrote down, against Principle I.
+  - **Why not (c) whole.** It is correct, but it throws away scoping on every run of every project that followed the comment, including the runs where the scoped subset is all killed. Those runs need no module arithmetic.
+  - **This applies the project's rule where it means what it says (Principle I, D138 item 1).** D138 made the scope an intersection with the project's configuration, never a reinterpretation of it.
+    - "No survivor" can be intersected with a subset.
+    - A percentage cannot. It can only be judged where it was defined.
+    - D138 item 3 already sweeps when configuration makes a path-based scope untrustworthy. This is the same rule, decided per run by the result.
+  - **The same rule under all three shapes.** Like D153, the run fails closed to the full run of the affected unit, and nothing new is trusted.
+  - **Priority 1 is untouched.** The merge root and CI do not run either mutation target. `mutation-full` is unchanged.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high that (a) and (b) are wrong; medium on item 2's cost.
+- **Would reverse if:** S08's benchmark, or a demo on a project with a lowered threshold, shows item 2 sweeping on most scoped runs. Then (c) whole is the honest form, with one first line naming the threshold, because a sweep every run should say so up front. This never reverses to (a).
+- **Written to:**
+  - `specs/001-faster-slipwai/decisions.md` (this entry)
+  - `specs/001-faster-slipwai/slices/S08-scoped-mutation/tasks.md` (T040's RED and GREEN, below)
+  - `assets/languages/go/scripts/go-mutation.py` (`judge_scoped` and the module docstring's third bullet)
+  - `assets/languages/go/app/.gremlins.yaml` (the last comment paragraph)
+  - `tests/test_mutation_uncovered.py` (the examples)
+  - `changelog.d/scoped-mutation.md` (one clause)
+- **Status:** standing
