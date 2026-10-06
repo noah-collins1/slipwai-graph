@@ -69,7 +69,7 @@ def services_of(words: list[str]) -> list[tuple[str, str]] | None:
 
 
 # The borders of `verify-scoped.py` this script asks, in the order it asks them. `idle` and `forced` are the stamp's.
-BORDERS = ("ci", "head", "trunk", "slice_branch", "base", "told")
+BORDERS = ("ci", "head", "trunk", "slice_branch", "base", "told", "index")
 NO_SCOPE = "this layout has no mutation scope — the recorded command runs"
 NO_SERVICE = "no generated service to scope"
 EMPTY_SINCE = "SINCE is set and empty"

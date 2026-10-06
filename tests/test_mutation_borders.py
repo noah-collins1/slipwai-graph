@@ -189,6 +189,21 @@ class BordersTest(FactoryTestCase):
                               timeout=120)
         self.assertEqual(zero.stdout.splitlines()[:1], [SWEEPS + "no generated service to scope"], zero.stderr)
 
+    def test_e12_an_index_the_stamp_will_not_vouch_for_is_the_sweep_with_that_borders_words(self) -> None:
+        """T035(b), S06 T044's `index`: an assume-unchanged production file hides its edit from git, so the run was
+        *no mutant to run*; now it sweeps and says why."""
+        git(self.repo, "checkout", "-q", "-b", SLICE)
+        source = next((self.repo / "apps/service").rglob("*.go"))
+        relative = str(source.relative_to(self.repo))
+        git(self.repo, "update-index", "--assume-unchanged", relative)
+        source.write_text(source.read_text(encoding="utf-8") + "\n// an edit\n", encoding="utf-8")
+        os.chdir(self.repo)
+        self.addCleanup(os.chdir, ROOT)
+        module = loaded(self.repo / "scripts/mutation-scope.py")
+        words = module.scoped_gate().index(module.ground())
+        self.assertIn("assume-unchanged", str(words))
+        self.sweeps(self.run_script(), str(words))
+
     def test_e10_every_border_leaves_the_project_as_it_was(self) -> None:
         """HOLD: `run_script` compares `git status --porcelain --ignored` before and after each run; here the
         borders of e1 to e7 run in one project in turn."""
