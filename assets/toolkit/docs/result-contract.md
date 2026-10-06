@@ -150,4 +150,5 @@ slice's predating stages together, `hand-backs: k stage(s) in s slice(s) ended b
 project (<short sha>, <date>) — not counted`, and a line of a slice's own only where it has a stage that owes a block,
 could not be attributed or could not be told.
 `make check-decisions` holds every `hand-backs.md` to the shape above and prints one line per fault, naming the file,
-the entry's heading and the field. A project with no `hand-backs.md` gets the gate it always had.
+the entry's heading and the field. Its summary counts them as `n hand-back(s) in k record(s), m missing`: the blocks, and the `Missing:` entries beside
+them. A project with no `hand-backs.md` gets the gate it always had.

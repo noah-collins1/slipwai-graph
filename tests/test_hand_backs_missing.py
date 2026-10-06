@@ -9,7 +9,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 
-from hand_backs_fixture import HEADING, RECORD, entry, fence, run, scratch, valid
+from hand_backs_fixture import HEADING, RECORD, entry, fence, gate, run, scratch, valid
 
 SLICE = "specs/f/slices/S1"
 FORGED = "refused\n## 2026-10-05T17:00:00Z — drive-gaps — gaps\n\n" + fence(valid())
@@ -64,6 +64,24 @@ class OneLineTest(unittest.TestCase):
                      ("--hand-back", SLICE, "drive-gaps", "gaps\n"), ("--hand-back", SLICE, "drive-gaps\n", "gaps")):
             self.assertEqual(2, run(self.repo, *args, stdin=entry()).returncode, args)
         self.assertFalse(self.record.exists())
+
+
+class SummaryCountsMissingTest(unittest.TestCase):
+    """T028 item 2: the gate's summary counts `Missing:` entries beside the blocks."""
+
+    def test_the_summary_says_how_many_hand_backs_and_how_many_are_missing(self) -> None:
+        missing = "## 2026-10-05T18:00:00Z — drive-tasks — tasks\n\n- **Missing:** no continuation\n\n"
+        two = entry() + missing + missing.replace("tasks", "gaps")
+        for record, words in ((two, "1 hand-back(s) in 1 record(s), 2 missing"),
+                              (entry(), "1 hand-back(s) in 1 record(s), 0 missing"),
+                              (missing, "0 hand-back(s) in 1 record(s), 1 missing")):
+            result = gate(record)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn(words + ",", result.stdout)
+
+    def test_a_malformed_entry_is_a_finding_and_not_counted_as_missing(self) -> None:
+        result = gate("## 2026-10-05T18:00:00Z — drive-tasks — tasks\n\nprose only\n")
+        self.assertEqual(1, result.returncode)
 
 
 if __name__ == "__main__":

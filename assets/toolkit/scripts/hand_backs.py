@@ -273,15 +273,18 @@ def block_faults(entry: dict[str, Any], known: set[str] | None) -> tuple[list[st
     return ([] if newer(block) else check_block(block, entry["match"].group(2), known)), block
 
 
-def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[str], list[str], int]:
-    """Findings, notes and the count of blocks in one record's text; `where` is its path from the root."""
+def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[str], list[str], int, int]:
+    """Findings, notes, the count of blocks and the count of `Missing:` entries in one record's text; `where` is its
+    path from the root."""
     findings: list[str] = []
     notes: list[str] = []
-    count = 0
+    count = missing = 0
     for entry in extract(text):
         at = f"{where}:{entry['line']}: {entry['heading']}"
         shape = entry_faults(entry)
         findings += [f"{at} — {fault}" for fault in shape]
+        if not shape and not entry["blocks"]:
+            missing += 1
         if shape or not entry["blocks"]:
             continue
         count += 1
@@ -290,7 +293,7 @@ def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[st
         if block is not None and newer(block):
             notes.append(f"check-decisions: note: {at} — contract {block['contract']} is newer than this "
                          "checker reads; its fields are not held")
-    return findings, notes, count
+    return findings, notes, count, missing
 
 
 def blocks_in(text: str) -> tuple[list[str], int | None]:

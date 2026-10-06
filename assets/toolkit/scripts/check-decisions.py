@@ -55,7 +55,7 @@ Every `specs/<feature>/hand-backs.md` and `specs/<feature>/slices/<id>/hand-back
 shape `docs/result-contract.md` writes down: an entry `## <UTC time> — drive-<name> — <stage>` holding one fenced
 `result-contract` block, or a `- **Missing:** <reason>` line, one finding per fault naming the file, the heading and
 the field. The shape itself lives in `hand_backs.py` beside this script. Where no such record exists the gate says and
-does exactly what it did before them; where one does, its summary gains `, <n> hand-back(s) in <m> record(s)`.
+does exactly what it did before them; where one does, its summary gains `, <n> hand-back(s) in <m> record(s), <k> missing`.
 
 A project with no record anywhere passes and says so: the gate runs in `make verify` from the first commit.
 """
@@ -492,22 +492,24 @@ def hand_backs_module() -> Any:
     return module
 
 
-def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int]:
-    """The findings, the notes and the count of hand-backs in every record, each finding naming its file."""
+def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int, int]:
+    """The findings, the notes, the count of hand-backs and the count of `Missing:` entries in every record, each
+    finding naming its file."""
     findings: list[str] = []
     if not records:  # no record: the module is not even loaded, and the gate is what it was
-        return findings, [], 0
+        return findings, [], 0, 0
     module = hand_backs_module()
     notes: list[str] = []
-    blocks = 0
+    blocks = absent = 0
     for path in records:
         feature = path.parent if path.parent.parent == SPECS else path.parent.parent.parent
         known = module.decision_ids(feature)
-        found, said, count = module.check_record(read(path), path.relative_to(ROOT).as_posix(), known)
+        found, said, count, lacking = module.check_record(read(path), path.relative_to(ROOT).as_posix(), known)
         findings += found
         notes += said
         blocks += count
-    return findings, notes, blocks
+        absent += lacking
+    return findings, notes, blocks, absent
 
 
 def gate() -> int:
@@ -527,7 +529,7 @@ def gate() -> int:
         findings += check_decisions(path)
     for path in logs:
         findings += check_demo_log(path)
-    held, said, blocks = check_hand_backs(records)
+    held, said, blocks, absent = check_hand_backs(records)
     for note in said:
         print(note)
     findings += held
@@ -539,7 +541,7 @@ def gate() -> int:
         return 1
     counted = sum(len(entries(read(p), DECISION_HEADING, legacy=True)) for p in decisions)
     demos = sum(len(entries(read(p), DEMO_HEADING, legacy=True)) for p in logs)
-    kept = f", {blocks} hand-back(s) in {len(records)} record(s)" if records else ""
+    kept = f", {blocks} hand-back(s) in {len(records)} record(s), {absent} missing" if records else ""
     print(f"check-decisions: {counted} decision(s) in {len(decisions)} file(s), {demos} demo(s) in {len(logs)} log(s)"
           f"{kept}, every field present and every path in the tree, every done slice in the adversary log")
     return 0
