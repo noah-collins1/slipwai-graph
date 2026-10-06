@@ -823,14 +823,18 @@ def is_unbracketed(entry: dict[str, Any]) -> bool:
     return "ended" in entry and entry.get("seconds") == 0
 
 
-def stage_wall(entry: dict[str, Any]) -> str:
+def stage_wall(entry: dict[str, Any], last_line: int | None = None) -> str:
+    """One entry's stage time as printed: a cut-off entry ends at `last_line`, its last attributed transcript line."""
     if "ended" not in entry:
         return "open"
-    return "unbracketed" if is_unbracketed(entry) else wall(entry.get("seconds", 0))
+    return "unbracketed" if is_unbracketed(entry) else wall(measures().stage_seconds(
+        [entry], {0: last_line} if last_line is not None else None))
 
 
 def summary_wall(summary: dict[str, Any]) -> str:
-    measured = wall(summary["seconds"])
+    """A record's stage time as the page prints it: the figure `--json` calls `stage_seconds`, a cut-off entry ended
+    at its last transcript line."""
+    measured = wall(summary["stage_seconds"])
     return f"{measured}+" if summary.get("unbracketed") else measured
 
 
@@ -935,6 +939,8 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
         "entries": [{"stage": entry["stage"], "started": entry.get("started"),
                      "stage_seconds": measures().entry_seconds(
                          entry, last_lines[index] if last_lines and index in last_lines else None),
+                     "recorded_seconds": entry["seconds"] if "seconds" in entry else measures().unknown(
+                         "the entry is still open"),
                      "tokens": tokens[index],
                      "read_from": measures().entry_source(shown.get(index, {}).get("source"), tokens[index]),
                      "delegates": shown.get(index, {}).get("delegates", [])} for index, entry in enumerate(stages)],
@@ -1007,7 +1013,7 @@ equate. A stage's tokens are a floor: the turn that closes the entry is still be
 number the script could not read is written as unknown with its reason, never estimated. A stage whose start and end
 were called in the same moment is unbracketed: its stage time and tokens are missing, not zero, and a slice containing one
 shows its measured stage time as a floor with a trailing `+`. Host context grows through a session, so otherwise identical
-slices spanning different numbers or lengths of sessions are not directly comparable on host tokens. Elapsed runs from a slice's ready commit to its accepted one; stage time adds up its brackets, which overlap across slices, so the two are never the same figure under one name."""
+slices spanning different numbers or lengths of sessions are not directly comparable on host tokens. Elapsed runs from a slice's ready commit to its accepted one; stage time adds up its brackets, which overlap across slices, so the two are never the same figure under one name. A stage cut off by the next iteration ends at its last transcript line, not when the cut-off ran; the note under the table gives both moments, and --json keeps the recorded seconds as recorded_seconds."""
 
 
 def by_feature() -> dict[str, list[tuple[Path, dict[str, Any]]]]:
@@ -1097,7 +1103,7 @@ def figures(summaries: list[dict[str, Any]]) -> dict[str, Any]:
 def feature_text(summaries: list[dict[str, Any]]) -> str:
     """The feature line's three figures, each under its own name: stage time is not elapsed."""
     found = figures(summaries)
-    total = summary_wall({"seconds": found["stage_seconds"], "unbracketed": any(s["unbracketed"] for s in summaries)})
+    total = summary_wall({"stage_seconds": found["stage_seconds"], "unbracketed": any(s["unbracketed"] for s in summaries)})
     return (f"stage time {total} in all; elapsed {figure_text(found['elapsed'])}; "
             f"time with any slice in flight {wall(found['in_flight_seconds'])}")
 
@@ -1156,15 +1162,15 @@ def moment_line(summary: dict[str, Any]) -> str:
         ": " + ", ".join(f"{name} {when}" for name, when in shown.items()) if shown else "")
 
 
-def stage_rows(record: dict[str, Any]) -> list[list[str]]:
+def stage_rows(record: dict[str, Any], last_lines: dict[int, int] | None = None) -> list[list[str]]:
     rows = []
-    for entry in record.get("stages", []):
+    for index, entry in enumerate(record.get("stages", [])):
         total = totals(entry)
         usage = entry.get("usage") or {}
         reported = ", ".join(f"{key}={value}" for key, value in (entry.get("signals") or {}).items()) or "—"
         rows.append([
             entry["stage"], entry.get("started", "")[:16].replace("T", " "),
-            stage_wall(entry),
+            stage_wall(entry, (last_lines or {}).get(index)),
             compact(total["input"] + total["cache_read"] + total["cache_creation"])
             if usage.get("source") and not is_unbracketed(entry) else "unknown",
             compact(total["output"]) if usage.get("source") and not is_unbracketed(entry) else "unknown",
@@ -1202,7 +1208,7 @@ def overview(feature: str | None = None) -> list[Path]:
             "## Stages\n\n" + "\n\n".join(
                 f"### {record.get('slice') or 'The feature, above the slice loop'} — stage time {summary_wall(summary)}\n\n"
                 + (f"{moment_line(summary)}\n\n" if summary["slice"] else "")
-                + markdown(stage_rows(record), STAGE_COLUMNS)
+                + markdown(stage_rows(record, summary["_last_lines"]), STAGE_COLUMNS)
                 for record, summary in zip(records_, summaries, strict=True)
             ),
         ]

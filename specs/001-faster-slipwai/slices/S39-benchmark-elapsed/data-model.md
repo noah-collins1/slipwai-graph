@@ -116,10 +116,10 @@ denominator of 0: unknown, naming it.
 ```json
 {"elapsed": 133433, "stage_seconds": 36211, "worked_seconds": 30120,
  "waiting": {"dependency": 9832, "worker": 41800, "review": 20322, "integration": 10995, "unattributed": 20364},
- "rework": {"seconds": 5429, "tokens": 18200345}, "cost": {"tokens": 81233412, "shared": 2210345},
+ "rework": {"seconds": 5429, "tokens": 18200345}, "cost": {"tokens": 81233412, "shared": 2210345, "sessions": {"<session>": 81233412}},
  "moments": {"ready": "2026-10-04T18:13:05Z", "accepted": "2026-10-06T07:16:58Z", "...": "..."},
  "read_from": {"ready": "b31c864 (slices/README.md: S04-parallel-gate)", "accepted": "c88fe2f (slices/README.md)", "...": "..."},
- "entries": [{"stage": "implement", "started": "…", "stage_seconds": 5755, "tokens": 0, "delegates": ["S08 US2 implement T002-T009"]}],
+ "entries": [{"stage": "implement", "started": "…", "stage_seconds": 5755, "recorded_seconds": 5755, "tokens": 0, "delegates": ["S08 US2 implement T002-T009"]}],
  "reentered": []}
 ```
 
