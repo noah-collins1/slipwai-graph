@@ -592,11 +592,11 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         say(f"scoped to {len(named)} changed file(s) since {words}: {', '.join(shown(name) for name in named)}")
     elif causes or unread:
         say(SWEEPS.format(reason=", ".join([*([said(sorted(handled))] if handled else []), *map(str, unread.values())])))
-    elif tests:
+    elif outside:  # a production file a tool leaves out changed, whatever else did: it is named `not mutated` below
+        say("no mutant to run — every changed production file is outside the tools' targets")
+    elif tests and not shared and not deleted:  # tests the only source files that changed (T022)
         say(f"no mutant to run — only tests changed: {', '.join(shown(name) for name in tests)}; "
             "`make mutation-full` is the run that measures them")
-    elif outside:
-        say("no mutant to run — every changed production file is outside the tools' targets")
     else:
         say("no mutant to run — no production file changed")
     for path in shared:

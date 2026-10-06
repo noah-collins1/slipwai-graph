@@ -82,6 +82,9 @@ Every line starts `mutation: `. The first line is exactly one of:
   script was handed, in order and deduplicated; checked after the classification, on the trunk as on a branch
 - `mutation: no mutant to run — <why>` — `only tests changed: <files>; \`make mutation-full\` is the run that
   measures them` · `no production file changed` · `every changed production file is outside the tools' targets`
+  — `only tests changed` opens a run only when tests are the only source files that changed; a production file a tool
+  leaves out opens `every changed production file is outside the tools' targets` whatever changed beside it, and a
+  `packages/` file or a deleted production file beside tests opens `no production file changed` (T022, host-settled)
 - `mutation: this layout has no mutation scope — the recorded command runs` (adopted layout only)
 
 Then each service once, in service order:
