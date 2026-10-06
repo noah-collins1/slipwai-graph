@@ -953,6 +953,7 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
         "_last_lines": last_lines or {},
         "_searched": {index for index, item in shown.items() if item.get("searched")},
         "_figures": {"slice": record.get("slice"), "ready": moved["ready"], "accepted": moved["accepted"],
+                     "elapsed": moved["elapsed"],
                      "stage_seconds": measures().stage_seconds(stages, last_lines),
                      "worked": measures().worked(stages, last_lines)},
     }

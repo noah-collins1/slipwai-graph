@@ -127,6 +127,33 @@ class FeatureFiguresTest(unittest.TestCase):
         self.assertTrue(elapsed["unknown"].startswith("S2: "), elapsed)
         self.assertIn("elapsed unknown (S2: ", done.stdout)
 
+    def test_e4_a_slice_accepted_before_it_was_ready_gives_the_feature_no_figure(self) -> None:
+        """A2: the story-split row is newer than the register row: the feature's elapsed names the slice."""
+        repo = self.repo
+        write(repo, SPLIT, graph([("S1", [])]))
+        commit(repo, stamp(5), "split", SPLIT)
+        write(repo, REGISTER, register(["S1"]))
+        commit(repo, stamp(3), "S1 done", REGISTER)
+        record(repo, "S1", entry("implement", stamp(6), stamp(6, "10:00:00")))
+        feature_record(repo, entry("split", stamp(6), stamp(6, "10:00:00")))
+        said = summaries(repo)["(feature)"]["feature_figures"]["elapsed"]["unknown"]
+        self.assertIn("S1", said)
+        self.assertIn("precedes ready", said)
+
+    def test_e5_a_bracket_begun_before_the_slice_was_ready_reads_unknown(self) -> None:
+        """A6: both register rows land in one commit, and S2-b has a bracket the day before: its elapsed is not 0."""
+        repo = self.repo
+        write(repo, SPLIT, graph([("S1-a", []), ("S2-b", ["S1-a"])]))
+        commit(repo, stamp(1), "split", SPLIT)
+        record(repo, "S2-b", entry("implement", stamp(4, "09:00:00"), stamp(4, "14:00:00")))
+        write(repo, REGISTER, register(["S1-a", "S2-b"]))
+        commit(repo, stamp(5), "both done", REGISTER)
+        feature_record(repo, entry("split", stamp(1), stamp(1, "10:00:00")))
+        found = summaries(repo)
+        self.assertIn("begun", found["S2-b"]["elapsed"]["unknown"])
+        self.assertTrue(all("unknown" in cause for cause in found["S2-b"]["waiting"].values()))
+        self.assertIn("S2-b", found["(feature)"]["feature_figures"]["elapsed"]["unknown"])
+
 
 UNKNOWN = "unknown — no decision entry carries a Reversibility: line"
 

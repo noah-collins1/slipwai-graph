@@ -250,6 +250,13 @@ class Reader:
         return block_dependencies(block) if block else []
 
 
+def started(entry: dict[str, Any]) -> int | None:
+    try:
+        return epoch(entry["started"])
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
 def moments(reader: Reader, ident: str | None, entries: list[dict[str, Any]]) -> dict[str, Any]:
     """`ready`, `accepted`, `elapsed` (each seconds or unknown), `demo_accepted` and `merged` where there are any,
     and `read_from` — where each was read. Elapsed is accepted minus ready."""
@@ -310,7 +317,12 @@ def moments(reader: Reader, ident: str | None, entries: list[dict[str, Any]]) ->
     elif out["accepted"] < ready:
         out["elapsed"] = unknown(f"accepted ({utc(out['accepted'])}) precedes ready ({utc(ready)})")
     else:
-        out["elapsed"] = out["accepted"] - ready
+        begun = min((moment for moment in (started(item) for item in entries) if moment is not None), default=None)
+        if begun is not None and begun < ready:  # work began before the slice was ready: one of the two is wrong
+            out["elapsed"] = unknown(f"the record contradicts ready: a bracket was begun {utc(begun)}, before ready "
+                                     f"({utc(ready)})")
+        else:
+            out["elapsed"] = out["accepted"] - ready
     return out
 
 
@@ -680,11 +692,15 @@ def feature_figures(parts: list[dict[str, Any]]) -> dict[str, Any]:
     slices = [part for part in parts if part["slice"]]
     readies = [part["ready"] for part in slices if isinstance(part["ready"], int)]
     unread = next((part for part in slices if is_unknown(part["ready"])), None)
+    contradicted = next((part for part in slices if is_unknown(part.get("elapsed"))
+                         and isinstance(part["ready"], int) and isinstance(part["accepted"], int)), None)
     elapsed: Any
     if not slices:
         elapsed = unknown("no slice record")
     elif unread is not None:  # a figure is printed only when every slice's ready and accepted moments were read
         elapsed = unknown(f"{unread['slice']}: {unread['ready']['unknown']}")
+    elif contradicted is not None:  # its ready and accepted moments were read and its own elapsed was refused
+        elapsed = unknown(f"{contradicted['slice']}: {contradicted['elapsed']['unknown']}")
     elif any(not isinstance(part["accepted"], int) for part in slices):
         elapsed = unknown(f"open since {utc(min(readies))}")
     else:
