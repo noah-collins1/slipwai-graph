@@ -44,16 +44,16 @@ class TestAGoChangeNarrowsTheMatrix(NarrowCase):
 
     def test_the_run_fails_when_the_narrowed_process_fails(self) -> None:
         self.declared_matrix()
-        self.slice_changing(GO)
         self.write("tests/test_matrix.py", "TEST_SELECTION = " + EVERY_BACKEND + "\n" + FAILING)
+        self.slice_changing(GO)
         done = self.selector()
         self.assertNotEqual(done.returncode, 0)
         self.assertEqual(self.seen(), {"test_other": ""}, "the other process ran although the narrowed one failed")
 
     def test_the_run_fails_when_the_other_process_fails_and_the_narrowed_one_still_ran(self) -> None:
         self.declared_matrix()
-        self.slice_changing(GO)
         self.write("tests/test_other.py", FAILING)
+        self.slice_changing(GO)
         done = self.selector()
         self.assertNotEqual(done.returncode, 0)
         self.assertEqual(self.seen(), {"test_matrix": "go"})
