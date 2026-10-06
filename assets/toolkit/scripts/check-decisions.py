@@ -546,8 +546,10 @@ def gate() -> int:
 
 
 HAND_USAGE = (
-    "usage: check-decisions.py --hand-back <specs/feature[/slices/id]> <drive-type> <stage>   (the hand-back on stdin)\n"
-    "       check-decisions.py --hand-back-missing <specs/feature[/slices/id]> <drive-type> <stage> <reason>\n"
+    "usage: check-decisions.py --hand-back <specs/feature[/slices/id]> <drive-type> <stage> [--started <instant>]"
+    "   (the hand-back on stdin)\n"
+    "       check-decisions.py --hand-back-missing <specs/feature[/slices/id]> <drive-type> <stage>"
+    " [--started <instant>] <reason>\n"
     "       check-decisions.py --hand-backs <specs/feature/slices/id>")
 FOLDER = re.compile(r"specs/([A-Za-z0-9][A-Za-z0-9._-]*)(?:/slices/([A-Za-z0-9][A-Za-z0-9._-]*))?")
 
@@ -581,6 +583,12 @@ def hand_back_verb(arguments: list[str]) -> int:
     and exists, the type is one of the ten and the stage is a lower-case word."""
     module = hand_backs_module()
     missing = arguments[0] == "--hand-back-missing"
+    started: str | None = None
+    if len(arguments) > 4 and arguments[4] == "--started":
+        if len(arguments) < 6 or not re.fullmatch(module.INSTANT, arguments[5]):
+            return refuse("--started takes an instant `YYYY-MM-DDTHH:MM:SSZ`")
+        started = arguments[5]
+        arguments = arguments[:4] + arguments[6:]
     wanted = 5 if missing else 4
     if len(arguments) < wanted or (not missing and len(arguments) != wanted):
         return refuse(f"{len(arguments) - 1} argument(s) given; {arguments[0]} takes {wanted - 1}")
@@ -595,13 +603,21 @@ def hand_back_verb(arguments: list[str]) -> int:
         return refuse("the reason is empty; --hand-back-missing says why")
     record = ROOT / where / HAND_BACKS
     title = folder.group(2) or folder.group(1)
+    started, refusal, note = module.resolve_started(ROOT / where / "benchmark.json", arguments[3], started)
+    if refusal:
+        print(f"check-decisions: {refusal}", file=sys.stderr)
+        return 1
+    if note:
+        print(f"check-decisions: note: {note}", file=sys.stderr)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if missing:
-        wrote = module.append_missing(record, title, arguments[2], arguments[3], " ".join(arguments[4:]).strip(), now)
+        wrote = module.append_missing(record, title, arguments[2], arguments[3], " ".join(arguments[4:]).strip(), now,
+                                     started)
         faults: list[str] = []
     else:
         faults, wrote = module.append(record, title, arguments[2], arguments[3], sys.stdin.read(),
-                                      module.decision_ids(ROOT / "specs" / folder.group(1)), now)
+                                      module.decision_ids(ROOT / "specs" / folder.group(1)), now,
+                                      started)
     for fault in faults:
         print(f"check-decisions: {fault}", file=sys.stderr)
     if not faults and not wrote:

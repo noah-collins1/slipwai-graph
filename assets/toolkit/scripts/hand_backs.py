@@ -2,8 +2,9 @@
 
 `docs/result-contract.md` is the shape in words; this is the same shape as code, so the gate and the dispatching
 session hold a block to one function. Loaded by path, with bytecode off, by `check-decisions.py`; nothing here
-prints or exits. A record is `hand-backs.md`: a preamble, then entries `## <UTC time> — drive-<name> — <stage>`,
-each holding one fenced `result-contract` block.
+prints or exits. A record is `hand-backs.md`: a preamble, then entries `## <UTC time> — drive-<name> — <stage>`
+with an optional ` — <started>` (the `started` of the benchmark entry the entry answers, D160), each holding one
+fenced `result-contract` block.
 """
 from __future__ import annotations
 
@@ -15,7 +16,8 @@ from typing import Any
 
 SCHEMA = 1
 FENCE = "result-contract"
-HEADING = re.compile(r"^## (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ) — (drive-[a-z]+) — ([a-z][a-z0-9-]*)$")
+INSTANT = r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"
+HEADING = re.compile(rf"^## ({INSTANT}) — (drive-[a-z]+) — ([a-z][a-z0-9-]*)(?: — ({INSTANT}))?$")
 
 # The thirteen fields, in order, each with the kind of value it holds (the page's table is this one).
 FIELDS: tuple[tuple[str, str], ...] = (
@@ -143,7 +145,7 @@ def check_block(block: object, heading_type: str, known: set[str] | None) -> lis
 
 
 MISSING = re.compile(r"^- \*\*Missing:\*\* (\S.*)$")
-SHAPE = "a heading `## <UTC time> — <drive-type> — <stage>`"
+SHAPE = "a heading `## <UTC time> — <drive-type> — <stage>` or `## <UTC time> — <drive-type> — <stage> — <started>`"
 
 
 def extract(text: str) -> list[dict[str, Any]]:
@@ -255,13 +257,16 @@ def blocks_in(text: str) -> tuple[list[str], int | None]:
     return found, (start[1] + 1 if start is not None and start[0] == FENCE else None)
 
 
-def repeats(record: Path, htype: str, stage: str, body: str | None, reason: str | None = None) -> bool:
-    """Whether the record's last entry for this type and stage already holds this block (`body`, byte for byte) or
-    this reason: a retry of a write that went through. A different one, or the same after another, is not."""
+def repeats(record: Path, htype: str, stage: str, started: str | None, body: str | None,
+            reason: str | None = None) -> bool:
+    """Whether the record's last entry for this type, stage and `started` already holds this block (`body`, byte for
+    byte) or this reason: a retry of a write that went through. A different one, or the same after another, or the
+    same for another start of the stage, is not."""
     if not record.is_file():
         return False
     same = [entry for entry in extract(record.read_text(encoding="utf-8"))
-            if entry["match"] is not None and entry["match"].group(2) == htype and entry["match"].group(3) == stage]
+            if entry["match"] is not None and entry["match"].group(2) == htype and entry["match"].group(3) == stage
+            and entry["match"].group(4) == started]
     if not same:
         return False
     last = same[-1]
@@ -270,12 +275,39 @@ def repeats(record: Path, htype: str, stage: str, body: str | None, reason: str 
     return not last["blocks"] and last["missing"][:1] == [reason]
 
 
+def heading(now: str, htype: str, stage: str, started: str | None) -> str:
+    return f"## {now} — {htype} — {stage}" + (f" — {started}" if started else "")
+
+
+def stages_of(bench: Path) -> list[dict[str, Any]]:
+    """The entries of a slice's `benchmark.json`; none where there is no file."""
+    return json.loads(bench.read_text(encoding="utf-8")).get("stages", []) if bench.is_file() else []
+
+
+def resolve_started(bench: Path, stage: str, given: str | None) -> tuple[str | None, str | None, str | None]:
+    """The `started` an entry for `stage` records, a refusal (one line) and a note (D160). `given` is the instant
+    passed with `--started`: it must be the start of an entry of that stage. Without it the one open entry of the
+    stage is answered; entries but none open are refused, never guessed; no entry at all records none, with a note."""
+    named = [entry for entry in stages_of(bench) if entry.get("stage") == stage]
+    if given is not None:
+        if any(entry.get("started") == given for entry in named):
+            return given, None, None
+        return None, f"{bench.name} has no {stage} entry started at {given}; --started names the start of one", None
+    opened = [entry for entry in named if "ended" not in entry and entry.get("started")]
+    if opened:
+        return str(opened[-1]["started"]), None, None
+    if named:
+        return None, (f"every {stage} entry in {bench.name} has ended; pass --started with the instant the "
+                      "--hand-backs line names"), None
+    return None, None, "this entry answers no benchmark entry; --hand-backs will not count it"
+
+
 def append(record: Path, title: str, htype: str, stage: str, text: str, known: set[str] | None,
-           now: str) -> tuple[list[str], bool]:
+           now: str, started: str | None = None) -> tuple[list[str], bool]:
     """Append one entry to `record` when the hand-back `text` holds exactly one block and the block passes the
     checks the gate makes; otherwise append nothing and return the faults. `title` heads a file made here. The
     second item is whether anything was written: a block the record's last entry for this type and stage already
-    holds is a retry, and writes nothing."""
+    holds (for this `started`) is a retry, and writes nothing."""
     fences, unclosed = blocks_in(text)
     if unclosed is not None:
         return [f"the {FENCE} fence opened on line {unclosed} of the hand-back is not closed"], False
@@ -293,18 +325,19 @@ def append(record: Path, title: str, htype: str, stage: str, text: str, known: s
     faults = [] if newer(block) else check_block(block, htype, known)
     if faults:
         return faults, False
-    if repeats(record, htype, stage, body):
+    if repeats(record, htype, stage, started, body):
         return [], False
-    write(record, title, f"## {now} — {htype} — {stage}\n\n{fences[0]}\n")
+    write(record, title, f"{heading(now, htype, stage, started)}\n\n{fences[0]}\n")
     return [], True
 
 
-def append_missing(record: Path, title: str, htype: str, stage: str, reason: str, now: str) -> bool:
+def append_missing(record: Path, title: str, htype: str, stage: str, reason: str, now: str,
+                   started: str | None = None) -> bool:
     """Append an entry saying no block was handed back, and why; False when the record's last entry for this type
-    and stage already says exactly this (a retry)."""
-    if repeats(record, htype, stage, None, reason):
+    stage and `started` already says exactly this (a retry)."""
+    if repeats(record, htype, stage, started, None, reason):
         return False
-    write(record, title, f"## {now} — {htype} — {stage}\n\n- **Missing:** {reason}\n\n")
+    write(record, title, f"{heading(now, htype, stage, started)}\n\n- **Missing:** {reason}\n\n")
     return True
 
 
@@ -344,7 +377,7 @@ def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None) 
     many could not be attributed (no usage read, or delegated with no agent types recorded: counted as neither, said
     once). A stage owes a block when a typed delegate that belongs to it ran (`owed`); one that only started untyped
     helpers, or `drive-slice`, owes this record nothing and is not listed. A block belongs to a stage when its heading
-    names the stage and one of the types that owe it, and its time lies in the stage's `[started, ended]`."""
+    names the stage and one of the types that owe it, and the `started` of its heading is the stage's own (D160)."""
     entries = [entry for entry in extract(record) if entry["match"] is not None and not entry_faults(entry)]
     lines: list[str] = []
     held = delegated = unattributed = 0
@@ -363,7 +396,7 @@ def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None) 
         delegated += 1
         mine = [entry for entry in entries
                 if entry["match"].group(3) == name and entry["match"].group(2) in types
-                and started <= entry["match"].group(1) <= str(stage["ended"])]
+                and entry["match"].group(4) == started]
         passing = [entry for entry in mine if entry["blocks"] and not block_faults(entry, known)[0]]
         if passing:
             held += 1

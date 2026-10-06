@@ -27,6 +27,12 @@ field, so the shape is fixed before anything is planned.
 - Each entry opens `## <UTC ISO-8601 time> — <delegate type> — <stage>`, followed by the block, or by one line
   `- **Missing:** <reason>` where no valid block came back (D136: one continuation asks for it; the stage is never re-run
   and the host never writes a block for a delegate). Entries are only appended.
+- An entry's heading may carry a fourth part, ` — <started>`: the `started` instant of the `benchmark.json` entry the
+  entry answers (D160). The verbs take it as `--started`, defaulting to the stage's one open entry and refusing rather
+  than guessing; coverage counts an entry for a stage only when its `started` is the stage's own. A heading without it
+  answers no benchmark entry.
+- A retry is the same block or reason for the same type, stage and `started` as the last such entry; the same content
+  for another start of a stage is a different entry and is appended (D160).
 - The body is one JSON object in a fence whose info string is `result-contract`: `contract` (integer `1`), `delegate`,
   `scope`, `status`, `contracts_changed`, `invariants_checked`, `tests`, `decisions` (`D<n>` ids the work relied on),
   `assumptions`, `unresolved`, `change_summary`, `files_changed` (repository-relative paths, D135) and
@@ -48,3 +54,6 @@ field, so the shape is fixed before anything is planned.
 - The dispatching session validates every block before appending it, which costs a round trip when a delegate returns
   a malformed one.
 - `hand-backs.md` grows with every dispatch.
+- A continuation for a missed block is written at any later time and still answers the stage it names, because the
+  record carries the stage's start and no time window has to contain it; an entry that names no start covers nothing
+  (D160).

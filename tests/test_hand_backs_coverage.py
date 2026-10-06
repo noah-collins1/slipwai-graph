@@ -19,7 +19,7 @@ from typing import Any
 from hand_backs_fixture import SCRIPTS, entry, run, scratch, valid
 
 SLICE = "specs/f/slices/S1"
-IMPLEMENT = "## 2026-10-05T17:01:02Z — drive-implement — implement"
+IMPLEMENT = "## 2026-10-05T17:01:02Z — drive-implement — implement — 2026-10-05T17:00:00Z"
 BLOCK = {"delegate": "drive-implement", "status": "green"}
 
 
@@ -85,7 +85,8 @@ class CoverageVerbTest(unittest.TestCase):
             "hand-backs: with a result contract: 1 of 2"], result.stdout.splitlines())
 
     def test_e2_a_missing_entry_counts_in_the_total_and_not_the_count(self) -> None:
-        record = "## 2026-10-05T18:05:00Z — drive-converge — converge\n\n- **Missing:** refused: out of budget\n\n"
+        record = ("## 2026-10-05T18:05:00Z — drive-converge — converge — 2026-10-05T18:00:00Z\n\n"
+                  "- **Missing:** refused: out of budget\n\n")
         result = self.verb(TWO, implement_block() + record)
         lines = result.stdout.splitlines()
         self.assertIn("hand-backs: converge 2026-10-05T18:00:00Z drive-converge: missing — refused: out of budget",
@@ -108,14 +109,29 @@ class CoverageVerbTest(unittest.TestCase):
                   {"stage": "plan", "started": "2026-10-05T16:20:00Z"}]
         self.assertEqual(["hand-backs: with a result contract: 0 of 0"], self.verb(stages).stdout.splitlines())
 
-    def test_e5_a_block_outside_every_window_or_for_another_stage_does_not_count(self) -> None:
-        late = implement_block().replace("17:01:02", "17:30:00")
-        other = entry(None, "## 2026-10-05T17:02:00Z — drive-gaps — gaps")
-        result = self.verb(TWO[:1], late + other)
+    def test_e5_a_block_naming_another_start_or_none_or_another_stage_does_not_count(self) -> None:
+        stale = implement_block().replace(" — 2026-10-05T17:00:00Z", " — 2026-10-04T17:00:00Z")
+        bare = implement_block().replace(" — 2026-10-05T17:00:00Z", "")
+        other = entry(None, "## 2026-10-05T17:02:00Z — drive-gaps — gaps — 2026-10-05T17:00:00Z")
+        result = self.verb(TWO[:1], stale + bare + other)
         self.assertEqual("hand-backs: implement 2026-10-05T17:00:00Z drive-implement: nothing recorded — "
                          "a finding for converge",
                          result.stdout.splitlines()[0])
         self.assertEqual("hand-backs: with a result contract: 0 of 1", result.stdout.splitlines()[-1])
+
+    def test_e5_a_continuation_written_after_the_stage_ended_answers_the_stage_it_names(self) -> None:
+        late = implement_block().replace("17:01:02", "23:30:00")
+        result = self.verb(TWO[:1], late)
+        self.assertEqual("hand-backs: with a result contract: 1 of 1", result.stdout.splitlines()[-1])
+
+    def test_e5_a_block_at_the_instant_two_stages_meet_covers_only_the_stage_it_names(self) -> None:
+        stages = [stage("implement", "2026-10-05T17:00:00Z", "2026-10-05T17:10:00Z"),
+                  stage("implement", "2026-10-05T17:10:00Z", "2026-10-05T17:20:00Z")]
+        meet = implement_block().replace("17:01:02", "17:10:00")  # names the first pass's start
+        lines = self.verb(stages, meet).stdout.splitlines()
+        self.assertEqual("hand-backs: implement 2026-10-05T17:00:00Z drive-implement: block", lines[0])
+        self.assertIn("implement 2026-10-05T17:10:00Z drive-implement: nothing recorded", lines[1])
+        self.assertEqual("hand-backs: with a result contract: 1 of 2", lines[-1])
 
     def test_e5_a_malformed_block_inside_the_window_does_not_count(self) -> None:
         bad = implement_block().replace('"status": "green"', '"status": "gaps"')

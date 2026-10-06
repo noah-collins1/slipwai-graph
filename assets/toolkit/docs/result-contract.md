@@ -66,9 +66,13 @@ is a heading and a body:
 
 ```text
 ## <UTC time> — drive-<name> — <stage>
+## <UTC time> — drive-<name> — <stage> — <started>
 ```
 
-The time is `YYYY-MM-DDTHH:MM:SSZ` and is written by the verb, never by the delegate. The body is exactly one of one
+The time is `YYYY-MM-DDTHH:MM:SSZ` and is written by the verb, never by the delegate. The optional fourth part is the
+`started` of the `benchmark.json` entry the entry answers, in the same form: it is what ties a block to the stage it
+was written for, a continuation written long after the stage ended included. A heading without it answers no benchmark
+entry (`ready-set`, or any stage with none), and `--hand-backs` does not count it. The body is exactly one of one
 `result-contract` fence, or one line `- **Missing:** <reason>` when the delegate handed back no block. The reasons the
 method writes are `refused: <the delegate's words>`, `malformed: <field>`, `no continuation` and
 `stopped: <reason>`; any non-empty reason passes the gate. Text before the first `## ` heading is the file's own.
@@ -85,11 +89,20 @@ All three are `scripts/check-decisions.py`; `<dir>` is `specs/<feature>` or `spe
 | Call | Reads | Writes | Exit |
 |---|---|---|---|
 | `scripts/check-decisions.py --hand-back <dir> <type> <stage>` | the hand-back on stdin | the heading and the fence, verbatim, only when the block passes | 0 appended, 1 faults on stderr and nothing written, 2 usage |
-| `scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>` | nothing | the heading and `- **Missing:** <reason>` | 0, 2 usage |
+| `scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>` | nothing | the heading and `- **Missing:** <reason>` | 0, 1 refused, 2 usage |
 | `scripts/check-decisions.py --hand-backs <slice-dir>` | `benchmark.json` and `hand-backs.md` | nothing | 0, 2 usage |
 
+Both write verbs take `--started <instant>` after `<stage>` (before the reason): the `started` of an entry of that
+stage in `<dir>/benchmark.json`; one that is not is refused (exit 1,
+one line, nothing written). Left out, the verb answers the stage's one open entry, which is the on-time case: append
+before ending the entry. A stage whose entries have all ended is refused until you pass `--started` with the instant
+the `--hand-backs` line, or the converge, demo-stop or adversary-stop line, names; the verb never guesses. With no
+`benchmark.json`, or no entry of that stage, the heading has three parts and the verb says it answers no benchmark
+entry. A retry is the same block or reason for the same type, stage and start as the last such entry; for another
+start of the stage it is appended.
+
 `--hand-backs` lists, for each ended benchmark entry that owes a block, whether the record holds a passing block for
-that stage, a `Missing:` line, or nothing; converge reads it, and `make benchmark` prints the count per slice. A stage
+that stage (an entry whose `started` is the stage's own), a `Missing:` line, or nothing; converge reads it, and `make benchmark` prints the count per slice. A stage
 owes a block only when a typed `drive-*` delegate that belongs to the stage ran (`implement` to `drive-implement`,
 `converge` to `drive-converge`, and so on, the table in `scripts/agents/benchmark.py`): the untyped helpers it started
 (Explore, general-purpose) and a `drive-slice`'s own context owe none, because the slice delegate's block goes to the

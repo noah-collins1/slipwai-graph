@@ -205,5 +205,91 @@ class RetryTest(Scratch):
         self.assertEqual(4, self.record.read_text(encoding="utf-8").count("\n## "))
 
 
+def bench(*stages: tuple[str, str, str | None]) -> str:
+    """A benchmark.json of (stage, started, ended) entries; an `ended` of None leaves the entry open."""
+    return json.dumps({"feature": "f", "slice": "S1", "stages": [
+        {"stage": name, "started": started, **({"ended": ended} if ended else {})} for name, started, ended in stages]})
+
+
+FIRST, SECOND = "2026-10-05T17:00:00Z", "2026-10-05T18:00:00Z"
+
+
+class StartedTest(Scratch):
+    """D160: an entry's heading names the benchmark entry it answers, by `started`."""
+
+    def write_bench(self, *stages: tuple[str, str, str | None]) -> None:
+        (self.repo / SLICE / "benchmark.json").write_text(bench(*stages), encoding="utf-8")
+
+    def missing(self, *args: str, stage: str = "gaps") -> subprocess.CompletedProcess[str]:
+        return run(self.repo, "--hand-back-missing", SLICE, "drive-gaps", stage, *args)
+
+    def headings(self) -> list[str]:
+        return [line for line in self.record.read_text(encoding="utf-8").splitlines() if line.startswith("## ")]
+
+    def test_a_given_start_that_is_a_stages_start_is_the_headings_fourth_part(self) -> None:
+        self.write_bench(("gaps", FIRST, FIRST[:-3] + "59Z"), ("gaps", SECOND, None))
+        result = run(self.repo, "--hand-back", SLICE, "drive-gaps", "gaps", "--started", FIRST, stdin=PRETTY)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertRegex(self.headings()[0], r"^## \S+ — drive-gaps — gaps — " + FIRST + "$")
+        self.assertEqual(0, run(self.repo).returncode)
+
+    def test_a_start_no_entry_of_the_stage_has_is_refused_in_one_line_and_writes_nothing(self) -> None:
+        self.write_bench(("gaps", FIRST, None))
+        for args in (("--hand-back", SLICE, "drive-gaps", "gaps", "--started", SECOND),
+                     ("--hand-back-missing", SLICE, "drive-gaps", "gaps", "--started", SECOND, "why")):
+            result = run(self.repo, *args, stdin=PRETTY)
+            self.assertEqual(1, result.returncode, args)
+            self.assertEqual(1, len(result.stderr.splitlines()), result.stderr)
+            self.assertIn("gaps", result.stderr)
+            self.assertIn(SECOND, result.stderr)
+        self.assertFalse(self.record.exists())
+
+    def test_without_a_start_the_one_open_entry_of_the_stage_is_answered(self) -> None:
+        self.write_bench(("gaps", FIRST, FIRST[:-3] + "59Z"), ("gaps", SECOND, None),
+                         ("tasks", "2026-10-05T19:00:00Z", None))
+        self.assertEqual(0, self.append(PRETTY).returncode)
+        self.assertEqual(0, self.missing("no continuation").returncode)
+        self.assertTrue(all(line.endswith(" — " + SECOND) for line in self.headings()), self.headings())
+
+    def test_without_a_start_and_no_open_entry_is_refused_naming_the_flag_and_writes_nothing(self) -> None:
+        self.write_bench(("gaps", FIRST, FIRST[:-3] + "59Z"))
+        for result in (self.append(PRETTY), self.missing("no continuation")):
+            self.assertEqual(1, result.returncode)
+            self.assertIn("--started", result.stderr)
+        self.assertFalse(self.record.exists())
+
+    def test_without_a_start_and_no_entry_of_the_stage_the_heading_has_three_parts_and_a_note(self) -> None:
+        for bench_text in (None, bench(("tasks", FIRST, None))):
+            if bench_text:
+                (self.repo / SLICE / "benchmark.json").write_text(bench_text, encoding="utf-8")
+            self.record.unlink(missing_ok=True)
+            result = self.append(PRETTY)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("answers no benchmark entry; --hand-backs will not count it", result.stderr)
+            self.assertRegex(self.headings()[0], r"gaps$")
+            self.assertEqual(0, run(self.repo).returncode)
+
+    def test_a_bad_instant_or_a_flag_with_no_value_is_usage_exit_two(self) -> None:
+        for args in (("--hand-back", SLICE, "drive-gaps", "gaps", "--started"),
+                     ("--hand-back", SLICE, "drive-gaps", "gaps", "--started", "yesterday")):
+            self.assertEqual(2, run(self.repo, *args, stdin=PRETTY).returncode, args)
+        self.assertFalse(self.record.exists())
+
+    def test_the_same_reason_for_a_different_start_of_the_stage_is_appended_and_for_the_same_start_is_not(self) -> None:
+        self.write_bench(("gaps", FIRST, FIRST[:-3] + "59Z"), ("gaps", SECOND, SECOND[:-3] + "59Z"))
+        for started, wrote in ((FIRST, True), (SECOND, True), (SECOND, False)):
+            result = self.missing("--started", started, "refused: out of budget")
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(not wrote, "already" in result.stderr, result.stderr)
+        self.assertEqual(2, len(self.headings()))
+
+    def test_the_same_block_for_a_different_start_is_appended_and_for_the_same_start_is_not(self) -> None:
+        self.write_bench(("gaps", FIRST, FIRST[:-3] + "59Z"), ("gaps", SECOND, SECOND[:-3] + "59Z"))
+        for started in (FIRST, SECOND, SECOND):
+            args = ("--hand-back", SLICE, "drive-gaps", "gaps", "--started", started)
+            self.assertEqual(0, run(self.repo, *args, stdin=PRETTY).returncode)
+        self.assertEqual(2, len(self.headings()))
+
+
 if __name__ == "__main__":
     unittest.main()
