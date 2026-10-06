@@ -1,0 +1,5 @@
+mutation: no mutant to run — every changed production file is outside the tools' targets
+mutation: skip apps/service — no changed production file within the tool's targets
+mutation: not mutated apps/service/src/main/java/com/example/demospring/adapters/driven/eventstorememory/InMemoryDatabase.java — outside PIT's configured targets
+mutation: 0 scoped, 0 swept, 1 skipped, 0 refused; passed
+exit 0 wall .116266799

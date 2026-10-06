@@ -1,0 +1,13 @@
+81388dc Scaffold demo-one
+f85657c health: comment
+== make mutation SINCE=HEAD~1
+mutation: scoped to 1 changed file(s) since `HEAD~1`: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: scoped to 1 given file(s): health/health.go
+Starting...
+Gathering coverage... done in 1.78115721s
+
+No results to report.
+mutation: no mutant to run — Gremlins found nothing to mutate in the scoped file(s), such as a change to comments only
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed
+exit 0
