@@ -37,3 +37,8 @@ def off_line(reason: str) -> str:
 
 def skipped_line(module: str, reason: str) -> str:
     return f"skipped {module}: {reason}"
+
+
+def narrowed_line(module: str, backends: tuple[str, ...], left_out: tuple[str, ...]) -> str:
+    only = ("backend " if len(backends) == 1 else "backends ") + ", ".join(backends)
+    return f"narrowed {module}: {only} only ({', '.join(left_out)} unaffected)"

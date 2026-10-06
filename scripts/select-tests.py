@@ -19,25 +19,37 @@ from select_tests import base, choose, declarations, full_rows, report, rules  #
 from select_tests.report import Full, full_line, printable  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-FULL_COMMAND = ("python3", "-m", "unittest", "discover", "-s", "tests", "-v")
-NAMED_COMMAND = ("python3", "-m", "unittest", "-v")
+UNITTEST = ("python3", "-m", "unittest")
+FULL_ARGUMENTS = ("discover", "-s", "tests", "-v")
+BACKENDS = "FACTORY_BACKENDS"
+
+
+def run_unittest(arguments: tuple[str, ...], pythonpath: str, backends: str | None = None, *,
+                 keep: bool = False) -> int:
+    """`PYTHONPATH=<pythonpath> python3 -m unittest <arguments>`, with `FACTORY_BACKENDS` set to `backends` or unset
+    (kept as it is where `keep`: the person gave it). No timeout: the suite takes as long as it takes, and the person
+    running it can stop it."""
+    env = dict(os.environ, PYTHONPATH=pythonpath)
+    if backends is not None:
+        env[BACKENDS] = backends
+    elif not keep:
+        env.pop(BACKENDS, None)
+    return subprocess.Popen((*UNITTEST, *arguments), cwd=ROOT, env=env).wait()
 
 
 def run_full() -> int:
-    """Today's full command. No timeout: the suite takes as long as it takes, and the person running it can stop it."""
-    env = dict(os.environ, PYTHONPATH="src")
-    return subprocess.Popen(FULL_COMMAND, cwd=ROOT, env=env).wait()
+    """Today's full command: `PYTHONPATH=src python3 -m unittest discover -s tests -v`."""
+    return run_unittest(FULL_ARGUMENTS, "src", keep=True)
 
 
-def run_modules(modules: list[str]) -> int:
+def run_modules(modules: list[str], backends: str | None = None) -> int:
     """`PYTHONPATH=src:tests python3 -m unittest -v <modules>`, which CI already trusts."""
     if not modules:
         return 0  # `unittest` with no names would discover from here: nothing selected is nothing run
-    env = dict(os.environ, PYTHONPATH="src:tests")
-    return subprocess.Popen((*NAMED_COMMAND, *modules), cwd=ROOT, env=env).wait()
+    return run_unittest(("-v", *modules), "src:tests", backends)
 
 
-def plan() -> tuple[base.ChangeSet, list[choose.Verdict]]:
+def plan() -> tuple[base.ChangeSet, choose.Selection]:
     """The base, what changed since, and which modules that reaches. Raises the line wherever the run is whole."""
     found = base.change_set(ROOT, base.establish(ROOT, os.environ))
     try:
@@ -56,7 +68,7 @@ def plan() -> tuple[base.ChangeSet, list[choose.Verdict]]:
         tree = declarations.scan(ROOT, catalog)
     except (OSError, ValueError, RecursionError) as error:
         raise base.cannot_be_established(f"the test tree could not be read: {error}") from error
-    return found, choose.choose(tree, found.paths, catalog)
+    return found, choose.select(tree, found.paths, catalog)
 
 
 def main() -> int:
@@ -64,15 +76,22 @@ def main() -> int:
         refusal = full_rows(os.environ, ROOT)
         if refusal is not None:
             raise refusal
-        found, verdicts = plan()
+        found, selection = plan()
     except Full as full:
         print(full.line, flush=True)
         return run_full()
     print(found.line, flush=True)
-    for verdict in verdicts:
+    for verdict in selection.verdicts:
         if not verdict.runs:
             print(report.skipped_line(verdict.module, verdict.skip), flush=True)
-    return run_modules([verdict.module for verdict in verdicts if verdict.runs])
+    narrowed = [verdict.module for verdict in selection.narrowed()]
+    if narrowed:
+        for module in narrowed:
+            print(report.narrowed_line(module, selection.backends, selection.left_out), flush=True)
+    others = [verdict.module for verdict in selection.verdicts if verdict.runs and verdict.module not in narrowed]
+    status = run_modules(others)
+    narrowed_status = run_modules(narrowed, ",".join(selection.backends))  # both run; either failing fails the run
+    return status or narrowed_status
 
 
 if __name__ == "__main__":

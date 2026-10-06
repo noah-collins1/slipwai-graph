@@ -92,8 +92,25 @@ def skip_reason(reached: Reach) -> str:
     return f"{said} and none of the changed files" if reached.plain else said
 
 
-def choose(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any]) -> list[Verdict]:
-    """Every test module, in name order, with whether it runs and why."""
+class Selection(NamedTuple):
+    """Every module's verdict, and the backends the matrix narrows to: those only a backend's own assets reached, and
+    the backends of the catalog that stay out of it."""
+
+    verdicts: list[Verdict]
+    backends: tuple[str, ...]
+    left_out: tuple[str, ...]
+
+    def narrows(self, verdict: Verdict) -> bool:
+        """A module runs narrowed when every reason it runs is a backend's own assets (a module with one other reason,
+        an undeclared one included, runs whole)."""
+        return bool(self.backends) and verdict.runs and all(reason.narrowable for reason in verdict.reasons)
+
+    def narrowed(self) -> list[Verdict]:
+        return [verdict for verdict in self.verdicts if self.narrows(verdict)]
+
+
+def select(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any]) -> Selection:
+    """Every test module, in name order, with whether it runs and why; and the backends it narrows to."""
     claims = {path: claim for path in paths if (claim := rules.claim(path, catalog)) is not None}
     reached = reach(paths, claims)
     verdicts: list[Verdict] = []
@@ -104,4 +121,10 @@ def choose(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any]
             continue
         found = reasons_for(module, tree, declaration, reached)
         verdicts.append(Verdict(module, tuple(found), "" if found else skip_reason(reached)))
-    return verdicts
+    named = sorted(option for axis, option in reached.narrowable if axis == "backend")
+    left_out = sorted(rules.names(catalog, "backends") - set(named)) if named else []
+    return Selection(verdicts, tuple(named), tuple(left_out))
+
+
+def choose(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any]) -> list[Verdict]:
+    return select(tree, paths, catalog).verdicts
