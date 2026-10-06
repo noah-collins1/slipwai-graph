@@ -264,8 +264,10 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
         if record.get("slice"):
             slices.setdefault(str(record["slice"]), []).append(key)
     sessions: dict[str, Session] = {}
+    notes_gone: set[str] = set()
     held: list[Held] = []
     used: dict[str, set[str]] = {key: set() for key in keys}  # the sessions each record's entries ran in
+    missing: dict[tuple[str, int], list[str]] = {}  # the transcript files an entry's span names that are gone
     for key, record in by_key.items():
         for index, entry in enumerate(record.get("stages", [])):
             window = make_window(entry)
@@ -275,7 +277,13 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 if name not in sessions:
                     sessions[name] = Session(name, *find(name))
             if window is not None and name is not None and sessions[name].present:
-                held.append(Held(key, index, entry, window, name))
+                gone = sorted(file for file in {*window.from_, *(window.to or {})}
+                              if ".claude/projects" in file and not Path(file).is_file())
+                if gone:  # a part of the session is missing: what the entry holds cannot be told from what is left
+                    missing[(key, index)] = [Path(file).name for file in gone]
+                    notes_gone.update(missing[(key, index)])
+                else:
+                    held.append(Held(key, index, entry, window, name))
     seen_windows: set[Any] = set()
     for item in held:  # a record merged from two branches carries the same bracket twice: it is counted once
         identity = (by_key[item.path].get("slice"), item.entry["stage"], item.entry.get("started"),
@@ -395,6 +403,15 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
             else:
                 source = "recorded"
                 figure = recorded(entry)
+                lost = missing.get((key, index))
+                if lost is not None:
+                    names = ", ".join(lost)
+                    usage = entry.get("usage") or {}
+                    if isinstance(figure, int) and not (usage.get("host") or usage.get("subagents")):
+                        figure = unknown("its recorded usage holds no figure")
+                    if isinstance(figure, dict):
+                        figure = unknown(f"{figure['unknown']}; {names} is not on this machine, so the transcripts "
+                                         "were not read for it")
                 clash = overlapping(key, entry, others, labels) if isinstance(figure, int) else None
                 if isinstance(figure, int) and clash is None and elsewhere is not None:
                     far = elsewhere_once()
@@ -433,7 +450,9 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
             "sessions": {name: summary[name] if sessions[name].present else
                          dict.fromkeys(PARTS, unknown("the transcripts are not on this machine"))
                          for name in names},
-            "notes": sorted(note for name in names for note in notes[name]),
+            "notes": sorted({*(note for name in names for note in notes[name]),
+                             *(f"{file} is not on this machine: the entries that span it are costed from their "
+                               "recorded usage" for file in notes_gone)}),
             "shared": refused if refused is not None else sum(summary[name]["shared"] for name in names)}
         for key in members:
             cost = result["records"][key]["cost"]

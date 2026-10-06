@@ -114,5 +114,44 @@ class ConservationTest(Base):
         self.assertEqual(sum(sum(item["cost"]["sessions"].values()) for item in found.values()), 1500)
 
 
+class PartlyMissingTest(Base):
+    """T034 (F5): a session with a transcript file gone is not costed as whole."""
+
+    def lay(self, recorded: bool) -> Path:
+        said = self.session
+        cursor = said.open(None, "implement", P1)
+        said.say(None, "h1", 10, stamp(1, "09:01:00"))
+        delegate = said.agent("a1", "Implement T1", "drive-implement")
+        said.say(delegate, "a1", 5000, stamp(1, "09:02:00"), "drive-implement")
+        item = said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:30:00"), cursor)
+        if recorded:
+            item["usage"]["host"] = {"m": {"input": 10, "output": 0, "cache_read": 0, "cache_creation": 0}}
+            item["usage"]["subagents"] = {"m": {"input": 5000, "output": 0, "cache_read": 0, "cache_creation": 0}}
+        record(self.repo, "S1", item)
+        feature_record(self.repo)
+        return delegate
+
+    def test_e1_a_missing_sub_agent_file_makes_the_cost_unknown_naming_it(self) -> None:
+        self.lay(recorded=False).unlink()
+        found = summaries(self.repo)["S1"]
+        for figure in (found["cost"]["tokens"], found["entries"][0]["tokens"]):
+            self.assertIsInstance(figure, dict, found)
+            self.assertIn("agent-a1.jsonl", figure["unknown"])
+        self.assertNotIn("transcripts, by", found["read_from"]["cost"])
+
+    def test_e2_with_a_recorded_usage_the_cost_is_that_and_says_so(self) -> None:
+        self.lay(recorded=True).unlink()
+        found = summaries(self.repo)["S1"]
+        self.assertEqual(found["cost"]["tokens"], 5010)
+        self.assertEqual(found["read_from"]["cost"], "the entries' recorded usage")
+        self.assertIn("agent-a1.jsonl", bench(self.repo).stdout)
+
+    def test_e3_with_every_file_present_the_transcripts_are_read(self) -> None:
+        self.lay(recorded=False)
+        found = summaries(self.repo)["S1"]
+        self.assertEqual(found["cost"]["tokens"], 5010)
+        self.assertIn("the transcripts", found["read_from"]["cost"])
+
+
 if __name__ == "__main__":
     unittest.main()
