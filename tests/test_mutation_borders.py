@@ -157,6 +157,11 @@ class BordersTest(FactoryTestCase):
         reason = loaded(self.repo / "scripts/mutation-scope.py").sweep_reason(clean_environment(), Unreadable())
         self.assertTrue(str(reason).startswith("the checkout could not be read ("), reason)
 
+    @staticmethod
+    def restore_environment(saved: dict[str, str]) -> None:
+        os.environ.clear()
+        os.environ.update(saved)
+
     def test_e8_a_slice_branch_with_a_base_is_not_a_sweep(self) -> None:
         git(self.repo, "checkout", "-q", "-b", SLICE)
         os.chdir(self.repo)
@@ -165,7 +170,7 @@ class BordersTest(FactoryTestCase):
         saved = dict(os.environ)  # the `ci` border reads the process's environment, so a CI machine's must not leak in
         os.environ.clear()
         os.environ.update(clean_environment())
-        self.addCleanup(lambda: (os.environ.clear(), os.environ.update(saved)))
+        self.addCleanup(self.restore_environment, saved)
         self.assertIsNone(module.sweep_reason(clean_environment(), module.ground()))
 
     def test_e9_an_adopted_layout_runs_the_recorded_command_without_a_scope(self) -> None:
