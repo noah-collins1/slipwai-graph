@@ -165,6 +165,7 @@ class Tree(NamedTuple):
 
     sources: Mapping[str, Source]
     closures: Mapping[str, frozenset[str]]
+    imported: Mapping[str, frozenset[str]]  # every name a file imports, directly or through the helpers it imports
 
     def effective(self, name: str) -> tuple[Declaration | None, str]:
         """The declaration a module runs under, or None and why it is undeclared: its own is missing or unusable, or a
@@ -202,7 +203,10 @@ def scan(root: Path, catalog: Mapping[str, Any] | None = None) -> Tree:
     """Read every `tests/*.py` file once."""
     catalog = load_catalog(root) if catalog is None else catalog
     sources = {path.stem: read_source(root, path, catalog) for path in sorted((root / "tests").glob("*.py"))}
-    return Tree(sources, {name: closure_of(name, sources) for name in sources})
+    closures = {name: closure_of(name, sources) for name in sources}
+    imported = {name: frozenset().union(*(sources[member].imports or frozenset() for member in {name, *closure}))
+                for name, closure in closures.items()}
+    return Tree(sources, closures, imported)
 
 
 def is_module(name: str) -> bool:

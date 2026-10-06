@@ -1,8 +1,9 @@
 """Which test modules a change reaches, and the one reason each runs or is skipped.
 
-A module runs when it is undeclared, or when something it declares is reached: a file it reads, or a configuration it
-generates. The reasons are listed in one order — *undeclared*, the module's own file, `reads`, the configuration — and
-the first is the one printed. A skipped module has one reason too, in the words of what it does not read.
+A module runs when it is undeclared, or when something it declares is reached: its own file or a helper it imports
+changed, a file it reads, or a configuration it generates. The reasons are listed in one order — *undeclared*, the
+module's own file, `reads`, the configuration, the helper — and the first is the one printed.
+A skipped module has one reason too, in the words of what it does not read.
 """
 from __future__ import annotations
 
@@ -41,6 +42,7 @@ class Reach(NamedTuple):
     configs: tuple[tuple[str, str], ...]
     plain: bool  # some changed path carries no configuration at all
     narrowable: frozenset[tuple[str, str]]  # the pairs only a backend's own assets reached
+    test_files: tuple[str, ...] = ()  # the names of the `tests/<name>.py` files that changed
 
 
 def reach(paths: list[str], claims: Mapping[str, rules.Claim]) -> Reach:
@@ -51,16 +53,21 @@ def reach(paths: list[str], claims: Mapping[str, rules.Claim]) -> Reach:
               if all(pair in claims[path].narrowable for path in paths if pair in claims[path].configs)
               and not any(claims[path].every for path in paths)}
     return Reach(tuple(paths), any(claims[path].every for path in paths), tuple(pairs),
-                 any(not claims[path].every and not claims[path].configs for path in paths), frozenset(narrow))
+                 any(not claims[path].every and not claims[path].configs for path in paths), frozenset(narrow),
+                 tuple(claims[path].test_file for path in paths if claims[path].test_file))
 
 
 def reads_match(path: str, entry: str) -> bool:
     return path == entry or path.startswith(entry.rstrip("/") + "/")
 
 
-def reasons_for(declaration: declarations.Declaration, reached: Reach) -> list[Reason]:
-    """Every reason a declared module is reached, in the order they are told."""
+def reasons_for(module: str, tree: declarations.Tree, declaration: declarations.Declaration,
+                reached: Reach) -> list[Reason]:
+    """Every reason a declared module is reached, in the one order they are told: its own file, the files it reads, the
+    configurations it generates, the helpers it imports."""
     found: list[Reason] = []
+    if module in reached.test_files:
+        found.append(Reason(f"`tests/{module}.py` changed"))
     for entry in sorted(declaration.reads):
         if any(reads_match(path, entry) for path in reached.paths):
             found.append(Reason(f"reads `{entry}`"))
@@ -69,6 +76,9 @@ def reasons_for(declaration: declarations.Declaration, reached: Reach) -> list[R
     for axis, option in reached.configs:
         if declaration.admits(axis, option):
             found.append(Reason(f"reads the {option} configuration", narrowable=(axis, option) in reached.narrowable))
+    for name in reached.test_files:
+        if name != module and name in tree.imported[module]:
+            found.append(Reason(f"imports `tests/{name}.py`"))
     return found
 
 
@@ -92,6 +102,6 @@ def choose(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any]
         if declaration is None:
             verdicts.append(Verdict(module, (Reason(UNDECLARED),), ""))
             continue
-        found = reasons_for(declaration, reached)
+        found = reasons_for(module, tree, declaration, reached)
         verdicts.append(Verdict(module, tuple(found), "" if found else skip_reason(reached)))
     return verdicts

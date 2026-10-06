@@ -28,6 +28,7 @@ class Claim(NamedTuple):
     configs: tuple[tuple[str, str], ...] = ()
     backend_asset: bool = False
     narrowable: frozenset[tuple[str, str]] = frozenset()
+    test_file: str = ""  # `tests/<name>.py`: the module or helper `name`, whose importers a change reaches
 
 
 class Row(NamedTuple):
@@ -152,6 +153,9 @@ def claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
         return Claim("the selector's own tests", True)
     if path.startswith("assets/"):
         return asset_claim(path, catalog)
+    stem = path.removeprefix("tests/").removesuffix(".py")
+    if path.startswith("tests/") and path.endswith(".py") and stem and "/" not in stem:
+        return Claim("the test tree", False, test_file=stem)
     if path in SELECTING_FILES or path.startswith(SELECTING):
         return Claim("the files its readers name", False)
     return None
