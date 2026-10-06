@@ -28,6 +28,16 @@ from support import FactoryTestCase, backends_under_test
 
 from slipwai.catalog import axis_default
 
+# Every project is generated through `./slipwai generate`; every backend is read from `backends_under_test()`.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["go", "java-quarkus", "java-spring", "python", "typescript"],
+        "frontend": ["none", "react-vite"],
+        "profile": ["event-modelling", "standard"],
+        "command": ["generate"],
+    },
+}
+
 # A name long enough to be the thing that fails, and no longer. 44 characters is where Python binds: the
 # deepest import a generated test makes is
 # `from <package>.adapters.driving.http.users.oidc_keycloak import (`, which is 100 columns at this length

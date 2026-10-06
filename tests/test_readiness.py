@@ -20,6 +20,16 @@ from slipwai.catalog import CATALOG, axis_default, axis_options
 from slipwai.probes import HEALTH_PATH, READY_PATHS, ready_path
 from slipwai.project.compose import CONTAINER_ADDRESSES
 
+# Every project is generated through `./slipwai generate`; every backend is read from `backends_under_test()`.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["go", "java-quarkus", "java-spring", "python", "typescript"],
+        "frontend": ["none"],
+        "profile": ["event-modelling", "standard"],
+        "command": ["generate"],
+    },
+}
+
 
 class ReadinessTest(FactoryTestCase):
     def test_every_backend_declares_where_it_answers_send_me_traffic(self) -> None:

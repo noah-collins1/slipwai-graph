@@ -20,6 +20,16 @@ from support import FactoryTestCase, backends_under_test
 
 from slipwai.catalog import CATALOG, axis_default
 
+# Every project is generated through `./slipwai generate`; every backend is read from `backends_under_test()`.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["go", "java-quarkus", "java-spring", "python", "typescript"],
+        "frontend": ["none", "react-vite"],
+        "profile": ["event-modelling", "standard"],
+        "command": ["generate"],
+    },
+}
+
 # What each spelling is, so a failure says why it is refused rather than only that it matched.
 FRAMEWORKS = {
     r"\bvi\.mock\b": "Vitest module mock",

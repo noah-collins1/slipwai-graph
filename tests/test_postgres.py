@@ -28,6 +28,16 @@ from support import FactoryTestCase, backends_under_test, default_gateways
 from slipwai.catalog import axis_default
 from slipwai.images import MIGRATIONS_IN_PRODUCTION, POSTGRES_SSLMODE
 
+# Every project is generated through `./slipwai generate`; every backend is read from `backends_under_test()`.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["go", "java-quarkus", "java-spring", "python", "typescript"],
+        "frontend": ["none"],
+        "profile": ["event-modelling"],
+        "command": ["generate"],
+    },
+}
+
 
 class ManagedPostgresTest(FactoryTestCase):
     """What a project is told about reaching a Postgres that insists on TLS. Needs no Docker: the failure

@@ -57,6 +57,16 @@ from slipwai.catalog import axis_default
 from slipwai.images import IMAGE_BUILDERS
 from slipwai.probes import ready_path
 
+# Every project is generated through `./slipwai generate`; every backend is read from `backends_under_test()`.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["go", "java-quarkus", "java-spring", "python", "typescript"],
+        "frontend": ["none"],
+        "profile": ["event-modelling"],
+        "command": ["generate"],
+    },
+}
+
 # What each builder needs on the PATH beyond docker: the tool itself, or a JDK for the builds Maven drives.
 NEEDS = {"pack": "pack", "ko": "ko", "": "java"}
 
