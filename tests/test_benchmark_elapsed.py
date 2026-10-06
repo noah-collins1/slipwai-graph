@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -11,6 +14,7 @@ from elapsed_fixture import (
     FEATURE,
     Session,
     bench,
+    clean,
     commit,
     entry,
     graph,
@@ -173,6 +177,41 @@ class ElapsedTest(unittest.TestCase):
         self.assertEqual(found.get("elapsed"), 2 * 86400)
         self.assertIn(dep, found["read_from"]["ready"])
         self.assertIn(own, found["read_from"]["accepted"])
+
+    def unknown_everywhere(self, found: dict, word: str) -> None:
+        figures = [found["elapsed"], found["worked_seconds"], *found["waiting"].values(),
+                   found["moments"].get("ready"), found["moments"].get("accepted")]
+        for figure in figures:
+            self.assertIsInstance(figure, dict, found)
+            self.assertIn(word, figure["unknown"])
+            self.assertNotIn("open since", figure["unknown"])
+
+    def test_e1_a_shallow_clone_reads_unknown_naming_the_shallow_history_never_zero(self) -> None:
+        self.standard()
+        shallow = Path(self.scratch.name) / "shallow"
+        done = subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{self.repo}", str(shallow)],
+                              capture_output=True, text=True, env=clean(self.repo / ".home"))
+        self.assertEqual(done.returncode, 0, done.stderr)
+        shutil.copytree(self.repo / "scripts", shallow / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        (shallow / ".home").mkdir()
+        found = summaries(shallow)["S2"]
+        self.unknown_everywhere(found, "shallow")
+
+    def test_e2_a_git_that_fails_on_log_reads_unknown_naming_the_failure_not_open_since(self) -> None:
+        self.standard()
+        fake = Path(self.scratch.name) / "fakebin"
+        fake.mkdir()
+        (fake / "git").write_text(
+            f'#!/bin/sh\nfor a in "$@"; do [ "$a" = log ] && {{ echo boom >&2; exit 1; }}; done\n'
+            f'exec {shutil.which("git")} "$@"\n', encoding="utf-8")
+        (fake / "git").chmod(0o755)
+        env = clean(self.repo / ".home")
+        env["PATH"] = f"{fake}{os.pathsep}{env['PATH']}"
+        done = subprocess.run(["python3", "-B", str(self.repo / "scripts/agents/benchmark.py"), "--json"],
+                              cwd=self.repo, env=env, text=True, capture_output=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        found = {item["slice"]: item for item in json.loads(done.stdout)}["S2"]
+        self.unknown_everywhere(found, "git failed")
 
     def test_outside_a_git_repository_the_moments_say_git_could_not_be_read(self) -> None:
         self.standard()

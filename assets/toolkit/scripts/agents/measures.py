@@ -150,6 +150,23 @@ class Reader:
         self.model = "docs/event-model/model.yaml"
         self.kept: dict[tuple[str, str], Found | None] = {}
         self.seen: bool | None = None
+        self.shallow_seen: bool | None = None
+        self.failure: str | None = None  # the first `git` command a lookup depended on that failed
+
+    @property
+    def shallow(self) -> bool:
+        """Whether the history is truncated (`--depth`): the oldest commit holding a row is then the graft, not the
+        commit that wrote it, so every moment it gives is wrong."""
+        if self.shallow_seen is None:
+            self.shallow_seen = self.git("rev-parse", "--is-shallow-repository") == "true"
+        return self.shallow_seen
+
+    def ask(self, *arguments: str) -> str | None:
+        """`git`'s answer: an empty string is an answer (nothing found), None is a failure, kept in `failure`."""
+        found = self.git(*arguments)
+        if found is None and self.failure is None:
+            self.failure = f"git failed: git {' '.join(arguments)}"
+        return found
 
     @property
     def readable(self) -> bool:
@@ -160,10 +177,12 @@ class Reader:
     def first(self, path: str, needle: str, holds: Callable[[str], bool]) -> tuple[int, str] | None:
         """The oldest commit that changed how often `needle` appears in `path` and whose copy of the file satisfies
         `holds` — the content check keeps `S1` from matching `S10`."""
-        listed = self.git("log", "--reverse", "--format=%H %ct", f"-S{needle}", "--", path) or ""
+        listed = self.ask("log", "--reverse", "--format=%H %ct", f"-S{needle}", "--", path) or ""
         for line in listed.splitlines():
             sha, _, when = line.partition(" ")
             content = self.git("show", f"{sha}:{path}")
+            if content is None and self.ask("ls-tree", "--name-only", sha, "--", path):
+                self.failure = self.failure or f"git failed: git show {sha[:7]}:{path}"  # it is there and unreadable
             if content is not None and holds(content):
                 return int(when), sha[:7]
         return None
@@ -195,7 +214,7 @@ class Reader:
     def merged(self, ident: str) -> Found | None:
         key = ("merged", ident)
         if key not in self.kept:
-            listed = self.git("log", "--merges", "--reverse", "--fixed-strings", f"--grep=slice/{ident}",
+            listed = self.ask("log", "--merges", "--reverse", "--fixed-strings", f"--grep=slice/{ident}",
                               "--format=%H %ct %s") or ""
             pattern = re.compile(r"slice/" + re.escape(ident) + r"(?![A-Za-z0-9])")
             self.kept[key] = next(((int(parts[1]), parts[0][:7], "merge commit") for parts in
@@ -228,6 +247,10 @@ def moments(reader: Reader, ident: str | None, entries: list[dict[str, Any]]) ->
         out.update({key: unknown("git could not be read: not a repository, or git failed")
                     for key in ("ready", "accepted", "elapsed")})
         return out
+    if reader.shallow:
+        out.update({key: unknown("git history is shallow: the oldest commit is where the clone was cut, not where a "
+                                 "row was written; fetch the full history") for key in ("ready", "accepted", "elapsed")})
+        return out
     demo = next((entry for entry in entries if entry.get("stage") == "demo" and "ended" in entry
                  and (entry.get("signals") or {}).get("outcome") == "accepted"), None)
     if demo is not None:
@@ -254,6 +277,12 @@ def moments(reader: Reader, ident: str | None, entries: list[dict[str, Any]]) ->
             if landed[0] > ready:
                 ready, read_from["ready"] = landed[0], f"{landed[1]} ({landed[2]})"
     own = reader.done(ident)
+    if reader.failure:
+        out.update({key: unknown(reader.failure) for key in ("ready", "accepted", "elapsed")})
+        for key in ("ready", "accepted", "merged"):
+            read_from.pop(key, None)
+        out.pop("merged", None)
+        return out
     out["ready"] = ready
     if own:
         out["accepted"], read_from["accepted"] = own[0], f"{own[1]} ({own[2]})"
@@ -486,6 +515,9 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
         waited = sibling_wait(reader, ident, found["demo_accepted"], found.get("merged", high))
         if waited:
             claimed["dependency"], read_from["dependency"] = [waited[0]], waited[1]
+    if reader.failure:  # a lookup the dependency wait made failed: nothing it would have claimed can be said
+        reason = unknown(reader.failure)
+        return {"worked": reason, "waiting": {name: reason for name in names}, "read_from": read_from}
     review = brackets(entries, last_lines, is_person_demo)
     claimed["review"] = review
     read_from["review"] = "the demo bracket with no driver" if review else "none present: no park, no person's demo"
