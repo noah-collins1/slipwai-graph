@@ -332,7 +332,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
     for key, record in by_key.items():
         shown: dict[int, dict[str, Any]] = {}
         figures: list[Figure] = []
-        read = {"transcripts": 0, "recorded": 0, "unread": 0}  # the entries the record's cost is made of, by source
+        read = {"transcripts": 0, "recorded": 0, "unread": 0, "open": 0}  # the entries the record's cost is made of, by source
         for index, entry in enumerate(record.get("stages", [])):
             done = entry.get("ended") is not None
             source = "transcripts"
@@ -356,14 +356,18 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                     figure = unknown(f"brackets of {clash} overlap this one and the transcripts are not on this "
                                      "machine")
                 shown[index] = {"tokens": figure, "delegates": [], "last_line": None, "searched": False}
-            if not done or entry.get("seconds") == 0:  # an open or unbracketed entry has no tokens to read
+            if not done:
+                read["open"] += 1
+            if not done and shown[index]["searched"] and shown[index]["tokens"]:
+                source = "open"  # the requests read into it are counted, so far: they are in no other figure
+            elif not done or entry.get("seconds") == 0:  # an open or unbracketed entry has no tokens to read
                 shown[index]["tokens"] = recorded(entry)
             if not isinstance(shown[index]["tokens"], int):
                 source = "unread"
             shown[index]["source"] = source
             if done or isinstance(shown[index]["tokens"], int):
                 figures.append(shown[index]["tokens"])
-                read[source] += 1
+                read["transcripts" if source == "open" else source] += 1
         bad = next((figure for figure in figures if isinstance(figure, dict)), None)
         result["records"][key] = {"entries": shown, "cost_read": read, "cost": {
             "tokens": bad if bad is not None else sum(figures) + loose[key], "shared": None}}

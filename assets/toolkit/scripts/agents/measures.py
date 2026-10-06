@@ -573,7 +573,7 @@ def cost_source(read: dict[str, int] | None, ended: int) -> str:
     """Where a record's cost was read from, by the entries each source supplied: both, with counts, where it is
     mixed; `none present` where no ended entry's cost could be read."""
     read = read or {}
-    transcripts, recorded, unread = (read.get(key, 0) for key in ("transcripts", "recorded", "unread"))
+    transcripts, recorded, unread, still = (read.get(key, 0) for key in ("transcripts", "recorded", "unread", "open"))
     entries = lambda count: f"{count} entr{'y' if count == 1 else 'ies'}"  # noqa: E731
     if transcripts and recorded:
         said = f"{TRANSCRIPTS} ({entries(transcripts)}) and {RECORDED} ({entries(recorded)})"
@@ -581,13 +581,16 @@ def cost_source(read: dict[str, int] | None, ended: int) -> str:
         said = TRANSCRIPTS if transcripts else RECORDED
     else:
         return "none present: no bracket ended" if not ended else "none present: no ended entry's cost could be read"
-    return said + (f"; {entries(unread)} unread" if unread else "")
+    return said + (f"; {entries(unread)} unread" if unread else "") + (
+        f"; so far, {entries(still)} still open" if still else "")
 
 
 def entry_source(source: str | None, tokens: Any) -> str:
     """Where one entry's tokens were read from: its transcripts, its recorded usage, or what was found absent."""
     if is_unknown(tokens):
         return f"none present: {tokens['unknown']}"
+    if source == "open":
+        return f"{TRANSCRIPTS}, so far: the entry is still open"
     return TRANSCRIPTS if source == "transcripts" else RECORDED
 
 

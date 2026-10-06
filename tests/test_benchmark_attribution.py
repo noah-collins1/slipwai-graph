@@ -279,5 +279,44 @@ class OtherBranchesTest(unittest.TestCase):
         self.assertEqual(found["entries"][0]["tokens"], found["cost"]["tokens"])
 
 
+class OpenEntryTest(unittest.TestCase):
+    """T026: a request read into an open entry is counted in the record's cost, which says it is so far."""
+
+    def setUp(self) -> None:
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.repo = project(Path(self.scratch.name))
+        said = Session(self.repo)
+        path = "specs/f/slices/S1/benchmark.json"
+        first = said.open(None, "implement", path)
+        said.say(None, "h1", 40, stamp(1, "09:30:00"))
+        done = said.entry("implement", stamp(1, "09:00:00"), stamp(1, "10:00:00"), first)
+        second = said.open(None, "converge", path)
+        said.say(None, "h2", 7, stamp(1, "10:10:00"))
+        left = said.entry("converge", stamp(1, "10:05:00"), stamp(1, "10:05:00"), second)
+        del left["ended"], left["seconds"], left["span"]
+        left["cursor"] = {"source": "claude", "session": "sess", "files": second, "subagents": {}}
+        record(self.repo, "S1", done, left)
+        feature_record(self.repo)
+
+    def test_e1_the_open_entrys_requests_are_in_the_cost_and_the_records_say_so_far(self) -> None:
+        found = summaries(self.repo)
+        s1, whole = found["S1"], found["(feature)"]
+        self.assertEqual(s1["cost"]["tokens"], 47)
+        self.assertEqual(s1["entries"][1]["tokens"], 7)
+        self.assertIn("so far", s1["read_from"]["cost"])
+        self.assertIn("1 entry still open", s1["read_from"]["cost"])
+        self.assertIn("so far", s1["entries"][1]["read_from"])
+        total = whole["session_totals"]["sess"]
+        self.assertEqual(s1["cost"]["tokens"] + whole["cost"]["tokens"] + total["shared"], total["total"])
+
+    def test_e2_without_transcripts_the_open_entry_is_named_beside_the_sum_of_the_ended_ones(self) -> None:
+        shutil.rmtree(self.repo / ".home/.claude")
+        s1 = summaries(self.repo)["S1"]
+        self.assertIn("1 entry still open", s1["read_from"]["cost"])
+        self.assertIn("so far", s1["read_from"]["cost"])
+        self.assertIn("still open", s1["entries"][1]["tokens"]["unknown"])
+
+
 if __name__ == "__main__":
     unittest.main()
