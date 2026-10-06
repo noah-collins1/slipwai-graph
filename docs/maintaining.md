@@ -35,8 +35,9 @@ branch. `TESTS`, `SKIP` and `FACTORY_BACKENDS` turn selection off: the run is ex
 tells the selector what it reads by a literal `TEST_SELECTION = {"configurations": {"backend": ["go"]}, "reads":
 ["path"]}` at module level (`"configurations"` is an axis-to-options map or `"every"`; `"reads"` lists the files it
 reads by path); a module without one always runs, and `tests/test_select_tests_declarations.py` holds each
-declaration to the catalog and the tree. Until `s38.patch` is applied to the root `Makefile` (a person does that),
-`make test` runs everything as before, and `python3 -B scripts/select-tests.py --dry-run` is how to see the selection.
+declaration to the catalog and the tree. On a slice branch `make test` prints the base line, each skip and its reason,
+and `selected N of M modules against <base>`, then runs only the selected modules and prints the summary again at the
+end; `python3 -B scripts/select-tests.py --dry-run` prints the same lines and runs nothing.
 
 CI runs those same targets as parallel jobs on the self-hosted runner, all starting at once: `checks` (lint,
 typecheck, structure, every fast suite), `matrix (<backend>)` — one job per backend, each generating that

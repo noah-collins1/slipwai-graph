@@ -72,9 +72,12 @@ class MaintainingPageSaysWhatMakeTestDoes(unittest.TestCase):
     def test_says_verify_stays_whole(self) -> None:
         self.assertSaysLike(r"(?i)`make verify` (always )?runs every module")
 
-    def test_says_the_patch_is_not_yet_applied(self) -> None:
-        self.assertSays("s38.patch")
-        self.assertSaysLike(r"(?i)until .*patch.* applied")
+    def test_no_longer_says_the_patch_is_pending(self) -> None:
+        self.assertNotIn("s38.patch", self.prose)
+        self.assertIsNone(re.search(r"(?i)until .*patch.* applied", self.prose))
+
+    def test_says_what_make_test_does_on_a_slice_branch(self) -> None:
+        self.assertSaysLike(r"`make test` (on a slice branch )?prints .*selected N of M modules.* runs only")
 
 
 if __name__ == "__main__":
