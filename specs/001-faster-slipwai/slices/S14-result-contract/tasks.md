@@ -444,7 +444,7 @@ Both files are factory-written, and a factory test holds them equal.
 **Q1 and Q2 are still the host's.** T012's `owed` and `OWNERS` follow Q2: if `drive-slice`'s block moves, the rule for
 which stages count moves with it.
 
-- [ ] T020 [US6] **MEDIUM (Phase 4) — `hand_backs.py:333` passes S06's scanner by splitting a literal, not by satisfying
+- [x] T020 [US6] **MEDIUM (Phase 4) — `hand_backs.py:333` passes S06's scanner by splitting a literal, not by satisfying
   it.**
   - **Evidence:**
     - With `AGENTS = "agents"`, `TableHeldTest` fails 12 shapes with `check-decisions reads agents, under none of
