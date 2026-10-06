@@ -784,7 +784,9 @@ the gaps:** T026, T027, T028 and T029 land before the demo; T030–T032 and T022
   `$`, a rename plus config change, a pom with entities, `MAKEFLAGS` set).
 
 ### T015 — Mutation (host task)
-- [ ] `drive-mutation` over `mutation-scope.py` and `go-mutation.py`'s `--file`; this slice's own scoped run is the first customer.
+- [x] **N/A** — `project.json` records no mutation command for this repository (`"mutation": null`), as for every slice
+  before this one; the factory's Python has no tool wired. Said in the register row and owed to the cruise report, not pretended.
+  (The slice's own scoped run was exercised on generated Go and Spring projects at T005, T006, T034 and the demos.)
 
 ### T016 — Both full gates on the final tip (host task)
 - [ ] `make verify` once, with the `build/` diff of T001: only the intended generated changes.
