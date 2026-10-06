@@ -1489,19 +1489,23 @@ changed, only the text that describes the keys.
 
 ### T021 — Mutation (host task)
 
-- [ ] **N/A** unless `project.json` records a mutation command for this repository by now; it recorded none for any slice
+- [x] **N/A** unless `project.json` records a mutation command for this repository by now; it recorded none for any slice
   before this one, so said in the register row and owed to the cruise report, not pretended.
+
+**T021 result (host, iteration 23):** N/A — `project.json` records no mutation command for this repository; owed to the cruise report, as for every slice before it.
 
 ### T022 — Both full gates on the final tip (host task)
 
-- [ ] On the tree after the last task above: `make test TESTS="test_toolkit test_utf8_io test_changelog"` first (the slice
+- [x] On the tree after the last task above: `make test TESTS="test_toolkit test_utf8_io test_changelog"` first (the slice
   touches `assets/`), then `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify` **once**,
   both green (Principle XIV). Confirm `VERSION` is `1.6.0.dev0` and nothing under `tools/`, the root `Makefile`, CI or
   `delivery/` changed.
 
+**T022 result (host, iteration 23, at `45ebedb`):** a first `make verify` was red on `test_factory_repository` (a backend key compared with a family name in `scoped_targets.py`, from T002; the sweeps never named that module) — fixed at `45ebedb`; then `make verify` green (2410 tests, 3121 s) and `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify` green (2410 tests, 3109 s). `VERSION` is `1.6.0.dev0`; nothing under `tools/`, the root `Makefile`, CI or `delivery/scripts/` changed.
+
 ### T023 — Register row and benchmark close (host task)
 
-- [ ] The slice's row in the register (`slices/README.md`) and `benchmark.json` closed, the after-acceptance commits
+- [x] The slice's row in the register (`slices/README.md`) and `benchmark.json` closed, the after-acceptance commits
   riding in this slice's own pull request (`AGENTS.md`).
 
 ---

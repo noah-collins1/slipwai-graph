@@ -1,10 +1,10 @@
 # Benchmark — 001-faster-slipwai
 
-Drawn 2026-10-05T10:23:59Z at `9e5b090` from 15 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
+Drawn 2026-10-06T03:13:43Z at `45ebedb` from 17 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
 
 ## Slices
 
-14 slice(s) recorded, 34h10m+ in all.
+16 slice(s) recorded, 46h58m+ in all.
 
 | slice | delegate/cycle | wall | in | out | models | sessions | converge | +tasks | gaps | mutation | adversary | demo | verify✗ | rework | tasks | files | ±lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -15,8 +15,10 @@ Drawn 2026-10-05T10:23:59Z at `9e5b090` from 15 record(s) under `specs/001-faste
 | S03-verify-stamp | story/rule, task/rule | 5h05m | 112.5M | 267.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 3 | 15 | 31/8 | — | 18 | accepted | 27 | 0 | 42 | 78 | +12971/-48 |
 | S04-parallel-gate | task/rule | 5h06m | 106.5M | 251.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 3 | 8 | 63/19 | — | 9 | accepted | 0 | 0 | 24 | 68 | +11069/-78 |
 | S05-xdist | story/rule, task/rule | 1h43m | 45.2M | 112.9k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 2 | 6 | 13/3 | — | 8 | accepted | 0 | 0 | 25 | 82 | +5806/-64 |
-| S06-scoped-gate | — | 24m36s+ | 20.1M (+1 unread) | 35.4k | claude-opus-5-5 | 2 | 0 | 0 | 19/0 | — | 0 | — | 0 | 0 | — | — | — |
+| S06-scoped-gate | rule/rule, task/rule | 12h37m+ | 410.1M (+1 unread) | 523.9k | claude-opus-5-5, claude-sonnet-5-5 | 4 | 5 | 19 | 19/0 | — | 20 | accepted | 0 | 0 | 55 | 179 | +51773/-134 |
+| S08-scoped-mutation | — | 17m48s | 5.8M | 12.7k | claude-opus-5-5 | 1 | 0 | 0 | 19/0 | — | 0 | — | 0 | 0 | — | — | — |
 | S11-render-once | story/rule, task/rule | 2h49m | 41.4M (+1 unread) | 132.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 6 | 17/7 | n/a (no command recorded) | 13 | accepted | 0 | 0 | 24 | 48 | +6103/-164 |
+| S14-result-contract | — | 17m48s | 5.4M | 29.5k | claude-opus-5-5 | 1 | 0 | 0 | 0/0 | — | 0 | — | 0 | 0 | — | — | — |
 | S20-slice-scope-root | rule/rule, task/example, task/rule | 1h09m+ | 22.8M (+3 unread) | 113.4k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 8 | 8/6 | — | 9 | accepted | 1 | 0 | 34 | 44 | +3998/-36 |
 | S21-refresh-keeps-owned-files | rule/rule, task/rule | 1h01m | 19.4M | 81.3k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 1 | 3 | 8/8 | — | 6 | accepted | 0 | 0 | 11 | 42 | +3092/-24 |
 | S22-slice-scope-base | rule/rule, task/rule | 1h41m | 32M | 200.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 7 | 21/11 | — | 11 | accepted | 0 | 0 | 29 | 29 | +5634/-42 |
@@ -168,7 +170,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | implement | 2026-10-04 22:24 | 14m54s | 6.5M | 24.2k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, driver=cruise |
 | demo | 2026-10-04 22:39 | 9m54s | 2.4M | 8.3k | claude-opus-5-5 | drive-hand | yes | outcome=accepted, driver=cruise |
 
-### S06-scoped-gate — 24m36s+
+### S06-scoped-gate — 12h37m+
 
 | stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
 |---|---|---|---|---|---|---|---|---|
@@ -178,6 +180,30 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | plan | 2026-10-05 01:09 | 15m25s | 12.9M | 8.2k | claude-opus-5-5 | general-purpose | yes | driver=cruise |
 | skipper | 2026-10-05 08:10 | 2m08s | 1.3M | 5.4k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
 | tasks | 2026-10-05 08:12 | 17s | 209.8k | 1.9k | claude-opus-5-5 | — | no | — |
+| tasks | 2026-10-05 10:24 | 4m17s | 1M | 5.4k | claude-opus-5-5, claude-sonnet-5-5 | drive-tasks | yes | driver=cruise |
+| implement | 2026-10-05 10:37 | 2h06m | 47.1M | 55.2k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=rule, cycle=rule, split=3, driver=cruise |
+| converge | 2026-10-05 13:07 | 10m10s | 7.1M | 7k | claude-opus-5-5 | drive-converge | yes | driver=cruise |
+| skipper | 2026-10-05 13:17 | 10m08s | 2.2M | 7.9k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-05 13:27 | 53m30s | 16.1M | 20.3k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=2, driver=cruise |
+| converge | 2026-10-05 14:21 | 10m04s | 4.7M | 3.6k | claude-opus-5-5 | drive-converge | yes | driver=cruise |
+| skipper | 2026-10-05 14:31 | 4m25s | 2M | 7.2k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-05 14:36 | 1h49m | 25.7M | 32k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+| converge | 2026-10-05 16:25 | 9m56s | 4.3M | 5.6k | claude-opus-5-5 | drive-converge | yes | driver=cruise |
+| skipper | 2026-10-05 16:35 | 4m26s | 1.8M | 5.1k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-05 16:41 | 29m56s | 24.3M | 29.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice, drive-tasks | yes | verify_failures=0, delegate=task, cycle=rule, split=2, driver=cruise |
+| converge | 2026-10-05 17:11 | 19m34s | 42.2M | 57.3k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-implement, drive-slice, drive-tasks | yes | driver=cruise |
+| implement | 2026-10-05 17:37 | 48m20s | 64.1M | 59.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-gaps, drive-implement, drive-slice | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
+| converge | 2026-10-05 18:26 | 16m55s | 6.9M | 5.5k | claude-opus-5-5 | drive-converge | yes | driver=cruise |
+| implement | 2026-10-05 18:43 | 2h43m | 70.6M | 82.3k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-gaps, drive-implement, drive-skipper, drive-slice | yes | verify_failures=0, delegate=task, cycle=rule, split=2, driver=cruise |
+| demo | 2026-10-05 21:56 | 10m12s | 4.4M | 13.6k | claude-opus-5-5 | drive-hand | yes | outcome=accepted, driver=cruise |
+| adversary | 2026-10-05 22:07 | 21m06s | 23.9M | 24.5k | claude-opus-5-5 | drive-adversary, drive-hand | yes | findings=20, seams=3, driver=cruise |
+| implement | 2026-10-05 22:34 | 1h20m | 41.7M | 66.7k | claude-opus-5-5, claude-sonnet-5-5 | drive-hand, drive-implement, drive-slice | yes | verify_failures=0, delegate=task, cycle=rule, split=3, driver=cruise |
+
+### S08-scoped-mutation — 17m48s
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-05 16:41 | 17m48s | 5.8M | 12.7k | claude-opus-5-5 | drive-gaps | yes | gaps=19, driver=cruise |
 
 ### S11-render-once — 2h49m
 
@@ -201,6 +227,13 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | adversary | 2026-10-03 23:43 | 16m11s | 3.5M | 9.5k | claude-fable-5-1 | drive-adversary | yes | findings=13, seams=2, driver=cruise |
 | implement | 2026-10-03 23:59 | 39m33s | 8.4M | 8.8k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
 | mutation | 2026-10-04 00:40 | 2s | 325k | 906 | claude-fable-5-1 | — | no | mutation_score=n/a (no command recorded), driver=cruise |
+
+### S14-result-contract — 17m48s
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-05 16:41 | 10m14s | 101.9k | 899 | claude-opus-5-5 | — | no | — |
+| skipper | 2026-10-05 16:51 | 7m34s | 5.3M | 28.6k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
 
 ### S20-slice-scope-root — 1h09m+
 
@@ -330,10 +363,12 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 
 - S03-verify-stamp: converge ran 3 times, appending 15 task(s) — a slice too large, or fixes too narrow to close the class of what they found
 - S04-parallel-gate: converge ran 3 times, appending 8 task(s) — a slice too large, or fixes too narrow to close the class of what they found
+- S06-scoped-gate: converge ran 5 times, appending 19 task(s) — a slice too large, or fixes too narrow to close the class of what they found
 - S01-gate-walks: implemented as story/rule and task/example and task/rule — its wall compares with neither
 - S02-runner-bookkeeping: implemented as story/rule and task/example — its wall compares with neither
 - S03-verify-stamp: implemented as story/rule and task/rule — its wall compares with neither
 - S05-xdist: implemented as story/rule and task/rule — its wall compares with neither
+- S06-scoped-gate: implemented as rule/rule and task/rule — its wall compares with neither
 - S11-render-once: implemented as story/rule and task/rule — its wall compares with neither
 - S20-slice-scope-root: implemented as rule/rule and task/example and task/rule — its wall compares with neither
 - S21-refresh-keeps-owned-files: implemented as rule/rule and task/rule — its wall compares with neither
@@ -348,6 +383,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 - S04-parallel-gate implement: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
 - S06-scoped-gate gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S06-scoped-gate tasks: cut off — iteration 20 ended with the entry open; its wall is real, its signals were never reported
+- S14-result-contract gaps: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
 - S20-slice-scope-root gaps: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
 - S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
