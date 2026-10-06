@@ -465,21 +465,32 @@ def cut_off(stage: dict[str, Any], arrived: Arrival | None) -> tuple[str, str] |
     return None
 
 
+def named_types(stage: dict[str, Any]) -> list[str]:
+    """The typed delegates the stage names as having run, by `agents` or by the `agent` signal its host reported."""
+    signalled = (stage.get("signals") or {}).get("agent")
+    return [agent for agent in [*(stage.get(AGENTS) or []), signalled]
+            if isinstance(agent, str) and stage["stage"] in OWNERS.get(agent, ())]
+
+
 def attributable(stage: dict[str, Any]) -> bool:
-    """Whether the harness's reading names the stage's delegates: it read a usage, and the stage's `agents` are
-    recorded where a delegate ran."""
+    """Whether the harness's reading names the stage's delegates: it read a usage, the stage's `agents` are recorded
+    where a delegate ran, and a harness whose reader returns no sub-agents at all (Codex) does not hide a typed
+    delegate the stage names: `delegated` is false there for every stage, so it cannot say none ran (A3)."""
     usage = stage.get("usage")
     if usage is not None and not usage.get("source"):
         return False
-    return not (stage.get("delegated") and not stage.get(AGENTS))
+    if stage.get("delegated") and not stage.get(AGENTS):
+        return False
+    return not (usage is not None and usage["source"] != "claude" and not stage.get("delegated")
+                and bool(named_types(stage)))
 
 
 def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None,
              arrived: Arrival | None = None) -> Coverage:
     """For each ended stage of a slice's `benchmark.json`, whether the record holds what the stage's delegates
     handed back: the lines to print, how many stages that owe a block have a passing one, how many owe one and how
-    many could not be attributed (no usage read, or delegated with no agent types recorded: counted as neither, said
-    once). A stage owes a block when a typed delegate
+    many could not be attributed (no usage read, delegated with no agent types recorded, or a harness that reads no
+    sub-agents yet names a typed delegate: counted as neither, said once). A stage owes a block when a typed delegate
     that belongs to it ran (`owed`); one that only started untyped helpers, or `drive-slice`, owes this record nothing
     and is not listed. A stage that ended strictly before `arrived` (`contract_arrived`, read by the caller so this
     stays pure) owes nothing and is said to predate the contract; where the arrival could not be told, the stage is

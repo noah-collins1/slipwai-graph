@@ -184,6 +184,22 @@ class CoverageVerbTest(unittest.TestCase):
                 "hand-backs: implement 2026-10-05T17:00:00Z: the harness could not attribute its delegates — "
                 "not counted", "hand-backs: with a result contract: 0 of 0"], self.verb(stages).stdout.splitlines())
 
+        """A3: on Codex the reader returns no sub-agents, so `delegated` is false; a typed delegate named still owes."""
+        """A3: on Codex the reader returns none, so `delegated` is false; the typed delegate named still owes a block."""
+        named = stage("implement", "2026-10-05T17:00:00Z", "2026-10-05T17:10:00Z", delegated=False, source="codex")
+        signalled = stage("converge", "2026-10-05T18:00:00Z", "2026-10-05T18:10:00Z", delegated=False, source="codex",
+                          agents=None) | {"signals": {"agent": "drive-converge"}}
+        for one, word in ((named, "implement 2026-10-05T17:00:00Z"), (signalled, "converge 2026-10-05T18:00:00Z")):
+            self.assertEqual([f"hand-backs: {word}: the harness could not attribute its delegates — not counted",
+                              "hand-backs: with a result contract: 0 of 0"], self.verb([one]).stdout.splitlines())
+
+    def test_a_codex_stage_that_names_no_typed_delegate_owes_nothing_and_says_nothing(self) -> None:
+        plain = stage("implement", "2026-10-05T17:00:00Z", "2026-10-05T17:10:00Z", delegated=False, source="codex",
+                      agents=None)
+        helper = stage("gaps", "2026-10-05T16:00:00Z", "2026-10-05T16:10:00Z", delegated=False, source="codex",
+                       agents=["Explore"])
+        self.assertEqual(["hand-backs: with a result contract: 0 of 0"], self.verb([plain, helper]).stdout.splitlines())
+
     def test_e8_a_block_of_a_type_that_does_not_own_the_stage_does_not_count(self) -> None:
         wrong = entry(valid() | {"delegate": "drive-hand", "status": "accepted"},
                       "## 2026-10-05T17:02:00Z — drive-hand — implement")
@@ -217,6 +233,11 @@ class BenchmarkCountTest(unittest.TestCase):
         out = self.aggregate(stages, implement_block())
         self.assertIn("S1: hand-backs with a result contract: 1 of 2; 1 stage(s) the harness could not attribute"
                       " — not counted", out)
+
+    def test_a_codex_stage_with_a_typed_delegate_prints_the_hand_back_line_for_it(self) -> None:
+        codex = stage("implement", "2026-10-05T17:00:00Z", "2026-10-05T17:10:00Z", delegated=False, source="codex")
+        self.assertIn("S1: hand-backs with a result contract: 0 of 0; 1 stage(s) the harness could not attribute"
+                      " — not counted", self.aggregate([codex]))
 
     def test_a_slice_with_no_delegated_or_unattributed_stage_prints_no_line(self) -> None:
         out = self.aggregate([stage("gaps", "2026-10-05T16:00:00Z", "2026-10-05T16:10:00Z", delegated=False)])

@@ -119,6 +119,8 @@ owes a block only when a typed `drive-*` delegate that belongs to the stage ran 
 (Explore, general-purpose) and a `drive-slice`'s own context owe none, because the slice delegate's block goes to the
 feature record under `ready-set`. A stage that was delegated but whose entry names no agent types, or whose tokens the
 harness could not read, is listed as not attributable and counted as neither owed nor held; it is never a finding.
+So is a stage on a harness whose reader returns no sub-agents at all (Codex, where every stage reads as not delegated)
+that names a typed delegate in its `agents` or its `agent` signal: nothing here can say none ran.
 Each line names the stage and the type(s), and the one for nothing recorded reads `nothing recorded — a finding for
 converge`. The `<stage>` you pass `--hand-back` is the name of the stage's open benchmark entry, so the record and
 `benchmark.json` agree.
