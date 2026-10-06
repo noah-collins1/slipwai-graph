@@ -168,7 +168,7 @@ class StatesTest(ScopeCase):
     """T031 (G6): states that worked and had no example."""
 
     def base(self) -> str:
-        """`main` with a marker commit and a later one that adds `config/later.go`; the slice is cut at the later one."""
+        """`main` with a marker commit and a later one adding `config/later.go`; the slice is cut at the later one."""
         git(self.repo, "checkout", "-q", "main")
         self.write("apps/service/config/marked.go")
         self.commit("marker")
