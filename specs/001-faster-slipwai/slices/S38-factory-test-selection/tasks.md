@@ -534,7 +534,7 @@ converged verdict while the patch waits for a person. A fix to the root `Makefil
 
 ### T022 — After-converge gaps pass (host task)
 
-- [ ] `drive-gaps` traces AC-S38-1 … -17 over the applied tree. Includes AC-S38-17's check:
+- [x] *(Done at `c4ae355`, iteration 24: five findings, T037–T041.)* `drive-gaps` traces AC-S38-1 … -17 over the applied tree. Includes AC-S38-17's check:
   `git diff --stat 8072724 -- assets src/slipwai catalog.json` is empty, `VERSION` and `changelog.d/` unchanged. Findings
   are decisions or tasks under *Phase 4*.
 
@@ -727,6 +727,17 @@ person, as T031/T032 did); were it applied first, they are `s38-2.patch`.
   **Files:** `scripts/select_tests/declarations.py`, `tests/test_select_tests_declarations.py`.
 
 ---
+
+### After-converge gaps (T022, 2026-10-06, iteration 24, `drive-gaps` over `c4ae355`) — before the demo
+
+AC-S38-1, -2, -4…-7, -9…-14, -17 held; -3 and -8 partly; -15 not yet run; **-16 not held** (reproduced). T037 and T038
+land before the demo (T023); T039–T041 too, since the demo follows the quickstart.
+
+- [ ] **T037 — HIGH · Asset files the generator reads on import reach every module that imports `slipwai` (gaps 1; AC-S38-10, -16).** `src/slipwai/assets.py` loads `assets/toolkit/scripts/check-styles.py` by path on import, and generator functions a module calls in process read `assets/toolkit/scripts/agents/registry.json` (`src/slipwai/project/gitignore.py`); a toolkit change selects only generating modules and those whose `reads` name the file, so seven reads-only modules importing `slipwai` are skipped while each errors on the faulted tree (reproduced: `check-styles.py` broken, `selected 332 of 339`, the seven raise `SyntaxError`). **RED** (`tests/test_select_tests_real_loaders.py`): a change to `check-styles.py`, to `agents/registry.json`, and to every other asset `src/slipwai` reads at import or from a function a declared module calls in process, runs every module that imports `slipwai` (or the run is full), with the reason. **GREEN — the class:** a rule like the pruner's row for every asset path `src/slipwai/` reads, found by scanning `src/slipwai/` for asset paths (literal and joined), not by a typed list; a module importing `slipwai` is taken to read them. **Files:** `scripts/select_tests/rules.py`, `scripts/select_tests/declarations.py`, `tests/test_select_tests_real_loaders.py`.
+- [ ] **T038 — HIGH · A declared module is held to what it reads, not to a typed list (gaps 2; AC-S38-8, -16) — the generating modules decided by D164.** **RED** (a new `tests/test_select_tests_real_audit.py`): each reads-only declared module runs under an audit hook (`sys.addaudithook`, `open` events), and the test fails on any opened path outside `src/` and `tests/` that neither its `reads` nor a run-everything row covers — teeth: the gaps pass's `self.module.load("verify-stamp.py")` added to `test_pit_globs` fails it; for the modules that generate projects, see D164. **GREEN:** the declarations it flags are fixed. **Files:** a new `tests/test_select_tests_real_audit.py`, `tests/support.py` only as D164 allows, the declarations it flags.
+- [ ] **T039 — MEDIUM · The demo's replays are runnable as written, and a full replay prints its count and base (gaps 3; AC-S38-15) — D165 (D157 standing).** `quickstart.md` names the four ranges: S06 `51c6de4..45ebedb` and S33 by its register row's *Merged as* range (they landed on `adopt-method`'s main line, no merge commit), S08 `3138416^1..3138416`, S14 `37cdf3f^1..37cdf3f` (merged since the plan); the quickstart's `SINCE=adopt-method` example is read on a tree whose `Makefile` matches its base. **RED/GREEN** (`tests/test_select_tests_replay.py`, `scripts/select-tests.py`): a replay that runs everything also prints `selected N of N against <base>`. **Files:** `quickstart.md`, `scripts/select-tests.py`, `tests/test_select_tests_replay.py`.
+- [ ] **T040 — LOW · The docs say the patch is applied (gaps 4).** Delete *Until `s38.patch` is applied …* from `docs/maintaining.md` and `test_says_the_patch_is_not_yet_applied` (`tests/test_select_tests_docs.py`), which holds it there; say instead what `make test` does on a slice branch. **Files:** `docs/maintaining.md`, `tests/test_select_tests_docs.py`.
+- [ ] **T041 — LOW · `adopt`'s fallback to the TypeScript examples is a cross-read (gaps 5).** `src/slipwai/toolkit.py` falls back to `assets/languages/typescript/examples/`; `CROSS_READS` gains `(command, adopt)` for them and the scan reads the f-string path in `src/slipwai/examples.py`. **Files:** `scripts/select_tests/rules.py`, `tests/test_select_tests_cross_reads.py`.
 
 ## Parallel opportunities
 
