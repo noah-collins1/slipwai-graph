@@ -23,13 +23,16 @@ typecheck: ## Byte-compile everything, then type-check it with mypy
 check-structure: ## Fail when a module imports against the declared direction, cycles, or outgrows its budget
 	python3 scripts/check-structure.py
 
-# The suite, or a slice of it: `TESTS="test_matrix test_add_service"` runs those modules, `SKIP="test_matrix"`
-# every module but those. CI holds the gate in parallel jobs this way; `make verify` still runs the whole suite.
+# The suite, or a slice of it. On a slice branch `make test` runs the modules the change can reach, and says which and
+# why (`scripts/select-tests.py`); on the trunk, off a branch, or after a change to this file it runs every module.
+# `SINCE=<ref>` names the base it compares against, `FULL=1` runs every module, and `TESTS="test_matrix test_add_service"`
+# runs exactly those modules, `SKIP="test_matrix"` every module but those: each of the last two prints `selection off`.
+# CI holds the gate in parallel jobs this way. `make verify` always runs every module: it passes `FULL=1` below.
 ALL_TESTS := $(patsubst tests/%.py,%,$(wildcard tests/test_*.py))
-TESTS ?= $(if $(SKIP),$(filter-out $(SKIP),$(ALL_TESTS)),)
+RUN_TESTS = $(or $(strip $(TESTS)),$(filter-out $(SKIP),$(ALL_TESTS)))
 .PHONY: test
-test: ## Run the factory's test suite, or a slice: TESTS="test_a test_b", or SKIP="test_a"
-	$(if $(TESTS),PYTHONPATH=src:tests python3 -m unittest -v $(TESTS),PYTHONPATH=src python3 -m unittest discover -s tests -v)
+test: ## Run the modules this slice branch can reach (SINCE=<ref>, FULL=1 for all), or TESTS="test_a test_b" / SKIP="test_a"
+	$(if $(strip $(TESTS)$(SKIP)),echo 'selection off: $(if $(strip $(TESTS)),TESTS,SKIP) given$(if $(RUN_TESTS),, - no module runs)'$(if $(RUN_TESTS),; PYTHONPATH=src:tests python3 -m unittest -v $(RUN_TESTS)),PYTHONPATH=src python3 -B scripts/select-tests.py)
 
 # A tree that already passed is not judged again: the verify stamp every generated project carries answers first, from
 # where it ships, so the factory's own gate is the one it generates. The four checks are `verify-checks`; CI never reads
@@ -52,13 +55,16 @@ VERIFY_STAMP = --tool make --make "$(MAKE)" $(foreach tool,$(VERIFY_TOOLS),$(if 
 .PHONY: verify
 verify: ## Full local gate — a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway
 ifneq ($(strip $(TESTS)$(SKIP)$(FACTORY_BACKENDS)),)
-	@"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks
+	@"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks FULL=1
 else
-	@if [ -L .factory-work ] || { [ -e .factory-work ] && [ ! -d .factory-work ]; }; then echo 'verify: .factory-work is a symbolic link or not a directory; the stamp cannot key what is behind it - make it a plain directory' >&2; exit 2; fi; { mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; { command -v sort >/dev/null && list=$$(find assets \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) 2>/dev/null) && printf '%s\n' "$$list" | LC_ALL=C sort; } || echo "caches: not listed, run $$$$"; } > .factory-work/verify-probes; } || { echo 'verify: .factory-work/verify-probes could not be written, so the stamp would key a stale answer; the gate stops' >&2; exit 2; }; run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
+	@if [ -L .factory-work ] || { [ -e .factory-work ] && [ ! -d .factory-work ]; }; then echo 'verify: .factory-work is a symbolic link or not a directory; the stamp cannot key what is behind it - make it a plain directory' >&2; exit 2; fi; { mkdir -p .factory-work && { docker compose version 2>/dev/null || echo absent; { command -v sort >/dev/null && list=$$(find assets \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) 2>/dev/null) && printf '%s\n' "$$list" | LC_ALL=C sort; } || echo "caches: not listed, run $$$$"; } > .factory-work/verify-probes; } || { echo 'verify: .factory-work/verify-probes could not be written, so the stamp would key a stale answer; the gate stops' >&2; exit 2; }; run=$$(python3 $(VERIFY_STAMP_SCRIPT) token); python3 $(VERIFY_STAMP_SCRIPT) reuse --token "$$run" $(VERIFY_STAMP) || { "$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks FULL=1 && python3 $(VERIFY_STAMP_SCRIPT) record --token "$$run" $(VERIFY_STAMP); } || { rc=$$?; [ "$$rc" -eq 1 ] || echo 'verify: the gate did not pass; each failed check is named above'; exit "$$rc"; }
 endif
 
 .PHONY: verify-checks
-verify-checks: lint typecheck check-structure test
+# Run directly or through `verify`, the gate is whole: `test` is made by a recipe of its own with `FULL=1`, not as a
+# prerequisite, so naming it before this goal (`make test verify-checks`) cannot leave this one with a selected run.
+verify-checks: lint typecheck check-structure
+	@"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" test FULL=1
 	@echo
 	@echo 'verify: all gates passed'
 
