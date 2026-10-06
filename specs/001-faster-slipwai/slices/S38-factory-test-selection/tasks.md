@@ -478,7 +478,7 @@ the patch line; `make lint typecheck check-structure` passes. Commit by path.
 
 ### T018 — [US3] Make the `Makefile` change in the scratch clone and export `s38.patch` (R9 · AC-S38-6, -13, -14)
 
-- [ ] **Rule R9, GREEN.** Follows T017 and every other task through T017 (the clone is taken at the worktree's tip).
+- [x] **Rule R9, GREEN.** Follows T017 and every other task through T017 (the clone is taken at the worktree's tip).
   In `/tmp/s38/clone`: `git clone --quiet /home/noahc/math/slipwai-graph-S38-factory-test-selection /tmp/s38/clone`
   (or `git -C /tmp/s38/clone pull --quiet` if it exists), then edit the clone's root `Makefile` only: the `test`
   recipe calls `python3 -B scripts/select-tests.py` unless `TESTS` is given (then it runs as today and prints
