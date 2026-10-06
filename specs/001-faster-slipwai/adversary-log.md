@@ -586,21 +586,21 @@ Findings: eighteen — two `HIGH`, seven `MEDIUM`, nine `LOW`; no `CRITICAL`. Wh
 
 | # | Seam | Severity | Finding | Triage | State |
 |---|---|---|---|---|---|
-| A1 | A | HIGH | *Merged* matches `slice/<id>` anywhere in a first-parent merge subject, so a sibling's merge that mentions the slice, a `slice/<id>-v2` retry, or a merge later reverted is taken as the slice's merge, charging days to integration. New | Confirmed; S39 T043 | open |
-| B1 | B | HIGH | Claude Code copies earlier requests into another session's transcript with the same `requestId`; requests are de-duplicated only within a session, so one request is charged to two slices and the session totals double. New | Confirmed; S39 T051 | open |
-| A2 | A | MEDIUM | The feature's elapsed is built from slices whose own figures are contradicted (accepted before ready), and can print negative. New | Confirmed; S39 T044 | open |
-| A3 | A | MEDIUM | One non-UTF-8 byte in any historical copy of the split, the register or the model makes the whole benchmark exit 1. New (regression) | Confirmed; S39 T045 | open |
-| A4 | A | MEDIUM | With no `git` on PATH the run exits 1 instead of reading `unknown`, as the fragment promises. New (regression) | Confirmed; S39 T045 | open |
-| A5 | A | MEDIUM | In a partial (blobless) clone each historical read fetches over the network into `.git/objects`, with no time limit — a hanging remote stalls a cruise run. New | Confirmed; S39 T045 | open |
-| B2 | B | MEDIUM | A streamed response's lines share one `requestId` with growing `output_tokens`; the first line is kept, so output tokens read about 3.3 times too low. Older (`claude_usage` at `end`), copied into S39 | Confirmed; S39 T048 (the stage `end` path), T051 (attribution) | open |
-| B3 | B | MEDIUM | A broken spawn chain (a `drive-slice`'s metadata absent or corrupt, a parent that resolves nowhere) sends a child's requests to another slice's host bracket with no note, where the contract says shared. New | Confirmed; S39 T052 | open |
-| B4 | B | MEDIUM | Tokens leak across features: a session with one feature's brackets is wholly that feature's while chain attribution charges another feature's record, so neither feature's totals add up; a slice id repeated across features resolves to the first in path order. New | Confirmed; S39 T053 | open |
-| B5 | B | MEDIUM | An entry that falls back to its recorded usage still has its live requests counted again (in shared, or by the chain), breaking conservation. New | Confirmed; S39 T053 | open |
-| A6 | A | LOW | A dependency marked done in the same commit as its dependant gives the dependant `0s` elapsed beside hours of its own brackets, with no note. New | Confirmed; S39 T044 | open |
-| A7 | A | LOW | A bracket that ends before it starts gives negative stage time. Older | Confirmed; S39 T046 | open |
-| A8 | A | LOW | An accepted demo with an unreadable `ended` crashes with a traceback. New | Confirmed; S39 T046 | open |
-| A9 | A | LOW | A cruise log whose rows are out of time order makes a park vanish from the person's wait, counted as worker. New | Confirmed; S39 T047 | open |
+| A1 | A | HIGH | *Merged* matches `slice/<id>` anywhere in a first-parent merge subject, so a sibling's merge that mentions the slice, a `slice/<id>-v2` retry, or a merge later reverted is taken as the slice's merge, charging days to integration. New | Confirmed; S39 T043 | fixed `5ac06ee` |
+| B1 | B | HIGH | Claude Code copies earlier requests into another session's transcript with the same `requestId`; requests are de-duplicated only within a session, so one request is charged to two slices and the session totals double. New | Confirmed; S39 T051 | fixed `d685bfc` |
+| A2 | A | MEDIUM | The feature's elapsed is built from slices whose own figures are contradicted (accepted before ready), and can print negative. New | Confirmed; S39 T044 | fixed `ff8fd55` |
+| A3 | A | MEDIUM | One non-UTF-8 byte in any historical copy of the split, the register or the model makes the whole benchmark exit 1. New (regression) | Confirmed; S39 T045 | fixed `0168e32` |
+| A4 | A | MEDIUM | With no `git` on PATH the run exits 1 instead of reading `unknown`, as the fragment promises. New (regression) | Confirmed; S39 T045 | fixed `0168e32` |
+| A5 | A | MEDIUM | In a partial (blobless) clone each historical read fetches over the network into `.git/objects`, with no time limit — a hanging remote stalls a cruise run. New | Confirmed; S39 T045 | fixed `0168e32` |
+| B2 | B | MEDIUM | A streamed response's lines share one `requestId` with growing `output_tokens`; the first line is kept, so output tokens read about 3.3 times too low. Older (`claude_usage` at `end`), copied into S39 | Confirmed; S39 T048 (the stage `end` path), T051 (attribution) | fixed `f791776`, `d685bfc` |
+| B3 | B | MEDIUM | A broken spawn chain (a `drive-slice`'s metadata absent or corrupt, a parent that resolves nowhere) sends a child's requests to another slice's host bracket with no note, where the contract says shared. New | Confirmed; S39 T052 | fixed `faecc82` |
+| B4 | B | MEDIUM | Tokens leak across features: a session with one feature's brackets is wholly that feature's while chain attribution charges another feature's record, so neither feature's totals add up; a slice id repeated across features resolves to the first in path order. New | Confirmed; S39 T053 | fixed `4ca8ee2` |
+| B5 | B | MEDIUM | An entry that falls back to its recorded usage still has its live requests counted again (in shared, or by the chain), breaking conservation. New | Confirmed; S39 T053 | fixed `4ca8ee2` |
+| A6 | A | LOW | A dependency marked done in the same commit as its dependant gives the dependant `0s` elapsed beside hours of its own brackets, with no note. New | Confirmed; S39 T044 | fixed `ff8fd55` |
+| A7 | A | LOW | A bracket that ends before it starts gives negative stage time. Older | Confirmed; S39 T046 | fixed `224eeb6` |
+| A8 | A | LOW | An accepted demo with an unreadable `ended` crashes with a traceback. New | Confirmed; S39 T046 | fixed `224eeb6` |
+| A9 | A | LOW | A cruise log whose rows are out of time order makes a park vanish from the person's wait, counted as worker. New | Confirmed; S39 T047 | fixed `e2cfa37` |
 | A10 | A | LOW | An inherited `GIT_DIR` is followed and another repository's history read. Older | Declined: needs an environment nobody runs the benchmark in, and the toolkit's git callers all share it; Parking Lot | declined |
-| B6 | B | LOW | A record with no ended bracket reads `cost.tokens: 0` where nothing was read, against *never a bare 0*. New | Confirmed; S39 T049 | open |
-| B7 | B | LOW | One unreadable metadata or transcript file, a dangling link, a line that is a JSON array, or a `parentAgentId` with `/` stops the whole report. New | Confirmed; S39 T054 | open |
-| B8 | B | LOW | The catch-up omits `scripts/test_benchmark.py`, which `migrate` changes; a description like `drive-slice S1-alpha (resumed)` reads as naming no slice. New | Confirmed; S39 T050 (fragment), T054 (description) | open |
+| B6 | B | LOW | A record with no ended bracket reads `cost.tokens: 0` where nothing was read, against *never a bare 0*. New | Confirmed; S39 T049 | fixed `66cc431` |
+| B7 | B | LOW | One unreadable metadata or transcript file, a dangling link, a line that is a JSON array, or a `parentAgentId` with `/` stops the whole report. New | Confirmed; S39 T054 | fixed `4e59e52` |
+| B8 | B | LOW | The catch-up omits `scripts/test_benchmark.py`, which `migrate` changes; a description like `drive-slice S1-alpha (resumed)` reads as naming no slice. New | Confirmed; S39 T050 (fragment), T054 (description) | fixed `299b6bb`, `4e59e52` |
