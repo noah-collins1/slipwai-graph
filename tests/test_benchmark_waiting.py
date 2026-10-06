@@ -99,10 +99,27 @@ class WaitingTest(unittest.TestCase):
         found = self.found()
         self.assertEqual(found["elapsed"], 11 * 3600)
         self.assertEqual(found["waiting"]["review"], 2 * 3600)
-        self.assertEqual(found["waiting"]["worker"], 8.5 * 3600 - 2 * 3600 - 3600)
-        self.assertEqual(found["waiting"]["unattributed"], 1800 + 2 * 3600)
+        # from the log's first row (09:30) to accepted (20:00), less the park's 2 h and the 1 h of work
+        self.assertEqual(found["waiting"]["worker"], 10.5 * 3600 - 2 * 3600 - 3600)
+        self.assertEqual(found["waiting"]["unattributed"], 1800)  # only the time before the log's first row
         self.assertIn("specs/cruise-log.jsonl", found["read_from"]["review"])
         self.assertIn("specs/cruise-log.jsonl", found["read_from"]["worker"])
+
+    def test_e5_time_after_the_logs_last_row_and_between_iterations_is_worker_not_unattributed(self) -> None:
+        self.accept(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")), row=stamp(1, "20:00:00"))
+        write(self.repo, "specs/cruise-log.jsonl",
+              park(1, stamp(1, "09:30:00"), stamp(1, "12:00:00"), "cruise: continue")
+              + park(2, stamp(1, "14:00:00"), stamp(1, "16:00:00"), "cruise: continue"))
+        found = self.found()
+        # 09:30 -> 20:00 is 10.5 h: 1 h worked, the rest worker — the gap 12:00-14:00 and 16:00-20:00 included
+        self.assertEqual((found["waiting"]["worker"], found["waiting"]["unattributed"]), (9.5 * 3600, 1800))
+        self.assertIn("outside any iteration", found["read_from"]["worker"])
+        self.assertIn("specs/cruise-log.jsonl", found["read_from"]["worker"])
+
+    def test_e6_with_no_cruise_log_time_outside_any_iteration_stays_unattributed(self) -> None:
+        self.accept(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")), row=stamp(1, "20:00:00"))
+        found = self.found()
+        self.assertEqual((found["waiting"]["worker"], found["waiting"]["unattributed"]), (0, 10 * 3600))
 
     def test_e3_no_second_is_taken_twice_where_causes_overlap(self) -> None:
         """A park inside merge -> row, a skipper nested in an implement, a demo with no driver: each second once."""

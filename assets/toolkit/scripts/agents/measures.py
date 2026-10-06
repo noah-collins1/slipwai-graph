@@ -546,8 +546,9 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
         claimed["review"] = review + parked
         read_from["review"] = f"{LOG}: stopped: human" if parked else read_from["review"]
         if span:
-            claimed["worker"] = [(min(start for start, _ in span), max(end for _, end in span))]
-            read_from["worker"] = f"{LOG}: the log's span, less parks"
+            claimed["worker"] = [(min(start for start, _ in span), FOREVER)]
+            read_from["worker"] = (f"{LOG}: from the log's first row to accepted, less every cause above; counts "
+                                   "time outside any iteration")
     seconds: dict[str, Any] = {}
     for cause in CAUSES:
         mine = subtract(clip(claimed[cause], low, high), taken)
