@@ -16,7 +16,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True  # before the package loads: nothing may be written beside the selector or under assets/
 
 from select_tests import base, full_rows  # noqa: E402
-from select_tests.report import Full  # noqa: E402
+from select_tests.report import Full, full_line, printable  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 FULL_COMMAND = ("python3", "-m", "unittest", "discover", "-s", "tests", "-v")
@@ -28,11 +28,23 @@ def run_full() -> int:
     return subprocess.Popen(FULL_COMMAND, cwd=ROOT, env=env).wait()
 
 
+def measure() -> Full | None:
+    """The base, what changed since, and whether it can be told what that reaches; the line of the base is printed."""
+    found = base.change_set(ROOT, base.establish(ROOT, os.environ))
+    for path in found.paths:  # provisional until the path rules (T005): the catalog is the one path that broadens
+        if path == "catalog.json":
+            return Full(full_line(f"{base.changed_words(ROOT, found, path)} — the catalog"))
+    for path in base.ignored_files(ROOT):
+        return Full(full_line(f"`{printable(path)}` is a file git ignores — what it changes cannot be established"))
+    print(found.line, flush=True)
+    return None
+
+
 def main() -> int:
     refusal: Full | None = full_rows(os.environ, ROOT)
     if refusal is None:
         try:
-            print(base.establish(ROOT, os.environ).line, flush=True)
+            refusal = measure()
         except Full as full:
             refusal = full
     if refusal is not None:
