@@ -50,9 +50,10 @@ def run_modules(modules: list[str], backends: str | None = None) -> int:
     return run_unittest(("-v", *modules), "src:tests", backends)
 
 
-def plan() -> tuple[base.ChangeSet, choose.Selection]:
-    """The base, what changed since, and which modules that reaches. Raises the line wherever the run is whole."""
-    found = base.change_set(ROOT, base.establish(ROOT, os.environ))
+def plan(replay: str | None = None) -> tuple[base.ChangeSet, choose.Selection]:
+    """The base, what changed since, and which modules that reaches. Raises the line wherever the run is whole. A
+    replay takes its change set from a range of commits, which leaves the working tree out of it."""
+    found = base.replay_changes(ROOT, replay) if replay else base.change_set(ROOT, base.establish(ROOT, os.environ))
     try:
         catalog = rules.load_catalog(ROOT)
     except Full:
@@ -63,8 +64,9 @@ def plan() -> tuple[base.ChangeSet, choose.Selection]:
         why = rules.broadening(path, catalog)
         if why is not None:
             raise Full(full_line(f"{base.changed_words(ROOT, found, path)} — {why}"))
-    for path in base.ignored_files(ROOT):
-        raise Full(full_line(f"`{printable(path)}` is a file git ignores — what it changes cannot be established"))
+    if not replay:  # git cannot say what a range of commits did to a file it ignores: the working tree is not in it
+        for path in base.ignored_files(ROOT):
+            raise Full(full_line(f"`{printable(path)}` is a file git ignores — what it changes cannot be established"))
     try:
         tree = declarations.scan(ROOT, catalog)
     except (OSError, ValueError, RecursionError) as error:
@@ -75,16 +77,20 @@ def plan() -> tuple[base.ChangeSet, choose.Selection]:
 def arguments(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="select-tests.py", description=__doc__.split("\n\n")[0] if __doc__ else None)
     parser.add_argument("--dry-run", action="store_true", help="print what would run and why, and run nothing")
-    return parser.parse_args(argv)
+    parser.add_argument("--replay", metavar="BASE..TIP", help="with --dry-run: the change set of that range of commits")
+    given = parser.parse_args(argv)
+    if given.replay and not given.dry_run:
+        parser.error("--replay only describes a selection: it needs --dry-run")
+    return given
 
 
 def main(argv: list[str]) -> int:
     given = arguments(argv)
     try:
-        refusal = full_rows(os.environ, ROOT)
+        refusal = full_rows(os.environ, ROOT, branch=not given.replay)
         if refusal is not None:
             raise refusal
-        found, selection = plan()
+        found, selection = plan(given.replay)
     except Full as full:
         print(full.line, flush=True)
         return 0 if given.dry_run else run_full()

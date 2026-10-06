@@ -179,3 +179,24 @@ def ignored_files(root: Path) -> list[str]:
     if status:
         raise cannot_be_established(f"git could not list the ignored files: {printable(out)}")
     return sorted(path for path in out.split("\0") if path and not is_cache(path))
+
+
+def replay_changes(root: Path, span: str) -> ChangeSet:
+    """The change set of `<base>..<tip>`: the paths that differ between the two trees, both sides of a rename, taken
+    from the commits and never the working tree (AC-S38-15). A span that cannot be read is row 11."""
+    start, dots, tip = span.partition("..")
+    if not dots or not start or not tip or tip.startswith(".") or start.startswith("-") or tip.startswith("-"):
+        raise cannot_be_established(f"`{printable(span)}` is not a range of commits written <base>..<tip>")
+    commits = []
+    for name in (start, tip):
+        status, out = git_out(root, "rev-parse", "--verify", "-q", f"{name}^{{commit}}")
+        if status or not out.strip():
+            raise cannot_be_established(f"`{printable(name)}` names no commit")
+        commits.append(out.strip())
+    status, out = git_out(root, "diff", "--no-renames", "--name-only", "-z", commits[0], commits[1])
+    if status:
+        raise cannot_be_established(f"git could not compare the range: {printable(out)}")
+    paths = sorted(path for path in out.split("\0") if path)
+    short = short_of(root, commits[0])
+    line = f"compared with `{printable(start)}` at {short}, replaying `{printable(span)}`"
+    return ChangeSet(paths, frozenset(paths), None, line, f"`{printable(start)}` at {short}")

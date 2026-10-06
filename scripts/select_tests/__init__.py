@@ -65,10 +65,11 @@ def branch_rows(root: Path) -> str:
     return name
 
 
-def full_rows(env: Mapping[str, str], root: Path) -> Full | None:
-    """The cases that make a run whole, in the order the data model lists them; the first that holds is the line."""
+def full_rows(env: Mapping[str, str], root: Path, *, branch: bool = True) -> Full | None:
+    """The cases that make a run whole, in the order the data model lists them; the first that holds is the line. A
+    replay of a range of commits has no branch to ask about, so `branch=False` leaves rows 6 and 7 out."""
     found = environment_rows(env)
-    if found is not None:
+    if found is not None or not branch:
         return found
     try:
         branch_rows(root)
