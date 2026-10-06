@@ -69,6 +69,11 @@ depart from it, the reason is the part that matters.
 existing repository's release path is, whether a person has approved a release — those are inputs nobody
 here has, and the honest answer is `unavailable`, with what a person must provide in `unresolved`. That word is
 your block's `status`, and it is what lets the run park with a question instead of shipping a guess.
+An `unavailable` answer is still the entry: return it under your number, its **Decision:** line saying what a
+person must provide, and the session that delegated you appends it at `Status: standing` like any other.
+
+Your own `D<n>` goes in `change_summary` and never in `decisions`, whether your `status` is `decided` or
+`unavailable`: `decisions` lists only the standing entries your work relied on.
 
 You write nothing. Return, in this order, the entry first, then any ADR, then the `result-contract` block last. The entry is the whole entry, in the shape `{DECISIONS}` shows, with its `Scope:` line (the slice ids whose
 later decisions must agree with it, or `global`), under the number the brief gave

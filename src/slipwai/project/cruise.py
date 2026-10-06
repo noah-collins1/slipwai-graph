@@ -187,7 +187,9 @@ The entry's shape, which `{layout.make} check-decisions` holds:
 
 A decision that would break a constitution MUST is not available; the skipper says so and the question parks.
 A fact nobody here has — a credential, a third party's behaviour, an approval — is `unavailable`, and the
-skipper's brief says which those are: it is never decided, whatever `decide` says. A person overrides a
+skipper's brief says which those are: it is never decided, whatever `decide` says. It is still an entry: the
+skipper returns it under its number with a **Decision:** that says what a person must provide, and it is
+appended like any other, so the log has no number nobody can explain. A person overrides a
 decision by editing its `Status` and writing the answer they want into the artifact; the next iteration
 re-derives the entry stage from that artifact, the way demo feedback re-enters the ladder.
 

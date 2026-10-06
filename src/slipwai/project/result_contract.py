@@ -112,9 +112,13 @@ def converge_sentence(layout: Layout, indent: str = "") -> str:
 def cruise_sentences(layout: Layout) -> str:
     """`commands/cruise.md`: where the skipper's entry and every skipper, hand and bosun block go."""
     return f"""**Every skipper, hand and bosun dispatch is recorded the same way** ([{PAGE}]({PAGE})): the skipper's entry
-goes to `{DECISIONS}` as above, and its `result-contract` block — the entry's `D<n>` in `decisions` — to the record with
+goes to `{DECISIONS}` as above, and its `result-contract` block to the record with
 `python3 scripts/check-decisions.py --hand-back <dir> drive-skipper <stage>`; the hand's and the bosun's blocks the
-same, each before the stage's benchmark entry closes. *What every delegate hands back* in `commands/drive.md` has
+same, each before the stage's benchmark entry closes. The skipper's own `D<n>` goes in the block's `change_summary` and
+never in `decisions`, which lists only the standing entries the work relied on, whether its `status` is `decided` or
+`unavailable`. An `unavailable` answer is an entry too, appended at `Status: standing` under the number it was given,
+so that number resolves; the report lists it among the entries a person has not reviewed, and a person overrides it as
+they override any entry. *What every delegate hands back* in `commands/drive.md` has
 the continuation and the `Missing:` forms, and the `<stage>` is the name of the stage's open benchmark entry
 (`skipper`, `hand`, `bosun`); `{layout.make} check-decisions` holds the record to the shape."""
 
