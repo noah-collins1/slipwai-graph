@@ -169,7 +169,7 @@ recorded where the tier is; a review's verdict from the `Status:` words FR-031 a
 gaps stage can take or change the spelling in one table. AC-S39-7's first half — every figure unknown on this
 repository's log — holds under any option.
 
-**Q2 — Where does *a person's patch the slice needs* come from?** AC-S39-2 counts it under *dependency*, and no record
+**Q2 — Where does *a person's patch the slice needs* come from?** *(Answered by D167: no record names a park's cause, so review and dependency read only a record that does — a person's closed demo — and a park is time a person held the run, cause unrecorded, inside `unattributed` and named by `--json`'s `unattributed_person`.)* AC-S39-2 counts it under *dependency*, and no record
 in this repository or a generated one marks a wait as one: a park for a patch and a park for a review are the same
 cruise-log line (`stopped: human`). Options: (a) every park is *review*, and the patch half of dependency counts
 nothing until a record names such a wait (FR-046's coordination tool, S34a, is where one would be written);

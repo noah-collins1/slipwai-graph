@@ -28,12 +28,13 @@ All intervals are clipped to `[ready, accepted]`, and integer seconds.
 
 | Name | Intervals | Read from |
 |---|---|---|
-| `worked` | union of the record's brackets `[started, end]`, except stage `gate` and a `demo` whose signals carry no `driver`; `end` is the latest timestamped line of any request attributed to the entry for a `cut_off` entry where one was read and it does not precede `started`, else `ended` (a last line before the start contradicts the bracket: the recorded end stands, and the note says so; transcripts read with no request in the entry say that, which is not the same as not read) | the brackets |
+| `worked` | union of the record's brackets `[started, end]`, except stage `gate` and a person's `demo` (closed by `end` with an `outcome` and no `driver`; a demo cut off before its `end` is stage time); `end` is the latest timestamped line of any request attributed to the entry for a `cut_off` entry where one was read and it does not precede `started`, else `ended` (a last line before the start contradicts the bracket: the recorded end stands, and the note says so; transcripts read with no request in the entry say that, which is not the same as not read) | the brackets |
 | `integration` | `[merged, accepted]` ∪ every `gate` bracket | the merge commit, the `gate` brackets |
 | `dependency` | `[demo_accepted, L]`, where `L` is the latest *landing* of a slice earlier in the `## Slice graph`'s row order that falls after `demo_accepted` and before `merged` (or before `accepted` where there is no merge); a landing is the sibling's `merged`, else its own `done` | git, the graph's order |
-| `review` | each cruise-log row whose `last_line` ends `stopped: human`: `[ended, next row's started]` (to now if none); each `demo` bracket with no `driver` signal | `specs/cruise-log.jsonl`, the brackets |
+| `review` | each person's `demo` bracket (closed by `end` with an `outcome`, no `driver`); a park's seconds are not review, since no record says its cause (D167) | the brackets |
+| *person, cause unrecorded* (inside `unattributed`, claimed after `review` and before `worker`) | each cruise-log row whose `last_line` ends `stopped: human` or carries `parked: <reason>`: `[ended, next row's started]`, the last row's park ending at the first bracket any record began after it, unknown with none | `specs/cruise-log.jsonl`, the brackets |
 | `worker` | `[first row's started, accepted]`: every second from the cruise log's first row on that no earlier cause took, the gaps between iterations and the time after the last logged row included ("outside any iteration") | `specs/cruise-log.jsonl`, which `read_from` names with that wording |
-| `unattributed` | what is left: with a log, only time before its first row; with none, every such second | — |
+| `unattributed` | what is left, plus the person time above (`--json` names it as `unattributed_person`, beside `waiting`, which keeps its five keys): with a log, only time before its first row; with none, every such second | — |
 
 A cruise log with a line that cannot be read whole (not JSON, or a `started`/`ended` that is not a UTC second) makes
 `review`, `worker` and `unattributed` `{"unknown": "specs/cruise-log.jsonl could not be read whole: line <n>"}`, naming
@@ -119,6 +120,7 @@ denominator of 0: unknown, naming it.
  "rework": {"seconds": 5429, "tokens": 18200345}, "cost": {"tokens": 81233412, "shared": 2210345, "sessions": {"<session>": 81233412}},
  "moments": {"ready": "2026-10-04T18:13:05Z", "accepted": "2026-10-06T07:16:58Z", "...": "..."},
  "read_from": {"ready": "b31c864 (slices/README.md: S04-parallel-gate)", "accepted": "c88fe2f (slices/README.md)", "...": "..."},
+ "unattributed_person": 7200,
  "entries": [{"stage": "implement", "started": "…", "stage_seconds": 5755, "recorded_seconds": 5755, "tokens": 0, "delegates": ["S08 US2 implement T002-T009"]}],
  "reentered": []}
 ```

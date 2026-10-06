@@ -947,6 +947,7 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
         "moments": {key: measures().printed(moved[key]) for key in ("ready", "accepted", "demo_accepted", "merged")
                     if key in moved},
         "worked_seconds": parts["worked"], "waiting": parts["waiting"],
+        "unattributed_person": parts["unattributed_person"],
         "read_from": measures().sources(moved, parts, len(ended), len(measures().rework_indices(stages)),
                                         (found or {}).get("cost_read")),
         "_last_lines": last_lines or {},
@@ -997,7 +998,10 @@ def waiting_rows(summaries: list[dict[str, Any]]) -> list[list[str]]:
     shown = lambda figure: "unknown" if isinstance(figure, dict) else wall(figure)  # noqa: E731
     tokens = lambda figure: "unknown" if isinstance(figure, dict) else compact(figure)  # noqa: E731
     return [[summary["slice"], shown(summary["elapsed"]), shown(summary["worked_seconds"]),
-             *(shown(summary["waiting"][name]) for name in WAITING_COLUMNS[3:8]),
+             *(shown(summary["waiting"][name]) + (
+                 f" ({wall(summary['unattributed_person'])} a person held the run, cause unrecorded)"
+                 if name == "unattributed" and isinstance(summary["unattributed_person"], int)
+                 and summary["unattributed_person"] else "") for name in WAITING_COLUMNS[3:8]),
              f"{wall(summary['rework']['seconds'])} · {tokens(summary['rework']['tokens'])}",
              tokens(summary["cost"]["tokens"])]
             for summary in summaries if summary["slice"]]

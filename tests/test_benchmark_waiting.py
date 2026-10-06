@@ -88,7 +88,7 @@ class WaitingTest(unittest.TestCase):
         self.assertIn("none present", found["read_from"]["worker"])
         self.assertIn("none present", found["read_from"]["review"])
 
-    def test_e2_a_park_is_review_and_the_cruise_log_spans_the_worker_wait(self) -> None:
+    def test_e2_a_park_is_a_person_unattributed_and_the_cruise_log_spans_the_worker_wait(self) -> None:
         self.accept(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")), row=stamp(1, "20:00:00"))
         write(
             self.repo,
@@ -98,11 +98,12 @@ class WaitingTest(unittest.TestCase):
         )
         found = self.found()
         self.assertEqual(found["elapsed"], 11 * 3600)
-        self.assertEqual(found["waiting"]["review"], 2 * 3600)
+        self.assertEqual(found["waiting"]["review"], 0)  # no record says the park was for a review (D167)
         # from the log's first row (09:30) to accepted (20:00), less the park's 2 h and the 1 h of work
         self.assertEqual(found["waiting"]["worker"], 10.5 * 3600 - 2 * 3600 - 3600)
-        self.assertEqual(found["waiting"]["unattributed"], 1800)  # only the time before the log's first row
-        self.assertIn("specs/cruise-log.jsonl", found["read_from"]["review"])
+        # the time before the log's first row, and the park: a person held the run, cause unrecorded
+        self.assertEqual((found["waiting"]["unattributed"], found["unattributed_person"]), (1800 + 7200, 7200))
+        self.assertIn("specs/cruise-log.jsonl", found["read_from"]["unattributed_person"])
         self.assertIn("specs/cruise-log.jsonl", found["read_from"]["worker"])
 
     def test_e5_time_after_the_logs_last_row_and_between_iterations_is_worker_not_unattributed(self) -> None:
@@ -146,12 +147,15 @@ class WaitingTest(unittest.TestCase):
         self.assertEqual(found["waiting"]["review"], 3600)
         self.assertEqual((found["waiting"]["worker"], found["waiting"]["unattributed"]), (3 * 3600, 0))
 
-    def test_e4_a_wait_for_a_patch_is_review_because_no_record_says_otherwise(self) -> None:
+    def test_e4_a_wait_for_a_patch_is_neither_review_nor_dependency_because_no_record_says_which(self) -> None:
         self.accept(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")), row=stamp(1, "20:00:00"))
         write(self.repo, "specs/cruise-log.jsonl", park(1, stamp(1, "09:00:00"), stamp(1, "13:00:00"), "stopped: human")
               + park(2, stamp(1, "15:00:00"), stamp(1, "16:00:00"), "cruise: continue"))
         found = self.found()
-        self.assertEqual((found["waiting"]["dependency"], found["waiting"]["review"]), (0, 2 * 3600))
+        self.assertEqual((found["waiting"]["dependency"], found["waiting"]["review"]), (0, 0))
+        self.assertEqual(found["unattributed_person"], 2 * 3600)
+        self.assertIn("no record names a park's cause", found["read_from"]["review"])
+        self.assertIn("no record names a park's cause", found["read_from"]["dependency"])
 
     def damaged(self, log: str) -> dict:
         self.accept(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")), row=stamp(1, "20:00:00"))
@@ -200,7 +204,7 @@ class WaitingTest(unittest.TestCase):
     def test_e3_a_clean_log_reads_as_it_did(self) -> None:
         found = self.damaged(park(1, stamp(1, "09:30:00"), stamp(1, "12:00:00"), "cruise: stopped: human")
                              + "\n" + park(2, stamp(1, "14:00:00"), stamp(1, "18:00:00"), "cruise: continue"))
-        self.assertEqual(found["waiting"]["review"], 2 * 3600)
+        self.assertEqual(found["unattributed_person"], 2 * 3600)
         self.assertIsInstance(found["waiting"]["worker"], int)
 
     def test_an_open_slice_has_no_worked_figure_and_no_waiting(self) -> None:

@@ -41,20 +41,20 @@ class OpenParkTest(unittest.TestCase):
 
     def test_e1_the_park_ends_at_the_first_bracket_begun_after_it(self) -> None:
         found = self.accept(entry("implement", stamp(1, "13:00:00"), stamp(1, "14:00:00")))
-        self.assertEqual(found["waiting"]["review"], 2 * 3600)  # 11:00 -> 13:00, not -> 18:00
-        self.assertIn("first bracket begun after it", found["read_from"]["review"])
-        self.assertIn(stamp(1, "13:00:00"), found["read_from"]["review"])
+        self.assertEqual(found["unattributed_person"], 2 * 3600)  # 11:00 -> 13:00, not -> 18:00
+        self.assertIn("first bracket begun after it", found["read_from"]["unattributed_person"])
+        self.assertIn(stamp(1, "13:00:00"), found["read_from"]["unattributed_person"])
 
     def test_e2_a_bracket_of_another_record_ends_it_too(self) -> None:
         found = self.accept(entry("implement", stamp(1, "15:00:00"), stamp(1, "16:00:00")),
                             entry("plan", stamp(1, "12:00:00"), stamp(1, "12:30:00")))
-        self.assertEqual(found["waiting"]["review"], 3600)
+        self.assertEqual(found["unattributed_person"], 3600)
 
     def test_e3_with_no_bracket_after_it_the_wait_is_unknown_saying_why(self) -> None:
         found = self.accept(entry("implement", stamp(1, "09:00:00"), stamp(1, "10:30:00")))
-        for cause in ("review", "worker", "unattributed"):
-            with self.subTest(cause=cause):
-                self.assertIn("no bracket of any record began after it", found["waiting"][cause]["unknown"])
+        for figure in (*(found["waiting"][cause] for cause in ("review", "worker", "unattributed")),
+                       found["unattributed_person"]):
+            self.assertIn("no bracket of any record began after it", figure["unknown"])
         self.assertNotIn("until accepted", json.dumps(found["read_from"]))
 
 

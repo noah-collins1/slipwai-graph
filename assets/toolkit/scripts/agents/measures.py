@@ -349,8 +349,11 @@ def bounds(entry: dict[str, Any], last_line: int | None = None) -> Interval | No
 
 
 def is_person_demo(entry: dict[str, Any]) -> bool:
-    """A `demo` bracket whose signals name no `driver`: a person at the demo, which is review's wait, not work."""
-    return entry.get("stage") == "demo" and not (entry.get("signals") or {}).get("driver")
+    """A `demo` bracket a person was at, which is review's wait, not work — on positive evidence only: it was closed
+    by `end` with an `outcome` recorded and carries no `driver` (a closed cruise entry always carries one). A demo
+    cut off before its `end` has no signals, and is stage time."""
+    signals = entry.get("signals") or {}
+    return entry.get("stage") == "demo" and "outcome" in signals and not signals.get("driver")
 
 
 def brackets(entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None,
@@ -481,7 +484,7 @@ def iterations(rows: list[dict[str, Any]]) -> list[Interval]:
 
 
 def parks(rows: list[dict[str, Any]], starts: list[int] | None = None) -> tuple[list[Interval], list[int], list[int]]:
-    """Each iteration ending `stopped: human`, up to the next iteration's start. The last row has none, and a park
+    """Each iteration ending `stopped: human` or `parked: <reason>`, up to the next iteration's start. The last row has none, and a park
     open at the end of the log ends at the first bracket any record started after it (`starts`): the person's wait
     is over when work began again. Where no bracket did, it is not recorded when the wait ended — the second result
     names where such a park began, and the third where a bracket ended one."""
@@ -489,7 +492,7 @@ def parks(rows: list[dict[str, Any]], starts: list[int] | None = None) -> tuple[
     endless: list[int] = []
     bracketed: list[int] = []
     for index, row in enumerate(rows):
-        if str(row.get("last_line", "")).rstrip().endswith("stopped: human"):
+        if re.search(r"stopped: human\s*$|\bparked:", str(row.get("last_line", ""))):
             try:
                 begun = epoch(row["ended"])
                 later = epoch(rows[index + 1]["started"]) if index + 1 < len(rows) else None
@@ -532,7 +535,8 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
     read_from: dict[str, str] = {}
     if is_unknown(found["elapsed"]):
         reason = found["elapsed"]
-        return {"worked": reason, "waiting": {name: reason for name in names}, "read_from": read_from}
+        return {"worked": reason, "waiting": {name: reason for name in names}, "read_from": read_from,
+                "unattributed_person": reason}
     low, high = found["ready"], found["accepted"]
     taken = clip(worked(entries, last_lines), low, high)
     read_from["worked_seconds"] = "the record's brackets"
@@ -553,10 +557,15 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
             claimed["dependency"], read_from["dependency"] = [waited[0]], waited[1]
     if reader.failure:  # a lookup the dependency wait made failed: nothing it would have claimed can be said
         reason = unknown(reader.failure)
-        return {"worked": reason, "waiting": {name: reason for name in names}, "read_from": read_from}
+        return {"worked": reason, "waiting": {name: reason for name in names}, "read_from": read_from,
+                "unattributed_person": reason}
     review = brackets(entries, last_lines, is_person_demo)
     claimed["review"] = review
-    read_from["review"] = "the demo bracket with no driver" if review else "none present: no park, no person's demo"
+    uncaused = "none present: no record names a park's cause"
+    read_from["review"] = "a person's demo: outcome recorded, no driver" if review else uncaused
+    read_from["dependency"] += f"; a person's patch: {uncaused}"
+    claimed["person"] = []
+    read_from["unattributed_person"] = f"none present: no {LOG} park"
     claimed["worker"] = []
     endless: list[int] = []
     read_from["worker"] = "none present: no cruise log"
@@ -565,31 +574,37 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
         parked, endless, bracketed = parks(log, starts)
         endless = [begun for begun in endless if begun < high]
         span = iterations(log)
-        claimed["review"] = review + parked
-        read_from["review"] = f"{LOG}: stopped: human" if parked else read_from["review"]
+        claimed["person"] = parked
+        if parked:
+            read_from["unattributed_person"] = (f"{LOG}: each row ending stopped: human or parked:, to the next row's "
+                                                "start; a person held the run, cause unrecorded")
         if bracketed:
-            read_from["review"] += f"; the park left open ends at the first bracket begun after it, {utc(bracketed[0])}"
+            read_from["unattributed_person"] += (f"; the park left open ends at the first bracket begun after it, "
+                                                 f"{utc(bracketed[0])}")
         if span:
             claimed["worker"] = [(min(start for start, _ in span), FOREVER)]
             read_from["worker"] = (f"{LOG}: from the log's first row to accepted, less every cause above; counts "
                                    "time outside any iteration")
     seconds: dict[str, Any] = {}
-    for cause in CAUSES:
+    for cause in ("integration", "dependency", "review", "person", "worker"):  # a person's wait comes before worker
         mine = subtract(clip(claimed[cause], low, high), taken)
         seconds[cause] = length(mine)
         taken = union(taken + mine)
     in_worked = length(clip(worked(entries, last_lines), low, high))
-    seconds["unattributed"] = (high - low) - length(taken)
+    person = seconds.pop("person")
+    seconds["unattributed"] = (high - low) - length(taken) + person  # the person's time is a part of it, named apart
     if damaged or endless:
         if damaged:
             reason = unknown(f"{LOG} could not be read whole: " + ", ".join(f"line {number}" for number in damaged))
         else:
-            reason = unknown(f"{LOG}'s last iteration ended `stopped: human` at {utc(endless[0])} and no bracket of any "
+            reason = unknown(f"{LOG}'s last iteration ended `stopped: human` or `parked:` at {utc(endless[0])} and no bracket of any "
                              "record began after it, so when the wait ended is not recorded")
         for name in ("review", "worker", "unattributed"):
             seconds[name] = reason
             read_from[name] = reason["unknown"]
-    return {"worked": in_worked, "waiting": seconds, "read_from": read_from}
+        person = reason
+        read_from["unattributed_person"] = reason["unknown"]
+    return {"worked": in_worked, "waiting": seconds, "read_from": read_from, "unattributed_person": person}
 
 
 TRANSCRIPTS = "the transcripts, by delegate and bracket"
@@ -630,7 +645,8 @@ def sources(moved: dict[str, Any], parts: dict[str, Any], ended: int, reworked: 
     found = {**moved["read_from"], **parts["read_from"]}
     if is_unknown(moved["elapsed"]):
         found["elapsed"] = f"none present: {moved['elapsed']['unknown']}"
-        for key in ("worked_seconds", "dependency", "worker", "review", "integration", "unattributed"):
+        for key in ("worked_seconds", "dependency", "worker", "review", "integration", "unattributed",
+                    "unattributed_person"):
             found[key] = found["elapsed"]
     else:
         found["elapsed"] = f"ready: commit {found.get('ready', '')}; accepted: commit {found.get('accepted', '')}"
