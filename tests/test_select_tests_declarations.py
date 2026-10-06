@@ -167,6 +167,56 @@ class TestAHelperVoidsADeclaration(DeclarationCase):
         self.assertEqual(self.selected()[0], ["test_a"])
 
 
+class TestAReadsOnlyDeclarationThatGenerates(DeclarationCase):
+    """`support.generate` is reachable from every importer while `support` names no configuration, so a module that
+    calls it and says only what it reads under-claims; `held` names it (T030, AC-S38-8)."""
+
+    SUPPORT = ('TEST_SELECTION = {"reads": []}\n\n\nclass FactoryTestCase:\n'
+               '    def generate(self, name):\n        return name\n\n'
+               '    def refuse(self, name):\n        return name\n')
+    CALLS = {
+        "generate": "import support\n\n\nclass C(support.FactoryTestCase):\n    def test_x(self):\n"
+                    "        self.generate('p')\n",
+        "refuse": "import support\n\n\nclass C(support.FactoryTestCase):\n    def test_x(self):\n"
+                  "        self.refuse('p')\n",
+        "the launcher": "import subprocess\n\n\ndef test_x():\n    subprocess.run(['./slipwai', 'generate', 'p'])\n",
+    }
+
+    def module(self, call: str, selection: str) -> None:
+        self.write("tests/support.py", self.SUPPORT)
+        self.write("tests/test_a.py", f"TEST_SELECTION = {selection}\n" + self.CALLS[call])
+
+    def test_a_reads_only_module_that_generates_is_named(self) -> None:
+        for call in self.CALLS:
+            with self.subTest(call):
+                self.module(call, '{"reads": []}')
+                self.commit("a reads-only generator")
+                found = self.held()
+                self.assertEqual([line.split(":")[0] for line in found], ["tests/test_a.py"], found)
+                self.assertIn("declares no configurations", found[0])
+
+    def test_a_helper_that_calls_generate_names_the_module_that_imports_it(self) -> None:
+        self.write("tests/support.py", self.SUPPORT)
+        self.write("tests/helper_x.py", 'TEST_SELECTION = {"reads": []}\nimport support\n\n\n'
+                   "def build(case):\n    case.generate('p')\n")
+        self.write("tests/test_a.py", 'TEST_SELECTION = {"reads": []}\nimport helper_x\n')
+        self.commit("a helper that generates")
+        self.assertEqual([line.split(":")[0] for line in self.held()], ["tests/test_a.py"])
+
+    def test_a_module_that_names_its_configurations_is_held(self) -> None:
+        for call in self.CALLS:
+            with self.subTest(call):
+                self.module(call, '{"configurations": {"backend": ["go"]}}')
+                self.commit("a generator that says what it generates")
+                self.assertEqual(self.held(), [])
+
+    def test_a_reads_only_module_that_generates_nothing_is_held(self) -> None:
+        self.write("tests/support.py", self.SUPPORT)
+        self.write("tests/test_a.py", 'TEST_SELECTION = {"reads": []}\nimport support\n\nX = support.FactoryTestCase\n')
+        self.commit("imports support, calls nothing")
+        self.assertEqual(self.held(), [])
+
+
 class TestTheRealTree(DeclarationCase):
     def test_every_declaration_in_this_repository_is_held_and_none_is_void(self) -> None:
         done = subprocess.run(["python3", "-B", "-c", "import json, sys\nsys.path.insert(0, 'scripts')\n" + HELD],
