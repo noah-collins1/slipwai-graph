@@ -163,18 +163,66 @@ def stage(service: Path, root: Path, modules: dict[str, Path], into: Path) -> Pa
     return staged_service
 
 
-def scalar(text: str) -> str:
-    """A YAML scalar as these files write one: bare, single-quoted or double-quoted.
+ESCAPES = {"\\": "\\", '"': '"', "/": "/", "0": "\0", "a": "\a", "b": "\b", "t": "\t", "n": "\n", "r": "\r",
+           " ": " ", "e": "\x1b"}
 
-    Quoted forms are taken whole, so a `#` inside a pattern stays in it; only a bare scalar has a trailing
-    comment stripped, which is the one place a `#` cannot be part of the value.
+
+class Unreadable(ValueError):
+    """A YAML form this reader does not claim to read; the caller says so and stops, never guesses."""
+
+
+def comment_only(rest: str) -> bool:
+    """Whether what follows a value is nothing or a comment. YAML needs the whitespace before the `#`."""
+    return not rest.strip() or (rest[0] in " \t" and rest.strip().startswith("#"))
+
+
+def scalar(text: str) -> str:
+    """A YAML scalar as these files write one: bare, single-quoted or double-quoted, with an optional comment.
+
+    A quoted scalar ends at its closing quote — a `#` inside stays in the pattern, and what follows it may only be
+    whitespace and a comment. A bare one ends at the first ` #`. Anything else — flow collections, anchors, tags,
+    block scalars, a mapping, an invalid double-quoted escape, an unclosed quote, an empty item — is `Unreadable`.
     """
-    text = text.strip()
+    text = text.lstrip()
+    if text[:1] == "'":
+        body, at = "", 1
+        while at < len(text):
+            if text[at] == "'":
+                if text[at + 1:at + 2] == "'":
+                    body, at = body + "'", at + 2
+                    continue
+                if comment_only(text[at + 1:]):
+                    return body
+                raise Unreadable(text)
+            body, at = body + text[at], at + 1
+        raise Unreadable(text)
+    if text[:1] == '"':
+        body, at = "", 1
+        while at < len(text):
+            if text[at] == '"':
+                if comment_only(text[at + 1:]):
+                    return body
+                raise Unreadable(text)
+            if text[at] == "\\":
+                if text[at + 1:at + 2] not in ESCAPES:
+                    raise Unreadable(text)
+                body, at = body + ESCAPES[text[at + 1]], at + 2
+                continue
+            body, at = body + text[at], at + 1
+        raise Unreadable(text)
+    bare = re.split(r"[ \t]#", text, maxsplit=1)[0].strip()
+    if not bare or bare[0] in "[]{}&*!|>%@`#,?" or ": " in bare or bare.endswith(":"):
+        raise Unreadable(text)
+    return bare
+
+
+def key_of(body: str) -> tuple[str, str]:
+    """A `key: rest` line as its key, unquoted, and what follows the colon with any comment removed."""
     for quote in ("'", '"'):
-        if len(text) >= 2 and text.startswith(quote) and text.endswith(quote):
-            body = text[1:-1]
-            return body.replace("\\\\", "\\").replace('\\"', '"') if quote == '"' else body.replace("''", "'")
-    return text.split(" #", 1)[0].strip()
+        if body.startswith(quote) and (end := body.find(quote, 1)) > 0 and body[end + 1:end + 2] == ":":
+            return body[1:end], re.split(r"(?:^|[ \t])#", body[end + 2:], maxsplit=1)[0].strip()
+    name, _, rest = body.partition(":")
+    return name.strip(), re.split(r"(?:^|[ \t])#", rest, maxsplit=1)[0].strip()
 
 
 def excluded(config: Path) -> list[str]:
@@ -197,23 +245,30 @@ def excluded(config: Path) -> list[str]:
                  "this file the way it looks like it reads.")
     patterns: list[str] = []
     section, listing = "", False
-    for line in lines:
-        body = line.strip()
-        if line[0] not in " \t":
-            section, listing = body.split(":", 1)[0], False
-            continue
-        if section != "unleash":
-            continue
-        if listing and body.startswith("- "):
-            patterns.append(scalar(body[2:]))
-            continue
-        listing = False
-        if body.startswith("exclude-files:"):
-            rest = body[len("exclude-files:"):].strip()
-            if rest and rest != "[]":
-                sys.exit(f"{config}: `exclude-files` is written inline. Write it as a block list, one "
-                         "`- pattern` per line, so a scoped run can read it and pass it back.")
-            listing = True
+    try:
+        for line in lines:
+            body = line.strip()
+            if line[0] not in " \t":
+                section, listing = key_of(body)[0], False
+                continue
+            if section != "unleash":
+                continue
+            if listing and (body == "-" or body.startswith("- ") or body.startswith("-\t")):
+                patterns.append(scalar(body[1:]))
+                continue
+            listing = False
+            if key_of(body)[0] == "exclude-files":
+                rest = key_of(body)[1]
+                if rest in ("[]", "~", "null") or re.fullmatch(r"\[\s*\]", rest):
+                    continue
+                if rest:
+                    sys.exit(f"{config}: `exclude-files` is written as {rest!r}. Write it as a block list, one "
+                             "`- pattern` per line (or `[]`), so a scoped run can read it and pass it back.")
+                listing = True
+    except Unreadable as unread:
+        sys.exit(f"{config}: `exclude-files` has an item this reader cannot read as YAML does ({str(unread).strip()!r}). "
+                 "Write each as a bare, 'single-quoted' or \"double-quoted\" pattern, so a scoped run passes Gremlins "
+                 "what it would itself have read.")
     return patterns
 
 
