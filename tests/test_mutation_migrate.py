@@ -76,7 +76,7 @@ class AProjectMadeBeforeGainsTheScopedMutationTest(FactoryTestCase):
             self.assertIn(squashed(paragraph).removeprefix("**Catch-up.**").strip(), note)
 
     def not_broadened(self, repo: Path) -> None:
-        """`rules.json` is the migrated Makefile's own, and S06's judgement charges nothing: `make verify-scoped` on a
+        """`rules.json` is the migrated Makefile's own, and S06's text hold finds nothing: `make verify-scoped` on a
         slice branch of the project is not the full gate for any difference in the Makefile."""
         sys.path.insert(0, str(ROOT / "assets/toolkit/scripts"))
         rules = importlib.import_module("verify_scoped.rules")
@@ -86,10 +86,7 @@ class AProjectMadeBeforeGainsTheScopedMutationTest(FactoryTestCase):
         self.assertEqual(held, rules.from_text(text), "rules.json is regenerated with the Makefile")
         data = records.database("make", str(repo / "Makefile"))
         names = json.loads((repo / "project.json").read_text(encoding="utf-8"))["deployables"]
-        grouped = {gate: [f"{gate}-{n}" for n in names if f"{gate}-{n}" in data.needs]
-                   for gate in ("lint", "typecheck", "test")}
-        flat = [unit for each in grouped.values() for unit in each]
-        judged = rules.judge(rules.load(str(repo / "scripts/verify_scoped/rules.json")), data, flat,
-                             data.needs["verify-checks"], grouped)
-        self.assertIsNone(judged.full)
-        self.assertFalse(judged.checks or judged.gates)
+        flat = [f"{gate}-{n}" for gate in ("lint", "typecheck", "test") for n in names if f"{gate}-{n}" in data.needs]
+        path = str(repo / "scripts/verify_scoped/rules.json")
+        self.assertIsNone(rules.text_problem(str(repo / "Makefile"), path, {}))
+        self.assertIsNone(rules.difference(rules.load(path), data, flat, rules.project_exports(data, str(repo))))

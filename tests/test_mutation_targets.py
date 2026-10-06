@@ -18,6 +18,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from scoped_fixture import LINE as SCOPED
+from scoped_fixture import ShapeCase
 from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE
 from support import FactoryTestCase
 from test_layout import DELIVERY
@@ -161,41 +163,42 @@ class MutationTargetsTest(FactoryTestCase):
                 for workflow in (self.project(name) / ".github/workflows").glob("*"):
                     self.assertNotIn("mutation", workflow.read_text(encoding="utf-8"), workflow.name)
 
-    def judged(self, project: Path) -> Any:
-        """S06's own judgement of this project's Makefile against the `rules.json` it shipped with."""
+    def hold(self, project: Path) -> tuple[Any, str, str | None, str | None]:
+        """S06's own hold (D140) over this project's Makefile: the rules module, the Makefile text, `text_problem` and
+        `difference`, each read as the scoped run reads them."""
         sys.path.insert(0, str(ROOT / "assets/toolkit/scripts"))
         rules = importlib.import_module("verify_scoped.rules")
         records = importlib.import_module("verify_scoped.record")
-        data = records.database("make", str(project / "Makefile"))
+        makefile = project / "Makefile"
+        data = records.database("make", str(makefile))
         names = json.loads((project / "project.json").read_text(encoding="utf-8"))["deployables"]
-        grouped = {gate: [f"{gate}-{n}" for n in names
-                          if f"{gate}-{n}" in data.needs and not n.startswith("integration")]
-                   for gate in ("lint", "typecheck", "test")}
-        held = rules.load(str(project / "scripts/verify_scoped/rules.json"))
-        flat = [unit for each in grouped.values() for unit in each]
-        return rules, data, flat, rules.judge(held, data, flat, data.needs["verify-checks"], grouped)
+        flat = [f"{gate}-{n}" for gate in ("lint", "typecheck", "test") for n in names
+                if f"{gate}-{n}" in data.needs and not n.startswith("integration")]
+        path = str(project / "scripts/verify_scoped/rules.json")
+        problem = rules.text_problem(str(makefile), path, {})
+        found = rules.difference(rules.load(path), data, flat, rules.project_exports(data, str(project)))
+        return rules, makefile.read_text(encoding="utf-8"), problem, found
 
-    def test_e4_hold_the_scoped_gates_rules_read_the_new_makefile_without_a_difference(self) -> None:
-        """HOLD (teeth: the next example): `rules.json` from the text equals the database's, and nothing is charged."""
+    def test_e4_hold_the_scoped_gates_text_hold_reads_the_new_makefile_without_a_difference(self) -> None:
+        """HOLD (teeth: the next example): `rules.json`'s digest is the Makefile text's, and the hold finds nothing."""
         for name in SERVICES:
             with self.subTest(shape=name):
                 project = self.project(name)
-                rules, data, flat, judged = self.judged(project)
-                text = self.text(name)
-                self.assertEqual(rules.from_text(text), rules.from_database(data, flat))
-                self.assertEqual(json.loads((project / "scripts/verify_scoped/rules.json").read_text("utf-8")),
-                                 rules.from_text(text))
-                self.assertIsNone(judged.full)
-                self.assertFalse(judged.checks or judged.gates)
+                rules, text, problem, found = self.hold(project)
+                held = json.loads((project / "scripts/verify_scoped/rules.json").read_text("utf-8"))
+                self.assertEqual(held["makefile"], rules.text_digest(text))
+                self.assertIsNone(problem)
+                self.assertIsNone(found)
                 for target in ("mutation", "mutation-full"):
-                    self.assertNotIn(target, rules.from_text(text)["rules"])
+                    self.assertNotIn(target, held["rules"])
 
-    def test_e4_teeth_a_global_variable_every_rule_reads_is_a_difference_the_judgement_charges(self) -> None:
+    def test_e4_teeth_a_global_variable_every_rule_reads_is_a_text_the_hold_says_is_not_the_factorys(self) -> None:
         copy = Path(tempfile.mkdtemp(dir=self.parent)) / "project"
         shutil.copytree(self.project("go-web"), copy, symlinks=True)
         makefile = copy / "Makefile"
         makefile.write_text(makefile.read_text(encoding="utf-8") + "\nSHELL := /bin/sh\n", encoding="utf-8")
-        self.assertIsNotNone(self.judged(copy)[3].full)
+        _, _, problem, _ = self.hold(copy)
+        self.assertIn("not the text the factory wrote", problem or "")
 
     def test_e5_the_script_delegates_to_mutation_full_and_passes_the_status_through(self) -> None:
         for status in (0, 7):
@@ -248,3 +251,18 @@ class MutationTargetsTest(FactoryTestCase):
             self.assertTrue((repo / "delivery/scripts/mutation-scope.py").is_file())
             makefile = (repo / "delivery/Makefile").read_text(encoding="utf-8")
             self.assertIn("python3 delivery/scripts/mutation-scope.py", makefile)
+
+
+class TheScopedGateStillScopesAProjectWithTheNewTargetsTest(ShapeCase):
+    shape = "go-web"
+
+    def test_e4_hold_a_one_file_source_change_on_a_slice_branch_is_not_the_full_gate(self) -> None:
+        """AC-S08-13 end to end: the generated Go project, on `slice/S1`, one production file changed. `make
+        verify-scoped` (its checks printed, not run: `STANDIN_DRY`) never says the full gate runs."""
+        self.edit("apps/service/main.go", "\n// an edit\n")
+        run = self.scoped({"STANDIN_DRY": "1"})
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertTrue(self.scoped_lines(run), run.stdout)
+        self.assertNotIn("the full gate runs", run.stdout + run.stderr)
+        ran = [line for line in self.scoped_lines(run) if line.startswith(SCOPED + "run  lint-service")]
+        self.assertTrue(ran, run.stdout)
