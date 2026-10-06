@@ -203,6 +203,7 @@ class Held:
         self.path, self.index, self.entry, self.window, self.session = path, index, entry, window, session
         self.cls: str | None = None
         self.duplicate = False
+        self.claims = False  # costed from its recorded usage: it holds the live requests of its window, uncounted
         self.label = ""
 
 
@@ -302,6 +303,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
     sessions: dict[str, Session] = {}
     notes_gone: set[str] = set()
     held: list[Held] = []
+    claimers: list[Held] = []
     used: dict[str, set[str]] = {key: set() for key in keys}  # the sessions each record's entries ran in
     missing: dict[tuple[str, int], list[str]] = {}  # the transcript files an entry's span names that are gone
     for key, record in by_key.items():
@@ -318,6 +320,9 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 if gone:  # a part of the session is missing: what the entry holds cannot be told from what is left
                     missing[(key, index)] = [Path(file).name for file in gone]
                     notes_gone.update(missing[(key, index)])
+                    claimer = Held(key, index, entry, window, name)
+                    claimer.claims = True
+                    claimers.append(claimer)
                 else:
                     held.append(Held(key, index, entry, window, name))
     once(sessions)
@@ -372,6 +377,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
     shared_requests: dict[str, list[Request]] = {}
     for name, session in sessions.items():
         mine = [item for item in held if item.session == name and not item.duplicate]
+        mine += [item for item in claimers if item.session == name]
         attributed = shared_total = 0
         shared_requests[name] = []
         for request in session.requests.values():
@@ -382,8 +388,14 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
             if broken:
                 notes[name].add(f"{broken} — its requests are in the shared bucket")
             elif description is not None:
-                target = resolve(slice_word(description), slices)
-                if target is None:
+                word = slice_word(description)
+                target = resolve(word, slices)
+                if len(slices.get(word, [])) > 1:
+                    target = None
+                    features = ", ".join(sorted({str(by_key[path].get("feature")) for path in slices[word]}))
+                    notes[name].add(f'drive-slice "{description}" names slice {word}, which more than one feature '
+                                    f"records ({features}) — its requests are in the shared bucket")
+                elif target is None:
                     notes[name].add(f'drive-slice "{description}" names no recorded slice — its requests are in the '
                                     "shared bucket")
                 else:
@@ -419,7 +431,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
             spent[target][name] = spent[target].get(name, 0) + request.tokens
             if chosen is None:
                 loose[target] += request.tokens
-            else:
+            elif not chosen.claims:
                 entries.setdefault((target, chosen.index), Totals()).add(request, session.description(request.file))
         # the total is what the transcripts hold, summed on its own: a request the loop above dropped would show
         # as a total larger than the two parts
@@ -482,9 +494,10 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
         result["records"][key] = {"entries": shown, "cost_read": read, "cost": {
             "tokens": bad if bad is not None else sum(figures) + loose[key], "shared": None,
             "sessions": {name: spent[key][name] for name in sorted(spent[key])}}}
-    ran: dict[str, list[str]] = {}  # the features that ran in each session
+    ran: dict[str, list[str]] = {}  # the features that ran in each session, or are charged there by the chain
+    charged = {key: used[key] | set(spent[key]) for key in keys}
     for key in keys:
-        for name in used[key]:
+        for name in charged[key]:
             if str(by_key[key].get("feature")) not in ran.setdefault(name, []):
                 ran[name].append(str(by_key[key].get("feature")))
     for name in ran:
@@ -511,7 +524,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
 
     for feature in {str(record.get("feature")) for record in by_key.values()}:
         members = [key for key in keys if str(by_key[key].get("feature")) == feature]
-        names = sorted(set().union(*(used[key] for key in members)))
+        names = sorted(set().union(*(charged[key] for key in members)))
         refused = unknown("no transcript was read") if not names or absent(names) else None
         mine = {name: part(name, feature) for name in names if sessions[name].present}
         result["features"][feature] = {
@@ -530,11 +543,11 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
             cost = result["records"][key]["cost"]
             if by_key[key].get("slice") is None:
                 cost["shared"] = result["features"][feature]["shared"]
-            elif not used[key] or absent(used[key]):
+            elif not charged[key] or absent(charged[key]):
                 cost["shared"] = unknown("no transcript was read")
             else:
                 cost["shared"] = sum(
-                    request.tokens for name in used[key] for request in shared_requests[name]
+                    request.tokens for name in charged[key] for request in shared_requests[name]
                     if any(item.window.covers(request.file, request.offset)
                            for item in held if item.path == key and item.session == name))
     return result

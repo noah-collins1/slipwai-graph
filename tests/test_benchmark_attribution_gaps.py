@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from elapsed_fixture import Session, bench, commit, feature_record, git, project, record, stamp, summaries
+from elapsed_fixture import Session, bench, commit, costed, feature_record, git, project, record, stamp, summaries
 
 sys.dont_write_bytecode = True
 
@@ -191,6 +191,82 @@ class TwoFeaturesTest(Base):
     def test_e2_the_feature_says_which_other_feature_ran_in_the_session(self) -> None:
         self.lay()
         self.assertIn("also ran in feature g", bench(self.repo).stdout)
+
+
+class ConservedAcrossFeaturesTest(Base):
+    """B4: a session is split among every feature that brackets in it or is charged there by the chain."""
+
+    def lay(self, other: str = "S7") -> None:
+        said = self.session
+        cursor = said.open(None, "implement", P1)
+        said.say(None, "h1", 100, stamp(1, "09:01:00"))
+        owner = said.agent("ds", f"drive-slice {other}", "drive-slice")
+        child = said.agent("ci", "Implement T1", "drive-implement", parent="ds")
+        said.say(owner, "ra", 10, stamp(1, "09:02:00"), "drive-slice")
+        said.say(child, "rb", 5000, stamp(1, "09:03:00"), "drive-implement")
+        record(self.repo, "S1", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), cursor))
+        feature_record(self.repo)
+
+    def test_e1_a_feature_charged_only_by_the_chain_is_a_feature_of_the_session(self) -> None:
+        self.lay()
+        record(self.repo, "S7", entryless(), feature="g")
+        feature_record(self.repo, feature="g")
+        found = {(item["feature"], item["slice"]): item for item in json.loads(bench(self.repo, "--json").stdout)}
+        mine = found[("f", None)]["session_totals"]["sess"]
+        self.assertEqual((mine["attributed"], mine["shared"], mine["elsewhere"]), (100, 0, 5010))
+        other = found[("g", "S7")]["cost"]
+        self.assertEqual((other["sessions"], other["shared"]), ({"sess": 5010}, 0))
+        self.assertEqual(found[("g", None)]["session_totals"]["sess"]["attributed"], 5010)
+
+    def test_e2_a_slice_id_found_in_two_features_is_shared_with_a_note(self) -> None:
+        self.lay("S1")
+        record(self.repo, "S1", entryless(), feature="g")
+        feature_record(self.repo, feature="g")
+        found = {(item["feature"], item["slice"]): item for item in json.loads(bench(self.repo, "--json").stdout)}
+        self.assertEqual(found[("f", "S1")]["cost"]["tokens"], 100)
+        self.assertEqual(found[("f", None)]["session_totals"]["sess"]["shared"], 5010)
+        self.assertIn("more than one feature", bench(self.repo).stdout)
+
+
+def entryless() -> dict:
+    """A stage that ran in no session this machine knows."""
+    return {"stage": "implement", "started": stamp(1, "09:00:00"), "ended": stamp(1, "09:10:00"), "seconds": 600,
+            "signals": {}, "usage": {"source": None, "reason": "fixture"}}
+
+
+class FallbackClaimsTest(Base):
+    """B5: an entry costed from its recorded usage claims the live requests of its window, so none counts twice."""
+
+    def test_e1_a_sub_agent_file_gone_leaves_the_host_line_with_the_entry_not_the_shared_bucket(self) -> None:
+        said = self.session
+        cursor = said.open(None, "implement", P1)
+        said.say(None, "h1", 100, stamp(1, "09:01:00"))
+        delegate = said.agent("a1", "Implement T1", "drive-implement")
+        said.say(delegate, "a1", 5000, stamp(1, "09:02:00"), "drive-implement")
+        item = costed(said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), cursor), 5107, "sess")
+        record(self.repo, "S1", item)
+        feature_record(self.repo)
+        delegate.unlink()
+        found = summaries(self.repo)
+        self.assertEqual(self.figures(found["S1"]), (5107, 0))
+        self.assertEqual(found["S1"]["cost"]["sessions"], {"sess": 100})
+        self.assertEqual(found["(feature)"]["session_totals"]["sess"], {"total": 100, "attributed": 100, "shared": 0})
+
+    def test_e2_a_main_transcript_gone_leaves_the_chains_requests_with_the_entry_not_counted_again(self) -> None:
+        said = self.session
+        owner = said.agent("ds", "drive-slice S1", "drive-slice")
+        child = said.agent("ci", "Implement T1", "drive-implement", parent="ds")
+        cursor = said.open(owner, "implement", P1)
+        said.say(owner, "ra", 10, stamp(1, "09:01:00"), "drive-slice")
+        said.say(child, "rb", 5000, stamp(1, "09:02:00"), "drive-implement")
+        said.say(None, "h1", 100, stamp(1, "09:03:00"))
+        item = costed(said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), cursor), 5110, "sess")
+        record(self.repo, "S1", item)
+        feature_record(self.repo)
+        said.main.unlink()
+        found = summaries(self.repo)
+        self.assertEqual(self.figures(found["S1"]), (5110, 0))
+        self.assertEqual(found["S1"]["cost"]["sessions"], {"sess": 5010})
 
 
 if __name__ == "__main__":
