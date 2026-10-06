@@ -13,6 +13,7 @@ from elapsed_fixture import (
     bench,
     commit,
     entry,
+    git,
     graph,
     merge,
     project,
@@ -22,6 +23,7 @@ from elapsed_fixture import (
     summaries,
     write,
 )
+from support import FactoryTestCase
 
 sys.dont_write_bytecode = True
 
@@ -161,6 +163,34 @@ class WaitingTest(unittest.TestCase):
         page = bench(self.repo, "overview", FEATURE)
         self.assertEqual(page.returncode, 0, page.stderr)
         self.assertIn("unattributed", (self.repo / f"specs/{FEATURE}/benchmark.md").read_text(encoding="utf-8"))
+
+
+class DriveProjectTest(FactoryTestCase):
+    """R10: a `/drive` project with no cruise log."""
+
+    def test_e1_a_project_with_no_cruise_log_leaves_its_waiting_unattributed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "nolog", "standard", "python")
+            (repo / ".home").mkdir(exist_ok=True)
+            if not (repo / ".git").exists():
+                git(repo, "init", "-q", "-b", "main")
+            self.assertFalse((repo / "specs/cruise-log.jsonl").exists())
+            write(repo, f"specs/{FEATURE}/story-split.md", graph([("S1", [])]))
+            commit(repo, stamp(1), "split", f"specs/{FEATURE}/story-split.md")
+            path = record(repo, "S1", entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")))
+            write(repo, f"specs/{FEATURE}/slices/README.md", register(["S1"]))
+            commit(repo, stamp(1, "20:00:00"), "S1 done", f"specs/{FEATURE}/slices/README.md", path)
+            done = bench(repo)
+            self.assertEqual((done.returncode, done.stderr), (0, ""))
+            found = summaries(repo)["S1"]
+            self.assertEqual((found["elapsed"], found["stage_seconds"], found["worked_seconds"]),
+                             (11 * 3600, 3600, 3600))
+            self.assertEqual(found["waiting"], {"dependency": 0, "worker": 0, "review": 0, "integration": 0,
+                                                "unattributed": 10 * 3600})
+            self.assertIn("none present: no cruise log", found["read_from"]["worker"])
+            self.assertIn("S1     11h00m", done.stdout)
+            self.assertNotIn("cruise-log", done.stdout)
+            self.assertEqual(bench(repo, "check").returncode, 0)
 
 
 if __name__ == "__main__":
