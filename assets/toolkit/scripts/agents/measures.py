@@ -428,3 +428,27 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
     in_worked = length(clip(worked(entries, last_lines), low, high))
     seconds["unattributed"] = (high - low) - length(taken)
     return {"worked": in_worked, "waiting": seconds, "read_from": read_from}
+
+
+# --- the feature's figures --------------------------------------------------------------------------------------
+
+def feature_figures(parts: list[dict[str, Any]]) -> dict[str, Any]:
+    """One feature's three figures from its records, each a dict with `slice` (None for the feature's own record),
+    `ready`, `accepted` (seconds or unknown), `stage_seconds` and `worked` (the bracket intervals, unclipped):
+    `elapsed` is the first slice's ready to the last slice's accepted — open while any slice is not accepted —
+    `stage_seconds` every record's stage time summed (the feature's own included), and `in_flight_seconds` the length
+    of the union of every slice record's worked brackets: the time with any slice in flight."""
+    slices = [part for part in parts if part["slice"]]
+    readies = [part["ready"] for part in slices if isinstance(part["ready"], int)]
+    elapsed: Any
+    if not slices:
+        elapsed = unknown("no slice record")
+    elif any(not isinstance(part["accepted"], int) for part in slices):
+        if readies:
+            elapsed = unknown(f"open since {utc(min(readies))}")
+        else:
+            elapsed = next(part["ready"] for part in slices if is_unknown(part["ready"]))
+    else:
+        elapsed = max(part["accepted"] for part in slices) - min(readies)
+    return {"elapsed": elapsed, "stage_seconds": sum(part["stage_seconds"] for part in parts),
+            "in_flight_seconds": length([span for part in slices for span in part["worked"]])}

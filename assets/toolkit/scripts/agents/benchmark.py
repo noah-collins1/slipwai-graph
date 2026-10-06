@@ -842,6 +842,9 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None) 
                     if key in found},
         "worked_seconds": parts["worked"], "waiting": parts["waiting"],
         "read_from": {**found["read_from"], **parts["read_from"]},
+        "_figures": {"slice": record.get("slice"), "ready": found["ready"], "accepted": found["accepted"],
+                     "stage_seconds": measures().stage_seconds(stages, last_lines),
+                     "worked": measures().worked(stages, last_lines)},
     }
 
 
@@ -976,6 +979,19 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
     return lines + hand_back_lines(records_)
 
 
+def figures(summaries: list[dict[str, Any]]) -> dict[str, Any]:
+    """A feature's elapsed, stage time and time with any slice in flight, from its records' summaries."""
+    return measures().feature_figures([summary["_figures"] for summary in summaries])
+
+
+def feature_text(summaries: list[dict[str, Any]]) -> str:
+    """The feature line's three figures, each under its own name: stage time is not elapsed."""
+    found = figures(summaries)
+    total = summary_wall({"seconds": found["stage_seconds"], "unbracketed": any(s["unbracketed"] for s in summaries)})
+    return (f"stage time {total} in all; elapsed {figure_text(found['elapsed'])}; "
+            f"time with any slice in flight {wall(found['in_flight_seconds'])}")
+
+
 def aggregate() -> str:
     grouped = by_feature()
     if not grouped:
@@ -984,9 +1000,7 @@ def aggregate() -> str:
     for feature, entries in grouped.items():
         summaries = [summarise(record) for _, record in entries]
         slices = [summary for summary in summaries if summary["slice"]]
-        total = {"seconds": sum(s["seconds"] for s in summaries),
-                 "unbracketed": any(s["unbracketed"] for s in summaries)}
-        head = f"{feature} — {len(slices)} slice(s) recorded, stage time {summary_wall(total)} in all"
+        head = f"{feature} — {len(slices)} slice(s) recorded, {feature_text(summaries)}"
         waits = waiting_rows(summaries)
         blocks.append("\n".join([head, table([row(summary) for summary in summaries]),
                                  *([table(waits, WAITING_COLUMNS)] if waits else []),
@@ -1057,9 +1071,7 @@ def overview(feature: str | None = None) -> list[Path]:
             f"Drawn {now()} at `{(git('rev-parse', '--short', 'HEAD') or 'no commit')}` from {len(entries)} record(s) "
             f"under `specs/{name}/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing "
             f"a slice. Regenerated whole, never edited: the records beside each slice are the source.",
-            f"## Slices\n\n{len(slices)} slice(s) recorded, stage time "
-            f"{summary_wall({'seconds': sum(s['seconds'] for s in summaries), 'unbracketed': any(s['unbracketed'] for s in summaries)})} "
-            "in all.\n\n"
+            f"## Slices\n\n{len(slices)} slice(s) recorded, {feature_text(summaries)}.\n\n"
             + markdown([row(summary) for summary in summaries], COLUMNS)
             + (f"\n\n{markdown(waiting_rows(summaries), WAITING_COLUMNS)}" if waiting_rows(summaries) else "")
             + f"\n\n{LEGEND}.",
@@ -1080,12 +1092,22 @@ def overview(feature: str | None = None) -> list[Path]:
     return pages
 
 
+def json_records() -> list[dict[str, Any]]:
+    """`--json`: every record's summary, and on each feature's own record that feature's figures."""
+    found = [{"path": str(path.relative_to(ROOT)), **summarise(record)} for path, record in records()]
+    for name in {str(item["feature"]) for item in found}:
+        mine = [item for item in found if str(item["feature"]) == name]
+        for item in mine:
+            if not item["slice"]:
+                item["feature_figures"] = figures(mine)
+    return [{key: value for key, value in item.items() if not key.startswith("_")} for item in found]
+
+
 def main() -> None:
     arguments = sys.argv[1:]
     if not arguments or arguments == ["--json"]:
         if arguments:
-            print(json.dumps([{"path": str(path.relative_to(ROOT)), **summarise(record)} for path, record in records()],
-                             indent=2, ensure_ascii=False))
+            print(json.dumps(json_records(), indent=2, ensure_ascii=False))
         else:
             print(aggregate())
         return
