@@ -556,6 +556,108 @@ converged verdict while the patch waits for a person. A fix to the root `Makefil
 
 ---
 
+## Phase 4: Convergence fixes
+
+Found by T020 (converge pass 1), in the order found; the grade is in each title. T026 and T027 re-open the loop; the
+rest may ship after it. T031 and T032 change the root `Makefile`, so they are a new patch (`s38-2.patch`) a person
+applies, as T019 is. Each RED is written first and observed failing for its own reason.
+
+### T026 — HIGH: an interpreter cache under `assets/` reaches the modules that read `assets` (AC-S38-10, -16)
+
+- [ ] `base.ignored_files` drops every cache (`is_cache`, `scripts/select_tests/base.py:171-181`), so a cache never enters
+  the change set. AC-S38-10 exempts caches from making the run **full**; it does not exempt them from reaching a
+  module that reads them. `test_assets_bytecode` declares `reads: ["assets", "tests"]` and exists to fail on exactly
+  this. Reproduced in a patched scratch copy: an ignored `assets/toolkit/scripts/__pycache__/verify-stamp.cpython-312.pyc`
+  and `SINCE=HEAD … select-tests.py --dry-run` print `skipped test_assets_bytecode: reads none of the changed files`;
+  `make test TESTS=test_assets_bytecode` on the same tree fails (1 failure). Full run red, selected run green.
+  **Fix:** a cache under `assets/` joins the change set for `reads` matching only — it still never makes the run full
+  and is claimed by no configuration.
+  **RED:** in the fixture, a slice branch with `SINCE` at its tip and one ignored `assets/<x>/__pycache__/y.pyc`: the
+  dry run selects the module declaring `reads: ["assets"]` with reason ``reads `assets` ``, the first line is the
+  base line (not `full:`), and a module declaring only a configuration is still skipped.
+  **Files:** `scripts/select_tests/base.py`, `scripts/select-tests.py` (only if `plan` is where the paths join),
+  `tests/test_select_tests_changes.py` (or a new `tests/test_select_tests_caches.py`).
+
+### T027 — HIGH: a test module in a `tests/` sub-package is neither run nor counted (AC-S38-12, -16)
+
+- [ ] The scan reads `tests/*.py` only (`scripts/select_tests/declarations.py:205`), and `rules.claim` sends any path
+  under a `tests/` subdirectory to *the files its readers name*. `unittest discover -s tests`, the full run, imports
+  `test*.py` from every sub-package. Reproduced: `tests/sub/__init__.py` plus a failing `tests/sub/test_nested.py`,
+  `SINCE=HEAD` dry run prints `selected 322 of 336` and names `test_nested` nowhere (only `test_assets_bytecode` is
+  pulled in, by its `reads`); `discover -s tests -p test_nested.py` fails. The total under-counts what the full run
+  holds and the module is never skipped by name (AC-S38-12).
+  **Fix:** a `.py` path under a `tests/` subdirectory that `discover` would import — every directory from `tests/` to
+  it holds an `__init__.py`, the file matches `test*.py`, or the path is an `__init__.py` — makes the run full with the
+  rule's words (e.g. *a test module the selector cannot name*). `tests/fixtures/…` (no `__init__.py` chain) keeps its
+  row.
+  **RED:** in the fixture, a slice branch with `tests/sub/__init__.py` and `tests/sub/test_nested.py` added: the dry
+  run's line is `full: \`tests/sub/test_nested.py\` changed — …`; a `.py` under `tests/fixtures/x/` with no
+  `__init__.py` chain still selects.
+  **Files:** `scripts/select_tests/rules.py`, `tests/test_select_tests_paths.py`.
+
+### T028 — MEDIUM: a root makefile git does not see changed leaves the run selected (AC-S38-14)
+
+- [ ] `verify_scoped.changes.changed` compares every base blob raw **except** `Makefile`, `GNUmakefile` and
+  `makefile` (`assets/toolkit/scripts/verify_scoped/changes.py:98`), which D140 hands to the scoped gate's text border;
+  the selector loads `changed` and has no such border, and `ignored_files` looks only under `assets/`, `src/` and
+  `tests/`. Reproduced: `git update-index --assume-unchanged Makefile`, a comment appended, `SINCE=HEAD` dry run prints
+  `selected 321 of 336`; likewise an untracked `GNUmakefile` (`include Makefile`) ignored through `.git/info/exclude`,
+  which make reads **before** `Makefile`. AC-S38-14: *any* change to the root `Makefile` makes the run full.
+  **Fix:** the selector compares the three root makefile names itself, raw against the base (bytes, mode, presence,
+  ignored or not), and any difference is the root Makefile's full row.
+  **RED:** in the fixture, (a) `Makefile` edited under `--assume-unchanged`, (b) an ignored `GNUmakefile` created, (c)
+  `Makefile` edited under `--skip-worktree`: each dry run's line is `full: \`<name>\` changed — the root Makefile: …`.
+  **Files:** `scripts/select_tests/base.py` (or `scripts/select-tests.py`'s `plan`), `tests/test_select_tests_changes.py`.
+
+### T029 — MEDIUM: the scoped gate's scripts that compute the change set are not a full row (priority 5)
+
+- [ ] The selector's verdict is computed by `assets/toolkit/scripts/check-slice-scope.py` and
+  `assets/toolkit/scripts/verify_scoped/` (`base.load_scoped`, `scripts/select_tests/base.py:51`), but a change to them
+  is claimed as *the toolkit* (every configuration), not as the selector (`rules.py:60`). A change to that code can
+  hide itself. Reproduced: `changes.changed` edited to drop paths under `verify_scoped/` from its return; `SINCE=HEAD`
+  dry run prints `skipped test_matrix: reads none of the changed files` and `selected 321 of 336` — the edit is not in
+  the change set it computed. **Fix:** both are rows of *the selector* (full), with their own words.
+  **RED:** a one-line change to `assets/toolkit/scripts/verify_scoped/changes.py`, and separately to
+  `check-slice-scope.py`: the line is `full: … — the selector's change-set scripts: its effect cannot be established`.
+  **Files:** `scripts/select_tests/rules.py`, `tests/test_select_tests_paths.py`.
+
+### T030 — MEDIUM: nothing holds a new declaration complete (AC-S38-8, -16)
+
+- [ ] The fifteen declarations here were spot-checked and hold (see *Convergence*), but the `real_*` tests pin only the
+  modules they list: a later `TEST_SELECTION` added to a module that is not on any list is held only for existence
+  (`held()`, `declarations.py:217`). `support.generate` is reachable from every importer while `support` declares no
+  configuration, so a reads-only declaration on a module that calls `self.generate(…)` under-claims and nothing fails.
+  **Fix:** (a) a test pins the set of modules and helpers carrying `TEST_SELECTION` to the union of the `real_*`
+  lists, so a new declaration must edit a selector test (which is itself full and reviewed); and (b) `held()` reports a
+  declared module whose closure calls `generate(`/`refuse(` or runs `slipwai` and declares no `configurations`.
+  **RED:** in the fixture, a module declaring `{"reads": []}` that imports `support` and calls `self.generate(…)`:
+  `held()` names it; and against the real tree, the pinned set equals the scanned set.
+  **Files:** `scripts/select_tests/declarations.py`, `tests/test_select_tests_declarations.py`,
+  `tests/test_select_tests_real_helpers.py` (or a new `tests/test_select_tests_real_declared.py`).
+
+### T031 — LOW: `make verify-checks` run directly selects, then says `verify: all gates passed` (AC-S38-6, G3)
+
+- [ ] Only `verify` passes `FULL=1` (patched `Makefile:58,60`); `verify-checks` (`Makefile:64`) reaches `test` with
+  selection on, on a slice branch, and ends `verify: all gates passed`. Shown by `make -n verify-checks` in the patched
+  scratch copy: the `test` line is `PYTHONPATH=src python3 -B scripts/select-tests.py`.
+  **Fix (in `s38-2.patch`):** `verify-checks` runs every module (a target-specific `FULL := 1` exported to its
+  prerequisites, or the message names a selected run). **RED:** `make verify-checks` on a slice branch with a
+  one-backend change runs every stand-in.
+  **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38-2.patch` (new), `tests/test_select_tests_make.py`,
+  `tests/test_select_tests_makefile.py`.
+
+### T032 — LOW: `SKIP` naming every module turns selection on (AC-S38-13)
+
+- [ ] `TESTS ?= $(if $(SKIP),$(filter-out …),)` (`Makefile:32`) is empty when `SKIP` names every module, so the `test`
+  recipe calls the selector. `make -n test SKIP="<all 336>"` prints `PYTHONPATH=src python3 -B scripts/select-tests.py`
+  where AC-S38-13 says `SKIP` turns selection off (the unpatched recipe ran every module here).
+  **Fix (in `s38-2.patch`):** the recipe branches on `$(TESTS)$(SKIP)`, prints `selection off: SKIP given` and runs no
+  module. **RED:** `make test SKIP="<every module>"` prints that line and does not call the selector.
+  **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38-2.patch` (shared with T031),
+  `tests/test_select_tests_make.py`.
+
+---
+
 ## Parallel opportunities
 
 | Task | Writes | Reads another task's file |
@@ -590,7 +692,72 @@ No screen in this slice
 
 ## Convergence
 
-*(To be written by T020 and T021.)*
+### Pass 1 (T020, cruise iteration 24) — **not converged**: 2 HIGH, 3 MEDIUM, 2 LOW
+
+Judged on `git diff 8072724..HEAD` (tip `1151dcd`) with `s38.patch` applied and committed in a scratch clone
+(`/tmp/s38/converge1`, probes in a second clone). There is no `.codegraph/` in this tree; text search and running code
+answered. The slice's own tests (`test_select_tests_*`, 19 modules, plus `test_factory_gate_stamp`) pass on the patched
+copy: 169 tests, OK.
+
+**Findings** (tasks under *Phase 4*):
+
+| Task | Grade | One-line reproduction |
+|---|---|---|
+| T026 | HIGH | ignored `assets/toolkit/scripts/__pycache__/x.pyc`, `SINCE=HEAD` dry run → `skipped test_assets_bytecode`; that module fails on the same tree |
+| T027 | HIGH | `tests/sub/__init__.py` + failing `tests/sub/test_nested.py` → `selected 322 of 336`, the module never named; `discover` fails it |
+| T028 | MEDIUM | `Makefile` edited under `--assume-unchanged`, or an ignored `GNUmakefile` → `selected 321 of 336`, not full |
+| T029 | MEDIUM | `verify_scoped/changes.py` edited to drop its own path → `skipped test_matrix`, `selected 321 of 336` |
+| T030 | MEDIUM | a reads-only declaration on a module that calls `support.generate` is held by nothing |
+| T031 | LOW | `make -n verify-checks` → the `test` line calls the selector; the run ends `verify: all gates passed` |
+| T032 | LOW | `make -n test SKIP="<every module>"` → the selector runs, not `selection off` |
+
+No finding is a product question: none changes what a criterion or decision says (T026 keeps AC-S38-10's exemption
+from *full*; T029 widens a full row, which priority 5 asks for).
+
+**Constitution, principle by principle the diff touches:**
+
+- *I, a scoped gate MUST be additive* — satisfied: CI markers make every run full
+  (`scripts/select_tests/__init__.py:15`, `environment_rows` at `:23`); only `slice/<id>` selects (`branch_rows`,
+  `:52-63`), so `adopt-method` and `main` stay full; `make verify` passes `FULL=1` on both of its `verify-checks` calls
+  (patched `Makefile:58` and `:60`), and `FULL=1` holds against `FULL=`/`FULL=0` on the command line, `make -e` and
+  `MAKEFLAGS` (scratch make probe). No check is removed: the diff touches nothing under `assets/`, `src/slipwai/` or
+  `catalog.json`.
+- *I, `VERSION` and a fragment for every user-visible change* — satisfied: `git diff --stat 8072724..HEAD -- assets
+  src/slipwai catalog.json VERSION changelog.d` is empty (AC-S38-17); no bump is owed.
+- *VIII, deterministic: same inputs, same verdict* — **not met** by T026 and T027: on one commit the full run fails
+  and the selected run passes.
+- *AGENTS, no mocking framework* — satisfied: no `unittest.mock`, `MagicMock` or `mock` in `tests/select_fixture*.py`
+  or `tests/test_select_tests_*.py`.
+- Money, time, identity, idempotency, persisted schema: not touched (a test-runner script).
+
+**Each level:**
+
+- **Domain** (`rules`, `declarations`, `choose`): proven — the generator opens and lists only assets its claim admits,
+  across 45 configurations (five backends × both frontends × both profiles at target `none`; × both frontends at
+  `aws` and `azure` under `event-modelling`; `existing` with postgres and keycloak), measured with an audit hook. Nothing at
+  the root is opened besides `VERSION` and `catalog.json`. `CROSS_READS` is complete for generation. Narrowing is
+  sound: a go asset narrows seven modules to `go`, and a cross-read path added beside it runs them whole. The fifteen
+  declared modules' `reads` and `configurations` match what each opens and passes to `generate` (spot-checked:
+  `test_matrix`, `test_images`, `test_postgres`, `test_readiness`, `test_line_widths`, `test_stale_references`,
+  `test_no_mocking_frameworks`, `test_mutation`, `test_go_mutation_file`, `test_pit_globs`, `test_release`,
+  `test_versions`, `test_gitea_pages`, `test_migration_script`, `test_assets_bytecode`). Not proven: caches (T026),
+  sub-packages (T027), self-hiding change-set code (T029), future declarations (T030).
+- **Use case** (`select-tests.py`): proven — what it prints is what it runs (skips named, narrowed named, summary
+  first and last); both processes run and either failing fails the run; `--replay` only with `--dry-run`; `SINCE`
+  unresolved, empty, or naming a non-commit goes full or falls back to the trunk as D156 says. Not proven: the
+  total under-counts a sub-package (T027).
+- **Delivery adapter** (the patched root `Makefile`): proven — `TESTS`/`SKIP`/`FACTORY_BACKENDS` turn selection off and
+  bypass the stamp; `SINCE` reaches the ratchet's `make test` through the environment; `RATCHET_TIGHTEN` is full;
+  the ratchet refuses to record a red suite without `RATCHET_TIGHTEN`, so a selected run cannot write a quarantine.
+  Not proven: hidden makefile edits (T028), `verify-checks` run directly (T031), `SKIP` naming every module (T032).
+- **Screen:** none (the selector's lines are its interface; `report.printable` strips control characters from every
+  word not its own).
+- **Published contract** (`make test`/`make verify` and `docs/maintaining.md`): held by `test_select_tests_docs` and
+  the two Makefile modules, green on the patched copy.
+
+Checked and clean: the trunk and `SINCE` base, deletion, rename (`--no-renames`), untracked and ignored files under the
+three trees, `--skip-worktree`/`--assume-unchanged` and filters on every file but the makefiles (raw comparison),
+`GIT_*` locating variables, CI markers, `FULL` empty, no tracked symlink or submodule, `make -n`/`-q`.
 
 ## Differences from plan.md
 
