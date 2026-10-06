@@ -54,8 +54,13 @@ class RealSpringTest(FactoryTestCase):
             self.assertRegex(lines[0], r"^mutation: scoped to 1 changed file\(s\) since `main` at [0-9a-f]+: "
                                        r"apps/service/src/main/java/com/example/\w+/health/HealthStatus\.java$")
             self.assertEqual(lines[-1], "mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed")
-            scoped_classes, scoped_count = classes_of(pit_report(repo))
+            report = pit_report(repo)
+            scoped_classes, scoped_count = classes_of(report)
             self.assertEqual({name.rsplit(".", 1)[-1] for name in scoped_classes}, {"HealthStatus"}, scoped_classes)
+            killers = {name.rsplit(".", 1)[-1] for name in re.findall(r"\[class:([\w.$]+)\]", report)}
+            self.assertTrue(killers, "the scoped run killed nothing, so the pom's test selection went unseen")
+            self.assertTrue(all(name.endswith("Test") for name in killers), killers)  # AC-S08-3: the pom's targetTests
+            self.assertFalse(any(name.endswith("IT") for name in killers), killers)  # and its *IT exclusion
             full = subprocess.run(["make", "mutation-full"], cwd=repo, env=clean_environment(), text=True,
                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=600)
             self.assertEqual(full.returncode, 0, full.stdout[-3000:])
