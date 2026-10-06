@@ -57,15 +57,16 @@ class TestTheHelpersSayWhatTheyRead(unittest.TestCase):
         # declaration of its own would widen every importer to every configuration
         self.assertEqual(self.helpers["support"], {**NOTHING, "reads": ["slipwai"]})
 
-    def test_the_stamp_fixture_generates_its_one_python_project(self) -> None:
-        self.assertEqual(self.helpers["stamp_fixture"], claim(
-            {"backend": ["python"], "command": ["generate"], "frontend": ["none"], "profile": ["standard"]},
-            ["slipwai"]))
+    def test_the_render_fixture_runs_the_launcher_so_it_declares_every_configuration(self) -> None:
+        # it generates one project through `./slipwai`; the selector reads a launcher as every option of every axis
+        # (D164 rule 3), so a narrower claim would void the declaration
+        self.assertEqual(self.helpers["render_fixture"],
+                         {"generates": True, "every": True, "axes": {}, "reads": ["slipwai"]})
 
-    def test_the_render_fixture_generates_the_default_event_modelling_project(self) -> None:
-        self.assertEqual(self.helpers["render_fixture"], claim(
-            {"backend": ["typescript"], "command": ["generate"], "frontend": ["none"],
-             "profile": ["event-modelling"]}, ["slipwai"]))
+    def test_the_stamp_fixture_stays_undeclared_because_it_loads_a_script_with_importlib(self) -> None:
+        # it runs the launcher too, and `importlib` loads a generated project's script: a reach D164 rule 4 holds to
+        # `reads`, which cannot name a file in a project not yet generated
+        self.assertIsNone(self.helpers["stamp_fixture"])
 
     def test_the_helpers_that_open_nothing_of_the_repository_declare_nothing_read(self) -> None:
         # both work in directories their callers hand them: git on an origin, a gate script of a generated project
@@ -88,7 +89,7 @@ class TestTheHelpersSayWhatTheyRead(unittest.TestCase):
     def test_no_declaration_among_them_is_void(self) -> None:
         mine = [line for line in self.held if any(f"tests/{name}.py" in line for name in HELPERS)]
         self.assertEqual(mine, [])
-        for name in ("support", "stamp_fixture", "render_fixture", "forge_checkout", "gate_audit"):
+        for name in ("support", "render_fixture", "forge_checkout", "gate_audit"):
             self.assertEqual(self.helpers[f"{name}:effective"], "", name)
 
 

@@ -20,8 +20,9 @@ from slipwai.assets import ROOT
 
 sys.dont_write_bytecode = True
 
-# `test_select_tests_real_helpers` holds these three undeclared (they import a test module or sit at the size budget)
-LEFT_UNDECLARED = ("scoped_fixture", "mutation_scope_fixture", "parallel_gate")
+# `test_select_tests_real_helpers` holds these undeclared (they import a test module, sit at the size budget, or load a
+# script by `importlib`, which D164 rule 4 holds a generating declaration to naming)
+LEFT_UNDECLARED = ("scoped_fixture", "mutation_scope_fixture", "parallel_gate", "stamp_fixture")
 PROBE = """
 import ast, json, sys
 sys.path.insert(0, 'scripts')

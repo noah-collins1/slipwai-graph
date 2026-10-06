@@ -220,6 +220,18 @@ class TestAReadsOnlyDeclarationThatGenerates(DeclarationCase):
             with self.subTest(call):
                 self.module(call, '{"configurations": {"backend": ["go"]}}')
                 self.commit("a generator that says what it generates")
+                held = self.held()
+                if call == "generate":  # a call the signature binds: `name` is no axis (T038)
+                    self.assertIn("computed backend", held[0])
+                else:  # a route the signature does not describe is every option of every axis
+                    self.assertEqual([line.split(":")[0] for line in held], ["tests/test_a.py"], held)
+                    self.assertIn("every option of every axis", held[0])
+
+    def test_a_module_that_declares_every_may_take_any_route(self) -> None:
+        for call in self.CALLS:
+            with self.subTest(call):
+                self.module(call, '{"configurations": "every"}')
+                self.commit("a generator that says it generates everything")
                 self.assertEqual(self.held(), [])
 
     def test_a_reads_only_module_that_generates_nothing_is_held(self) -> None:
