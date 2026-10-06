@@ -107,6 +107,17 @@ class OwnershipSentencesTest(FactoryTestCase):
         self.assertIn("how many stages a typed delegate that belongs to them ran handed back a block", text)
         self.assertNotIn("how many delegated stages", text)
 
+    def test_the_fragment_carries_the_started_argument_the_catch_up_cut_off_and_the_skipper_correction(self) -> None:
+        text = (ROOT / "changelog.d/result-contract.md").read_text(encoding="utf-8")
+        self.assertEqual(text.splitlines()[0], "MINOR")
+        lead, catch_up = flat(text).split("**Catch-up.**")
+        for words in ("`--started <instant>`", "the instant the `--hand-backs` line names",
+                      "a continuation that arrives after its stage's entry closed", "`unavailable` answer",
+                      "`change_summary`", "a PATCH-level correction"):
+            self.assertIn(words, lead)
+        self.assertIn("Stages that ended before `hand_backs.py` first reached the project's history owe no block, "
+                      "and `--hand-backs` and `make benchmark` say so instead of counting them", catch_up)
+
     def test_the_two_links_in_every_brief_are_root_relative_the_same_way(self) -> None:
         """Both name a project-root path, spelled out in the link text; neither is relative to `agents/`."""
         for layout in (AT_ROOT, ADOPTED):
