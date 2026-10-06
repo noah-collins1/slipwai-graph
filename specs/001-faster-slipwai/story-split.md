@@ -480,6 +480,8 @@ that cannot delegate takes the earliest ready slice in split order and names the
   says, what the key leaves out, and what the gate's checks then read inside such a directory. It changes what the
   stamp answers, so it lands under `assets/` after S32 (D91). Found by S33's after-converge gaps pass.
 
+- **What S39's adversary pass declined (A10 under `## S39` in `adversary-log.md`), for the completion audit.** `benchmark.py` follows an inherited `GIT_DIR` and reads another repository's history with no warning — older than S39, shared by every toolkit script that calls git, and reached only from an environment nobody runs the benchmark in.
+
 ## Next Step
 
 Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,

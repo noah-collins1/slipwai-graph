@@ -1709,17 +1709,63 @@
         "start": {
           "open": 3,
           "done": 39
+        },
+        "end": {
+          "open": 15,
+          "done": 39
         }
       },
-      "cursor": {
+      "ended": "2026-10-06T10:58:44Z",
+      "seconds": 675,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 632088,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a665ad8b9056cf10b.jsonl": 248310
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 836873,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a1a84f2460acb575a.jsonl": 537757,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a665ad8b9056cf10b.jsonl": 579756,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ae91a4fe8081de3da.jsonl": 712064
+        }
+      },
+      "usage": {
         "source": "claude",
         "session": "2382cd35-c30b-4143-ab92-9beb7e6d8378",
-        "files": {
-          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 632088
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 12,
+            "output": 8538,
+            "cache_read": 635162,
+            "cache_creation": 17563
+          }
         },
         "subagents": {
-          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a665ad8b9056cf10b.jsonl": 248310
-        }
+          "claude-opus-5-5": {
+            "input": 210,
+            "output": 4864,
+            "cache_read": 9100183,
+            "cache_creation": 306262
+          }
+        },
+        "agents": [
+          "drive-adversary",
+          "drive-hand"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5"
+      ],
+      "agents": [
+        "drive-adversary",
+        "drive-hand"
+      ],
+      "delegated": true,
+      "signals": {
+        "findings": 18,
+        "seams": 2,
+        "driver": "cruise"
       }
     }
   ]
