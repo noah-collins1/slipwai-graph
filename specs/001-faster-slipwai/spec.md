@@ -2590,3 +2590,76 @@ what D117 rule 2, D125 and D153 count, and *full* means every test module, with 
 - **AC-S38-17** — *G12, G14.* S38 selects and does nothing else: no parallelism, and no change to how a test runs.
   `git diff --stat <base> -- assets src/slipwai catalog.json` is empty at the slice's end, and `VERSION` and
   `changelog.d/` are unchanged; anything else goes back as a bump question.
+
+### S39-benchmark-elapsed (method slice)
+
+**Gaps reviewed** 2026-10-06, cruise iteration 24, `drive-gaps` (read only) with the host's own D159: FR-049, FR-057,
+S39's split and graph rows against D129, D130 and D132 (the owner's), S37's row that reads these measures; against
+`assets/toolkit/scripts/agents/benchmark.py` (its copy under `delivery/scripts/agents/` read only), its tests, the 16
+slice records and the feature record, the S08 and S14 worktree records, `specs/cruise-log.jsonl`, the register, the
+`drive.md` and `cruise.md` passages that open and close entries, and the session transcripts' subagent metadata. Found
+and written back: no record holds *ready* or *accepted* as a moment, so both are derived from git (the split commit and
+the last dependency's register row; the slice's own register row); S08 merged before its own Phase 4 finished, so
+*merged*, *demo accepted* and *done* are three moments; the overview heading prints summed stage time as if it were
+elapsed, which FR-049 forbids once slices overlap; rework after an `implementation` or `behaviour` demo is not counted;
+one session's transcript serves every concurrent slice and the delegate-type rule hands one slice's lines to another's
+bracket, while a subagent's `meta.json` names the `drive-slice` that spawned it; brackets kept in a worktree and on the
+integration branch do not see each other; no decision carries a tier yet (S26's `Reversibility:` line), so FR-057's
+metrics read unknown until it does (D132 keeps them here); old records stay readable (D65).
+
+Unless a criterion says otherwise, *ready* is the later of the commit that added the slice to `story-split.md` and the
+commit that added the register row of its last dependency; *accepted* is the commit that added the slice's own register
+row; *stage time* is what today's `wall` column sums; *elapsed* is accepted minus ready.
+
+- **AC-S39-1** — *G1.* Given S08's history (demo 3 accepted, merged at `3138416`, adversary fixes after it, its register
+  row added later), when the benchmark reports it, then elapsed runs from its ready commit to its register-row commit,
+  and the demo-accepted and merge moments are shown inside that interval; before the row exists, elapsed reads *open
+  since <ready>*, never a number.
+- **AC-S39-2** — *G2, the split row's criterion.* Given a slice that waited on a sibling's merge, when its record is
+  reported, then elapsed, accumulated stage time and waiting by cause — *dependency* (a sibling's merge in split order or
+  a person's patch the slice needs), *worker* (no bracket of the slice open, or outside any iteration), *review* (a park
+  ending `stopped: human` up to the next iteration, a demo waiting on a person), *integration* (merge to register row,
+  the full gate inside it, timed by a new host-bracketed `gate` stage) — are separate numbers, each read from a record
+  (git, `specs/cruise-log.jsonl`, `decisions.md`, the brackets), and the causes plus *unattributed* plus the union of the
+  slice's brackets equal elapsed, to the second.
+- **AC-S39-3** — *G3.* Given a skipper bracket nested inside an `implement` bracket of the same slice, then the slice's
+  worked time counts that interval once; given an entry cut off at the next iteration's start hours after its last
+  transcript line, then its stage time ends at that last line and the report says so; the `wall` column is renamed
+  *stage time*, and no heading reports a sum of stage time as elapsed.
+- **AC-S39-4** — *G4.* Given S08's record (demo 1 `implementation`, implement, demo 2 `implementation`, implement, demo 3
+  `accepted`), then its rework is those two `implement` entries with their tokens and seconds, counted inside S08's total
+  cost; the adversary-fix `implement` after acceptance is not rework. Rework is every entry after a `behaviour` or
+  `implementation` demo up to the next demo's close.
+- **AC-S39-5** — *G5.* Given two slices' `implement` brackets open at once in one session, each with `drive-implement`
+  delegates spawned by its own `drive-slice`, then each request is counted in exactly one slice's record — the one whose
+  `drive-slice` spawned it, read from the subagent's `meta.json` and the spawning `drive-slice`'s description, which
+  `drive.md` and `cruise.md` fix as `drive-slice <id>`; across every record in the project, worktree copies after merge
+  included, no request is counted twice; a line that ties to no slice is counted in the feature's *shared* bucket and in
+  no slice.
+- **AC-S39-6** — *G6.* Given S06, S08 and S14 overlapping in iterations 23–24, then the feature's elapsed (first slice
+  ready to last slice accepted) is less than the sum of their stage times, the two appear under different names, and the
+  union of the slices' intervals is shown as *time with any slice in flight*.
+- **AC-S39-7** — *G7, FR-057, D132.* Given a decision log with no `Reversibility:` lines, when decision health is
+  reported, then the escalation share, the misclassification rate and the median wait by tier each read *unknown* with
+  that reason, and no figure is printed; given a fixture log of 20 easy or guarded entries with 4 escalated to hard, then
+  the share reads 20% and is flagged outside 5–15%; a misclassification rate over 5% is flagged.
+- **AC-S39-8** — *G8, D65.* Given the 16 records as committed at `8072724`, when `make benchmark` runs before and after
+  S39, then every column S39 does not rename holds the same values, each new figure is derived or reads *unknown — <reason>*,
+  and `check-benchmark` warns of no field an old record lacks.
+- **AC-S39-9** — *G9, what S37 reads.* Given any record, then `benchmark.py --json` carries `elapsed`, `stage_seconds`,
+  `waiting{dependency, worker, review, integration, unattributed}`, `rework{seconds, tokens}` and `cost{tokens, shared}`,
+  each a number or `{"unknown": "<reason>"}`, with the record each was read from; the page's reading notes say in one
+  sentence how elapsed differs from stage time.
+- **AC-S39-10** — *G10.* Given a generated project with one slice driven by `/drive` and no `specs/cruise-log.jsonl`,
+  when `make benchmark` runs, then elapsed and stage time are reported, every waiting cause the project has no record for
+  is *unattributed*, and it exits 0 with no warning about the cruise log.
+- **AC-S39-11** — *G11.* Given the real records of iterations 23–24 (S06, S08, S14, S14's worktree record included),
+  when the demo runs the asset copy of the script in place, then S08's elapsed, stage time and waiting by cause match
+  figures recomputed by hand from git and the cruise log; the tokens over all records plus the shared bucket equal the
+  session's distinct-request total; and S08's `implement` of 17:17–18:53Z no longer holds S06's or S14's delegates. The
+  timings are reported, not judged against a threshold.
+- **AC-S39-12** — *G12, AGENTS.md.* MINOR, with a fragment: given a project generated by the previous release with
+  records from before S39, when `slipwai migrate` runs and then `make benchmark`, then it succeeds and the catch-up names
+  what changed and that nothing must be redone; the new derivation lives in a module of its own beside `benchmark.py`
+  under `assets/toolkit/scripts/agents/`. In this repository, attribution across concurrent slices stays by delegate type
+  until a person runs `migrate`.
