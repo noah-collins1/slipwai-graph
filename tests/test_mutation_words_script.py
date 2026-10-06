@@ -13,6 +13,7 @@ from typing import Any
 import mutation_scope_fixture
 from mutation_scope_fixture import HEALTH, FakeRunner, ScopeCase
 from stamp_fixture import git
+from test_mutation_borders import clean_environment
 
 FIRST = re.compile(r"^mutation: scoped to (\d+) changed file\(s\) since `main` at ([0-9a-f]{7,}): (.+)$")
 
@@ -144,3 +145,42 @@ class FirstLineTest(ScopeCase):
                         if "packages" in combo:
                             self.assertIn("mutation: not mutated packages/shared/a.txt — not mutated by this target",
                                           ran.lines)
+
+
+class EarlierReportTest(ScopeCase):
+    """T044 (B7): a Go service the run starts no tool for keeps no earlier report that reads as this run's."""
+
+    REPORT = "apps/service/gremlins.json"
+
+    def plant(self) -> None:
+        self.write(self.REPORT, '{"mutants_killed": 0}\n')
+
+    def test_t044_a_service_with_nothing_to_mutate_loses_the_report_of_an_earlier_run(self) -> None:
+        self.plant()
+        self.write("apps/service/health/extra_test.go")
+        ran = self.run_in_process("go:apps/service", "go:apps/billing")
+        self.assertIn("mutation: skip apps/service — no changed production file", ran.lines)
+        self.assertFalse((self.repo / self.REPORT).exists(), ran.out)
+
+    def test_t044_a_service_whose_changed_files_the_tool_leaves_out_loses_it_too(self) -> None:
+        self.plant()
+        self.write("apps/service/cmd/x.go")
+        self.addCleanup(setattr, mutation_scope_fixture, "FakeRunner", FakeRunner)
+        setattr(mutation_scope_fixture, "FakeRunner", PlanningRunner)  # noqa: B010 -- the run site reads this name
+        ran = self.run_in_process("go:apps/service", runner_args={"mutable": {}})
+        self.assertIn("mutation: skip apps/service — no changed production file within the tool's targets", ran.lines)
+        self.assertFalse((self.repo / self.REPORT).exists(), ran.out)
+
+    def test_t044_hold_a_service_the_tool_runs_for_keeps_its_report_for_the_tool_to_replace(self) -> None:
+        self.plant()
+        self.write(HEALTH, "package health\n// edited\n")
+        ran = self.run_in_process("go:apps/service")
+        self.assertIn("mutation: scope apps/service — health/health.go", ran.lines)
+        self.assertTrue((self.repo / self.REPORT).exists(), ran.out)
+
+    def test_t044_hold_a_dry_run_removes_nothing(self) -> None:
+        self.plant()
+        self.write("apps/service/health/extra_test.go")
+        ran = self.run_in_process("go:apps/service", env=clean_environment(MAKEFLAGS="n"))
+        self.assertIn("mutation: skip apps/service — no changed production file", ran.lines)
+        self.assertTrue((self.repo / self.REPORT).exists(), ran.out)

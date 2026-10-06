@@ -742,6 +742,21 @@ class Tools:
         return refusal(backend, path, [])
 
 
+GO_REPORT = "gremlins.json"  # where a Go run leaves its report, in the service; `go-mutation.py` writes it
+
+
+def drop_report(backend: str, root: str, dry: bool) -> None:
+    """A Go service this run starts no tool for keeps no earlier run's report, which would read as this run's. The report
+    is a tool's output, replaced by the next run that starts one; nothing is removed under a dry run."""
+    report = os.path.join(root, GO_REPORT)
+    if backend != "go" or dry or not os.path.isfile(report):
+        return
+    try:
+        os.remove(report)
+    except OSError as error:
+        say(f"{shown(report)} is an earlier run's report and could not be removed ({str(error)[:60]})")
+
+
 class Unlisted(str):
     """A path git cannot say changed — one it ignores, or one in a nested repository — with the words that say so."""
 
@@ -813,12 +828,14 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
             result, kind = (Result(0, [], []) if dry and backend in WIRED else runner.sweep(backend, root)), "swept"
         elif plan is None:
             say(f"skip {root} — no changed production file")
+            drop_report(backend, root, dry)
             counts["skipped"] += 1
             continue
         elif not plan.keep and plan.left:
             say(f"skip {root} — no changed production file within the tool's targets")
             for name, why in plan.left:
                 say(f"not mutated {shown(root + '/' + name)} — {why}")
+            drop_report(backend, root, dry)
             counts["skipped"] += 1
             continue
         else:
