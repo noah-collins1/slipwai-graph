@@ -1067,6 +1067,25 @@
       "signals": {
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "hand",
+      "started": "2026-10-06T10:46:20Z",
+      "planned": "hand: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 3,
+          "done": 38
+        }
+      },
+      "cursor": {
+        "source": "claude",
+        "session": "2382cd35-c30b-4143-ab92-9beb7e6d8378",
+        "files": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 455541
+        },
+        "subagents": {}
+      }
     }
   ]
 }
