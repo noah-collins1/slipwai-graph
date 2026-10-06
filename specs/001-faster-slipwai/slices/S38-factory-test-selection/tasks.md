@@ -640,10 +640,10 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 - [ ] Only `verify` passes `FULL=1` (patched `Makefile:58,60`); `verify-checks` (`Makefile:64`) reaches `test` with
   selection on, on a slice branch, and ends `verify: all gates passed`. Shown by `make -n verify-checks` in the patched
   scratch copy: the `test` line is `PYTHONPATH=src python3 -B scripts/select-tests.py`.
-  **Fix (in `s38-2.patch`):** `verify-checks` runs every module (a target-specific `FULL := 1` exported to its
+  **Fix (in `s38.patch`, regenerated — it is not yet applied, so the person applies one patch, not two):** `verify-checks` runs every module (a target-specific `FULL := 1` exported to its
   prerequisites, or the message names a selected run). **RED:** `make verify-checks` on a slice branch with a
   one-backend change runs every stand-in.
-  **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38-2.patch` (new), `tests/test_select_tests_make.py`,
+  **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch` (regenerated), `tests/test_select_tests_make.py`,
   `tests/test_select_tests_makefile.py`.
 
 ### T032 — LOW: `SKIP` naming every module turns selection on (AC-S38-13)
@@ -651,9 +651,9 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 - [ ] `TESTS ?= $(if $(SKIP),$(filter-out …),)` (`Makefile:32`) is empty when `SKIP` names every module, so the `test`
   recipe calls the selector. `make -n test SKIP="<all 336>"` prints `PYTHONPATH=src python3 -B scripts/select-tests.py`
   where AC-S38-13 says `SKIP` turns selection off (the unpatched recipe ran every module here).
-  **Fix (in `s38-2.patch`):** the recipe branches on `$(TESTS)$(SKIP)`, prints `selection off: SKIP given` and runs no
+  **Fix (in the regenerated `s38.patch`):** the recipe branches on `$(TESTS)$(SKIP)`, prints `selection off: SKIP given` and runs no
   module. **RED:** `make test SKIP="<every module>"` prints that line and does not call the selector.
-  **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38-2.patch` (shared with T031),
+  **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch` (shared with T031),
   `tests/test_select_tests_make.py`.
 
 ---
