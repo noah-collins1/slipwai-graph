@@ -318,7 +318,8 @@ class OpenEntryTest(unittest.TestCase):
         self.assertIn("1 entry still open", s1["read_from"]["cost"])
         self.assertIn("so far", s1["entries"][1]["read_from"])
         total = whole["session_totals"]["sess"]
-        self.assertEqual(s1["cost"]["tokens"] + whole["cost"]["tokens"] + total["shared"], total["total"])
+        self.assertIn("unknown", whole["cost"]["tokens"])  # the feature record ended no bracket (T049)
+        self.assertEqual(s1["cost"]["tokens"] + total["shared"], total["total"])
 
     def test_e2_without_transcripts_the_open_entry_is_named_beside_the_sum_of_the_ended_ones(self) -> None:
         shutil.rmtree(self.repo / ".home/.claude")

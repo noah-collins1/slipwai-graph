@@ -201,7 +201,11 @@ class PinGitCopyTest(unittest.TestCase):
             for home in (False, True):
                 repo = dated_copy(Path(base) / f"copy-{home}", home)
                 records = json.loads(run(repo, "--json").stdout)
-                self.assertEqual(sum(isinstance(item["elapsed"], int) for item in records) > 5, True)
+                # every register row lands in one commit here, so a slice whose brackets began before that commit
+                # reads unknown with its reason (T044); git is still read for the ones it can answer
+                self.assertGreaterEqual(sum(isinstance(item["elapsed"], int) for item in records), 1)
+                self.assertTrue(all(isinstance(item["elapsed"], int) or item["elapsed"].get("unknown")
+                                    for item in records))
                 for item in records:
                     stages = json.loads((repo / item["path"]).read_text(encoding="utf-8"))["stages"]
                     with self.subTest(home=home, record=item["path"]):

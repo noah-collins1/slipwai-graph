@@ -226,8 +226,9 @@ class WaitingTest(unittest.TestCase):
         self.assertEqual(split[0], ["slice", "elapsed", "worked", "dependency", "worker", "review", "integration",
                                     "unattributed", "rework", "cost"])
         cells = {cells[0]: cells for cells in split[1:]}
-        self.assertEqual(cells["S2"], ["S2", "11h00m", "1h00m", "0s", "0s", "0s", "0s", "10h00m", "0s · 0", "unknown"])
-        self.assertEqual(cells["S3"][2:], ["unknown"] * 6 + ["0s · 0", "unknown"])
+        unread = "unknown (see notes)"  # T042: a cell points at the note that gives its reason
+        self.assertEqual(cells["S2"], ["S2", "11h00m", "1h00m", "0s", "0s", "0s", "0s", "10h00m", "0s · 0", unread])
+        self.assertEqual(cells["S3"][2:], [unread] * 6 + ["0s · 0", unread])
         self.assertEqual(out.count("S3: elapsed unknown"), 1)
         self.assertIn("S3: elapsed unknown — S3 is in neither", out)
         self.assertLess(out.index("slice  delegate/cycle"), out.index("unattributed"))
