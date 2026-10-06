@@ -248,6 +248,13 @@ def rule_of(text: str, target: str) -> list[str]:
     return found
 
 
+def prerequisites(rule: list[str]) -> list[str]:
+    """The prerequisites on a rule's target line: the words after the colon, before a comment or a recipe after `;`."""
+    if not rule:
+        return []
+    return rule[0].partition(":")[2].split("#")[0].split(";")[0].split()
+
+
 def mutation_rule(text: str) -> list[str]:
     """The `mutation` and `mutation-full` rules of a Makefile as written: the latter holds the tool's invocation."""
     return rule_of(text, "mutation") + rule_of(text, "mutation-full")
@@ -626,7 +633,7 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
             continue
         else:
             if backend in WIRED:
-                say(f"scope {root} — {', '.join(shown(name) for name in production[root])}")
+                say(f"scope {root} — {', '.join(shown(name) for name in plan.keep)}")
             result = (Result(0, list(production[root]), []) if dry and backend in WIRED
                       else runner.run(backend, root, production[root]))
             kind = "scoped"
@@ -673,7 +680,8 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
         whole, causes = sweep_causes(changes, services, tool, commit, makefile)
         if whole:
             raise Sweep(said(whole))
-        if [line[1:] for line in rule_of(read(makefile) or "", "mutation-full")[1:]] != factory_recipe(services):
+        written = rule_of(read(makefile) or "", "mutation-full")
+        if [line[1:] for line in written[1:]] != factory_recipe(services) or prerequisites(written):
             handed = os.environ.get("SINCE")
             raise Sweep(NOT_FACTORY + (f", with `SINCE={shown(handed)}`" if handed else ""), keeps_since=True)
     except Sweep as why:

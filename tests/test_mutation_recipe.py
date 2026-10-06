@@ -112,6 +112,26 @@ class RecipeTest(RecipeBase):
                     self.log.unlink()
                     (self.repo / produced).unlink(missing_ok=True)
 
+    def test_t025_a_prerequisite_the_trunk_added_to_the_target_line_is_not_the_factorys_recipe(self) -> None:
+        origin = git(self.repo, "rev-parse", "main").strip()
+        for name, (words, produced) in SHAPES.items():
+            with self.subTest(backend=name):
+                git(self.repo, "checkout", "-q", "-f", SLICE)
+                git(self.repo, "branch", "-q", "-f", "main", origin)
+                git(self.repo, "checkout", "-q", "-B", SLICE, "main")
+                git(self.repo, "checkout", "-q", "--", ".")
+                self.on_main(words)
+                self.edit_line("mutation-full: ## Run", "mutation-full: tools ## Run")
+                git(self.repo, "checkout", "-q", "main")
+                self.commit("the trunk adds a prerequisite")
+                git(self.repo, "checkout", "-q", "-B", SLICE)
+                self.write(produced)
+                status, lines, recording = self.run_recording(*words)
+                self.assertEqual(lines[0], NOT_FACTORY, lines)
+                self.swept_whole(status, lines, recording)
+                self.log.unlink()
+                (self.repo / produced).unlink(missing_ok=True)
+
     def test_e3_a_recipe_for_other_services_than_the_ones_handed_is_not_the_factorys(self) -> None:
         self.on_main(TWO_GO)
         self.write(GO_FILE)

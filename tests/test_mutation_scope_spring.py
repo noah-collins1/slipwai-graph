@@ -120,6 +120,15 @@ class SpringRunnerTest(SpringCase):
         self.assertEqual([line for line in lines if " apps/spring —" in line and not line.startswith(
             "mutation: not mutated")], [SKIPPED.format("apps/spring")])
 
+    def test_t025_the_scope_line_names_the_classes_pit_takes_and_the_others_are_not_mutated_lines(self) -> None:
+        self.pom(("com.example.x.health.*",))
+        self.java("health/HealthStatus", "other/Outside")
+        _, lines = self.run_spring(FakeExecute())
+        kept, left = f"src/main/java/{PACKAGE}/health/HealthStatus.java", f"src/main/java/{PACKAGE}/other/Outside.java"
+        self.assertIn(f"mutation: scope apps/spring — {kept}", lines)
+        self.assertIn(f"mutation: not mutated apps/spring/{left} — outside PIT's configured targets", lines)
+        self.assertFalse([line for line in lines if line.startswith("mutation: scope ") and "Outside" in line], lines)
+
     def test_e4_an_unreadable_pom_or_pattern_is_reported_as_unreadable_naming_the_file(self) -> None:
         self.java("health/HealthStatus")
         for text in ("<project><unclosed>", POM.format(targets=params("${pkg}.*"), excluded=""),

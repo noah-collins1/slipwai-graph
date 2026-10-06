@@ -84,6 +84,15 @@ class GoScopeTest(ScopeCase):
         self.assertEqual(lines[-1], "mutation: 0 scoped, 0 swept, 2 skipped, 0 refused; passed")
         self.assertEqual(tools.runs(), [])
 
+    def test_t025_the_scope_line_names_the_files_gremlins_takes_and_the_others_are_not_mutated_lines(self) -> None:
+        self.write("apps/service/cmd/migrate/main.go", "package main\n// edited\n")
+        self.write(HEALTH, "package health\n// edited\n")
+        status, lines, _ = self.run_default()
+        self.assertEqual(status, 0, "\n".join(lines))
+        self.assertEqual(self.service_lines(lines, "apps/service"), ["mutation: scope apps/service — health/health.go"])
+        self.assertIn("mutation: not mutated apps/service/cmd/migrate/main.go — outside Gremlins' configured targets",
+                      lines)
+
     def test_e4_the_tools_failure_is_the_services_failure(self) -> None:
         self.fit_recipe(TWO)
         (self.repo / HEALTH).write_text("package health\n// edited\n", encoding="utf-8")
