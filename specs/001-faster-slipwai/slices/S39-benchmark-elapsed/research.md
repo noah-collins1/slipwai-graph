@@ -75,6 +75,10 @@ record cites the record or the commit. The slice adds no dependency.
 - **Rationale**: the recorded usage was split by today's rule, which double-counts only where brackets of different
   records overlap (`other_windows`, lines 268–278, reads only this checkout's records). A clone in CI has no
   transcripts; the figure it can stand behind is the non-overlapping one.
+- **Built**: the overlap check reads this tree's records and, through `git for-each-ref` and `git show`, those on every
+  local `slice/*` branch and on `main` or `master` (a slice's concurrent brackets live on its own branch); where git
+  cannot list them the recorded sum is unknown with that reason. `read_from.cost` names the transcripts, the recorded
+  usage or both with counts, never the transcripts where none was read.
 
 ## R-6 Cut-off stage time ends at the last attributed line
 
@@ -83,6 +87,10 @@ record cites the record or the commit. The slice adds no dependency.
 - **Rationale**: `cut_off_entry()` (lines 567–591) stamps `ended` with the moment the cut-off ran, which can be the
   next iteration's start hours later (AC-S39-3). Counting only the entry's own lines keeps a sibling's later activity
   from extending it.
+- **Built**: the moment is the *latest* line of any request attributed to the entry (a response is a line per content
+  block, seconds apart), not the first line of each; one before the entry's start leaves the recorded end standing with
+  a note that the transcript contradicts the bracket, and a transcript read with no request in the entry is a different
+  note from one that could not be read.
 
 ## R-7 Renames, not reuse
 
@@ -97,3 +105,17 @@ record cites the record or the commit. The slice adds no dependency.
   `Status:` `ratified`/`reverted`, wait from the skipper bracket holding `When:`.
 - **Rationale**: this repository's 159 entries carry no `Reversibility:` line (`grep -c` 0), so every figure reads
   unknown today and nothing is computed from a field that does not exist (D159).
+- **Built**: a review's verdict is the `Status:` line's first word (a status that merely mentions `ratified` is not a
+  review), and each median is `{median, read, of}` so a median over two of ten entries says so. The figures are
+  objects (`{percent, numerator, denominator, flagged, why}`), the shortest skipper bracket holding `When:` is the one
+  taken, and `--json` carries them as `feature_figures`, `session_totals` and `decision_health`, because the D65 pin
+  holds the old `feature` and `sessions` keys.
+
+## R-9 Worker is every second outside the other causes, from the cruise log's first row
+
+- **Decision**: where `specs/cruise-log.jsonl` exists, *worker* takes every second from its first row's `started` to
+  accepted that nothing earlier claimed — the gaps between iterations and the time after the last row included; with no
+  log it stays unattributed (R10). A log with a line that cannot be read whole makes review, worker and unattributed
+  unknown, naming the line.
+- **Rationale**: AC-S39-2 lists *worker* as "no bracket of the slice open, or outside any iteration"; the host chose
+  that reading over counting time past the log's last row as unattributed.

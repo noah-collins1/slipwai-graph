@@ -7,17 +7,20 @@ every figure below is derived each time a reader runs. This page spells what the
 
 | Moment | Read from | Absent |
 |---|---|---|
-| `added` | oldest commit whose `specs/<f>/story-split.md` names `` `<id>` ``; else whose `docs/event-model/model.yaml` has a `- id: <id>` block | `{"unknown": "<id> is in neither specs/<f>/story-split.md nor docs/event-model/model.yaml"}` |
-| `dependencies` | backticked ids in the `depends_on` cell of the `## Slice graph` row whose first cell is `` `<id>` ``; else the block's `depends_on` list; `—` or empty is none | none |
-| `done[<dep>]` | oldest commit whose `specs/<f>/slices/README.md` has a row whose first cell is `` `<dep>` ``, or whose `model.yaml` has `<dep>`'s block at `status: implemented` — the earlier of the two | the slice is not ready |
+| `added` | oldest commit whose `specs/<f>/story-split.md` names `<id>`, backticked or bare; else whose `docs/event-model/model.yaml` has a `- id: <id>` block | `{"unknown": "<id> is in neither specs/<f>/story-split.md nor docs/event-model/model.yaml"}` |
+| `dependencies` | ids, backticked or bare and comma-separated, in the `depends_on` cell of the `## Slice graph` row whose first cell is `<id>` (one cell reader serves the graph, the register and the split); else the block's `depends_on` list; `—` or empty is none | none |
+| `done[<dep>]` | oldest commit whose `specs/<f>/slices/README.md` has a row whose first cell is `<dep>` (backticked or bare, the rule `done_slices()` uses), or whose `model.yaml` has `<dep>`'s block at `status: implemented` — the earlier of the two | the slice is not ready |
 | `ready` | max(`added`, every `done[<dep>]`) | `{"unknown": "not ready: <dep> is not done"}` |
 | `accepted` | the slice's own `done` | elapsed reads `open since <ready>` |
 | `demo_accepted` | `ended` of the first `demo` entry with `signals.outcome == "accepted"` | not shown |
 | `merged` | oldest merge commit whose subject contains `slice/<id>` | integration counts only `gate` brackets |
 
 Times are UTC seconds; a commit's moment is its committer time (`%ct`). Each moment carries the commit (short sha)
-or the record it came from in `read_from`. Outside a git repository, or where `git` fails, every git-read moment is
-`{"unknown": "git could not be read: <why>"}`.
+or the record it came from in `read_from`. Outside a git repository, every git-read moment is
+`{"unknown": "git could not be read: <why>"}`; in a shallow clone (`git rev-parse --is-shallow-repository` is `true`),
+where the oldest commit holding a row is the graft and not the commit that wrote it, it is
+`{"unknown": "git history is shallow: …"}`; and where a `git log` or `git show` a moment depends on fails it is
+`{"unknown": "git failed: <command>"}`. Only an empty answer means *not found*.
 
 ## Intervals and causes (per slice record, accepted slices only)
 
@@ -25,12 +28,16 @@ All intervals are clipped to `[ready, accepted]`, and integer seconds.
 
 | Name | Intervals | Read from |
 |---|---|---|
-| `worked` | union of the record's brackets `[started, end]`, except stage `gate` and a `demo` whose signals carry no `driver`; `end` is the last attributed line for a `cut_off` entry where one was read, else `ended` | the brackets |
+| `worked` | union of the record's brackets `[started, end]`, except stage `gate` and a `demo` whose signals carry no `driver`; `end` is the latest timestamped line of any request attributed to the entry for a `cut_off` entry where one was read and it does not precede `started`, else `ended` (a last line before the start contradicts the bracket: the recorded end stands, and the note says so; transcripts read with no request in the entry say that, which is not the same as not read) | the brackets |
 | `integration` | `[merged, accepted]` ∪ every `gate` bracket | the merge commit, the `gate` brackets |
 | `dependency` | `[demo_accepted, L]`, where `L` is the latest *landing* of a slice earlier in the `## Slice graph`'s row order that falls after `demo_accepted` and before `merged` (or before `accepted` where there is no merge); a landing is the sibling's `merged`, else its own `done` | git, the graph's order |
 | `review` | each cruise-log row whose `last_line` ends `stopped: human`: `[ended, next row's started]` (to now if none); each `demo` bracket with no `driver` signal | `specs/cruise-log.jsonl`, the brackets |
-| `worker` | `[first row's started, last row's ended]` of the cruise log, less the parks | `specs/cruise-log.jsonl` |
-| `unattributed` | what is left | — |
+| `worker` | `[first row's started, accepted]`: every second from the cruise log's first row on that no earlier cause took, the gaps between iterations and the time after the last logged row included ("outside any iteration") | `specs/cruise-log.jsonl`, which `read_from` names with that wording |
+| `unattributed` | what is left: with a log, only time before its first row; with none, every such second | — |
+
+A cruise log with a line that cannot be read whole (not JSON, or a `started`/`ended` that is not a UTC second) makes
+`review`, `worker` and `unattributed` `{"unknown": "specs/cruise-log.jsonl could not be read whole: line <n>"}`, naming
+each such line; a log that exists is never reported as absent.
 
 Each cause takes only seconds no earlier row of this table (from `worked` down) has taken. Hence
 `worked + integration + dependency + review + worker + unattributed == elapsed`, exactly. A cause with no record to
@@ -52,7 +59,8 @@ named in a record, `<projects>/<slug>/<session>.jsonl` and `<session>/subagents/
 `agent-<a>.meta.json`.
 
 1. **Requests.** An assistant line with `message.usage` and a key (`requestId`, else `message.id`, else `uuid`); the
-   first line of a key is the request (offset, file, `timestamp`, `attributionAgent`, the four usage counts). Tokens =
+   first line of a key is the request (offset, file, `timestamp`, `attributionAgent`, the four usage counts), and the
+   latest `timestamp` of any line of the key is where the request ended (`last`). Tokens =
    `input_tokens + output_tokens + cache_read_input_tokens + cache_creation_input_tokens`.
 2. **Chain.** For a sub-agent file, follow `parentAgentId` through the session's `meta.json` files; the first
    `agentType == "drive-slice"` names the slice: its description after `drive-slice `, else its first word, matched
@@ -67,19 +75,24 @@ named in a record, `<projects>/<slug>/<session>.jsonl` and `<session>/subagents/
    `Window.counts`; several records → the one record with a window whose stage owns the request's agent type
    (`OWNERS`), else shared; none → shared.
 5. **Outputs.** Per entry: `tokens`, `delegates` (descriptions of the sub-agent files whose requests it got),
-   `last_line`. Per record: `cost.tokens` (everything assigned to it), `cost.shared` (for a slice record: shared
+   `last_line` (the latest `last` of its requests), and whether its transcripts were read at all. Per record: `cost.tokens` (everything assigned to it), `cost.shared` (for a slice record: shared
    requests inside its own brackets; for the feature record: the feature's bucket). Per session: `total`,
    `attributed`, `shared` — `attributed + shared == total`.
 
 A session whose transcripts are absent: each entry's recorded `usage` totals stand in, counted where no bracket of
-another record overlaps the entry's interval, else `{"unknown": "brackets of <record> overlap this one and the
-transcripts are not on this machine"}`. A Codex session is read the same way, without step 2.
+another record overlaps the entry's interval. The other records are those of this working tree and, read with `git
+for-each-ref` and `git show <ref>:<path>`, those on every local `slice/*` branch and on `main` or `master`; an
+overlap there reads `{"unknown": "brackets of <slice> on <ref> overlap this one and the transcripts are not on this
+machine"}`, and where git cannot list or read them the recorded sum is unknown with that reason. A record's
+`read_from.cost` (and each entry's `source`) says which entries came from the transcripts, which from recorded usage
+and which were unread, with counts where they are mixed. An entry never bracketed (`seconds` 0) or still open has no
+tokens and no stage time to read: both are `{"unknown": …}` in both paths, never `0`. A Codex session is read the same way, without step 2.
 
 ## Feature figures
 
 | Name | Value |
 |---|---|
-| `elapsed` | min(slice `ready`) → max(slice `accepted`); `open since <first ready>` while any slice record is not accepted |
+| `elapsed` | min(slice `ready`) → max(slice `accepted`); `open since <first ready>` while any slice record is not accepted; unknown naming the first slice whose `ready` was unread |
 | `stage_seconds` | Σ `stage_seconds` over every record of the feature, the feature's own included |
 | `in_flight_seconds` | the length of the union of every slice record's `worked` brackets (unclipped) |
 
@@ -90,8 +103,10 @@ transcripts are not on this machine"}`. A Codex session is read the same way, wi
 | Figure | Numerator / denominator | Flag |
 |---|---|---|
 | `escalation_share` | entries whose `- **Reversibility:**` value is `easy → hard` or `guarded → hard` (`->` too) / entries whose first tier is `easy` or `guarded` | outside 5–15 % |
-| `misclassification_rate` | tiered entries whose `Status:` contains `reverted` / tiered entries whose `Status:` contains `ratified` or `reverted` | over 5 % |
-| `median_wait[<tier>]` | median of the `seconds` of the `skipper` bracket (any record of the feature) holding the entry's `When:` | none |
+| `misclassification_rate` | tiered entries whose `Status:` first word is `reverted` / tiered entries whose `Status:` first word is `ratified` or `reverted` (`- **Status:** standing — to be ratified` is neither) | over 5 % |
+| `median_wait[<tier>]` | `{median, read, of}`: the median of the `seconds` of the shortest `skipper` bracket (any record of the feature) holding each entry's `When:`, over the `read` entries of the tier's `of` that one holds; the line reads `easy 6m00s (2 of 10)` | none |
+
+Each rate is `{percent, numerator, denominator, flagged, why}` (or unknown), not a bare number.
 
 No `Reversibility:` line in the log: all three `{"unknown": "no decision entry carries a Reversibility: line"}`. A
 denominator of 0: unknown, naming it.
@@ -108,6 +123,8 @@ denominator of 0: unknown, naming it.
  "reentered": []}
 ```
 
-(Numbers illustrative.) Any figure may instead be `{"unknown": "<reason>"}`. The feature record also carries
-`feature: {elapsed, stage_seconds, in_flight_seconds}`, `decision_health` and `sessions` (per session `total`,
-`attributed`, `shared`).
+(Numbers illustrative.) Any figure may instead be `{"unknown": "<reason>"}`. Each feature carries, once,
+`feature_figures: {elapsed, stage_seconds, in_flight_seconds}`, `decision_health` and `session_totals` (per session
+`total`, `attributed`, `shared`) — on its feature record or, where it has none, on its first slice record in path order,
+whose `read_from.feature_figures` says so. They are not `feature` and `sessions`, because the pin holds those two keys
+(a string and a count) on every old record.

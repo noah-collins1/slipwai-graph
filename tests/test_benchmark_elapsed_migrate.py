@@ -157,7 +157,9 @@ class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
 
     def test_e2_the_catch_up_names_the_renames_the_json_key_the_modules_and_the_gate(self) -> None:
         for words in ("`wall` → `stage time`", "`rework` column → `re-entered`", "{seconds, tokens}", "`reentered`",
-                      "`scripts/agents/measures.py`", "`scripts/agents/attribution.py`", "`gate`",
+                      "`scripts/agents/measures.py`", "`scripts/agents/attribution.py`", "`commands/benchmark.md`",
+                      "`feature_figures`", "`slice/*`", "shallow clone", "after its iterations",
+                      "`gate`",
                       "`drive-slice <id>`", "no record is rewritten",
                       "nothing"):
             self.assertIn(words, self.note)
