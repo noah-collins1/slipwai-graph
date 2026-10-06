@@ -601,6 +601,10 @@ def hand_back_verb(arguments: list[str]) -> int:
         return refuse(f"stage {arguments[3]!r} is not a lower-case word (a-z, 0-9, -; no underscore)")
     if missing and not " ".join(arguments[4:]).strip():
         return refuse("the reason is empty; --hand-back-missing says why")
+    fault = module.line_fault(" ".join(arguments[4:])) if missing else None
+    if fault:
+        return refuse(f"the reason {fault}; it is one line of printable text, so keep the first line of the "
+                      "delegate's words")
     record = ROOT / where / HAND_BACKS
     title = folder.group(2) or folder.group(1)
     started, refusal, note = module.resolve_started(ROOT / where / "benchmark.json", arguments[3], started)

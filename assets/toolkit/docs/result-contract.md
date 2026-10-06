@@ -101,6 +101,10 @@ the `--hand-backs` line, or the converge, demo-stop or adversary-stop line, name
 entry. A retry is the same block or reason for the same type, stage and start as the last such entry; for another
 start of the stage it is appended.
 
+A `<reason>` is one line of printable text: a line break of any kind or a control character is refused with usage
+(exit 2) and nothing is written, so the method's `refused: <the delegate's words>` keeps the first line of them. The
+`<type>` and `<stage>` are held to the same.
+
 `--hand-backs` lists, for each ended benchmark entry that owes a block, whether the record holds a passing block for
 that stage (an entry whose `started` is the stage's own), a `Missing:` line, or nothing; converge reads it, and `make benchmark` prints the count per slice. A stage
 owes a block only when a typed `drive-*` delegate that belongs to the stage ran (`implement` to `drive-implement`,

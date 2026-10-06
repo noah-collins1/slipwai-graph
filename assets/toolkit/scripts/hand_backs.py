@@ -331,10 +331,21 @@ def append(record: Path, title: str, htype: str, stage: str, text: str, known: s
     return [], True
 
 
+def line_fault(value: str) -> str | None:
+    """Why `value` is not one line of printable text, which is all a verb writes outside the delegate's verbatim block
+    (the reason of a `Missing:` entry): a line break of any kind, or a control or separator character, would let it
+    forge or hide an entry in an append-only record (A1)."""
+    odd = next((char for char in value if not char.isprintable()), None)
+    return None if odd is None else f"contains {odd!r}, which is not printable"
+
+
 def append_missing(record: Path, title: str, htype: str, stage: str, reason: str, now: str,
                    started: str | None = None) -> bool:
     """Append an entry saying no block was handed back, and why; False when the record's last entry for this type
     stage and `started` already says exactly this (a retry)."""
+    fault = line_fault(reason)
+    if fault:
+        raise ValueError(f"the reason {fault}")
     if repeats(record, htype, stage, started, None, reason):
         return False
     write(record, title, f"{heading(now, htype, stage, started)}\n\n- **Missing:** {reason}\n\n")
