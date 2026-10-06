@@ -27,7 +27,7 @@ if sys.argv[1:2] == ["run"]:
         with open(sys.argv[sys.argv.index("--output") + 1], "w", encoding="utf-8") as report:
             report.write(os.environ["FAKE_REPORT"])
     code = int(os.environ["FAKE_EXIT"])
-    print("Test efficacy: 0.00%")
+    print(os.environ.get("FAKE_SAY", "Test efficacy: 0.00%"))
     if code and os.environ["FAKE_STYLE"] == "run":  # `go run` reports the program's exit and exits 1 itself
         sys.stderr.write("exit status %d\\n" % code)
         sys.exit(1)
@@ -53,10 +53,13 @@ class UncoveredTest(unittest.TestCase):
         self.tools = FakeTools(self.directory, git=False)
         executable(self.tools.bin / "go", FAKE_GO)
 
-    def main(self, body: str, code: int, *arguments: str, style: str = "binary") -> tuple[int, str, str]:
+    def main(self, body: str, code: int, *arguments: str, style: str = "binary",
+             say: str | None = None) -> tuple[int, str, str]:
         module = loaded()
         saved = dict(os.environ)
         os.environ.update(self.tools.environment(), FAKE_REPORT=body, FAKE_EXIT=str(code), FAKE_STYLE=style)
+        if say is not None:
+            os.environ["FAKE_SAY"] = say
         out, err = io.StringIO(), io.StringIO()
         try:
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
@@ -115,7 +118,7 @@ class UncoveredTest(unittest.TestCase):
         for style in STYLES:
             for body in ("", report()):
                 with self.subTest(style=style, report=body):
-                    status, out, err = self.main(body, 0, "--file", "a.go", style=style)
+                    status, out, err = self.main(body, 0, "--file", "a.go", style=style, say="\nNo results to report.")
                     self.assertEqual(status, 0, out + err)
                     self.assertTrue(any("no mutant to run" in line for line in out.splitlines()), out)
 

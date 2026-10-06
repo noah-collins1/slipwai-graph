@@ -66,6 +66,8 @@ from pathlib import Path
 GREMLINS = "__GO_GREMLINS__"
 REPORT = "gremlins.json"
 CONFIG = ".gremlins.yaml"
+NOTHING = "No results to report."  # what Gremlins prints, with exit 0 and no report, when it found nothing to mutate
+STOPPED = "Shutting down gracefully"  # what it prints, with exit 0 and no report, when a signal stopped it
 TIMED_OUT = "TIMED OUT"
 NOT_COVERED = "NOT COVERED"
 
@@ -291,8 +293,10 @@ def assess(report: Path) -> int:
             "run — either way a pass on nothing is not a pass.\n"
         )
         return 1
-    result = json.loads(report.read_text(encoding="utf-8"))
-    statuses = Counter(m["status"] for f in result.get("files", []) for m in f.get("mutations", []))
+    statuses = tally(report)
+    if statuses is None:
+        sys.stderr.write("mutation: Gremlins exited 0 but its report cannot be read; a pass on nothing is not a pass.\n")
+        return 1
     if not statuses:
         sys.stderr.write("mutation: Gremlins reported no mutants; a pass on nothing is not a pass.\n")
         return 1
@@ -318,7 +322,27 @@ def tally(report: Path) -> Counter[str] | None:
         return None
 
 
-def judge_scoped(report: Path, code: int) -> int:
+def gremlins(command: list[str], staged: Path) -> tuple[int, str]:
+    """Run Gremlins, its output passed through line by line as it is written, and returned with the exit status:
+    what it printed is the only evidence of *why* it exited 0 without a report."""
+    heard = []
+    with subprocess.Popen(command, cwd=staged, env={**os.environ, "GOWORK": "off"}, stdout=subprocess.PIPE,
+                          text=True, encoding="utf-8", errors="replace") as process:
+        assert process.stdout is not None
+        for line in process.stdout:
+            heard.append(line)
+            sys.stdout.write(line)
+            sys.stdout.flush()
+    return process.returncode, "".join(heard)
+
+
+def found_nothing(heard: str) -> bool:
+    """Whether Gremlins said it found nothing to mutate, and was not stopped saying it."""
+    lines = {line.strip() for line in heard.splitlines()}
+    return NOTHING in lines and not any(STOPPED in line for line in lines)
+
+
+def judge_scoped(report: Path, code: int, heard: str) -> int:
     """A scoped run's exit status, from Gremlins' report and not from the exit code of what started it.
 
     `go run` turns the program's exit 10 into its own 1 (and prints "exit status 10"), a built binary exits 10,
@@ -328,11 +352,18 @@ def judge_scoped(report: Path, code: int) -> int:
     no test reaches. So a failing run whose report holds mutants and none was killed, lived or timed out passes
     with them counted. A failing run with no report, or one that cannot be read, is a build or setup failure and
     stays red; and Gremlins' "No results to report." (exit 0, no report) after a scope is a change with no mutant
-    of its own to answer for.
+    of its own to answer for — only when it said so: an exit 0 with no report and no such line is a run a signal
+    stopped ("Shutting down gracefully", which it also exits 0 on), and one with a report that cannot be read is
+    no evidence either, so both fail as the sweep's do.
     """
     statuses = tally(report)
     if code == 0:
         if not statuses:
+            if statuses is None and report.is_file() or not found_nothing(heard):
+                sys.stderr.write(
+                    "mutation: Gremlins exited 0 without a readable report and without saying it found nothing to "
+                    "mutate — stopped by a signal, or its report unreadable. That is not a pass; rerun.\n")
+                return 1
             say("mutation: no mutant to run — Gremlins found nothing to mutate in the scoped file(s), "
                 "such as a change to comments only")
             return 0
@@ -398,15 +429,12 @@ def main(argv: list[str]) -> int:
     try:
         staged = stage(service, root.resolve(), modules, into)
         report = into / REPORT
-        run = subprocess.run(
-            ["go", "run", GREMLINS, "unleash", "--output", str(report), *scoped, "."],
-            cwd=staged, env={**os.environ, "GOWORK": "off"},
-        )
+        code, heard = gremlins(["go", "run", GREMLINS, "unleash", "--output", str(report), *scoped, "."], staged)
         keep_report(report, service)
         if scoped:
-            return judge_scoped(report, run.returncode)
-        if run.returncode != 0:
-            return run.returncode
+            return judge_scoped(report, code, heard)
+        if code != 0:
+            return code
         return assess(report)
     finally:
         shutil.rmtree(into, ignore_errors=True)
