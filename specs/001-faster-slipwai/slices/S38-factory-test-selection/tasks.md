@@ -99,7 +99,7 @@ hand); `spec.md`, `decisions.md`, `story-split.md`. No bump (AC-S38-17): nothing
 
 ### T002 — [US1] Only a slice branch selects (R1 · AC-S38-1, -7, -13)
 
-- [ ] **Rule R1.** Follows T001. Data-model *full* rows 1–7, in order. Creates the entry `scripts/select-tests.py`
+- [x] **Rule R1.** Follows T001. Data-model *full* rows 1–7, in order. Creates the entry `scripts/select-tests.py`
   (arguments, the order of the *full* rows, running today's full command), `scripts/select_tests/__init__.py` and
   `report.py` (the line), and `tests/test_select_tests_full.py`.
 
@@ -124,7 +124,7 @@ as today's full command does.
 
 ### T003 — [US1] The base is the trunk, or what `SINCE` names (R2 · AC-S38-2, -3, -4 (b), (c))
 
-- [ ] **Rule R2.** Follows T002. Data-model *The base*, rows 8–9 and the `SINCE` clauses of row 3's precedence.
+- [x] **Rule R2.** Follows T002. Data-model *The base*, rows 8–9 and the `SINCE` clauses of row 3's precedence.
   Creates `scripts/select_tests/base.py` (the base: loads `check-slice-scope.py`'s `merge_base()` as it ships,
   `SINCE` as `<ref>^{commit}` compared as a tree, D138 item 4, with the shared-history check) and
   `tests/test_select_tests_base.py`.
@@ -148,7 +148,7 @@ as today's full command does.
 
 ### T004 — [US1] The change set is the scoped gate's (R3 · AC-S38-5, -10 (ignored files))
 
-- [ ] **Rule R3.** Follows T003. `changes.changed` + `changes.unpushed`, loaded as they ship (research R-1); the
+- [x] **Rule R3.** Follows T003. `changes.changed` + `changes.unpushed`, loaded as they ship (research R-1); the
   ignored files (R-6); data-model *full* rows 10, 11, 13. Edits `base.py` (the change set) and creates
   `tests/test_select_tests_changes.py`.
 
@@ -174,7 +174,7 @@ as today's full command does.
 
 ### T005 — [US1] What cannot be established runs everything (R4 · AC-S38-4 (a), -8 (b), -10, -14 (b))
 
-- [ ] **Rule R4.** Follows T004. The **full** rows of data-model *The path rules*. Creates `scripts/select_tests/rules.py`
+- [x] **Rule R4.** Follows T004. The **full** rows of data-model *The path rules*. Creates `scripts/select_tests/rules.py`
   (the first row that claims a path, with its rule's words) and `tests/test_select_tests_paths.py`.
 
 **RED:**
@@ -196,7 +196,7 @@ as today's full command does.
 
 ### T006 — [US1] A module reads what it declares; an undeclared one always runs (R5 e1, e3, e4 · AC-S38-8)
 
-- [ ] **Rule R5, first half.** Follows T005. `TEST_SELECTION` read by `ast.literal_eval` (never an import); the
+- [x] **Rule R5, first half.** Follows T005. `TEST_SELECTION` read by `ast.literal_eval` (never an import); the
   path-to-configuration map taken from `catalog.json` (`backends` with each one's `family`, `frontends`, `profiles`,
   `targets`) and the `assets/` rows of the table; the selection and its reasons. Creates
   `scripts/select_tests/declarations.py` and `choose.py`, and `tests/test_select_tests_declarations.py`.
@@ -225,7 +225,7 @@ Commit by path.
 
 ### T007 — [US1] A directory is read by more than its name suggests (R5 e2, R-5 · AC-S38-8)
 
-- [ ] **Rule R5, second half.** Follows T006. The cross-read rows of research R-5 in `rules.py`:
+- [x] **Rule R5, second half.** Follows T006. The cross-read rows of research R-5 in `rules.py`:
   `assets/languages/typescript/biome/**` and `typescript/app/package.json` also reach `frontend` `react-vite`;
   `assets/languages/java/build/**` also reaches `command` `adopt`; and each row of `FLAG_READERS[backend].tree` that
   a reading of `src/slipwai/project/flags.py` confirms. Creates `tests/test_select_tests_cross_reads.py`.
@@ -250,7 +250,7 @@ Commit by path.
 
 ### T008 — [US1] The test tree selects by its own imports (R6 · AC-S38-10 (fixture), -11)
 
-- [ ] **Rule R6.** Follows T007. The module, helper and `reads` rows for `tests/`. Edits `rules.py`, `choose.py` and
+- [x] **Rule R6.** Follows T007. The module, helper and `reads` rows for `tests/`. Edits `rules.py`, `choose.py` and
   `declarations.py` (the import graph, transitive); creates `tests/test_select_tests_imports.py`.
 
 **RED:**
@@ -272,7 +272,7 @@ Commit by path.
 
 ### T009 — [US1] A backend's change narrows the matrix (R7 · AC-S38-9)
 
-- [ ] **Rule R7.** Follows T008. Data-model *Narrowing*: two `unittest` processes, the narrowed with
+- [x] **Rule R7.** Follows T008. Data-model *Narrowing*: two `unittest` processes, the narrowed with
   `FACTORY_BACKENDS=<B>`, the rest with it unset, the run failing when either fails. Edits `choose.py`,
   `select-tests.py`; creates `tests/test_select_tests_narrow.py`.
 
@@ -293,7 +293,7 @@ Commit by path.
 
 ### T010 — [US1] Every skip is named, and a dry run shows it (R8 e1, e2 · AC-S38-12)
 
-- [ ] **Rule R8, first half.** Follows T009. Data-model *What a run prints*. Edits `report.py` and the entry; creates
+- [x] **Rule R8, first half.** Follows T009. Data-model *What a run prints*. Edits `report.py` and the entry; creates
   `tests/test_select_tests_report.py`.
 
 **RED:**
@@ -311,7 +311,7 @@ Commit by path.
 
 ### T011 — [US1] A dry run replays a range of commits (R8 e3 · AC-S38-15 (replay))
 
-- [ ] **Rule R8, second half.** Follows T010. `--dry-run --replay <base>..<tip>`: the change set from that range
+- [x] **Rule R8, second half.** Follows T010. `--dry-run --replay <base>..<tip>`: the change set from that range
   instead of the working tree and the branch rules, selection over the **current** tree's declarations. Edits
   `base.py` and the entry; creates `tests/test_select_tests_replay.py` (a fixture repository with a range of commits).
 
