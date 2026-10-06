@@ -162,6 +162,10 @@ class BordersTest(FactoryTestCase):
         os.chdir(self.repo)
         self.addCleanup(os.chdir, ROOT)
         module = loaded(self.repo / "scripts/mutation-scope.py")
+        saved = dict(os.environ)  # the `ci` border reads the process's environment, so a CI machine's must not leak in
+        os.environ.clear()
+        os.environ.update(clean_environment())
+        self.addCleanup(lambda: (os.environ.clear(), os.environ.update(saved)))
         self.assertIsNone(module.sweep_reason(clean_environment(), module.ground()))
 
     def test_e9_an_adopted_layout_runs_the_recorded_command_without_a_scope(self) -> None:
