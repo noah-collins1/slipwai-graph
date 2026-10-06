@@ -56,11 +56,12 @@ class WriteVerbContractTest(unittest.TestCase):
             return result, record.read_text(encoding="utf-8") if record.exists() else ""
 
     def test_a_contract_other_than_one_is_refused_in_one_line_and_nothing_is_written(self) -> None:
-        for block in ({"contract": 2}, valid() | {"contract": 2}, valid() | {"contract": 99}, valid() | {"contract": 0}):
+        for block in ({"contract": 2}, valid() | {"contract": 2}, valid() | {"contract": 99},
+                      valid() | {"contract": 0}):
             result, record = self.append(block)
             self.assertEqual(1, result.returncode, block)
-            self.assertEqual([f"check-decisions: contract: {block['contract']} is not a contract this checker can check "
-                              "(it checks 1); hand back a contract 1 block"], result.stderr.splitlines())
+            self.assertEqual([f"check-decisions: contract: {block['contract']} is not a contract this checker can "
+                              "check (it checks 1); hand back a contract 1 block"], result.stderr.splitlines())
             self.assertEqual("", record)
 
     def test_a_contract_one_block_with_unknown_keys_is_still_appended(self) -> None:
