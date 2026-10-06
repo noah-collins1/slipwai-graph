@@ -7,7 +7,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import unittest
 from pathlib import Path
 
 from support import FactoryTestCase
@@ -110,10 +109,6 @@ def make(repo: Path, target: str) -> subprocess.CompletedProcess:
 
 
 class AProjectMadeBeforeReadsItsOldRecordsAfterMigrateTest(FactoryTestCase):
-    # measures.py `feature_figures` raises `min() iterable argument is empty` when every slice has an accepted moment
-    # and none a ready one (a project with no story-split.md or model.yaml naming the slice): `make benchmark` exits
-    # 2. Remove this marker when that is fixed.
-    @unittest.expectedFailure
     def test_e1_migrate_brings_the_modules_and_make_benchmark_reads_the_old_records(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             old = old_factory(directory)

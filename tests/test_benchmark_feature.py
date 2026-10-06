@@ -77,6 +77,26 @@ class FeatureFiguresTest(unittest.TestCase):
         self.assertEqual(figures["elapsed"], {"unknown": f"open since {stamp(1)}"})
         self.assertEqual((figures["stage_seconds"], figures["in_flight_seconds"]), (103 * 3600, 34 * 3600))
 
+    def test_e3_a_slice_with_no_ready_moment_makes_the_feature_elapsed_unknown_naming_it(self) -> None:
+        repo = self.repo
+        write(repo, SPLIT, graph([("S1", [])]))  # S2 is in no graph and no model: its ready moment is unread
+        paths = [SPLIT] + [record(repo, ident, entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")))
+                           for ident in ("S1", "S2")]
+        own = f"specs/{FEATURE}/benchmark.json"
+        stages = [entry("split", stamp(1, "09:00:00"), stamp(1, "10:00:00"))]
+        write(repo, own, json.dumps({"feature": FEATURE, "slice": None, "stages": stages}))
+        paths.append(own)
+        commit(repo, stamp(1), "records", *paths)
+        write(repo, REGISTER, register(["S1", "S2"]))
+        commit(repo, stamp(2, "21:00:00"), "done", REGISTER)
+        done = bench(self.repo)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("Traceback", done.stderr)
+        elapsed = summaries(self.repo)["(feature)"]["feature_figures"]["elapsed"]
+        self.assertEqual(set(elapsed), {"unknown"})
+        self.assertTrue(elapsed["unknown"].startswith("S2: "), elapsed)
+        self.assertIn("elapsed unknown (S2: ", done.stdout)
+
 
 UNKNOWN = "unknown — no decision entry carries a Reversibility: line"
 

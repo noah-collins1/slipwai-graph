@@ -503,19 +503,20 @@ def sources(moved: dict[str, Any], parts: dict[str, Any], ended: int, reworked: 
 def feature_figures(parts: list[dict[str, Any]]) -> dict[str, Any]:
     """One feature's three figures from its records, each a dict with `slice` (None for the feature's own record),
     `ready`, `accepted` (seconds or unknown), `stage_seconds` and `worked` (the bracket intervals, unclipped):
-    `elapsed` is the first slice's ready to the last slice's accepted — open while any slice is not accepted —
+    `elapsed` is the first slice's ready to the last slice's accepted — unknown while any slice's ready moment is
+    unread, open while any slice is not accepted —
     `stage_seconds` every record's stage time summed (the feature's own included), and `in_flight_seconds` the length
     of the union of every slice record's worked brackets: the time with any slice in flight."""
     slices = [part for part in parts if part["slice"]]
     readies = [part["ready"] for part in slices if isinstance(part["ready"], int)]
+    unread = next((part for part in slices if is_unknown(part["ready"])), None)
     elapsed: Any
     if not slices:
         elapsed = unknown("no slice record")
+    elif unread is not None:  # a figure is printed only when every slice's ready and accepted moments were read
+        elapsed = unknown(f"{unread['slice']}: {unread['ready']['unknown']}")
     elif any(not isinstance(part["accepted"], int) for part in slices):
-        if readies:
-            elapsed = unknown(f"open since {utc(min(readies))}")
-        else:
-            elapsed = next(part["ready"] for part in slices if is_unknown(part["ready"]))
+        elapsed = unknown(f"open since {utc(min(readies))}")
     else:
         elapsed = max(part["accepted"] for part in slices) - min(readies)
     return {"elapsed": elapsed, "stage_seconds": sum(part["stage_seconds"] for part in parts),
