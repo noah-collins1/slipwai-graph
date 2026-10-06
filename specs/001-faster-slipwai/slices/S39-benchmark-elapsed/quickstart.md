@@ -1,21 +1,26 @@
 # Quickstart: S39-benchmark-elapsed — the demo script
 
-The demo (AC-S39-11) runs the **asset copy** of the script in place, in this slice's worktree, over the real records
-of iterations 23–24 and the real transcripts of this machine. It never runs this repository's `delivery/scripts/`
-(a control; it gets S39 only through a person's `slipwai migrate`), never writes under
-`/home/noahc/math/slipwai-graph`, and reads `~/.claude/projects/-home-noahc-math-slipwai-graph/` without writing.
-Scratch under `/tmp/s39/` only. The timings are reported, not judged against a threshold.
+The demo (AC-S39-11) runs the **asset copy** of the script, from a scratch clone of this slice's worktree (the
+script's project root is the nearest directory above it holding `project.json`, so the clone is its own root, and the
+cruise log can sit beside it without touching the worktree), over the real records of iterations 23–24 and the real
+transcripts of this machine. It never runs this repository's `delivery/scripts/` (a control; it gets S39 only through
+a person's `slipwai migrate`), never writes under `/home/noahc/math/slipwai-graph` or the worktree, and reads
+`~/.claude/projects/-home-noahc-math-slipwai-graph/` without writing. Scratch under `/tmp/s39/` only. The timings are
+reported, not judged against a threshold. The clone holds what is committed: commit first.
 
 ```sh
 W=/home/noahc/math/slipwai-graph-S39-benchmark-elapsed
-cd $W
-cp /home/noahc/math/slipwai-graph/specs/cruise-log.jsonl specs/cruise-log.jsonl   # untracked here; removed in step 6
+mkdir -p /tmp/s39
+rm -rf /tmp/s39/demo && git clone -q $W /tmp/s39/demo
+cp /home/noahc/math/slipwai-graph/specs/cruise-log.jsonl /tmp/s39/demo/specs/cruise-log.jsonl   # the log is untracked
+cd /tmp/s39/demo
+S=assets/toolkit/scripts/agents/benchmark.py
 ```
 
 ## 1. The aggregate
 
 ```sh
-time python3 -B assets/toolkit/scripts/agents/benchmark.py > /tmp/s39/aggregate.txt
+time python3 -B $S > /tmp/s39/aggregate.txt
 ```
 
 Expect: the slice table's third column headed `stage time`, a `re-entered` column where `rework` was; the feature
@@ -26,19 +31,24 @@ three decision-health lines reading `unknown — no decision entry carries a Rev
 ## 2. S08 against figures derived by hand
 
 ```sh
-python3 -B assets/toolkit/scripts/agents/benchmark.py --json > /tmp/s39/all.json
+python3 -B $S --json > /tmp/s39/all.json
 python3 -B -c "import json; r=[x for x in json.load(open('/tmp/s39/all.json')) if x['slice']=='S08-scoped-mutation'][0]; print(json.dumps({k:r[k] for k in ('elapsed','stage_seconds','worked_seconds','waiting','rework','moments','read_from')}, indent=1))"
 ```
 
-Derive the same by hand, and compare to the second:
+Derive the same by hand the way the code derives it — the oldest commit touching the file *whose copy holds the id*
+(a row beginning `| <id> |`, backticked or bare), not a pickaxe, which lists a commit only when a count changes —
+and the merge as the first-parent merge commit whose subject names the slice and does not say `into slice/<id>`:
 
 ```sh
 F=specs/001-faster-slipwai
-git log --reverse --format='%h %ct %cI' -S'`S08-scoped-mutation`' -- $F/story-split.md | head -1     # added: d3a0926
-git log --reverse --format='%h %ct %cI' -S'| `S04-parallel-gate` |' -- $F/slices/README.md | head -1  # S04 done: b31c864 → ready
-git log --reverse --format='%h %ct %cI' -S'| `S08-scoped-mutation` |' -- $F/slices/README.md | head -1 # accepted: c88fe2f
-git log --merges --fixed-strings --grep=slice/S08-scoped-mutation --format='%h %ct %cI'              # merged: 3138416
-git log --reverse --format='%h %ct %cI' -S'| `S06-scoped-gate` |' -- $F/slices/README.md | head -1    # S06 lands: 1d6cc17
+first() { for c in $(git log --reverse --format=%H -- "$1"); do
+  git show "$c:$1" 2>/dev/null | grep -Eq "$2" && { git log -1 --format='%h %ct %cI' "$c"; return; }; done; }
+row() { echo "^[[:space:]]*\\|[[:space:]]*\`?$1\`?[[:space:]]*\\|"; }
+first $F/story-split.md "S08-scoped-mutation"                                    # added: d3a0926
+first $F/slices/README.md "$(row S04-parallel-gate)"                             # S04 done: b31c864 → ready
+first $F/slices/README.md "$(row S08-scoped-mutation)"                           # accepted: c88fe2f
+git log --merges --first-parent --fixed-strings --grep=slice/S08-scoped-mutation --format='%h %ct %cI'  # merged: 3138416
+first $F/slices/README.md "$(row S06-scoped-gate)"                               # S06 lands: 1d6cc17
 ```
 
 - **elapsed** = accepted − ready (expected 133 433 s: 2026-10-04T18:13:05Z → 2026-10-06T07:16:58Z).
@@ -101,18 +111,18 @@ print(mine, whole['shared'], mine + whole['shared'], whole['total'])"
 ## 5. The page
 
 ```sh
-python3 -B assets/toolkit/scripts/agents/benchmark.py overview 001-faster-slipwai
-git diff --stat specs/001-faster-slipwai/benchmark.md
+python3 -B $S overview 001-faster-slipwai
+git diff --stat specs/001-faster-slipwai/benchmark.md      # in the scratch clone: it is thrown away in step 6
 ```
 
 Expect the page's *Reading these numbers* to carry the sentence on elapsed against stage time; the stage tables'
-column `stage time`; each slice heading with stage time and elapsed under their names. Restore the page afterwards
-(`git checkout -- specs/001-faster-slipwai/benchmark.md`) — the demo reads it, it does not commit it.
+column `stage time`; each slice heading with stage time and elapsed under their names. The page is written in the
+scratch clone only; the worktree's own is untouched.
 
 ## 6. Clean up
 
 ```sh
-rm -f $W/specs/cruise-log.jsonl
-rm -rf /tmp/s39/aggregate.txt /tmp/s39/all.json
+cd $W
+rm -rf /tmp/s39/demo /tmp/s39/aggregate.txt /tmp/s39/all.json
 git -C $W status --short     # nothing the demo made
 ```
