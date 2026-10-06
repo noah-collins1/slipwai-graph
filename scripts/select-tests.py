@@ -71,7 +71,8 @@ def plan(replay: str | None = None) -> tuple[base.ChangeSet, choose.Selection]:
         tree = declarations.scan(ROOT, catalog)
     except (OSError, ValueError, RecursionError) as error:
         raise base.cannot_be_established(f"the test tree could not be read: {error}") from error
-    return found, choose.select(tree, found.paths, catalog)
+    caches = [] if replay else base.cache_files(ROOT)  # they reach what reads their directory, and nothing else
+    return found, choose.select(tree, found.paths, catalog, caches)
 
 
 def arguments(argv: list[str]) -> argparse.Namespace:

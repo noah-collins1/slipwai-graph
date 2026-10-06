@@ -109,10 +109,14 @@ class Selection(NamedTuple):
         return [verdict for verdict in self.verdicts if self.narrows(verdict)]
 
 
-def select(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any]) -> Selection:
-    """Every test module, in name order, with whether it runs and why; and the backends it narrows to."""
+def select(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any],
+           caches: list[str] | None = None) -> Selection:
+    """Every test module, in name order, with whether it runs and why; and the backends it narrows to. `caches` are
+    files a module's `reads` can match and nothing else: no claim, no configuration, no full run (T026)."""
     claims = {path: claim for path in paths if (claim := rules.claim(path, catalog)) is not None}
     reached = reach(paths, claims)
+    if caches:
+        reached = reached._replace(paths=(*reached.paths, *caches))
     verdicts: list[Verdict] = []
     for module in sorted(name for name in tree.sources if declarations.is_module(name)):
         declaration, _ = tree.effective(module)

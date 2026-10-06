@@ -173,12 +173,23 @@ def is_cache(path: str) -> bool:
     return CACHE_DIRECTORY in path.split("/") or path.endswith(CACHE_SUFFIXES)
 
 
-def ignored_files(root: Path) -> list[str]:
-    """Every file git ignores under `assets/`, `src/` or `tests/` that is not an interpreter cache (research R-6)."""
+def ignored_listing(root: Path) -> list[str]:
+    """Every file git ignores under `assets/`, `src/` or `tests/`, caches included."""
     status, out = git_out(root, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--", *TREES)
     if status:
         raise cannot_be_established(f"git could not list the ignored files: {printable(out)}")
-    return sorted(path for path in out.split("\0") if path and not is_cache(path))
+    return sorted(path for path in out.split("\0") if path)
+
+
+def ignored_files(root: Path) -> list[str]:
+    """Every file git ignores under `assets/`, `src/` or `tests/` that is not an interpreter cache (research R-6)."""
+    return [path for path in ignored_listing(root) if not is_cache(path)]
+
+
+def cache_files(root: Path) -> list[str]:
+    """The interpreter caches git ignores under `assets/`: never a reason to run everything and claimed by no
+    configuration, but a file a module that reads the directory it sits in reads (T026, AC-S38-10)."""
+    return [path for path in ignored_listing(root) if is_cache(path) and path.startswith("assets/")]
 
 
 def replay_changes(root: Path, span: str) -> ChangeSet:
