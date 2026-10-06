@@ -8,7 +8,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from elapsed_fixture import Session, bench, costed, entry, feature_record, project, record, stamp, summaries
+from elapsed_fixture import (
+    Session,
+    bench,
+    commit,
+    costed,
+    entry,
+    feature_record,
+    git,
+    project,
+    record,
+    stamp,
+    summaries,
+)
 
 sys.dont_write_bytecode = True
 
@@ -197,6 +209,44 @@ class UnreadEntriesTest(unittest.TestCase):
             self.assertEqual((found["stage_seconds"], found["seconds"]), (3600, 3600))  # the pin: today's sum stands
         self.assertEqual(runs[0]["cost"]["tokens"], runs[1]["cost"]["tokens"])
         self.assertIsInstance(runs[0]["cost"]["tokens"], dict)
+
+
+class OtherBranchesTest(unittest.TestCase):
+    """AC-S39-5: without transcripts the overlap check sees the brackets kept on other slice branches."""
+
+    def setUp(self) -> None:
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.repo = project(Path(self.scratch.name))
+
+    def concurrent(self, start: str, end: str) -> None:
+        """S2's record, committed on `slice/S2` alone; the checkout is left on `slice/S1`."""
+        repo = self.repo
+        git(repo, "checkout", "-q", "-b", "slice/S2")
+        path = record(repo, "S2", costed(entry("implement", stamp(1, start), stamp(1, end)), 2000, "gone"))
+        commit(repo, stamp(1, "11:00:00"), "S2's brackets", path)
+        git(repo, "checkout", "-q", "-b", "slice/S1", "main")
+        self.assertFalse((repo / path).exists())
+        record(repo, "S1", costed(entry("implement", stamp(1, "09:00:00"), stamp(1, "10:00:00")), 1000, "gone"))
+
+    def test_e1_a_concurrent_slices_brackets_on_its_own_branch_make_the_recorded_sum_unknown(self) -> None:
+        self.concurrent("09:30:00", "10:30:00")
+        found = summaries(self.repo)["S1"]
+        for figure in (found["cost"]["tokens"], found["entries"][0]["tokens"]):
+            self.assertIsInstance(figure, dict)
+            self.assertTrue(figure["unknown"].startswith("brackets of S2 "), figure)
+            self.assertIn("overlap", figure["unknown"])
+
+    def test_e2_no_branch_holds_an_overlapping_bracket_the_recorded_sum_stands(self) -> None:
+        self.concurrent("12:00:00", "13:00:00")
+        self.assertEqual(summaries(self.repo)["S1"]["cost"]["tokens"], 1000)
+
+    def test_e3_where_git_cannot_list_the_branches_the_recorded_sum_is_unknown_saying_so(self) -> None:
+        self.concurrent("12:00:00", "13:00:00")
+        shutil.rmtree(self.repo / ".git")
+        figure = summaries(self.repo)["S1"]["cost"]["tokens"]
+        self.assertIsInstance(figure, dict)
+        self.assertIn("git", figure["unknown"])
 
 
 if __name__ == "__main__":

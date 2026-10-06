@@ -234,9 +234,13 @@ def overlapping(path: str, entry: dict[str, Any], others: dict[str, list[dict[st
 
 def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
               find: Callable[[str], tuple[Path | None, list[Path]]], make_window: Callable[[dict[str, Any]], Any],
-              recorded: Callable[[dict[str, Any]], Figure]) -> dict[str, Any]:
+              recorded: Callable[[dict[str, Any]], Figure],
+              elsewhere: Callable[[], tuple[dict[str, list[dict[str, Any]]], dict[str, str], str | None]] | None = None,
+              ) -> dict[str, Any]:
     """Every record's per-entry `tokens`, `delegates` and `last_line`, its `cost`, and per feature the sessions'
-    `total`, `attributed` and `shared` (which add up) and the notes the reading owes."""
+    `total`, `attributed` and `shared` (which add up) and the notes the reading owes. `elsewhere` is asked, once and only
+    when a recorded figure is about to stand, for the ended brackets of the records on other branches — `(entries by
+    key, label by key, why not)`, `why not` set where git could not say — which a bracket here may overlap."""
     keys = [str(path) for path, _ in records]
     by_key = {str(path): record for path, record in records}
     labels = {key: str(record.get("slice") or "(feature)") for key, record in by_key.items()}
@@ -312,6 +316,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
         summary[name] = {"total": attributed + shared_total, "attributed": attributed, "shared": shared_total}
 
     others = {key: [item for item in by_key[key].get("stages", []) if "ended" in item] for key in keys}
+    far: tuple[dict[str, list[dict[str, Any]]], dict[str, str], str | None] | None = None
     result: dict[str, Any] = {"records": {}, "features": {}}
     absent = lambda names: any(not sessions[name].present for name in names)  # noqa: E731
     for key, record in by_key.items():
@@ -328,7 +333,15 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 source = "recorded"
                 figure = recorded(entry)
                 clash = overlapping(key, entry, others, labels) if isinstance(figure, int) else None
-                if clash is not None:
+                if isinstance(figure, int) and clash is None and elsewhere is not None:
+                    if far is None:
+                        far = elsewhere()
+                    if far[2] is not None:
+                        figure = unknown(f"{far[2]}, so brackets of another slice that overlap this one cannot be "
+                                         "ruled out and the transcripts are not on this machine")
+                    else:
+                        clash = overlapping(key, entry, far[0], far[1])
+                if isinstance(figure, int) and clash is not None:
                     figure = unknown(f"brackets of {clash} overlap this one and the transcripts are not on this "
                                      "machine")
                 shown[index] = {"tokens": figure, "delegates": [], "last_line": None}

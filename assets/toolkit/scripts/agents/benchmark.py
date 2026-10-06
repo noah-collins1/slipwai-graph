@@ -123,12 +123,42 @@ def attribution() -> Any:
     return _LOADED["attribution"]
 
 
+TRUNKS = ("main", "master")
+
+
+def branch_records() -> tuple[dict[str, list[dict[str, Any]]], dict[str, str], str | None]:
+    """The ended brackets of every record on a local `slice/*` branch or the integration branch that this working
+    tree does not hold (a record it holds is read from the tree), by `<ref>:<path>`, with each one's label; and why
+    not, where git could not list the branches or read one."""
+    held = {path.relative_to(ROOT).as_posix() for path, _ in records()}
+    listed = git("for-each-ref", "--format=%(refname:short)", "refs/heads")
+    if listed is None:
+        return {}, {}, "git could not list the branches"
+    found: dict[str, list[dict[str, Any]]] = {}
+    labels: dict[str, str] = {}
+    for ref in (name for name in listed.splitlines() if name.startswith("slice/") or name in TRUNKS):
+        names = git("ls-tree", "-r", "--name-only", ref, "--", "specs")
+        if names is None:
+            return {}, {}, f"git could not read the files of {ref}"
+        for name in (item for item in names.splitlines() if item.endswith(f"/{RECORD}") and item not in held):
+            text = git("show", f"{ref}:{name}")
+            try:
+                other = json.loads(text) if text is not None else None
+            except ValueError:
+                other = None
+            if not isinstance(other, dict):
+                return {}, {}, f"git could not read {name} on {ref}"
+            found[f"{ref}:{name}"] = [item for item in other.get("stages", []) if "ended" in item]
+            labels[f"{ref}:{name}"] = f"{other.get('slice') or '(feature)'} on {ref}"
+    return found, labels, None
+
+
 def attributed() -> dict[str, Any]:
     """Every request of every session named in a record, counted in one record's entry or in the shared bucket —
     read once per process, over every record, because one request can be claimed by brackets of several."""
     if "attributed" not in _LOADED:
         _LOADED["attributed"] = attribution().attribute(records(), ROOT, claude_transcripts, window_of,
-                                                         measures().recorded_tokens)
+                                                         measures().recorded_tokens, branch_records)
     return _LOADED["attributed"]  # type: ignore[no-any-return]
 
 
