@@ -671,6 +671,12 @@ worktree was mutated and restored (T018's teeth, below).
   scopes as it did" gains "unless `mutation-full`'s recipe is not the factory's"). Then one example per source of `SINCE`
   (environment, make's command line) for the chosen behaviour, the fake `--make` recording what it received. Files:
   `mutation-scope.py`, `tests/test_mutation_recipe.py`, and under (ii) `data-model.md` and `changelog.d/scoped-mutation.md`.
+  **Decided: D154, option (i).** Only a sweep raised for `NOT_FACTORY` keeps `SINCE` for the sub-make; every other
+  whole-run cause clears it as T019 does. With `SINCE` non-empty the first line gains the suffix ``, with `SINCE=<ref>` ``
+  (the ref through `shown()`), appended at the raise site so the bare constant stays as tests spell it. One example per
+  source of `SINCE` (environment, make's command line) with a trunk-committed `mutation-full` edit, the fake `--make`
+  recording no `SINCE=` on its command line and `SINCE=<ref>` seen; a guard that a `scope-script` sweep under the same
+  `SINCE` still clears it; teeth: put `SINCE=` back for `NOT_FACTORY` and both examples fail. The catch-up stays as written.
 
 ### T024 — [US2] LOW · The published words name every whole-run sweep cause T018 added (AC-S08-8, AC-S08-18 · partial)
 - [ ] **The surface:** every published place that lists what makes `make mutation` sweep — the fragment

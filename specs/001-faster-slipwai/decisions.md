@@ -3387,3 +3387,40 @@
 - **Would reverse if:** a benchmark of the parallel loop shows the unpushed range selects the full gate, or most checks, on most scoped runs. Then the local trunk commit could be vouched for instead by a recorded green full `make verify` on that clean trunk commit (Phase 4's run). That would be its own slice, and it would never return to option (b).
 - **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (A2's GREEN: points 1–7, which carry the gates page, data-model.md *How a unit is chosen* and the fragment's Catch-up sentence)
 - **Status:** standing
+
+## D154 — When `mutation-full`'s recipe is not the factory's (`NOT_FACTORY`), does the sweep under a set `SINCE` pass `SINCE` to the project's recipe?
+- **Stage:** converge (Phase 4) · **Slice:** S08-scoped-mutation · **When:** 2026-10-06T03:17:08Z · **Iteration:** 24
+- **Scope:** S08-scoped-mutation
+- **Question:** T023. T019 clears `SINCE` on every whole-run sweep: `full()` passes `SINCE=` to the sub-make at `assets/toolkit/scripts/mutation-scope.py:675`. For the `scope-script` and `rule-text` causes that is right. For `NOT_FACTORY` it empties the project's own `$(if $(SINCE),--since $(SINCE))`. So in a project that edited its `mutation-full` line on the trunk long ago, `make mutation SINCE=<ref>` runs a whole-module Gremlins sweep. Before this slice the same command ran Go scoped by `--since`. That contradicts three things:
+  - the first line's *runs as written*;
+  - the catch-up's "with `SINCE=<ref>` Go scopes as it did";
+  - D139's Phase 4 command on `main`.
+- **Options:** the converge pass made no recommendation (Principle XIV).
+  - (i) The `NOT_FACTORY` sweep keeps `SINCE` for the sub-make, so the project's recipe runs exactly as written. `scope-script` and `rule-text` keep T019's clearing.
+  - (ii) It clears `SINCE`, and the first line and the catch-up say so.
+- **Decision:** (i), with one refinement to the first line.
+  1. **Which cause clears `SINCE`.** Only a sweep raised for `NOT_FACTORY` keeps `SINCE`. At `:675`, `clear_since` stays true only for the other causes. Every other sweep cause clears it as T019 does now. That covers the `whole` causes from `sweep_causes` (scope script, rule text, configuration) and the checkout border reasons. `NO_SCOPE` (adopted layout) and `EMPTY_SINCE` don't change. Order is unchanged: `whole` causes are checked before `NOT_FACTORY`, so a branch that both edits the rule and inherits a non-factory recipe still sweeps with `SINCE` cleared.
+  2. **The first line.** If `SINCE` is unset or empty, the line stays exactly as `NOT_FACTORY` spells it. If `SINCE` is non-empty, it gains a suffix naming the ref as the person wrote it (through `shown()`), so the line says the ref was handed on. Exact words are below.
+  3. **A bad ref.** `SINCE=<a ref naming no commit>` refuses before the recipe check, because `change_set` raises `Refused` first. That doesn't change, so the project's recipe is never handed a ref that names no commit.
+  4. **Examples owed.** Add one example per source of `SINCE`, each with a trunk-committed edit to `mutation-full` and the fake `--make` recording what it received:
+     - environment: `SINCE=<ref> make mutation`;
+     - make's command line: `make mutation SINCE=<ref>`.
+
+     Both hold that no `SINCE=` is on the sub-make's command line, that the sub-make sees `SINCE=<ref>`, and that the first line carries the suffix. A guard example holds that a `scope-script` sweep under the same `SINCE` still clears it, so the fix can't widen into T019's cases. The teeth: put `SINCE=` back for `NOT_FACTORY` and both source examples fail.
+  5. **The catch-up.** "with `SINCE=<ref>` Go scopes as it did" stays as written, because it is now true. T024's added clause naming the `NOT_FACTORY` cause should use the words below.
+  6. **Level.** No new bump. It rides in S08's MINOR fragment.
+- **Why:**
+  - **The project owns its Makefile (Principle I).** The only reason for the `NOT_FACTORY` sweep is that the factory can't vouch for a recipe it didn't write, so it hands the run to that recipe. Handing it over with a variable removed doesn't respect that ownership: it rewrites the project's recipe at run time. A line that says *runs as written* while doing that is a false line, and the owner's taste is one true line a person can act on.
+  - **D138 item 4 and D150 already settled this.** An explicit `SINCE` keeps its published meaning on any checkout. D150 kept `make mutation-full SINCE=<ref>` scoping Go because "a person who types `SINCE` asked for a scope". Under (ii), `make mutation SINCE=<ref>` would differ from the very `mutation-full SINCE=<ref>` it delegates to. An answer a project already gives would stop meaning what it meant, and AGENTS.md calls that a MAJOR. The brief puts any MAJOR out of scope.
+  - **Fewer runs, no false green (priorities 2 and 5).** (ii) turns D139's Phase 4 command into the hour-long sweep FR-008 exists to avoid, for every project that ever tuned its `mutation-full` line. That is exactly the projects the Go, Spring and Quarkus notes now invite to tune it there. (i) can't produce a false green: the run is the project's own recipe given the scope the person asked for, which is what it did before this slice.
+  - **Why `scope-script` and `rule-text` still clear `SINCE`.** There the factory's own scoping machinery changed, so the scope can't be trusted and the whole run is the trustworthy one. `NOT_FACTORY` raises no doubt about the scope. It only says whose recipe runs.
+  - **Priority 1 is untouched either way.** The merge root and CI run `make verify` and never set `SINCE`. Neither mutation target is reachable from them.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the owner rules that a run whose first line opens *the sweep runs* must never be narrower than the whole module. Then (ii) is the only honest form, and the catch-up takes its qualifier.
+- **Written to:**
+  - `specs/001-faster-slipwai/decisions.md` (this entry)
+  - `specs/001-faster-slipwai/slices/S08-scoped-mutation/tasks.md` (T023's GREEN: points 1–4)
+  - `assets/toolkit/scripts/mutation-scope.py` (the `:675` call and the first-line suffix)
+  - `tests/test_mutation_recipe.py` (the two source examples and the guard)
+  - `changelog.d/scoped-mutation.md` (unchanged by T023; T024's clause uses the words below)
+- **Status:** standing
