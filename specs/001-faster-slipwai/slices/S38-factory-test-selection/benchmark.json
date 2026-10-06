@@ -1076,15 +1076,73 @@
         "start": {
           "open": 3,
           "done": 38
+        },
+        "end": {
+          "open": 3,
+          "done": 38
         }
       },
-      "cursor": {
-        "source": "claude",
-        "session": "2382cd35-c30b-4143-ab92-9beb7e6d8378",
-        "files": {
+      "ended": "2026-10-06T19:38:15Z",
+      "seconds": 31915,
+      "span": {
+        "from": {
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 455541
         },
-        "subagents": {}
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 1609331,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a1a84f2460acb575a.jsonl": 537757,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a2045a0dde4c23c18.jsonl": 464388,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a665ad8b9056cf10b.jsonl": 1077262,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ad35fb8612de06ffc.jsonl": 596635,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ae91a4fe8081de3da.jsonl": 712064,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-afa1c5c3c21190387.jsonl": 942815
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "2382cd35-c30b-4143-ab92-9beb7e6d8378",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 202,
+            "output": 56144,
+            "cache_read": 15956580,
+            "cache_creation": 117011
+          }
+        },
+        "subagents": {
+          "claude-opus-5-5": {
+            "input": 454,
+            "output": 23077,
+            "cache_read": 15787355,
+            "cache_creation": 7109428
+          },
+          "claude-sonnet-5-5": {
+            "input": 234,
+            "output": 7900,
+            "cache_read": 10862815,
+            "cache_creation": 249531
+          }
+        },
+        "agents": [
+          "drive-adversary",
+          "drive-hand",
+          "drive-implement"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "agents": [
+        "drive-adversary",
+        "drive-hand",
+        "drive-implement"
+      ],
+      "delegated": true,
+      "signals": {
+        "outcome": "implementation",
+        "driver": "cruise"
       }
     }
   ]
