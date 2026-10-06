@@ -33,7 +33,8 @@ OWES = ("A stage owes a block only when a typed `drive-*` delegate that belongs 
         "helpers it started (Explore, general-purpose) and a `drive-slice`'s own context owe none, and a delegate the "
         "harness could not attribute is said so and never a finding.")
 STAGE = ("`<stage>` is the name of the stage's open benchmark entry — the word `benchmark.py start` was given — so "
-         "the record and `benchmark.json` name a stage the same way.")
+         "the record and `benchmark.json` name a stage the same way. `ready-set` is the one stage with no benchmark entry: "
+         "its name is the record's own.")
 
 
 def spelled(words: tuple[str, ...]) -> str:

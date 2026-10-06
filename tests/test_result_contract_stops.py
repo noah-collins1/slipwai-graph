@@ -1,10 +1,18 @@
 """Every page that owns a stop with delegates says when each block is appended, and what a skipper's block names."""
 from __future__ import annotations
 
-from support import FactoryTestCase
-from test_result_contract_briefs import ADOPTED, brief, command
+import re
+import subprocess
+import tempfile
 
+from support import FactoryTestCase
+from test_agent_types import REGISTRY, projected
+from test_result_contract_briefs import ADOPTED, SECTION, brief, command
+from test_stage_models import installed
+
+from slipwai.assets import ROOT
 from slipwai.layout import AT_ROOT
+from slipwai.project.agents import types
 
 
 def flat(text: str) -> str:
@@ -84,3 +92,44 @@ class StopsTest(FactoryTestCase):
                 self.assertIn("A continuation recorded after the stage's benchmark entry has closed passes "
                               "`--started <instant>` to either verb, the instant the `--hand-backs` line names", text)
                 self.assertIn("on time, the verb finds the open entry itself", text)
+
+
+class OwnershipSentencesTest(FactoryTestCase):
+    def test_the_stage_sentence_names_ready_set_as_the_one_stage_with_no_benchmark_entry(self) -> None:
+        for layout in (AT_ROOT, ADOPTED):
+            with self.subTest(layout=layout.delivery):
+                drive = flat(section(command("drive", layout), "## What every delegate hands back"))
+                self.assertIn("`ready-set` is the one stage with no benchmark entry", drive)
+                self.assertIn("`ready-set` is the one stage with no benchmark entry", flat(brief("drive-slice", layout)))
+
+    def test_the_fragment_counts_a_stage_when_a_typed_delegate_that_belongs_to_it_ran(self) -> None:
+        text = flat((ROOT / "changelog.d/result-contract.md").read_text(encoding="utf-8"))
+        self.assertIn("how many stages a typed delegate that belongs to them ran handed back a block", text)
+        self.assertNotIn("how many delegated stages", text)
+
+    def test_the_two_links_in_every_brief_are_root_relative_the_same_way(self) -> None:
+        """Both name a project-root path, spelled out in the link text; neither is relative to `agents/`."""
+        for layout in (AT_ROOT, ADOPTED):
+            where = f"{layout.delivery}/" if layout.moved else ""
+            for agent in types():
+                with self.subTest(layout=layout.delivery, agent=agent.name):
+                    links = re.findall(r"\[([^\]]*)\]\(([^)]*)\)", brief(agent.name, layout))
+                    for page in ("result-contract.md", "delegated-agent-safety.md"):
+                        self.assertIn((f"{where}docs/{page}", f"{where}docs/{page}"), links)
+
+
+class EveryHarnessProjectionTest(FactoryTestCase):
+    def test_every_harness_with_an_agent_file_row_carries_the_paragraph(self) -> None:
+        keys = [each["key"] for each in REGISTRY if each["agentFile"]]
+        self.assertEqual(sorted(keys), ["claude", "codex", "copilot", "cursor-agent", "gemini", "opencode"])
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "projected", "standard", "python")
+            installed(repo, *keys)
+            subprocess.run(["python3", "-B", "scripts/agents/project.py"], cwd=repo, check=True, capture_output=True)
+            for key in keys:
+                for agent in types():
+                    text = projected(repo, key, agent.name)
+                    with self.subTest(harness=key, agent=agent.name):
+                        self.assertIn(SECTION.removeprefix("## "), text)
+                        self.assertIn(f"`delegate` is `{agent.name}`", text)
+                        self.assertIn("(docs/result-contract.md)", text)
