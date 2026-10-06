@@ -159,53 +159,89 @@ MISSING = re.compile(r"^- \*\*Missing:\*\* (\S.*)$")
 SHAPE = "a heading `## <UTC time> — <drive-type> — <stage>` or `## <UTC time> — <drive-type> — <stage> — <started>`"
 
 
+OPEN = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+
+
+def opening(line: str) -> tuple[str, int, str] | None:
+    """The fence a line opens, CommonMark's way: up to three spaces, then a run of three or more backticks or tildes
+    and an info string (which holds no backtick after a backtick run): (character, run length, info string)."""
+    found = OPEN.match(line.rstrip("\r"))
+    if found is None or (found.group(1)[0] == "`" and "`" in found.group(2)):
+        return None
+    return found.group(1)[0], len(found.group(1)), found.group(2).strip()
+
+
+def closes(line: str, char: str, length: int) -> bool:
+    """Whether a line closes a fence of `length` runs of `char`: the same character, at least as many, nothing after."""
+    return re.fullmatch(rf" {{0,3}}{re.escape(char)}{{{length},}}[ \t]*", line.rstrip("\r")) is not None
+
+
 def extract(text: str) -> list[dict[str, Any]]:
     """The entries of a record, each `line`, `heading`, `match` (the heading's parts or None), `blocks` (the
-    (line, body) of each `result-contract` fence), `missing` (the reasons of `- **Missing:**` lines) and `open`
-    (the line of a `result-contract` fence no closing fence ended before the next heading). A fence with another
-    info string is skipped whole, headings inside it included; text before the first heading is the file's own."""
+    (line, body) of each top-level `result-contract` fence), `missing` (the reasons of `- **Missing:**` lines), `open`
+    (the line of a `result-contract` fence no closing fence ended before the next heading), `hidden` (the (fence line,
+    heading line) of each entry heading that sits inside another fence) and `foreign` (the (line, info) of a fence of
+    another kind never closed). Fences pair CommonMark's way, and one with another info string is skipped whole, quoted
+    text; text before the first heading is the file's own."""
     entries: list[dict[str, Any]] = []
-    lines = text.split("\n")
-    fence: tuple[str, int, list[str]] | None = None  # info string, line, body so far
-    for number, line in enumerate(lines, 1):
-        stripped = line.strip()
-        if fence is not None and stripped == "```":
-            if fence[0] == FENCE and entries:
-                entries[-1]["blocks"].append((fence[1], "\n".join(fence[2])))
-            fence = None
-        elif fence is not None and not (fence[0] == FENCE and line.startswith("## ")):
-            fence[2].append(line)
-        elif line.startswith("## "):
-            if fence is not None:  # a block no closing fence ended before this heading
-                keep_open(entries, fence)
+    fence: tuple[str, int, str, int, list[str]] | None = None  # character, length, info string, line, body so far
+    for number, line in enumerate(text.split("\n"), 1):
+        if fence is not None:
+            if closes(line, fence[0], fence[1]):
+                if fence[2] == FENCE and entries:
+                    entries[-1]["blocks"].append((fence[3], "\n".join(fence[4])))
                 fence = None
+                continue
+            if fence[2] != FENCE or not line.startswith("## "):
+                fence[4].append(line)
+                if fence[2] != FENCE and HEADING.match(line.rstrip("\r")):
+                    target(entries, fence)["hidden"].append((fence[3], number))
+                continue
+            keep_open(entries, fence)  # a block no closing fence ended before this heading
+            fence = None
+        if line.startswith("## "):
             entries.append({"line": number, "heading": line, "match": HEADING.match(line), "blocks": [],
-                            "missing": [], "open": None})
-        elif stripped.startswith("```"):
-            fence = (stripped[3:].strip(), number, [])
+                            "missing": [], "open": None, "hidden": [], "foreign": None})
+        elif (start := opening(line)) is not None:
+            fence = (start[0], start[1], start[2], number, [])
         elif entries and (found := MISSING.match(line.rstrip())):
             entries[-1]["missing"].append(found.group(1).strip())
-    if fence is not None and fence[0] == FENCE:
-        keep_open(entries, fence)
+    if fence is not None:
+        if fence[2] == FENCE:
+            keep_open(entries, fence)
+        else:
+            target(entries, fence)["foreign"] = (fence[3], fence[2])
     return entries
 
 
-def keep_open(entries: list[dict[str, Any]], fence: tuple[str, int, list[str]]) -> None:
-    """Note a `result-contract` fence nothing closed on the entry it sits in; before the first heading it is an
-    entry of its own (`preamble`), so the file's own text is held to the one rule that a fence is closed."""
-    if entries:
-        entries[-1]["open"] = fence[1]
-    elif fence[0] == FENCE:
-        entries.append({"line": fence[1], "heading": f"```{FENCE}", "match": None, "blocks": [], "missing": [],
-                        "open": fence[1], "preamble": True})
+def target(entries: list[dict[str, Any]], fence: tuple[str, int, str, int, list[str]]) -> dict[str, Any]:
+    """The entry a fence belongs to: the last one; before the first heading, an entry of its own (`preamble`), so the
+    file's own text is held to the rules that a fence is closed and hides no heading."""
+    if not entries:
+        entries.append({"line": fence[3], "heading": fence[0] * 3 + fence[2], "match": None, "blocks": [],
+                        "missing": [], "open": None, "hidden": [], "foreign": None, "preamble": True})
+    return entries[-1]
+
+
+def keep_open(entries: list[dict[str, Any]], fence: tuple[str, int, str, int, list[str]]) -> None:
+    """Note a `result-contract` fence nothing closed on the entry it sits in."""
+    target(entries, fence)["open"] = fence[3]
 
 
 def entry_faults(entry: dict[str, Any]) -> list[str]:
     """What is wrong with the shape of one entry, apart from the fields of its block."""
+    hidden = [f"the heading on line {heading} sits inside the fence opened on line {fence}, which hides it"
+              for fence, heading in entry["hidden"]]
+    if entry["foreign"] is not None:
+        hidden.append(f"the {entry['foreign'][1] or 'unlabelled'} fence opened on line {entry['foreign'][0]} "
+                      "is not closed")
     if entry.get("preamble"):
-        return [f"the {FENCE} fence before the first heading is not closed"]
+        opened = [f"the {FENCE} fence before the first heading is not closed"] if entry["open"] is not None else []
+        return hidden + opened
     if entry["match"] is None:
         return [f"is not {SHAPE}"]
+    if hidden:
+        return hidden
     if entry["open"] is not None:
         return [f"the {FENCE} fence is not closed"]
     blocks, missing = entry["blocks"], entry["missing"]
@@ -258,19 +294,21 @@ def check_record(text: str, where: str, known: set[str] | None) -> tuple[list[st
 
 
 def blocks_in(text: str) -> tuple[list[str], int | None]:
-    """The `result-contract` fences in a hand-back, each as its verbatim text (info line to closing fence), and
-    the line of one never closed. Fences with another info string are skipped whole."""
+    """The top-level `result-contract` fences in a hand-back, each as its verbatim text (info line to closing fence),
+    and the line of one never closed. Fences pair CommonMark's way, tildes included, and one with another info string
+    holds whatever it quotes, a `result-contract` example among it."""
     found: list[str] = []
     lines = text.split("\n")
-    start: tuple[str, int] | None = None
+    start: tuple[str, int, str, int] | None = None  # character, length, info string, index of the opening line
     for number, line in enumerate(lines):
-        if start is None and line.strip().startswith("```"):
-            start = (line.strip()[3:].strip(), number)
-        elif start is not None and line.strip() == "```":
-            if start[0] == FENCE:
-                found.append("\n".join(lines[start[1]:number + 1]) + "\n")
+        if start is None:
+            if (opened := opening(line)) is not None:
+                start = (opened[0], opened[1], opened[2], number)
+        elif closes(line, start[0], start[1]):
+            if start[2] == FENCE:
+                found.append("\n".join(lines[start[3]:number + 1]) + "\n")
             start = None
-    return found, (start[1] + 1 if start is not None and start[0] == FENCE else None)
+    return found, (start[3] + 1 if start is not None and start[2] == FENCE else None)
 
 
 def repeats(record: Path, htype: str, stage: str, started: str | None, body: str | None,

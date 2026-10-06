@@ -92,7 +92,7 @@ class RecordStructureTest(unittest.TestCase):
             "no fence": ("# T\n\nprose\n\n", 0),
             "a closed fence": (f"# T\n\n{fence(valid())}\n", 0),
             "an unclosed fence": ("# T\n```result-contract\n{\n", 1),
-            "another info string, unclosed": ("# T\n```text\n{\n", 0),
+            "another info string, unclosed": ("# T\n```text\n{\n", 1),
         }
         for name, (preamble, code) in cases.items():
             with self.subTest(name):

@@ -78,6 +78,12 @@ entry (`ready-set`, or any stage with none), and `--hand-backs` does not count i
 method writes are `refused: <the delegate's words>`, `malformed: <field>`, `no continuation` and
 `stopped: <reason>`; any non-empty reason passes the gate. Text before the first `## ` heading is the file's own.
 
+Fences pair the CommonMark way: one closes only on a run of the same character, backtick or tilde, at least as long as
+the one that opened it, with nothing after it and at most three spaces before. Only a top-level fence whose info string
+is `result-contract` is a block, so an example quoted inside another fence (a four-backtick or `~~~` wrapper, say) is
+the delegate's prose and not its hand-back. In a record, a heading hidden inside another fence, and a fence of any kind
+left open to the end of the file, are findings naming the lines.
+
 Helpers a delegate starts (Explore, general-purpose, the groups a `drive-implement` fans out to) get no block and no
 entry of their own: what they did is reported in the delegate's own block, in `tests`, `files_changed`, `unresolved`
 and `change_summary`, and that one block is what the dispatching session appends.
