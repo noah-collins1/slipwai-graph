@@ -139,6 +139,15 @@ class ShareTest(unittest.TestCase):
         self.assertEqual(found["(feature)"]["session_totals"]["gone"]["total"],
                          {"unknown": "the transcripts are not on this machine"})
 
+    def test_e8_a_bracket_of_another_session_is_not_an_overlap_where_the_recorded_sum_stands(self) -> None:
+        record(self.repo, "S1", costed(entry("implement", stamp(1, "09:00:00"), stamp(1, "10:00:00")), 1000, "one"))
+        record(self.repo, "S2", costed(entry("implement", stamp(1, "09:30:00"), stamp(1, "10:30:00")), 2000, "two"))
+        record(self.repo, "S3", costed(entry("implement", stamp(1, "09:30:00"), stamp(1, "10:30:00")), 4000, "one"))
+        found = summaries(self.repo)
+        self.assertEqual(found["S2"]["cost"]["tokens"], 2000)
+        self.assertEqual(found["S1"]["cost"]["tokens"], {"unknown": "brackets of S3 overlap this one and the "
+                                                                    "transcripts are not on this machine"})
+
 
 class CostProvenanceTest(unittest.TestCase):
     """AC-S39-9: `read_from.cost`, and each entry's, names what the cost was read from — never a transcript that was

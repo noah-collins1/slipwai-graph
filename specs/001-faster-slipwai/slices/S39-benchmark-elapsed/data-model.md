@@ -80,7 +80,7 @@ named in a record, `<projects>/<slug>/<session>.jsonl` and `<session>/subagents/
    `attributed`, `shared` — `attributed + shared == total`.
 
 A session whose transcripts are absent: each entry's recorded `usage` totals stand in, counted where no bracket of
-another record overlaps the entry's interval. The other records are those of this working tree and, read with `git
+another record overlaps the entry's interval and names the same session, or none. The other records are those of this working tree and, read with `git
 for-each-ref` and `git show <ref>:<path>`, the copy at the tip of every local branch, whatever it is named (for a record this tree holds, only the entries the tree's copy lacks, by `stage` and `started`); an
 overlap there reads `{"unknown": "brackets of <slice> on <ref> overlap this one and the transcripts are not on this
 machine"}`, and where git cannot list or read them the recorded sum is unknown with that reason. A record's

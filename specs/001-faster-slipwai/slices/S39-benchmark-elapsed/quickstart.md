@@ -85,7 +85,7 @@ print(total)
 EOF
 ```
 
-Expect that number to equal the `d883234c…` session's `total` in the feature record's `sessions`, and `attributed +
+Expect that number to equal the `d883234c…` session's `total` in the feature record's `session_totals`, and `attributed +
 shared` to equal it too.
 
 ## 5. The page

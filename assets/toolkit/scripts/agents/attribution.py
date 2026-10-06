@@ -225,17 +225,21 @@ class Totals:
 
 def overlapping(path: str, entry: dict[str, Any], others: dict[str, list[dict[str, Any]]],
                 labels: dict[str, str]) -> str | None:
-    """The label of another record with an ended bracket overlapping this entry's in time, if there is one."""
+    """The label of another record with an ended bracket overlapping this entry's in time, if there is one. A
+    bracket that names another session cannot have entered this entry's recorded usage, so it is not one."""
     try:
         start, end = epoch(entry["started"]), epoch(entry["ended"])
     except (KeyError, ValueError, TypeError):
         return None
+    mine = session_of(entry, None)
     for other, entries in others.items():
         if other == path:
             continue
         for item in entries:
             try:
-                if epoch(item["started"]) < end and start < epoch(item["ended"]):
+                theirs = session_of(item, None)
+                if epoch(item["started"]) < end and start < epoch(item["ended"]) and (
+                        mine is None or theirs is None or mine == theirs):
                     return labels[other]
             except (KeyError, ValueError, TypeError):
                 continue

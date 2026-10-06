@@ -296,6 +296,13 @@ class StageTimeTest(unittest.TestCase):
         self.assertIn(f"S2 implement: stage time ends at its last transcript line {stamp(1, '10:30:00')}, not at "
                       f"the recorded end {stamp(1, '13:30:00')}", bench(self.repo).stdout)
 
+    def test_e5_a_last_line_at_the_recorded_end_says_the_two_agree(self) -> None:
+        self.cut(Session(self.repo), lines=(stamp(1, "13:29:58"), stamp(1, "13:30:00")))
+        out = bench(self.repo).stdout
+        self.assertIn(f"S2 implement: stage time ends at its last transcript line {stamp(1, '13:30:00')}, which "
+                      "agrees with the recorded end", out)
+        self.assertNotIn("not at the recorded end", out)
+
     def test_e4_stage_time_is_never_called_wall_and_no_heading_sums_it_as_elapsed(self) -> None:
         self.accepted(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")),
                       entry("converge", stamp(1, "11:00:00"), stamp(1, "11:30:00")),

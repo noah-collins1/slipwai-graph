@@ -457,6 +457,9 @@ def cut_off_notes(label: str, entries: list[dict[str, Any]], last_lines: dict[in
             notes.append(f"{label} {entry['stage']}: stage time ends at its recorded end {entry['ended']} — its "
                          f"transcript's last line {utc(last)} precedes the entry's start {entry['started']}, so the "
                          "transcript contradicts the bracket")
+        elif last == epoch(entry["ended"]):
+            notes.append(f"{label} {entry['stage']}: stage time ends at its last transcript line {utc(last)}, which "
+                         "agrees with the recorded end")
         else:
             notes.append(f"{label} {entry['stage']}: stage time ends at its last transcript line {utc(last)}, not at "
                          f"the recorded end {entry['ended']}")
