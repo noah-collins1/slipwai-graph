@@ -923,6 +923,7 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
         "read_from": measures().sources(moved, parts, len(ended), len(measures().rework_indices(stages)),
                                         (found or {}).get("cost_read")),
         "_last_lines": last_lines or {},
+        "_searched": {index for index, item in shown.items() if item.get("searched")},
         "_figures": {"slice": record.get("slice"), "ready": moved["ready"], "accepted": moved["accepted"],
                      "stage_seconds": measures().stage_seconds(stages, last_lines),
                      "worked": measures().worked(stages, last_lines)},
@@ -1048,7 +1049,7 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
               and summary["elapsed"]["unknown"].startswith("open since")]
     for summary, record in zip(summaries, records_, strict=True):
         lines += measures().cut_off_notes(record.get("slice") or "(feature)", record.get("stages", []),
-                                          summary["_last_lines"])
+                                          summary["_last_lines"], summary["_searched"])
         for entry in record.get("stages", []):
             usage = entry.get("usage")
             if "ended" in entry and usage is not None and not usage.get("source"):

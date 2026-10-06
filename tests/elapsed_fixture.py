@@ -131,15 +131,18 @@ class Session:
         path.with_suffix(".meta.json").write_text(json.dumps(meta), encoding="utf-8")
         return path
 
-    def say(self, path: Path | None, request: str, tokens: int, when: str, agent: str | None = None) -> None:
-        """One response as Claude Code writes it: a line per content block, the same usage on each."""
+    def say(self, path: Path | None, request: str, tokens: int, when: str, agent: str | None = None,
+            until: str | None = None) -> None:
+        """One response as Claude Code writes it: a line per content block, the same usage on each; `until` is
+        when its last block was written, where that is not the same second as its first."""
         line = {"type": "assistant", "requestId": request, "timestamp": when.replace("Z", ".123Z"),
                 "message": {"model": "m", "usage": {"input_tokens": tokens, "output_tokens": 0,
                                                     "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}}}
         if agent:
             line["attributionAgent"] = agent
+        last = {**line, "timestamp": (until or when).replace("Z", ".123Z")}
         with (path or self.main).open("a", encoding="utf-8") as handle:
-            handle.write((json.dumps(line) + "\n") * 2)
+            handle.write(json.dumps(line) + "\n" + json.dumps(last) + "\n")
 
     def snap(self) -> dict[str, int]:
         return {str(path): path.stat().st_size for path in [self.main, *sorted(self.agents.glob("*.jsonl"))]}

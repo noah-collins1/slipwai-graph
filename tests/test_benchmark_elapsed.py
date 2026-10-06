@@ -252,6 +252,37 @@ class StageTimeTest(unittest.TestCase):
         self.assertIn(f"S2 implement: stage time ends at its recorded end {stamp(1, '14:00:00')} — its transcript's "
                       "last line could not be read", notes)
 
+    def cut(self, session: Session, *, lines: tuple[str, str] | None, ended: str = "13:30:00") -> dict:
+        cursor = session.open(None, "implement", f"specs/{FEATURE}/slices/S2/benchmark.json")
+        if lines:
+            session.say(None, "r1", 100, lines[0], until=lines[1])
+        cut = session.entry("implement", stamp(1, "10:00:00"), stamp(1, ended), cursor)
+        cut["cut_off"] = "iteration 3 ended with the entry open"
+        self.accepted(cut)
+        return summaries(self.repo)["S2"]
+
+    def test_e1_a_cut_off_entry_ends_at_the_latest_line_of_its_request_not_its_first(self) -> None:
+        found = self.cut(Session(self.repo), lines=(stamp(1, "09:59:56"), stamp(1, "10:00:01")))
+        self.assertEqual((found["stage_seconds"], found["worked_seconds"]), (1, 1))
+        self.assertIn(f"S2 implement: stage time ends at its last transcript line {stamp(1, '10:00:01')}, not at "
+                      f"the recorded end {stamp(1, '13:30:00')}", bench(self.repo).stdout)
+
+    def test_e2_a_request_wholly_before_the_start_leaves_the_recorded_end_and_the_note_says_so(self) -> None:
+        found = self.cut(Session(self.repo), lines=(stamp(1, "09:59:50"), stamp(1, "09:59:56")))
+        self.assertEqual((found["stage_seconds"], found["worked_seconds"]), (3.5 * 3600, 3.5 * 3600))
+        out = bench(self.repo).stdout
+        self.assertIn(f"S2 implement: stage time ends at its recorded end {stamp(1, '13:30:00')} — its transcript's "
+                      f"last line {stamp(1, '09:59:56')} precedes the entry's start {stamp(1, '10:00:00')}, "
+                      "so the transcript contradicts the bracket", out)
+
+    def test_e3_transcripts_read_with_no_request_in_the_entry_say_none_was_found(self) -> None:
+        found = self.cut(Session(self.repo), lines=None)
+        self.assertEqual(found["stage_seconds"], 3.5 * 3600)
+        out = bench(self.repo).stdout
+        self.assertIn("S2 implement: stage time ends at its recorded end", out)
+        self.assertIn("its transcript was read and no request of it was found in the entry", out)
+        self.assertNotIn("could not be read", out)
+
     def test_e2_a_cut_off_entry_ends_at_its_last_attributed_line_and_the_note_names_both_moments(self) -> None:
         session = Session(self.repo)
         cursor = session.open(None, "implement", f"specs/{FEATURE}/slices/S2/benchmark.json")

@@ -54,15 +54,19 @@ def epoch(text: str) -> int:
 
 
 class Request:
-    __slots__ = ("key", "file", "offset", "when", "agent", "tokens")
+    """One API response. `when` is its first line's moment (where it began); `last` is the latest moment any of its
+    lines carries (where it ended) — a response is written as a line per content block, seconds apart."""
+
+    __slots__ = ("key", "file", "offset", "when", "agent", "tokens", "last")
 
     def __init__(self, key: str, file: str, offset: int, when: str | None, agent: str | None, tokens: int) -> None:
         self.key, self.file, self.offset, self.when, self.agent, self.tokens = key, file, offset, when, agent, tokens
+        self.last = when
 
 
 def read_requests(files: list[Path]) -> dict[str, Request]:
     """Every request in `files`, once: only the lines that carry `"usage"` are parsed, and a repeated key (one API
-    response is written as a line per content block) keeps its first line."""
+    response is written as a line per content block) keeps its first line, and the latest moment of any."""
     found: dict[str, Request] = {}
     for path in files:
         with path.open("rb") as handle:
@@ -80,7 +84,13 @@ def read_requests(files: list[Path]) -> dict[str, Request]:
                 if item.get("type") != "assistant" or not isinstance(usage, dict):
                     continue
                 key = item.get("requestId") or message.get("id") or item.get("uuid")
-                if not key or str(key) in found:
+                if not key:
+                    continue
+                if str(key) in found:
+                    again = found[str(key)]
+                    moment = stamp(item.get("timestamp"))
+                    if moment and (again.last is None or moment > again.last):
+                        again.last = moment
                     continue
                 agent = item.get("attributionAgent") if isinstance(item.get("attributionAgent"), str) else None
                 tokens = sum(usage[field] for field in FIELDS if isinstance(usage.get(field), int))
@@ -209,8 +219,8 @@ class Totals:
         self.tokens += request.tokens
         if delegate:
             self.delegates.add(delegate)
-        if request.when and (self.last is None or request.when > self.last):
-            self.last = request.when
+        if request.last and (self.last is None or request.last > self.last):
+            self.last = request.last
 
 
 def overlapping(path: str, entry: dict[str, Any], others: dict[str, list[dict[str, Any]]],
@@ -328,7 +338,8 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
             source = "transcripts"
             if (key, index) in entries or any(item.path == key and item.index == index for item in held):
                 found = entries.get((key, index), Totals())
-                shown[index] = {"tokens": found.tokens, "delegates": sorted(found.delegates), "last_line": found.last}
+                shown[index] = {"tokens": found.tokens, "delegates": sorted(found.delegates), "last_line": found.last,
+                                "searched": True}
             else:
                 source = "recorded"
                 figure = recorded(entry)
@@ -344,7 +355,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 if isinstance(figure, int) and clash is not None:
                     figure = unknown(f"brackets of {clash} overlap this one and the transcripts are not on this "
                                      "machine")
-                shown[index] = {"tokens": figure, "delegates": [], "last_line": None}
+                shown[index] = {"tokens": figure, "delegates": [], "last_line": None, "searched": False}
             if not done or entry.get("seconds") == 0:  # an open or unbracketed entry has no tokens to read
                 shown[index]["tokens"] = recorded(entry)
             if not isinstance(shown[index]["tokens"], int):

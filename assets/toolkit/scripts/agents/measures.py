@@ -336,8 +336,8 @@ def bounds(entry: dict[str, Any], last_line: int | None = None) -> Interval | No
         start, end = epoch(entry["started"]), epoch(entry["ended"])
     except (KeyError, ValueError, TypeError):
         return None
-    if last_line is not None and entry.get("cut_off"):
-        end = min(end, max(start, last_line))
+    if last_line is not None and entry.get("cut_off") and last_line >= start:  # one before the start contradicts it
+        end = min(end, last_line)
     return (start, end)
 
 
@@ -434,17 +434,26 @@ def rework(entries: list[dict[str, Any]], tokens: list[Any], last_lines: dict[in
             "tokens": sum_figures([tokens[index] for index in chosen])}
 
 
-def cut_off_notes(label: str, entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> list[str]:
+def cut_off_notes(label: str, entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None,
+                  searched: set[int] | None = None) -> list[str]:
     """For each cut-off entry, where its stage time ends and why: its last attributed transcript line, or its
-    recorded end because no transcript line could be read."""
+    recorded end — because the transcript could not be read, because it was read and held no request of the entry
+    (`searched`, the entries whose transcripts were), or because its last line precedes the entry's start."""
     notes = []
     for index, entry in enumerate(entries):
         if not entry.get("cut_off") or "ended" not in entry:
             continue
         last = (last_lines or {}).get(index)
-        if last is None:
+        if last is None and index in (searched or set()):
+            notes.append(f"{label} {entry['stage']}: stage time ends at its recorded end {entry['ended']} — its "
+                         "transcript was read and no request of it was found in the entry")
+        elif last is None:
             notes.append(f"{label} {entry['stage']}: stage time ends at its recorded end {entry['ended']} — its "
                          "transcript's last line could not be read")
+        elif last < epoch(entry["started"]):
+            notes.append(f"{label} {entry['stage']}: stage time ends at its recorded end {entry['ended']} — its "
+                         f"transcript's last line {utc(last)} precedes the entry's start {entry['started']}, so the "
+                         "transcript contradicts the bracket")
         else:
             notes.append(f"{label} {entry['stage']}: stage time ends at its last transcript line {utc(last)}, not at "
                          f"the recorded end {entry['ended']}")
