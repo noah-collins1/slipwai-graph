@@ -801,10 +801,10 @@ the gaps:** T026, T027, T028 and T029 land before the demo; T030–T032 and T022
   (The slice's own scoped run was exercised on generated Go and Spring projects at T005, T006, T034 and the demos.)
 
 ### T016 — Both full gates on the final tip (host task)
-- [ ] `make verify` once, with the `build/` diff of T001: only the intended generated changes.
+- [x] *(Done at `8072724`, iteration 24: `make verify` and the delivery gate under CI markers, 2618 tests each, green; a first run at `131fd28` was stopped red on two fake-tool variables the stamp's list lacked, fixed at `8072724`, and a `test_matrix` npm write hit the shared `/tmp` quota held by that stopped run's scratch.)* `make verify` once, with the `build/` diff of T001: only the intended generated changes.
 
 ### T017 — Register row and benchmark close (host task)
-- [ ] Slice register row, `benchmark.json`.
+- [x] *(Done, iteration 24.)* Slice register row, `benchmark.json`.
 
 ---
 

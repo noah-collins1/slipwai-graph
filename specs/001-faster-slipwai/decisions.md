@@ -2656,7 +2656,7 @@
 - **Decided by:** host (standing decision D117)
 - **Confidence:** high · **Would reverse if:** a project-added prerequisite of verify-checks could change what a factory check runs without its own rule differing
 - **Written to:** `specs/001-faster-slipwai/slices/S06-scoped-gate/tasks.md` (T030), `assets/toolkit/scripts/verify_scoped/rules.py`
-- **Status:** standing
+- **Status:** overridden by D140
 
 ## D132 — FR-050 to FR-057 from the author's updated material: which slices carry them (spec a462166)
 - **Stage:** split (owner's message through /cruise-tell) · **Slice:** S16-contract-edges, S17-locality-report, S26-reversibility-line, S27-provisional-decisions, S28-ratify-revert, S30-route-classifier, S34a-evidence-records, S34b-evidence-lifecycle, S36-integration-invariants, S39-benchmark-elapsed · **When:** 2026-10-05T16:35:35Z · **Iteration:** 22
@@ -2668,7 +2668,7 @@
 - **Decided by:** human
 - **Confidence:** high · **Would reverse if:** the owner says otherwise
 - **Written to:** `specs/001-faster-slipwai/story-split.md` (the Includes of S16, S17, S26, S27, S28, S30, S34a, S34b, S36 and S39), `specs/001-faster-slipwai/spec.md` (FR-050 to FR-057, the owner's commit a462166)
-- **Status:** overridden by D140
+- **Status:** standing
 
 ## D133 — What an unnamed project variable is charged to: every Makefile variable, export line and special variable make can hand a recipe is compared, and one the factory did not write is the full gate
 
