@@ -16,10 +16,21 @@ git switch adopt-method && python3 -B scripts/select-tests.py --dry-run   # full
 
 Run on one machine, recording its name, the commit and each elapsed time in `demo-log.md`.
 
-1. **Replays.** For each of S06, S08 and S33 (merged into `adopt-method`: the merge commit's first parent to the merge)
-   and S14 (`slice/S14-result-contract` against the base it was cut from), run
-   `python3 -B scripts/select-tests.py --dry-run --replay <base>..<tip>` and copy what it prints: modules selected of
-   the total, backends narrowed, the base, one reason per skipped module. A full selection is recorded as printed.
+1. **Replays.** Four ranges, each run as `python3 -B scripts/select-tests.py --dry-run --replay <range>` and copied as
+   printed: modules selected of the total, backends narrowed, the base, one reason per skipped module. A replay that
+   runs everything prints its `full:` line and then `selected N of N modules against <base>`; that is recorded as
+   printed, a full selection included (D165). S06 and S33 landed on `adopt-method`'s main line with no merge commit,
+   S08 and S14 as merge commits:
+
+   | Slice | Range |
+   |---|---|
+   | S06 | `51c6de4..45ebedb` |
+   | S33 | `1e8f880..e82bb06` (its register row's *Merged as* range, ending at its done commit) |
+   | S08 | `3138416^1..3138416` |
+   | S14 | `37cdf3f^1..37cdf3f` (merged since the plan) |
+
+   The `SINCE=adopt-method` line above is read on a tree whose `Makefile` matches its base: where `adopt-method`'s
+   `Makefile` lacks `s38.patch`, the diff holds the `Makefile` and the run is full.
 2. **Two timed cases, each on a throwaway `slice/` branch off this one**, in a scratch clone under `/tmp/s38/`:
    (a) one line changed under `assets/languages/go/`; (b) one line changed in a script under
    `assets/toolkit/scripts/` that a declared module loads by path. For each: `time make test SINCE=<this branch's tip>`,

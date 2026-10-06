@@ -74,7 +74,16 @@ class TestAReplayedRange(ReplayCase):
         self.write("catalog.json", (self.repo / "catalog.json").read_text(encoding="utf-8") + "\n")
         tip = self.commit("catalog")
         self.assertEqual(self.replay(f"{start}..{tip}"),
-                         ["full: `catalog.json` changed — the catalog: its effect cannot be established"])
+                         ["full: `catalog.json` changed — the catalog: its effect cannot be established",
+                          f"selected 4 of 4 modules against `{start}` at {self.short(start)}"])
+
+    def test_a_full_replay_prints_what_it_selected_and_the_base_whichever_row_made_it_whole(self) -> None:
+        start, _, _ = self.history()
+        self.write("Makefile", "all:\n")
+        tip = self.commit("makefile")
+        lines = self.replay(f"{start}..{tip}")
+        self.assertEqual(lines[0].split(":")[0], "full")
+        self.assertEqual(lines[1:], [f"selected 4 of 4 modules against `{start}` at {self.short(start)}"])
 
     def test_a_range_that_cannot_be_read_says_so_and_exits_zero(self) -> None:
         self.history()

@@ -7,11 +7,13 @@ LIMIT = 200
 
 
 class Full(Exception):
-    """A reason the whole suite runs: its one line, already worded."""
+    """A reason the whole suite runs: its one line, already worded, and where a replay established what it was
+    compared with, that base (a full replay still says what it was measured against)."""
 
-    def __init__(self, line: str) -> None:
+    def __init__(self, line: str, against: str = "") -> None:
         super().__init__(line)
         self.line = line
+        self.against = against
 
 
 def printable(value: object, limit: int = LIMIT, quote: bool = True) -> str:

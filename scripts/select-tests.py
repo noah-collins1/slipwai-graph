@@ -55,6 +55,16 @@ def plan(replay: str | None = None) -> tuple[base.ChangeSet, choose.Selection]:
     replay takes its change set from a range of commits, which leaves the working tree out of it."""
     found = base.replay_changes(ROOT, replay) if replay else base.change_set(ROOT, base.establish(ROOT, os.environ))
     try:
+        return found, select(found, replay is not None)
+    except Full as full:
+        if replay:
+            full.against = found.against  # a full replay says what it was measured against (AC-S38-15)
+        raise
+
+
+def select(found: base.ChangeSet, replay: bool) -> choose.Selection:
+    """The modules the change set reaches, over the tree as it is; raises the line wherever the run is whole."""
+    try:
         catalog = rules.load_catalog(ROOT)
     except Full:
         if "catalog.json" not in found.paths:
@@ -78,7 +88,7 @@ def plan(replay: str | None = None) -> tuple[base.ChangeSet, choose.Selection]:
     for path in hidden[:1]:  # `discover` imports it and the scan cannot name it: only the full run is the same answer
         raise Full(full_line(f"`{printable(path)}` is {rules.NAMELESS} — {rules.BROADENS}"))
     caches = [] if replay else base.cache_files(ROOT)  # they reach what reads their directory, and nothing else
-    return found, choose.select(tree, found.paths, catalog, caches)
+    return choose.select(tree, found.paths, catalog, caches)
 
 
 def arguments(argv: list[str]) -> argparse.Namespace:
@@ -100,6 +110,9 @@ def main(argv: list[str]) -> int:
         found, selection = plan(given.replay)
     except Full as full:
         print(full.line, flush=True)
+        if full.against:  # a replay that runs everything: all of them, against the base it was compared with
+            total = len([path for path in (ROOT / "tests").glob("test*.py") if path.is_file()])
+            print(report.summary_line(total, total, full.against), flush=True)
         return 0 if given.dry_run else run_full()
     print(found.line, flush=True)
     for verdict in selection.verdicts:
