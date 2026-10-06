@@ -101,6 +101,11 @@ def scoped_gate() -> Any:
     return load("verify-scoped.py")
 
 
+def scoped_gate_changes() -> Any:
+    """`verify-scoped.py`'s own `changes` module, whose `unpushed` is D153's rule: reached through it, never copied."""
+    return scoped_gate().changes
+
+
 def ground() -> Any:
     """Where `HEAD` stands, as `verify-scoped.py` reads it."""
     return scoped_gate().Ground()
@@ -205,7 +210,16 @@ def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str], Any, str]:
             scope = where.scope
             base = scope.merge_base()
             short = (scope.git("rev-parse", "--short", base.commit) or str(base.commit)[:7]).strip()
-            return f"`{shown(str(base.named))}` at {short}", project_changes(scope, base.commit), scope, base.commit
+            span = scoped_gate_changes().unpushed(scope, base.commit)  # D153: the trunk's commits nobody's push gated
+            if span.failure is not None:
+                raise Sweep(span.failure)
+            found = project_changes(scope, base.commit)
+            prefix = (scope.git("rev-parse", "--show-prefix") or "").strip()
+            for path in sorted(span.paths):  # from the top of the repository; the changes here start at the project
+                if path.startswith(prefix) and path[len(prefix):]:
+                    found.setdefault(path[len(prefix):], "M")
+            clause = f"; {span.note}" if span.paths else ""
+            return f"`{shown(str(base.named))}` at {short}{clause}", found, scope, base.commit
         commit = resolved(where.scope, since)
         return f"`{shown(since)}`", project_changes(where.scope, commit), where.scope, commit
     except (Sweep, Refused):
