@@ -395,6 +395,90 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
 `decision_health` and `session_totals` on its first slice record in `--json` (path order), and the aggregate is
 unchanged.
 
+## Phase 9: Converge pass 2 — the same class, where pass 1's fixes did not reach (appended)
+
+The rules of Phase 8 hold unchanged. Each RED is the reproduction under *Pass 2* below, written as a test that enters
+through `benchmark.py` as a `python3 -B` subprocess over `tests/elapsed_fixture.py`'s scratch project. Its GREEN holds
+the T001 pin and `worked + causes + unattributed == elapsed`. Order: T025 → T026 (both `attribution.py`/`benchmark.py`),
+then T027 and T028 (`measures.py`), then T029. Only T025 re-opens the loop. T026–T028 are MEDIUM. They belong in this
+loop because they touch the same files and the same class, but they may go to Phase 4 if the ladder's bound is reached.
+T029 is LOW, for Phase 4.
+
+- [ ] T025 [US2] **HIGH — without transcripts, every copy of every record that could overlap is seen** (AC-S39-5
+  "brackets kept in a worktree and on the integration branch do not see each other"; R5 e7; constitution VII).
+  T017 has two holes. (a) `branch_records()` reads `slice/*` and `TRUNKS = ("main", "master")`
+  (benchmark.py:126, 139), so it never reads an integration branch with another name, and this repository's is
+  `adopt-method`. (b) It skips every path the working tree holds (benchmark.py:133, 143), so when a branch carries a
+  *newer* copy of a record this tree also holds, that copy's later brackets are never compared. Both apply on this
+  very branch: S14's record and the feature record are held at `525399b`, while `adopt-method` carries their
+  iteration-24 brackets. Close the class: the overlap check reads every local branch (`refs/heads/*`, not a list of
+  names). For a record held here, it also reads each branch copy's entries that the tree's copy lacks (by `stage` and
+  `started`). The labels say which ref each came from, and "git could not list or read" stays unknown. RED: e1 the
+  integration branch named `adopt-method`, S2's overlapping record committed only there, checkout on `slice/S1`,
+  empty `HOME`: S1's `cost.tokens` and entry read `unknown — brackets of S2 on adopt-method overlap …` (today `1000`) ·
+  e2 the integration branch `main`, the tree holding S2's record with only a non-overlapping `plan`, `main`'s copy
+  adding an overlapping `implement`: unknown (today `1000`) · e3 T017's e1–e3 unchanged. In the same commit, the
+  fragment's catch-up sentence "on a local `slice/*` branch or on `main` or `master`" and the plan's, research's and
+  data model's `main`/`master` wording say what was built.
+  Files: `assets/toolkit/scripts/agents/benchmark.py`, `assets/toolkit/scripts/agents/attribution.py`,
+  `tests/test_benchmark_attribution.py`, `tests/elapsed_fixture.py`, `changelog.d/benchmark-elapsed.md`,
+  `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/{plan,research,data-model}.md`.
+
+- [ ] T026 [US2] **MEDIUM — a request read into an open entry is counted somewhere, and the record says so**
+  (AC-S39-5 "each request is counted in exactly one slice's record"; R5 e5; D159 G11's conservation check). An open
+  entry has a window (benchmark.py `window_of`, the cursor case), so `attribute()` assigns it requests and counts them
+  in the session's `attributed`. attribution.py:359-366 then replaces the entry's tokens with `unknown — the entry is
+  still open` and leaves them out of `figures`. So those requests are in no record's `cost.tokens` and not in `shared`,
+  and the record's cost is printed as a number while `read_from.cost` says nothing of the omission. On this branch
+  that is S39's open `converge`, and on every project it is any slice in flight. Close the class: Σ records'
+  `cost.tokens` + `shared` == Σ sessions' `total` whenever every record's cost is a number. Either the open entry's
+  attributed tokens count in its record's cost, and its entry and `read_from.cost` say "so far, N entr(y/ies) still
+  open", or the record's cost is unknown naming the open entry. Choose one and apply it in both paths. RED: e1 S1 with
+  an ended `implement` (40 tokens) and an open `converge` holding one request (7): today S1 `cost.tokens` 40, feature 0,
+  shared 0, session `{"total": 47, "attributed": 47, "shared": 0}`, so 40 ≠ 47 · e2 the same with an empty `HOME`: the
+  same rule.
+  Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/measures.py`,
+  `tests/test_benchmark_attribution.py`.
+
+- [ ] T027 [US1] **MEDIUM — a cruise log whose bytes cannot be decoded is a damaged log, not a crash** (AC-S39-8
+  "nothing a project already has may newly fail" (D65); T019's class). `cruise_log()` (benchmark.py:170) reads the
+  log with `read_text(encoding="utf-8")`. A log cut inside a multi-byte character (a runner killed mid-append; the
+  log's `told` text carries `—`) raises `UnicodeDecodeError`, so the aggregate, `--json` and `overview` exit 1. Before
+  S39 they never read the log. Close the class: the log is read as bytes, line by line. A line that does not decode is
+  a damaged line by number, as T019 made a non-JSON one. A zero-byte log that exists says it exists and has no row,
+  never `no cruise log` (LOW, same reader). RED: e1 a log of one park row followed by a row cut after the first byte
+  of `—`: exit 0, review, worker and unattributed unknown naming line 2 · e2 a zero-byte log: `read_from.worker` does
+  not say `no cruise log` · e3 a clean log: unchanged.
+  Files: `assets/toolkit/scripts/agents/benchmark.py`, `assets/toolkit/scripts/agents/measures.py`,
+  `tests/test_benchmark_waiting.py`.
+
+- [ ] T028 [US1] **MEDIUM — a done mark is found by what the file holds, not by how often a word appears**
+  (AC-S39-1; T015's class). `Reader.first()` (measures.py:177-188) lists only the commits `git log -S<needle>` names.
+  The pickaxe lists a commit only when the needle's *count* changes, and T015 widened the needle to the bare id. So a
+  commit that adds the register row while removing a prose mention of the same id (net zero) is never examined. The
+  slice then reads `open since`, or, once a later commit changes the count, that later commit is printed as
+  `accepted` with a number. The same holds for `status: implemented` in `model.yaml`. Close the class: examine every
+  commit that touched the path, in order (`git log --reverse --format='%H %ct' -- <path>`), with `holds` deciding.
+  Keep the pickaxe only as a prefilter that cannot drop a commit `holds` would accept, and keep `git failed` and
+  `shallow` as they are. RED: e1 register: day 2 `Next up: S1-a.`; day 3 the row added and that line removed in one
+  commit; day 5 a note naming `S1-a`: accepted is the day-3 commit and elapsed 172 800 (today `accepted`
+  2026-10-05T09:00:00Z from the day-5 commit, elapsed 345 600) · e2 the day-5 commit absent: accepted read, not
+  `open since` · e3 T015's e1–e4 unchanged.
+  Files: `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_elapsed.py`, `tests/elapsed_fixture.py`.
+
+- [ ] T029 **LOW — what the demo script and the notes say** (Phase 4). `quickstart.md` step 4 compares against "the
+  feature record's `sessions`", but the key is `session_totals` (`sessions` is a count, held by the pin). The cut-off
+  note reads "stage time ends at its last transcript line 2026-10-04T12:18:03Z, not at the recorded end
+  2026-10-04T12:18:03Z" where the two are the same moment (S04 `implement`, S33 `skipper`). It should say that the
+  two agree. Without transcripts the overlap check takes any other record's bracket in the same minutes. That
+  includes one that ran in a *different* session, which cannot have entered this entry's recorded usage, so a correct
+  recorded sum reads unknown. It is never false, but it is worse than it need be. Count an overlap only where the
+  other bracket names the same session or names none. RED: the cut-off note for an equal moment; two
+  different-session overlapping brackets keep their recorded sums.
+  Files: `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/quickstart.md`,
+  `assets/toolkit/scripts/agents/measures.py`, `assets/toolkit/scripts/agents/attribution.py`,
+  `tests/test_benchmark_elapsed.py`, `tests/test_benchmark_attribution.py`.
+
 ## Convergence
 
 ### Pass 1 — 2026-10-06, cruise iteration 24, `drive-converge` (worktree at `957c808`)
@@ -508,3 +592,152 @@ one feature, so that was not reproduced.
   `/tmp/s39/aggregate.txt`. Its figures inherit the defects above.
 - *Published contract* (`--json`, the fragment, `benchmark.json` untouched): the old keys are proven by the pin. The
   new keys' truthfulness is not (T014, T016, T017, T021).
+
+### Pass 2 — 2026-10-06, cruise iteration 24, `drive-converge` (worktree at `8e9334d`)
+
+**Verdict: not converged.** 1 HIGH (T025), 3 MEDIUM (T026–T028), 1 LOW (T029). Pass 1's ten findings are closed
+as instances, and each closing test has teeth. One of them, T017, is not closed as a class. Budget: complete,
+nothing marked incomplete.
+
+**How it was judged.** No `.codegraph/` exists here, so the symbols were read directly. All reproductions ran under
+`/tmp/s39/p2/`. `real` is a `--no-local` clone of this worktree with local `adopt-method`, `main`, `slice/S14-…` and
+`slice/S38-…`, plus the main checkout's `specs/cruise-log.jsonl` and this worktree's uncommitted S39 record. It was
+run with the real transcripts (read only) and with an empty `HOME`. `merged` and `torn` are copies of `real`. `fx/` holds
+fixture scripts over `tests/elapsed_fixture.py`. Teeth were tested only in a second clone, `mut`, restoring each
+file with `git checkout -- <path>` there, which ended clean. This worktree was never mutated: its one change is the
+host's open `converge` bracket in `benchmark.json`, untouched. Suites: the 14 targeted modules, `test_benchmark_pin
+test_benchmark_elapsed test_benchmark_waiting test_benchmark_attribution test_benchmark_attribution_chain
+test_benchmark_feature test_benchmark_elapsed_migrate test_benchmark test_benchmark_brackets test_benchmark_overview
+test_toolkit test_utf8_io test_changelog test_hand_backs_coverage`, ran 134 tests OK with 1 skipped.
+`make lint typecheck check-structure` is clean.
+
+**Pass 1, re-run.** Every reproduction now gives the honest answer:
+- T014: empty `HOME`, `read_from.cost` is `the entries' recorded usage[; N entries unread]`.
+- T015: bare ids are read.
+- T016: no entry figure is a bare `0` where nothing was read. The remaining zeros are 3–13 s brackets whose recorded
+  usage is 0, and two `gaps` brackets whose requests all went to shared, each naming its source.
+- T017: S39 without transcripts reads `unknown — brackets of S38-… on slice/S38-… overlap`.
+- T018 and T019: shallow history and a torn line read unknown.
+- T020: `(feature) ground` ends at `01:44:47Z`. S14 `gaps` says its transcript was read and held no request, and
+  S20 `gaps` says the transcript contradicts the bracket.
+- T021: the carrier is the first slice record.
+- T022: `(n of m)`, and the verdict is the first word.
+- T024: S08 has 0 s unattributed.
+- T023: the fragment names `commands/benchmark.md`.
+
+Teeth, one mutation each, in `mut`: every one failed its module. The mutations were:
+- cost source always transcripts: 2 failures;
+- `depends_on` ticked-only: 2;
+- register first cell ticked-only: 3;
+- unbracketed entry keeps attributed tokens: 5 failures and 1 error;
+- no branch records: 1;
+- shallow ignored: 1;
+- git failure ignored: 1;
+- damaged log ignored: 2 errors;
+- `last` kept as the first line: 2;
+- a contradicting last line allowed: 1;
+- carrier only on a feature record: 1;
+- verdict by substring: 1;
+- `(n of m)` dropped: 2;
+- worker ending at the last iteration: 2.
+
+**Findings (most severe first), each with its reproduction.**
+
+1. **HIGH — T017 does not reach the integration branch, nor a newer copy of a record this tree holds** (T025).
+   `TRUNKS = ("main", "master")` (benchmark.py:126, 139). A held path is skipped (benchmark.py:133, 143).
+   - *Fixture* (`/tmp/s39/p2/fx/repro_branch.py`), S1 `implement` 09:00–10:00 (1000) on `slice/S1`, S2's overlapping
+     `implement` 09:30–10:30:
+     - integration branch `adopt-method`, S2 only there: S1 `cost.tokens` `1000`, `read_from.cost` `the entries'
+       recorded usage`;
+     - integration branch `main`, the tree holding S2's older copy: `1000`;
+     - control, `main`, S2 not in the tree (T017's case): `unknown — brackets of S2 on main overlap …`.
+   - *Real records*: in `real`, with `slice/S38-…` deleted (as it is once merged) and an empty `HOME`, S39 reads
+     `cost.tokens` 118 963 280 from recorded usage, its `plan` entry 28 417 982 and `implement` 64 889 972. Yet
+     `adopt-method` holds the feature record's `skipper` 07:28:44–07:37:08Z and S14's `implement`
+     07:37:16–07:57:56Z, which overlap S39's `tasks`, `pin` and `implement` (from 07:30:29Z). With `main` forced to
+     `adopt-method` the result is the same 118 963 280, because both records are held here at `525399b`. With
+     transcripts, S39's attributed cost is 48 792 882 in both the branch view and a merged view, so the spawn-chain
+     path is sound.
+   - *Effect*: the fragment's catch-up claim ("on a local `slice/*` branch or on `main` or `master` … reads
+     `unknown`") is false for (b) and, in this repository, for (a).
+   - *Can reading other branches make a figure worse?* It can make a correct recorded sum unknown, when the other
+     bracket ran in a different session. That is never a false number (T029, LOW).
+2. **MEDIUM — an open entry's attributed requests are in no record** (T026). `/tmp/s39/p2/fx/repro_open.py`:
+   - S1 has an ended `implement` (40) and an open `converge` holding one request (7);
+   - S1 reads `cost {"tokens": 40, "shared": 0}`, feature `{"tokens": 0, "shared": 0}`, and `session_totals`
+     `{"total": 47, "attributed": 47, "shared": 0}`;
+   - 7 tokens are said to be attributed and are counted nowhere (attribution.py:359-366).
+   - The real S39 record is the same shape today: its open `converge` is `unknown — the entry is still open`, and
+     its cost is printed as 48 792 882.
+   - AC-S39-11's check uses session `d883234c…`, which has no open entry, so the demo is not affected: its
+     `attributed + shared == total` (358 475 109, the quickstart's own recount agrees).
+3. **MEDIUM — a log cut inside a UTF-8 character fails the run** (T027). In `torn`, the log was cut one byte into its
+   first `—` (byte 4286 of 16 238). `benchmark.py` prints `benchmark: 'utf-8' codec can't decode byte 0xe2 in
+   position 4285: unexpected end of data` and exits 1, though `check` still exits 0. A zero-byte log reads
+   `read_from.worker` `none present: no cruise log` (LOW, same task).
+4. **MEDIUM — a net-zero pickaxe hides the done mark** (T028). `/tmp/s39/p2/fx/repro_pickaxe.py`:
+   - the register reads `Next up: S1-a.` on day 2;
+   - on day 3 the row `| S1-a |` is added and that line removed (`809e1b6`);
+   - on day 5 a note names `S1-a` (`339b242`);
+   - S1-a then reads `accepted 2026-10-05T09:00:00Z`, `read_from.accepted` `339b242`, `elapsed 345600` (true:
+     `172800`);
+   - without the day-5 commit it reads `open since`.
+   - On the real history a brute-force walk of every register commit agrees with the reader for all 17 slices, so
+     this is latent here.
+5. **LOW — wording** (T029):
+   - the quickstart's `sessions` should be `session_totals`;
+   - an equal-moment cut-off note ("ends at its last transcript line 12:18:03Z, not at the recorded end 12:18:03Z");
+   - the session-blind overlap.
+
+**Judged and left as built.**
+- *`Reader.failure` is sticky per feature.* A failed `git` lookup for one slice makes later slices of the feature read
+  unknown, naming that command. This is order-dependent and over-cautious, but it never prints a number a failed
+  lookup stands behind (the check runs after every lookup a figure uses, measures.py:280, 535).
+- *`Reader.shallow`* uses `self.git`, not `ask`. A failing `rev-parse --is-shallow-repository` reads as not shallow,
+  and every lookup after it still goes through `ask`. Sound.
+- *The first-word verdict* fits FR-031's `Status: provisional · ratify by <date>`: `provisional` is neither verdict.
+  Every Status line in this repository starts `standing` (156) or `overridden` (3).
+- *`(n of m)`*: `of` counts every entry of the tier, including those with no `When:`. That is right, since those
+  cannot be held.
+- *`--json` `rework` retyped.* AC-S39-9 names `rework{seconds, tokens}`, so the reuse is the spec's, and the
+  catch-up names it with `reentered`. No reader of the old list ships: S37 is not built, and `delivery/scripts/` is
+  the control.
+- *Quickstart against the code.* S08 is `elapsed 133433`, `worked 31439` = stage time, integration 10 995 (14 534 −
+  1 002 − 2 537), dependency 7 538 (9 712 − the 2 174 s `implement` 00:35:14–01:11:28Z inside it, as step 2's "less
+  any S08 bracket" says), review 20 322 (parks of iterations 13, 14, 17, 18 and 20: 2 513 + 4 972 + 5 127 + 5 099 +
+  2 611), worker 63 139, unattributed 0. The sum is exact. The `implement` of 17:17:50Z names only `S08 US2 implement
+  T002-T009` and `drive-slice S08-scoped-mutation`, at 50 537 230 tokens. Step 1's columns, three feature figures and
+  three decision-health unknowns are all present (`/tmp/s39/p2/agg.txt`).
+- *Scope*: `git diff --name-only 525399b HEAD` lists the Structure Decision's paths, this folder and
+  `tests/test_hand_backs_coverage.py`. Nothing under `delivery/`. `VERSION` is `1.6.0.dev0`. The fragment's first line
+  is `MINOR`. Every file under `tests/` and `src/` is ≤ 350 lines (`test_benchmark.py` 350, `cruise.py` 337). There is
+  no mocking import. Every text `open`/`read_text` names `utf-8`; the two `rb` opens in attribution.py are binary.
+  There is no `__pycache__` under `assets/`.
+
+**Not judged.** AC-S39-11 is the demo. A session whose requests serve two features is still unreproduced here (one
+feature).
+
+**Constitution, by principle the diff touches.**
+- **I** (a generated project owns its files; D65): `check()` is unchanged (benchmark.py:738) and its output is pinned
+  byte for byte. The catch-up exists (changelog.d/benchmark-elapsed.md:5). It is **unmet** in two places: a torn log
+  newly fails `make benchmark` (T027), and the catch-up's overlap sentence is untrue (T025).
+- **III**: two modules, loaded by path with bytecode off (benchmark.py:99-121). Met.
+- **V**: every example enters through `benchmark.py` as a subprocess, and every pass-1 fix has teeth (above). Met.
+- **VII** (every figure names its source, or reads unknown): met for pass 1's ten. It is **unmet** where a recorded
+  sum stands although a bracket on `adopt-method` or in a newer branch copy overlaps it (T025), where read tokens
+  vanish from cost (T026), and where a later commit is named as `accepted` (T028).
+- **VIII**: `MINOR`, `VERSION` unchanged. `rework` → object per AC-S39-9, with `reentered` carrying the old list.
+  Met.
+- **II, IV, VI**: not touched.
+
+**By level.**
+- *Domain* (`measures.py`, `attribution.py`): the identity, chain attribution and pass 1's readers are proven. Not
+  proven: the done-mark search (T028) and the open-entry conservation (T026).
+- *Use case* (`summarise`, `json_records`, `branch_records`): provenance, bare zeros and the carrier are proven.
+  Not proven: which refs and copies the overlap check sees (T025), and the log read (T027).
+- *Delivery adapter* (CLI; generated `drive.md`/`cruise.md`/`benchmark.md`): proven by
+  `test_benchmark_elapsed_migrate`. A torn log's exit 1 is not (T027).
+- *Screen* (the overview page): columns, headings and the decision-health section are proven. Its figures inherit
+  T025–T028.
+- *Published contract* (`--json`, the fragment): the old keys are pinned. Not proven: the new keys' conservation
+  (T026), and the catch-up's overlap and damaged-log sentences (T025, T027).
