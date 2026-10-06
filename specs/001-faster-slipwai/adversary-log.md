@@ -530,3 +530,16 @@ Findings: sixteen — seven `MEDIUM`, nine `LOW`; no `CRITICAL`. Five of them le
 | B6 | B | LOW | `MAKEFILES` in the environment makes `make mutation` say the recipe is not the factory's and then fail with *No rule*. New | Confirmed; S08 T041 | open |
 | B7 | B | LOW | A run that starts no tool leaves an earlier `gremlins.json` in place, which the note says the next run replaces. Older file behaviour, met more often now | Confirmed; S08 T044 | open |
 | B8 | B | LOW | Read, not run: two `pitest-maven` elements (`pluginManagement` and `plugins`) are read as the first only; a Kotlin source under `src/main/kotlin` is `other` and never counted. New | Confirmed; S08 T037 (two blocks), S08 T036 (Kotlin) | open |
+
+## S14 · 37cdf3f · 2026-10-06
+
+Slice `S14-result-contract` (cruise iterations 22–24), diff `ee0a167..37cdf3f` (merged into adopt-method at `37cdf3f`): the result-contract block every delegate hands back, the record each is appended to and the coverage check over them (`assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`'s `--hand-back` and `--hand-backs`), the benchmark's reading of which delegates ran (`assets/toolkit/scripts/agents/benchmark.py`), the brief paragraphs spliced into every agent and command (`src/slipwai/project/result_contract.py` and its callers), the page `assets/toolkit/docs/result-contract.md`, one fragment.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | Two new verbs of the decisions check a host and a delegate run, `--hand-back` (reads a delegate's reply on stdin) and `--hand-backs` (coverage over a slice) (`assets/toolkit/scripts/check-decisions.py`, `assets/toolkit/scripts/hand_backs.py`) |
+| driven adapter or the provider types behind one | widened | The verbs append to a slice's record file and read the benchmark record and its delegates (`assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/agents/benchmark.py`) |
+| authorisation decision (who can reach one that already exists) | not present | The diff decides nothing about who may do what |
+| concurrency, idempotency, ordering, retention, or time | widened | A retried hand-back is not appended twice; several delegates append to one record (`assets/toolkit/scripts/hand_backs.py`) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
