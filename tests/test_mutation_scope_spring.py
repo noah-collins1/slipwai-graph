@@ -147,6 +147,24 @@ class SpringRunnerTest(SpringCase):
                       "the Makefile still names it, so regenerate it or restore the service", lines)
         self.assertEqual(lines[-1], "mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/spring")
 
+    def test_t031_a_renamed_java_class_is_deleted_at_the_old_name_and_targeted_at_its_new_fqn(self) -> None:
+        git(self.repo, "checkout", "-q", "main")
+        self.pom(("com.example.x.*",))
+        self.java("health/OldName")
+        self.commit("the class")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        git(self.repo, "mv", f"apps/spring/src/main/java/{PACKAGE}/health/OldName.java",
+            f"apps/spring/src/main/java/{PACKAGE}/health/NewName.java")
+        (self.repo / f"apps/spring/src/main/java/{PACKAGE}/health/NewName.java").write_text(
+            "package com.example.x.health;\n\npublic class NewName {}\n", encoding="utf-8")
+        execute = FakeExecute()
+        status, lines = self.run_spring(execute)
+        self.assertEqual(status, 0, "\n".join(lines))
+        self.assertEqual(execute.seen, [([*SWEEP, "-DtargetClasses=com.example.x.health.NewName,"
+                                          "com.example.x.health.NewName$*"], "apps/spring")])
+        self.assertIn(f"mutation: not mutated apps/spring/src/main/java/{PACKAGE}/health/OldName.java"
+                      " — deleted, no mutants", lines)
+
     def test_e4_an_unreadable_pom_or_pattern_is_reported_as_unreadable_naming_the_file(self) -> None:
         self.java("health/HealthStatus")
         for text in ("<project><unclosed>", POM.format(targets=params("${pkg}.*"), excluded=""),

@@ -21,7 +21,7 @@ from typing import Any
 from scoped_fixture import LINE as SCOPED
 from scoped_fixture import ShapeCase
 from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE
-from support import FactoryTestCase
+from support import FactoryTestCase, commit_all
 from test_layout import DELIVERY
 from test_mutation_borders import loaded
 from test_scoped_targets import build, database
@@ -47,6 +47,7 @@ SERVICES = {
     "model-typescript-web": ["typescript:apps/service"],
     "standard-python": ["python:apps/service"],
     "standard-quarkus": ["java-quarkus:apps/service"],
+    "go-typescript": ["go:apps/service", "typescript:apps/second"],
 }
 PORTS = {"typescript": 3000}
 
@@ -94,6 +95,17 @@ def fake_make(directory: Path, status: int) -> tuple[Path, Path]:
     return program, log
 
 
+def go_and_typescript(parent: Path, case: FactoryTestCase) -> Path:
+    """A Go backend with a TypeScript service added beside it (T031): a shape `test_scoped_targets` does not build."""
+    project = case.generate(parent, "shapegots", "standard", "go", "none", http="none")
+    dirty = subprocess.run(["git", "status", "--porcelain"], cwd=project, text=True, capture_output=True, timeout=60)
+    if dirty.stdout.strip():  # `add-service` refuses a tree with uncommitted work
+        commit_all(project, "before second")
+    subprocess.run([str(ROOT / "slipwai"), "add-service", "second", "--language", "typescript"], cwd=project,
+                   check=True, capture_output=True, timeout=120)
+    return project
+
+
 class MutationTargetsTest(FactoryTestCase):
     longMessage = False
     parent: Path
@@ -109,7 +121,8 @@ class MutationTargetsTest(FactoryTestCase):
 
     def project(self, name: str) -> Path:
         if name not in self.projects:
-            self.projects[name] = build(self.parent, name, self)
+            self.projects[name] = go_and_typescript(self.parent, self) if name == "go-typescript" else build(
+                self.parent, name, self)
             self.databases[name] = database(self.projects[name])
         return self.projects[name]
 

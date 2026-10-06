@@ -162,3 +162,49 @@ class UnlistedTest(Recorded):
         ran = self.run_in_process(env=clean_environment(SINCE=":/no commit says this"))
         self.assertEqual((ran.status, ran.runner.seen), (2, []))
         self.assertIn("names no commit", ran.first)
+
+
+class StatesTest(ScopeCase):
+    """T031 (G6): states that worked and had no example."""
+
+    def base(self) -> str:
+        """`main` with a marker commit and a later one that adds `config/later.go`; the slice is cut at the later one."""
+        git(self.repo, "checkout", "-q", "main")
+        self.write("apps/service/config/marked.go")
+        self.commit("marker")
+        marked = self.git_out("rev-parse", "HEAD")
+        self.write("apps/service/config/later.go")
+        self.commit("later")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        return marked
+
+    def test_a_unicode_path_with_a_space_is_scoped_as_named(self) -> None:
+        name = "apps/service/health/café ünï.go"
+        self.write(name)
+        ran = self.run_in_process()
+        self.assertEqual(ran.runner.seen, [("apps/service", ["health/café ünï.go"])], ran.out)
+        self.assertTrue(ran.first.endswith(f": {name}"), ran.first)
+
+    def test_a_since_as_a_tag_a_ref_name_a_full_or_short_hash_or_detached_with_ci_names_the_same_commit(self) -> None:
+        marked = self.base()
+        git(self.repo, "tag", "-a", "-m", "marker", "v-marker", marked)
+        git(self.repo, "tag", "plain", marked)
+        forms = ("v-marker", "refs/tags/v-marker", "plain", marked, marked[:8])
+        for ref in forms:
+            for extra in ({}, {"CI": "1"}):
+                with self.subTest(ref=ref[:20], ci=bool(extra)):
+                    ran = self.run_in_process(env=clean_environment(SINCE=ref, **extra))
+                    self.assertEqual(ran.status, 0, ran.out)
+                    self.assertEqual(ran.first, f"mutation: scoped to 1 changed file(s) since `{ref}`: "
+                                     "apps/service/config/later.go", ran.out)
+        git(self.repo, "checkout", "-q", "--detach")
+        ran = self.run_in_process(env=clean_environment(SINCE="v-marker", CI="1"))
+        self.assertEqual(ran.runner.seen, [("apps/service", ["config/later.go"])], ran.out)
+
+    def test_a_a_rename_across_services_is_deleted_in_the_one_and_scoped_in_the_other(self) -> None:
+        (self.repo / "apps/billing").mkdir(exist_ok=True)
+        git(self.repo, "mv", HEALTH, "apps/billing/health.go")
+        ran = self.run_in_process("go:apps/service", "go:apps/billing")
+        self.assertIn(f"mutation: not mutated {HEALTH} — deleted, no mutants", ran.lines)
+        self.assertEqual(ran.runner.seen, [("apps/billing", ["health.go"])], ran.out)
+        self.assertIn("mutation: skip apps/service — no changed production file", ran.lines)
