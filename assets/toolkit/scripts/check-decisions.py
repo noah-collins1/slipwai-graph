@@ -607,10 +607,13 @@ def hand_back_verb(arguments: list[str]) -> int:
                       "delegate's words")
     record = ROOT / where / HAND_BACKS
     title = folder.group(2) or folder.group(1)
-    started, refusal, note = module.resolve_started(ROOT / where / "benchmark.json", arguments[3], started)
+    started, refusal, note = module.resolve_started(ROOT / where / "benchmark.json", arguments[3], started,
+                                                    f"{where}/benchmark.json")
     if refusal:
         print(f"check-decisions: {refusal}", file=sys.stderr)
         return 1
+    if record.is_file():
+        read(record)  # a record that is not UTF-8 is refused here, in one line, before anything is written
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if missing:
         wrote = module.append_missing(record, title, arguments[2], arguments[3], " ".join(arguments[4:]).strip(), now,
@@ -646,9 +649,12 @@ def coverage_verb(arguments: list[str]) -> int:
         return refuse(why)
     where = ROOT / path
     bench = where / "benchmark.json"
-    stages = json.loads(bench.read_text(encoding="utf-8")).get("stages", []) if bench.is_file() else []
-    record = where / HAND_BACKS
     module = hand_backs_module()
+    stages, fault = module.read_benchmark(bench)
+    if fault:
+        print(f"check-decisions: {path}/benchmark.json is damaged: {fault}", file=sys.stderr)
+        return 1
+    record = where / HAND_BACKS
     found = module.coverage(
         stages, read(record) if record.is_file() else "", module.decision_ids(ROOT / "specs" / folder.group(1)),
         module.contract_arrived())

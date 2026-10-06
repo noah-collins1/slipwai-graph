@@ -876,7 +876,15 @@ def hand_back_lines(records_: list[dict[str, Any]]) -> list[str]:
         if record.get("slice"):
             folder = folder / "slices" / str(record["slice"])
         kept = folder / "hand-backs.md"
-        text = kept.read_text(encoding="utf-8") if kept.is_file() else ""
+        label = record.get("slice") or "(feature)"
+        fault = module.stages_fault(record.get("stages", []))
+        try:
+            text = kept.read_text(encoding="utf-8") if kept.is_file() else ""
+        except UnicodeDecodeError:
+            fault = "hand-backs.md is not UTF-8"
+        if fault:
+            lines.append(f"{label}: hand-backs: {fault} — not counted")
+            continue
         found = module.coverage(
             record.get("stages", []), text, module.decision_ids(ROOT / "specs" / str(record.get("feature"))), arrived)
         predated += found.predates

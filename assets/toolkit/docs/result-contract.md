@@ -91,7 +91,7 @@ All three are `scripts/check-decisions.py`; `<dir>` is `specs/<feature>` or `spe
 |---|---|---|---|
 | `scripts/check-decisions.py --hand-back <dir> <type> <stage>` | the hand-back on stdin | the heading and the fence, verbatim, only when the block passes | 0 appended, 1 faults on stderr and nothing written, 2 usage |
 | `scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>` | nothing | the heading and `- **Missing:** <reason>` | 0, 1 refused, 2 usage |
-| `scripts/check-decisions.py --hand-backs <slice-dir>` | `benchmark.json` and `hand-backs.md` | nothing | 0, 2 usage |
+| `scripts/check-decisions.py --hand-backs <slice-dir>` | `benchmark.json` and `hand-backs.md` | nothing | 0, 1 a file it reads is damaged, 2 usage |
 
 Both write verbs take `--started <instant>` after `<stage>` (before the reason): the `started` of an entry of that
 stage in `<dir>/benchmark.json`; one that is not is refused (exit 1,
@@ -104,6 +104,11 @@ start of the stage it is appended.
 
 `--hand-back` reads stdin as bytes and decodes it as UTF-8 whatever the locale is, so the block is recorded as written;
 bytes that are not UTF-8 are refused in one line (exit 1), nothing written.
+
+A `benchmark.json` or a record the verbs read that is cut off, empty, not an object with a list of named stages, not
+UTF-8 or nested too deeply is one line on stderr naming the file and exit 1, and nothing is written; so is a block
+nested too deeply to read. A stage with no `started` is listed as `could not tell` and counted nowhere, because no
+entry can name it.
 
 A `<reason>` is one line of printable text: a line break of any kind or a control character is refused with usage
 (exit 2) and nothing is written, so the method's `refused: <the delegate's words>` keeps the first line of them. The

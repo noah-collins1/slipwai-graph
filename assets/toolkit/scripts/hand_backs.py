@@ -53,17 +53,26 @@ def whole(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
+def shown(value: object) -> str:
+    """`value` as a fault quotes it: its repr, cut short, and never a traceback for a value nested too deep to print."""
+    try:
+        text = repr(value)
+    except RecursionError:
+        return "<nested too deeply to show>"
+    return text if len(text) <= 80 else text[:77] + "..."
+
+
 def text_fault(value: object) -> str | None:
     if not isinstance(value, str):
-        return f"{value!r} is not a string"
+        return f"{shown(value)} is not a string"
     return None if value.strip() else "is empty; it says something"
 
 
 def list_fault(value: object) -> str | None:
     if not isinstance(value, list):
-        return f"{value!r} is not a list of strings"
+        return f"{shown(value)} is not a list of strings"
     odd = [item for item in value if not isinstance(item, str)]
-    return f"{odd[0]!r} is not a string; every item of the list is one" if odd else None
+    return f"{shown(odd[0])} is not a string; every item of the list is one" if odd else None
 
 
 def path_fault(path: str) -> str | None:
@@ -78,10 +87,10 @@ def path_fault(path: str) -> str | None:
 def difficulty_fault(value: object) -> str | None:
     shape = "is an object of exactly an integer `score` 1-5 and a non-empty string `reason`"
     if not isinstance(value, dict) or set(value) != {"score", "reason"}:
-        return f"{value!r} is not an object of exactly `score` and `reason`; it {shape}"
+        return f"{shown(value)} is not an object of exactly `score` and `reason`; it {shape}"
     score, reason = value["score"], value["reason"]
     if not whole(score) or not 1 <= score <= 5 or not isinstance(reason, str) or not reason.strip():
-        return f"{value!r} is not valid; it {shape}"
+        return f"{shown(value)} is not valid; it {shape}"
     return None
 
 
@@ -99,9 +108,9 @@ def decision_ids(feature: Path) -> set[str]:
 
 def decision_fault(item: object, known: set[str] | None) -> str | None:
     if not isinstance(item, str) or not re.fullmatch(r"D[0-9]+", item):
-        return f"{item!r} is not a decision id `D<n>`"
+        return f"{shown(item)} is not a decision id `D<n>`"
     if known is not None and item not in known:
-        return f"{item!r} names no `## {item} — ` entry in the feature's decisions.md"
+        return f"{shown(item)} names no `## {item} — ` entry in the feature's decisions.md"
     return None
 
 
@@ -118,15 +127,15 @@ def field_faults(name: str, kind: str, value: object, block: dict[str, Any], hea
                  known: set[str] | None) -> list[str]:
     """The faults of one present field."""
     if name == "contract":
-        return [] if whole(value) and value == SCHEMA else [f"{value!r} is not the integer {SCHEMA}"]
+        return [] if whole(value) and value == SCHEMA else [f"{shown(value)} is not the integer {SCHEMA}"]
     if name == "delegate":
         if not isinstance(value, str) or value not in STATUSES:
-            return [f"{value!r} is not one of {', '.join(STATUSES)}"]
-        return [] if value == heading_type else [f"{value!r} differs from the heading's {heading_type!r}"]
+            return [f"{shown(value)} is not one of {', '.join(STATUSES)}"]
+        return [] if value == heading_type else [f"{shown(value)} differs from the heading's {heading_type!r}"]
     if name == "status":
         delegate = block.get("delegate")
         allowed = STATUSES.get(delegate, ()) if isinstance(delegate, str) else ()
-        return [] if not allowed or value in allowed else [f"{value!r} is not one of {', '.join(allowed)}"]
+        return [] if not allowed or value in allowed else [f"{shown(value)} is not one of {', '.join(allowed)}"]
     fault = difficulty_fault(value) if kind == "object" else text_fault(value) if kind == "string" else list_fault(value)
     if fault:
         return [fault]
@@ -136,7 +145,7 @@ def field_faults(name: str, kind: str, value: object, block: dict[str, Any], hea
 def check_block(block: object, heading_type: str, known: set[str] | None) -> list[str]:
     """The faults of one parsed block, each `<field>: <fault>`; `known` is the feature's `D<n>` ids."""
     if not isinstance(block, dict):
-        return [f"block: {block!r} is not a JSON object"]
+        return [f"block: {shown(block)} is not a JSON object"]
     faults: list[str] = []
     for name, kind in FIELDS:
         if name not in block:
@@ -209,6 +218,9 @@ def entry_faults(entry: dict[str, Any]) -> list[str]:
     return []
 
 
+DEEP = "block: the body is nested too deeply to read"
+
+
 def block_faults(entry: dict[str, Any], known: set[str] | None) -> tuple[list[str], dict[str, Any] | None]:
     """The faults of one entry's block, shape and fields (each `<field>: <fault>`), and the block where it parsed
     to an object. An entry that is a `Missing:` line holds none."""
@@ -216,10 +228,12 @@ def block_faults(entry: dict[str, Any], known: set[str] | None) -> tuple[list[st
         return [], None
     try:
         block = json.loads(entry["blocks"][0][1])
+    except RecursionError:
+        return [DEEP], None
     except ValueError as error:
         return [f"block: the body is not JSON ({error})"], None
     if not isinstance(block, dict):
-        return [f"block: the body is {block!r}, not one JSON object"], None
+        return [f"block: the body is {shown(block)}, not one JSON object"], None
     return ([] if newer(block) else check_block(block, entry["match"].group(2), known)), block
 
 
@@ -281,16 +295,51 @@ def heading(now: str, htype: str, stage: str, started: str | None) -> str:
     return f"## {now} — {htype} — {stage}" + (f" — {started}" if started else "")
 
 
-def stages_of(bench: Path) -> list[dict[str, Any]]:
-    """The entries of a slice's `benchmark.json`; none where there is no file."""
-    return json.loads(bench.read_text(encoding="utf-8")).get("stages", []) if bench.is_file() else []
+def stage_fault(stage: object) -> str | None:
+    """Why one entry of a `benchmark.json`'s `stages` is not a stage this module can read; a missing `started` is
+    read as *could not tell*, not refused."""
+    if not isinstance(stage, dict) or not isinstance(stage.get("stage"), str) or not stage["stage"]:
+        return f"{shown(stage)} is not an object with a `stage` name"
+    if stage.get("usage") is not None and not isinstance(stage["usage"], dict):
+        return f"the `usage` of {stage['stage']} is not an object"
+    return None
 
 
-def resolve_started(bench: Path, stage: str, given: str | None) -> tuple[str | None, str | None, str | None]:
+def stages_fault(stages: object) -> str | None:
+    """Why `stages` is not a list of readable stages, or None."""
+    if not isinstance(stages, list):
+        return "`stages` is not a list"
+    return next((fault for fault in map(stage_fault, stages) if fault), None)
+
+
+def read_benchmark(bench: Path) -> tuple[list[dict[str, Any]], str | None]:
+    """The stages of a slice's `benchmark.json` (none where there is no file) and, where the file cannot be read as a
+    benchmark record, one line saying why."""
+    if not bench.is_file():
+        return [], None
+    try:
+        data = json.loads(bench.read_text(encoding="utf-8"))
+    except UnicodeDecodeError as error:
+        return [], f"not UTF-8 ({error.reason} at byte {error.start})"
+    except RecursionError:
+        return [], "nested too deeply to read"
+    except (ValueError, OSError) as error:
+        return [], f"not JSON ({error})"
+    if not isinstance(data, dict):
+        return [], "not a JSON object"
+    fault = stages_fault(data.get("stages", []))
+    return ([], fault) if fault else (data.get("stages", []), None)
+
+
+def resolve_started(bench: Path, stage: str, given: str | None,
+                    label: str | None = None) -> tuple[str | None, str | None, str | None]:
     """The `started` an entry for `stage` records, a refusal (one line) and a note (D160). `given` is the instant
     passed with `--started`: it must be the start of an entry of that stage. Without it the one open entry of the
     stage is answered; entries but none open are refused, never guessed; no entry at all records none, with a note."""
-    named = [entry for entry in stages_of(bench) if entry.get("stage") == stage]
+    stages, fault = read_benchmark(bench)
+    if fault:
+        return None, f"{label or bench.name} is damaged: {fault}", None
+    named = [entry for entry in stages if entry.get("stage") == stage]
     if given is not None:
         if any(entry.get("started") == given for entry in named):
             return given, None, None
@@ -320,10 +369,12 @@ def append(record: Path, title: str, htype: str, stage: str, text: str, known: s
     body = "\n".join(fences[0].split("\n")[1:-2])
     try:
         block = json.loads(body)
+    except RecursionError:
+        return [DEEP], False
     except ValueError as error:
         return [f"block: the body is not JSON ({error})"], False
     if not isinstance(block, dict):
-        return [f"block: the body is {block!r}, not one JSON object"], False
+        return [f"block: the body is {shown(block)}, not one JSON object"], False
     contract = block.get("contract")
     if whole(contract) and contract != SCHEMA:  # the gate reads a newer record forward; this verb vouches for no other
         return [f"contract: {contract} is not a contract this checker can check (it checks {SCHEMA}); "
@@ -502,16 +553,19 @@ def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None,
     for stage in stages:
         if "ended" not in stage:
             continue
-        name, started = stage["stage"], stage.get("started", "")
+        name, started = stage["stage"], stage.get("started")
         types = owed(stage)
         unreadable = not attributable(stage)
         if not unreadable and (not stage.get("delegated") or not types):
             continue
         cut = cut_off(stage, arrived)
+        if cut is None and instant(started) is None:  # no start to match an entry to, and never a window from time 0
+            cut = "untold", "could not tell which entries answer it (no started instant) — not counted"
+            started = "?"
         if cut is not None:
             predates += cut[0] == "predates"
             untold += cut[0] == "untold"
-            lines.append(f"hand-backs: {name} {started}: {cut[1]}")
+            lines.append(f"hand-backs: {name} {started or '?'}: {cut[1]}")
             continue
         if unreadable:
             unattributed += 1
