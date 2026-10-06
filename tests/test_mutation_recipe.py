@@ -208,7 +208,7 @@ class SinceTest(RecipeBase):
     """T041 (A5, B5, B6): the scoped run reads the Makefile make runs and sweeps where it cannot vouch for it."""
     """T041 (A5, B5, B6): the scoped run reads the Makefile make runs, and sweeps where it cannot vouch for what runs."""
 
-    def test_t041_the_mutation_rule_changing_sweeps_whatever_form_the_makefile_is_named_in(self) -> None:
+    def test_t041_the_mutation_rule_changing_sweeps_in_whatever_form_the_makefile_is_named(self) -> None:
         for form in ("Makefile", "./Makefile", "absolute", "sub/../Makefile"):
             with self.subTest(form=form):
                 self.setUp()
