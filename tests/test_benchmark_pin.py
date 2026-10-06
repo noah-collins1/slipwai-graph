@@ -131,6 +131,24 @@ class BenchmarkPinTest(unittest.TestCase):
                 with self.subTest(record=was["path"], key=key):
                     self.assertEqual(value, now[RENAMED_KEYS.get(key, key)])
 
+    def test_e3_no_new_figure_is_a_bare_zero_where_nothing_was_read(self) -> None:
+        self.assertNoBareZero(json.loads(run(self.after, "--json").stdout))
+
+    def assertNoBareZero(self, records: list[dict]) -> None:
+        for record in records:
+            read = record["read_from"]
+            with self.subTest(record=record["path"]):
+                for cause, seconds in record["waiting"].items():
+                    self.assertIn(cause, read)
+                    if seconds == 0:
+                        self.assertTrue(read[cause].startswith(("none present", "elapsed less")), read[cause])
+                self.assertIn("rework", read)
+                if 0 in (record["rework"]["seconds"], record["rework"]["tokens"]):
+                    self.assertTrue(read["rework"].startswith("none present"), read["rework"])
+                self.assertIn("cost", read)
+                self.assertNotEqual(0, record["cost"]["tokens"])
+                self.assertNotEqual(0, record["cost"]["shared"])
+
     def test_e2_check_benchmark_is_byte_for_byte_the_same(self) -> None:
         before, after = run(self.before, "check"), run(self.after, "check")
         self.assertEqual((before.returncode, before.stdout, before.stderr),

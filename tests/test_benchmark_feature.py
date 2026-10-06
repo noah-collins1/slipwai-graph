@@ -9,7 +9,20 @@ import unittest
 from collections.abc import Sequence
 from pathlib import Path
 
-from elapsed_fixture import FEATURE, bench, commit, entry, graph, project, record, register, stamp, summaries, write
+from elapsed_fixture import (
+    FEATURE,
+    bench,
+    commit,
+    entry,
+    feature_record,
+    graph,
+    project,
+    record,
+    register,
+    stamp,
+    summaries,
+    write,
+)
 
 from slipwai.assets import ROOT
 
@@ -142,9 +155,74 @@ class DecisionHealthTest(unittest.TestCase):
                    (stamp(1, "12:00:00"), "guarded", "ratified")]
         lines, found = self.health(log(entries), a, b)
         self.assertIn("median wait: easy 3m30s", lines[2])
-        self.assertIn("guarded unknown (no skipper bracket holds a guarded entry's When: moment)", lines[2])
+        self.assertIn("guarded unknown (no skipper bracket holds the When: moment of any guarded entry)", lines[2])
         self.assertEqual(210, found["median_wait"]["easy"])
         self.assertEqual("no hard entry", found["median_wait"]["hard"]["unknown"])
+
+
+WAITING = ("dependency", "worker", "review", "integration", "unattributed")
+FIGURES = ("elapsed", "stage_seconds", "worked_seconds", "cost", "rework")
+READ = ("elapsed", "stage_seconds", "worked_seconds", *WAITING[:4], "unattributed", "rework", "cost")
+SOURCES = ("commit", "specs/cruise-log.jsonl", "decisions.md", "transcript", "bracket", "none present")
+
+
+def is_figure(value: object) -> bool:
+    return (isinstance(value, int) and not isinstance(value, bool)) or (
+        isinstance(value, dict) and set(value) == {"unknown"} and isinstance(value["unknown"], str))
+
+
+class JsonKeysTest(unittest.TestCase):
+    """R9: `--json` carries every figure S37 reads, on every record, and says where each was read."""
+
+    def setUp(self) -> None:
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.repo = project(Path(self.scratch.name))
+        repo = self.repo
+        write(repo, SPLIT, graph([("S1", []), ("S2", [])]))
+        paths = [SPLIT, record(repo, "S1", entry("implement", stamp(1, "10:00:00"), stamp(1, "12:00:00"))),
+                 record(repo, "S2", entry("implement", stamp(1, "10:00:00"), stamp(1, "12:00:00"))),
+                 feature_record(repo, entry("split", stamp(1, "09:00:00"), stamp(1, "10:00:00")))]
+        commit(repo, stamp(1), "split", *paths)
+        write(repo, REGISTER, register(["S1"]))
+        commit(repo, stamp(1, "15:00:00"), "S1 done", REGISTER)  # S2 stays open
+
+    def test_e1_every_key_is_on_every_record_each_a_number_or_an_unknown_object(self) -> None:
+        found = summaries(self.repo)
+        self.assertEqual({"S1", "S2", "(feature)"}, set(found))
+        for name, item in found.items():
+            with self.subTest(record=name):
+                self.assertTrue(all(is_figure(item[key]) for key in ("elapsed", "stage_seconds", "worked_seconds")))
+                self.assertEqual(set(WAITING), set(item["waiting"]))
+                self.assertTrue(all(is_figure(value) for value in item["waiting"].values()))
+                self.assertEqual({"seconds", "tokens"}, set(item["rework"]))
+                self.assertEqual({"tokens", "shared"}, set(item["cost"]))
+                self.assertTrue(all(is_figure(value) for value in (*item["rework"].values(), *item["cost"].values())))
+                self.assertTrue(all(isinstance(value, str) or is_figure(value) for value in item["moments"].values()))
+                self.assertIsInstance(item["entries"], list)
+                self.assertIsInstance(item["reentered"], list)
+        self.assertEqual(7200 + 0, found["S1"]["stage_seconds"])
+        self.assertTrue(isinstance(found["S1"]["elapsed"], int) and "unknown" in found["S2"]["elapsed"])
+
+    def test_e2_read_from_names_a_source_for_each_figure_known_or_not(self) -> None:
+        for name, item in summaries(self.repo).items():
+            with self.subTest(record=name):
+                for key in READ:
+                    self.assertIn(key, item["read_from"])
+                    said = item["read_from"][key]
+                    self.assertTrue(any(word in said for word in SOURCES), (key, said))
+        read = summaries(self.repo)["S1"]["read_from"]
+        self.assertRegex(read["elapsed"], r"[0-9a-f]{7}")
+        self.assertIn("bracket", read["worked_seconds"])
+        self.assertTrue(read["worker"].startswith("none present"))
+
+    def test_e3_the_reading_paragraph_says_how_elapsed_differs_from_stage_time(self) -> None:
+        self.assertEqual(0, bench(self.repo, "overview", FEATURE).returncode)
+        page = (self.repo / f"specs/{FEATURE}/benchmark.md").read_text(encoding="utf-8")
+        sentence = ("Elapsed runs from a slice's ready commit to its accepted one; stage time adds up its brackets, "
+                    "which overlap across slices, so the two are never the same figure under one name.")
+        self.assertEqual(1, page.count(sentence))
+        self.assertIn(sentence, page.split("## Reading these numbers")[1])
 
 
 if __name__ == "__main__":

@@ -477,6 +477,27 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
     return {"worked": in_worked, "waiting": seconds, "read_from": read_from}
 
 
+def sources(moved: dict[str, Any], parts: dict[str, Any], ended: int, reworked: int, transcripts: bool) -> dict[str, str]:
+    """`read_from` for every figure `--json` carries — a figure no record supports says what was looked at and found
+    absent (`none present: …`), so a `0` is never the only word about it. `moved` and `parts` are `moments` and
+    `waiting`'s results; `reworked` counts the entries a refused demo sent back; `transcripts` is whether attribution
+    read the cost."""
+    found = {**moved["read_from"], **parts["read_from"]}
+    if is_unknown(moved["elapsed"]):
+        found["elapsed"] = f"none present: {moved['elapsed']['unknown']}"
+        for key in ("worked_seconds", "dependency", "worker", "review", "integration", "unattributed"):
+            found[key] = found["elapsed"]
+    else:
+        found["elapsed"] = f"ready: commit {found.get('ready', '')}; accepted: commit {found.get('accepted', '')}"
+        found["unattributed"] = "elapsed less worked time and every cause above: what no bracket, commit or log claims"
+    found["stage_seconds"] = f"the record's brackets ({ended} ended)" if ended else "none present: no bracket ended"
+    found["rework"] = (f"the {reworked} entr{'y' if reworked == 1 else 'ies'} after a refused demo's bracket" if reworked
+                       else "none present: no demo was refused")
+    found["cost"] = ("the transcripts, by delegate and bracket" if transcripts else
+                     "the entries' recorded usage" if ended else "none present: no bracket ended")
+    return found
+
+
 # --- the feature's figures --------------------------------------------------------------------------------------
 
 def feature_figures(parts: list[dict[str, Any]]) -> dict[str, Any]:
@@ -566,7 +587,7 @@ def decision_health(text: str, skippers: list[tuple[int, int, int]]) -> dict[str
         reads = [min(held, key=lambda span: span[1] - span[0])[2] for entry in mine if entry["when"] is not None
                  if (held := [span for span in skippers if span[0] <= entry["when"] <= span[1]])]
         waits[tier] = median(reads) if reads else unknown(
-            f"no {tier} entry" if not mine else f"no skipper bracket holds a {tier} entry's When: moment")
+            f"no {tier} entry" if not mine else f"no skipper bracket holds the When: moment of any {tier} entry")
     return {
         "escalation_share": share(sum(entry["escalated"] for entry in scored), len(scored),
                                   "no entry is scored easy or guarded",

@@ -877,7 +877,8 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
         "rework": measures().rework(stages, tokens, last_lines),
         "cost": (found or {}).get("cost") or {
             "tokens": measures().sum_figures([figure for entry, figure in zip(stages, tokens, strict=True)
-                                              if "ended" in entry]),
+                                              if "ended" in entry]) if ended else measures().unknown(
+                                                  "no bracket ended"),
             "shared": measures().unknown("no transcript was read")},
         "entries": [{"stage": entry["stage"], "started": entry.get("started"),
                      "stage_seconds": measures().stage_seconds([entry], {0: last_lines[index]}
@@ -887,7 +888,8 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
         "moments": {key: measures().printed(moved[key]) for key in ("ready", "accepted", "demo_accepted", "merged")
                     if key in moved},
         "worked_seconds": parts["worked"], "waiting": parts["waiting"],
-        "read_from": {**moved["read_from"], **parts["read_from"]},
+        "read_from": measures().sources(moved, parts, len(ended), len(measures().rework_indices(stages)),
+                                        bool((found or {}).get("cost"))),
         "_last_lines": last_lines or {},
         "_figures": {"slice": record.get("slice"), "ready": moved["ready"], "accepted": moved["accepted"],
                      "stage_seconds": measures().stage_seconds(stages, last_lines),
@@ -951,7 +953,7 @@ equate. A stage's tokens are a floor: the turn that closes the entry is still be
 number the script could not read is written as unknown with its reason, never estimated. A stage whose start and end
 were called in the same moment is unbracketed: its stage time and tokens are missing, not zero, and a slice containing one
 shows its measured stage time as a floor with a trailing `+`. Host context grows through a session, so otherwise identical
-slices spanning different numbers or lengths of sessions are not directly comparable on host tokens."""
+slices spanning different numbers or lengths of sessions are not directly comparable on host tokens. Elapsed runs from a slice's ready commit to its accepted one; stage time adds up its brackets, which overlap across slices, so the two are never the same figure under one name."""
 
 
 def by_feature() -> dict[str, list[tuple[Path, dict[str, Any]]]]:
