@@ -1,0 +1,27 @@
+05a39d46 old-first-seen 27423957 new(max,earliest) 27536695 script 27536695 MATCH
+1e7931f6 old-first-seen 4101308 new(max,earliest) 4120392 script 4120392 MATCH
+2382cd35 old-first-seen 27924008 new(max,earliest) 28102457 script 27764672 DIFF -337785
+2774e7d8 old-first-seen 14327535 new(max,earliest) 14424533 script 14424533 MATCH
+2a3c3a2d old-first-seen 29073536 new(max,earliest) 29281421 script 29281421 MATCH
+3a77752f old-first-seen 122581279 new(max,earliest) 123451787 script 123451787 MATCH
+3f644856 old-first-seen 50506853 new(max,earliest) 50750588 script 50750588 MATCH
+42ceffde old-first-seen 24099470 new(max,earliest) 24255062 script 24255062 MATCH
+442dbae1 old-first-seen 5013080 new(max,earliest) 5032213 script 5032213 MATCH
+67e812bd old-first-seen 3796658 new(max,earliest) 3803717 script 3803717 MATCH
+7050cb49 old-first-seen 27370734 new(max,earliest) 27461424 script 27461424 MATCH
+88bd686f old-first-seen 15987768 new(max,earliest) 16051934 script 16051934 MATCH
+89c9fcef old-first-seen 52340264 new(max,earliest) 52676902 script 52676902 MATCH
+8a5c5e67 old-first-seen 37804319 new(max,earliest) 38120070 script 38120070 MATCH
+c1b709e2 old-first-seen 29677434 new(max,earliest) 29886620 script 29886620 MATCH
+c1c52109 old-first-seen 315542049 new(max,earliest) 317417025 script 317417025 MATCH
+c48ca0e1 old-first-seen 117243499 new(max,earliest) 117931010 script 117931010 MATCH
+ca2432d6 old-first-seen 2563922 new(max,earliest) 2577133 script 2577133 MATCH
+ccfaa2b0 old-first-seen 20725289 new(max,earliest) 20843471 script 20843471 MATCH
+d0506da5 old-first-seen 145104399 new(max,earliest) 145889236 script 145889236 MATCH
+d1599cc9 old-first-seen 15012112 new(max,earliest) 15081710 script 15081710 MATCH
+d3c4b758 old-first-seen 53409541 new(max,earliest) 53699096 script 53699096 MATCH
+d883234c old-first-seen 358475109 new(max,earliest) 360184669 script 360184669 MATCH
+f511edbc old-first-seen 59725951 new(max,earliest) 60173984 script 60173984 MATCH
+fe924153 old-first-seen 93461236 new(max,earliest) 94106215 script 94106215 MATCH
+match 24 of 25 | requests in >1 session 0 tokens dropped as copies 0
+sum old 1653291310 sum new 1662859364 sum script 1662521579

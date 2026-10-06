@@ -1,0 +1,5396 @@
+[
+  {
+    "path": "specs/001-faster-slipwai/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": null,
+    "stages": [
+      "ground",
+      "bosun",
+      "split",
+      "skipper",
+      "skipper",
+      "gaps",
+      "skipper",
+      "gaps",
+      "skipper"
+    ],
+    "open": [],
+    "seconds": 5757,
+    "stage_seconds": 5718,
+    "unbracketed": false,
+    "tokens": {
+      "input": 1512,
+      "output": 125173,
+      "cache_read": 33055112,
+      "cache_creation": 1399089
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-fable-5-1",
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 2,
+    "converge_passes": 0,
+    "tasks_appended": 0,
+    "gaps": {
+      "before": 0,
+      "after": 0
+    },
+    "mutation_score": null,
+    "outcome": null,
+    "findings": 26,
+    "seams": 0,
+    "verify_failures": 0,
+    "delegation": [],
+    "split": 0,
+    "reentered": [],
+    "shape": null,
+    "elapsed": {
+      "unknown": "a feature record is not a slice"
+    },
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 23823782,
+      "shared": 385852904,
+      "sessions": {
+        "442dbae1-fa22-452d-bb2e-a520fcdc34fd": 4239884,
+        "c1c52109-a42e-4a63-be90-04df7ba894ab": 19583898
+      }
+    },
+    "entries": [
+      {
+        "stage": "ground",
+        "started": "2026-10-03T01:44:46Z",
+        "stage_seconds": 1,
+        "recorded_seconds": 40,
+        "tokens": 93960,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "bosun",
+        "started": "2026-10-03T01:45:26Z",
+        "stage_seconds": 387,
+        "recorded_seconds": 387,
+        "tokens": 1704233,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Ground assumptions for cruise run"
+        ]
+      },
+      {
+        "stage": "split",
+        "started": "2026-10-03T01:51:53Z",
+        "stage_seconds": 2536,
+        "recorded_seconds": 2536,
+        "tokens": 2441691,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-06T03:16:19Z",
+        "stage_seconds": 112,
+        "recorded_seconds": 112,
+        "tokens": 280634,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D154 on T023"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-06T03:33:35Z",
+        "stage_seconds": 253,
+        "recorded_seconds": 253,
+        "tokens": 462331,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D155 on B3 efficacy"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-06T04:16:31Z",
+        "stage_seconds": 597,
+        "recorded_seconds": 597,
+        "tokens": 2329923,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S38 slice gaps review"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-06T04:26:28Z",
+        "stage_seconds": 725,
+        "recorded_seconds": 725,
+        "tokens": 4964023,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D156 S38 base",
+          "Skipper D157 S38 measurement"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-06T06:22:27Z",
+        "stage_seconds": 603,
+        "recorded_seconds": 603,
+        "tokens": 3536178,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 slice gaps review"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-06T07:28:44Z",
+        "stage_seconds": 504,
+        "recorded_seconds": 504,
+        "tokens": 8010809,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D160 continuation window",
+          "Skipper D161 pre-contract stages",
+          "Skipper D162 unknown contract",
+          "Skipper D163 unavailable skipper",
+          "Skipper D164 S38 generate audit"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": {
+        "unknown": "a feature record is not a slice"
+      },
+      "accepted": {
+        "unknown": "a feature record is not a slice"
+      }
+    },
+    "worked_seconds": {
+      "unknown": "a feature record is not a slice"
+    },
+    "waiting": {
+      "integration": {
+        "unknown": "a feature record is not a slice"
+      },
+      "dependency": {
+        "unknown": "a feature record is not a slice"
+      },
+      "review": {
+        "unknown": "a feature record is not a slice"
+      },
+      "worker": {
+        "unknown": "a feature record is not a slice"
+      },
+      "unattributed": {
+        "unknown": "a feature record is not a slice"
+      }
+    },
+    "unattributed_person": {
+      "unknown": "a feature record is not a slice"
+    },
+    "read_from": {
+      "elapsed": "none present: a feature record is not a slice",
+      "worked_seconds": "none present: a feature record is not a slice",
+      "dependency": "none present: a feature record is not a slice",
+      "worker": "none present: a feature record is not a slice",
+      "review": "none present: a feature record is not a slice",
+      "integration": "none present: a feature record is not a slice",
+      "unattributed": "none present: a feature record is not a slice",
+      "unattributed_person": "none present: a feature record is not a slice",
+      "stage_seconds": "the record's brackets (9 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    },
+    "feature_figures": {
+      "elapsed": {
+        "unknown": "open since 2026-10-03T02:34:09Z"
+      },
+      "stage_seconds": 219986,
+      "in_flight_seconds": 184828
+    },
+    "session_totals": {
+      "05a39d46-4295-41f9-91dc-c84148cc6def": {
+        "total": 27536695,
+        "attributed": 14011250,
+        "shared": 13525445
+      },
+      "1e7931f6-ee5d-4f36-9ac3-890b461f9e8f": {
+        "total": 4120392,
+        "attributed": 1945618,
+        "shared": 2174774
+      },
+      "2382cd35-c30b-4143-ab92-9beb7e6d8378": {
+        "total": 27764672,
+        "attributed": 21112174,
+        "shared": 6652498
+      },
+      "2774e7d8-4d46-455a-b71d-a6a8ca2cc703": {
+        "total": 14424533,
+        "attributed": 11130660,
+        "shared": 3293873
+      },
+      "2a3c3a2d-3e8b-412d-b85c-64770f8d9b77": {
+        "total": 29281421,
+        "attributed": 23273859,
+        "shared": 6007562
+      },
+      "3a77752f-2709-4af1-ae28-bbb911334437": {
+        "total": 123451787,
+        "attributed": 113385252,
+        "shared": 10066535
+      },
+      "3f644856-c9f8-4a4d-9d9d-f4921635a839": {
+        "total": 50750588,
+        "attributed": 36413869,
+        "shared": 14336719
+      },
+      "42ceffde-f4da-4981-ab48-9b3ec14cb687": {
+        "total": 24255062,
+        "attributed": 19685012,
+        "shared": 4570050
+      },
+      "442dbae1-fa22-452d-bb2e-a520fcdc34fd": {
+        "total": 5032213,
+        "attributed": 4239884,
+        "shared": 792329
+      },
+      "67e812bd-e703-4942-b0d1-77fde79a23ab": {
+        "total": 3803717,
+        "attributed": 1041266,
+        "shared": 2762451
+      },
+      "7050cb49-9b51-458f-a964-027fa7a6bc6c": {
+        "total": 27461424,
+        "attributed": 20392033,
+        "shared": 7069391
+      },
+      "88bd686f-1f85-43ad-b1b7-86e86d2ef03d": {
+        "total": 16051934,
+        "attributed": 9874441,
+        "shared": 6177493
+      },
+      "89c9fcef-9863-417c-bb5a-0a2437f5497b": {
+        "total": 52676902,
+        "attributed": 41875101,
+        "shared": 10801801
+      },
+      "8a5c5e67-c29c-4145-a020-3c51be550e9f": {
+        "total": 38120070,
+        "attributed": 32515674,
+        "shared": 5604396
+      },
+      "c1b709e2-1677-4e9f-935e-0acf76c27c0b": {
+        "total": 29886620,
+        "attributed": 22826728,
+        "shared": 7059892
+      },
+      "c1c52109-a42e-4a63-be90-04df7ba894ab": {
+        "total": 317417025,
+        "attributed": 180502573,
+        "shared": 136914452
+      },
+      "c48ca0e1-03c9-4cd7-99ab-906faaf996b9": {
+        "total": 117931010,
+        "attributed": 112452669,
+        "shared": 5478341
+      },
+      "ca2432d6-c321-4918-9e16-87dd9d107a5f": {
+        "total": 2577133,
+        "attributed": 1551346,
+        "shared": 1025787
+      },
+      "ccfaa2b0-1f5c-4f3a-a1b2-01ea0aac6411": {
+        "total": 20843471,
+        "attributed": 18810461,
+        "shared": 2033010
+      },
+      "d0506da5-55be-4c67-a549-28552fd90230": {
+        "total": 145889236,
+        "attributed": 98953028,
+        "shared": 46936208
+      },
+      "d1599cc9-399e-4ddc-a0a6-a5037ac676d4": {
+        "total": 15081710,
+        "attributed": 12522696,
+        "shared": 2559014
+      },
+      "d3c4b758-1b76-4516-9585-0556f8d2b620": {
+        "total": 53699096,
+        "attributed": 42041645,
+        "shared": 11657451
+      },
+      "d883234c-5eb4-40de-976d-81f2874b2842": {
+        "total": 360184669,
+        "attributed": 306627679,
+        "shared": 53556990
+      },
+      "f511edbc-d1eb-43b3-94a5-093420638864": {
+        "total": 60173984,
+        "attributed": 47682514,
+        "shared": 12491470
+      },
+      "fe924153-f3c2-4837-834b-4e941ffe0a1a": {
+        "total": 94106215,
+        "attributed": 81801243,
+        "shared": 12304972
+      }
+    },
+    "decision_health": {
+      "escalation_share": {
+        "unknown": "no decision entry carries a Reversibility: line"
+      },
+      "misclassification_rate": {
+        "unknown": "no decision entry carries a Reversibility: line"
+      },
+      "median_wait": {
+        "unknown": "no decision entry carries a Reversibility: line"
+      }
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S00-run-path/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S00-run-path",
+    "stages": [
+      "gaps",
+      "skipper",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "gaps",
+      "map",
+      "demo",
+      "implement",
+      "converge",
+      "demo",
+      "adversary",
+      "mutation"
+    ],
+    "open": [],
+    "seconds": 6251,
+    "stage_seconds": 6251,
+    "unbracketed": true,
+    "tokens": {
+      "input": 3116,
+      "output": 156980,
+      "cache_read": 19278412,
+      "cache_creation": 862835
+    },
+    "usage_unknown": 1,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 2,
+    "tasks_appended": 1,
+    "gaps": {
+      "before": 7,
+      "after": 5
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 0,
+    "seams": 0,
+    "verify_failures": 1,
+    "delegation": [
+      "rule/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 9,
+      "files": 44,
+      "added": 3151,
+      "removed": 203,
+      "from": "5e8a0f4500fa2a2bf4083f2cc2cb2da51546613f",
+      "to": "2108b8136283623b41c8e2cbca06edfed1e1a1c4"
+    },
+    "elapsed": 8607,
+    "rework": {
+      "seconds": 391,
+      "tokens": 3041286
+    },
+    "cost": {
+      "tokens": {
+        "unknown": "not recorded: the stage was not bracketed around its work"
+      },
+      "shared": 0,
+      "sessions": {
+        "7050cb49-9b51-458f-a964-027fa7a6bc6c": 20392033
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T02:36:29Z",
+        "stage_seconds": 483,
+        "recorded_seconds": 483,
+        "tokens": 551418,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T02:44:32Z",
+        "stage_seconds": 570,
+        "recorded_seconds": 570,
+        "tokens": 2157773,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Decide D12: where S00 lands"
+        ]
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-03T02:54:02Z",
+        "stage_seconds": 361,
+        "recorded_seconds": 361,
+        "tokens": 1395457,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-03T03:00:03Z",
+        "stage_seconds": 224,
+        "recorded_seconds": 224,
+        "tokens": 742553,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Write S00-run-path tasks.md"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T03:04:16Z",
+        "stage_seconds": 2407,
+        "recorded_seconds": 2407,
+        "tokens": 4035610,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T001: test child environment"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T03:44:23Z",
+        "stage_seconds": 380,
+        "recorded_seconds": 380,
+        "tokens": 1922665,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 for S00-run-path"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T03:50:43Z",
+        "stage_seconds": 391,
+        "recorded_seconds": 391,
+        "tokens": 1044995,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Post-implementation gaps for S00"
+        ]
+      },
+      {
+        "stage": "map",
+        "started": "2026-10-03T03:57:14Z",
+        "stage_seconds": 258,
+        "recorded_seconds": 258,
+        "tokens": 2063756,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T04:01:32Z",
+        "stage_seconds": 437,
+        "recorded_seconds": 437,
+        "tokens": 1709606,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo S00-run-path as the actor"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T04:08:49Z",
+        "stage_seconds": 85,
+        "recorded_seconds": 85,
+        "tokens": 1266441,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "T009: patch.dict in new example"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T04:10:14Z",
+        "stage_seconds": 306,
+        "recorded_seconds": 306,
+        "tokens": 1774845,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 2 for S00-run-path"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T04:50:51Z",
+        "stage_seconds": 312,
+        "recorded_seconds": 312,
+        "tokens": 1320346,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo 2 of S00-run-path as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-03T04:56:03Z",
+        "stage_seconds": 37,
+        "recorded_seconds": 37,
+        "tokens": 406568,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "mutation",
+        "started": "2026-10-03T04:56:40Z",
+        "stage_seconds": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "recorded_seconds": 0,
+        "tokens": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "read_from": "none present: not recorded: the stage was not bracketed around its work",
+        "delegates": []
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T02:34:09Z",
+      "accepted": "2026-10-03T04:57:36Z",
+      "demo_accepted": "2026-10-03T04:56:03Z"
+    },
+    "worked_seconds": 6251,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 2356,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-03T04:56:03Z",
+      "ready": "d3a0926 (story-split.md: S00-run-path)",
+      "accepted": "972ff5e (slices/README.md: S00-run-path)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit d3a0926 (story-split.md: S00-run-path); accepted: commit 972ff5e (slices/README.md: S00-run-path)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (14 ended)",
+      "rework": "the 2 entries after a refused demo's bracket",
+      "cost": "the transcripts, by delegate and bracket; 1 entry unread"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S01-gate-walks/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S01-gate-walks",
+    "stages": [
+      "gaps",
+      "skipper",
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "converge",
+      "implement",
+      "gaps",
+      "implement",
+      "demo",
+      "adversary",
+      "skipper",
+      "implement",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 8975,
+    "stage_seconds": 8975,
+    "unbracketed": true,
+    "tokens": {
+      "input": 992,
+      "output": 165727,
+      "cache_read": 44738335,
+      "cache_creation": 2329427
+    },
+    "usage_unknown": 2,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 2,
+    "tasks_appended": 9,
+    "gaps": {
+      "before": 22,
+      "after": 13
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 7,
+    "seams": 2,
+    "verify_failures": 1,
+    "delegation": [
+      "story/rule",
+      "task/example",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 33,
+      "files": 45,
+      "added": 6623,
+      "removed": 59,
+      "from": "8a428c264283df0ad5377dc205de0b39971fcbf9",
+      "to": "eb35c9c826862c66a763bab86e7bc0521d8cf2fb"
+    },
+    "elapsed": 44086,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": {
+        "unknown": "not recorded: the stage was not bracketed around its work"
+      },
+      "shared": 0,
+      "sessions": {
+        "f511edbc-d1eb-43b3-94a5-093420638864": 47682514
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T13:15:12Z",
+        "stage_seconds": 107,
+        "recorded_seconds": 107,
+        "tokens": 730380,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T13:16:59Z",
+        "stage_seconds": 279,
+        "recorded_seconds": 279,
+        "tokens": 2041956,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D45 target pruning",
+          "Skipper D46 codegraph scope",
+          "Skipper D47 entry count"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T13:21:38Z",
+        "stage_seconds": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "recorded_seconds": 0,
+        "tokens": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "read_from": "none present: not recorded: the stage was not bracketed around its work",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-03T13:25:04Z",
+        "stage_seconds": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "recorded_seconds": 0,
+        "tokens": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "read_from": "none present: not recorded: the stage was not bracketed around its work",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-03T13:25:17Z",
+        "stage_seconds": 132,
+        "recorded_seconds": 132,
+        "tokens": 531311,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Tasks for S01-gate-walks"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T13:28:03Z",
+        "stage_seconds": 678,
+        "recorded_seconds": 678,
+        "tokens": 7851729,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement US1 walking gates",
+          "Implement US2 code-index gate"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T13:39:32Z",
+        "stage_seconds": 362,
+        "recorded_seconds": 362,
+        "tokens": 1809787,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 S01"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T13:45:48Z",
+        "stage_seconds": 200,
+        "recorded_seconds": 200,
+        "tokens": 980937,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D49 raw-bytes rule"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T13:49:19Z",
+        "stage_seconds": 1130,
+        "recorded_seconds": 1130,
+        "tokens": 3704447,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T015 under() fix",
+          "Implement T016-T020 memory fixes"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T14:08:22Z",
+        "stage_seconds": 862,
+        "recorded_seconds": 862,
+        "tokens": 3401745,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 2 S01"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T14:22:55Z",
+        "stage_seconds": 687,
+        "recorded_seconds": 687,
+        "tokens": 3093314,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T021 T022"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T14:34:34Z",
+        "stage_seconds": 326,
+        "recorded_seconds": 326,
+        "tokens": 1966302,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Gaps: code-index gate seam",
+          "Gaps: walking gates seam"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T14:40:12Z",
+        "stage_seconds": 1269,
+        "recorded_seconds": 1269,
+        "tokens": 7818599,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T024-T026 walking gates",
+          "Implement T027-T029 code-index"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T15:01:34Z",
+        "stage_seconds": 697,
+        "recorded_seconds": 697,
+        "tokens": 4083190,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo S01 as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-03T15:13:41Z",
+        "stage_seconds": 497,
+        "recorded_seconds": 497,
+        "tokens": 2908763,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A walking gates",
+          "Adversary seam B code-index gate"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T15:22:15Z",
+        "stage_seconds": 237,
+        "recorded_seconds": 237,
+        "tokens": 1689524,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D52 pom.xml door"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T15:26:25Z",
+        "stage_seconds": 1350,
+        "recorded_seconds": 1350,
+        "tokens": 4684723,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T030 T031 pom door",
+          "Implement T032 T033 record races"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T16:12:31Z",
+        "stage_seconds": 162,
+        "recorded_seconds": 162,
+        "tokens": 385807,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T04:57:36Z",
+      "accepted": "2026-10-03T17:12:22Z",
+      "demo_accepted": "2026-10-03T15:13:11Z"
+    },
+    "worked_seconds": 8975,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 35111,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-03T15:13:11Z",
+      "ready": "972ff5e (slices/README.md: S00-run-path)",
+      "accepted": "cf6799f (slices/README.md: S01-gate-walks)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit 972ff5e (slices/README.md: S00-run-path); accepted: commit cf6799f (slices/README.md: S01-gate-walks)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (18 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket; 2 entries unread"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S02-runner-bookkeeping/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S02-runner-bookkeeping",
+    "stages": [
+      "gaps",
+      "skipper",
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "demo",
+      "adversary",
+      "skipper",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 10844,
+    "stage_seconds": 10844,
+    "unbracketed": false,
+    "tokens": {
+      "input": 1476,
+      "output": 205332,
+      "cache_read": 77792524,
+      "cache_creation": 3156932
+    },
+    "usage_unknown": 1,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 2,
+    "tasks_appended": 5,
+    "gaps": {
+      "before": 69,
+      "after": 0
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 18,
+    "seams": 3,
+    "verify_failures": 0,
+    "delegation": [
+      "story/rule",
+      "task/example"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 28,
+      "files": 79,
+      "added": 11047,
+      "removed": 78,
+      "from": "83abad5b42e6995d1b5d6ca2ab3e9f6efb565c15",
+      "to": "9414e3bc91aba8192c4dee9fb8804f22ca319438"
+    },
+    "elapsed": 60363,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 81801243,
+      "shared": 0,
+      "sessions": {
+        "fe924153-f3c2-4837-834b-4e941ffe0a1a": 81801243
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T17:23:00Z",
+        "stage_seconds": 81,
+        "recorded_seconds": 81,
+        "tokens": 792938,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T17:24:26Z",
+        "stage_seconds": 309,
+        "recorded_seconds": 309,
+        "tokens": 2497549,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D56 controls signature",
+          "Skipper D57 fingerprint",
+          "Skipper D58 log and stream offset",
+          "Skipper D59 index drift and sync",
+          "Skipper D60 Scope line"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T17:30:43Z",
+        "stage_seconds": 5,
+        "recorded_seconds": 5,
+        "tokens": 0,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-03T17:30:59Z",
+        "stage_seconds": 122,
+        "recorded_seconds": 122,
+        "tokens": 867202,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-03T17:33:10Z",
+        "stage_seconds": 171,
+        "recorded_seconds": 171,
+        "tokens": 997268,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Tasks for S02"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T17:36:53Z",
+        "stage_seconds": 3440,
+        "recorded_seconds": 3440,
+        "tokens": 34776037,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S02 US1 runner",
+          "Implement S02 US2 health",
+          "Implement S02 US3 scope checker",
+          "Implement S02 US4 writers",
+          "Implement S02 US5 stream+release"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T18:35:17Z",
+        "stage_seconds": 770,
+        "recorded_seconds": 770,
+        "tokens": 2729222,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge S02 pass 1"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T18:48:15Z",
+        "stage_seconds": 694,
+        "recorded_seconds": 694,
+        "tokens": 3439666,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S02 converge tasks T015–T019"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T19:00:08Z",
+        "stage_seconds": 1007,
+        "recorded_seconds": 1007,
+        "tokens": 2218579,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge S02 pass 2"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T19:17:15Z",
+        "stage_seconds": 834,
+        "recorded_seconds": 834,
+        "tokens": 6432148,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Hand demo S02"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-03T19:52:44Z",
+        "stage_seconds": 1024,
+        "recorded_seconds": 1024,
+        "tokens": 5827395,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A runner records",
+          "Adversary seam B health memory",
+          "Adversary seam C scope verb"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T20:09:59Z",
+        "stage_seconds": 307,
+        "recorded_seconds": 307,
+        "tokens": 933034,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D64 between-iterations window"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T20:15:36Z",
+        "stage_seconds": 2080,
+        "recorded_seconds": 2080,
+        "tokens": 20290205,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Finish S02 T028",
+          "Fix S02 T028 gate differential",
+          "Fix S02 adversary runner findings",
+          "Fix S02 adversary scope findings"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T04:57:36Z",
+      "accepted": "2026-10-03T21:43:39Z",
+      "demo_accepted": "2026-10-03T19:31:09Z"
+    },
+    "worked_seconds": 10844,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 49519,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-03T19:31:09Z",
+      "ready": "972ff5e (slices/README.md: S00-run-path)",
+      "accepted": "3e9bdca (slices/README.md: S02-runner-bookkeeping)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit 972ff5e (slices/README.md: S00-run-path); accepted: commit 3e9bdca (slices/README.md: S02-runner-bookkeeping)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (13 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S03-verify-stamp/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S03-verify-stamp",
+    "stages": [
+      "gaps",
+      "skipper",
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "gaps",
+      "skipper",
+      "implement",
+      "demo",
+      "adversary",
+      "skipper",
+      "implement",
+      "demo"
+    ],
+    "open": [],
+    "seconds": 18313,
+    "stage_seconds": 18313,
+    "unbracketed": false,
+    "tokens": {
+      "input": 1884,
+      "output": 267220,
+      "cache_read": 108734339,
+      "cache_creation": 3771338
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 3,
+    "tasks_appended": 15,
+    "gaps": {
+      "before": 31,
+      "after": 8
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 18,
+    "seams": 3,
+    "verify_failures": 27,
+    "delegation": [
+      "story/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 42,
+      "files": 78,
+      "added": 12971,
+      "removed": 48,
+      "from": "1d87e6fbc014e61c313cf8d9063d91e1264d222c",
+      "to": "ed9cc37202530824525e335db97bf2ee7becd44f"
+    },
+    "elapsed": 53237,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 113385252,
+      "shared": 0,
+      "sessions": {
+        "3a77752f-2709-4af1-ae28-bbb911334437": 113385252
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T01:40:15Z",
+        "stage_seconds": 117,
+        "recorded_seconds": 117,
+        "tokens": 766424,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T01:42:22Z",
+        "stage_seconds": 211,
+        "recorded_seconds": 211,
+        "tokens": 1745037,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D73 stamp key",
+          "Skipper D74 where never read",
+          "Skipper D75 tool versions",
+          "Skipper D76 reuse behaviour"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T01:45:53Z",
+        "stage_seconds": 118,
+        "recorded_seconds": 118,
+        "tokens": 445271,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-04T01:48:06Z",
+        "stage_seconds": 306,
+        "recorded_seconds": 306,
+        "tokens": 1708643,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-04T01:53:25Z",
+        "stage_seconds": 171,
+        "recorded_seconds": 171,
+        "tokens": 889924,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Tasks for S03-verify-stamp"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T01:56:28Z",
+        "stage_seconds": 5003,
+        "recorded_seconds": 5003,
+        "tokens": 35296773,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement US1 of S03",
+          "Implement US2 of S03",
+          "Implement US3 of S03",
+          "T001 pin holds S03"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T03:20:04Z",
+        "stage_seconds": 876,
+        "recorded_seconds": 876,
+        "tokens": 4225574,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 S03"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T03:34:57Z",
+        "stage_seconds": 1030,
+        "recorded_seconds": 1030,
+        "tokens": 6379707,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "T016 trunk reads stamp fix",
+          "T017 ignored inputs closed list",
+          "T018 page and fragment fix",
+          "T019 then T020 stamp fixes"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T03:52:07Z",
+        "stage_seconds": 756,
+        "recorded_seconds": 756,
+        "tokens": 2056813,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 2 S03"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T04:04:43Z",
+        "stage_seconds": 1245,
+        "recorded_seconds": 1245,
+        "tokens": 2178917,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "T024 T025 T026 fixes"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T04:25:28Z",
+        "stage_seconds": 346,
+        "recorded_seconds": 346,
+        "tokens": 1801228,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 3 S03"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T04:31:24Z",
+        "stage_seconds": 413,
+        "recorded_seconds": 413,
+        "tokens": 2878735,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Gaps over S03 diff"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T04:38:17Z",
+        "stage_seconds": 283,
+        "recorded_seconds": 283,
+        "tokens": 1272562,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D81 triage"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T04:43:14Z",
+        "stage_seconds": 1658,
+        "recorded_seconds": 1658,
+        "tokens": 10756362,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "T031–T034 stamp script tasks",
+          "T035 page and fragment"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T05:11:28Z",
+        "stage_seconds": 913,
+        "recorded_seconds": 913,
+        "tokens": 3301970,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo S03 as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-04T05:27:09Z",
+        "stage_seconds": 722,
+        "recorded_seconds": 722,
+        "tokens": 8289194,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A: the key",
+          "Adversary seam B: stamp file",
+          "Adversary seam C: where never read"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T05:39:11Z",
+        "stage_seconds": 309,
+        "recorded_seconds": 309,
+        "tokens": 1213193,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D83 adversary triage"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T05:45:56Z",
+        "stage_seconds": 3546,
+        "recorded_seconds": 3546,
+        "tokens": 26587498,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "T036–T039 adversary fixes",
+          "T040 recipe fixes",
+          "T041 page and fragment after D83"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T06:45:03Z",
+        "stage_seconds": 290,
+        "recorded_seconds": 290,
+        "tokens": 1591427,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo 2 of S03: re-measure"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T17:12:22Z",
+      "accepted": "2026-10-04T07:59:39Z",
+      "demo_accepted": "2026-10-04T05:26:41Z"
+    },
+    "worked_seconds": 18313,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 34924,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-04T05:26:41Z",
+      "ready": "cf6799f (slices/README.md: S01-gate-walks)",
+      "accepted": "1a193a1 (slices/README.md: S03-verify-stamp)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit cf6799f (slices/README.md: S01-gate-walks); accepted: commit 1a193a1 (slices/README.md: S03-verify-stamp)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (19 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S04-parallel-gate/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S04-parallel-gate",
+    "stages": [
+      "skipper",
+      "gaps",
+      "plan",
+      "tasks",
+      "pin",
+      "implement",
+      "skipper",
+      "converge",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "gaps",
+      "skipper",
+      "implement",
+      "converge",
+      "demo",
+      "adversary",
+      "skipper",
+      "implement",
+      "demo"
+    ],
+    "open": [],
+    "seconds": 18366,
+    "stage_seconds": 18366,
+    "unbracketed": false,
+    "tokens": {
+      "input": 1938,
+      "output": 251166,
+      "cache_read": 103056346,
+      "cache_creation": 3489997
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 3,
+    "tasks_appended": 8,
+    "gaps": {
+      "before": 63,
+      "after": 19
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 9,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 24,
+      "files": 68,
+      "added": 11069,
+      "removed": 78,
+      "from": "add697fba76a22e67db68c6c9de55eb1a6e5f8fd",
+      "to": "c37dc4aa9d75020bf82556c5e4176c65945e3e47"
+    },
+    "elapsed": 36806,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 98953028,
+      "shared": 8572373,
+      "sessions": {
+        "d0506da5-55be-4c67-a549-28552fd90230": 98953028
+      }
+    },
+    "entries": [
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T11:11:14Z",
+        "stage_seconds": 317,
+        "recorded_seconds": 317,
+        "tokens": 2062341,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D88 writers under -j",
+          "Skipper D89 who gets -j",
+          "Skipper D90 sync once",
+          "Skipper D91 model lockfile"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T11:17:30Z",
+        "stage_seconds": 147,
+        "recorded_seconds": 147,
+        "tokens": 1122069,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-04T11:22:18Z",
+        "stage_seconds": 229,
+        "recorded_seconds": 229,
+        "tokens": 1451023,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-04T11:26:08Z",
+        "stage_seconds": 771,
+        "recorded_seconds": 771,
+        "tokens": 7596023,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Tasks for S04-parallel-gate"
+        ]
+      },
+      {
+        "stage": "pin",
+        "started": "2026-10-04T11:39:15Z",
+        "stage_seconds": 121,
+        "recorded_seconds": 121,
+        "tokens": 828734,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T11:41:25Z",
+        "stage_seconds": 2198,
+        "recorded_seconds": 2198,
+        "tokens": 15047289,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T002 one sync",
+          "Implement T003 check-python first",
+          "Implement T004 then T005",
+          "Implement T007 adopted serial",
+          "Implement T008 model tooling lock"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T12:18:03Z",
+        "stage_seconds": 1048,
+        "recorded_seconds": 1048,
+        "tokens": 732655,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D93 first stamped pass"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T13:04:59Z",
+        "stage_seconds": 509,
+        "recorded_seconds": 509,
+        "tokens": 3730657,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 S04"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T13:13:38Z",
+        "stage_seconds": 815,
+        "recorded_seconds": 815,
+        "tokens": 2378608,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Fix converge findings T014-T017"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T13:27:13Z",
+        "stage_seconds": 477,
+        "recorded_seconds": 477,
+        "tokens": 2752702,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 2 S04"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T13:35:10Z",
+        "stage_seconds": 302,
+        "recorded_seconds": 302,
+        "tokens": 688028,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D95 adopted include reach"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T13:40:23Z",
+        "stage_seconds": 664,
+        "recorded_seconds": 664,
+        "tokens": 1671395,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T018 confine NOTPARALLEL"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T13:51:27Z",
+        "stage_seconds": 748,
+        "recorded_seconds": 748,
+        "tokens": 14012040,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Gaps trace: gate and sync",
+          "Gaps trace: model tooling and carry"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T14:03:55Z",
+        "stage_seconds": 361,
+        "recorded_seconds": 361,
+        "tokens": 1629275,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D96 gaps triage"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T14:10:49Z",
+        "stage_seconds": 2981,
+        "recorded_seconds": 2981,
+        "tokens": 13699371,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T020 gate order fixes",
+          "Implement T021 model marker and words"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T15:00:39Z",
+        "stage_seconds": 445,
+        "recorded_seconds": 445,
+        "tokens": 2581103,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge re-check of gaps fixes"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T15:08:18Z",
+        "stage_seconds": 686,
+        "recorded_seconds": 686,
+        "tokens": 4202788,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo S04 as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-04T15:20:59Z",
+        "stage_seconds": 722,
+        "recorded_seconds": 722,
+        "tokens": 6087883,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A: gate under -j",
+          "Adversary seam B: model install and carry"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T15:33:01Z",
+        "stage_seconds": 451,
+        "recorded_seconds": 451,
+        "tokens": 2244623,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D97 adversary triage"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T15:40:32Z",
+        "stage_seconds": 1547,
+        "recorded_seconds": 1547,
+        "tokens": 4887956,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T023 adversary fixes"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T16:06:38Z",
+        "stage_seconds": 2827,
+        "recorded_seconds": 2827,
+        "tokens": 9546465,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo 2 S04 changed steps"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-04T07:59:39Z",
+      "accepted": "2026-10-04T18:13:05Z",
+      "demo_accepted": "2026-10-04T15:19:44Z"
+    },
+    "worked_seconds": 18366,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 18440,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-04T15:19:44Z",
+      "ready": "1a193a1 (slices/README.md: S03-verify-stamp)",
+      "accepted": "b31c864 (slices/README.md: S04-parallel-gate)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit 1a193a1 (slices/README.md: S03-verify-stamp); accepted: commit b31c864 (slices/README.md: S04-parallel-gate)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (21 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S05-xdist/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S05-xdist",
+    "stages": [
+      "skipper",
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "gaps",
+      "implement",
+      "demo",
+      "implement",
+      "demo",
+      "adversary",
+      "skipper",
+      "implement",
+      "demo"
+    ],
+    "open": [],
+    "seconds": 6225,
+    "stage_seconds": 6225,
+    "unbracketed": false,
+    "tokens": {
+      "input": 1128,
+      "output": 112880,
+      "cache_read": 43478721,
+      "cache_creation": 1680766
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 2,
+    "converge_passes": 2,
+    "tasks_appended": 6,
+    "gaps": {
+      "before": 13,
+      "after": 3
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 8,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "story/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 25,
+      "files": 82,
+      "added": 5806,
+      "removed": 64,
+      "from": "b2eda135e07fdc0ec50f68948101cfb4989e6d97",
+      "to": "d8645414ba8cc01f164cf299912fadda4a5c7460"
+    },
+    "elapsed": 22207,
+    "rework": {
+      "seconds": 96,
+      "tokens": 669244
+    },
+    "cost": {
+      "tokens": 45074056,
+      "shared": 0,
+      "sessions": {
+        "05a39d46-4295-41f9-91dc-c84148cc6def": 14011250,
+        "3f644856-c9f8-4a4d-9d9d-f4921635a839": 31062806
+      }
+    },
+    "entries": [
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T19:16:11Z",
+        "stage_seconds": 97,
+        "recorded_seconds": 97,
+        "tokens": 1412836,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D102 parallelSafe default",
+          "Skipper D103 xdist worker count"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T19:17:50Z",
+        "stage_seconds": 49,
+        "recorded_seconds": 49,
+        "tokens": 932734,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-04T19:18:50Z",
+        "stage_seconds": 30,
+        "recorded_seconds": 30,
+        "tokens": 195416,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-04T19:19:20Z",
+        "stage_seconds": 151,
+        "recorded_seconds": 151,
+        "tokens": 776024,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 tasks from plan"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T19:21:55Z",
+        "stage_seconds": 1314,
+        "recorded_seconds": 1314,
+        "tokens": 7359488,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 implement US2 T001-T005"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T20:06:16Z",
+        "stage_seconds": 397,
+        "recorded_seconds": 397,
+        "tokens": 3991534,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 converge pass 1"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T20:12:53Z",
+        "stage_seconds": 643,
+        "recorded_seconds": 643,
+        "tokens": 3597143,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 fix T014-T017"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T20:23:36Z",
+        "stage_seconds": 299,
+        "recorded_seconds": 299,
+        "tokens": 3565899,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 converge pass 2"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T20:28:35Z",
+        "stage_seconds": 270,
+        "recorded_seconds": 270,
+        "tokens": 2622829,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 after-converge gaps"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T20:33:17Z",
+        "stage_seconds": 109,
+        "recorded_seconds": 109,
+        "tokens": 834036,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 fix T020 words"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T20:35:13Z",
+        "stage_seconds": 482,
+        "recorded_seconds": 482,
+        "tokens": 3522802,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 demo as the actor"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T20:43:39Z",
+        "stage_seconds": 96,
+        "recorded_seconds": 96,
+        "tokens": 669244,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 fix T021 comma and words"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T20:45:15Z",
+        "stage_seconds": 247,
+        "recorded_seconds": 247,
+        "tokens": 1582821,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S05 demo 2 as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-04T22:13:39Z",
+        "stage_seconds": 371,
+        "recorded_seconds": 371,
+        "tokens": 3263635,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A: xdist gate",
+          "Adversary seam B: mark carry"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T22:20:04Z",
+        "stage_seconds": 182,
+        "recorded_seconds": 182,
+        "tokens": 1826683,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D106: parallel masks leaks",
+          "Skipper D107: duplicate mark handling",
+          "Skipper D108: small S05 fixes"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T22:24:23Z",
+        "stage_seconds": 894,
+        "recorded_seconds": 894,
+        "tokens": 6544484,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T022 CI serial",
+          "Implement T023 duplicate keys",
+          "Implement T024 small fixes"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T22:39:53Z",
+        "stage_seconds": 594,
+        "recorded_seconds": 594,
+        "tokens": 2376448,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo 3 of S05 as actor"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-04T18:13:05Z",
+      "accepted": "2026-10-05T00:23:12Z",
+      "demo_accepted": "2026-10-04T20:49:22Z"
+    },
+    "worked_seconds": 6225,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 8497,
+      "unattributed": 7485
+    },
+    "unattributed_person": 7485,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-04T20:49:22Z",
+      "ready": "b31c864 (slices/README.md: S04-parallel-gate)",
+      "accepted": "957bff3 (slices/README.md: S05-xdist)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit b31c864 (slices/README.md: S04-parallel-gate); accepted: commit 957bff3 (slices/README.md: S05-xdist)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (17 ended)",
+      "rework": "the 1 entry after a refused demo's bracket",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S06-scoped-gate/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S06-scoped-gate",
+    "stages": [
+      "gaps",
+      "skipper",
+      "gaps",
+      "plan",
+      "skipper",
+      "tasks",
+      "tasks",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "implement",
+      "demo",
+      "adversary",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 45422,
+    "stage_seconds": 45421,
+    "unbracketed": true,
+    "tokens": {
+      "input": 6110,
+      "output": 523883,
+      "cache_read": 387464555,
+      "cache_creation": 22626085
+    },
+    "usage_unknown": 1,
+    "models": [
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 4,
+    "converge_passes": 5,
+    "tasks_appended": 19,
+    "gaps": {
+      "before": 19,
+      "after": 0
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 20,
+    "seams": 3,
+    "verify_failures": 0,
+    "delegation": [
+      "rule/rule",
+      "task/rule"
+    ],
+    "split": 12,
+    "reentered": [],
+    "shape": {
+      "tasks": 55,
+      "files": 179,
+      "added": 51773,
+      "removed": 134,
+      "from": "3a9a204762562613f627210880ea68b1028f2951",
+      "to": "45ebedbd160bbb70b833f9f806798e96c820fb63"
+    },
+    "elapsed": 118841,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 253475429,
+      "shared": 21762704,
+      "sessions": {
+        "c48ca0e1-03c9-4cd7-99ab-906faaf996b9": 112452669,
+        "ca2432d6-c321-4918-9e16-87dd9d107a5f": 1551346,
+        "ccfaa2b0-1f5c-4f3a-a1b2-01ea0aac6411": 18810461,
+        "d883234c-5eb4-40de-976d-81f2874b2842": 120660953
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-05T01:00:58Z",
+        "stage_seconds": 266,
+        "recorded_seconds": 266,
+        "tokens": 3946171,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Map gate checks for S06"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-05T01:05:26Z",
+        "stage_seconds": 140,
+        "recorded_seconds": 140,
+        "tokens": 1770427,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "D114 record home/ownership",
+          "D115 components and consumers",
+          "D116 tools, env vars, stamp"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-05T01:09:20Z",
+        "stage_seconds": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "recorded_seconds": 0,
+        "tokens": 144618,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-05T01:09:34Z",
+        "stage_seconds": 925,
+        "recorded_seconds": 925,
+        "tokens": 12949245,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Plan S06-scoped-gate"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-05T08:10:03Z",
+        "stage_seconds": 128,
+        "recorded_seconds": 128,
+        "tokens": 1339603,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Decide S06 Q1 as D123",
+          "Decide S06 Q2 as D124"
+        ]
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-05T08:12:47Z",
+        "stage_seconds": 16,
+        "recorded_seconds": 17,
+        "tokens": 211743,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-05T10:24:49Z",
+        "stage_seconds": 257,
+        "recorded_seconds": 257,
+        "tokens": 977090,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 tasks from plan"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T10:37:41Z",
+        "stage_seconds": 7582,
+        "recorded_seconds": 7582,
+        "tokens": 47396293,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 T005 then T013 (worktree)",
+          "S06 T014 ladder text (worktree)",
+          "S06 chain T004,T006–T009",
+          "S06 chain T010–T012",
+          "S06 implement T002–T003",
+          "S06 implement T015"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T13:07:05Z",
+        "stage_seconds": 610,
+        "recorded_seconds": 610,
+        "tokens": 7192983,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 converge pass 1"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-05T13:17:24Z",
+        "stage_seconds": 608,
+        "recorded_seconds": 608,
+        "tokens": 2210418,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D125 ignored files",
+          "Skipper D126 published wording"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T13:27:45Z",
+        "stage_seconds": 3210,
+        "recorded_seconds": 3210,
+        "tokens": 16165535,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 fix T024,T025,T027,T026",
+          "S06 fix T028,T029 (worktree)"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T14:21:15Z",
+        "stage_seconds": 604,
+        "recorded_seconds": 604,
+        "tokens": 4731478,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 converge pass 2"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-05T14:31:25Z",
+        "stage_seconds": 265,
+        "recorded_seconds": 265,
+        "tokens": 2031121,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D127 rule text source"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T14:36:00Z",
+        "stage_seconds": 6556,
+        "recorded_seconds": 6556,
+        "tokens": 25529378,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 fix T030, T032, T031"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T16:25:22Z",
+        "stage_seconds": 596,
+        "recorded_seconds": 596,
+        "tokens": 4343759,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 converge pass 3"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-05T16:35:47Z",
+        "stage_seconds": 266,
+        "recorded_seconds": 266,
+        "tokens": 1874614,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D133 unnamed variables"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T16:41:36Z",
+        "stage_seconds": 1796,
+        "recorded_seconds": 1796,
+        "tokens": 10355812,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 T033+T034 implement",
+          "S06 T035 implement"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T17:11:32Z",
+        "stage_seconds": 1174,
+        "recorded_seconds": 1174,
+        "tokens": 6751542,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 converge pass 4"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T17:37:55Z",
+        "stage_seconds": 2900,
+        "recorded_seconds": 2900,
+        "tokens": 17433253,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 T036+T037 per D140"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T18:26:15Z",
+        "stage_seconds": 1015,
+        "recorded_seconds": 1015,
+        "tokens": 6995621,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 converge pass 5"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T18:43:33Z",
+        "stage_seconds": 9798,
+        "recorded_seconds": 9798,
+        "tokens": 32439761,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 T039–T042 implement",
+          "S06 T045 gates page words"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-05T21:56:35Z",
+        "stage_seconds": 612,
+        "recorded_seconds": 612,
+        "tokens": 4420621,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 demo as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-05T22:07:31Z",
+        "stage_seconds": 1266,
+        "recorded_seconds": 1266,
+        "tokens": 18658586,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 adversary seam A selection",
+          "S06 adversary seam B baseline",
+          "S06 adversary seam C make"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T22:34:57Z",
+        "stage_seconds": 4831,
+        "recorded_seconds": 4831,
+        "tokens": 23605757,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S06 chain X: T048, T050, T052",
+          "S06 chain Y: T049, T055 stamp",
+          "S06 chain Z: T051, T053, T054"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-04T18:13:05Z",
+      "accepted": "2026-10-06T03:13:46Z",
+      "demo_accepted": "2026-10-05T22:06:47Z"
+    },
+    "worked_seconds": 45421,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 53098,
+      "unattributed": 20322
+    },
+    "unattributed_person": 20322,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-05T22:06:47Z",
+      "ready": "b31c864 (slices/README.md: S04-parallel-gate)",
+      "accepted": "1d6cc17 (slices/README.md: S06-scoped-gate)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit b31c864 (slices/README.md: S04-parallel-gate); accepted: commit 1d6cc17 (slices/README.md: S06-scoped-gate)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (24 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S08-scoped-mutation/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S08-scoped-mutation",
+    "stages": [
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "gaps",
+      "implement",
+      "demo",
+      "implement",
+      "demo",
+      "implement",
+      "demo",
+      "implement",
+      "adversary",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 31439,
+    "stage_seconds": 31439,
+    "unbracketed": false,
+    "tokens": {
+      "input": 4784,
+      "output": 399167,
+      "cache_read": 321152276,
+      "cache_creation": 17509703
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 2,
+    "converge_passes": 2,
+    "tasks_appended": 8,
+    "gaps": {
+      "before": 19,
+      "after": 7
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 16,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "story/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 44,
+      "files": 249,
+      "added": 27959,
+      "removed": 455,
+      "from": "d9c56bfca7aa2dcec5642feca6929f9af9cf20bd",
+      "to": "8072724c62414932d7570654dc1982949d50f3a5"
+    },
+    "elapsed": 133433,
+    "rework": {
+      "seconds": 5429,
+      "tokens": 12250403
+    },
+    "cost": {
+      "tokens": 175356594,
+      "shared": 31258941,
+      "sessions": {
+        "c1c52109-a42e-4a63-be90-04df7ba894ab": 47975644,
+        "d883234c-5eb4-40de-976d-81f2874b2842": 127380950
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-05T16:41:44Z",
+        "stage_seconds": 1068,
+        "recorded_seconds": 1068,
+        "tokens": 0,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-05T17:03:20Z",
+        "stage_seconds": 516,
+        "recorded_seconds": 516,
+        "tokens": 5675889,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-05T17:11:59Z",
+        "stage_seconds": 269,
+        "recorded_seconds": 269,
+        "tokens": 2208077,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 tasks from plan",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T17:17:50Z",
+        "stage_seconds": 5755,
+        "recorded_seconds": 5755,
+        "tokens": 50725980,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 US2 implement T002-T009",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T18:53:49Z",
+        "stage_seconds": 449,
+        "recorded_seconds": 449,
+        "tokens": 4861919,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 converge pass 1",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T19:01:18Z",
+        "stage_seconds": 1914,
+        "recorded_seconds": 1914,
+        "tokens": 9732544,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 converge fixes T018-T021",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T19:33:12Z",
+        "stage_seconds": 351,
+        "recorded_seconds": 351,
+        "tokens": 2652899,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 converge pass 2",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-05T19:39:07Z",
+        "stage_seconds": 339,
+        "recorded_seconds": 339,
+        "tokens": 4255765,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 after-converge gaps",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T19:52:24Z",
+        "stage_seconds": 7387,
+        "recorded_seconds": 7387,
+        "tokens": 7906816,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 fixes T026-T029",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-05T22:08:13Z",
+        "stage_seconds": 1171,
+        "recorded_seconds": 1171,
+        "tokens": 3597434,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 demo as the actor"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T22:36:06Z",
+        "stage_seconds": 3177,
+        "recorded_seconds": 3177,
+        "tokens": 8371433,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 T033 demo-1 fix",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-05T23:32:43Z",
+        "stage_seconds": 597,
+        "recorded_seconds": 597,
+        "tokens": 1301284,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 demo 2 as the actor"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T23:43:07Z",
+        "stage_seconds": 2252,
+        "recorded_seconds": 2252,
+        "tokens": 3878970,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 T034 real-exit fix",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-06T00:23:53Z",
+        "stage_seconds": 481,
+        "recorded_seconds": 481,
+        "tokens": 5859783,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 demo 3 as the actor"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-06T00:35:14Z",
+        "stage_seconds": 2174,
+        "recorded_seconds": 2174,
+        "tokens": 7149916,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 T035 after rebase",
+          "drive-slice S08-scoped-mutation"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-06T03:16:18Z",
+        "stage_seconds": 1002,
+        "recorded_seconds": 1002,
+        "tokens": 12860950,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 adversary seam A",
+          "S08 adversary seam B"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-06T03:33:35Z",
+        "stage_seconds": 2537,
+        "recorded_seconds": 2537,
+        "tokens": 35114694,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S08 Phase 4 fixes, Go wrapper",
+          "S08 Phase 4 fixes, scope script"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-04T18:13:05Z",
+      "accepted": "2026-10-06T07:16:58Z",
+      "demo_accepted": "2026-10-06T00:31:54Z",
+      "merged": "2026-10-06T03:14:44Z"
+    },
+    "worked_seconds": 31439,
+    "waiting": {
+      "integration": 10995,
+      "dependency": 7538,
+      "review": 0,
+      "worker": 63139,
+      "unattributed": 20322
+    },
+    "unattributed_person": 20322,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-06T00:31:54Z",
+      "ready": "b31c864 (slices/README.md: S04-parallel-gate)",
+      "merged": "3138416 (merge commit: slice/S08-scoped-mutation)",
+      "accepted": "c88fe2f (slices/README.md: S08-scoped-mutation)",
+      "worked_seconds": "the record's brackets",
+      "integration": "3138416 (merge commit: slice/S08-scoped-mutation)",
+      "dependency": "1d6cc17 (slices/README.md: S06-scoped-gate of S06-scoped-gate); a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit b31c864 (slices/README.md: S04-parallel-gate); accepted: commit c88fe2f (slices/README.md: S08-scoped-mutation)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (17 ended)",
+      "rework": "the 2 entries after a refused demo's bracket",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S11-render-once/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S11-render-once",
+    "stages": [
+      "gaps",
+      "skipper",
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "implement",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "converge",
+      "gaps",
+      "implement",
+      "demo",
+      "adversary",
+      "implement",
+      "mutation"
+    ],
+    "open": [],
+    "seconds": 10194,
+    "stage_seconds": 10194,
+    "unbracketed": false,
+    "tokens": {
+      "input": 868,
+      "output": 132235,
+      "cache_read": 39558212,
+      "cache_creation": 1847148
+    },
+    "usage_unknown": 1,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 2,
+    "tasks_appended": 6,
+    "gaps": {
+      "before": 17,
+      "after": 7
+    },
+    "mutation_score": "n/a (no command recorded)",
+    "outcome": "accepted",
+    "findings": 13,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "story/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 24,
+      "files": 48,
+      "added": 6103,
+      "removed": 164,
+      "from": "c4a266557f201f300d0d44a6ff0902f663d0eb05",
+      "to": "abc216d3678b7483c91eb7fef37ffc9645e30bbf"
+    },
+    "elapsed": 74502,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 41875101,
+      "shared": 0,
+      "sessions": {
+        "89c9fcef-9863-417c-bb5a-0a2437f5497b": 41875101
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T21:44:57Z",
+        "stage_seconds": 144,
+        "recorded_seconds": 144,
+        "tokens": 1187163,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T21:47:26Z",
+        "stage_seconds": 168,
+        "recorded_seconds": 168,
+        "tokens": 940092,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D68 skip key",
+          "Skipper D69 SC-004 measure"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T21:51:34Z",
+        "stage_seconds": 3,
+        "recorded_seconds": 3,
+        "tokens": 0,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-03T21:51:44Z",
+        "stage_seconds": 201,
+        "recorded_seconds": 201,
+        "tokens": 1611834,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-03T21:55:10Z",
+        "stage_seconds": 121,
+        "recorded_seconds": 121,
+        "tokens": 899158,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Tasks for S11-render-once"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T21:57:31Z",
+        "stage_seconds": 243,
+        "recorded_seconds": 243,
+        "tokens": 1742736,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "T001 pin fixture and tests"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T22:01:42Z",
+        "stage_seconds": 921,
+        "recorded_seconds": 921,
+        "tokens": 4427182,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S11 US1 (T002–T004)"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T22:17:10Z",
+        "stage_seconds": 516,
+        "recorded_seconds": 516,
+        "tokens": 2222992,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S11 US2 (T005–T008)"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T22:25:50Z",
+        "stage_seconds": 360,
+        "recorded_seconds": 360,
+        "tokens": 1763925,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 for S11"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T22:32:03Z",
+        "stage_seconds": 67,
+        "recorded_seconds": 67,
+        "tokens": 388890,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D70 key and browser"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T22:33:19Z",
+        "stage_seconds": 1045,
+        "recorded_seconds": 1045,
+        "tokens": 4376931,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S11 T009–T013"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T22:50:56Z",
+        "stage_seconds": 324,
+        "recorded_seconds": 324,
+        "tokens": 903774,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 2 for S11"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T22:56:32Z",
+        "stage_seconds": 246,
+        "recorded_seconds": 246,
+        "tokens": 1222714,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "After-converge gaps for S11"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T23:00:49Z",
+        "stage_seconds": 1890,
+        "recorded_seconds": 1890,
+        "tokens": 5127532,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S11 T014–T017",
+          "Implement S11 T018"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T23:32:52Z",
+        "stage_seconds": 599,
+        "recorded_seconds": 599,
+        "tokens": 2641929,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo S11-render-once as actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-03T23:43:28Z",
+        "stage_seconds": 971,
+        "recorded_seconds": 971,
+        "tokens": 3594246,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A: skip and files",
+          "Adversary seam B: session and failures"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T23:59:51Z",
+        "stage_seconds": 2373,
+        "recorded_seconds": 2373,
+        "tokens": 8498141,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S11 T020–T024, T019"
+        ]
+      },
+      {
+        "stage": "mutation",
+        "started": "2026-10-04T00:40:05Z",
+        "stage_seconds": 2,
+        "recorded_seconds": 2,
+        "tokens": 325862,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T04:57:36Z",
+      "accepted": "2026-10-04T01:39:18Z",
+      "demo_accepted": "2026-10-03T23:42:51Z"
+    },
+    "worked_seconds": 10194,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 64308,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-03T23:42:51Z",
+      "ready": "972ff5e (slices/README.md: S00-run-path)",
+      "accepted": "1d87e6f (slices/README.md: S11-render-once)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit 972ff5e (slices/README.md: S00-run-path); accepted: commit 1d87e6f (slices/README.md: S11-render-once)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (18 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S14-result-contract/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S14-result-contract",
+    "stages": [
+      "gaps",
+      "skipper",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "gaps",
+      "demo",
+      "adversary",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 7918,
+    "stage_seconds": 7918,
+    "unbracketed": false,
+    "tokens": {
+      "input": 3140,
+      "output": 266786,
+      "cache_read": 209504026,
+      "cache_creation": 7411989
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 2,
+    "converge_passes": 2,
+    "tasks_appended": 12,
+    "gaps": {
+      "before": 0,
+      "after": 7
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 14,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "story/rule"
+    ],
+    "split": 2,
+    "reentered": [],
+    "shape": {
+      "tasks": 41,
+      "files": 309,
+      "added": 34705,
+      "removed": 485,
+      "from": "d9c56bfca7aa2dcec5642feca6929f9af9cf20bd",
+      "to": "717cd5ae6743081689561b5a38a5f80c6779513f"
+    },
+    "elapsed": 219669,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 70897412,
+      "shared": 55600327,
+      "sessions": {
+        "c1c52109-a42e-4a63-be90-04df7ba894ab": 12311636,
+        "d883234c-5eb4-40de-976d-81f2874b2842": 58585776
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-05T16:41:44Z",
+        "stage_seconds": 614,
+        "recorded_seconds": 614,
+        "tokens": 0,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-05T16:51:58Z",
+        "stage_seconds": 454,
+        "recorded_seconds": 454,
+        "tokens": 2298534,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D134 S14 record shape",
+          "Skipper D135 S14 deferred sync",
+          "Skipper D136 S14 missing block",
+          "Skipper D137 S08 every backend",
+          "Skipper D138 S08 scope rules"
+        ]
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-05T17:00:46Z",
+        "stage_seconds": 404,
+        "recorded_seconds": 404,
+        "tokens": 4251946,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "drive-slice S14-result-contract"
+        ]
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-05T17:07:34Z",
+        "stage_seconds": 171,
+        "recorded_seconds": 171,
+        "tokens": 851882,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S14 tasks from plan",
+          "drive-slice S14-result-contract"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T17:11:20Z",
+        "stage_seconds": 1156,
+        "recorded_seconds": 1156,
+        "tokens": 18309027,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S14 T001-T002 hand-back shape",
+          "S14 T007-T009 briefs, ladder, page",
+          "S14 T010 migrate and fragment",
+          "S14 re-pin two cruise brief tests",
+          "drive-slice S14-result-contract"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T17:30:44Z",
+        "stage_seconds": 972,
+        "recorded_seconds": 972,
+        "tokens": 5263770,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S14 converge pass 1",
+          "drive-slice S14-result-contract"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T17:47:12Z",
+        "stage_seconds": 974,
+        "recorded_seconds": 974,
+        "tokens": 10673304,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S14 converge fixes T012-T019",
+          "drive-slice S14-result-contract"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T18:03:26Z",
+        "stage_seconds": 364,
+        "recorded_seconds": 364,
+        "tokens": 2997228,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S14 converge pass 2",
+          "drive-slice S14-result-contract"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-05T18:09:34Z",
+        "stage_seconds": 291,
+        "recorded_seconds": 291,
+        "tokens": 3132497,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S14 post-converge gaps trace",
+          "drive-slice S14-result-contract"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-05T22:34:57Z",
+        "stage_seconds": 630,
+        "recorded_seconds": 630,
+        "tokens": 2147979,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S14 demo as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-06T07:17:56Z",
+        "stage_seconds": 648,
+        "recorded_seconds": 648,
+        "tokens": 12311636,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S14 adversary seam A",
+          "S14 adversary seam B"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-06T07:37:16Z",
+        "stage_seconds": 1240,
+        "recorded_seconds": 1240,
+        "tokens": 0,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T21:43:39Z",
+      "accepted": "2026-10-06T10:44:48Z",
+      "demo_accepted": "2026-10-05T22:45:27Z",
+      "merged": "2026-10-06T07:17:21Z"
+    },
+    "worked_seconds": 7918,
+    "waiting": {
+      "integration": 10559,
+      "dependency": 16157,
+      "review": 0,
+      "worker": 164713,
+      "unattributed": 20322
+    },
+    "unattributed_person": 20322,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-05T22:45:27Z",
+      "ready": "3e9bdca (slices/README.md: S02-runner-bookkeeping)",
+      "merged": "37cdf3f (merge commit: slice/S14-result-contract)",
+      "accepted": "718f3e4 (slices/README.md: S14-result-contract)",
+      "worked_seconds": "the record's brackets",
+      "integration": "37cdf3f (merge commit: slice/S14-result-contract)",
+      "dependency": "3138416 (merge commit of S08-scoped-mutation); a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit 3e9bdca (slices/README.md: S02-runner-bookkeeping); accepted: commit 718f3e4 (slices/README.md: S14-result-contract)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (12 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S20-slice-scope-root/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S20-slice-scope-root",
+    "stages": [
+      "gaps",
+      "skipper",
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "converge",
+      "implement",
+      "gaps",
+      "skipper",
+      "demo",
+      "implement",
+      "adversary",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 4167,
+    "stage_seconds": 4167,
+    "unbracketed": true,
+    "tokens": {
+      "input": 558,
+      "output": 113388,
+      "cache_read": 21361199,
+      "cache_creation": 1469577
+    },
+    "usage_unknown": 3,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 2,
+    "tasks_appended": 8,
+    "gaps": {
+      "before": 8,
+      "after": 6
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 9,
+    "seams": 2,
+    "verify_failures": 1,
+    "delegation": [
+      "rule/rule",
+      "task/example",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 34,
+      "files": 44,
+      "added": 3998,
+      "removed": 36,
+      "from": "eafc156c760bd1f88e70a05f845f7d9568d21d17",
+      "to": "b0dde0c0b372e6fc8c7bea7b299d4afc5d225231"
+    },
+    "elapsed": 6693,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": {
+        "unknown": "not recorded: the stage was not bracketed around its work"
+      },
+      "shared": 0,
+      "sessions": {
+        "2a3c3a2d-3e8b-412d-b85c-64770f8d9b77": 23273859
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T05:02:01Z",
+        "stage_seconds": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "recorded_seconds": 0,
+        "tokens": 121252,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T05:02:01Z",
+        "stage_seconds": 221,
+        "recorded_seconds": 221,
+        "tokens": 701683,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D18 root host paths"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T05:05:42Z",
+        "stage_seconds": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "recorded_seconds": 0,
+        "tokens": {
+          "unknown": "not recorded: the stage was not bracketed around its work"
+        },
+        "read_from": "none present: not recorded: the stage was not bracketed around its work",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-03T05:05:59Z",
+        "stage_seconds": 120,
+        "recorded_seconds": 120,
+        "tokens": 893014,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-03T05:07:59Z",
+        "stage_seconds": 79,
+        "recorded_seconds": 79,
+        "tokens": 493756,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Tasks for S20"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T05:09:51Z",
+        "stage_seconds": 1287,
+        "recorded_seconds": 1287,
+        "tokens": 3315673,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T001 root owner",
+          "Implement T002 host surface",
+          "Implement T003 register ids",
+          "Implement T004 benchmark ids"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T05:31:18Z",
+        "stage_seconds": 273,
+        "recorded_seconds": 273,
+        "tokens": 2038464,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 S20"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T05:35:51Z",
+        "stage_seconds": 152,
+        "recorded_seconds": 152,
+        "tokens": 542712,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D20 host list source"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T05:38:36Z",
+        "stage_seconds": 303,
+        "recorded_seconds": 303,
+        "tokens": 2109515,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T005 id head guard",
+          "Implement T006-T009 host surface"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T05:43:39Z",
+        "stage_seconds": 217,
+        "recorded_seconds": 217,
+        "tokens": 1786312,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 2 S20"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T05:47:16Z",
+        "stage_seconds": 13,
+        "recorded_seconds": 13,
+        "tokens": 0,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T05:47:29Z",
+        "stage_seconds": 170,
+        "recorded_seconds": 170,
+        "tokens": 929665,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Gaps over S20 diff"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T05:50:19Z",
+        "stage_seconds": 159,
+        "recorded_seconds": 159,
+        "tokens": 577091,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D21 migration rules"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T05:53:17Z",
+        "stage_seconds": 325,
+        "recorded_seconds": 325,
+        "tokens": 3450241,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Hand demo 1 for S20"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T05:58:42Z",
+        "stage_seconds": 363,
+        "recorded_seconds": 363,
+        "tokens": 2452131,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Finish T013-T015 phase 4",
+          "Implement T013-T015 phase 4"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-03T06:05:07Z",
+        "stage_seconds": 282,
+        "recorded_seconds": 282,
+        "tokens": 2061238,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A host surface",
+          "Adversary seam B register ids"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T06:09:49Z",
+        "stage_seconds": 203,
+        "recorded_seconds": 203,
+        "tokens": 1801112,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T016-T018 adversary fixes",
+          "Implement T019 id pattern"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T04:57:36Z",
+      "accepted": "2026-10-03T06:49:09Z",
+      "demo_accepted": "2026-10-03T05:58:42Z"
+    },
+    "worked_seconds": 4167,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 2526,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-03T05:58:42Z",
+      "ready": "972ff5e (slices/README.md: S00-run-path)",
+      "accepted": "b66f10b (slices/README.md: S20-slice-scope-root)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit 972ff5e (slices/README.md: S00-run-path); accepted: commit b66f10b (slices/README.md: S20-slice-scope-root)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (17 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket; 1 entry unread"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S21-refresh-keeps-owned-files/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S21-refresh-keeps-owned-files",
+    "stages": [
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "implement",
+      "gaps",
+      "implement",
+      "demo",
+      "adversary",
+      "skipper",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 3674,
+    "stage_seconds": 3674,
+    "unbracketed": false,
+    "tokens": {
+      "input": 490,
+      "output": 81252,
+      "cache_read": 18305781,
+      "cache_creation": 1141897
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 1,
+    "tasks_appended": 3,
+    "gaps": {
+      "before": 8,
+      "after": 8
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 6,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "rule/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 11,
+      "files": 42,
+      "added": 3092,
+      "removed": 24,
+      "from": "b66f10b3440345cb940e8e8f3077299a0e5c5345",
+      "to": "345ddedceafb35d1c099aa82eba87aad2b446b03"
+    },
+    "elapsed": 12797,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 19685012,
+      "shared": 0,
+      "sessions": {
+        "42ceffde-f4da-4981-ab48-9b3ec14cb687": 19685012
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T06:49:50Z",
+        "stage_seconds": 104,
+        "recorded_seconds": 104,
+        "tokens": 607320,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-03T06:51:45Z",
+        "stage_seconds": 79,
+        "recorded_seconds": 79,
+        "tokens": 610252,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-03T06:53:05Z",
+        "stage_seconds": 104,
+        "recorded_seconds": 104,
+        "tokens": 424462,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Tasks for slice S21"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T06:54:49Z",
+        "stage_seconds": 712,
+        "recorded_seconds": 712,
+        "tokens": 3718983,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S21 T002",
+          "Implement S21 T003",
+          "Implement S21 T004"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T07:06:41Z",
+        "stage_seconds": 571,
+        "recorded_seconds": 571,
+        "tokens": 3171854,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 S21"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T07:16:25Z",
+        "stage_seconds": 321,
+        "recorded_seconds": 321,
+        "tokens": 1246557,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S21 T006",
+          "Implement S21 T007"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T07:21:55Z",
+        "stage_seconds": 406,
+        "recorded_seconds": 406,
+        "tokens": 1194942,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Gaps trace over S21 diff"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T07:28:41Z",
+        "stage_seconds": 258,
+        "recorded_seconds": 258,
+        "tokens": 1042998,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S21 T009"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T07:33:06Z",
+        "stage_seconds": 359,
+        "recorded_seconds": 359,
+        "tokens": 2574685,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Demo S21 as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-03T07:39:22Z",
+        "stage_seconds": 370,
+        "recorded_seconds": 370,
+        "tokens": 2735489,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A: seeded files",
+          "Adversary seam B: strategy.before"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T07:45:32Z",
+        "stage_seconds": 171,
+        "recorded_seconds": 171,
+        "tokens": 1128417,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper decision D28"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T07:49:49Z",
+        "stage_seconds": 219,
+        "recorded_seconds": 219,
+        "tokens": 1229053,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S21 T010"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T04:57:36Z",
+      "accepted": "2026-10-03T08:30:53Z",
+      "demo_accepted": "2026-10-03T07:39:05Z"
+    },
+    "worked_seconds": 3674,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 9123,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-03T07:39:05Z",
+      "ready": "972ff5e (slices/README.md: S00-run-path)",
+      "accepted": "3d9a922 (slices/README.md: S21-refresh-keeps-owned-files)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit 972ff5e (slices/README.md: S00-run-path); accepted: commit 3d9a922 (slices/README.md: S21-refresh-keeps-owned-files)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (12 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S22-slice-scope-base/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S22-slice-scope-base",
+    "stages": [
+      "gaps",
+      "skipper",
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "converge",
+      "gaps",
+      "skipper",
+      "implement",
+      "demo",
+      "adversary",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 6114,
+    "stage_seconds": 6114,
+    "unbracketed": false,
+    "tokens": {
+      "input": 800,
+      "output": 200250,
+      "cache_read": 29869952,
+      "cache_creation": 2128921
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 2,
+    "tasks_appended": 7,
+    "gaps": {
+      "before": 21,
+      "after": 11
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 11,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "rule/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 29,
+      "files": 29,
+      "added": 5634,
+      "removed": 42,
+      "from": "3d9a922b807dfcd8311c085a7340172f8baab592",
+      "to": "27acb52af4fd55962432290ad7580595fe1e234c"
+    },
+    "elapsed": 17086,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 32515674,
+      "shared": 0,
+      "sessions": {
+        "8a5c5e67-c29c-4145-a020-3c51be550e9f": 32515674
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T08:31:51Z",
+        "stage_seconds": 115,
+        "recorded_seconds": 115,
+        "tokens": 722992,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T08:33:46Z",
+        "stage_seconds": 370,
+        "recorded_seconds": 370,
+        "tokens": 1076855,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D30 trunk name",
+          "Skipper D31 shallow CI"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T08:39:56Z",
+        "stage_seconds": 84,
+        "recorded_seconds": 84,
+        "tokens": 160906,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-03T08:41:43Z",
+        "stage_seconds": 114,
+        "recorded_seconds": 114,
+        "tokens": 712600,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-03T08:43:46Z",
+        "stage_seconds": 83,
+        "recorded_seconds": 83,
+        "tokens": 376523,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Tasks for S22"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T08:45:44Z",
+        "stage_seconds": 827,
+        "recorded_seconds": 827,
+        "tokens": 5810084,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T002 (R1)",
+          "Implement T003 (R2)",
+          "Implement T004 (R3)",
+          "Implement T005 (R4)",
+          "Implement T006 (R5)",
+          "Implement T007 (R6)",
+          "Implement T009 (R8)"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T08:59:31Z",
+        "stage_seconds": 473,
+        "recorded_seconds": 473,
+        "tokens": 1357312,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 S22"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T09:07:24Z",
+        "stage_seconds": 160,
+        "recorded_seconds": 160,
+        "tokens": 578804,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D32 push pipeline"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T09:10:14Z",
+        "stage_seconds": 475,
+        "recorded_seconds": 475,
+        "tokens": 4142036,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T011 then T012",
+          "Implement T012 no-base name",
+          "Implement T013 CI marker",
+          "Implement T014 then T015",
+          "Implement T015 and T016"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T09:18:09Z",
+        "stage_seconds": 347,
+        "recorded_seconds": 347,
+        "tokens": 967657,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 2 S22"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T09:24:07Z",
+        "stage_seconds": 391,
+        "recorded_seconds": 391,
+        "tokens": 1447124,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Gaps over S22 diff"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T09:30:38Z",
+        "stage_seconds": 231,
+        "recorded_seconds": 231,
+        "tokens": 577493,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D33 master trunk"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T09:34:37Z",
+        "stage_seconds": 886,
+        "recorded_seconds": 886,
+        "tokens": 5034048,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T018 then T019",
+          "Implement T020 then T021",
+          "Implement follow-up, T022, T023"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T09:49:50Z",
+        "stage_seconds": 333,
+        "recorded_seconds": 333,
+        "tokens": 1446996,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Hand runs S22 demo"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-03T09:55:46Z",
+        "stage_seconds": 417,
+        "recorded_seconds": 417,
+        "tokens": 3005700,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Adversary seam A names",
+          "Adversary seam B no-base"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T10:02:54Z",
+        "stage_seconds": 808,
+        "recorded_seconds": 808,
+        "tokens": 5098544,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement T024 then T025",
+          "Implement T026, T027, T028"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T06:09:49Z",
+      "accepted": "2026-10-03T10:54:35Z",
+      "demo_accepted": "2026-10-03T09:55:23Z"
+    },
+    "worked_seconds": 6114,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 10972,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-03T09:55:23Z",
+      "ready": "a0669ba (story-split.md: S22-slice-scope-base)",
+      "accepted": "9add02f (slices/README.md: S22-slice-scope-base)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit a0669ba (story-split.md: S22-slice-scope-base); accepted: commit 9add02f (slices/README.md: S22-slice-scope-base)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (16 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S23-refusal-in-subdirectory/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S23-refusal-in-subdirectory",
+    "stages": [
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "gaps",
+      "implement",
+      "demo",
+      "adversary",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 4592,
+    "stage_seconds": 4592,
+    "unbracketed": false,
+    "tokens": {
+      "input": 586,
+      "output": 117829,
+      "cache_read": 21154377,
+      "cache_creation": 1344750
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 1,
+    "converge_passes": 1,
+    "tasks_appended": 6,
+    "gaps": {
+      "before": 10,
+      "after": 6
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 8,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "rule/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 17,
+      "files": 30,
+      "added": 4009,
+      "removed": 11,
+      "from": "9add02f7e461fe6675bb83f5827f084c1011c3a4",
+      "to": "fee89b88b767356bc7b5fd06459cfea63bc52cae"
+    },
+    "elapsed": 19483,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 22826728,
+      "shared": 0,
+      "sessions": {
+        "c1b709e2-1677-4e9f-935e-0acf76c27c0b": 22826728
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T10:55:17Z",
+        "stage_seconds": 132,
+        "recorded_seconds": 132,
+        "tokens": 1192344,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-03T10:57:49Z",
+        "stage_seconds": 92,
+        "recorded_seconds": 92,
+        "tokens": 153247,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-03T10:59:21Z",
+        "stage_seconds": 98,
+        "recorded_seconds": 98,
+        "tokens": 436113,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 plan into tasks"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T11:02:30Z",
+        "stage_seconds": 1017,
+        "recorded_seconds": 1017,
+        "tokens": 4617524,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 T002 implement R1",
+          "S23 T003 implement R2",
+          "S23 T004 implement R3",
+          "S23 T005 implement R5",
+          "S23 T006 implement R4",
+          "S23 T007 implement R6",
+          "S23 T008 implement R7"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-03T11:20:45Z",
+        "stage_seconds": 440,
+        "recorded_seconds": 440,
+        "tokens": 1539298,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 converge pass 1"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T11:28:23Z",
+        "stage_seconds": 166,
+        "recorded_seconds": 166,
+        "tokens": 952413,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D40: GIT_DIR alone",
+          "Skipper D41: no git on PATH"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T11:31:26Z",
+        "stage_seconds": 1135,
+        "recorded_seconds": 1135,
+        "tokens": 3701021,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 T010 unreadable repository holds",
+          "S23 T011 rename entries",
+          "S23 T014 placements repeat criteria",
+          "S23 T015 decline message"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T11:50:22Z",
+        "stage_seconds": 257,
+        "recorded_seconds": 257,
+        "tokens": 1708057,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 gaps after converge"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T11:54:39Z",
+        "stage_seconds": 269,
+        "recorded_seconds": 269,
+        "tokens": 804904,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 T016 advice is followable"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-03T12:01:10Z",
+        "stage_seconds": 441,
+        "recorded_seconds": 441,
+        "tokens": 3110581,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 demo as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-03T12:08:50Z",
+        "stage_seconds": 464,
+        "recorded_seconds": 464,
+        "tokens": 2904405,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 adversary seam A",
+          "S23 adversary seam B"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-03T12:16:34Z",
+        "stage_seconds": 81,
+        "recorded_seconds": 81,
+        "tokens": 1706821,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S23 T017 catch-up command"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T07:49:49Z",
+      "accepted": "2026-10-03T13:14:32Z",
+      "demo_accepted": "2026-10-03T12:08:31Z"
+    },
+    "worked_seconds": 4592,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 14891,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-03T12:08:31Z",
+      "ready": "ad977aa (story-split.md: S23-refusal-in-subdirectory)",
+      "accepted": "8a428c2 (slices/README.md: S23-refusal-in-subdirectory)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit ad977aa (story-split.md: S23-refusal-in-subdirectory); accepted: commit 8a428c2 (slices/README.md: S23-refusal-in-subdirectory)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (12 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S24-ci-fetches-slice-base/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S24-ci-fetches-slice-base",
+    "stages": [
+      "gaps",
+      "skipper",
+      "bosun",
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "gaps",
+      "skipper",
+      "implement",
+      "demo",
+      "implement",
+      "demo",
+      "adversary",
+      "skipper",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 4645,
+    "stage_seconds": 4645,
+    "unbracketed": false,
+    "tokens": {
+      "input": 902,
+      "output": 174665,
+      "cache_read": 41482835,
+      "cache_creation": 2020222
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-fable-5-1",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 2,
+    "converge_passes": 2,
+    "tasks_appended": 4,
+    "gaps": {
+      "before": 13,
+      "after": 7
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 8,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "rule/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 24,
+      "files": 226,
+      "added": 34959,
+      "removed": 339,
+      "from": "cf6799f00b481933174e3e27b75470c0fb7b4cc0",
+      "to": "bf44aa5b6c49ef763ee164ecb378153fdf59dc6c"
+    },
+    "elapsed": 64487,
+    "rework": {
+      "seconds": 25,
+      "tokens": 903717
+    },
+    "cost": {
+      "tokens": 43987263,
+      "shared": 0,
+      "sessions": {
+        "1e7931f6-ee5d-4f36-9ac3-890b461f9e8f": 1945618,
+        "d3c4b758-1b76-4516-9585-0556f8d2b620": 42041645
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-03T17:13:23Z",
+        "stage_seconds": 97,
+        "recorded_seconds": 97,
+        "tokens": 638973,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-03T17:15:05Z",
+        "stage_seconds": 255,
+        "recorded_seconds": 255,
+        "tokens": 915972,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper decides D54"
+        ]
+      },
+      {
+        "stage": "bosun",
+        "started": "2026-10-03T17:19:53Z",
+        "stage_seconds": 92,
+        "recorded_seconds": 92,
+        "tokens": 390673,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Bosun on S24 blocker"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T08:00:32Z",
+        "stage_seconds": 186,
+        "recorded_seconds": 186,
+        "tokens": 1243169,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-04T08:03:43Z",
+        "stage_seconds": 140,
+        "recorded_seconds": 140,
+        "tokens": 1183799,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-04T08:06:14Z",
+        "stage_seconds": 160,
+        "recorded_seconds": 160,
+        "tokens": 666251,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Cut S24 tasks"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T08:09:34Z",
+        "stage_seconds": 492,
+        "recorded_seconds": 492,
+        "tokens": 7006418,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 T002 generated verify job",
+          "S24 T003 adopted gate fetch",
+          "S24 T004 no base fails in CI",
+          "S24 T005 forge checkout holds",
+          "S24 T006 history gates hold"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T08:17:57Z",
+        "stage_seconds": 525,
+        "recorded_seconds": 525,
+        "tokens": 5464098,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 converge pass 1"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T08:26:50Z",
+        "stage_seconds": 239,
+        "recorded_seconds": 239,
+        "tokens": 2663426,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 T013 T015 true words",
+          "S24 T016 migrate hold test"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-04T08:30:55Z",
+        "stage_seconds": 134,
+        "recorded_seconds": 134,
+        "tokens": 1105289,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 converge pass 2"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T08:33:13Z",
+        "stage_seconds": 268,
+        "recorded_seconds": 268,
+        "tokens": 2003007,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 gaps over the diff"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T08:37:49Z",
+        "stage_seconds": 218,
+        "recorded_seconds": 218,
+        "tokens": 1506697,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D86 gaps findings"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T08:42:14Z",
+        "stage_seconds": 126,
+        "recorded_seconds": 126,
+        "tokens": 4144025,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 T017 words and adopt report",
+          "S24 T018 trunk reading holds"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T08:44:31Z",
+        "stage_seconds": 320,
+        "recorded_seconds": 320,
+        "tokens": 1608479,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 demo as the actor"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T08:50:01Z",
+        "stage_seconds": 25,
+        "recorded_seconds": 25,
+        "tokens": 903717,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-04T08:50:31Z",
+        "stage_seconds": 184,
+        "recorded_seconds": 184,
+        "tokens": 1381594,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 demo 2 catch-up"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-04T08:53:59Z",
+        "stage_seconds": 427,
+        "recorded_seconds": 427,
+        "tokens": 4110208,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 adversary seam A",
+          "S24 adversary seam B"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-04T09:01:13Z",
+        "stage_seconds": 261,
+        "recorded_seconds": 261,
+        "tokens": 2076455,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Skipper D87 adversary triage"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T09:06:30Z",
+        "stage_seconds": 496,
+        "recorded_seconds": 496,
+        "tokens": 4975013,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S24 T020-T022 T024 gate fixes",
+          "S24 T023 branch holds"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-03T17:12:22Z",
+      "accepted": "2026-10-04T11:07:09Z",
+      "demo_accepted": "2026-10-04T08:53:35Z"
+    },
+    "worked_seconds": 4645,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 59842,
+      "unattributed": 0
+    },
+    "unattributed_person": 0,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-04T08:53:35Z",
+      "ready": "cf6799f (slices/README.md: S01-gate-walks)",
+      "accepted": "add697f (slices/README.md: S24-ci-fetches-slice-base)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit cf6799f (slices/README.md: S01-gate-walks); accepted: commit add697f (slices/README.md: S24-ci-fetches-slice-base)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (19 ended)",
+      "rework": "the 1 entry after a refused demo's bracket",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S33-factory-gate-stamp/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S33-factory-gate-stamp",
+    "stages": [
+      "gaps",
+      "plan",
+      "tasks",
+      "implement",
+      "converge",
+      "skipper",
+      "implement",
+      "converge",
+      "implement",
+      "gaps",
+      "skipper",
+      "implement",
+      "implement",
+      "demo",
+      "implement",
+      "adversary",
+      "implement",
+      "hand"
+    ],
+    "open": [],
+    "seconds": 16211,
+    "stage_seconds": 16211,
+    "unbracketed": false,
+    "tokens": {
+      "input": 1002,
+      "output": 120857,
+      "cache_read": 37546890,
+      "cache_creation": 2145708
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 5,
+    "converge_passes": 2,
+    "tasks_appended": 6,
+    "gaps": {
+      "before": 10,
+      "after": 7
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 5,
+    "seams": 1,
+    "verify_failures": 0,
+    "delegation": [
+      "rule/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": {
+      "tasks": 31,
+      "files": 135,
+      "added": 42301,
+      "removed": 105,
+      "from": "c34ccc6016b1d727c4eec4e0e39819bbb26f1b27",
+      "to": "9e5b090877ac4c441c06ab41f4161e3131e42497"
+    },
+    "elapsed": 58178,
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 39920126,
+      "shared": 170547,
+      "sessions": {
+        "2774e7d8-4d46-455a-b71d-a6a8ca2cc703": 11130660,
+        "3f644856-c9f8-4a4d-9d9d-f4921635a839": 5351063,
+        "67e812bd-e703-4942-b0d1-77fde79a23ab": 1041266,
+        "88bd686f-1f85-43ad-b1b7-86e86d2ef03d": 9874441,
+        "d1599cc9-399e-4ddc-a0a6-a5037ac676d4": 12522696
+      }
+    },
+    "entries": [
+      {
+        "stage": "gaps",
+        "started": "2026-10-04T18:59:57Z",
+        "stage_seconds": 53,
+        "recorded_seconds": 53,
+        "tokens": 482537,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "plan",
+        "started": "2026-10-04T19:00:59Z",
+        "stage_seconds": 33,
+        "recorded_seconds": 33,
+        "tokens": 257512,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": []
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-04T19:01:35Z",
+        "stage_seconds": 83,
+        "recorded_seconds": 83,
+        "tokens": 379592,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S33 tasks from plan"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-04T19:02:58Z",
+        "stage_seconds": 503,
+        "recorded_seconds": 503,
+        "tokens": 4231422,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S33 implement T001-T005"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T00:25:56Z",
+        "stage_seconds": 360,
+        "recorded_seconds": 360,
+        "tokens": 3064732,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 1 for S33"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-05T00:31:59Z",
+        "stage_seconds": 71,
+        "recorded_seconds": 71,
+        "tokens": 557576,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Decide D112 Compose keying"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T00:33:39Z",
+        "stage_seconds": 705,
+        "recorded_seconds": 705,
+        "tokens": 3366411,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S33 T015–T017 as patch"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-05T00:45:24Z",
+        "stage_seconds": 313,
+        "recorded_seconds": 313,
+        "tokens": 2218382,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Converge pass 2 for S33 fix"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T00:50:40Z",
+        "stage_seconds": 540,
+        "recorded_seconds": 540,
+        "tokens": 1923559,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S33 T018–T020 into patch"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-05T02:56:31Z",
+        "stage_seconds": 411,
+        "recorded_seconds": 411,
+        "tokens": 3396041,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S33 after-converge gaps pass"
+        ]
+      },
+      {
+        "stage": "skipper",
+        "started": "2026-10-05T03:03:22Z",
+        "stage_seconds": 62,
+        "recorded_seconds": 62,
+        "tokens": 1121150,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Decide D119: caches vs stamp key",
+          "Decide D120: worktrees disable stamp"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T03:04:24Z",
+        "stage_seconds": 668,
+        "recorded_seconds": 668,
+        "tokens": 2933822,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Implement S33 T022–T025 (tests only)"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T03:16:44Z",
+        "stage_seconds": 673,
+        "recorded_seconds": 673,
+        "tokens": 2423428,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "Build S33 T026 as s33-3.patch"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-05T05:36:11Z",
+        "stage_seconds": 8201,
+        "recorded_seconds": 8201,
+        "tokens": 3259840,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S33 demo as the actor"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T07:53:24Z",
+        "stage_seconds": 120,
+        "recorded_seconds": 120,
+        "tokens": 843304,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S33 T028 pruner bytecode fix"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-05T07:55:44Z",
+        "stage_seconds": 530,
+        "recorded_seconds": 530,
+        "tokens": 6305048,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S33 adversary: root verify recipe"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-05T08:04:41Z",
+        "stage_seconds": 256,
+        "recorded_seconds": 256,
+        "tokens": 2114504,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S33 T030 gitea env in suite",
+          "S33 T031 Makefile patch 4"
+        ]
+      },
+      {
+        "stage": "hand",
+        "started": "2026-10-05T08:57:44Z",
+        "stage_seconds": 2629,
+        "recorded_seconds": 2629,
+        "tokens": 1041266,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S33 demo 2 (T029)"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-04T18:14:24Z",
+      "accepted": "2026-10-05T10:24:02Z",
+      "demo_accepted": "2026-10-05T07:52:52Z"
+    },
+    "worked_seconds": 16211,
+    "waiting": {
+      "integration": 0,
+      "dependency": 0,
+      "review": 0,
+      "worker": 21645,
+      "unattributed": 20322
+    },
+    "unattributed_person": 20322,
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-05T07:52:52Z",
+      "ready": "1e8f880 (story-split.md: S33-factory-gate-stamp)",
+      "accepted": "e82bb06 (slices/README.md: S33-factory-gate-stamp)",
+      "worked_seconds": "the record's brackets",
+      "integration": "none present: no merge commit, no gate bracket",
+      "dependency": "none present: no accepted demo, or no sibling landed after it; a person's patch: none present: no record names a park's cause",
+      "review": "none present: no record names a park's cause",
+      "unattributed_person": "specs/cruise-log.jsonl: each row ending stopped: human or parked:, to the next row's start; a person held the run, cause unrecorded",
+      "worker": "specs/cruise-log.jsonl: from the log's first row to accepted, less every cause above; counts time outside any iteration",
+      "elapsed": "ready: commit 1e8f880 (story-split.md: S33-factory-gate-stamp); accepted: commit e82bb06 (slices/README.md: S33-factory-gate-stamp)",
+      "unattributed": "elapsed less worked time and every cause above: what no bracket, commit or log claims",
+      "stage_seconds": "the record's brackets (18 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  },
+  {
+    "path": "specs/001-faster-slipwai/slices/S39-benchmark-elapsed/benchmark.json",
+    "feature": "001-faster-slipwai",
+    "slice": "S39-benchmark-elapsed",
+    "stages": [
+      "plan",
+      "tasks",
+      "pin",
+      "implement",
+      "converge",
+      "implement",
+      "converge",
+      "implement",
+      "gaps",
+      "implement",
+      "demo",
+      "adversary",
+      "implement"
+    ],
+    "open": [],
+    "seconds": 10919,
+    "stage_seconds": 10919,
+    "unbracketed": false,
+    "tokens": {
+      "input": 2952,
+      "output": 227139,
+      "cache_read": 182897593,
+      "cache_creation": 6282847
+    },
+    "usage_unknown": 0,
+    "models": [
+      "claude-opus-5-5",
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 2,
+    "converge_passes": 2,
+    "tasks_appended": 16,
+    "gaps": {
+      "before": 0,
+      "after": 0
+    },
+    "mutation_score": null,
+    "outcome": "accepted",
+    "findings": 28,
+    "seams": 2,
+    "verify_failures": 0,
+    "delegation": [
+      "story/rule",
+      "task/rule"
+    ],
+    "split": 0,
+    "reentered": [],
+    "shape": null,
+    "elapsed": {
+      "unknown": "open since 2026-10-05T16:15:00Z"
+    },
+    "rework": {
+      "seconds": 0,
+      "tokens": 0
+    },
+    "cost": {
+      "tokens": 121743569,
+      "shared": 51567656,
+      "sessions": {
+        "2382cd35-c30b-4143-ab92-9beb7e6d8378": 21112174,
+        "c1c52109-a42e-4a63-be90-04df7ba894ab": 100631395
+      }
+    },
+    "entries": [
+      {
+        "stage": "plan",
+        "started": "2026-10-06T07:18:56Z",
+        "stage_seconds": 679,
+        "recorded_seconds": 679,
+        "tokens": 3984156,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 slice ladder to converge"
+        ]
+      },
+      {
+        "stage": "tasks",
+        "started": "2026-10-06T07:30:29Z",
+        "stage_seconds": 115,
+        "recorded_seconds": 115,
+        "tokens": 1141160,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 slice ladder to converge",
+          "S39 tasks from plan"
+        ]
+      },
+      {
+        "stage": "pin",
+        "started": "2026-10-06T07:32:28Z",
+        "stage_seconds": 73,
+        "recorded_seconds": 73,
+        "tokens": 1036238,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 slice ladder to converge"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-06T07:33:56Z",
+        "stage_seconds": 2135,
+        "recorded_seconds": 2135,
+        "tokens": 28312341,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S38 gaps fixes T037–T041",
+          "S39 US1 elapsed waiting stage time",
+          "S39 US2 rework and attribution",
+          "S39 US3 US4 health and json",
+          "S39 US5 ladder text migrate",
+          "S39 slice ladder to converge"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-06T08:09:35Z",
+        "stage_seconds": 711,
+        "recorded_seconds": 711,
+        "tokens": 6045291,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 converge pass 1",
+          "S39 slice ladder to converge"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-06T08:21:29Z",
+        "stage_seconds": 1148,
+        "recorded_seconds": 1148,
+        "tokens": 11991167,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 converge fixes T014-T018",
+          "S39 converge fixes T019-T024",
+          "S39 slice ladder to converge"
+        ]
+      },
+      {
+        "stage": "converge",
+        "started": "2026-10-06T08:40:41Z",
+        "stage_seconds": 627,
+        "recorded_seconds": 627,
+        "tokens": 7851005,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 converge pass 2",
+          "S39 slice ladder to converge"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-06T08:51:08Z",
+        "stage_seconds": 736,
+        "recorded_seconds": 736,
+        "tokens": 10339223,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 fixes T025-T029",
+          "S39 slice ladder to converge"
+        ]
+      },
+      {
+        "stage": "gaps",
+        "started": "2026-10-06T09:04:07Z",
+        "stage_seconds": 1142,
+        "recorded_seconds": 1142,
+        "tokens": 7969672,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 after-converge gaps"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-06T09:23:23Z",
+        "stage_seconds": 1127,
+        "recorded_seconds": 1127,
+        "tokens": 15884150,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 gaps fixes T030–T039"
+        ]
+      },
+      {
+        "stage": "demo",
+        "started": "2026-10-06T09:42:12Z",
+        "stage_seconds": 426,
+        "recorded_seconds": 426,
+        "tokens": 3304968,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 demo as the actor"
+        ]
+      },
+      {
+        "stage": "adversary",
+        "started": "2026-10-06T10:47:29Z",
+        "stage_seconds": 675,
+        "recorded_seconds": 675,
+        "tokens": 7578871,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 adversary seam A: time",
+          "S39 adversary seam B: cost"
+        ]
+      },
+      {
+        "stage": "implement",
+        "started": "2026-10-06T10:58:58Z",
+        "stage_seconds": 1325,
+        "recorded_seconds": 1325,
+        "tokens": 13533303,
+        "read_from": "the transcripts, by delegate and bracket",
+        "delegates": [
+          "S39 fixes T040–T050 (measures/benchmark)",
+          "S39 fixes T051–T054 (attribution)"
+        ]
+      }
+    ],
+    "moments": {
+      "ready": "2026-10-05T16:15:00Z",
+      "accepted": {
+        "unknown": "open since 2026-10-05T16:15:00Z"
+      },
+      "demo_accepted": "2026-10-06T09:49:18Z",
+      "merged": "2026-10-06T10:47:05Z"
+    },
+    "worked_seconds": {
+      "unknown": "open since 2026-10-05T16:15:00Z"
+    },
+    "waiting": {
+      "integration": {
+        "unknown": "open since 2026-10-05T16:15:00Z"
+      },
+      "dependency": {
+        "unknown": "open since 2026-10-05T16:15:00Z"
+      },
+      "review": {
+        "unknown": "open since 2026-10-05T16:15:00Z"
+      },
+      "worker": {
+        "unknown": "open since 2026-10-05T16:15:00Z"
+      },
+      "unattributed": {
+        "unknown": "open since 2026-10-05T16:15:00Z"
+      }
+    },
+    "unattributed_person": {
+      "unknown": "open since 2026-10-05T16:15:00Z"
+    },
+    "read_from": {
+      "demo_accepted": "the demo bracket ended 2026-10-06T09:49:18Z",
+      "ready": "2000bdc (story-split.md: S39-benchmark-elapsed)",
+      "merged": "02cf1ed (merge commit: slice/S39-benchmark-elapsed)",
+      "elapsed": "none present: open since 2026-10-05T16:15:00Z",
+      "worked_seconds": "none present: open since 2026-10-05T16:15:00Z",
+      "dependency": "none present: open since 2026-10-05T16:15:00Z",
+      "worker": "none present: open since 2026-10-05T16:15:00Z",
+      "review": "none present: open since 2026-10-05T16:15:00Z",
+      "integration": "none present: open since 2026-10-05T16:15:00Z",
+      "unattributed": "none present: open since 2026-10-05T16:15:00Z",
+      "unattributed_person": "none present: open since 2026-10-05T16:15:00Z",
+      "stage_seconds": "the record's brackets (13 ended)",
+      "rework": "none present: no demo was refused",
+      "cost": "the transcripts, by delegate and bracket"
+    }
+  }
+]

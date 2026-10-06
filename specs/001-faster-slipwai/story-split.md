@@ -482,6 +482,8 @@ that cannot delegate takes the earliest ready slice in split order and names the
 
 - **What S39's adversary pass declined (A10 under `## S39` in `adversary-log.md`), for the completion audit.** `benchmark.py` follows an inherited `GIT_DIR` and reads another repository's history with no warning — older than S39, shared by every toolkit script that calls git, and reached only from an environment nobody runs the benchmark in.
 
+- **What S39's demo 2 left for the page (`demo-log.md`, iteration 25), for the next slice that touches `make benchmark`'s page.** The slice table's key prints under the waiting table, two tables from what it describes; the waiting key skips elapsed, worked and rework, and *review = a person's demo* reads hard; the stage tables' `in`/`out` cells still say a bare `unknown` beside `unbracketed`; the cost note says *the stage was not bracketed* without naming the stage; and a slice with one unbracketed stage (S06) shows a cost where S00, S01 and S20 read `unknown`, which the page does not explain.
+
 ## Next Step
 
 Enter the ladder for `S00-run-path` at its Slice gaps stage; it is the only ready slice. `S01-gate-walks`,

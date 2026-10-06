@@ -1,0 +1,93 @@
+001-faster-slipwai — 17 slice(s) recorded, stage time 61h06m+ in all; elapsed open since 2026-10-03T02:34:09Z; time with any slice in flight 51h20m
+  escalation share: unknown — no decision entry carries a Reversibility: line
+  misclassification rate: unknown — no decision entry carries a Reversibility: line
+  median wait: unknown — no decision entry carries a Reversibility: line
+  slice                          delegate/cycle                       stage time  in                  out     models                                                sessions  converge  +tasks  gaps   mutation                   adversary  demo      verify✗  re-entered  tasks  files  ±lines     
+  (feature)                      —                                    1h35m       34.5M               125.2k  claude-fable-5-1, claude-opus-5-5, claude-sonnet-5-5  2         0         0       0/0    —                          26         —         0        0           —      —      —          
+  S00-run-path                   rule/rule                            1h44m+      20.1M (+1 unread)   157k    claude-fable-5-1, claude-sonnet-5-5                   1         2         1       7/5    —                          0          accepted  1        0           9      44     +3151/-203 
+  S01-gate-walks                 story/rule, task/example, task/rule  2h29m+      47.1M (+2 unread)   165.7k  claude-fable-5-1, claude-sonnet-5-5                   1         2         9       22/13  —                          7          accepted  1        0           33     45     +6623/-59  
+  S02-runner-bookkeeping         story/rule, task/example             3h00m       81M (+1 unread)     205.3k  claude-fable-5-1, claude-sonnet-5-5                   1         2         5       69/0   —                          18         accepted  0        0           28     79     +11047/-78 
+  S03-verify-stamp               story/rule, task/rule                5h05m       112.5M              267.2k  claude-fable-5-1, claude-sonnet-5-5                   1         3         15      31/8   —                          18         accepted  27       0           42     78     +12971/-48 
+  S04-parallel-gate              task/rule                            5h06m       106.5M              251.2k  claude-fable-5-1, claude-sonnet-5-5                   1         3         8       63/19  —                          9          accepted  0        0           24     68     +11069/-78 
+  S05-xdist                      story/rule, task/rule                1h43m       45.2M               112.9k  claude-opus-5-5, claude-sonnet-5-5                    2         2         6       13/3   —                          8          accepted  0        0           25     82     +5806/-64  
+  S06-scoped-gate                rule/rule, task/rule                 12h37m+     410.1M (+1 unread)  523.9k  claude-opus-5-5, claude-sonnet-5-5                    4         5         19      19/0   —                          20         accepted  0        0           55     179    +51773/-134
+  S08-scoped-mutation            story/rule                           8h43m       338.7M              399.2k  claude-opus-5-5, claude-sonnet-5-5                    2         2         8       19/7   —                          16         accepted  0        0           44     249    +27959/-455
+  S11-render-once                story/rule, task/rule                2h49m       41.4M (+1 unread)   132.2k  claude-fable-5-1, claude-sonnet-5-5                   1         2         6       17/7   n/a (no command recorded)  13         accepted  0        0           24     48     +6103/-164 
+  S14-result-contract            story/rule                           2h11m       216.9M              266.8k  claude-opus-5-5, claude-sonnet-5-5                    2         2         12      0/7    —                          14         accepted  0        0           41     309    +34705/-485
+  S20-slice-scope-root           rule/rule, task/example, task/rule   1h09m+      22.8M (+3 unread)   113.4k  claude-fable-5-1, claude-sonnet-5-5                   1         2         8       8/6    —                          9          accepted  1        0           34     44     +3998/-36  
+  S21-refresh-keeps-owned-files  rule/rule, task/rule                 1h01m       19.4M               81.3k   claude-fable-5-1, claude-sonnet-5-5                   1         1         3       8/8    —                          6          accepted  0        0           11     42     +3092/-24  
+  S22-slice-scope-base           rule/rule, task/rule                 1h41m       32M                 200.2k  claude-fable-5-1, claude-sonnet-5-5                   1         2         7       21/11  —                          11         accepted  0        0           29     29     +5634/-42  
+  S23-refusal-in-subdirectory    rule/rule, task/rule                 1h16m       22.5M               117.8k  claude-fable-5-1, claude-sonnet-5-5                   1         1         6       10/6   —                          8          accepted  0        0           17     30     +4009/-11  
+  S24-ci-fetches-slice-base      rule/rule, task/rule                 1h17m       43.5M               174.7k  claude-fable-5-1, claude-sonnet-5-5                   2         2         4       13/7   —                          8          accepted  0        0           24     226    +34959/-339
+  S33-factory-gate-stamp         rule/rule, task/rule                 4h30m       39.7M               120.9k  claude-opus-5-5, claude-sonnet-5-5                    5         2         6       10/7   —                          5          accepted  0        0           31     135    +42301/-105
+  S39-benchmark-elapsed          story/rule, task/rule                3h01m       189.2M              227.1k  claude-opus-5-5, claude-sonnet-5-5                    2         2         16      0/0    —                          28         accepted  0        0           —      —      —          
+  slice                          elapsed              worked               dependency           worker               review               integration          unattributed                                           rework          cost               
+  S00-run-path                   2h23m                1h44m                0s                   39m16s               0s                   0s                   0s                                                     6m31s · 3M      unknown (see notes)
+  S01-gate-walks                 12h14m               2h29m                0s                   9h45m                0s                   0s                   0s                                                     0s · 0          unknown (see notes)
+  S02-runner-bookkeeping         16h46m               3h00m                0s                   13h45m               0s                   0s                   0s                                                     0s · 0          81.8M              
+  S03-verify-stamp               14h47m               5h05m                0s                   9h42m                0s                   0s                   0s                                                     0s · 0          113.4M             
+  S04-parallel-gate              10h13m               5h06m                0s                   5h07m                0s                   0s                   0s                                                     0s · 0          99M                
+  S05-xdist                      6h10m                1h43m                0s                   2h21m                0s                   0s                   2h04m (2h04m a person held the run, cause unrecorded)  1m36s · 669.2k  45.1M              
+  S06-scoped-gate                33h00m               12h37m               0s                   14h44m               0s                   0s                   5h38m (5h38m a person held the run, cause unrecorded)  0s · 0          253.5M             
+  S08-scoped-mutation            37h03m               8h43m                2h05m                17h32m               0s                   3h03m                5h38m (5h38m a person held the run, cause unrecorded)  1h30m · 12.3M   175.4M             
+  S11-render-once                20h41m               2h49m                0s                   17h51m               0s                   0s                   0s                                                     0s · 0          41.9M              
+  S14-result-contract            61h01m               2h11m                4h29m                45h45m               0s                   2h55m                5h38m (5h38m a person held the run, cause unrecorded)  0s · 0          70.9M              
+  S20-slice-scope-root           1h51m                1h09m                0s                   42m06s               0s                   0s                   0s                                                     0s · 0          unknown (see notes)
+  S21-refresh-keeps-owned-files  3h33m                1h01m                0s                   2h32m                0s                   0s                   0s                                                     0s · 0          19.7M              
+  S22-slice-scope-base           4h44m                1h41m                0s                   3h02m                0s                   0s                   0s                                                     0s · 0          32.5M              
+  S23-refusal-in-subdirectory    5h24m                1h16m                0s                   4h08m                0s                   0s                   0s                                                     0s · 0          22.8M              
+  S24-ci-fetches-slice-base      17h54m               1h17m                0s                   16h37m               0s                   0s                   0s                                                     25s · 903.7k    44M                
+  S33-factory-gate-stamp         16h09m               4h30m                0s                   6h00m                0s                   0s                   5h38m (5h38m a person held the run, cause unrecorded)  0s · 0          39.9M              
+  S39-benchmark-elapsed          unknown (see notes)  unknown (see notes)  unknown (see notes)  unknown (see notes)  unknown (see notes)  unknown (see notes)  unknown (see notes)                                    0s · 0          121.7M             
+  dependency = from an accepted demo until a sibling earlier in the split landed; worker = from the cruise log's first row to accepted, less every other cause; review = a person's demo (an outcome, no driver); integration = from the merge commit or a gate bracket to accepted; unattributed = what no record claims, a held run included; cost = the tokens attributed to the slice by spawn chain; `--json` names where each was read from
+  S03-verify-stamp: converge ran 3 times, appending 15 task(s) — a slice too large, or fixes too narrow to close the class of what they found
+  S04-parallel-gate: converge ran 3 times, appending 8 task(s) — a slice too large, or fixes too narrow to close the class of what they found
+  S06-scoped-gate: converge ran 5 times, appending 19 task(s) — a slice too large, or fixes too narrow to close the class of what they found
+  S01-gate-walks: implemented as story/rule and task/example and task/rule — its stage time compares with neither
+  S02-runner-bookkeeping: implemented as story/rule and task/example — its stage time compares with neither
+  S03-verify-stamp: implemented as story/rule and task/rule — its stage time compares with neither
+  S05-xdist: implemented as story/rule and task/rule — its stage time compares with neither
+  S06-scoped-gate: implemented as rule/rule and task/rule — its stage time compares with neither
+  S11-render-once: implemented as story/rule and task/rule — its stage time compares with neither
+  S20-slice-scope-root: implemented as rule/rule and task/example and task/rule — its stage time compares with neither
+  S21-refresh-keeps-owned-files: implemented as rule/rule and task/rule — its stage time compares with neither
+  S22-slice-scope-base: implemented as rule/rule and task/rule — its stage time compares with neither
+  S23-refusal-in-subdirectory: implemented as rule/rule and task/rule — its stage time compares with neither
+  S24-ci-fetches-slice-base: implemented as rule/rule and task/rule — its stage time compares with neither
+  S33-factory-gate-stamp: implemented as rule/rule and task/rule — its stage time compares with neither
+  S39-benchmark-elapsed: implemented as story/rule and task/rule — its stage time compares with neither
+  S39-benchmark-elapsed: open since 2026-10-05T16:15:00Z — elapsed, worked time and every waiting cause are unknown until its done mark exists
+  S00-run-path: cost unknown — not recorded: the stage was not bracketed around its work
+  S01-gate-walks: cost unknown — not recorded: the stage was not bracketed around its work
+  S20-slice-scope-root: cost unknown — not recorded: the stage was not bracketed around its work
+  (feature) ground: stage time ends at its last transcript line 2026-10-03T01:44:47Z, not at the recorded end 2026-10-03T01:45:26Z
+  (feature) ground: cut off — a new `bosun` entry started while it was open; its stage time is real, its signals were never reported
+  S00-run-path mutation: not bracketed around its work — start and end were called in the same moment, so this stage's time and tokens are missing, not zero.
+  S01-gate-walks gaps: not bracketed around its work — start and end were called in the same moment, so this stage's time and tokens are missing, not zero.
+  S01-gate-walks plan: not bracketed around its work — start and end were called in the same moment, so this stage's time and tokens are missing, not zero.
+  S04-parallel-gate implement: stage time ends at its last transcript line 2026-10-04T12:18:03Z, which agrees with the recorded end
+  S04-parallel-gate implement: cut off — a new `skipper` entry started while it was open; its stage time is real, its signals were never reported
+  S06-scoped-gate tasks: stage time ends at its last transcript line 2026-10-05T08:13:03Z, not at the recorded end 2026-10-05T08:13:04Z
+  S06-scoped-gate gaps: not bracketed around its work — start and end were called in the same moment, so this stage's time and tokens are missing, not zero.
+  S06-scoped-gate tasks: cut off — iteration 20 ended with the entry open; its stage time is real, its signals were never reported
+  S14-result-contract gaps: stage time ends at its recorded end 2026-10-05T16:51:58Z — its transcript was read and no request of it was found in the entry
+  S14-result-contract gaps: cut off — a new `skipper` entry started while it was open; its stage time is real, its signals were never reported
+  S20-slice-scope-root gaps: stage time ends at its recorded end 2026-10-03T05:02:01Z — its transcript's last line 2026-10-03T05:02:00Z precedes the entry's start 2026-10-03T05:02:01Z, so the transcript contradicts the bracket
+  S20-slice-scope-root gaps: cut off — a new `skipper` entry started while it was open; its stage time is real, its signals were never reported
+  S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's time and tokens are missing, not zero.
+  S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's time and tokens are missing, not zero.
+  S33-factory-gate-stamp skipper: stage time ends at its last transcript line 2026-10-05T03:04:24Z, which agrees with the recorded end
+  S33-factory-gate-stamp skipper: cut off — a new `implement` entry started while it was open; its stage time is real, its signals were never reported
+  a drive-gaps delegate ran in no bracket of a stage that runs it — its requests are in the shared bucket
+  a drive-hand delegate ran in no bracket of a stage that runs it — its requests are in the shared bucket
+  a drive-implement delegate ran in no bracket of a stage that runs it — its requests are in the shared bucket
+  a drive-skipper delegate ran in no bracket of a stage that runs it — its requests are in the shared bucket
+  drive-slice "S38 slice ladder to converge" names no recorded slice — its requests are in the shared bucket
+  (feature): hand-backs with a result contract: 0 of 6
+  S06-scoped-gate: hand-backs with a result contract: 0 of 7
+  S08-scoped-mutation: hand-backs with a result contract: 0 of 15
+  S14-result-contract: hand-backs with a result contract: 0 of 8
+  S39-benchmark-elapsed: hand-backs with a result contract: 0 of 11
+  hand-backs: 190 stage(s) in 17 slice(s) ended before the result contract reached this project (15b43bb, 2026-10-05) — not counted
+
+delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens as recorded (a stage's own, which may hold a sibling's delegates where brackets overlapped), while cost is attributed by spawn chain, each request charged to one slice; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes stage time a floor because an unbracketed stage is missing; tokens are not prices

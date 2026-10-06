@@ -81,21 +81,27 @@ are as recorded and unchanged).
 ```sh
 python3 -B - <<'EOF'
 import json, glob, os
-seen, total = set(), 0
+usage = {}  # a streamed request's lines share one id; its usage is the largest each field reaches (T051)
 base = os.path.expanduser('~/.claude/projects/-home-noahc-math-slipwai-graph/d883234c-5eb4-40de-976d-81f2874b2842')
+fields = ('input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens')
 for path in [base + '.jsonl', *sorted(glob.glob(base + '/subagents/*.jsonl'))]:
     for line in open(path, encoding='utf-8', errors='replace'):
         if '"usage"' not in line: continue
         try: item = json.loads(line)
         except ValueError: continue
+        if not isinstance(item, dict): continue
         m = item.get('message') or {}; u = m.get('usage'); k = item.get('requestId') or m.get('id') or item.get('uuid')
-        if item.get('type') != 'assistant' or not isinstance(u, dict) or not k or k in seen: continue
-        seen.add(k); total += sum(u.get(f) or 0 for f in ('input_tokens','output_tokens','cache_read_input_tokens','cache_creation_input_tokens') if isinstance(u.get(f), int))
-print(total)
+        if item.get('type') != 'assistant' or not isinstance(u, dict) or not k: continue
+        kept = usage.setdefault(k, dict.fromkeys(fields, 0))
+        for f in fields:
+            if isinstance(u.get(f), int): kept[f] = max(kept[f], u[f])
+print(sum(sum(kept.values()) for kept in usage.values()))
 EOF
 ```
 
-Expect that number to equal the `d883234c…` session's `total` in the feature record's `session_totals` (which the
+This reads one session, so it does not see a request copied in from another; the script gives such a copy to the
+session where it first appears, and on this machine none is copied (demo 2). Expect that number to equal the
+`d883234c…` session's `total` in the feature record's `session_totals` (which the
 script reads from the transcript, not as `attributed + shared`), and the records to account for all of it: the sum,
 over every record, of its `cost.sessions` for that session, plus that session's `shared`, is the same number.
 

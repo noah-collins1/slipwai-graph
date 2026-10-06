@@ -23,3 +23,37 @@
   3. Some cells say a bare `unknown`: `cost` for S00, S01 and S20, and every waiting cell for S14 and S39. *Reading these numbers* promises "unknown with its reason". The reasons are in Notes (open since; not bracketed) and in `--json`, but not in the cell.
   4. review reads `0s` on every row. Per D167 that is correct, because no record names a park's cause. Inside S08's unattributed, the parenthesis `(5h38m a person held the run, cause unrecorded)` is the plain answer the actor wanted.
   5. Timings: the aggregate took 2.9 s, `--json` about the same, and `overview` under 3 s. Reported only, not judged.
+
+## 2026-10-06T11:24:39Z — accepted · iteration 25 · drive-hand (claude-opus-5-5)
+- **Started with:** `git clone -q /home/noahc/math/slipwai-graph /tmp/s39/demo` (tip `75bd48c`), then `cp /home/noahc/math/slipwai-graph/specs/cruise-log.jsonl /tmp/s39/demo/specs/cruise-log.jsonl` (24 rows). In the clone I ran `python3 -B assets/toolkit/scripts/agents/benchmark.py` (3.0 s real, exit 0), then `… --json` (exit 0), then `… overview 001-faster-slipwai` (3.1 s, exit 0; the page was written in the clone only). I followed the quickstart's steps 1–5 as written, except that the clone came from `adopt-method` · **Seeded:** none. The run read the committed records, the main checkout's cruise log, and this machine's transcripts without writing to them.
+- **Driven through:** CLI. There is no screen, so agent-browser, a browser tool and HTTP do not apply. `.specify/cruise.json` names `browser`, but this slice's only interfaces are `make benchmark`, `--json` and the page.
+- **Examples:**
+  - T040, the waiting table's key: passed. One line under the table defines dependency, worker, review, integration, unattributed and cost, and says that `--json` names where each was read from.
+  - T041, which token figure is the cost: passed. The key line says `in` is "as recorded (a stage's own, which may hold a sibling's delegates where brackets overlapped), while cost is attributed by spawn chain, each request charged to one slice". S08 reads `in 338.7M` and `cost 175.4M`, and the page now says why they differ.
+  - T042, every `unknown` cell carries its reason: passed for the slice tables. Each slice-level unknown reads `unknown (see notes)`:
+    - S00, S01 and S20 cost: the note reads "cost unknown — not recorded: the stage was not bracketed around its work".
+    - S39's seven waiting cells: the note reads "open since 2026-10-05T16:15:00Z — … unknown until its done mark exists".
+    - Both reasons are true of this tree. S00's mutation, S01's gaps and plan, and S20's two gaps entries are zero-second brackets. S39 has no register row yet.
+  - AC-S39-1/2/11, S08 against my hand derivation: passed, to the second and unchanged from demo 1.
+    - Moments: elapsed 133 433 s, from ready `b31c864` 2026-10-04T18:13:05Z to accepted `c88fe2f` 2026-10-06T07:16:58Z.
+    - Parts: worked 31 439, integration 10 995, dependency 7 538, review 0, worker 63 139, unattributed 20 322. The unattributed figure is all time a person held the run: parks of 2 513, 4 972, 5 127, 5 099 and 2 611 s.
+    - The merge is `3138416`. It is the only merge naming S08, and it matches as `slice/S08-scoped-mutation`. S14's merge `37cdf3f` matches the same way.
+    - All 16 records that show a number sum to their elapsed (0 mismatches).
+  - AC-S39-5, S08's 17:17:50Z implement: passed. Its delegates are only `S08 US2 implement T002-T009` and `drive-slice S08-scoped-mutation`. It holds 50 725 980 tokens, below its recorded `in` of 126.4M, which is unchanged.
+  - Tokens conserved: passed for all 25 sessions. For each session, Σ records' `cost.sessions` + shared equals its total: 1 662 521 579 in all, 385 852 904 of it shared.
+    - My own count from the transcripts agrees for 24 of 25. I read each request at the largest value each usage field reaches; a copied request goes to the session holding its earliest line.
+    - The 25th, `2382cd35`, is iteration 25's live session and was still growing. Run again back to back, the script and I both read 28 401 543.
+  - What changed since demo 1: every total rose. `d883234c` went from 358 475 109 to 360 184 669, all sessions together rose 9 568 054 (+0.58 %), and S08's cost went from 174.5M to 175.4M.
+    - The whole rise comes from the streamed-output rule: a request's usage now comes from its last line, where demo 1 used the first.
+    - The copy rule moved nothing here, because no request key appears in two of these 25 transcripts.
+    - The new figures are right.
+  - Unknowns: none is new. Every unknown in demo 1's `--json` has the same reason now. S14's nine are gone, because S14 now has its register row (accepted 10:44:48Z, elapsed 61h01m). The three decision-health lines still read `unknown — no decision entry carries a Reversibility: line`.
+- **Evidence:** `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/demo/demo2-aggregate.txt`, `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/demo/demo2-benchmark.json-output.json`, `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/demo/demo2-benchmark-page.md`, `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/demo/demo2-s08-hand-derivation.md`, `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/demo/demo2-tokens-conserved.md`, `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/demo/demo2-tokens-per-session.txt`
+- **Feedback:** These are notes. None of them withholds acceptance.
+  1. The quickstart is stale. Step 4's snippet counts the first line of each request, so it now prints 358 475 109 against the script's 360 184 669 for `d883234c`. It should take the largest value each field reaches, or the last line, and give a copied request to the session holding its earliest line. This is a fix to `quickstart.md`, not to the code.
+  2. design: the first table has lost its key. Its key line (`delegate/cycle = … in = … cost …`) now prints below the waiting table, so the slice table's key sits two tables away from it. See `demo2-benchmark-page.md`, lines 10–52.
+  3. design: the waiting table's key leaves out three of its own columns: `elapsed`, `worked` and `rework`. The line `review = a person's demo (an outcome, no driver)` is still hard to parse.
+  4. design: the stage tables still show bare `unknown` in their `in`/`out` cells (`demo2-benchmark-page.md`, lines 89, 99, 100, 222, 319 and 321). Each sits beside `unbracketed` in the stage-time cell, and *Reading these numbers* explains that word, so the reason is readable. It is still not the `unknown (see notes)` form T042 gave the slice tables.
+  5. A slice's cost-unknown note says "the stage was not bracketed" without naming the stage. A reader has to find the separate `S00-run-path mutation: not bracketed …` lines further down.
+  6. Question for the next slice: S06 also has an unbracketed stage (gaps, 2026-10-05 01:09), yet its cost reads 253.5M while S00, S01 and S20 read unknown. Also, S00's `cost.sessions` carries 20 392 033 while its `cost.tokens` is unknown. The page does not say why one unbracketed stage voids S00's cost but not S06's. This was already so in demo 1.
+  7. Timings: aggregate 3.0 s, overview 3.1 s. Reported, not judged.

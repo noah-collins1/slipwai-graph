@@ -520,6 +520,11 @@ Delegate 1 owns `measures.py` and `benchmark.py` (T040–T050); delegate 2 owns 
 - [x] *(Done at `4ca8ee2`, iteration 25.)* **T053 — MEDIUM (B4, B5) · Tokens are conserved across features and fallbacks:** a session is split among every feature that brackets in it or is charged by the chain; a slice id found in two features goes to shared with a note; an entry read from its recorded usage claims its window's live requests, so none is counted again. **Files:** `attribution.py`, `tests/test_benchmark_attribution_gaps.py`.
 - [x] *(Done at `4e59e52`, iteration 25.)* **T054 — LOW (B7, B8) · One bad file is one `unknown`, not a failed report** (unreadable or dangling transcript or metadata, a line that is not an object, a `parentAgentId` that is not a plain name), and `drive-slice <id> (…)` names `<id>`. **Files:** `attribution.py`, `tests/test_benchmark_attribution_chain.py`.
 
+## Phase 13: Demo 2 (2026-10-06, iteration 25) — `accepted` by drive-hand over the fixes
+
+- [x] *(Done by the host, iteration 25.)* **T055 — LOW · The quickstart's step 4 counts what the script counts:** a streamed request's usage is the largest each field reaches, and the page says a copy from another session is the first session's; it prints 360 184 669, the script's figure. **Files:** `quickstart.md`.
+- The actor's other notes (the first table's key two tables away, the waiting key skipping elapsed, worked and rework, bare `unknown` in the stage tables' `in`/`out`, the cost note not naming the stage, why S06's unbracketed stage still has a cost) are design notes for the next slice that touches the page: the Parking Lot.
+
 ## Convergence
 
 ### Pass 1 — 2026-10-06, cruise iteration 24, `drive-converge` (worktree at `957c808`)
