@@ -6,7 +6,7 @@ is not an error, it is the answer: nothing says what it reaches, so every module
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -17,10 +17,15 @@ UNCLAIMED = "no rule claims it"
 
 
 class Claim(NamedTuple):
-    """The row that claims a path: its words, and whether it makes the run whole."""
+    """The row that claims a path: its words, whether it makes the run whole, and what it reaches — every
+    configuration, or the `(axis, option)` pairs named; `backend_asset` says the path is a backend's own asset, which
+    is what lets the matrix narrow to the backends it names."""
 
     rule: str
     full: bool
+    every: bool = False
+    configs: tuple[tuple[str, str], ...] = ()
+    backend_asset: bool = False
 
 
 class Row(NamedTuple):
@@ -51,10 +56,11 @@ FULL_ROWS = (
     Row("the attribute rules", paths=(".gitattributes",), full=True),
     Row("the selector", paths=("scripts/select-tests.py",), trees=("scripts/select_tests/",), full=True),
 )
-# Everything the rows after those name: claimed, so the run may select, and what each reaches is for the chooser.
-SELECTING = ("assets/languages/", "assets/backing-services/", "assets/frontends/", "assets/profiles/",
-             "assets/targets/", "assets/toolkit/", "assets/adoption/", "docs/", "specs/", "delivery/", ".github/",
-             ".specify/", ".claude/", "changelog.d/", "coordination-lean/", "scripts/", "tests/")
+# `assets/backing-services/` holds files and directories no backend owns: every configuration reads them.
+OTHER_BACKING_SERVICES = ("keycloak", "sql", "docker-compose.yml", "env.example")
+# The rows after those: a change claimed here reaches the modules whose `reads` name it, and nothing else.
+SELECTING = ("docs/", "specs/", "delivery/", ".github/", ".specify/", ".claude/", "changelog.d/", "coordination-lean/",
+             "scripts/", "tests/")
 SELECTING_FILES = ("README.md", "CHANGELOG.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md", "SECURITY.md", "LICENSE",
                    "NOTICE")
 
@@ -81,25 +87,35 @@ def names(catalog: Mapping[str, Any], axis: str) -> frozenset[str]:
     return frozenset(value) if isinstance(value, dict) else frozenset()
 
 
-def asset_claimed(path: str, catalog: Mapping[str, Any]) -> bool:
-    """Whether a row below the first claims a path under `assets/`: a directory the catalog names, or a named one."""
+def backends_named(catalog: Mapping[str, Any], name: str) -> tuple[str, ...]:
+    """The backends a directory name stands for: the backend of that name, and the backends of the family of it."""
+    found = catalog.get("backends")
+    if not isinstance(found, dict):
+        return ()
+    return tuple(backend for backend, record in found.items()
+                 if backend == name or (isinstance(record, dict) and record.get("family") == name))
+
+
+def asset_claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
+    """The row below the first that claims a path under `assets/`, with what it reaches (data-model *The path rules*).
+    A directory the catalog does not name is not claimed: nothing says what it reaches."""
     parts = path.split("/")
     if len(parts) < 3:
-        return False
+        return None
     tree, name = parts[1], parts[2]
-    backends = names(catalog, "backends")
-    families = {record.get("family") for record in (catalog.get("backends") or {}).values() if isinstance(record, dict)}
-    if tree in ("languages", "backing-services") and len(parts) > 3 and (name in backends or name in families):
-        return True
-    keyed: dict[str, Callable[[], bool]] = {
-        "frontends": lambda: name in names(catalog, "frontends"),
-        "profiles": lambda: name in names(catalog, "profiles"),
-        "targets": lambda: name in names(catalog, "targets"),
-        "toolkit": lambda: True,
-        "adoption": lambda: True,
-        "backing-services": lambda: name in ("keycloak", "sql", "docker-compose.yml", "env.example"),
-    }
-    return keyed.get(tree, lambda: False)()
+    if tree in ("languages", "backing-services") and len(parts) > 3 and (backends := backends_named(catalog, name)):
+        return Claim(f"the {name} assets", False, configs=tuple(("backend", b) for b in backends), backend_asset=True)
+    if tree == "backing-services" and name in OTHER_BACKING_SERVICES:
+        return Claim("the shared backing services", False, every=True)
+    if tree == "toolkit":
+        return Claim("the toolkit", False, every=True)
+    if tree == "adoption":
+        return Claim("the adoption assets", False, configs=(("command", "adopt"),))
+    for directory, axis, axis_name in (("frontends", "frontend", "frontends"), ("profiles", "profile", "profiles"),
+                                       ("targets", "target", "targets")):
+        if tree == directory and len(parts) > 3 and name in names(catalog, axis_name):
+            return Claim(f"the {name} assets", False, configs=((axis, name),))
+    return None
 
 
 def claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
@@ -110,7 +126,7 @@ def claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
     if own_tests(path):
         return Claim("the selector's own tests", True)
     if path.startswith("assets/"):
-        return Claim("assets", False) if asset_claimed(path, catalog) else None
+        return asset_claim(path, catalog)
     if path in SELECTING_FILES or path.startswith(SELECTING):
         return Claim("the files its readers name", False)
     return None

@@ -33,3 +33,7 @@ def full_line(reason: str) -> str:
 
 def off_line(reason: str) -> str:
     return f"selection off: {reason}"
+
+
+def skipped_line(module: str, reason: str) -> str:
+    return f"skipped {module}: {reason}"

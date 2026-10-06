@@ -1,0 +1,223 @@
+"""What a test module says it reads: `TEST_SELECTION`, read with `ast` and never by importing the module.
+
+A declaration is a claim about what the module generates (`configurations`) and which files it reads by path
+(`reads`). A module that declares nothing, or whose declaration cannot be read, or that imports a helper in `tests/`
+that is itself undeclared, is *undeclared*: it always runs. `held` names every declaration that is invalid or void,
+so a test can hold that none is silently dead.
+"""
+from __future__ import annotations
+
+import ast
+import sys
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any, NamedTuple
+
+from .rules import load_catalog, names
+
+sys.dont_write_bytecode = True
+
+NAME = "TEST_SELECTION"
+AXES = ("backend", "frontend", "profile", "target", "command")
+CATALOG_AXES = {"backend": "backends", "frontend": "frontends", "profile": "profiles", "target": "targets"}
+COMMANDS = ("generate", "adopt")
+KEYS = ("configurations", "reads")
+DYNAMIC_IMPORTS = ("import_module", "__import__")
+
+
+class Declaration(NamedTuple):
+    """A module's declaration, or the join of a module's and its helpers': whether it generates a project at all, in
+    every configuration or in the options named per axis (an axis it does not name admits any option), and the files
+    and directories it reads by path."""
+
+    generates: bool = False
+    every: bool = False
+    axes: Mapping[str, frozenset[str]] = {}
+    reads: frozenset[str] = frozenset()
+
+    def admits(self, axis: str, option: str) -> bool:
+        return self.generates and (self.every or axis not in self.axes or option in self.axes[axis])
+
+
+class Source(NamedTuple):
+    """One `tests/*.py` file as the scan sees it: its declaration (None where it has none or it cannot be read), the
+    reason a declaration it has is unusable, and the names it imports (None where they cannot all be told)."""
+
+    declaration: Declaration | None
+    problem: str
+    imports: frozenset[str] | None
+
+
+def valid_options(catalog: Mapping[str, Any], axis: str) -> frozenset[str]:
+    return frozenset(COMMANDS) if axis == "command" else names(catalog, CATALOG_AXES[axis])
+
+
+def reads_ok(root: Path, entry: object) -> str:
+    """Why a `reads` entry is unusable, or empty: a relative path inside the tree that exists."""
+    if not isinstance(entry, str) or not entry or entry.startswith("/") or ".." in entry.split("/"):
+        return f"reads names {entry!r}, which is not a path inside the repository"
+    return "" if (root / entry).exists() else f"reads names `{entry}`, which does not exist"
+
+
+def build(root: Path, value: object, catalog: Mapping[str, Any]) -> tuple[Declaration | None, str]:
+    """The declaration a literal says, or why it is not one: its shape, an axis or option the catalog lacks, a path."""
+    if not isinstance(value, dict) or not set(value) <= set(KEYS):
+        return None, f"{NAME} must be a dict with the keys {', '.join(KEYS)} only"
+    reads = value.get("reads", [])
+    if not isinstance(reads, list):
+        return None, "reads must be a list of paths"
+    for entry in reads:
+        if why := reads_ok(root, entry):
+            return None, why
+    if "configurations" not in value:
+        return Declaration(reads=frozenset(reads)), ""
+    configured = value["configurations"]
+    if configured == "every":
+        return Declaration(True, True, {}, frozenset(reads)), ""
+    if not isinstance(configured, dict):
+        return None, 'configurations must be "every" or a dict of axis to options'
+    axes: dict[str, frozenset[str]] = {}
+    for axis, options in configured.items():
+        if axis not in AXES:
+            return None, f"configurations names the axis {axis!r}, which is not one of {', '.join(AXES)}"
+        if not isinstance(options, list) or not options or not all(isinstance(option, str) for option in options):
+            return None, f"configurations names no options, or not a list of names, for {axis}"
+        unknown = sorted(set(options) - valid_options(catalog, axis))
+        if unknown:
+            return None, f"configurations names the {axis} {', '.join(map(repr, unknown))}, which the catalog lacks"
+        axes[axis] = frozenset(options)
+    return Declaration(True, False, axes, frozenset(reads)), ""
+
+
+def imported_names(tree: ast.AST) -> frozenset[str] | None:
+    """Every module name the file imports, by statement or by `import_module("name")`; None where a name is computed."""
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            found.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                found.add(node.module.split(".")[0])
+            if node.level or node.module in (None, "tests"):
+                found.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.Call):
+            function = node.func
+            called = function.attr if isinstance(function, ast.Attribute) else getattr(function, "id", "")
+            if called in DYNAMIC_IMPORTS:
+                first = node.args[0] if node.args else None
+                if not (isinstance(first, ast.Constant) and isinstance(first.value, str)):
+                    return None
+                found.add(first.value.split(".")[0])
+    return frozenset(found)
+
+
+def assignments(tree: ast.Module) -> list[ast.expr | None]:
+    """The values assigned to `TEST_SELECTION` at the top of the module (None for a bare annotation)."""
+    found: list[ast.expr | None] = []
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+        else:
+            continue
+        if any(isinstance(target, ast.Name) and target.id == NAME for target in targets):
+            found.append(node.value)
+    return found
+
+
+def read_source(root: Path, path: Path, catalog: Mapping[str, Any]) -> Source:
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except (OSError, SyntaxError, ValueError, RecursionError) as error:
+        return Source(None, f"cannot be parsed: {error}", None)
+    imports = imported_names(tree)
+    found = assignments(tree)
+    if not found:
+        return Source(None, "", imports)
+    if len(found) > 1 or found[0] is None:
+        return Source(None, f"{NAME} is assigned more than once, or not given a value", imports)
+    try:
+        value = ast.literal_eval(found[0])
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        return Source(None, f"{NAME} is not a literal", imports)
+    declaration, problem = build(root, value, catalog)
+    return Source(declaration, problem, imports)
+
+
+def join(parts: list[Declaration]) -> Declaration:
+    """A module's own declaration and its helpers' as one: reads unioned, and for the configurations the options each
+    names per axis unioned — an axis any generating part leaves unnamed stays unnamed, which admits any option."""
+    generating = [part for part in parts if part.generates]
+    reads = frozenset().union(*(part.reads for part in parts))
+    if not generating:
+        return Declaration(reads=reads)
+    if any(part.every for part in generating):
+        return Declaration(True, True, {}, reads)
+    axes = {axis: frozenset().union(*(part.axes[axis] for part in generating))
+            for axis in AXES if all(axis in part.axes for part in generating)}
+    return Declaration(True, False, axes, reads)
+
+
+class Tree(NamedTuple):
+    """The test tree as declared: every `tests/*.py` file's source, the module names that are test modules, and what
+    each one's import closure holds."""
+
+    sources: Mapping[str, Source]
+    closures: Mapping[str, frozenset[str]]
+
+    def effective(self, name: str) -> tuple[Declaration | None, str]:
+        """The declaration a module runs under, or None and why it is undeclared: its own is missing or unusable, or a
+        helper in its import closure is."""
+        own = self.sources[name]
+        if own.declaration is None:
+            return None, own.problem or f"{NAME} is missing"
+        parts = [own.declaration]
+        for member in sorted(self.closures[name]):
+            helper = self.sources[member]
+            if helper.declaration is None:
+                return None, f"it imports `tests/{member}.py`, which declares nothing"
+            parts.append(helper.declaration)
+        if own.imports is None:
+            return None, "it loads a module by a name the scan cannot read"
+        for member in sorted(self.closures[name]):
+            if self.sources[member].imports is None:
+                return None, f"`tests/{member}.py` loads a module by a name the scan cannot read"
+        return join(parts), ""
+
+
+def closure_of(name: str, sources: Mapping[str, Source]) -> frozenset[str]:
+    """Every file in `tests/` the module imports, directly or through another, by name."""
+    seen: set[str] = set()
+    pending = [name]
+    while pending:
+        for imported in sorted(sources[pending.pop()].imports or ()):
+            if imported in sources and imported != name and imported not in seen:
+                seen.add(imported)
+                pending.append(imported)
+    return frozenset(seen)
+
+
+def scan(root: Path, catalog: Mapping[str, Any] | None = None) -> Tree:
+    """Read every `tests/*.py` file once."""
+    catalog = load_catalog(root) if catalog is None else catalog
+    sources = {path.stem: read_source(root, path, catalog) for path in sorted((root / "tests").glob("*.py"))}
+    return Tree(sources, {name: closure_of(name, sources) for name in sources})
+
+
+def is_module(name: str) -> bool:
+    """What `unittest discover -s tests` loads: the pattern is `test*.py`."""
+    return name.startswith("test")
+
+
+def held(root: Path) -> list[str]:
+    """Every declaration that cannot be used, as `tests/<file>.py: <why>`: invalid ones, and ones a helper voids."""
+    tree = scan(root)
+    problems: list[str] = []
+    for name in sorted(tree.sources):
+        source = tree.sources[name]
+        if source.problem and (source.declaration is None and "cannot be parsed" not in source.problem):
+            problems.append(f"tests/{name}.py: {source.problem}")
+        elif source.declaration is not None and tree.effective(name)[0] is None:
+            problems.append(f"tests/{name}.py: its declaration is void — {tree.effective(name)[1]}")
+    return problems

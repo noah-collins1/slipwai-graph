@@ -15,11 +15,12 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True  # before the package loads: nothing may be written beside the selector or under assets/
 
-from select_tests import base, full_rows, rules  # noqa: E402
+from select_tests import base, choose, declarations, full_rows, report, rules  # noqa: E402
 from select_tests.report import Full, full_line, printable  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 FULL_COMMAND = ("python3", "-m", "unittest", "discover", "-s", "tests", "-v")
+NAMED_COMMAND = ("python3", "-m", "unittest", "-v")
 
 
 def run_full() -> int:
@@ -28,8 +29,16 @@ def run_full() -> int:
     return subprocess.Popen(FULL_COMMAND, cwd=ROOT, env=env).wait()
 
 
-def measure() -> Full | None:
-    """The base, what changed since, and whether it can be told what that reaches; the line of the base is printed."""
+def run_modules(modules: list[str]) -> int:
+    """`PYTHONPATH=src:tests python3 -m unittest -v <modules>`, which CI already trusts."""
+    if not modules:
+        return 0  # `unittest` with no names would discover from here: nothing selected is nothing run
+    env = dict(os.environ, PYTHONPATH="src:tests")
+    return subprocess.Popen((*NAMED_COMMAND, *modules), cwd=ROOT, env=env).wait()
+
+
+def plan() -> tuple[base.ChangeSet, list[choose.Verdict]]:
+    """The base, what changed since, and which modules that reaches. Raises the line wherever the run is whole."""
     found = base.change_set(ROOT, base.establish(ROOT, os.environ))
     try:
         catalog = rules.load_catalog(ROOT)
@@ -40,23 +49,30 @@ def measure() -> Full | None:
     for path in found.paths:  # the first that broadens, in the order the change set is sorted
         why = rules.broadening(path, catalog)
         if why is not None:
-            return Full(full_line(f"{base.changed_words(ROOT, found, path)} — {why}"))
+            raise Full(full_line(f"{base.changed_words(ROOT, found, path)} — {why}"))
     for path in base.ignored_files(ROOT):
-        return Full(full_line(f"`{printable(path)}` is a file git ignores — what it changes cannot be established"))
-    print(found.line, flush=True)
-    return None
+        raise Full(full_line(f"`{printable(path)}` is a file git ignores — what it changes cannot be established"))
+    try:
+        tree = declarations.scan(ROOT, catalog)
+    except (OSError, ValueError, RecursionError) as error:
+        raise base.cannot_be_established(f"the test tree could not be read: {error}") from error
+    return found, choose.choose(tree, found.paths, catalog)
 
 
 def main() -> int:
-    refusal: Full | None = full_rows(os.environ, ROOT)
-    if refusal is None:
-        try:
-            refusal = measure()
-        except Full as full:
-            refusal = full
-    if refusal is not None:
-        print(refusal.line, flush=True)
-    return run_full()
+    try:
+        refusal = full_rows(os.environ, ROOT)
+        if refusal is not None:
+            raise refusal
+        found, verdicts = plan()
+    except Full as full:
+        print(full.line, flush=True)
+        return run_full()
+    print(found.line, flush=True)
+    for verdict in verdicts:
+        if not verdict.runs:
+            print(report.skipped_line(verdict.module, verdict.skip), flush=True)
+    return run_modules([verdict.module for verdict in verdicts if verdict.runs])
 
 
 if __name__ == "__main__":
