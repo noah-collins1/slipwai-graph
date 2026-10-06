@@ -205,6 +205,16 @@ class RetryTest(Scratch):
         self.assertIn("already", result.stderr)
         self.assertEqual(before, self.record.read_bytes())
 
+    def test_e8_the_same_block_again_with_crlf_line_ends_is_a_noop_too(self) -> None:
+        crlf = PRETTY.replace("\n", "\r\n")
+        for first, again in ((crlf, crlf), (PRETTY, crlf), (crlf, PRETTY)):
+            self.record.unlink(missing_ok=True)
+            self.assertEqual(0, self.append(first).returncode)
+            result = self.append(again)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("already", result.stderr)
+            self.assertEqual(1, self.record.read_text(encoding="utf-8").count("\n## "))
+
     def test_e8_a_different_block_is_still_appended_and_then_the_first_again_is_too(self) -> None:
         self.assertEqual(0, self.append(PRETTY).returncode)
         other = fence(valid() | {"scope": "a correction"})

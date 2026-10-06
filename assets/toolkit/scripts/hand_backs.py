@@ -311,6 +311,12 @@ def blocks_in(text: str) -> tuple[list[str], int | None]:
     return found, (start[3] + 1 if start is not None and start[2] == FENCE else None)
 
 
+def unix(text: str) -> str:
+    """`text` with every line end a newline and none at the end: the record is read with universal newlines and a
+    hand-back is not, so a retry of one with CRLF line ends compares as the same."""
+    return re.sub(r"\r\n?", "\n", text).rstrip("\n")
+
+
 def repeats(record: Path, htype: str, stage: str, started: str | None, body: str | None,
             reason: str | None = None) -> bool:
     """Whether the record's last entry for this type, stage and `started` already holds this block (`body`, byte for
@@ -325,7 +331,8 @@ def repeats(record: Path, htype: str, stage: str, started: str | None, body: str
         return False
     last = same[-1]
     if body is not None:
-        return len(last["blocks"]) == 1 and not last["missing"] and last["blocks"][0][1] == body
+        same_text = len(last["blocks"]) == 1 and unix(last["blocks"][0][1]) == unix(body)
+        return same_text and not last["missing"]
     return not last["blocks"] and last["missing"][:1] == [reason]
 
 
