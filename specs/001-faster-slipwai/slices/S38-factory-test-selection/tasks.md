@@ -355,7 +355,7 @@ Commit by path.
 
 ### T013 — [P] [US2] The backend readers say which backends they generate (R5 · AC-S38-8, -9)
 
-- [ ] **Declaration task.** Follows T012. Adds `TEST_SELECTION` to each module below **where a reading proves what it
+- [x] **Declaration task.** Follows T012. Adds `TEST_SELECTION` to each module below **where a reading proves what it
   generates and reads**; a module where it does not (including the four research R-4 says only name the variable) **stays
   undeclared** and is named with the reason. A module that narrows by `backends_under_test()` or `FACTORY_BACKENDS`
   declares its backend axis as the full set the catalog lists, so the narrowing of T009 has a subject. Creates
@@ -380,7 +380,7 @@ of the edited modules. Commit by path.
 
 ### T014 — [P] [US2] The real-toolchain mutation modules say which backend they run (R5 · AC-S38-8)
 
-- [ ] **Declaration task.** Follows T012. Declares the modules that run a real toolchain for one backend, **where a
+- [x] **Declaration task.** Follows T012. Declares the modules that run a real toolchain for one backend, **where a
   reading proves it**; any other stays undeclared. Creates `tests/test_select_tests_real_mutation.py`.
 
 **Manifest:** `tests/test_mutation_scope_real_go.py` (`backend: ["go"]`), `tests/test_mutation_scope_real_spring.py`
@@ -399,7 +399,7 @@ inverted accordingly: a java-spring path selects the second; a typescript path s
 
 ### T015 — [P] [US2] Modules that generate nothing and load a toolkit script by path say what they load (R5 · AC-S38-8, -16)
 
-- [ ] **Declaration task.** Follows T012. These are the tests no import scan can follow (research R-4: 29 modules call
+- [x] **Declaration task.** Follows T012. These are the tests no import scan can follow (research R-4: 29 modules call
   `spec_from_file_location`, ten more use `importlib.import_module`/`__import__`). For each module of the manifest, a
   reading decides: declare `reads` for **every** script, directory or fixture it loads or opens by path (and no
   `configurations` where it generates no project), or **leave it undeclared** and name why. A module that also
