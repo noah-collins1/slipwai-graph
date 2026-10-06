@@ -286,15 +286,39 @@ def shape(element: Any) -> Any:
             tuple(shape(child) for child in element))
 
 
+def pitest_plugins(root: Any) -> list[Any]:
+    """Every `pitest-maven` plugin element of a pom, wherever it sits: `plugins`, `pluginManagement`, a profile."""
+    return [plugin for plugin in root.iter() if local(plugin.tag) == "plugin" and any(
+        local(child.tag) == "artifactId" and (child.text or "").strip() == "pitest-maven" for child in plugin)]
+
+
+def pom_properties(root: Any) -> dict[str, list[str]]:
+    """The values of every `<properties>` entry of a pom, a name once per place it is set."""
+    found: dict[str, list[str]] = {}
+    for properties in (el for el in root.iter() if local(el.tag) == "properties"):
+        for child in properties:
+            found.setdefault(local(child.tag), []).append((child.text or "").strip())
+    return found
+
+
 def pitest_block(text: str | None) -> Any:
-    """The `pitest-maven` plugin of a pom as structure; None where there is no pom or no such plugin. Text that does not
-    parse raises, because a side that cannot be read cannot be called equal."""
+    """PIT's configuration in a pom as structure: every `pitest-maven` element and the properties they read through
+    `${…}`, transitively; None where there is no pom or no such plugin. Text that does not parse raises, because a side
+    that cannot be read cannot be called equal."""
     if text is None:
         return None
-    for plugin in (el for el in ElementTree.fromstring(text).iter() if local(el.tag) == "plugin"):
-        if any(local(child.tag) == "artifactId" and (child.text or "").strip() == "pitest-maven" for child in plugin):
-            return shape(plugin)
-    return None
+    root = ElementTree.fromstring(text)
+    plugins = pitest_plugins(root)
+    if not plugins:
+        return None
+    blocks = tuple(shape(plugin) for plugin in plugins)
+    values, wanted, seen = pom_properties(root), re.findall(r"\$\{([^}]+)\}", repr(blocks)), set()
+    while wanted:
+        name = wanted.pop()
+        if name not in seen:
+            seen.add(name)
+            wanted += re.findall(r"\$\{([^}]+)\}", " ".join(values.get(name, [])))
+    return blocks, tuple(sorted((name, tuple(values.get(name, []))) for name in seen))
 
 
 def read(path: str) -> str | None:
@@ -472,14 +496,16 @@ def pit_targets(pom: str) -> tuple[list[str], list[str]]:
         tree = ElementTree.parse(pom)
     except (OSError, ElementTree.ParseError) as error:
         raise Unreadable(f"the pom cannot be read ({str(error)[:80]})") from error
-    for plugin in (el for el in tree.iter() if local(el.tag) == "plugin"):
-        if any(local(child.tag) == "artifactId" and (child.text or "").strip() == "pitest-maven" for child in plugin):
-            settings = next((child for child in plugin if local(child.tag) == "configuration"), None)
-            lists = {local(child.tag): [(param.text or "").strip() for param in child]
-                     for child in (settings if settings is not None else [])}
-            if not lists.get("targetClasses"):
-                raise Unreadable("the pitest-maven plugin names no targetClasses")
-            return lists["targetClasses"], lists.get("excludedClasses", [])
+    plugins = pitest_plugins(tree.getroot())
+    if len(plugins) > 1:  # which one Maven reads depends on profiles and management, which this script does not resolve
+        raise Unreadable("the pom has more than one pitest-maven plugin")
+    for plugin in plugins:
+        settings = next((child for child in plugin if local(child.tag) == "configuration"), None)
+        lists = {local(child.tag): [(param.text or "").strip() for param in child]
+                 for child in (settings if settings is not None else [])}
+        if not lists.get("targetClasses"):
+            raise Unreadable("the pitest-maven plugin names no targetClasses")
+        return lists["targetClasses"], lists.get("excludedClasses", [])
     raise Unreadable("the pom has no pitest-maven plugin")
 
 
