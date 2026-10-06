@@ -2612,6 +2612,14 @@ what D117 rule 2, D125 and D153 count, and *full* means every test module, with 
 - **AC-S38-17** — *G12, G14.* S38 selects and does nothing else: no parallelism, and no change to how a test runs.
   `git diff --stat <base> -- assets src/slipwai catalog.json` is empty at the slice's end, and `VERSION` and
   `changelog.d/` are unchanged; anything else goes back as a bump question.
+- **AC-S38-18** — *D164, the after-converge gaps pass.* A declared module is held to what it reads by the selector's
+  own scan of the tree being selected: every `generate(` call in it or its `tests/` closure is bound to
+  `FactoryTestCase.generate`'s signature and resolved per axis, an argument the scan cannot resolve counting as every
+  option of its axis; `refuse(`, the launcher and `slipwai.cli` count as every option of every axis; an in-process reach
+  into the repository its `reads` does not name voids the declaration, which `held()` names and the module then runs;
+  a reads-only declared module is run under an audit hook that fails on any opened path its `reads` or a run-everything
+  row does not cover; and every asset path `src/slipwai/` reads reaches every module that imports `slipwai`. Nothing in
+  `tests/support.py` changes and no module runs twice.
 
 ### S39-benchmark-elapsed (method slice)
 
