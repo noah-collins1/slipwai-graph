@@ -484,6 +484,9 @@ def go_plan(path: str, files: list[str]) -> Plan:
         keep = tool.mutable(set(files), tool.excluded(Path(path) / tool.CONFIG))
     except SystemExit:
         return Plan(list(files), [])
+    except re.error as error:  # a pattern Go's regexp accepts and Python's `re` cannot compile: not read, so the sweep
+        return Plan([], [], f"{path}/{tool.CONFIG}: the pattern `{shown(str(error.pattern))}` cannot be read "
+                            f"({str(error.msg)[:80]})")
     return Plan(sorted(keep), [(name, "outside Gremlins' configured targets") for name in files if name not in keep])
 
 
@@ -497,6 +500,8 @@ def go(path: str, files: list[str]) -> Result:
         print(stop.code, file=sys.stderr)
         return Result(2, [], [])
     plan = go_plan(path, files)
+    if plan.unreadable is not None:
+        return Result(0, [], [], None, plan.unreadable)
     if not plan.keep:
         return Result(0, [], plan.left)
     command = [sys.executable, os.path.join(HERE, "go-mutation.py"), path]

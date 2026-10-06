@@ -93,6 +93,29 @@ class GoScopeTest(ScopeCase):
         self.assertIn("mutation: not mutated apps/service/cmd/migrate/main.go — outside Gremlins' configured targets",
                       lines)
 
+    def test_t043_an_exclusion_python_cannot_compile_sweeps_that_service_with_words_never_a_traceback(self) -> None:
+        self.write("apps/service/.gremlins.yaml", "unleash:\n  exclude-files:\n    - '\\pL+_gen\\.go'\n")
+        git(self.repo, "checkout", "-q", "main")
+        self.commit("the project excludes generated files")  # not a change of the configuration on the slice
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        self.write(HEALTH, "package health\n// edited\n")
+        status, lines, tools = self.run_default()
+        self.assertEqual(status, 0, "\n".join(lines))
+        words = "apps/service/.gremlins.yaml: the pattern `\\pL+_gen\\.go` cannot be read ("
+        self.assertTrue(lines[0].startswith(f"mutation: the sweep runs — {words}"), lines)
+        (named,) = self.service_lines(lines, "apps/service")
+        self.assertTrue(named.startswith(f"mutation: sweep apps/service — {words}"), named)
+        self.assertEqual(lines[-1], "mutation: 0 scoped, 1 swept, 1 skipped, 0 refused; passed")
+
+    def test_t043_hold_a_pattern_both_read_still_scopes(self) -> None:
+        self.write("apps/service/.gremlins.yaml", "unleash:\n  exclude-files:\n    - 'x_gen\\.go'\n")
+        git(self.repo, "checkout", "-q", "main")
+        self.commit("the project excludes generated files")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        self.write(HEALTH, "package health\n// edited\n")
+        _, lines, _ = self.run_default()
+        self.assertIn("mutation: scope apps/service — health/health.go", lines)
+
     def test_e4_the_tools_failure_is_the_services_failure(self) -> None:
         self.fit_recipe(TWO)
         (self.repo / HEALTH).write_text("package health\n// edited\n", encoding="utf-8")
