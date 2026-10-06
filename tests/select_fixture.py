@@ -97,12 +97,22 @@ class SelectCase(unittest.TestCase):
                                 capture_output=True).returncode == 0
         git(self.repo, "checkout", "-q", *(() if exists else ("-b",)), name)
 
-    def make(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
-        """`make <args>` as a person types it, with nothing of the outer run's state in the child."""
+    def environment(self, **env: str) -> dict[str, str]:
+        """What a person's shell holds, with nothing of the outer run's state in it, and `env` on top."""
         names = CI_MARKERS + MAKE_STATE + GIT_STATE + NARROWING
         full = {k: v for k, v in os.environ.items() if k not in names and not k.startswith("GIT_")}
         full.update(STANDIN_LOG=str(self.log), PYTHONDONTWRITEBYTECODE="1", **env)
-        return subprocess.run(["make", *args], cwd=self.repo, env=full, text=True, capture_output=True, timeout=180)
+        return full
+
+    def make(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
+        """`make <args>` as a person types it, with nothing of the outer run's state in the child."""
+        return subprocess.run(["make", *args], cwd=self.repo, env=self.environment(**env), text=True,
+                              capture_output=True, timeout=180)
+
+    def selector(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
+        """`python3 -B scripts/select-tests.py <args>` in the repository, as the patched `make test` runs it."""
+        return subprocess.run(["python3", "-B", "scripts/select-tests.py", *args], cwd=self.repo,
+                              env=self.environment(**env), text=True, capture_output=True, timeout=180)
 
     def ran(self) -> list[str]:
         """What has run since the last call, from the log: each stand-in module as `(name, PYTHONPATH)` strings."""
