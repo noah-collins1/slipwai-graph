@@ -102,6 +102,9 @@ the `--hand-backs` line, or the converge, demo-stop or adversary-stop line, name
 entry. A retry is the same block or reason for the same type, stage and start as the last such entry; for another
 start of the stage it is appended.
 
+`--hand-back` reads stdin as bytes and decodes it as UTF-8 whatever the locale is, so the block is recorded as written;
+bytes that are not UTF-8 are refused in one line (exit 1), nothing written.
+
 A `<reason>` is one line of printable text: a line break of any kind or a control character is refused with usage
 (exit 2) and nothing is written, so the method's `refused: <the delegate's words>` keeps the first line of them. The
 `<type>` and `<stage>` are held to the same.

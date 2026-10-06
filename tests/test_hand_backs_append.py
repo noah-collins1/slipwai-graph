@@ -6,6 +6,7 @@ reason. Each runs in a scratch project as a subprocess, and the gate is then run
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import tempfile
@@ -132,6 +133,33 @@ class AppendTest(Scratch):
         self.record.write_text("# Hand-backs — S1", encoding="utf-8")
         self.assertEqual(0, self.append(PRETTY).returncode)
         self.assertEqual(0, run(self.repo).returncode)
+
+
+class StdinEncodingTest(Scratch):
+    """A4: the hand-back is UTF-8 whatever the locale says; the verb reads bytes and decodes them itself."""
+
+    def feed(self, data: bytes, **env: str) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.run(["python3", "-B", "scripts/check-decisions.py", "--hand-back", SLICE, "drive-gaps",
+                               "gaps"], cwd=self.repo, input=data, capture_output=True,
+                              env={**os.environ, **env})
+
+    def test_a_block_with_an_em_dash_and_an_accent_is_recorded_byte_for_byte_under_any_locale(self) -> None:
+        text = "```result-contract\n" + json.dumps(valid() | {"scope": "café — fixed"}, ensure_ascii=False) + "\n```\n"
+        for env in ({"PYTHONIOENCODING": "cp1252"}, {"LC_ALL": "C", "PYTHONUTF8": "0", "PYTHONIOENCODING": "ascii"}):
+            self.record.unlink(missing_ok=True)
+            result = self.feed(text.encode("utf-8"), **env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("café — fixed".encode(), self.record.read_bytes())
+            self.assertEqual(0, run(self.repo).returncode)
+
+    def test_bytes_that_are_not_utf8_are_refused_in_one_line_and_nothing_is_written(self) -> None:
+        for data in (b"\xff\xfe" + PRETTY.encode(), PRETTY.encode().replace(b"two", b"t\xe9")):
+            result = self.feed(data)
+            self.assertEqual(1, result.returncode)
+            self.assertNotIn(b"Traceback", result.stderr)
+            self.assertEqual(1, len(result.stderr.splitlines()), result.stderr)
+            self.assertIn(b"UTF-8", result.stderr)
+        self.assertFalse(self.record.exists())
 
 
 class ArgumentsTest(Scratch):

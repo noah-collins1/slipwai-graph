@@ -617,7 +617,13 @@ def hand_back_verb(arguments: list[str]) -> int:
                                      started)
         faults: list[str] = []
     else:
-        faults, wrote = module.append(record, title, arguments[2], arguments[3], sys.stdin.read(),
+        try:  # bytes, decoded as UTF-8 whatever the locale says: a delegate's em dash is not the locale's to mangle
+            text = sys.stdin.buffer.read().decode("utf-8")
+        except UnicodeDecodeError as error:
+            print(f"check-decisions: the hand-back on stdin is not UTF-8 ({error.reason} at byte {error.start}); "
+                  "nothing appended", file=sys.stderr)
+            return 1
+        faults, wrote = module.append(record, title, arguments[2], arguments[3], text,
                                       module.decision_ids(ROOT / "specs" / folder.group(1)), now,
                                       started)
     for fault in faults:
