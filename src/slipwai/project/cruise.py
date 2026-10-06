@@ -267,7 +267,8 @@ does the stop hook; one that ends `continue` or `parked` leaves it for the next.
 ## What holds throughout
 
 - **Parallelism is inherited and widened.** Everything *Running ready slices concurrently* allows runs the
-  same way here. What no longer serialises the fan-out are the two stops that were a person's: a delegate's
+  same way here, each slice's delegate described `drive-slice <id>`, the slice's whole id, so the benchmark can
+  charge its requests to the slice. What no longer serialises the fan-out are the two stops that were a person's: a delegate's
   product question is answered while its siblings keep running, and a slice's demo runs in the hand while
   the next slice's delegate is still converging. Phase 4 stays one slice at a time on `main`. The worktrees
   beside the checkout are writable on Claude Code because the runner starts every iteration with `--add-dir`

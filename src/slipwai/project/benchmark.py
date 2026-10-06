@@ -23,6 +23,7 @@ SIGNALS: tuple[tuple[str, str], ...] = (
     ("adversary", "`findings=N` — findings the pass recorded in the log; a recorded skip is `0`"),
     ("adversary", "`seams=N` — delegates spawned; a recorded skip is `0`"),
     ("mutation", "`mutation_score=…` — copied from the tool's own line, in its own units"),
+    ("gate", "nothing beyond what every stage takes"),
     ("demo", "`outcome=accepted`, `outcome=behaviour` or `outcome=implementation` — what the feedback changed"),
     ("any", "`model=…` only when the record shows no transcript was read and the stage said which model ran it"),
     ("any", "`agent=…` the same way: only when the transcript attributed the delegate to no type and the stage "
@@ -55,7 +56,7 @@ python3 scripts/agents/benchmark.py end specs/<feature>/slices/<id> implement ve
 |---|---|
 {rows}
 
-Everything else is read, not asked: wall time; tokens by model from the harness's own transcript between the two
+Everything else is read, not asked: stage time; tokens by model from the harness's own transcript between the two
 moments — Claude Code's and Codex's today; anywhere else the record says `null` and why — whether the stage was
 delegated, and to which agent type where the transcript names one (Claude Code attributes every sub-agent line
 to the type that ran it, so an adversary pass on this slice is comparable with the same type on another); the tasks a converge pass appended; how many converge passes there were; a stage re-entered after
@@ -73,7 +74,12 @@ because a bracket missed cannot be taken afterwards. Close
 `adversary` after its findings are triaged and before any fix, passing `findings=N` and `seams=N`; each
 failing test and fix belongs to a new
 `implement` entry. Bracket `demo` around the actor's session, not the note afterwards, and `mutation` around the
-run. A same-moment start and end is reported as `unbracketed`, not `0s`, and makes the slice wall a floor.
+run. A same-moment start and end is reported as `unbracketed`, not `0s`, and makes the slice stage time a floor.
+The full gate run after a slice's merge is that slice's `gate` stage, bracketed by the host, not by a delegate:
+`python3 scripts/agents/benchmark.py start specs/<feature>/slices/<id> gate` before the run and `python3
+scripts/agents/benchmark.py end specs/<feature>/slices/<id> gate` after it.
+Elapsed is a different figure from stage time: it runs from the slice's ready commit to its accepted one and is read
+from git, while stage time adds up the brackets, and summed stage time is never elapsed.
 
 When the slice is archived, close its record:
 
@@ -83,7 +89,7 @@ python3 scripts/agents/benchmark.py close specs/<feature>/slices/<id>   # adds t
 
 Closing also redraws `specs/<feature>/benchmark.md`, the overview `/benchmark` writes on demand; `{layout.make}
 benchmark` prints the same aggregate at any time — one row per slice: cost, converge passes, gaps, mutation score,
-findings, demo outcome, rework, shape. Commit the record and the page with the slice. Nothing on either goes on the
+findings, demo outcome, re-entered, shape. Commit the record and the page with the slice. Nothing on either goes on the
 demo board: cost is the team's, and the board is the actor's.
 """
 
@@ -110,9 +116,10 @@ python3 scripts/agents/benchmark.py overview $ARGUMENTS
 ```
 
 With a feature named, that feature's page; with none, one page per feature that has a record. Each is
-`specs/<feature>/benchmark.md`: the slices side by side — wall, tokens in and out, the models that ran, converge
+`specs/<feature>/benchmark.md`: the slices side by side — stage time, tokens in and out, the models that ran, converge
 passes, tasks appended, gaps before and after converge, mutation score, adversary findings, demo outcome, verify
-failures, rework, sessions, tasks, files, lines — then every stage of every slice with the type and model that
+failures, re-entered, sessions, tasks, files, lines — then each slice's elapsed beside its worked time and the time it
+waited, by cause (dependency, worker, review, integration, unattributed), then every stage of every slice with the type and model that
 ran it and what it reported, the notes (entries
 still open, a stage re-entered after implementation, tokens the script could not read and why), and how to read
 the numbers. The page is regenerated whole; never edit it, and never edit a record to change what it says. No
