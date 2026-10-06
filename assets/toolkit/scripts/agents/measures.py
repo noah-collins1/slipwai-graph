@@ -174,10 +174,11 @@ class Reader:
             self.seen = self.git("rev-parse", "--git-dir") is not None
         return self.seen
 
-    def first(self, path: str, needle: str, holds: Callable[[str], bool]) -> tuple[int, str] | None:
-        """The oldest commit that changed how often `needle` appears in `path` and whose copy of the file satisfies
-        `holds` — the content check keeps `S1` from matching `S10`."""
-        listed = self.ask("log", "--reverse", "--format=%H %ct", f"-S{needle}", "--", path) or ""
+    def first(self, path: str, holds: Callable[[str], bool]) -> tuple[int, str] | None:
+        """The oldest commit that touched `path` whose copy of the file satisfies `holds`. Every commit that touched
+        it is examined, in order: a pickaxe on a word lists a commit only when the word's count changes, and a commit
+        that adds a row while removing a mention of the same id changes nothing it can see."""
+        listed = self.ask("log", "--reverse", "--format=%H %ct", "--", path) or ""
         for line in listed.splitlines():
             sha, _, when = line.partition(" ")
             content = self.git("show", f"{sha}:{path}")
@@ -190,10 +191,10 @@ class Reader:
     def added(self, ident: str) -> Found | None:
         key = ("added", ident)
         if key not in self.kept:
-            found = self.first(self.split, ident, lambda text: mentions(text, ident))
+            found = self.first(self.split, lambda text: mentions(text, ident))
             where = f"story-split.md: {ident}"
             if found is None:
-                found = self.first(self.model, f"id: {ident}", lambda text: ident in model_blocks(text))
+                found = self.first(self.model, lambda text: ident in model_blocks(text))
                 where = f"model.yaml: {ident}"
             self.kept[key] = (found[0], found[1], where) if found else None
         return self.kept[key]
@@ -202,8 +203,8 @@ class Reader:
         """The slice's done mark: a register row, or `status: implemented` in the model — the earlier of the two."""
         key = ("done", ident)
         if key not in self.kept:
-            rows = self.first(self.register, ident, lambda text: register_has(text, ident))
-            marked = self.first(self.model, "status: implemented",
+            rows = self.first(self.register, lambda text: register_has(text, ident))
+            marked = self.first(self.model,
                                 lambda text: bool(re.search(r"^\s*status:\s*implemented\s*$",
                                                             model_blocks(text).get(ident, ""), re.M)))
             options = [(found[0], found[1], where) for found, where in
