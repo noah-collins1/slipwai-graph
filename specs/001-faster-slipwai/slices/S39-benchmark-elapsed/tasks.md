@@ -61,7 +61,7 @@ Constraints that hold for every task's GREEN, stated once:
 R1–R3, R6 and R10 all write `assets/toolkit/scripts/agents/measures.py` and `benchmark.py`, so they run in order.
 T002 also writes the shared fixture and the first `measures.py` (no separate setup task).
 
-- [ ] T002 [US1] **R1 — ready and accepted are read from git** (AC-S39-1). `tests/elapsed_fixture.py` (the scratch git
+- [x] T002 [US1] **R1 — ready and accepted are read from git** (AC-S39-1). `tests/elapsed_fixture.py` (the scratch git
   project with `project.json`, `specs/f/story-split.md` and its `## Slice graph`, `specs/f/slices/README.md`,
   records, commits dated with `GIT_COMMITTER_DATE`; the fake `HOME` with transcripts and `meta.json`; `bench(...)` as
   a `python3 -B` subprocess) and a first `measures.py` (`moments(...)` and the interval helpers), loaded by
@@ -76,7 +76,7 @@ T002 also writes the shared fixture and the first `measures.py` (no separate set
   Files: `tests/elapsed_fixture.py`, `tests/test_benchmark_elapsed.py`,
   `assets/toolkit/scripts/agents/measures.py`, `assets/toolkit/scripts/agents/benchmark.py`.
 
-- [ ] T003 [US1] **R2 — waiting by cause adds up to elapsed** (AC-S39-2). `measures.py`: `parks(...)`,
+- [x] T003 [US1] **R2 — waiting by cause adds up to elapsed** (AC-S39-2). `measures.py`: `parks(...)`,
   `iterations(...)` from `specs/cruise-log.jsonl`, `worked(...)` (the brackets' union, `gate` and a driverless `demo`
   excepted) and `waiting(...)` with the first-claim order *worked, integration, dependency, review, worker,
   unattributed* of [data-model.md](data-model.md); `benchmark.py` prints a waiting table after the slice table and
@@ -89,7 +89,7 @@ T002 also writes the shared fixture and the first `measures.py` (no separate set
   Files: `tests/test_benchmark_waiting.py`, `tests/elapsed_fixture.py`,
   `assets/toolkit/scripts/agents/measures.py`, `assets/toolkit/scripts/agents/benchmark.py`.
 
-- [ ] T004 [US1] **R3 — worked once, stage time renamed** (AC-S39-3). `measures.py` `stage_seconds(...)`;
+- [x] T004 [US1] **R3 — worked once, stage time renamed** (AC-S39-3). `measures.py` `stage_seconds(...)`;
   `benchmark.py`: `COLUMNS`, `STAGE_COLUMNS`, `LEGEND`, the page's slice heading and the feature line read *stage
   time* (the feature line `stage time … in all`); the old `rework` list moves to `reentered` in `summarise()` and its
   column to `re-entered` (values unchanged); a `cut_off` entry's stage time ends at the last attributed transcript
@@ -105,7 +105,7 @@ T002 also writes the shared fixture and the first `measures.py` (no separate set
   `tests/test_benchmark_brackets.py`, `assets/toolkit/scripts/agents/measures.py`,
   `assets/toolkit/scripts/agents/benchmark.py`.
 
-- [ ] T005 [US1] **R6 — the feature's elapsed is not its stage time** (AC-S39-6). `measures.py`
+- [x] T005 [US1] **R6 — the feature's elapsed is not its stage time** (AC-S39-6). `measures.py`
   `feature_figures(...)`; the aggregate's feature line and the page's print `stage time`, `elapsed` and `time with any
   slice in flight` under those names; `--json`'s feature record gains `feature: {elapsed, stage_seconds,
   in_flight_seconds}`. RED→GREEN: e1 three overlapping slices: elapsed < summed stage time; the line carries all
@@ -113,7 +113,7 @@ T002 also writes the shared fixture and the first `measures.py` (no separate set
   Files: `tests/test_benchmark_feature.py`, `assets/toolkit/scripts/agents/measures.py`,
   `assets/toolkit/scripts/agents/benchmark.py`.
 
-- [ ] T006 [US1] **R10 — a `/drive` project with no cruise log** (AC-S39-10). Where `specs/cruise-log.jsonl` is
+- [x] T006 [US1] **R10 — a `/drive` project with no cruise log** (AC-S39-10). Where `specs/cruise-log.jsonl` is
   absent, worker and review (their cruise half) read nothing, the time they would hold stays *unattributed*, and the
   run exits 0 with no warning about the log. If e1 passes the moment it is written, fold only what it forces into
   `measures.py`'s missing-log path and keep e1 as the guard (no passing-on-write test is its own task).
@@ -127,7 +127,7 @@ T002 also writes the shared fixture and the first `measures.py` (no separate set
 
 R4 and R5 share `benchmark.py` and read each other's figures, so they run in order, after Phase 2.
 
-- [ ] T007 [US2] **R4 — rework is what a non-accepted demo cost** (AC-S39-4). `measures.py` `rework(...)`: every
+- [x] T007 [US2] **R4 — rework is what a non-accepted demo cost** (AC-S39-4). `measures.py` `rework(...)`: every
   entry after a `demo` whose outcome is `behaviour` or `implementation`, up to (not including) the next `demo`, or to
   the end of the record; its seconds are stage time, its tokens the entry's tokens (here the recorded `usage` totals;
   T008 points them at attributed tokens); both inside the slice's `cost`. `--json` gains `rework{seconds, tokens}` and
@@ -139,7 +139,7 @@ R4 and R5 share `benchmark.py` and read each other's figures, so they run in ord
   Files: `tests/test_benchmark_attribution.py`, `assets/toolkit/scripts/agents/measures.py`,
   `assets/toolkit/scripts/agents/benchmark.py`.
 
-- [ ] T008 [US2] **R5 — each request in one record** (AC-S39-5). New `attribution.py`: reads each session's
+- [x] T008 [US2] **R5 — each request in one record** (AC-S39-5). New `attribution.py`: reads each session's
   transcripts once (only lines carrying `"usage"`), resolves each sub-agent's chain from `meta.json`
   (`parentAgentId` upwards to a `drive-slice`; description `drive-slice <id>`, or its first word for older
   transcripts), finds each bracket's opener (`benchmark: <stage> started (<record>` at the bracket's cursor), assigns
@@ -162,7 +162,7 @@ R4 and R5 share `benchmark.py` and read each other's figures, so they run in ord
 
 ## Phase 4: US3 — decision health (FR-057)
 
-- [ ] T009 [US3] **R7 — decision health reads unknown until a tier exists** (AC-S39-7; D159). `measures.py`
+- [x] T009 [US3] **R7 — decision health reads unknown until a tier exists** (AC-S39-7; D159). `measures.py`
   `decision_health(...)` on Q1 option (a), one table of spellings: `- **Reversibility:** <tier>` with `<tier> → hard`
   (and `->`) an escalation, `Status:` words `ratified`/`reverted`, the median wait from the skipper bracket (any
   record of the feature) holding the entry's `When:`; `benchmark.py` prints three lines under the feature heading and
@@ -175,7 +175,7 @@ R4 and R5 share `benchmark.py` and read each other's figures, so they run in ord
 
 ## Phase 5: US4 — the reading surfaces
 
-- [ ] T010 [US4] **R9 — `--json` carries what S37 reads** (AC-S39-9), with R8's e3. `summarise()` assembles every
+- [x] T010 [US4] **R9 — `--json` carries what S37 reads** (AC-S39-9), with R8's e3. `summarise()` assembles every
   key of [data-model.md](data-model.md)'s *`--json`, per record*: `elapsed`, `stage_seconds`, `worked_seconds`,
   `waiting{…}`, `rework{…}`, `cost{…}`, `moments`, `read_from`, `entries`, `reentered`; the page's *Reading these
   numbers* (`READING`) gains one sentence on elapsed against stage time. Mostly already built by T002–T009: fold into
@@ -189,7 +189,7 @@ R4 and R5 share `benchmark.py` and read each other's figures, so they run in ord
 
 ## Phase 6: US5 — ladder text and what a project already made gets (sequential)
 
-- [ ] T011 [US5] **R11 — the ladder names the slice and brackets the gate** (AC-S39-2, -5). Factory text only:
+- [x] T011 [US5] **R11 — the ladder names the slice and brackets the gate** (AC-S39-2, -5). Factory text only:
   `src/slipwai/project/parallel_slices.py` describes every `drive-slice` delegate as `drive-slice <id>` and brackets
   the full gate run after a merge as the slice's `gate` stage; `src/slipwai/project/cruise.py` names the description in
   the fan-out sentence, in place; `src/slipwai/project/benchmark.py` *What each stage costs* gains `gate` and its
@@ -202,7 +202,7 @@ R4 and R5 share `benchmark.py` and read each other's figures, so they run in ord
   `src/slipwai/project/cruise.py`, `src/slipwai/project/benchmark.py`,
   `assets/toolkit/scripts/agents/benchmark.py`.
 
-- [ ] T012 [US5] **R12 — what a project already made gets** (AC-S39-12). Last, because it needs every file. A
+- [x] T012 [US5] **R12 — what a project already made gets** (AC-S39-12). Last, because it needs every file. A
   project generated by the factory at `525399b` (taken from git) with records written before S39, migrated by this
   one: `scripts/agents/measures.py` and `attribution.py` arrive, `make benchmark` succeeds, `check-benchmark` warns of
   nothing new. `changelog.d/benchmark-elapsed.md`: first line `MINOR`, one standalone **Catch-up.** paragraph naming
@@ -215,7 +215,7 @@ R4 and R5 share `benchmark.py` and read each other's figures, so they run in ord
 
 ## Phase 7: Polish and final check
 
-- [ ] T013 **Hold the gate** (no new behaviour, no new test). Run and report, changing nothing unless a failure names a
+- [x] T013 **Hold the gate** (no new behaviour, no new test). Run and report, changing nothing unless a failure names a
   file in the manifests above: `make lint typecheck check-structure`; `make test TESTS="test_toolkit test_utf8_io
   test_changelog"`; the six new modules and the existing `tests/test_benchmark*.py` (`make test TESTS="test_benchmark_pin
   test_benchmark_elapsed test_benchmark_waiting test_benchmark_attribution test_benchmark_feature
