@@ -29,6 +29,7 @@ from functools import cache
 from typing import Any
 
 from ..assets import TOOLKIT_ROOT
+from ..catalog import family_of
 from ..layout import Layout
 from ..services import App, services_of, web_apps
 from .gate import stamped
@@ -194,7 +195,7 @@ def scoped_section(apps: list[App], layout: Layout) -> str:
         for family, shared_lines in families.items():
             language = family.split("_", 1)[1]
             names.append(family)
-            text += rule(family, [FIRST, *([SYNC] if language == "python" else [])], shared_lines)
+            text += rule(family, [FIRST, *([SYNC] if family_of(language) == "python" else [])], shared_lines)
         text += rules
     return f"{HEADER}.PHONY: {' '.join(names)}\n{text}{order_rules(apps)}{verify_scoped_rule()}"
 
