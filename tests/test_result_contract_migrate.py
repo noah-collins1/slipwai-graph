@@ -65,8 +65,8 @@ def specs_digest(repo: Path) -> dict[str, str]:
 
 
 def findings(run: subprocess.CompletedProcess[str]) -> tuple[int, list[str]]:
-    """What the gate's checks said, without the counts and timings a migrate legitimately moves: the exit code, the
-    name of every check that spoke, and whether the gate ended passed (a failing check prints its fault under its name)."""
+    """What the gate's checks said, without the counts and timings a migrate moves: the exit code, the
+    name of every check that spoke, and whether the gate ended passed (a failing check prints its fault under it)."""
     lines = (run.stdout + run.stderr).splitlines()
     spoke = sorted({match.group(1) for line in lines if (match := re.match(r"^(check-[\w-]+):", line))})
     return run.returncode, [*spoke, *(line for line in lines if line.startswith("verify:"))]

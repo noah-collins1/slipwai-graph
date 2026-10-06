@@ -100,7 +100,8 @@ class OwnershipSentencesTest(FactoryTestCase):
             with self.subTest(layout=layout.delivery):
                 drive = flat(section(command("drive", layout), "## What every delegate hands back"))
                 self.assertIn("`ready-set` is the one stage with no benchmark entry", drive)
-                self.assertIn("`ready-set` is the one stage with no benchmark entry", flat(brief("drive-slice", layout)))
+                slice_brief = flat(brief("drive-slice", layout))
+                self.assertIn("`ready-set` is the one stage with no benchmark entry", slice_brief)
 
     def test_the_fragment_counts_a_stage_when_a_typed_delegate_that_belongs_to_it_ran(self) -> None:
         text = flat((ROOT / "changelog.d/result-contract.md").read_text(encoding="utf-8"))
