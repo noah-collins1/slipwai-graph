@@ -180,6 +180,10 @@ class TestAReadsOnlyDeclarationThatGenerates(DeclarationCase):
         "refuse": "import support\n\n\nclass C(support.FactoryTestCase):\n    def test_x(self):\n"
                   "        self.refuse('p')\n",
         "the launcher": "import subprocess\n\n\ndef test_x():\n    subprocess.run(['./slipwai', 'generate', 'p'])\n",
+        "the launcher by path": "import subprocess\n\nROOT = None\n\n\ndef test_x():\n"
+                                "    subprocess.run([str(ROOT / 'slipwai'), 'generate', 'p'])\n",
+        "the command's own main": "from slipwai.cli import main\n\n\ndef test_x():\n    main(['generate', 'p'])\n",
+        "the command module": "import slipwai.cli\n\n\ndef test_x():\n    slipwai.cli.main(['generate', 'p'])\n",
     }
 
     def module(self, call: str, selection: str) -> None:
@@ -201,6 +205,14 @@ class TestAReadsOnlyDeclarationThatGenerates(DeclarationCase):
                    "def build(case):\n    case.generate('p')\n")
         self.write("tests/test_a.py", 'TEST_SELECTION = {"reads": []}\nimport helper_x\n')
         self.commit("a helper that generates")
+        self.assertEqual([line.split(":")[0] for line in self.held()], ["tests/test_a.py"])
+
+    def test_a_helper_that_runs_the_launcher_names_the_module_that_imports_it(self) -> None:
+        self.write("tests/support.py", self.SUPPORT)
+        self.write("tests/gen_helper.py", 'TEST_SELECTION = {"reads": []}\nimport subprocess\n\n\n'
+                   "def build():\n    subprocess.run(['./slipwai', 'generate', 'p'])\n")
+        self.write("tests/test_a.py", 'TEST_SELECTION = {"reads": []}\nimport gen_helper\n')
+        self.commit("a helper that runs the launcher")
         self.assertEqual([line.split(":")[0] for line in self.held()], ["tests/test_a.py"])
 
     def test_a_module_that_names_its_configurations_is_held(self) -> None:
