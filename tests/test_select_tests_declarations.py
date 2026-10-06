@@ -59,7 +59,7 @@ class TestWhatARunReaches(DeclarationCase):
         self.slice_changing("assets/toolkit/scripts/x.py")
         ran, skipped = self.selected()
         self.assertEqual(ran, ["test_a"])
-        self.assertEqual(skipped, ["skipped test_b: reads no configuration"])
+        self.assertEqual(skipped, ["skipped test_b: reads no configuration and none of the changed files"])
 
     def test_the_same_run_on_the_tree_the_base_names_shows_the_one_path_only(self) -> None:
         # AC-S38-2 and -3 through the log: a slice cut from `adopt-method` compared with its tree

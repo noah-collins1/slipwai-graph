@@ -5,12 +5,16 @@ Once `s38.patch` is applied and committed on `slice/S38-factory-test-selection`,
 
 ```sh
 python3 -B scripts/select-tests.py --dry-run                          # on this branch, no SINCE: full — the trunk's diff holds the Makefile
-SINCE=adopt-method python3 -B scripts/select-tests.py --dry-run       # the SINCE line, every skip with its reason, the summary
-make test SINCE=adopt-method                                          # the same selection, then the selected modules run
+SINCE=adopt-method python3 -B scripts/select-tests.py --dry-run       # full until S38 is merged: adopt-method's Makefile lacks the patch
+make test SINCE=adopt-method                                          # the same, then every module runs (until the merge)
 make test SINCE=adopt-method FULL=1                                   # every module
 make test SKIP=test_matrix                                            # selection off: SKIP given — as before
-git switch adopt-method && python3 -B scripts/select-tests.py --dry-run   # full: not a slice branch (`adopt-method`)
+git switch adopt-method && python3 -B scripts/select-tests.py --dry-run   # needs S38 merged: only then has adopt-method the selector
 ```
+
+Before the merge, the SINCE line, every skip with its reason and the summary are read from the tip of this branch as a
+base: `SINCE=HEAD python3 -B scripts/select-tests.py --dry-run` after a change (a skipped module reads, for a toolkit
+script, *reads no configuration and none of the changed files*; for a go change, *reads no go configuration*).
 
 ## The demo (AC-S38-15, AC-S38-16 — D157)
 

@@ -44,7 +44,7 @@ class TestAReplayedRange(ReplayCase):
         short = self.short(start)
         # the toolkit script reaches every configuration, so `test_b` (python) runs and nothing is narrowed
         self.assertEqual(lines, [f"compared with `{start}` at {short}, replaying `{start}..{two}`",
-                                 "skipped test_d: reads no configuration",
+                                 "skipped test_d: reads no configuration and none of the changed files",
                                  f"selected 3 of 4 modules against `{start}` at {short}"])
 
     def test_the_first_commit_alone_is_a_go_change_only(self) -> None:

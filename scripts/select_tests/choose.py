@@ -93,7 +93,7 @@ def skip_reason(reached: Reach) -> str:
         return "reads none of the changed files"
     options = "" if reached.every else " " + ", ".join(dict.fromkeys(option for _, option in reached.configs))
     said = f"reads no{options} configuration"
-    return f"{said} and none of the changed files" if reached.plain else said
+    return f"{said} and none of the changed files" if reached.plain or reached.every else said
 
 
 class Selection(NamedTuple):
