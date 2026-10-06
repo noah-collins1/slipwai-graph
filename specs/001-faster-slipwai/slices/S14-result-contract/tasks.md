@@ -179,7 +179,7 @@ once T002 is committed (the status table they compare against is final then).
 
 AC-S14-19 (the demo) is not a task: the demo is the next stage, scripted by [quickstart.md](quickstart.md).
 
-- [ ] **T028 — LOW · The demo's notes (drive-hand, demo 1, iteration 23).** (1) quickstart §2's command says it is the registry's but passes only `--permission-mode acceptEdits`; it needs the registry's `--allowedTools` and `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, or a fresh untrusted project refuses every shell call (say the registry's command, or read it from `registry.json`). (2) the `check-decisions` summary does not count `Missing:` entries as hand-backs — say "n hand-backs, m missing". (3) the `docs/result-contract.md` link in each agent brief is root-relative and breaks when a viewer opens `agents/` (the safety-page link beside it has the same shape; fix both or neither, named). **Files:** `quickstart.md`, `assets/toolkit/scripts/check-decisions.py`, `src/slipwai/project/result_contract.py`, their tests.
+- [x] *(Done at `a6ddc54` (1), `85e4f4b` (2), `a086a2f` (3: both links root-relative, named), iteration 24.)* **T028 — LOW · The demo's notes (drive-hand, demo 1, iteration 23).** (1) quickstart §2's command says it is the registry's but passes only `--permission-mode acceptEdits`; it needs the registry's `--allowedTools` and `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, or a fresh untrusted project refuses every shell call (say the registry's command, or read it from `registry.json`). (2) the `check-decisions` summary does not count `Missing:` entries as hand-backs — say "n hand-backs, m missing". (3) the `docs/result-contract.md` link in each agent brief is root-relative and breaks when a viewer opens `agents/` (the safety-page link beside it has the same shape; fix both or neither, named). **Files:** `quickstart.md`, `assets/toolkit/scripts/check-decisions.py`, `src/slipwai/project/result_contract.py`, their tests.
 
 ## Dependencies and order
 
@@ -477,7 +477,7 @@ which stages count moves with it.
     be the idiomatic spelling.
   - Files: `assets/toolkit/scripts/hand_backs.py`. S06's table and test belong to S06.
 
-- [ ] T021 [US6] **LOW (Phase 4) — a CRLF hand-back retried is appended twice** (constitution II).
+- [x] *(Done at `146d92e`, iteration 24.)* T021 [US6] **LOW (Phase 4) — a CRLF hand-back retried is appended twice** (constitution II).
   - **Evidence:** `/tmp/s14/p2/probe.py` calls `append` twice with the same CRLF text. Both calls return `([], True)`,
     and the record holds two headings. `body` keeps the `\r` (`hand_backs.py:286`), while `extract` reads through
     `read_text`'s universal newlines (`:263`), so `repeats` never matches.
@@ -487,7 +487,7 @@ which stages count moves with it.
   - **Sweep:** both write verbs, and every comparison between the hand-back and the record.
   - Files: `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_append.py`.
 
-- [ ] T022 [US6] **LOW (Phase 4) — the `STAGE` sentence contradicts `ready-set`, and the fragment's count sentence
+- [x] *(Done at `a086a2f`, iteration 24.)* T022 [US6] **LOW (Phase 4) — the `STAGE` sentence contradicts `ready-set`, and the fragment's count sentence
   predates T012.**
   - **Evidence:**
     - `STAGE` (`result_contract.py:35`) says `<stage>` is the open benchmark entry's name. It sits right after
@@ -502,7 +502,7 @@ which stages count moves with it.
   - Files: `src/slipwai/project/result_contract.py`, `assets/toolkit/docs/result-contract.md`,
     `changelog.d/result-contract.md`, `tests/test_result_contract_briefs.py`.
 
-- [ ] T023 [US6] **LOW (Phase 4) — an unclosed foreign fence inside an entry silently hides the next entry from the
+- [x] *(Done at `5ba4a6d`, iteration 24.)* T023 [US6] **LOW (Phase 4) — an unclosed foreign fence inside an entry silently hides the next entry from the
   gate and from coverage** (AC-S14-6).
   - **Evidence:** in the probe, an entry was followed by a ` ```text ` fence left unclosed, then a valid `--hand-back`
     append, then a malformed entry. The valid entry vanished: the next closing fence closed the `text` fence. The gate
@@ -520,7 +520,7 @@ twelve fully pinned, five partly, one confirmed defect, three product questions 
 [plan.md](plan.md#open-questions) as Q3–Q5). The loop is at its bound and none is `CRITICAL`, so each lands here as a
 Phase 4 task; the slice goes to its demo carrying them.
 
-- [ ] T024 [US6] **MEDIUM (Phase 4) — a four-backtick quoted example hides the delegate's real block from
+- [x] *(Done at `5ba4a6d`, iteration 24.)* T024 [US6] **MEDIUM (Phase 4) — a four-backtick quoted example hides the delegate's real block from
   `--hand-back`** (AC-S14-10, -11).
   - **Evidence:** `blocks_in` (`hand_backs.py:242`) and `extract` (`:149`) treat any line opening with three backticks
     as a fence, so a ```` ````markdown ```` wrapper pairs with the inner closing fence and the trailing real block is
@@ -534,7 +534,7 @@ Phase 4 task; the slice goes to its demo carrying them.
     three, three inside four, tildes, an unclosed outer fence.
   - Files: `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_append.py`, `tests/test_hand_backs_record.py`.
 
-- [ ] T025 [US6] **MEDIUM (Phase 4) — the completion audit is not told to be the backstop** (AC-S14-12, last clause;
+- [x] *(Done at `7e73ec1`, iteration 24.)* T025 [US6] **MEDIUM (Phase 4) — the completion audit is not told to be the backstop** (AC-S14-12, last clause;
   D136 item 2).
   - **Evidence:** `## When the ready set is empty: the completion audit` (`cruise.py:199`ff) says nothing of hand-backs;
     no text or test puts the check there.
@@ -545,14 +545,14 @@ Phase 4 task; the slice goes to its demo carrying them.
   - Files: `src/slipwai/project/result_contract.py`, `src/slipwai/project/cruise.py` (one placeholder),
     `tests/test_result_contract_briefs.py`.
 
-- [ ] T026 [US6] **LOW (Phase 4) — three harness projections are not pinned** (AC-S14-1, *`make agents` carries it into
+- [x] *(Done at `a086a2f`, iteration 24.)* T026 [US6] **LOW (Phase 4) — three harness projections are not pinned** (AC-S14-1, *`make agents` carries it into
   every harness's agent file*).
   - **Evidence:** `test_the_claude_codex_and_gemini_projections_carry_the_paragraph` covers three of six; Cursor,
     Copilot and opencode are unchecked.
   - **GREEN / sweep:** the test runs over every harness with an `agentFile` row in `scripts/agents/registry.json`.
   - Files: `tests/test_result_contract_briefs.py`.
 
-- [ ] T027 [US6] **LOW (Phase 4) — the migrate test proves `make check-decisions`, not `make verify`** (AC-S14-17,
+- [x] *(Done at `a6ddc54`, iteration 24.)* T027 [US6] **LOW (Phase 4) — the migrate test proves `make check-decisions`, not `make verify`** (AC-S14-17,
   AC-S14-16's full-gate clause).
   - **Evidence:** `test_result_contract_migrate` e1/e2 run only `check-decisions`; nothing compares the full gate's
     findings before and after on a project with no record.
@@ -564,19 +564,19 @@ Phase 4 task; the slice goes to its demo carrying them.
 
 ### Adversary pass (2026-10-06, iteration 24, at `525399b`; `adversary-log.md`, row S14) — the class each closes
 
-- [ ] **T029 — HIGH · A `Missing:` reason is one line, or it is refused (A1; AC-S14-10, -11; the page's body shape).** **RED:** `--hand-back-missing` with a reason holding `\n`, `\r`, `\r\n`, a line opening a fence, or a line shaped like an entry heading is refused with exit 2 and nothing appended; the forged-block repro no longer passes the gate or coverage; an innocent multi-line refusal never reaches the record. **GREEN — the class:** every value the verbs write outside the delegate's verbatim block (the reason, the agent and stage arguments) is one line of printable text, checked before anything is written; the method's `refused: <the delegate's words>` says the host keeps the first line. **Files:** `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`, `tests/test_hand_backs_append.py` or a new `tests/test_hand_backs_missing.py`; `src/slipwai/project/result_contract.py` if the method's words change.
-- [ ] **T030 — HIGH · An entry answers the stage it was written for, a continuation included (B1, A2, A5) — decided by D160.** See D160 for the GREEN. **Files:** `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_coverage.py`, `tests/test_hand_backs_append.py`; the page and the method's words where D160 says.
-- [ ] **T031 — MEDIUM · A stage that ran before the contract arrived owes nothing (B2) — decided by D161.** See D161. **Files:** `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/agents/benchmark.py`, `changelog.d/result-contract.md`, `tests/test_hand_backs_coverage.py`, `tests/test_result_contract_migrate.py`.
-- [ ] **T032 — MEDIUM · The adversary page records the adversaries' blocks before it closes the entry (B3).** **RED:** a generated project's `commands/adversary.md` (and its adopted twin) carries the append step, spliced from `result_contract.py`, before *end the `adversary` benchmark entry*; `test_result_contract_briefs.py` pins it beside the drive and cruise sentences. **GREEN — the class:** every page that owns a stop with delegates — drive, cruise, adversary, the completion audit (T025) — says to append each block before ending the stage's entry. **Files:** `src/slipwai/project/result_contract.py`, the source that writes `commands/adversary.md` under `src/slipwai/project/`, `tests/test_result_contract_briefs.py`.
-- [ ] **T033 — MEDIUM · A harness whose delegates cannot be attributed says so (A3; AC-S14-15).** **RED:** a stage read from a Codex session (`usage.source` `codex`, no subagents) with a typed delegate in `agents` or `signals.agent` is listed as *could not attribute*, never left out, and `make benchmark` prints the hand-back line for it. **GREEN:** coverage treats any harness whose reader returns no subagents as unattributable, not as undelegated. **Files:** `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/agents/benchmark.py` if the reader must say so, `tests/test_hand_backs_coverage.py`.
-- [ ] **T034 — MEDIUM · `--hand-back` reads stdin as UTF-8 whatever the locale (A4; AC-S14-10 *verbatim*).** **RED:** under `PYTHONIOENCODING=cp1252` (and `LC_ALL=C`) a block with `café — fixed` is recorded byte for byte; invalid UTF-8 on stdin is refused in one line, no traceback. **GREEN:** stdin is read as bytes and decoded as UTF-8. **Files:** `assets/toolkit/scripts/check-decisions.py`, `tests/test_hand_backs_append.py`.
-- [ ] **T035 — LOW · Damaged inputs end in the page's exits, never a traceback (A6).** **RED:** a `benchmark.json` cut off, empty, with a BOM, `[]`, `"stages": {}`, a string `usage`, a stage with no `stage` or no `started`; a record ending mid-UTF-8; a body nested 100000 deep — each gives the page's exit and one line naming the file, and nothing is written; a stage with no `started` is *could not tell*, never a window from the start of time. **Files:** `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`, a new `tests/test_hand_backs_damaged.py`.
-- [ ] **T036 — LOW · The verb vouches only for a contract it knows (A8) — decided by D162.** See D162. **Files:** `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_shape.py`, the page.
-- [ ] **T037 — LOW · An `unavailable` skipper answer and its `D<n>` (B6) — decided by D163.** See D163. **Files:** `src/slipwai/project/cruise.py` or `cruise_agents.py`, `src/slipwai/project/result_contract.py`, `assets/toolkit/docs/result-contract.md`, `tests/test_result_contract_briefs.py`.
+- [x] *(Done at `00e06a9`, `5a956ad`, `98cfa5e`, iteration 24.)* **T029 — HIGH · A `Missing:` reason is one line, or it is refused (A1; AC-S14-10, -11; the page's body shape).** **RED:** `--hand-back-missing` with a reason holding `\n`, `\r`, `\r\n`, a line opening a fence, or a line shaped like an entry heading is refused with exit 2 and nothing appended; the forged-block repro no longer passes the gate or coverage; an innocent multi-line refusal never reaches the record. **GREEN — the class:** every value the verbs write outside the delegate's verbatim block (the reason, the agent and stage arguments) is one line of printable text, checked before anything is written; the method's `refused: <the delegate's words>` says the host keeps the first line. **Files:** `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`, `tests/test_hand_backs_append.py` or a new `tests/test_hand_backs_missing.py`; `src/slipwai/project/result_contract.py` if the method's words change.
+- [x] *(Done at `c8ae7d1`, iteration 24.)* **T030 — HIGH · An entry answers the stage it was written for, a continuation included (B1, A2, A5) — decided by D160.** See D160 for the GREEN. **Files:** `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_coverage.py`, `tests/test_hand_backs_append.py`; the page and the method's words where D160 says.
+- [x] *(Done at `8afe9cd`, `acc003a` (catch-up), iteration 24.)* **T031 — MEDIUM · A stage that ran before the contract arrived owes nothing (B2) — decided by D161.** See D161. **Files:** `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/agents/benchmark.py`, `changelog.d/result-contract.md`, `tests/test_hand_backs_coverage.py`, `tests/test_result_contract_migrate.py`.
+- [x] *(Done at `7e73ec1`, iteration 24.)* **T032 — MEDIUM · The adversary page records the adversaries' blocks before it closes the entry (B3).** **RED:** a generated project's `commands/adversary.md` (and its adopted twin) carries the append step, spliced from `result_contract.py`, before *end the `adversary` benchmark entry*; `test_result_contract_briefs.py` pins it beside the drive and cruise sentences. **GREEN — the class:** every page that owns a stop with delegates — drive, cruise, adversary, the completion audit (T025) — says to append each block before ending the stage's entry. **Files:** `src/slipwai/project/result_contract.py`, the source that writes `commands/adversary.md` under `src/slipwai/project/`, `tests/test_result_contract_briefs.py`.
+- [x] *(Done at `86a2be6`, `576b1e0`, iteration 24.)* **T033 — MEDIUM · A harness whose delegates cannot be attributed says so (A3; AC-S14-15).** **RED:** a stage read from a Codex session (`usage.source` `codex`, no subagents) with a typed delegate in `agents` or `signals.agent` is listed as *could not attribute*, never left out, and `make benchmark` prints the hand-back line for it. **GREEN:** coverage treats any harness whose reader returns no subagents as unattributable, not as undelegated. **Files:** `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/agents/benchmark.py` if the reader must say so, `tests/test_hand_backs_coverage.py`.
+- [x] *(Done at `14dff98`, iteration 24.)* **T034 — MEDIUM · `--hand-back` reads stdin as UTF-8 whatever the locale (A4; AC-S14-10 *verbatim*).** **RED:** under `PYTHONIOENCODING=cp1252` (and `LC_ALL=C`) a block with `café — fixed` is recorded byte for byte; invalid UTF-8 on stdin is refused in one line, no traceback. **GREEN:** stdin is read as bytes and decoded as UTF-8. **Files:** `assets/toolkit/scripts/check-decisions.py`, `tests/test_hand_backs_append.py`.
+- [x] *(Done at `fc8864e`, iteration 24.)* **T035 — LOW · Damaged inputs end in the page's exits, never a traceback (A6).** **RED:** a `benchmark.json` cut off, empty, with a BOM, `[]`, `"stages": {}`, a string `usage`, a stage with no `stage` or no `started`; a record ending mid-UTF-8; a body nested 100000 deep — each gives the page's exit and one line naming the file, and nothing is written; a stage with no `started` is *could not tell*, never a window from the start of time. **Files:** `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`, a new `tests/test_hand_backs_damaged.py`.
+- [x] *(Done at `2600a7b`, `7166a00`, iteration 24.)* **T036 — LOW · The verb vouches only for a contract it knows (A8) — decided by D162.** See D162. **Files:** `assets/toolkit/scripts/hand_backs.py`, `tests/test_hand_backs_shape.py`, the page.
+- [x] *(Done at `1041b38`, `6b31015`, iteration 24.)* **T037 — LOW · An `unavailable` skipper answer and its `D<n>` (B6) — decided by D163.** See D163. **Files:** `src/slipwai/project/cruise.py` or `cruise_agents.py`, `src/slipwai/project/result_contract.py`, `assets/toolkit/docs/result-contract.md`, `tests/test_result_contract_briefs.py`.
 
 ## After acceptance (host tasks, iteration 24)
 
 - [x] **T038 — The adversary pass.** Two seams, fourteen findings (`adversary-log.md`, row S14); T029–T037 carry them; A7 and B4 fold into T024; B5 declined.
-- [ ] **T039 — Mutation.** N/A unless `project.json` records a mutation command for this repository.
+- [x] **T039 — Mutation.** N/A — `project.json` records no mutation command for this repository (`"mutation": null`).
 - [ ] **T040 — Both full gates on the final tip** (`make verify`, then the delivery gate under CI markers), after every suite that reads a generated gate.
 - [ ] **T041 — Register row (`accepted-by: drive-hand`), close the record; remove the slice's worktrees and branch.**
