@@ -3478,3 +3478,79 @@
   - `tests/test_mutation_uncovered.py` (the examples)
   - `changelog.d/scoped-mutation.md` (one clause)
 - **Status:** standing
+
+## D156 — On a `slice/<id>` branch, what does the factory's own `make test` measure a change against?
+- **Stage:** slice gaps (pre-planning) · **Slice:** S38-factory-test-selection · **When:** 2026-10-06T04:27:58Z · **Iteration:** 24
+- **Scope:** S38-factory-test-selection
+- **Question:** G2, and question 2 for a person. Here, slices are cut from `adopt-method` and merged back into it (D129). But `project.json`'s `ci.branch` is `main`, and `check-slice-scope.merge_base()` measures against `main`. Measured that way, a slice cut from `adopt-method` has 1139 changed files. Those always include `Makefile`, `catalog.json` and `tests/support.py`, so every broadening rule fires, and no run gets shorter until `adopt-method` reaches `main`. What base does selection use, and how is a base other than the trunk named?
+- **Options:**
+  - (a) The branch the slice was cut from, recorded at claim time (in git's upstream config, or read from the reflog), falling back to the trunk. An explicit `SINCE=<ref>` sits beside it. A `SINCE` that cannot be resolved runs the full suite. *(The gaps stage recommended this one.)*
+  - (b) The trunk (`ci.branch`) only, plus `SINCE=<ref>` as the one way to name another base. In this repository, the ladder and the cruise pass `SINCE=adopt-method` on a slice branch until `adopt-method` merges.
+  - (c) The nearest of the trunk and every local branch that could be an ancestor (the merge-base nearest `HEAD`).
+- **Decision:** (b). This departs from the stage's recommendation. Six points:
+  1. **The implicit base is the trunk, measured the way the scoped gate measures it.** The selector loads `assets/toolkit/scripts/check-slice-scope.py` and takes `merge_base()` as it stands. It does not modify it.
+     - It counts what D117 rule 2 counts, as D125 and D153 settled them: every path in `git diff --no-renames` against the base, plus the working tree, untracked files, deletions and both sides of a rename.
+     - It adds D153's unpushed range of the trunk, by loading `assets/toolkit/scripts/verify_scoped/changes.py`'s `unpushed()` where it can be loaded as it stands. Where it cannot, the selector applies the same rule: if the range cannot be established, the full suite runs.
+     - The base is never inferred from a local branch or the reflog.
+  2. **`SINCE=<ref>` is the only other base, and it means what D138 item 4 says.** The run compares against that ref's tree: `git diff --no-renames <ref>`, with the working tree and untracked files included, rather than against a merge-base.
+     - `SINCE` can be given on the command line or in the environment. Make reads both, so it reaches the `make test` that `ratchet.py` runs inside `make -f delivery/Makefile verify` without editing anything listed in `delivery/.written`.
+  3. **`SINCE` names the base and nothing more.** It never turns selection on where G1 says the full suite runs: not on the trunk, not on `adopt-method`, not on a detached `HEAD`, and not under a CI marker. It does not turn selection off either, unlike `TESTS`, `SKIP` and `FACTORY_BACKENDS` (G10).
+     - Because `make verify` always runs the full suite (G3), `SINCE` does not join the stamp's bypass list.
+  4. **A `SINCE` that cannot be resolved means the full suite.** That covers a ref that names no commit, or one that shares no history with `HEAD`. The run prints one line: `full: SINCE=<ref> could not be resolved — <why>`.
+  5. **The first line says which base was used, and whose word stands behind it.**
+     - For the trunk: ``compared with `main` at <short> (the trunk)``, plus D153's clause when there is an unpushed range.
+     - For `SINCE`: ``compared with `adopt-method` at <short>, named by SINCE — taken as passing on the word of whoever named it``.
+  6. **This repository's practice until `adopt-method` merges into `main`.** The host adds `SINCE=adopt-method` to every slice delegate's brief, and to its own gate runs in a slice worktree. A run that forgets it pays the full suite. It never gets a narrower one.
+     - When `adopt-method` reaches `main`, the practice stops, and the trunk base works with nothing passed.
+     - `docs/maintaining.md` documents `SINCE`: its default (the trunk), and one sentence on when to set it (when your branch was cut from a branch other than the trunk, and that branch's tip passed the full suite).
+- **Why:**
+  - **The maintainer needs to know which tree a skipped module is trusted on.** (b) says so on every run, and it answers the same way on every machine and in every worktree.
+  - **(a) cannot be recorded with what S38 may touch.**
+    - The reflog does not keep the name: this repository's own `slice/S08-scoped-mutation` reflog reads `branch: Created from c3c760b`, a commit and not `adopt-method`. It also expires and is local to one machine.
+    - No upstream is set, because the worktrees are made with D129's `git worktree add -b slice/<id> adopt-method`. Setting one would mean changing the claim procedure, which lives in `delivery/commands/cruise.md` (factory-written) and in the owner's own D129 text. S38 is factory-only and may change neither.
+    - A fallback that infers the base when the record is missing is the false-green shape priority 5 rules out.
+  - **(c) is D153's defect over again.** A local branch nobody gated (`s33-patch-3`, `s33-patch-4` are here today) could become the base. A skip would then rest on a commit no full suite ever ran on.
+  - **(b) fails slow, not wrong.** Forgetting `SINCE` costs one full run. A wrong `SINCE` is printed in the run's first line, under the name of whoever gave it. The merge root's full suite after every merge into `adopt-method` (D129, priority 1, constitution "a scoped or memoised gate MUST be additive") stands behind it either way.
+  - **`SINCE` gets D138's meaning, not a merge-base meaning.** That way one word means one thing across `make mutation` and `make test`. Comparing against the named tree is also the sounder claim: a module is skipped only when everything it reads is identical to a tree that passed.
+    - When `adopt-method` moves on under a slice, the slice's runs broaden until it rebases. That is honest, because the slice's tree differs from the tree that passed.
+  - **It keeps D130's reason for the slice alive here, now.** With `SINCE=adopt-method`, a slice that changes one backend's assets selects against its real change, not against 1139 files.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the factory's coordination tool (FR-046, S34a) comes to record each claim's base in its versioned, gate-checked state. The selector would then read that record instead of a hand-given `SINCE`. That is option (a), with a record that is gated rather than inferred.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S38's criteria: AC-S38-G2a to G2e below), `docs/maintaining.md` (the SINCE setting: default and when to set it), `specs/001-faster-slipwai/cruise-carry.md` (pass SINCE=adopt-method in every slice delegate's brief until adopt-method merges into main)
+- **Status:** standing
+
+## D157 — What must S38's demo show for SC-016: is choosing the right modules enough, or must it also show D130's time saving, and measured against what?
+- **Stage:** slice gaps (pre-planning) · **Slice:** S38-factory-test-selection · **When:** 2026-10-06T04:26:54Z · **Iteration:** 24
+- **Scope:** S38-factory-test-selection
+- **Question:** The gaps report's G11 and its *Questions for a person* 3. SC-016 is stated in terms of which modules run. D130 gives the slice's reason as time: every later slice pays the forty-minute factory gate. Most later slices touch `assets/toolkit/scripts/` or `src/slipwai/project/`, and under G7 those select broadly or run everything. Timing one favourable change would therefore overstate the gain. What does the demo have to show, and what is it compared with?
+- **Options:** (a) replay the change sets of S06, S08, S14 and S33 through the dry run, reporting modules selected out of the total and the backends narrowed. Time one favourable case and one toolkit case against a full `make test` on the same commit and the same machine. Run a soundness check: inject a fault into the changed generator, and every module that fails the full run must be in the selected set. **The gaps stage recommended this one.** · (b) selection correctness only (which modules, with reasons, and the soundness check), with no timing · (c) time one favourable change only, and use that as SC-016's figure.
+- **Decision:** (a), made stricter in two places and with one clarification.
+  1. **The soundness check runs twice**, once in each timed case:
+     - a fault in a single backend's asset, where `FACTORY_BACKENDS` narrowing applies;
+     - a fault in a script under `assets/toolkit/scripts/` that tests load by path. This is the dependency an import scan cannot see.
+  2. **The soundness check is held at the level of results, not module names.** The selected run must itself go red. Every module that fails in the full run on the same faulted tree must also fail in the selected run. The full run must fail at least one module, or the fault does not count.
+  3. **SC-016's pass condition is selection plus soundness. The timings are reported, not judged against a threshold.** Each figure is measured against a full `make test` on the same commit and machine, not against S33's 2512 s or any other recorded number. The replay table goes into the demo log alongside the timings, whatever it shows. That includes the case where most later slices' change sets select the full suite. Such a result is a finding about D130's expected payback, not a failed demo. For S14, the replay uses the change set on its branch against its base, because S14 has not merged yet. The demo log also names which part of each figure the plan moves into S39's elapsed-time measures, if any.
+- **Why:**
+  - The one thing that would make this work pointless is a faster loop that lets through what today's gate catches (owner brief, constitution I). So the demo must above all show that a selected run fails wherever the full run fails. Option (b) shows that. Option (c) does not show it at all.
+  - The maintainer chose this slice because of time (D130). A demo that never measures time cannot show the maintainer whether the choice paid off. Option (b) leaves that out.
+  - "Measurement before behaviour" (priority 6) means recording the real distribution before anyone relies on the gain. A single favourable timing is the overstatement the gaps report warns against. The four replays show what selection buys across the kinds of change that actually come next. Measuring against the same commit and machine keeps the comparison honest.
+  - Making soundness rather than speed the pass condition puts determinism ahead of speed, which is priority 5 in spirit.
+  - A fault the full run does not catch would prove nothing, which is why the full run must fail at least one module.
+  - The toolkit fault covers the by-path loads that G5 and G7 identify as the place a selector would silently miss a dependency.
+  - Nothing here changes what the merge root or CI checks, so it is not something a person must be asked.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the owner sets a minimum time saving for S38. The timing would then become a pass condition, not a reported figure.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (SC-016's reading: correct selection plus result-level soundness, with time reported against a same-commit full run), `specs/001-faster-slipwai/story-split.md` (S38's acceptance criteria)
+- **Status:** standing
+
+## D158 — S38's gaps G1, G3–G10, G12–G14, and whether the pre-push gate on a slice branch may run a selected `make test`
+- **Stage:** slice gaps (pre-planning) · **Slice:** S38-factory-test-selection · **When:** 2026-10-06T04:37:48Z · **Iteration:** 24
+- **Scope:** S38-factory-test-selection
+- **Question:** The `drive-gaps` pass over S38 (iteration 24) raised fourteen gaps; for twelve of them it recommended an answer, and it asked a person whether the pre-push `make -f delivery/Makefile verify` on a slice branch may run a selected `make test` (its question 1), since the ladder calls that run full.
+- **Options:** for each of G1, G3–G10, G12–G14 the stage's recommendation (recommended) or leaving the gap open for planning; for question 1, (a) the pre-push gate on a slice branch selects, the merge root and CI stay full (recommended — D123 already settled it for generated projects), (b) the pre-push gate is always full.
+- **Decision:** the stage's recommendation for every one, written as AC-S38-1 to AC-S38-14 in `specs/001-faster-slipwai/spec.md`: G1 selection only on `slice/<id>`, full everywhere else and under any CI marker; G3 `make verify` always full and stamped, a selection variable bypasses the stamp; G4 `RATCHET_TIGHTEN` means full; G5 each module declares the configurations and files it reads, an undeclared module always runs, the path map is derived from `catalog.json` and the pruner's tables and an unclaimed path under `assets/` means full; G6 `FACTORY_BACKENDS` narrows `test_matrix`; G7 the full-suite list and the import-graph narrowing; G8 changed and deleted test modules; G9 one reason per skipped module and a dry run; G10 `TESTS`, `SKIP`, `FACTORY_BACKENDS` turn selection off, `FULL=1` opts out; G12 selection only — no parallelism and no speed-up of the tests themselves; G13 the root `Makefile` as a patch a person applies, its recipes held by their text; G14 no bump while nothing under `assets/`, `src/slipwai/` or `catalog.json` changes. Question 1: (a).
+- **Why:** each is the stage's own recommendation and none contradicts a standing entry or the constitution; question 1 is answered the same way the standing D123 answered it — the scoped gate before the first push, the full gate at the merge root and in CI — and G1 keeps `adopt-method`, this repository's merge root, full. Nothing here changes what the merge root or CI checks, so it is not one of the brief's *Always ask a person*.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** planning finds a declaration scheme (G5) the suite cannot carry within `check-structure`'s budgets, which would send G5 back to the skipper.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

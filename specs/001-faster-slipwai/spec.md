@@ -2506,3 +2506,87 @@ to the session that dispatched it; *the block* is the fenced `result-contract` b
   its own headless harness produce hand-backs, and two seeded fixtures (no block; a malformed block) show the converge
   finding — in a real `drive-converge` verdict over the no-block fixture (D145) — and the field-naming refusal; the share of real hand-backs carrying a block is written into the quickstart
   with the project's axes, the harness and the number.
+
+### S38-factory-test-selection
+
+**Gaps reviewed** 2026-10-06, cruise iteration 24, `drive-gaps` (read only) with `drive-skipper` for D156 and D157 and
+the host's own D158: FR-048, SC-016, S38's split and graph rows against D128–D132, the owner brief's priorities, *Out
+of scope* and *Always ask a person*; against the root `Makefile`'s `test`, `verify` and `verify-checks` rules and its
+stamp bypass list, `tests/support.py`, the suite's 318 modules (140 generate a project, about 100 import a shared
+fixture, 13 read `backends_under_test()`, many load scripts under `assets/` by path), `make starters`, `ratchet.py`
+inside `make -f delivery/Makefile verify`, the CI workflow's `TESTS=` and `SKIP=` jobs, S33's stamp and S06's scoped
+gate. Found and written back: this repository's merge root is `adopt-method`, not the trunk `project.json` names, and
+a base of `main` makes every run here full (D156: the trunk, or a base named by `SINCE`); `make verify` reaches `make
+test` through `verify-checks` and must stay full and stamped; the ratchet's tighten would erase findings of modules
+that never ran; nothing in the suite declares what it reads, so an undeclared module always runs; the factory suite
+runs serially under unittest, so S05's xdist does not meet it; the demo measures selection and soundness, and reports
+time against a same-commit full run without a threshold (D157); the root `Makefile` is a patch a person applies, as
+S33's was.
+
+Unless a criterion says otherwise, *a slice branch* is a branch named `slice/<id>`, *the base* is D156's, *changed* is
+what D117 rule 2, D125 and D153 count, and *full* means every test module, with `FACTORY_BACKENDS` unset.
+
+- **AC-S38-1** — *G1, owner priority 1.* Given the trunk, `adopt-method`, any branch not named `slice/<id>`, a detached
+  `HEAD`, a branch whose trunk cannot be told, or any of `CI`, `GITHUB_ACTIONS` or `GITLAB_CI` set, when `make test`
+  runs, then it runs full and says which case it was in one line.
+- **AC-S38-2** — *G2, D156 (AC-S38-G2a).* Given a slice branch with no `SINCE` whose only change since its merge-base
+  with `main` is one path under `assets/languages/go/`, and `origin/main` level with local `main`, when `make test`
+  runs, then the first line reads ``compared with `main` at <short> (the trunk)`` and the selection reflects that one
+  path only.
+- **AC-S38-3** — *G2, D156 (AC-S38-G2b).* Given a slice branch cut from `adopt-method` whose only change against
+  `adopt-method`'s tree is one path under `assets/languages/go/`, when `make test SINCE=adopt-method` runs, or
+  `SINCE=adopt-method make -f delivery/Makefile verify`, then the first line reads ``compared with `adopt-method` at
+  <short>, named by SINCE — taken as passing on the word of whoever named it`` and the selection reflects that one path
+  only; `SINCE` compares with that ref's tree (D138 item 4), not a merge-base.
+- **AC-S38-4** — *G2, D156 (AC-S38-G2c, G2d, G2e).* Given the same branch with no `SINCE`, whose diff against `main`'s
+  merge-base includes `Makefile` and `catalog.json`, then every module runs and the line names the first broadening path
+  and its rule; given `SINCE=nonexistent`, or a `SINCE` with no history in common with `HEAD`, then every module runs
+  and the line reads `full: SINCE=<ref> could not be resolved — <why>`; given `SINCE=main` on `adopt-method`, or on a
+  slice branch with `CI=1`, then every module runs and the line gives AC-S38-1's reason, not the base.
+- **AC-S38-5** — *G2, D117, D125, D153 (AC-S38-G2f).* Given a slice branch with `SINCE=adopt-method` whose only change
+  is an untracked new file under `assets/languages/go/`, or the deletion of one, then the modules that read the `go`
+  configuration are selected; given no `SINCE` and a local `main` with an unpushed commit touching `catalog.json`, then
+  every module runs and the line names that path as D153 words it.
+- **AC-S38-6** — *G3, S33's stamp.* Given a slice branch with a one-backend change, when `make verify` runs, then every
+  module runs and the stamp is recorded as S33 records it; given a selection variable on `make verify` (`SINCE`
+  excepted, which never narrows `make verify`), then no stamp is read, written or removed.
+- **AC-S38-7** — *G4.* Given `RATCHET_TIGHTEN=1` on a slice branch, when `make test` runs, then every module runs and
+  the line names `RATCHET_TIGHTEN`.
+- **AC-S38-8** — *G5.* Given a change only under `assets/languages/go/`, when `make test` selects, then the modules
+  that declare the `go` configuration, those that declare every configuration and those that declare nothing run, and
+  every other module is named skipped with its reason (*reads no go configuration*); given a new directory under
+  `assets/` that no rule claims, then every module runs and the line names the path. A module's declaration names
+  only configurations and files that exist, held by a test.
+- **AC-S38-9** — *G6.* Given a change that affects only the `go` backend, then `test_matrix` runs with
+  `FACTORY_BACKENDS=go` and the output names the backends left out.
+- **AC-S38-10** — *G7.* Given a one-line change to `catalog.json`, `assets/backing-services/prune.py`, any file under
+  `src/slipwai/`, the root `Makefile`, `scripts/verify`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, the
+  selector or its own tests, an ignored file under `assets/`, `src/` or `tests/` other than the caches D119 exempts, or
+  any path no rule claims, then every module runs and the line names the path and the rule; given a change to one shared
+  fixture module only, then exactly the modules that import it, directly or through another, run.
+- **AC-S38-11** — *G8.* Given only `tests/test_x.py` edited, then `test_x` runs and every other declared module is named
+  skipped; given a deleted test module, then the run does not fail on the missing name.
+- **AC-S38-12** — *G9, SC-016.* Given any selected run, then before the tests start every module not run is named once
+  with one reason, and the last line gives the modules selected, the total and the base; a dry run prints the same
+  selection and runs nothing.
+- **AC-S38-13** — *G10.* Given `make test SKIP="test_matrix"` on a slice branch, then every module but `test_matrix`
+  runs and the line says *selection off: SKIP given* (likewise `TESTS` and `FACTORY_BACKENDS`); given `FULL=1`, then
+  every module runs.
+- **AC-S38-14** — *G13.* Given the root `Makefile` patch a person applies (the cruise guard refuses an iteration's edit
+  there), then its `test` and `verify` recipes and its stamp bypass list match the text a test holds, and any change to
+  the root `Makefile` on a slice branch makes `make test` run every module. Until the patch is applied the tests that
+  need it fail with a message naming it.
+- **AC-S38-15** — *G11, D157.* Given the change sets of S06, S08, S33 (merged) and S14 (its branch against its base),
+  when the selector's dry run is run on each, then each prints the modules selected out of the total, the backends
+  narrowed, the base and one reason for every skipped module, and the demo log records all four as printed, a full
+  selection included; given a change under one backend's assets, and separately a change under
+  `assets/toolkit/scripts/`, on a slice branch, when `make test` selects and then `make test FULL=1` runs on the same
+  commit and machine, then the demo log records both elapsed times, the machine, the commit and the modules selected out
+  of the total. No criterion requires a minimum saving.
+- **AC-S38-16** — *G11, D157, the brief's one thing that would make this pointless.* Given a fault injected into the
+  changed backend asset, and separately into a script under `assets/toolkit/scripts/` a test module loads by path, when
+  the full suite and the selected run are each run on that tree, then the full run fails at least one module and every
+  module that fails in the full run fails in the selected run.
+- **AC-S38-17** — *G12, G14.* S38 selects and does nothing else: no parallelism, and no change to how a test runs.
+  `git diff --stat <base> -- assets src/slipwai catalog.json` is empty at the slice's end, and `VERSION` and
+  `changelog.d/` are unchanged; anything else goes back as a bump question.
