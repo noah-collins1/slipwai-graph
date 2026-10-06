@@ -656,6 +656,76 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
   **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch` (shared with T031),
   `tests/test_select_tests_make.py`.
 
+Found by T021 (converge pass 2), in the order of their grade. T033 re-opens the loop; T034–T036 may ship after it.
+T034 and T035 change the root `Makefile`: `s38.patch` is still unapplied, so they regenerate it (one patch for the
+person, as T031/T032 did); were it applied first, they are `s38-2.patch`.
+
+### T033 — HIGH: a `tests/` sub-package already on the base is never run, never named, never counted (AC-S38-12, -16; VIII)
+
+- [ ] T027 makes the run full only while a sub-package file is in the change set. Once the sub-package is on the base,
+  the scan still reads `tests/*.py` only (`scripts/select_tests/declarations.py:223`, `scan`), so every later
+  selected run leaves its modules out of the verdicts, the skipped lines and the total, while `unittest discover -s
+  tests`, the full run, imports them. Reproduced in a patched scratch clone: `tests/sub/__init__.py` plus
+  `tests/sub/test_nested.py` (fails when `assets/languages/go/README.probe` holds `FAULT`) committed, then that go
+  file committed; `SINCE=HEAD~1 select-tests.py --dry-run` prints `selected 331 of 338` and names `test_nested`
+  nowhere; `discover -s tests -p test_nested.py` on the same tree is `FAILED (failures=1)`. Full run red, selected run
+  green, and the module is never skipped by name. **Fix:** a selected run is possible only where the scan holds every
+  module `discover` would load. Where any directory under `tests/` reachable through an `__init__.py` chain holds a
+  `test*.py`, the run is full and the line names it (*a test module the selector cannot name*). Alternatively, the scan
+  takes those modules as undeclared, always run, by their dotted names. Choosing between the two is the implementer's
+  call; both broaden. **RED:** in the fixture, a slice branch whose *base* holds `tests/sub/__init__.py` and a stand-in
+  `tests/sub/test_nested.py`, with a go-asset change since the base: the dry run either is full with that line, or
+  lists `sub.test_nested` as run and counts it in the total; the log of a real run holds `test_nested`.
+  **Files:** `scripts/select_tests/declarations.py` and/or `scripts/select_tests/rules.py`, `scripts/select-tests.py`
+  (only if the full row is raised in `plan`), `tests/test_select_tests_paths.py` (or a new
+  `tests/test_select_tests_subpackages.py`), `tests/select_fixture.py` (only if a stand-in in a sub-directory needs it).
+
+### T034 — MEDIUM: `TESTS` given empty beside `SKIP` runs no module and passes — `make verify` included (AC-S38-6, -13; I)
+
+- [ ] The patched `test` recipe branches on `$(strip $(TESTS)$(SKIP))` and words the line by `$(origin TESTS)`.
+  An explicitly empty `TESTS` (command line, or exported empty in the environment, so `?=` does not assign) with
+  any `SKIP` echoes `selection off: TESTS given` and runs nothing. Reproduced in the patched scratch clone:
+  `make test TESTS= SKIP=test_matrix` → `selection off: TESTS given`, no unittest, `rc=0`; `TESTS= make test
+  SKIP=test_matrix` the same; `make verify-checks TESTS= SKIP=test_matrix` ends `verify: all gates passed` with no
+  test run, and `make -n verify TESTS= SKIP=test_matrix` shows that path (stamp bypassed, `verify-checks FULL=1`,
+  then the echo alone). The unpatched recipe (`8072724:Makefile:32`) ran `discover -s tests` for an empty `TESTS`, and
+  AC-S38-13 gives `SKIP=test_matrix` *every module but `test_matrix`*. **Fix (in the regenerated `s38.patch`):** an
+  empty `TESTS` is not given. The branch and the word test `$(strip $(TESTS))` before `origin`, so `TESTS= SKIP=x`
+  runs every module but `x` and says `SKIP given`. T032's all-modules `SKIP` keeps running none. **RED:** `make test
+  TESTS= SKIP=<one stand-in>` in the fixture runs every other stand-in (the log, not the line) and prints `selection
+  off: SKIP given`; the same with `TESTS` exported empty.
+  **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch` (regenerated),
+  `tests/test_select_tests_make.py`, `tests/test_select_tests_makefile.py`.
+
+### T035 — LOW: `make test verify-checks` runs `test` once, selected, then says `verify: all gates passed` (AC-S38-6, G3)
+
+- [ ] T031's `verify-checks: override export FULL := 1` reaches `test` only when `verify-checks` is what makes it.
+  Named first as a goal, `test` is made once without `FULL`, and `verify-checks` finds it done. Reproduced in the
+  patched scratch clone with a stub selector that prints `FULL`: `make test verify-checks -o lint -o typecheck -o
+  check-structure` → `STUB FULL=None`, then `verify: all gates passed` (`make verify-checks`, `… FULL=`, `-e
+  verify-checks` each print `FULL='1'`). **Fix (in the regenerated `s38.patch`):** `verify-checks`' recipe ends with
+  its words only where the run was whole, e.g. it calls `test` itself through `$(MAKE) … test FULL=1` rather than as
+  a prerequisite, or it refuses alongside a `test` goal (`$(filter test,$(MAKECMDGOALS))`). **RED:** `make test
+  verify-checks` on a slice branch with a one-backend change runs every stand-in by the log, or exits non-zero
+  without the `all gates passed` line.
+  **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch` (shared with T034),
+  `tests/test_select_tests_make.py`, `tests/test_select_tests_makefile.py`.
+
+### T036 — LOW: `held()`'s under-claim check sees one route to a generated project of four (AC-S38-8)
+
+- [ ] T030 (b) flags a reads-only declaration only for a `generate(`/`refuse(` call in the closure, or the literal
+  `./slipwai` in the module's *own* file (`declarations.py:126`, `under_claims` at `:235`). `stamp_fixture` reaches
+  the launcher as `str(ROOT / "slipwai")`. Reproduced with `declarations.held()` over a scratch tree whose modules
+  all declare `{"reads": []}`: `subprocess.run([str(ROOT / "slipwai"), "generate", …])`, a helper `gen_helper.py`
+  running `["./slipwai", "generate", …]`, and `from slipwai.cli import main; main(["generate", …])` are not named;
+  only `self.generate("x")` is. T030 (a)'s pin, an equality run on every selected run (the selector's tests are
+  undeclared), still makes a new declaration edit a reviewed selector test, so this is LOW. **Fix:** the launcher
+  test reads the closure, not the module alone, and matches the name `slipwai` as a path's last part
+  (`"./slipwai"`, `ROOT / "slipwai"`) or a `slipwai.cli` import. Alternatively, the docstring and data model say
+  `held()` names the direct call only and the pin is the guard. **RED:** in the fixture, each of the three modules
+  above is named by `held()`.
+  **Files:** `scripts/select_tests/declarations.py`, `tests/test_select_tests_declarations.py`.
+
 ---
 
 ## Parallel opportunities
@@ -758,6 +828,91 @@ from *full*; T029 widens a full row, which priority 5 asks for).
 Checked and clean: the trunk and `SINCE` base, deletion, rename (`--no-renames`), untracked and ignored files under the
 three trees, `--skip-worktree`/`--assume-unchanged` and filters on every file but the makefiles (raw comparison),
 `GIT_*` locating variables, CI markers, `FULL` empty, no tracked symlink or submodule, `make -n`/`-q`.
+
+### Pass 2 (T021, cruise iteration 24) — **not converged**: 1 HIGH, 1 MEDIUM, 2 LOW
+
+Judged on `git diff 8072724..HEAD` (tip `ef4318f`), weighted to pass 1's fixes (`1151dcd..HEAD`, T026–T032), with
+`s38.patch` applied in `/tmp/s38/converge2`. Probes ran in a second clone with the patch committed (`/tmp/s38/probe`),
+since an uncommitted `Makefile` makes every dry run full. There is no `.codegraph/` in this tree; text search and
+running code answered. On the patched copy, `make test TESTS="<the 20 test_select_tests_* modules, test_factory_gate_stamp,
+test_factory_gate_stamp_probes>"` ran 212 tests, OK.
+
+**Findings** (tasks under *Phase 4*):
+
+| Task | Grade | One-line reproduction |
+|---|---|---|
+| T033 | HIGH | `tests/sub/{__init__,test_nested}.py` on the base, a go asset changed since → `selected 331 of 338`, `test_nested` never named; `discover` fails it |
+| T034 | MEDIUM | `make test TESTS= SKIP=test_matrix` → `selection off: TESTS given`, no module, rc 0; `make verify-checks` the same, ending `verify: all gates passed` |
+| T035 | LOW | `make test verify-checks` → the selector sees `FULL` unset, then `verify: all gates passed` |
+| T036 | LOW | `held()` names no reads-only module that generates through `ROOT / "slipwai"`, a helper's `./slipwai`, or `slipwai.cli.main` |
+
+No finding changes what a criterion or decision says. T033 extends T027's full row to the base, which priority 5 asks
+for. T034 restores what AC-S38-13 already says `SKIP` does. **One question for the host (not a finding):** T032 made
+`SKIP` naming every module run none, with `make verify SKIP=<all>` then ending `verify: all gates passed`. The
+unpatched recipe ran the whole suite there. That matches the words of AC-S38-13, and pass 1 recorded it as the fix,
+but it is a green gate with no test run. If the owner wants priority 5 to govern it, T032's fix should broaden instead.
+
+**What pass 1's fixes hold (checked again, by probe):**
+
+- **T026:** a cache only adds a `reads` match (`choose.select`, after `reach`), so it can neither narrow nor claim a
+  configuration. A non-ignored `.pyo` would enter the change set as an untracked toolkit file and broaden. Caches under
+  `src/`/`tests/` are D119's exemption, and no declared module reads a cache there (`test_assets_bytecode` reads
+  `tests/*.py` as text, `TESTS.glob("*.py")`). `find assets -name __pycache__` in the worktree: empty.
+- **T027:** `rules.discoverable` sends `tests/sub/test_a.py`, `tests/sub/__init__.py` and a vanished chain to the full
+  row, and `tests/fixtures/x/test_y.py` and `tests/fixtures/adopt/python-worker/tests/test_worker.py` (no
+  `__init__.py` chain) to *the files its readers name*. Python 3.14's `discover` imports no namespace package. The
+  only `load_tests` (`test_xdist_ci`) is undeclared and always runs. Not held: a sub-package once it is on the base
+  (T033).
+- **T028:** `base.makefile_changes` compares the three names raw, by `lstat`, so a symlink, a deletion, a mode change
+  or an ignored new `GNUmakefile` differs. GNU make reads no case variant on Linux, and the root `Makefile` includes
+  nothing.
+- **T029:** both change-set scripts are full rows. `verify_scoped/*` imports only its own package and the stdlib, and
+  `check-slice-scope.merge_base`/`changed_files` read only `project.json` (full) and git. `GITHUB_BASE_REF` and
+  `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` can only move the base back (`older_of`).
+- **T030:** the pin (`test_select_tests_real_declared`) is an equality and runs on every selected run. `held()` is
+  narrower than its words (T036).
+- **T031/T032:** `make verify-checks` with `FULL=`, `-e`, `FULL=0` in the environment, and `MAKEFLAGS=FULL=` each hand
+  the selector `FULL='1'` (stub selector). `make verify TESTS=' '` takes the stamped path and runs whole. Not held: a
+  `test` goal ahead of `verify-checks` (T035), and an empty `TESTS` beside `SKIP` (T034).
+
+**Constitution, principle by principle the diff touches:**
+
+- *I, a scoped gate MUST be additive:* `make verify` is whole on its stamped path (patched `Makefile:58`, `:60`),
+  and `verify-checks` is whole under every variable route tried (`override export FULL := 1`). **Not met** where
+  `TESTS` is empty beside `SKIP`: the gate ends `all gates passed` with no test (T034). CI markers make every run full
+  (`scripts/select_tests/__init__.py:15`, `:23`).
+- *I, `VERSION` and a fragment for every user-visible change:* satisfied. `git diff --stat 8072724..HEAD -- assets
+  src/slipwai catalog.json VERSION changelog.d` is empty (AC-S38-17), so no bump is owed.
+- *VIII, deterministic: the same inputs give the same verdict:* **not met** by T033, where on one commit the full run
+  fails and the selected run passes.
+- *AGENTS, no mocking framework:* satisfied. The new tests (`test_select_tests_caches`, `_real_declared`, and the
+  additions to `_changes`, `_paths`, `_declarations`, `_make`, `_makefile`) use the fixture's stand-ins, with no
+  `unittest.mock`.
+- Money, time, identity, idempotency and persisted schema are not touched (a test-runner script).
+
+**Each level:**
+
+- **Domain** (`rules`, `declarations`, `choose`): proven — the path rows (full rows, sub-package files, the change-set
+  scripts) by `rules.claim` over edge paths. Caches match `reads` only. Not proven: a sub-package on the base (T033),
+  and `held()`'s routes (T036).
+- **Use case** (`select-tests.py`): proven — what is printed is what runs, for the top-level modules. A cache never
+  makes the run full. An ignored non-cache file under the three trees is full under every pathspec-modifying `GIT_*`
+  variable (`GIT_GLOB_`, `NOGLOB_`, `ICASE_`, `LITERAL_PATHSPECS`). Not proven: the total omits a sub-package's modules
+  (T033).
+- **Delivery adapter** (the patched root `Makefile`): proven — `FULL` reaches the selector from `verify-checks` under
+  every variable route. `TESTS`/`SKIP` from the command line or environment word the line correctly when non-empty.
+  `make -f delivery/Makefile verify` reaches the root `make test` through the ratchet, as AC-S38-3 says it may. Not
+  proven: T034, T035.
+- **Screen:** none.
+- **Published contract** (`make test`/`make verify`, `docs/maintaining.md`): green on the patched copy. T034 changes
+  what an empty `TESTS` means against the contract `8072724` published.
+
+Checked and clean, beyond pass 1's list: an ignored file outside `assets/`, `src/` and `tests/` (e.g.
+`scripts/select_tests/zz_probe.py` under `.git/info/exclude`) is not listed. AC-S38-10 scopes ignored files to those
+three trees, and an unimported file is inert, so this is recorded as scope, not a finding. `make test TESTS=' '` or
+`SKIP=' '` selects, the default and not a narrowing the person asked for. When `TESTS` and `SKIP` are both given,
+`TESTS` wins, as it did before the patch. Scratch removed: `/tmp/s38/converge2`, `/tmp/s38/probe`, `/tmp/s38/held`
+and two logs.
 
 ## Differences from plan.md
 
