@@ -75,9 +75,10 @@ record cites the record or the commit. The slice adds no dependency.
 - **Rationale**: the recorded usage was split by today's rule, which double-counts only where brackets of different
   records overlap (`other_windows`, lines 268–278, reads only this checkout's records). A clone in CI has no
   transcripts; the figure it can stand behind is the non-overlapping one.
-- **Built**: the overlap check reads this tree's records and, through `git for-each-ref` and `git show`, those on every
-  local `slice/*` branch and on `main` or `master` (a slice's concurrent brackets live on its own branch); where git
-  cannot list them the recorded sum is unknown with that reason. `read_from.cost` names the transcripts, the recorded
+- **Built**: the overlap check reads this tree's records and, through `git for-each-ref` and `git show`, the copy at the
+  tip of every local branch, whatever it is named, and for a record this tree holds the entries its copy lacks (a slice's
+  concurrent brackets live on its own branch, and an integration branch can carry a newer copy); where git
+  cannot list or read them the recorded sum is unknown with that reason. `read_from.cost` names the transcripts, the recorded
   usage or both with counts, never the transcripts where none was read.
 
 ## R-6 Cut-off stage time ends at the last attributed line

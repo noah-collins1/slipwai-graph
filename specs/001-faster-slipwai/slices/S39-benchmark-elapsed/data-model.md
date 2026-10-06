@@ -81,7 +81,7 @@ named in a record, `<projects>/<slug>/<session>.jsonl` and `<session>/subagents/
 
 A session whose transcripts are absent: each entry's recorded `usage` totals stand in, counted where no bracket of
 another record overlaps the entry's interval. The other records are those of this working tree and, read with `git
-for-each-ref` and `git show <ref>:<path>`, those on every local `slice/*` branch and on `main` or `master`; an
+for-each-ref` and `git show <ref>:<path>`, the copy at the tip of every local branch, whatever it is named (for a record this tree holds, only the entries the tree's copy lacks, by `stage` and `started`); an
 overlap there reads `{"unknown": "brackets of <slice> on <ref> overlap this one and the transcripts are not on this
 machine"}`, and where git cannot list or read them the recorded sum is unknown with that reason. A record's
 `read_from.cost` (and each entry's `source`) says which entries came from the transcripts, which from recorded usage

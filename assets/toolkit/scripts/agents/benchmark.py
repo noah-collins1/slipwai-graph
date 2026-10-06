@@ -123,24 +123,23 @@ def attribution() -> Any:
     return _LOADED["attribution"]
 
 
-TRUNKS = ("main", "master")
-
-
 def branch_records() -> tuple[dict[str, list[dict[str, Any]]], dict[str, str], str | None]:
-    """The ended brackets of every record on a local `slice/*` branch or the integration branch that this working
-    tree does not hold (a record it holds is read from the tree), by `<ref>:<path>`, with each one's label; and why
-    not, where git could not list the branches or read one."""
-    held = {path.relative_to(ROOT).as_posix() for path, _ in records()}
+    """The ended brackets of every record at the tip of every local branch, whatever the branch is named, by
+    `<ref>:<path>`, with each one's label; and why not, where git could not list the branches or read one. A record
+    this working tree holds is read from the tree, so a branch's copy of it counts only for the entries the tree's
+    copy lacks (by `stage` and `started`): a newer copy on another branch is compared, an identical one is not."""
+    held = {path.relative_to(ROOT).as_posix(): {(item.get("stage"), item.get("started")) for item in other.get("stages", [])}
+            for path, other in records()}
     listed = git("for-each-ref", "--format=%(refname:short)", "refs/heads")
     if listed is None:
         return {}, {}, "git could not list the branches"
     found: dict[str, list[dict[str, Any]]] = {}
     labels: dict[str, str] = {}
-    for ref in (name for name in listed.splitlines() if name.startswith("slice/") or name in TRUNKS):
+    for ref in listed.splitlines():
         names = git("ls-tree", "-r", "--name-only", ref, "--", "specs")
         if names is None:
             return {}, {}, f"git could not read the files of {ref}"
-        for name in (item for item in names.splitlines() if item.endswith(f"/{RECORD}") and item not in held):
+        for name in (item for item in names.splitlines() if item.endswith(f"/{RECORD}")):
             text = git("show", f"{ref}:{name}")
             try:
                 other = json.loads(text) if text is not None else None
@@ -148,8 +147,11 @@ def branch_records() -> tuple[dict[str, list[dict[str, Any]]], dict[str, str], s
                 other = None
             if not isinstance(other, dict):
                 return {}, {}, f"git could not read {name} on {ref}"
-            found[f"{ref}:{name}"] = [item for item in other.get("stages", []) if "ended" in item]
-            labels[f"{ref}:{name}"] = f"{other.get('slice') or '(feature)'} on {ref}"
+            lacking = [item for item in other.get("stages", []) if "ended" in item
+                       and (item.get("stage"), item.get("started")) not in held.get(name, set())]
+            if lacking:
+                found[f"{ref}:{name}"] = lacking
+                labels[f"{ref}:{name}"] = f"{other.get('slice') or '(feature)'} on {ref}"
     return found, labels, None
 
 

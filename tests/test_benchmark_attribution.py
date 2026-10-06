@@ -248,6 +248,36 @@ class OtherBranchesTest(unittest.TestCase):
         self.assertIsInstance(figure, dict)
         self.assertIn("git", figure["unknown"])
 
+    def test_e4_an_integration_branch_with_any_name_is_read_like_the_others(self) -> None:
+        """T025 e1: the branch is `adopt-method`, S2's record is committed only there."""
+        repo = self.repo
+        git(repo, "branch", "-m", "main", "adopt-method")
+        path = record(repo, "S2", costed(entry("implement", stamp(1, "09:30:00"), stamp(1, "10:30:00")), 2000, "gone"))
+        commit(repo, stamp(1, "11:00:00"), "S2 on the integration branch", path)
+        git(repo, "checkout", "-q", "-b", "slice/S1", "HEAD~1")
+        record(repo, "S1", costed(entry("implement", stamp(1, "09:00:00"), stamp(1, "10:00:00")), 1000, "gone"))
+        found = summaries(repo)["S1"]
+        for figure in (found["cost"]["tokens"], found["entries"][0]["tokens"]):
+            self.assertIsInstance(figure, dict)
+            self.assertIn("brackets of S2 on adopt-method overlap", figure["unknown"])
+
+    def test_e5_a_newer_copy_of_a_record_this_tree_holds_is_compared_too(self) -> None:
+        """T025 e2: the tree holds S2 with a `plan` that overlaps nothing; `main`'s copy adds an overlapping one."""
+        repo = self.repo
+        plan = costed(entry("plan", stamp(1, "07:00:00"), stamp(1, "08:00:00")), 50, "gone")
+        path = record(repo, "S2", plan)
+        commit(repo, stamp(1, "08:00:00"), "S2 plan", path)
+        git(repo, "checkout", "-q", "-b", "slice/S1")
+        git(repo, "checkout", "-q", "main")
+        record(repo, "S2", plan, costed(entry("implement", stamp(1, "09:30:00"), stamp(1, "10:30:00")), 2000, "gone"))
+        commit(repo, stamp(1, "11:00:00"), "S2 implement on main", path)
+        git(repo, "checkout", "-q", "slice/S1")
+        record(repo, "S1", costed(entry("implement", stamp(1, "09:00:00"), stamp(1, "10:00:00")), 1000, "gone"))
+        found = summaries(repo)["S1"]
+        self.assertIsInstance(found["cost"]["tokens"], dict, found["cost"])
+        self.assertIn("brackets of S2 on main overlap", found["cost"]["tokens"]["unknown"])
+        self.assertEqual(found["entries"][0]["tokens"], found["cost"]["tokens"])
+
 
 if __name__ == "__main__":
     unittest.main()

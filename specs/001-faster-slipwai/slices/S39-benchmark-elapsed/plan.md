@@ -110,8 +110,8 @@ is not edited — here attribution stays by delegate type until a person migrate
   the shared bucket; returns per-entry tokens, delegates and last-line moments, per-record cost, per-session totals.
 - `assets/toolkit/scripts/agents/benchmark.py`: loads both by path with `sys.dont_write_bytecode` (as
   `hand_back_lines` loads `hand_backs.py`); `LADDER` gains `gate` after `mutation`; `summarise()` gains the new keys
-  (`feature_figures`, `session_totals` and `decision_health` once per feature; `branch_records()` reads the records on
-  local `slice/*` branches and `main`/`master` for the overlap check) and moves the old `rework` list to `reentered`; `COLUMNS`, `STAGE_COLUMNS`, `LEGEND`, `READING`, the feature
+  (`feature_figures`, `session_totals` and `decision_health` once per feature; `branch_records()` reads the records at the tip of
+  every local branch for the overlap check) and moves the old `rework` list to `reentered`; `COLUMNS`, `STAGE_COLUMNS`, `LEGEND`, `READING`, the feature
   heading and the page's slice heading as R3, R6, R9 say; a waiting table after the slice table; the decision-health
   lines; the notes for cut-off stage time and unresolved `drive-slice` descriptions. `check()` is unchanged.
 
