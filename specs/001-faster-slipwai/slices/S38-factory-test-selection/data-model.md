@@ -31,6 +31,8 @@ TEST_SELECTION = {
   `tests/` (`configurations` and `reads` unioned). A module whose closure holds an undeclared helper is undeclared.
   A test holds that no declared module is voided this way, so a declaration cannot be silently dead.
 - **Who may be declared**: only what a reading of the module (and its helpers) proves. A doubt leaves it undeclared.
+- **Under-claims are held** (T030): a declared module whose closure calls `generate(` or `refuse(`, or whose own file runs
+  `./slipwai`, and whose joined declaration names no `configurations`, fails the held-declarations check.
 
 ## The base
 
@@ -48,6 +50,12 @@ compared with as a tree (D138 item 4); it must share history with `HEAD` (`git m
 untracked files, deletions, both sides of a rename, and raw-byte differences), plus, for the trunk base,
 `changes.unpushed(scope, base).paths` (D153). Then, separately, every file git ignores under `assets/`, `src/` or
 `tests/` other than `__pycache__/`, `*.pyc`, `*.pyo`.
+
+Two additions from converge pass 1. **The root makefiles** (`Makefile`, `GNUmakefile`, `makefile`) are compared raw with the
+base — bytes, mode, presence, ignored or not — so an edit hidden by `--assume-unchanged`, `--skip-worktree` or an ignore
+rule is still the root Makefile's full row (T028). **An interpreter cache under `assets/`** that git ignores never makes
+the run full and carries no configuration, but joins the paths a module's `reads` match, so a module reading `assets`
+runs (T026); a replay leaves the working tree, caches included, out.
 
 ## Where a run is full, and its one line
 
@@ -78,7 +86,7 @@ Every changed path is matched by the first row that claims it.
 
 | Path | Effect |
 |---|---|
-| `catalog.json`, `assets/backing-services/prune.py`, `src/**`, `Makefile`, `scripts/verify`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, `project.json`, `slipwai`, `.gitignore`, `.gitattributes`, the selector (`scripts/select-tests.py`, `scripts/select_tests/**`) and its tests | **full**, with the row's rule (*the catalog*, *the pruner*, *the generator*, *the root Makefile*, …: *its effect cannot be established*) |
+| `catalog.json`, `assets/backing-services/prune.py`, `src/**`, `Makefile`, `scripts/verify`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, `project.json`, `slipwai`, `.gitignore`, `.gitattributes`, the selector (`scripts/select-tests.py`, `scripts/select_tests/**`) and its tests, the selector's change-set scripts (`assets/toolkit/scripts/check-slice-scope.py`, `assets/toolkit/scripts/verify_scoped/**` — T029), a `test*.py` or `__init__.py` under a `tests/` sub-package `discover` would import (*a test module the selector cannot name* — T027) | **full**, with the row's rule (*the catalog*, *the pruner*, *the generator*, *the root Makefile*, …: *its effect cannot be established*) |
 | `tests/test_<m>.py` | module `m` runs, and every module importing it |
 | `tests/<helper>.py` | every module whose import closure holds it |
 | `tests/**` (anything else) | the modules whose `reads` name it |
