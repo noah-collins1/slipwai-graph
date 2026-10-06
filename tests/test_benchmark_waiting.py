@@ -153,10 +153,10 @@ class WaitingTest(unittest.TestCase):
         head = next(index for index, line in enumerate(lines) if "unattributed" in line)
         split = [re.split(r"\s{2,}", line.strip()) for line in lines[head:head + 4]]
         self.assertEqual(split[0], ["slice", "elapsed", "worked", "dependency", "worker", "review", "integration",
-                                    "unattributed"])
+                                    "unattributed", "rework", "cost"])
         cells = {cells[0]: cells for cells in split[1:]}
-        self.assertEqual(cells["S2"], ["S2", "11h00m", "1h00m", "0s", "0s", "0s", "0s", "10h00m"])
-        self.assertEqual(cells["S3"][2:], ["unknown"] * 6)
+        self.assertEqual(cells["S2"], ["S2", "11h00m", "1h00m", "0s", "0s", "0s", "0s", "10h00m", "0s · 0", "unknown"])
+        self.assertEqual(cells["S3"][2:], ["unknown"] * 6 + ["0s · 0", "unknown"])
         self.assertEqual(out.count("S3: elapsed unknown"), 1)
         self.assertIn("S3: elapsed unknown — S3 is in neither", out)
         self.assertLess(out.index("slice  delegate/cycle"), out.index("unattributed"))

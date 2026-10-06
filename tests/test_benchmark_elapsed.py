@@ -178,7 +178,7 @@ class StageTimeTest(unittest.TestCase):
         self.assertTrue(headings and all("stage time" in line for line in headings), headings)
         found = summaries(self.repo)["S2"]
         self.assertEqual(found["reentered"], ["example-map"])
-        self.assertNotIn("rework", found)
+        self.assertEqual(found["rework"], {"seconds": 0, "tokens": 0})  # R4's meaning: no demo, no rework
 
 
 if __name__ == "__main__":

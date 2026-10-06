@@ -806,6 +806,7 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None) 
     # The post-converge `/gaps` pass is the ladder, not rework; a stage above it, re-entered, is.
     rework = [entry["stage"] for index, entry in enumerate(ended)
               if index > first_implemented and order(entry["stage"]) < order("gaps")]
+    tokens = [measures().recorded_tokens(entry) for entry in stages]
     found = measures().moments(reader(str(record.get("feature"))), record.get("slice"), stages)
     parts = measures().waiting(found, reader(str(record.get("feature"))), str(record.get("slice")), stages, cruise_log())
     last = {key: next((entry["signals"][key] for entry in reversed(ended) if key in entry.get("signals", {})), None)
@@ -838,6 +839,13 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None) 
         "split": sum(entry["signals"].get("split", 0) for entry in ended),
         "reentered": rework, "shape": record.get("shape"),
         "elapsed": found["elapsed"],
+        "rework": measures().rework(stages, tokens, last_lines),
+        "cost": {"tokens": measures().sum_figures([figure for entry, figure in zip(stages, tokens, strict=True)
+                                                   if "ended" in entry]), "shared": measures().unknown("no transcript was read")},
+        "entries": [{"stage": entry["stage"], "started": entry.get("started"),
+                     "stage_seconds": measures().stage_seconds([entry], {0: last_lines[index]}
+                                                               if last_lines and index in last_lines else None),
+                     "tokens": tokens[index], "delegates": []} for index, entry in enumerate(stages)],
         "moments": {key: measures().printed(found[key]) for key in ("ready", "accepted", "demo_accepted", "merged")
                     if key in found},
         "worked_seconds": parts["worked"], "waiting": parts["waiting"],
@@ -879,14 +887,18 @@ def table(rows: list[list[str]], columns: tuple[str, ...] = COLUMNS) -> str:
                      for line in [list(columns), *rows])
 
 
-WAITING_COLUMNS = ("slice", "elapsed", "worked", "dependency", "worker", "review", "integration", "unattributed")
+WAITING_COLUMNS = ("slice", "elapsed", "worked", "dependency", "worker", "review", "integration", "unattributed",
+                   "rework", "cost")
 
 
 def waiting_rows(summaries: list[dict[str, Any]]) -> list[list[str]]:
     """Each slice's elapsed and where it went; a figure no record supports reads `unknown`."""
     shown = lambda figure: "unknown" if isinstance(figure, dict) else wall(figure)  # noqa: E731
+    tokens = lambda figure: "unknown" if isinstance(figure, dict) else compact(figure)  # noqa: E731
     return [[summary["slice"], shown(summary["elapsed"]), shown(summary["worked_seconds"]),
-             *(shown(summary["waiting"][name]) for name in WAITING_COLUMNS[3:])]
+             *(shown(summary["waiting"][name]) for name in WAITING_COLUMNS[3:8]),
+             f"{wall(summary['rework']['seconds'])} · {tokens(summary['rework']['tokens'])}",
+             tokens(summary["cost"]["tokens"])]
             for summary in summaries if summary["slice"]]
 
 

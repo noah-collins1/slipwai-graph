@@ -95,6 +95,14 @@ def entry(stage: str, started: str, ended: str, **signals: object) -> dict:
             "usage": {"source": None, "reason": "fixture"}}
 
 
+def costed(item: dict, tokens: int, session: str = "s1") -> dict:
+    """The entry with a recorded `usage` of `tokens` (all input), as `end` leaves one read from a transcript."""
+    item["usage"] = {"source": "claude", "session": session, "subagents": {},
+                     "host": {"m": {"input": tokens, "output": 0, "cache_read": 0, "cache_creation": 0}}}
+    item["ran"] = ["m"]
+    return item
+
+
 def _epoch(text: str) -> int:
     return int(datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC).timestamp())
 

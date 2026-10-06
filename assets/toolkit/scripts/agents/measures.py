@@ -320,6 +320,53 @@ def stage_seconds(entries: list[dict[str, Any]], last_lines: dict[int, int] | No
     return total
 
 
+REFUSED = ("behaviour", "implementation")
+TOKEN_KEYS = ("input", "output", "cache_read", "cache_creation")
+
+
+def recorded_tokens(entry: dict[str, Any]) -> Any:
+    """What the entry's own `usage` says it cost — the four counts over every model, host and delegates — or why
+    nothing was read. An unbracketed entry has no tokens to read (its start and end were the same moment)."""
+    usage = entry.get("usage") or {}
+    if "ended" not in entry:
+        return unknown("the entry is still open")
+    if entry.get("seconds") == 0:
+        return unknown("not recorded: the stage was not bracketed around its work")
+    if not usage.get("source"):
+        return unknown(f"not recorded: {usage.get('reason') or 'no usage was read'}")
+    return sum(tokens.get(key, 0) for part in ("host", "subagents") for tokens in (usage.get(part) or {}).values()
+               for key in TOKEN_KEYS)
+
+
+def sum_figures(figures: list[Any]) -> Any:
+    """The sum of figures, or the first reason one of them is unknown: a total is never made of a guess."""
+    for figure in figures:
+        if is_unknown(figure):
+            return figure
+    return sum(figures)
+
+
+def rework_indices(entries: list[dict[str, Any]]) -> list[int]:
+    """Every entry after a `demo` whose outcome was `behaviour` or `implementation`, up to (not including) the next
+    `demo`, or to the record's end: what a demo that was not accepted sent back. After an `accepted` one, none."""
+    found = []
+    refused = False
+    for index, entry in enumerate(entries):
+        if entry.get("stage") == "demo":
+            refused = (entry.get("signals") or {}).get("outcome") in REFUSED
+        elif refused and "ended" in entry:
+            found.append(index)
+    return found
+
+
+def rework(entries: list[dict[str, Any]], tokens: list[Any], last_lines: dict[int, int] | None = None) -> dict[str, Any]:
+    """The rework entries' stage time and tokens (`tokens[i]` is entry `i`'s figure)."""
+    chosen = rework_indices(entries)
+    kept = {new: (last_lines or {})[old] for new, old in enumerate(chosen) if old in (last_lines or {})}
+    return {"seconds": stage_seconds([entries[index] for index in chosen], kept),
+            "tokens": sum_figures([tokens[index] for index in chosen])}
+
+
 def cut_off_notes(label: str, entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> list[str]:
     """For each cut-off entry, where its stage time ends and why: its last attributed transcript line, or its
     recorded end because no transcript line could be read."""
