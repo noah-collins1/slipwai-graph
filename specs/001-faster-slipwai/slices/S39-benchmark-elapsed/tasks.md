@@ -256,6 +256,255 @@ shared by T002, T003 and T008.
 No screen in this slice. (No white box either: a method slice with no entry in `docs/event-model/model.yaml`, so no
 mockup states to write back.)
 
+## Phase 8: Converge pass 1 — every figure from a record that says it (appended)
+
+Each task closes a class, not the instance found: its RED is the reproduction under *Convergence* below, written as
+a test that enters through `benchmark.py` as a `python3 -B` subprocess over `tests/elapsed_fixture.py`'s scratch
+project, and its GREEN holds the T001 pin and the identity `worked + causes + unattributed == elapsed` on every
+fixture it touches. The Constraints above hold unchanged (≤ 350 lines, `encoding="utf-8"`, no mocking, scratch
+under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 (one file, `attribution.py`, and
+`summarise()`), T015 → T018 → T019 (one file, `measures.py`'s readers), then T020, T021, T022, T023.
+
+- [ ] T014 [US4] **HIGH — `read_from.cost` names what the cost was read from** (AC-S39-9; constitution VII).
+  `sources()` is passed `bool(found.get("cost"))`, and `attribute()` sets a `cost` on every record, so every record says
+  `the transcripts, by delegate and bracket` even when no transcript is on the machine and every figure is the
+  entries' recorded usage. Close the class: `attribute()` returns, per record, which entries it read from the
+  transcripts and which from recorded usage, and `read_from.cost` (and each `entries[i]`) names that. Where both are
+  mixed it names both, with counts. RED: e1 the `test_benchmark_attribution` e7 fixture (empty `HOME`, `costed`
+  entries): `read_from.cost` names the recorded usage and never says `transcripts` · e2 one session present and one
+  absent: both are named · e3 every `read_from` value in `test_benchmark_feature`'s e2 is asserted against a run with
+  and without transcripts, not only for being present.
+  Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/measures.py`,
+  `assets/toolkit/scripts/agents/benchmark.py`, `tests/test_benchmark_feature.py`, `tests/test_benchmark_attribution.py`.
+
+- [ ] T015 [US1] **HIGH — a slice id is read the same way in every table the ladder writes** (AC-S39-1, -2). Today
+  `graph_rows` reads only backticked ids in `depends_on` (measures.py:96), and `added()`/`done()` search with
+  `` `<id>` `` (measures.py:152, 164). The generated split template writes `— or id list` and `[ID]`, and
+  `done_slices()` (benchmark.py:679) accepts a bare `S1-a`. So a bare `depends_on` drops the dependency and prints a
+  doubled elapsed, and a bare register row reads `open since` for a slice `check-benchmark` calls done. Close the class:
+  one cell reader in `measures.py` for the graph's first cell, its `depends_on` cell (backticked or bare,
+  comma-separated, `—` empty), the register's first cell (the rule `done_slices` uses) and the split's mention. The
+  pickaxe needle is the bare id, and the `holds` content check stays exact, so `S1` never matches `S10`. RED: e1 graph
+  `` | `S2-b` | S1-a | `` → S2-b's ready is S1-a's row commit and elapsed is 2 days (today 4) · e2 register `| S1-a |` →
+  accepted read, not `open since` · e3 a split naming `S2-b` bare → ready read · e4 bare `S1` beside `S10` in all three
+  tables: S1's moments are its own.
+  Files: `assets/toolkit/scripts/agents/measures.py`, `tests/elapsed_fixture.py`, `tests/test_benchmark_elapsed.py`.
+
+- [ ] T016 [US4] **HIGH — no figure is a bare `0` where nothing was read** (AC-S39-8 "each new figure is derived or
+  reads unknown"; R8 e3; the fragment's own claim). Today, with transcripts present, an unbracketed entry is held, so
+  its `tokens` is `0` and the record's `cost.tokens` prints a number. Without transcripts the same entry reads `unknown —
+  not recorded: the stage was not bracketed`. On this repository that is S00 `mutation`, S01 `gaps` and `plan`, and
+  S20 `gaps`. `entries[i].stage_seconds` is `0` for an open entry and for an unbracketed one, against READING's "its
+  stage time and tokens are missing, not zero". The pin's e3 is vacuous for waiting (its tree is no git repository, so
+  every cause is unknown) and never reads `entries`. Close the class: an unbracketed entry's tokens are unknown in both
+  paths, and its record's `cost.tokens` follows one rule in both. An open or unbracketed entry's `stage_seconds` is
+  unknown with its reason. The record-level `stage_seconds`/`seconds` keep today's sum and the `+` floor (the pin). RED:
+  e1 a fixture with an unbracketed and an open entry, with and without a `Session`: per-entry `stage_seconds` and
+  `tokens` unknown, the record's `cost.tokens` the same in both runs · e2 the pin's e3 also run over a dated git copy
+  of the 8072724 records, with transcripts and without, and asserting every `entries[i]` figure and every waiting cause.
+  Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/benchmark.py`,
+  `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_pin.py`, `tests/test_benchmark_attribution.py`.
+
+- [ ] T017 [US2] **HIGH — without transcripts, the overlap check sees every record that could overlap** (AC-S39-5
+  "brackets kept in a worktree and on the integration branch do not see each other"; R5 e7). `overlapping()` reads only
+  the working tree's records, so on a slice branch a concurrent slice's brackets, which sit on that slice's branch, are
+  invisible, and the recorded sum (every sub-agent in the session's window) is printed as the slice's cost. On this
+  branch, with an empty `HOME`, S39's `plan` reads 28 417 982 tokens against 3 918 980 attributed, and the record
+  100 114 540 against 32 198 975. Close the class: the overlap check also reads every record on local `slice/*` branches
+  and the integration branch (`git for-each-ref`, `git show <ref>:<path>`). Where git cannot list them, the recorded sum
+  is unknown with that reason. RED: e1 S1 on `slice/S1`, S2's overlapping record committed only on `slice/S2`, empty
+  `HOME`: S1's `cost.tokens` reads `unknown — brackets of S2 … overlap` · e2 no branch holds an overlapping bracket: the
+  recorded sum stands (today's e7 kept).
+  Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/benchmark.py`,
+  `tests/test_benchmark_attribution.py`, `tests/elapsed_fixture.py`.
+
+- [ ] T018 [US1] **MEDIUM — a truncated or failing git history is not an absent one**. In a `--depth 1` clone, the
+  oldest commit holding every row is the graft, so every done slice reads `elapsed 0`, `worked 0` and every cause `0`.
+  `first()` also treats `git log` returning None (a failure) as "no such commit". Close the class: `Reader` says
+  `unknown — git history is shallow: …` when `git rev-parse --is-shallow-repository` is `true`, and `unknown — git
+  failed: <command>` when a `git log`/`git show` it depends on fails. Only an empty answer means "not found". RED: e1
+  the R1 e1 fixture cloned `--depth 1`: elapsed, worked and every cause unknown naming the shallow history · e2 a `git`
+  that fails on `log` (a fake `git` first on `PATH` in the test tree): unknown naming the failure, not `open since`.
+  Files: `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_elapsed.py`.
+
+- [ ] T019 [US1] **MEDIUM — a cruise log that cannot be read whole leaves review and worker unknown**. `parse_log`
+  skips a non-JSON line, and `iterations`/`parks` skip a row without a parsable `started`/`ended`, so a torn park row
+  moves its seconds to `worker`/`unattributed` while `read_from.review` says `none present: no park`. A log whose
+  times all fail to parse says `none present: no cruise log`. Close the class: the reader keeps what it could not read,
+  with its line number. Any such line makes `review`, `worker` and `unattributed` unknown, naming the line, and a log
+  that exists is never reported as absent. RED: e1 the park row cut mid-line: review, worker and unattributed unknown
+  naming line 1 (today review 0, unattributed 115 200) · e2 every row's `started` with fractional seconds: unknown,
+  never `no cruise log` · e3 a clean log: today's figures unchanged.
+  Files: `assets/toolkit/scripts/agents/measures.py`, `assets/toolkit/scripts/agents/benchmark.py`,
+  `tests/test_benchmark_waiting.py`.
+
+- [ ] T020 [US1] **MEDIUM — a cut-off entry ends at its last line, read as a last line** (AC-S39-3). `Totals.last` is
+  each request's *first* line (`read_requests` keeps the first line per key), so the feature's cut-off `ground` entry
+  (started 01:44:46Z, lines to 01:44:47Z) "ends at its last transcript line 2026-10-03T01:44:42Z", before its own
+  start, and its stage time is clamped to `0`. S14 `gaps` says its transcript "could not be read" when it was read and
+  held no request. Close the class: the last line is the latest timestamped line of any request attributed to the
+  entry. One that precedes the start leaves the recorded end standing, with a note that the transcript contradicts the
+  bracket. Read-with-nothing-found and not-read are two different notes. RED: e1 a cut-off entry whose one request
+  writes lines at start−4 s and start+1 s: stage time 1 s, note names start+1 s · e2 a request wholly before the
+  start: recorded end, the contradiction noted · e3 transcripts present, no request in the entry: the note says none
+  was found.
+  Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/measures.py`,
+  `tests/test_benchmark_elapsed.py`.
+
+- [ ] T021 [US4] **MEDIUM — every feature's figures are in `--json`, with or without a feature record** (AC-S39-6,
+  -9). `json_records()` attaches `feature_figures`, `session_totals` and `decision_health` only to a record with no
+  `slice`. A feature whose stages above the slice loop were never bracketed (which `check-benchmark` warns of, but
+  which happens) prints all three on the aggregate's line and carries none of them in `--json`, with no unknown and no
+  reason. Close the class: each feature in `--json` carries the three once. **Carrier is the host's call**
+  (recommendation: on the feature's first slice record in path order where no feature record exists, with
+  `read_from.feature_figures` saying so). RED: e1 two slice records and no feature record: the three keys present
+  exactly once for the feature · e2 with a feature record: unchanged.
+  Files: `assets/toolkit/scripts/agents/benchmark.py`, `tests/test_benchmark_feature.py`.
+
+- [ ] T022 [US3] **MEDIUM — decision health reads no figure over a partial or mis-read set** (AC-S39-7; the
+  `218cb7f` class). The median wait per tier is taken over only the entries a skipper bracket holds, and is printed with
+  no count: of ten `easy` entries, two held gives `easy 6m00s`. `reviewed`/`reverted` are substring tests on the
+  Status line, so `- **Status:** standing — to be ratified at S28` counts as reviewed: 0 % of 3, not flagged, when
+  nothing was reviewed. Close the class: each median carries how many entries it was read from, of how many
+  (`{median, read, of}`, and the line `easy 6m00s (2 of 10)`). A review verdict is the Status line's first word, in
+  `SPELLING`. RED: e1 ten `easy` entries, two held: the line and `--json` name 2 of 10 · e2 three entries whose Status
+  says `to be ratified`: the rate unknown, `no tiered entry was ratified or reverted` · e3 today's e2–e5 unchanged.
+  Files: `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_feature.py`.
+
+- [ ] T023 **LOW — the fragment and the slice's records say what was built**. The catch-up's list of what `migrate`
+  brings leaves out the regenerated `commands/benchmark.md` (`benchmark_command`, src/slipwai/project/benchmark.py:97,
+  whose page description changed). Its "never a bare `0`" and "overlapping brackets … read `unknown`" become true only
+  with T016 and T017, so re-read them after those land. `data-model.md` still names `feature`/`sessions` (built:
+  `feature_figures`/`session_totals`, because the pin holds the old keys), a figure where decision health returns
+  `{percent, numerator, denominator, flagged, why}`, and "the skipper bracket" where the shortest holding one is taken.
+  The plan's test list lacks `tests/test_benchmark_attribution_chain.py`. RED: `test_benchmark_elapsed_migrate`'s
+  catch-up example names `commands/benchmark.md`.
+  Files: `changelog.d/benchmark-elapsed.md`, `tests/test_benchmark_elapsed_migrate.py`, `data-model.md`, `plan.md`.
+
+- [ ] T024 [US1] **MEDIUM (host, after pass 1) — time outside any iteration is *worker*, as AC-S39-2 says**
+  (AC-S39-2, -10). Where `specs/cruise-log.jsonl` exists, *worker* takes every second from the log's first row's
+  `started` to accepted that worked time and the earlier causes did not take — the gaps between iterations and the time
+  after the last logged row included ("outside any iteration"); only time before the log's first row stays
+  *unattributed*, and with no log every such second stays *unattributed* (R10 unchanged). `read_from` for worker names
+  the log and says it counts time outside any iteration. RED: a slice accepted after the log's last row — the seconds
+  between that row's `ended` and accepted, unclaimed by any other cause, read as worker (today: unattributed); S08 on
+  this repository's records reads 0 s unattributed. Data-model's *worker* row is amended with T023.
+  Files: `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_waiting.py`.
+
+**Host decision on T021** (pass 1 asked): a feature with no feature record carries its `feature_figures`,
+`decision_health` and `session_totals` on its first slice record in `--json` (path order), and the aggregate is
+unchanged.
+
 ## Convergence
 
-*(The verdict is written here by the converge stage.)*
+### Pass 1 — 2026-10-06, cruise iteration 24, `drive-converge` (worktree at `957c808`)
+
+**Verdict: not converged.** 4 HIGH, 5 MEDIUM, 1 LOW, each a task above (T014–T023). Budget: complete, nothing marked
+incomplete.
+
+**How it was judged.** No `.codegraph/` exists in this worktree or the main checkout, so symbols were read directly.
+The reproductions ran under `/tmp/s39/`: a clone of this worktree, `/tmp/s39/real`, with the main checkout's
+`specs/cruise-log.jsonl` copied in, run with the real transcripts and with an empty `HOME`; scratch projects from
+`tests/elapsed_fixture.py` under `/tmp/s39/repro/out`; direct calls into `measures.py`/`attribution.py`. Teeth were
+checked by mutating the *clone* only and restoring each file with `git checkout -- <path>` there; the worktree was
+never mutated. Suites: the 13 targeted modules (102 tests) OK, 1 skipped (`test_changelog`'s history guard);
+`make lint typecheck check-structure` clean; no `__pycache__` under `assets/`; no mocking import; every text
+`open`/`read_text` names `utf-8` (the two binary opens in `attribution.py` excepted); `VERSION` `1.6.0.dev0`.
+
+**Findings (most severe first), each with its reproduction.**
+
+1. **HIGH — `read_from.cost` is false on every record without transcripts** (T014). `HOME=/tmp/s39/emptyhome
+   python3 -B assets/toolkit/scripts/agents/benchmark.py --json` in `/tmp/s39/real`: all 18 records read
+   `"cost": "the transcripts, by delegate and bracket"` while their `cost.shared` says `no transcript was read`
+   (measures.py:496-497, benchmark.py:891-892, attribution.py:335-336 sets `cost` unconditionally).
+2. **HIGH — a bare id in the split or register is misread** (T015). A fixture with graph row `` | `S2-b` | S1-a | ``
+   (the template's `— or id list`): S2-b elapsed `345600` (ready = the split commit), against `172800` with
+   backticks. A bare register row `| S1-a |`: S1-a reads `open since 2026-10-01T09:00:00Z` and S2-b `not ready: S1-a
+   is not done`, while `done_slices()` counts both done.
+3. **HIGH — bare zeros where nothing was read** (T016). The real records with transcripts: S00 `mutation`, S01
+   `gaps`/`plan` and S20 `gaps` (unbracketed) read `tokens: 0`, `stage_seconds: 0`, and their records' `cost.tokens`
+   a number. Without transcripts the same entries read `unknown — not recorded: the stage was not bracketed`. A
+   fixture's open `converge` entry reads `stage_seconds: 0`. The pin's e3 (test_benchmark_pin.py:134-150) runs where
+   git is absent, so its waiting branch never executes.
+4. **HIGH — without transcripts, a concurrent slice on another branch is invisible** (T017). The empty-`HOME` run:
+   S39 `cost.tokens` 100 114 540 (the `plan` entry 28 417 982) against 32 198 975 (3 918 980) attributed from the
+   transcripts, printed as a number. S14's concurrent brackets live on `slice/S14`, which `overlapping()`
+   (attribution.py:216-232) never reads.
+5. **MEDIUM — shallow history reads as zero** (T018). The R1 fixture cloned `--depth 1`: S2-b `elapsed 0`, ready =
+   accepted = `2026-10-05T09:00:00Z`, `worked_seconds 0`, every cause `0` (deep clone: 172800).
+6. **MEDIUM — a torn or unparsable cruise log is read as a smaller one** (T019). Park row 1 (day 4 12:00 → 18:00) cut
+   mid-line: review `21600 → 0`, unattributed `0 → 115200`, `read_from.review` `none present: no park`. Every row with
+   fractional seconds: `read_from.worker` `none present: no cruise log` with the log present.
+7. **MEDIUM — the cut-off end is a first line, and can precede the start** (T020). The aggregate over the real
+   records: `(feature) ground: stage time ends at its last transcript line 2026-10-03T01:44:42Z` for an entry started
+   01:44:46Z whose window holds lines to 01:44:47Z. Its `stage_seconds` is `0`. `S14-result-contract gaps: … its
+   transcript's last line could not be read`, though the transcript was read.
+8. **MEDIUM — feature figures vanish from `--json` with no feature record** (T021). Two slice records and no feature
+   record: no record carries `feature_figures`, `session_totals` or `decision_health`, while the aggregate prints
+   `stage time 2h00m in all; elapsed 96h00m; …`.
+9. **MEDIUM — decision health over a partial or substring-matched set** (T022). `decision_health` over ten `easy`
+   entries, two held by a 360 s skipper bracket: `median wait: easy 360` with no count. Three entries whose Status says
+   `to be ratified at S28`: `misclassification rate 0% (0 of 3 reviewed)`.
+10. **LOW — the fragment and records drift from what was built** (T023). See the task.
+
+**Judged and left as built.**
+- *An entry with no recorded usage makes `cost.tokens` unknown even when transcripts were read.* This is the honest
+  answer. Such an entry has no window (no `span`, no cursor), so the transcripts cannot place its work, and its host
+  requests sit in the shared bucket. A number would be a floor presented as a total. T016 makes the unbracketed case
+  follow the same rule.
+- *`--json` keys `feature_figures`/`session_totals`.* These are right, because the pin holds `feature` (a string) and
+  `sessions` (a count) on every old record. *Decision health as objects* and *the shortest skipper bracket holding
+  `When:`* are sound. All three are written into the data model by T023.
+- *The D65 pin genuinely compares.* `benchmark.py` at `525399b` against the working copy over the `8072724`
+  records, cell by cell. Mutating one cell (`converge_passes + 1`) failed it 17 times. `check` is byte-identical.
+- *Teeth.* An `unattributed + 1` mutation failed 5 tests (waiting/elapsed); a chain that never finds `drive-slice`
+  failed 3; turning off the `218cb7f` partial-ready guard failed 5 plus 1 error; inverting the cost provenance failed 3;
+  turning off dedup of a merged bracket failed 1.
+- *The identity* `worked + causes + unattributed == elapsed` holds on every accepted slice of the real records (15 of
+  15) and by construction (measures.py:470-477). *Token conservation:* `attributed + shared == total` per session by
+  construction (attribution.py:312).
+- *Scope.* `git diff --name-only 525399b HEAD` is the Structure Decision's paths, this folder, and
+  `tests/test_hand_backs_coverage.py`. `tests/test_benchmark_attribution_chain.py` is one test module beyond the plan's
+  list (T023). Nothing under `delivery/`. The uncommitted `benchmark.json` change is the host's open `converge`
+  bracket, untouched.
+- *Factory text.* `drive.md` (parallel_slices.py) and `cruise.md` (cruise.py) say `drive-slice <id>`, and *What each
+  stage costs* names `gate` and its bracket, as AC-S39-2/-5 ask.
+
+**Handed back (no task — a reading of the spec, not a defect).** AC-S39-2 lists *worker* as "no bracket of the
+slice open, **or outside any iteration**". The data model and code count seconds outside the cruise log's span as
+*unattributed*: the more conservative reading, which leaves S08 with 20 s unattributed after iteration 23's end. The
+host can keep it, and say so in the AC, or ask for those seconds under *worker*.
+
+**Not judged.** AC-S39-11 is the demo. The code produces what `quickstart.md` steps 1–4 expect: the columns, three
+named feature figures, decision-health unknowns, S08's `implement` delegates all `S08 …`, and `attributed + shared ==
+total` per session. One exception is S08's dependency: `quickstart.md` derives it as 9 712 s "less any S08 bracket",
+and the code gives 7 538 s; the demo's hand derivation is where that is checked. The shared bucket of a session
+whose requests serve two features is summed into both features' `shared` (attribution.py:346). This repository has
+one feature, so that was not reproduced.
+
+**Constitution, by principle the diff touches.**
+- **I (a generated project owns its files)**: `check()` is unchanged (benchmark.py:707-742) and pinned byte for byte
+  (test_benchmark_pin.py:152-155). `migrate` carries the modules (test_benchmark_elapsed_migrate.py:112). The catch-up
+  note exists (changelog.d/benchmark-elapsed.md:5) but its file list is incomplete (T023).
+- **III (simplicity)**: the two new modules are justified at plan.md:85-86 and loaded by path, bytecode off
+  (benchmark.py:99-121).
+- **V (acceptance-driven)**: every example enters through `benchmark.py` as a subprocess (elapsed_fixture.py:172-174),
+  and the tests have teeth (above).
+- **VII (auditability)**: `read_from` per figure (measures.py:480-498) is **unmet** where it is false or a figure is
+  a bare `0` (T014, T016), and where a partial record is read as whole (T015, T017-T022).
+- **VIII (versioning)**: the fragment's first line is `MINOR`; `VERSION` is `1.6.0.dev0`. The `--json` `rework` key's
+  move is named in the catch-up and held by the pin (`RENAMED_KEYS`, test_benchmark_pin.py:34).
+- **II, IV, VI**: not touched. No write endpoint, no domain/adapter code, no third-party adapter; transcripts and
+  `meta.json` are read at `attribution.py`'s boundary into its own `Request`/`Session`.
+
+**By level.**
+- *Domain* (`measures.py`, `attribution.py`): the identity and attribution are proven. Reading partial or
+  differently-spelled records is not (T015, T018-T020, T022).
+- *Use case* (`summarise`, `json_records`, `aggregate`): figures are assembled. Provenance, bare zeros and feature
+  figures are not right (T014, T016, T021).
+- *Delivery adapter* (the CLI and the generated `drive.md`/`cruise.md`/`benchmark.md`): proven by
+  `test_benchmark_elapsed_migrate`. The catch-up's file list is not (T023).
+- *Screen*: the overview page's columns, headings and decision-health section are proven by the tests and by
+  `/tmp/s39/aggregate.txt`. Its figures inherit the defects above.
+- *Published contract* (`--json`, the fragment, `benchmark.json` untouched): the old keys are proven by the pin. The
+  new keys' truthfulness is not (T014, T016, T017, T021).
