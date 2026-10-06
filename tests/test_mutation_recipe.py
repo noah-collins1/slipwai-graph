@@ -7,6 +7,8 @@ factory's recipe for the services under test (built from the factory's own per-b
 """
 from __future__ import annotations
 
+import stat
+
 import test_mutation_sweeps
 from mutation_scope_fixture import SLICE, ScopeCase, with_recipe
 from stamp_fixture import git
@@ -21,7 +23,7 @@ GO_FILE = "apps/service/health/more.go"
 SHAPES = {"go two-service": (TWO_GO, GO_FILE), "spring": ((SPRING,), SPRING_FILE)}
 
 
-class RecipeTest(ScopeCase):
+class RecipeBase(ScopeCase):
     def fit_recipe(self, words: tuple[str, ...]) -> None:
         """These examples set the recipe themselves, so the run does not fit it."""
 
@@ -51,6 +53,8 @@ class RecipeTest(ScopeCase):
         self.assertEqual(calls(self.log)[0][3], "mutation-full")
         self.assertEqual(status, 0)
 
+
+class RecipeTest(RecipeBase):
     def test_e1_an_edit_to_mutation_fulls_recipe_line_sweeps_the_whole_run_for_each_wired_backend(self) -> None:
         for name, (words, produced) in SHAPES.items():
             with self.subTest(backend=name):
@@ -102,7 +106,7 @@ class RecipeTest(ScopeCase):
                         self.commit("the change")
                     env = clean_environment(SINCE="HEAD~1") if since else None
                     status, lines, recording = self.run_recording(*words, env=env)
-                    self.assertEqual(lines[0], NOT_FACTORY, lines)
+                    self.assertEqual(lines[0], NOT_FACTORY + (", with `SINCE=HEAD~1`" if since else ""), lines)
                     self.assertEqual(len([line for line in lines if line.startswith("mutation: ")]), 1, lines)
                     self.swept_whole(status, lines, recording)
                     self.log.unlink()
@@ -125,3 +129,55 @@ class RecipeTest(ScopeCase):
         status, lines, recording = self.run_recording(*TWO_GO)
         self.assertEqual(lines, ["mutation: this layout has no mutation scope — the recorded command runs"])
         self.swept_whole(status, lines, recording)
+
+
+class SinceTest(RecipeBase):
+    """T023 (D154): a recipe the project owns runs as written, `SINCE` included; the factory's own causes clear it."""
+
+    def seeing_since(self) -> None:
+        """The fake make also logs the `SINCE` its environment carries, as a line `env SINCE=<value>`."""
+        text = self.make.read_text(encoding="utf-8")
+        self.make.write_text(text.replace("echo -- >>", f'echo "env SINCE=$SINCE" >> "{self.log}"; echo -- >>'),
+                             encoding="utf-8")
+        self.make.chmod(self.make.stat().st_mode | stat.S_IXUSR)
+
+    def trunk_edits_recipe(self) -> None:
+        written = self.on_main(TWO_GO)
+        self.edit_line(written[0], "A=1 " + written[0])
+        git(self.repo, "checkout", "-q", "main")
+        self.commit("the trunk edits the recipe")
+        git(self.repo, "checkout", "-q", "-B", SLICE)
+        self.write(GO_FILE)
+        self.commit("the change")
+
+    def sources(self) -> dict[str, dict[str, str]]:
+        return {"the environment": clean_environment(SINCE="HEAD~1"),
+                "make's command line": clean_environment(SINCE="HEAD~1", MAKEFLAGS=" -- SINCE=HEAD~1")}
+
+    def test_t023_a_recipe_the_factory_did_not_write_keeps_since_for_the_sub_make_from_either_source(self) -> None:
+        self.seeing_since()
+        self.trunk_edits_recipe()
+        for source, env in self.sources().items():
+            with self.subTest(source=source):
+                status, lines, _ = self.run_recording(*TWO_GO, env=env)
+                self.assertEqual(lines[0], NOT_FACTORY + ", with `SINCE=HEAD~1`", lines)
+                made = calls(self.log)
+                self.assertEqual(len(made), 1, made)
+                self.assertEqual(made[0][:4], ["--no-print-directory", "-f", "Makefile", "mutation-full"])
+                self.assertFalse([word for word in made[0] if word.startswith("SINCE=")], made)
+                self.assertIn("env SINCE=HEAD~1", made[0])
+                self.assertEqual(status, 0)
+                self.log.unlink()
+
+    def test_t023_hold_the_scope_script_changing_still_clears_since_under_the_same_ref(self) -> None:
+        self.seeing_since()
+        self.trunk_edits_recipe()
+        script = self.repo / "scripts/mutation-scope.py"
+        script.write_text(script.read_text(encoding="utf-8") + "\n#\n", encoding="utf-8")
+        for source, env in self.sources().items():
+            with self.subTest(source=source):
+                _, lines, _ = self.run_recording(*TWO_GO, env=env)
+                self.assertEqual(lines[0], "mutation: the sweep runs — `scripts/mutation-scope.py` changed", lines)
+                made = calls(self.log)
+                self.assertIn("SINCE=", made[0])
+                self.log.unlink()

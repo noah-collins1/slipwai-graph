@@ -157,7 +157,12 @@ def full(make: str, makefile: str, clear_since: bool = False, dry: bool = False)
 
 
 class Sweep(Exception):
-    """The whole run is the sweep, for the reason this carries."""
+    """The whole run is the sweep, for the reason this carries. `keeps_since` is true only where the recipe that runs is the
+    project's own (D154): the sweep then hands `SINCE` on, and every other cause clears it."""
+
+    def __init__(self, reason: str, keeps_since: bool = False) -> None:
+        super().__init__(reason)
+        self.keeps_since = keeps_since
 
 
 class Refused(Exception):
@@ -669,10 +674,11 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
         if whole:
             raise Sweep(said(whole))
         if [line[1:] for line in rule_of(read(makefile) or "", "mutation-full")[1:]] != factory_recipe(services):
-            raise Sweep(NOT_FACTORY)
+            handed = os.environ.get("SINCE")
+            raise Sweep(NOT_FACTORY + (f", with `SINCE={shown(handed)}`" if handed else ""), keeps_since=True)
     except Sweep as why:
         say(SWEEPS.format(reason=why))
-        return full(make, makefile, bool(os.environ.get("SINCE")), dry)
+        return full(make, makefile, bool(os.environ.get("SINCE")) and not why.keeps_since, dry)
     except Refused as why:
         say(str(why))
         return 2
