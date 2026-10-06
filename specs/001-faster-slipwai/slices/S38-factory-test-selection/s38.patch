@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index 9dc17f0..719db01 100644
+index 9dc17f0..2422a55 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -23,13 +23,16 @@ typecheck: ## Byte-compile everything, then type-check it with mypy
@@ -19,11 +19,11 @@ index 9dc17f0..719db01 100644
 -test: ## Run the factory's test suite, or a slice: TESTS="test_a test_b", or SKIP="test_a"
 -	$(if $(TESTS),PYTHONPATH=src:tests python3 -m unittest -v $(TESTS),PYTHONPATH=src python3 -m unittest discover -s tests -v)
 +test: ## Run the modules this slice branch can reach (SINCE=<ref>, FULL=1 for all), or TESTS="test_a test_b" / SKIP="test_a"
-+	$(if $(TESTS),echo 'selection off: $(if $(filter file,$(origin TESTS)),SKIP,TESTS) given'; PYTHONPATH=src:tests python3 -m unittest -v $(TESTS),PYTHONPATH=src python3 -B scripts/select-tests.py)
++	$(if $(strip $(TESTS)$(SKIP)),echo 'selection off: $(if $(filter file,$(origin TESTS)),SKIP,TESTS) given'$(if $(strip $(TESTS)),; PYTHONPATH=src:tests python3 -m unittest -v $(TESTS)),PYTHONPATH=src python3 -B scripts/select-tests.py)
  
  # A tree that already passed is not judged again: the verify stamp every generated project carries answers first, from
  # where it ships, so the factory's own gate is the one it generates. The four checks are `verify-checks`; CI never reads
-@@ -52,9 +55,9 @@ VERIFY_STAMP = --tool make --make "$(MAKE)" $(foreach tool,$(VERIFY_TOOLS),$(if
+@@ -52,12 +55,15 @@ VERIFY_STAMP = --tool make --make "$(MAKE)" $(foreach tool,$(VERIFY_TOOLS),$(if
  .PHONY: verify
  verify: ## Full local gate — a tree that already passed is not judged again; VERIFY_FORCE=1 runs it anyway
  ifneq ($(strip $(TESTS)$(SKIP)$(FACTORY_BACKENDS)),)
@@ -35,3 +35,9 @@ index 9dc17f0..719db01 100644
  endif
  
  .PHONY: verify-checks
++# Run directly or through `verify`, the gate is whole: `override` holds against FULL on the command line, in MAKEFLAGS and
++# under `make -e`, `export` hands it to the `test` prerequisite's recipe, which the selector reads.
++verify-checks: override export FULL := 1
+ verify-checks: lint typecheck check-structure test
+ 	@echo
+ 	@echo 'verify: all gates passed'
