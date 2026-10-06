@@ -51,8 +51,8 @@ git log --reverse --format='%h %ct %cI' -S'| `S06-scoped-gate` |' -- $F/slices/R
 - **dependency** = S08's accepted demo end 00:31:54Z → S06's row 03:13:46Z (9 712 s), less any S08 bracket in it.
 - **review** = the parks in [ready, accepted]: for each cruise-log row ending `cruise: stopped: human`, its `ended` →
   the next row's `started`, clipped to the interval, less S08 brackets.
-- **worker** = the cruise log's span inside [ready, accepted] (from ready, inside iteration 13, to iteration 24's
-  still-open end: the log's last row is iteration 23, so its `ended` 03:14:24Z bounds it), less worked, the causes
+- **worker** = from the cruise log's first row's `started` (before ready here, so from ready) to accepted — time
+  between and after the logged iterations included, *outside any iteration* (AC-S39-2) — less worked, the causes
   above, and parks.
 - **unattributed** = elapsed − the rest. Check: every part sums to elapsed exactly.
 

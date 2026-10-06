@@ -265,7 +265,7 @@ fixture it touches. The Constraints above hold unchanged (≤ 350 lines, `encodi
 under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 (one file, `attribution.py`, and
 `summarise()`), T015 → T018 → T019 (one file, `measures.py`'s readers), then T020, T021, T022, T023.
 
-- [ ] T014 [US4] **HIGH — `read_from.cost` names what the cost was read from** (AC-S39-9; constitution VII).
+- [x] T014 [US4] **HIGH — `read_from.cost` names what the cost was read from** (AC-S39-9; constitution VII).
   `sources()` is passed `bool(found.get("cost"))`, and `attribute()` sets a `cost` on every record, so every record says
   `the transcripts, by delegate and bracket` even when no transcript is on the machine and every figure is the
   entries' recorded usage. Close the class: `attribute()` returns, per record, which entries it read from the
@@ -277,7 +277,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/measures.py`,
   `assets/toolkit/scripts/agents/benchmark.py`, `tests/test_benchmark_feature.py`, `tests/test_benchmark_attribution.py`.
 
-- [ ] T015 [US1] **HIGH — a slice id is read the same way in every table the ladder writes** (AC-S39-1, -2). Today
+- [x] T015 [US1] **HIGH — a slice id is read the same way in every table the ladder writes** (AC-S39-1, -2). Today
   `graph_rows` reads only backticked ids in `depends_on` (measures.py:96), and `added()`/`done()` search with
   `` `<id>` `` (measures.py:152, 164). The generated split template writes `— or id list` and `[ID]`, and
   `done_slices()` (benchmark.py:679) accepts a bare `S1-a`. So a bare `depends_on` drops the dependency and prints a
@@ -290,7 +290,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   tables: S1's moments are its own.
   Files: `assets/toolkit/scripts/agents/measures.py`, `tests/elapsed_fixture.py`, `tests/test_benchmark_elapsed.py`.
 
-- [ ] T016 [US4] **HIGH — no figure is a bare `0` where nothing was read** (AC-S39-8 "each new figure is derived or
+- [x] T016 [US4] **HIGH — no figure is a bare `0` where nothing was read** (AC-S39-8 "each new figure is derived or
   reads unknown"; R8 e3; the fragment's own claim). Today, with transcripts present, an unbracketed entry is held, so
   its `tokens` is `0` and the record's `cost.tokens` prints a number. Without transcripts the same entry reads `unknown —
   not recorded: the stage was not bracketed`. On this repository that is S00 `mutation`, S01 `gaps` and `plan`, and
@@ -305,7 +305,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/benchmark.py`,
   `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_pin.py`, `tests/test_benchmark_attribution.py`.
 
-- [ ] T017 [US2] **HIGH — without transcripts, the overlap check sees every record that could overlap** (AC-S39-5
+- [x] T017 [US2] **HIGH — without transcripts, the overlap check sees every record that could overlap** (AC-S39-5
   "brackets kept in a worktree and on the integration branch do not see each other"; R5 e7). `overlapping()` reads only
   the working tree's records, so on a slice branch a concurrent slice's brackets, which sit on that slice's branch, are
   invisible, and the recorded sum (every sub-agent in the session's window) is printed as the slice's cost. On this
@@ -318,7 +318,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/benchmark.py`,
   `tests/test_benchmark_attribution.py`, `tests/elapsed_fixture.py`.
 
-- [ ] T018 [US1] **MEDIUM — a truncated or failing git history is not an absent one**. In a `--depth 1` clone, the
+- [x] T018 [US1] **MEDIUM — a truncated or failing git history is not an absent one**. In a `--depth 1` clone, the
   oldest commit holding every row is the graft, so every done slice reads `elapsed 0`, `worked 0` and every cause `0`.
   `first()` also treats `git log` returning None (a failure) as "no such commit". Close the class: `Reader` says
   `unknown — git history is shallow: …` when `git rev-parse --is-shallow-repository` is `true`, and `unknown — git
@@ -327,7 +327,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   that fails on `log` (a fake `git` first on `PATH` in the test tree): unknown naming the failure, not `open since`.
   Files: `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_elapsed.py`.
 
-- [ ] T019 [US1] **MEDIUM — a cruise log that cannot be read whole leaves review and worker unknown**. `parse_log`
+- [x] T019 [US1] **MEDIUM — a cruise log that cannot be read whole leaves review and worker unknown**. `parse_log`
   skips a non-JSON line, and `iterations`/`parks` skip a row without a parsable `started`/`ended`, so a torn park row
   moves its seconds to `worker`/`unattributed` while `read_from.review` says `none present: no park`. A log whose
   times all fail to parse says `none present: no cruise log`. Close the class: the reader keeps what it could not read,
@@ -338,7 +338,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   Files: `assets/toolkit/scripts/agents/measures.py`, `assets/toolkit/scripts/agents/benchmark.py`,
   `tests/test_benchmark_waiting.py`.
 
-- [ ] T020 [US1] **MEDIUM — a cut-off entry ends at its last line, read as a last line** (AC-S39-3). `Totals.last` is
+- [x] T020 [US1] **MEDIUM — a cut-off entry ends at its last line, read as a last line** (AC-S39-3). `Totals.last` is
   each request's *first* line (`read_requests` keeps the first line per key), so the feature's cut-off `ground` entry
   (started 01:44:46Z, lines to 01:44:47Z) "ends at its last transcript line 2026-10-03T01:44:42Z", before its own
   start, and its stage time is clamped to `0`. S14 `gaps` says its transcript "could not be read" when it was read and
@@ -351,7 +351,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/measures.py`,
   `tests/test_benchmark_elapsed.py`.
 
-- [ ] T021 [US4] **MEDIUM — every feature's figures are in `--json`, with or without a feature record** (AC-S39-6,
+- [x] T021 [US4] **MEDIUM — every feature's figures are in `--json`, with or without a feature record** (AC-S39-6,
   -9). `json_records()` attaches `feature_figures`, `session_totals` and `decision_health` only to a record with no
   `slice`. A feature whose stages above the slice loop were never bracketed (which `check-benchmark` warns of, but
   which happens) prints all three on the aggregate's line and carries none of them in `--json`, with no unknown and no
@@ -361,7 +361,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   exactly once for the feature · e2 with a feature record: unchanged.
   Files: `assets/toolkit/scripts/agents/benchmark.py`, `tests/test_benchmark_feature.py`.
 
-- [ ] T022 [US3] **MEDIUM — decision health reads no figure over a partial or mis-read set** (AC-S39-7; the
+- [x] T022 [US3] **MEDIUM — decision health reads no figure over a partial or mis-read set** (AC-S39-7; the
   `218cb7f` class). The median wait per tier is taken over only the entries a skipper bracket holds, and is printed with
   no count: of ten `easy` entries, two held gives `easy 6m00s`. `reviewed`/`reverted` are substring tests on the
   Status line, so `- **Status:** standing — to be ratified at S28` counts as reviewed: 0 % of 3, not flagged, when
@@ -371,7 +371,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   says `to be ratified`: the rate unknown, `no tiered entry was ratified or reverted` · e3 today's e2–e5 unchanged.
   Files: `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_feature.py`.
 
-- [ ] T023 **LOW — the fragment and the slice's records say what was built**. The catch-up's list of what `migrate`
+- [x] T023 **LOW — the fragment and the slice's records say what was built**. The catch-up's list of what `migrate`
   brings leaves out the regenerated `commands/benchmark.md` (`benchmark_command`, src/slipwai/project/benchmark.py:97,
   whose page description changed). Its "never a bare `0`" and "overlapping brackets … read `unknown`" become true only
   with T016 and T017, so re-read them after those land. `data-model.md` still names `feature`/`sessions` (built:
@@ -381,7 +381,7 @@ under `/tmp/s39/`, `VERSION` stays `1.6.0.dev0`). Order: T014 → T016 → T017 
   catch-up example names `commands/benchmark.md`.
   Files: `changelog.d/benchmark-elapsed.md`, `tests/test_benchmark_elapsed_migrate.py`, `data-model.md`, `plan.md`.
 
-- [ ] T024 [US1] **MEDIUM (host, after pass 1) — time outside any iteration is *worker*, as AC-S39-2 says**
+- [x] T024 [US1] **MEDIUM (host, after pass 1) — time outside any iteration is *worker*, as AC-S39-2 says**
   (AC-S39-2, -10). Where `specs/cruise-log.jsonl` exists, *worker* takes every second from the log's first row's
   `started` to accepted that worked time and the earlier causes did not take — the gaps between iterations and the time
   after the last logged row included ("outside any iteration"); only time before the log's first row stays
