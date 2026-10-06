@@ -2,6 +2,7 @@
 does it is shared, in a figure that says so — never a number from a record that does not say it."""
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -151,6 +152,45 @@ class PartlyMissingTest(Base):
         found = summaries(self.repo)["S1"]
         self.assertEqual(found["cost"]["tokens"], 5010)
         self.assertIn("the transcripts", found["read_from"]["cost"])
+
+
+class TwoFeaturesTest(Base):
+    """T037 (F8): a session two features ran in has its shared bucket split between them, never counted by both."""
+
+    def lay(self) -> None:
+        said = self.session
+        first = said.open(None, "converge", P1)
+        said.say(None, "h0", 7, stamp(1, "09:01:00"))
+        second = said.open(None, "implement", P2)
+        said.say(None, "h1", 50, stamp(1, "09:02:00"))  # two of f's brackets cover it: shared, and f's
+        record(self.repo, "S1", said.entry("converge", stamp(1, "09:00:00"), stamp(1, "09:10:00"), first))
+        record(self.repo, "S2", said.entry("implement", stamp(1, "09:01:30"), stamp(1, "09:10:00"), second))
+        third = said.open(None, "implement", "specs/g/slices/S3/benchmark.json")
+        said.say(None, "g1", 9, stamp(1, "11:01:00"))
+        record(self.repo, "S3", said.entry("implement", stamp(1, "11:00:00"), stamp(1, "11:10:00"), third),
+               feature="g")
+        said.say(None, "late", 3, stamp(1, "12:00:00"))  # after every bracket: nobody's
+        feature_record(self.repo)
+        feature_record(self.repo, feature="g")
+
+    def test_e1_the_shared_bucket_is_split_by_the_brackets_that_cover_each_request(self) -> None:
+        self.lay()
+        found = json.loads(bench(self.repo, "--json").stdout)
+        mine = [item["session_totals"]["sess"] for item in found if item.get("session_totals")]
+        self.assertEqual(len(mine), 2)
+        by_attributed = {part["attributed"]: part for part in mine}
+        self.assertEqual(by_attributed[7]["shared"], 50)
+        self.assertEqual(by_attributed[9]["shared"], 0)
+        for part in mine:
+            self.assertEqual(part["total"], 69)
+            self.assertEqual(part["total"], part["attributed"] + part["shared"] + part["elsewhere"], part)
+        self.assertEqual(sum(part["shared"] for part in mine), 50)  # not 53 twice
+        shared = sorted(item["cost"]["shared"] for item in found if item["slice"] is None)
+        self.assertEqual(shared, [0, 50])
+
+    def test_e2_the_feature_says_which_other_feature_ran_in_the_session(self) -> None:
+        self.lay()
+        self.assertIn("also ran in feature g", bench(self.repo).stdout)
 
 
 if __name__ == "__main__":

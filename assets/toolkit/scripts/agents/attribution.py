@@ -405,12 +405,12 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 figure = recorded(entry)
                 lost = missing.get((key, index))
                 if lost is not None:
-                    names = ", ".join(lost)
+                    files = ", ".join(lost)
                     usage = entry.get("usage") or {}
                     if isinstance(figure, int) and not (usage.get("host") or usage.get("subagents")):
                         figure = unknown("its recorded usage holds no figure")
                     if isinstance(figure, dict):
-                        figure = unknown(f"{figure['unknown']}; {names} is not on this machine, so the transcripts "
+                        figure = unknown(f"{figure['unknown']}; {files} is not on this machine, so the transcripts "
                                          "were not read for it")
                 clash = overlapping(key, entry, others, labels) if isinstance(figure, int) else None
                 if isinstance(figure, int) and clash is None and elsewhere is not None:
@@ -442,18 +442,50 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
         result["records"][key] = {"entries": shown, "cost_read": read, "cost": {
             "tokens": bad if bad is not None else sum(figures) + loose[key], "shared": None,
             "sessions": {name: spent[key][name] for name in sorted(spent[key])}}}
+    ran: dict[str, list[str]] = {}  # the features that ran in each session
+    for key in keys:
+        for name in used[key]:
+            if str(by_key[key].get("feature")) not in ran.setdefault(name, []):
+                ran[name].append(str(by_key[key].get("feature")))
+    for name in ran:
+        ran[name].sort()
+
+    def part(name: str, feature: str) -> dict[str, Any]:
+        """One feature's part of a session: the whole of it where it ran there alone; else the attributed tokens of
+        its own records and the shared requests its brackets cover (the first feature, by name, where several
+        cover one), the rest being `elsewhere` — other features' and no one's."""
+        whole = summary[name]
+        if len(ran[name]) < 2:
+            return whole
+        brackets = {other: [item for item in held if item.session == name and
+                            str(by_key[item.path].get("feature")) == other] for other in ran[name]}
+        shared = 0
+        for request in shared_requests[name]:
+            covered = [other for other in ran[name]
+                       if any(item.window.covers(request.file, request.offset) for item in brackets[other])]
+            if covered and covered[0] == feature:
+                shared += request.tokens
+        attributed = sum(spent[key].get(name, 0) for key in keys if str(by_key[key].get("feature")) == feature)
+        return {"total": whole["total"], "attributed": attributed, "shared": shared,
+                "elsewhere": whole["total"] - attributed - shared}
+
     for feature in {str(record.get("feature")) for record in by_key.values()}:
         members = [key for key in keys if str(by_key[key].get("feature")) == feature]
         names = sorted(set().union(*(used[key] for key in members)))
         refused = unknown("no transcript was read") if not names or absent(names) else None
+        mine = {name: part(name, feature) for name in names if sessions[name].present}
         result["features"][feature] = {
-            "sessions": {name: summary[name] if sessions[name].present else
+            "sessions": {name: mine[name] if sessions[name].present else
                          dict.fromkeys(PARTS, unknown("the transcripts are not on this machine"))
                          for name in names},
             "notes": sorted({*(note for name in names for note in notes[name]),
                              *(f"{file} is not on this machine: the entries that span it are costed from their "
-                               "recorded usage" for file in notes_gone)}),
-            "shared": refused if refused is not None else sum(summary[name]["shared"] for name in names)}
+                               "recorded usage" for file in notes_gone),
+                             *(f"session {name} also ran in feature {other}: its shared bucket is split by the "
+                               "brackets that cover each request, and `elsewhere` is what this feature's records "
+                               "and shared share do not hold" for name in names for other in ran[name]
+                               if other != feature)}),
+            "shared": refused if refused is not None else sum(mine[name]["shared"] for name in names)}
         for key in members:
             cost = result["records"][key]["cost"]
             if by_key[key].get("slice") is None:

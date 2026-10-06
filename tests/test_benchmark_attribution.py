@@ -110,7 +110,7 @@ class ShareTest(unittest.TestCase):
         costs = sorted((item["path"], item["cost"]["tokens"]) for item in everything(self.repo) if item["slice"])
         self.assertEqual(sum(tokens for _, tokens in costs), 40)
         totals = summaries(self.repo)["(feature)"]["session_totals"]["sess"]
-        self.assertEqual(totals, {"total": 40, "attributed": 40, "shared": 0})
+        self.assertEqual(totals, {"total": 40, "attributed": 40, "shared": 0, "elsewhere": 0})  # two features ran in it
 
     def test_e5_the_records_and_the_shared_bucket_add_up_to_the_sessions_distinct_requests(self) -> None:
         said = self.session
