@@ -518,7 +518,7 @@ converged verdict while the patch waits for a person. A fix to the root `Makefil
 
 ### T020 — Converge, pass 1 (host task)
 
-- [ ] `drive-converge` over the slice's diff with `s38.patch` applied in `/tmp/s38/check`, against the constitution. **Brief it with the whole class**, not an
+- [x] `drive-converge` over the slice's diff with `s38.patch` applied in `/tmp/s38/check`, against the constitution. **Brief it with the whole class**, not an
   instance (S06 and S33 each needed five passes to find it): *anything make or the environment can change about which
   modules run* — every variable (command line, environment, `MAKEFLAGS`, `-e`, `MAKEOVERRIDES`, `SINCE` from the
   environment), every `GIT_*` and git configuration that moves the change set, a path git ignores, a path no rule
@@ -529,7 +529,7 @@ converged verdict while the patch waits for a person. A fix to the root `Makefil
 
 ### T021 — Converge, pass 2 (host task)
 
-- [ ] A second `drive-converge` pass over what pass 1's fixes changed, same class. A change to the root `Makefile`
+- [x] A second `drive-converge` pass over what pass 1's fixes changed, same class. A change to the root `Makefile`
   is a new patch (`s38-2.patch`) a person applies again.
 
 ### T022 — After-converge gaps pass (host task)
@@ -662,7 +662,7 @@ person, as T031/T032 did); were it applied first, they are `s38-2.patch`.
 
 ### T033 — HIGH: a `tests/` sub-package already on the base is never run, never named, never counted (AC-S38-12, -16; VIII)
 
-- [ ] T027 makes the run full only while a sub-package file is in the change set. Once the sub-package is on the base,
+- [x] T027 makes the run full only while a sub-package file is in the change set. Once the sub-package is on the base,
   the scan still reads `tests/*.py` only (`scripts/select_tests/declarations.py:223`, `scan`), so every later
   selected run leaves its modules out of the verdicts, the skipped lines and the total, while `unittest discover -s
   tests`, the full run, imports them. Reproduced in a patched scratch clone: `tests/sub/__init__.py` plus
@@ -682,7 +682,7 @@ person, as T031/T032 did); were it applied first, they are `s38-2.patch`.
 
 ### T034 — MEDIUM: `TESTS` given empty beside `SKIP` runs no module and passes — `make verify` included (AC-S38-6, -13; I)
 
-- [ ] The patched `test` recipe branches on `$(strip $(TESTS)$(SKIP))` and words the line by `$(origin TESTS)`.
+- [x] The patched `test` recipe branches on `$(strip $(TESTS)$(SKIP))` and words the line by `$(origin TESTS)`.
   An explicitly empty `TESTS` (command line, or exported empty in the environment, so `?=` does not assign) with
   any `SKIP` echoes `selection off: TESTS given` and runs nothing. Reproduced in the patched scratch clone:
   `make test TESTS= SKIP=test_matrix` → `selection off: TESTS given`, no unittest, `rc=0`; `TESTS= make test
@@ -699,7 +699,7 @@ person, as T031/T032 did); were it applied first, they are `s38-2.patch`.
 
 ### T035 — LOW: `make test verify-checks` runs `test` once, selected, then says `verify: all gates passed` (AC-S38-6, G3)
 
-- [ ] T031's `verify-checks: override export FULL := 1` reaches `test` only when `verify-checks` is what makes it.
+- [x] T031's `verify-checks: override export FULL := 1` reaches `test` only when `verify-checks` is what makes it.
   Named first as a goal, `test` is made once without `FULL`, and `verify-checks` finds it done. Reproduced in the
   patched scratch clone with a stub selector that prints `FULL`: `make test verify-checks -o lint -o typecheck -o
   check-structure` → `STUB FULL=None`, then `verify: all gates passed` (`make verify-checks`, `… FULL=`, `-e
@@ -713,7 +713,7 @@ person, as T031/T032 did); were it applied first, they are `s38-2.patch`.
 
 ### T036 — LOW: `held()`'s under-claim check sees one route to a generated project of four (AC-S38-8)
 
-- [ ] T030 (b) flags a reads-only declaration only for a `generate(`/`refuse(` call in the closure, or the literal
+- [x] T030 (b) flags a reads-only declaration only for a `generate(`/`refuse(` call in the closure, or the literal
   `./slipwai` in the module's *own* file (`declarations.py:126`, `under_claims` at `:235`). `stamp_fixture` reaches
   the launcher as `str(ROOT / "slipwai")`. Reproduced with `declarations.held()` over a scratch tree whose modules
   all declare `{"reads": []}`: `subprocess.run([str(ROOT / "slipwai"), "generate", …])`, a helper `gen_helper.py`
@@ -913,6 +913,25 @@ three trees, and an unimported file is inert, so this is recorded as scope, not 
 `SKIP=' '` selects, the default and not a narrowing the person asked for. When `TESTS` and `SKIP` are both given,
 `TESTS` wins, as it did before the patch. Scratch removed: `/tmp/s38/converge2`, `/tmp/s38/probe`, `/tmp/s38/held`
 and two logs.
+
+### After pass 2 (host, cruise iteration 24) — the findings fixed; the verdict this slice stops at
+
+Pass 2's four findings are fixed and each is held by the RED its task named: T033 `afdd6e2` (a sub-package anywhere in
+the tree makes the run full, named), T036 `17ab354` (the under-claim check reads the closure for the launcher by path
+and `slipwai.cli`), T034/T035 `563bdf8` + `f699166` (`s38.patch` regenerated: an empty `TESTS` reads as unset, a `SKIP`
+naming every module says no module runs — R-9, the host's answer to pass 2's question — and `verify-checks` makes
+`test` itself with `FULL=1`, whole in any goal order). The data model says each. On a fresh clone of the tip with
+`s38.patch` applied, every `test_select_tests_*` module, `test_select_tests_pin` and the four `test_factory_gate_stamp*`
+modules: 223 tests, OK (122.7 s). A dry run there on a throwaway `slice/x` with one go-asset line changed and `SINCE`
+its parent: the SINCE line, 5 modules skipped with their reasons, the seven backend readers narrowed to `go`,
+`selected 334 of 339`; without `SINCE`, `full: \`.gitignore\` changed — the ignore rules: …` (the trunk's diff).
+`git diff --stat 8072724..HEAD -- assets src/slipwai catalog.json VERSION changelog.d` is empty (AC-S38-17).
+
+**Verdict: converged on the patched tree, with no CRITICAL or HIGH open — two passes as briefed, the second's
+findings fixed and held by their tests, not judged again by a third pass.** Blocked at T019: until a person applies
+`s38.patch`, the 22 tests of `test_select_tests_make` and `test_select_tests_makefile` fail on this branch with the
+line naming the patch (AC-S38-14), and the demo (T023) cannot run. Noted, not a finding: `verify-checks` now runs
+`test` after lint, typecheck and check-structure rather than beside them under `make -j`.
 
 ## Differences from plan.md
 

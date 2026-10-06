@@ -31,8 +31,9 @@ TEST_SELECTION = {
   `tests/` (`configurations` and `reads` unioned). A module whose closure holds an undeclared helper is undeclared.
   A test holds that no declared module is voided this way, so a declaration cannot be silently dead.
 - **Who may be declared**: only what a reading of the module (and its helpers) proves. A doubt leaves it undeclared.
-- **Under-claims are held** (T030): a declared module whose closure calls `generate(` or `refuse(`, or whose own file runs
-  `./slipwai`, and whose joined declaration names no `configurations`, fails the held-declarations check.
+- **Under-claims are held** (T030, T036): a declared module whose import closure calls `generate(` or `refuse(`, runs
+  the launcher by path (`"./slipwai"`, `X / "slipwai"`, `["slipwai", …]`) or imports `slipwai.cli`, and whose joined
+  declaration names no `configurations`, fails the held-declarations check.
 
 ## The base
 
@@ -76,9 +77,13 @@ Checked in this order; the first that holds is the line, and every module runs a
 | 11 | the scoped-gate scripts cannot be loaded, or git fails | `full: the change set cannot be established — <why>` |
 | 12 | a changed path broadens (below) | ``full: `<path>` changed — <rule>`` (a path from the unpushed range is worded as D153 words it) |
 | 13 | an ignored file under `assets/`, `src/`, `tests/` | ``full: `<path>` is a file git ignores — what it changes cannot be established`` |
+| 14 | the tree holds a `test*.py` in a `tests/` sub-package `discover` enters (an `__init__.py` at every step), on the base or the branch (T033) | ``full: `<path>` is a test module the selector cannot name — its effect cannot be established`` |
 
-`TESTS` and `SKIP` never reach the selector: the `test` recipe runs them as today and prints
-`selection off: TESTS given` or `selection off: SKIP given`.
+`TESTS` and `SKIP` never reach the selector: the `test` recipe runs `RUN_TESTS` — a non-empty `TESTS`, else every
+module but `SKIP`'s — as today and prints `selection off: TESTS given` or `selection off: SKIP given`; an empty `TESTS`
+reads as unset (T034); a `SKIP` naming every module prints `selection off: SKIP given - no module runs` and runs none
+(R-9). `verify-checks` makes `test` itself, through a sub-make with `FULL=1`, so it is whole whatever the goals'
+order (T031, T035); `verify` passes `FULL=1` to it as well.
 
 ## The path rules
 
