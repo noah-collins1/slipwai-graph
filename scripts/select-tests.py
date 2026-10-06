@@ -71,6 +71,12 @@ def plan(replay: str | None = None) -> tuple[base.ChangeSet, choose.Selection]:
         tree = declarations.scan(ROOT, catalog)
     except (OSError, ValueError, RecursionError) as error:
         raise base.cannot_be_established(f"the test tree could not be read: {error}") from error
+    try:
+        hidden = declarations.nameless(ROOT)
+    except (OSError, ValueError, RecursionError) as error:
+        raise base.cannot_be_established(f"the test tree could not be read: {error}") from error
+    for path in hidden[:1]:  # `discover` imports it and the scan cannot name it: only the full run is the same answer
+        raise Full(full_line(f"`{printable(path)}` is {rules.NAMELESS} — {rules.BROADENS}"))
     caches = [] if replay else base.cache_files(ROOT)  # they reach what reads their directory, and nothing else
     return found, choose.select(tree, found.paths, catalog, caches)
 

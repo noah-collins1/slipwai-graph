@@ -14,6 +14,7 @@ from .report import Full, full_line, printable
 
 BROADENS = "its effect cannot be established"
 UNCLAIMED = "no rule claims it"
+NAMELESS = "a test module the selector cannot name"
 
 
 class Claim(NamedTuple):
@@ -177,7 +178,7 @@ def claim(path: str, catalog: Mapping[str, Any], root: Path | None = None) -> Cl
     if path.startswith("assets/"):
         return asset_claim(path, catalog)
     if discoverable(path, root):
-        return Claim("a test module the selector cannot name", True)
+        return Claim(NAMELESS, True)
     stem = path.removeprefix("tests/").removesuffix(".py")
     if path.startswith("tests/") and path.endswith(".py") and stem and "/" not in stem:
         return Claim("the test tree", False, test_file=stem)

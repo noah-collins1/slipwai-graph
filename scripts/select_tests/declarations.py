@@ -232,6 +232,24 @@ def is_module(name: str) -> bool:
     return name.startswith("test")
 
 
+def nameless(root: Path) -> list[str]:
+    """Every `test*.py` below `tests/` that `unittest discover -s tests` imports and the scan cannot name: in a
+    directory reached through an `__init__.py` at every step. Sorted; a directory that cannot be read is an error
+    (T033)."""
+    found: list[str] = []
+    pending = [root / "tests"]
+    while pending:
+        directory = pending.pop()
+        for entry in sorted(directory.iterdir()):
+            relative = entry.relative_to(root).as_posix()
+            if entry.is_dir():
+                if (entry / "__init__.py").exists():
+                    pending.append(entry)
+            elif directory != root / "tests" and entry.name.startswith("test") and entry.name.endswith(".py"):
+                found.append(relative)
+    return sorted(found)
+
+
 def under_claims(tree: Tree, name: str) -> bool:
     """A declared module that generates a project and names no configuration: it calls `generate(`/`refuse(` itself or
     through a helper in its closure, or names the launcher `./slipwai` in its own file, yet what it declares (joined
