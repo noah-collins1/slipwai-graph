@@ -29,7 +29,7 @@ class UnpushedTrunkTest(ScopeCase):
         return bare
 
     def trunk_commit(self) -> None:
-        """A commit on local `main` changing a production file, and `slice/S1` cut after it, with no change of its own."""
+        """A commit on local `main` changing a production file; `slice/S1` is cut after it and changes nothing."""
         git(self.repo, "checkout", "-q", "main")
         (self.repo / HEALTH).write_text("package health\n// edited on main\n", encoding="utf-8")
         self.commit("main, unpushed")
