@@ -42,7 +42,7 @@ Constraints that hold for every task's GREEN, stated once:
 
 ## Phase 1: Pin (before any change)
 
-- [ ] T001 [US1] **R8 — old records still read the same** (AC-S39-8; D65). The pin, and the whole of R8's e1–e2.
+- [x] T001 [US1] **R8 — old records still read the same** (AC-S39-8; D65). The pin, and the whole of R8's e1–e2.
   `tests/test_benchmark_pin.py` takes `assets/toolkit/scripts/agents/benchmark.py` at git `525399b` with
   `git show` (and `assets/toolkit/scripts/hand_backs.py` beside it, because the script loads it) into a scratch
   project under `/tmp/s39/`, takes the 16 `benchmark.json` records as committed at `8072724` into the scratch
