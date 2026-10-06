@@ -61,7 +61,7 @@ def plan(replay: str | None = None) -> tuple[base.ChangeSet, choose.Selection]:
             raise
         catalog = {}  # a catalog that was changed and no longer reads is itself the first full row's path
     for path in found.paths:  # the first that broadens, in the order the change set is sorted
-        why = rules.broadening(path, catalog)
+        why = rules.broadening(path, catalog, ROOT)
         if why is not None:
             raise Full(full_line(f"{base.changed_words(ROOT, found, path)} — {why}"))
     if not replay:  # git cannot say what a range of commits did to a file it ignores: the working tree is not in it

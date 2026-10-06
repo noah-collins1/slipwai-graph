@@ -94,3 +94,42 @@ class TestACatalogThatCannotBeRead(PathCase):
         self.commit("a broken catalog on the trunk")
         self.assertTrue(self.line_for("assets/languages/go/x.go").startswith(
             "full: the change set cannot be established — catalog.json cannot be read: "))
+
+
+class TestATestModuleInASubPackage(PathCase):
+    """`unittest discover -s tests` imports `test*.py` from a sub-package; the selector cannot name it (T027)."""
+
+    NAMELESS = "a test module the selector cannot name"
+
+    def package(self) -> None:
+        self.write("tests/sub/__init__.py", "")
+        self.commit("a sub-package on the trunk")
+
+    def test_a_test_module_discover_would_import_runs_every_module(self) -> None:
+        self.package()
+        self.assertEqual(self.line_for("tests/sub/test_nested.py"),
+                         f"full: `tests/sub/test_nested.py` changed — {self.NAMELESS}: {BROADENS}")
+
+    def test_a_new_package_with_its_module_runs_every_module(self) -> None:
+        self.assertEqual(self.line_for("tests/sub/__init__.py", "tests/sub/test_nested.py"),
+                         f"full: `tests/sub/__init__.py` changed — {self.NAMELESS}: {BROADENS}")
+
+    def test_the_init_of_a_sub_package_runs_every_module(self) -> None:
+        self.package()
+        self.assertEqual(self.line_for("tests/sub/__init__.py"),
+                         f"full: `tests/sub/__init__.py` changed — {self.NAMELESS}: {BROADENS}")
+
+    def test_a_package_two_deep_needs_every_init(self) -> None:
+        self.write("tests/sub/__init__.py", "")
+        self.write("tests/sub/deep/test_x.py", "")
+        self.commit("a gap in the chain")
+        self.assertTrue(self.line_for("tests/sub/deep/test_x.py").startswith("compared with `main` at "))
+        self.write("tests/sub/deep/__init__.py", "")
+        self.commit("the chain closed")
+        self.assertIn(self.NAMELESS, self.line_for("tests/sub/deep/test_x.py"))
+
+    def test_a_file_discover_would_not_import_keeps_its_row(self) -> None:
+        self.package()
+        for path in ("tests/sub/helper.py", "tests/sub/data.txt", "tests/fixtures/x/test_x.py", "tests/fixtures/y.py"):
+            with self.subTest(path=path):
+                self.assertTrue(self.line_for(path).startswith("compared with `main` at "))

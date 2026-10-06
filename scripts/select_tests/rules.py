@@ -144,8 +144,28 @@ def own_asset_claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
     return None
 
 
-def claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
-    """The first row that claims `path`, or None where no row does."""
+def discoverable(path: str, root: Path | None) -> bool:
+    """A `.py` file in a sub-package of `tests/` that `unittest discover -s tests` can import: a `test*.py` file (or an
+    `__init__.py`) in a directory chain that holds an `__init__.py` at every step. Where the chain cannot be read from
+    the working tree (the file or a package is gone), it is taken as intact: the doubt broadens (T027)."""
+    parts = path.split("/")
+    if len(parts) < 3 or parts[0] != "tests" or not parts[-1].endswith(".py"):
+        return False
+    name = parts[-1]
+    if name != "__init__.py" and not name.startswith("test"):
+        return False
+    if root is None:
+        return False
+    directory = root / "tests"
+    for part in parts[1:-1]:
+        directory = directory / part
+        if directory.exists() and not (directory / "__init__.py").exists():
+            return False
+    return True
+
+
+def claim(path: str, catalog: Mapping[str, Any], root: Path | None = None) -> Claim | None:
+    """The first row that claims `path`, or None where no row does. `root` is where its directories are read."""
     for row in FULL_ROWS:
         if row.holds(path):
             return Claim(row.rule, True)
@@ -153,6 +173,8 @@ def claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
         return Claim("the selector's own tests", True)
     if path.startswith("assets/"):
         return asset_claim(path, catalog)
+    if discoverable(path, root):
+        return Claim("a test module the selector cannot name", True)
     stem = path.removeprefix("tests/").removesuffix(".py")
     if path.startswith("tests/") and path.endswith(".py") and stem and "/" not in stem:
         return Claim("the test tree", False, test_file=stem)
@@ -161,9 +183,9 @@ def claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
     return None
 
 
-def broadening(path: str, catalog: Mapping[str, Any]) -> str | None:
+def broadening(path: str, catalog: Mapping[str, Any], root: Path | None = None) -> str | None:
     """Why `path` makes the run whole — the rule's words — or None where it only selects."""
-    found = claim(path, catalog)
+    found = claim(path, catalog, root)
     if found is None:
         return UNCLAIMED
     return f"{found.rule}: {BROADENS}" if found.full else None
