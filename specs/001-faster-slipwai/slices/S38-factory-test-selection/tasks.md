@@ -81,7 +81,7 @@ hand); `spec.md`, `decisions.md`, `story-split.md`. No bump (AC-S38-17): nothing
 
 ### T001 — [US1] Pin: what `make test` and `make verify` do today (plan *Pin*)
 
-- [ ] **Stand-alone pin; green on today's `Makefile`, no production change.** Creates `tests/select_fixture.py`
+- [x] **Stand-alone pin; green on today's `Makefile`, no production change.** Creates `tests/select_fixture.py`
   (the temporary repository on a branch, the copied root `Makefile`, the stand-in modules and log, the environment
   builder) only as far as the pin needs, and `tests/test_select_tests_pin.py`, driving the **real** root `Makefile`
   copied into the fixture.
