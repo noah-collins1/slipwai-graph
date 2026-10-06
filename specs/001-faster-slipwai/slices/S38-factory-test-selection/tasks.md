@@ -564,7 +564,7 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 
 ### T026 — HIGH: an interpreter cache under `assets/` reaches the modules that read `assets` (AC-S38-10, -16)
 
-- [ ] `base.ignored_files` drops every cache (`is_cache`, `scripts/select_tests/base.py:171-181`), so a cache never enters
+- [x] `base.ignored_files` drops every cache (`is_cache`, `scripts/select_tests/base.py:171-181`), so a cache never enters
   the change set. AC-S38-10 exempts caches from making the run **full**; it does not exempt them from reaching a
   module that reads them. `test_assets_bytecode` declares `reads: ["assets", "tests"]` and exists to fail on exactly
   this. Reproduced in a patched scratch copy: an ignored `assets/toolkit/scripts/__pycache__/verify-stamp.cpython-312.pyc`
@@ -580,7 +580,7 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 
 ### T027 — HIGH: a test module in a `tests/` sub-package is neither run nor counted (AC-S38-12, -16)
 
-- [ ] The scan reads `tests/*.py` only (`scripts/select_tests/declarations.py:205`), and `rules.claim` sends any path
+- [x] The scan reads `tests/*.py` only (`scripts/select_tests/declarations.py:205`), and `rules.claim` sends any path
   under a `tests/` subdirectory to *the files its readers name*. `unittest discover -s tests`, the full run, imports
   `test*.py` from every sub-package. Reproduced: `tests/sub/__init__.py` plus a failing `tests/sub/test_nested.py`,
   `SINCE=HEAD` dry run prints `selected 322 of 336` and names `test_nested` nowhere (only `test_assets_bytecode` is
@@ -597,7 +597,7 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 
 ### T028 — MEDIUM: a root makefile git does not see changed leaves the run selected (AC-S38-14)
 
-- [ ] `verify_scoped.changes.changed` compares every base blob raw **except** `Makefile`, `GNUmakefile` and
+- [x] `verify_scoped.changes.changed` compares every base blob raw **except** `Makefile`, `GNUmakefile` and
   `makefile` (`assets/toolkit/scripts/verify_scoped/changes.py:98`), which D140 hands to the scoped gate's text border;
   the selector loads `changed` and has no such border, and `ignored_files` looks only under `assets/`, `src/` and
   `tests/`. Reproduced: `git update-index --assume-unchanged Makefile`, a comment appended, `SINCE=HEAD` dry run prints
@@ -611,7 +611,7 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 
 ### T029 — MEDIUM: the scoped gate's scripts that compute the change set are not a full row (priority 5)
 
-- [ ] The selector's verdict is computed by `assets/toolkit/scripts/check-slice-scope.py` and
+- [x] The selector's verdict is computed by `assets/toolkit/scripts/check-slice-scope.py` and
   `assets/toolkit/scripts/verify_scoped/` (`base.load_scoped`, `scripts/select_tests/base.py:51`), but a change to them
   is claimed as *the toolkit* (every configuration), not as the selector (`rules.py:60`). A change to that code can
   hide itself. Reproduced: `changes.changed` edited to drop paths under `verify_scoped/` from its return; `SINCE=HEAD`
@@ -623,7 +623,7 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 
 ### T030 — MEDIUM: nothing holds a new declaration complete (AC-S38-8, -16)
 
-- [ ] The fifteen declarations here were spot-checked and hold (see *Convergence*), but the `real_*` tests pin only the
+- [x] The fifteen declarations here were spot-checked and hold (see *Convergence*), but the `real_*` tests pin only the
   modules they list: a later `TEST_SELECTION` added to a module that is not on any list is held only for existence
   (`held()`, `declarations.py:217`). `support.generate` is reachable from every importer while `support` declares no
   configuration, so a reads-only declaration on a module that calls `self.generate(…)` under-claims and nothing fails.
@@ -637,7 +637,7 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 
 ### T031 — LOW: `make verify-checks` run directly selects, then says `verify: all gates passed` (AC-S38-6, G3)
 
-- [ ] Only `verify` passes `FULL=1` (patched `Makefile:58,60`); `verify-checks` (`Makefile:64`) reaches `test` with
+- [x] Only `verify` passes `FULL=1` (patched `Makefile:58,60`); `verify-checks` (`Makefile:64`) reaches `test` with
   selection on, on a slice branch, and ends `verify: all gates passed`. Shown by `make -n verify-checks` in the patched
   scratch copy: the `test` line is `PYTHONPATH=src python3 -B scripts/select-tests.py`.
   **Fix (in `s38.patch`, regenerated — it is not yet applied, so the person applies one patch, not two):** `verify-checks` runs every module (a target-specific `FULL := 1` exported to its
@@ -648,7 +648,7 @@ applies, as T019 is. Each RED is written first and observed failing for its own 
 
 ### T032 — LOW: `SKIP` naming every module turns selection on (AC-S38-13)
 
-- [ ] `TESTS ?= $(if $(SKIP),$(filter-out …),)` (`Makefile:32`) is empty when `SKIP` names every module, so the `test`
+- [x] `TESTS ?= $(if $(SKIP),$(filter-out …),)` (`Makefile:32`) is empty when `SKIP` names every module, so the `test`
   recipe calls the selector. `make -n test SKIP="<all 336>"` prints `PYTHONPATH=src python3 -B scripts/select-tests.py`
   where AC-S38-13 says `SKIP` turns selection off (the unpatched recipe ran every module here).
   **Fix (in the regenerated `s38.patch`):** the recipe branches on `$(TESTS)$(SKIP)`, prints `selection off: SKIP given` and runs no
