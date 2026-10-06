@@ -10,8 +10,10 @@ import os
 import subprocess
 import tempfile
 import time
+import unittest
 from pathlib import Path
 
+import elapsed_fixture as fx
 from support import FactoryTestCase
 from test_benchmark import CLAUDE_FIELDS, SESSION, bench, clean, commit, installed, record
 from test_cruise_runner import cruise, enable, fake_harness
@@ -255,3 +257,26 @@ class BenchmarkBracketsTest(FactoryTestCase):
                           made.stderr)
             self.assertIn("check-benchmark: 2 warning(s) above — what was not measured stays unmeasured; not failing "
                           "verify", made.stdout)
+
+
+class StreamedResponseTest(unittest.TestCase):
+    def test_a_streamed_response_counts_its_last_lines_usage_not_its_first(self) -> None:
+        """B2: one `requestId`, `output_tokens` growing 8 then 176 (counted 10, true 178)."""
+        with tempfile.TemporaryDirectory() as scratch:
+            repo = fx.project(Path(scratch))
+            session = fx.Session(repo)
+            (repo / ".specify").mkdir()
+            installed(repo, "claude")
+            env = {**fx.clean(repo / ".home"), "CLAUDE_CODE_SESSION_ID": session.name}
+            slice_ = "specs/f/slices/S1"
+            (repo / slice_).mkdir(parents=True)
+            self.assertEqual(0, bench(repo, "start", slice_, "implement", env=env, delivery=".").returncode)
+            for output in (8, 176):
+                line = {"type": "assistant", "requestId": "r1", "message": {"model": "m", "usage": {
+                    "input_tokens": 2, "output_tokens": output, "cache_read_input_tokens": 0,
+                    "cache_creation_input_tokens": 0}}}
+                with session.main.open("a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(line) + "\n")
+            self.assertEqual(0, bench(repo, "end", slice_, "implement", env=env, delivery=".").returncode)
+            usage = record(repo, slice_)["stages"][0]["usage"]
+        self.assertEqual(176, usage["host"]["m"]["output"])

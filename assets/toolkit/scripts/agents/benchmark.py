@@ -423,6 +423,7 @@ def claude_usage(items: list[dict[str, Any]], by_model: dict[str, dict[str, int]
     particular. That is read rather than asked, the way the model is, so a record can only claim a type that
     actually ran (the transcripts Claude Code 2.1.268 wrote on this machine, read 2026-09-15).
     """
+    last: dict[str, tuple[str, dict[str, Any], str | None]] = {}  # a streamed response's usage grows: its last line's
     for position, item in enumerate(items):
         if item.get("type") != "assistant":
             continue
@@ -434,10 +435,12 @@ def claude_usage(items: list[dict[str, Any]], by_model: dict[str, dict[str, int]
         agent = item.get("attributionAgent") if isinstance(item.get("attributionAgent"), str) else None
         if keep is not None and offsets is not None and not keep(offsets[position], agent):
             continue
-        seen.add(str(key))
+        last[str(key)] = (str(message.get("model") or "unknown"), usage, agent)
+    for key, (model, usage, agent) in last.items():
+        seen.add(key)
         if agents is not None and agent is not None:
             agents.add(agent)
-        add_usage(by_model.setdefault(str(message.get("model") or "unknown"), empty_usage()), usage, CLAUDE_FIELDS)
+        add_usage(by_model.setdefault(model, empty_usage()), usage, CLAUDE_FIELDS)
 
 
 def codex_total(path: Path, offset: int) -> dict[str, int] | None:
