@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True  # before the package loads: nothing may be written beside the selector or under assets/
 
-from select_tests import full_rows  # noqa: E402
+from select_tests import base, full_rows  # noqa: E402
 from select_tests.report import Full  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -30,6 +30,11 @@ def run_full() -> int:
 
 def main() -> int:
     refusal: Full | None = full_rows(os.environ, ROOT)
+    if refusal is None:
+        try:
+            print(base.establish(ROOT, os.environ).line, flush=True)
+        except Full as full:
+            refusal = full
     if refusal is not None:
         print(refusal.line, flush=True)
     return run_full()

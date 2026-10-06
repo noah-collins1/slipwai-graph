@@ -7,6 +7,7 @@ line (AC-S38-1). Later tasks extend it with declarations, a small `catalog.json`
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -34,6 +35,12 @@ STAND_IN = ("import os\nimport unittest\n\n\nclass Case(unittest.TestCase):\n   
             "        with open(os.environ['STANDIN_LOG'], 'a', encoding='utf-8') as log:\n"
             "            log.write('module\\t{name}\\tPYTHONPATH=' + os.environ.get('PYTHONPATH', '')\n"
             "                      + '\\tFACTORY_BACKENDS=' + os.environ.get('FACTORY_BACKENDS', '') + '\\n')\n")
+# The catalog's shape, as far as the selector reads it: backends with their family, and the other three axes by name.
+CATALOG = {"schemaVersion": 1, "default": {"backend": "typescript"},
+           "backends": {"typescript": {"family": "typescript"}, "python": {"family": "python"}, "go": {"family": "go"},
+                        "java-quarkus": {"family": "java"}, "java-spring": {"family": "java"}},
+           "frontends": {"none": {}, "react-vite": {}}, "profiles": {"standard": {}, "event-modelling": {}},
+           "targets": {"none": {}, "aws": {}, "azure": {}, "existing": {}}}
 LINT = "#!/bin/sh\necho \"verify $*\" >> \"$STANDIN_LOG\"\nexit 0\n"
 STRUCTURE = ("import os\nwith open(os.environ['STANDIN_LOG'], 'a', encoding='utf-8') as log:\n"
              "    log.write('check-structure\\n')\n")
@@ -80,6 +87,7 @@ class SelectCase(unittest.TestCase):
         self.write("src/mod.py", "X = 1\n")
         self.write(".gitignore", "__pycache__/\n.factory-work/\n")
         self.write("project.json", '{"ci": {"branch": "main"}}\n')
+        self.write("catalog.json", json.dumps(CATALOG, indent=1) + "\n")
         git(self.repo, "init", "-q", "-b", "main")
         for key, value in (("user.name", "t"), ("user.email", "t@local"), ("commit.gpgsign", "false")):
             git(self.repo, "config", key, value)
@@ -103,6 +111,17 @@ class SelectCase(unittest.TestCase):
         full = {k: v for k, v in os.environ.items() if k not in names and not k.startswith("GIT_")}
         full.update(STANDIN_LOG=str(self.log), PYTHONDONTWRITEBYTECODE="1", **env)
         return full
+
+    def commit(self, message: str = "change") -> str:
+        """Everything in the working tree as one commit; its id."""
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", message)
+        return git(self.repo, "rev-parse", "HEAD").strip()
+
+    def probe(self, code: str, **env: str) -> subprocess.CompletedProcess[str]:
+        """`code` run by `python3 -B` beside the selector's package, which it may import: for a function's answer."""
+        return subprocess.run(["python3", "-B", "-c", "import json, sys\nsys.path.insert(0, 'scripts')\n" + code],
+                              cwd=self.repo, env=self.environment(**env), text=True, capture_output=True, timeout=180)
 
     def make(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
         """`make <args>` as a person types it, with nothing of the outer run's state in the child."""

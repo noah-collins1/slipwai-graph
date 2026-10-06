@@ -14,15 +14,16 @@ class Full(Exception):
         self.line = line
 
 
-def printable(value: object, limit: int = LIMIT) -> str:
-    """A word that is not ours (a branch, a path, a ref, git's own words) with every control character dropped and a
-    backtick made an apostrophe, so it forges no line and ends no span early."""
+def printable(value: object, limit: int = LIMIT, quote: bool = True) -> str:
+    """A word that is not ours (a branch, a path, a ref, git's own words) with every control character dropped and,
+    where `quote`, a backtick made an apostrophe, so it forges no line and ends no span early. Words the scoped gate
+    already made printable keep their own backticks (`quote=False`)."""
     kept = []
     for char in str(value):
         category = unicodedata.category(char)
         if category[0] == "C" or category in ("Zl", "Zp"):
             continue
-        kept.append("'" if char == "`" else char)
+        kept.append("'" if quote and char == "`" else char)
     return "".join(kept)[:limit]
 
 
