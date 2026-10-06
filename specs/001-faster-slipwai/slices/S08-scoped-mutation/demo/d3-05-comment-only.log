@@ -1,0 +1,11 @@
+mutation: scoped to 1 changed file(s) since `main` at e325850: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: scoped to 1 given file(s): health/health.go
+Starting...
+Gathering coverage... done in 1.786247352s
+
+No results to report.
+mutation: no mutant to run — Gremlins found nothing to mutate in the scoped file(s), such as a change to comments only
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; passed
+exit 0

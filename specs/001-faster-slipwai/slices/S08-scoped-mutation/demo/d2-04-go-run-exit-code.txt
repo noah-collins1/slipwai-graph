@@ -1,0 +1,8 @@
+$ go run . (program calls os.Exit(10))
+exit status 10
+exit 1
+
+$ go build -o p . && ./p
+exit 10
+
+go version go1.27.1 linux/amd64

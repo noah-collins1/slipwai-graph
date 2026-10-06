@@ -1,0 +1,13 @@
+== /home/noahc/math/slipwai-graph-S08-scoped-mutation/slipwai generate demo-go --backend go
+created: /tmp/s08-demo3/demo-go
+== /home/noahc/math/slipwai-graph-S08-scoped-mutation/slipwai generate demo-one --backend go
+created: /tmp/s08-demo3/demo-one
+== /home/noahc/math/slipwai-graph-S08-scoped-mutation/slipwai generate demo-spring --backend java-spring
+created: /tmp/s08-demo3/demo-spring
+== /home/noahc/math/slipwai-graph-S08-scoped-mutation/slipwai generate demo-py --backend python
+created: /tmp/s08-demo3/demo-py
+
+Nothing is committed. Review with `git status` and `git diff`; `git checkout . && git clean -fd` undoes it.
+Next: make verify
+e325850 billing
+bc0db48 Scaffold demo-go

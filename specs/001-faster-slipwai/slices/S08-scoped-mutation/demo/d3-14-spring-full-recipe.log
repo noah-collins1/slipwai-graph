@@ -1,0 +1,21 @@
+cd apps/service && ./mvnw -B -q test-compile org.pitest:pitest-maven:mutationCoverage
+exit 0
+19:.PHONY: help
+23:.PHONY: install
+38:.PHONY: build-packages
+58:.PHONY: check-python agents agents-list check-extensions check-agents models check-benchmark benchmark cruise cruise-watch cruise-status cruise-stop cruise-tell check-decisions
+90:.PHONY: typecheck lint format check-imports check-migrations check-slice-scope check-styles check-speckit check-codegraph check-ux-gates check-constitution constitution-requirements
+129:.PHONY: check-model
+133:.PHONY: model
+137:.PHONY: model-drawio
+141:.PHONY: check-drawio
+146:.PHONY: model-drawio-test
+151:.PHONY: services-up services-down
+158:.PHONY: migrate
+164:.PHONY: dev dev-web demo demo-down
+194:.PHONY: test test-integration adversarial mutation audit
+234:.PHONY: mutation-full
+241:.PHONY: verify ci
+246:.PHONY: verify-checks
+261:.PHONY: lint-service lint-web typecheck-service typecheck-web test-service test-web
+279:.PHONY: verify-scoped

@@ -1,0 +1,10 @@
+created: /tmp/s08-demo2/demo-go
+31e7389 Scaffold demo-go
+it holds the bounded context `billing`
+no purpose recorded: say what it owns (`slipwai describe-service billing --purpose "..."`), or /drive will ask before it places a slice here
+
+Nothing is committed. Review with `git status` and `git diff`; `git checkout . && git clean -fd` undoes it.
+Next: make verify
+d8a0229 billing
+31e7389 Scaffold demo-go
+main

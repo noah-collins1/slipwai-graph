@@ -1,0 +1,7 @@
+2026-10-06T00:24:17Z
+bdf3aa4 S08 records: T034 ticked with a host real-Gremlins check; T010 green on 0b48473, 814 tests, test_matrix included (records only — reaches no user) (cruise iteration 23)
+1.6.0.dev0
+go version go1.27.1 linux/amd64
+openjdk version "25.0.4.1" 2026-08-18 LTS
+x86_64
+12

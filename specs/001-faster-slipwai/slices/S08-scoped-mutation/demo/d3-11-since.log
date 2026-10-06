@@ -1,0 +1,313 @@
+main
+81388dc Scaffold demo-one
+== label commit on main
+67b8c65 health: label
+== make mutation SINCE=HEAD~1
+mutation: scoped to 1 changed file(s) since `HEAD~1`: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: scoped to 1 given file(s): health/health.go
+Starting...
+Gathering coverage... done in 1.776425248s
+      KILLED CONDITIONALS_BOUNDARY at health/health.go:11:14
+      KILLED CONDITIONALS_NEGATION at health/health.go:11:14
+
+Mutation testing completed in 1 second 139 milliseconds
+Killed: 2, Lived: 0, Not covered: 0
+Timed out: 0, Not viable: 0, Skipped: 0
+Test efficacy: 100.00%
+Mutator coverage: 100.00%
+mutation: report written to apps/service/gremlins.json
+mutation: 2 mutants, none timed out; Gremlins' threshold held
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed
+exit 0
+== comment-only commit on main
+c7b508b health: comment
+ apps/service/health/health.go | 1 +
+ 1 file changed, 1 insertion(+)
+== make mutation SINCE=HEAD~1
+mutation: scoped to 1 changed file(s) since `HEAD~1`: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: scoped to 1 given file(s): health/health.go
+Starting...
+Gathering coverage... done in 1.782593389s
+      KILLED CONDITIONALS_BOUNDARY at health/health.go:12:14
+      KILLED CONDITIONALS_NEGATION at health/health.go:12:14
+
+Mutation testing completed in 1 second 113 milliseconds
+Killed: 2, Lived: 0, Not covered: 0
+Timed out: 0, Not viable: 0, Skipped: 0
+Test efficacy: 100.00%
+Mutator coverage: 100.00%
+mutation: report written to apps/service/gremlins.json
+mutation: 2 mutants, none timed out; Gremlins' threshold held
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed
+exit 0
+== make mutation SINCE=nope
+mutation: SINCE `nope` names no commit
+make: *** [Makefile:271: mutation] Error 2
+exit 2
+== make mutation SINCE=
+mutation: the sweep runs — SINCE is set and empty
+python3 scripts/go-mutation.py apps/service 
+Starting...
+Gathering coverage... done in 1.78059295s
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/checkpointstorepostgres/store.go:104:15
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/checkpointstorepostgres/store.go:121:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/checkpointstorepostgres/store.go:87:83
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/checkpointstorepostgres/store.go:107:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/checkpointstorepostgres/store.go:104:44
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/checkpointstorepostgres/store.go:77:9
+      KILLED CONDITIONALS_NEGATION at adapters/driven/checkpointstorememory/store.go:51:14
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:162:21
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:82:27
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:130:58
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:191:40
+      KILLED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:191:40
+      KILLED INCREMENT_DECREMENT at adapters/driven/eventstorememory/store.go:194:31
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:236:27
+      KILLED INCREMENT_DECREMENT at adapters/driven/eventstorememory/store.go:220:10
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:214:19
+      KILLED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:236:27
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:239:31
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:252:25
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:277:13
+      KILLED ARITHMETIC_BASE at adapters/driven/eventstorememory/store.go:255:43
+      KILLED INVERT_NEGATIVES at adapters/driven/eventstorememory/store.go:255:43
+      KILLED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:282:27
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:282:27
+      KILLED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:282:60
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:282:60
+      KILLED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:301:74
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:301:74
+      KILLED ARITHMETIC_BASE at adapters/driven/eventstorememory/store.go:309:71
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:318:9
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:75:50
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:75:35
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:151:10
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:154:72
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:158:37
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:168:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:174:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:177:76
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:181:41
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:190:36
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:228:70
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:243:80
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:255:70
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:262:36
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:262:21
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:264:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:272:10
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:286:16
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:292:39
+ NOT COVERED INCREMENT_DECREMENT at adapters/driven/eventstorepostgres/store.go:298:11
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:299:76
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:309:40
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:314:14
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:318:11
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:345:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:359:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:364:66
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:386:24
+ NOT COVERED INVERT_NEGATIVES at adapters/driven/eventstorepostgres/store.go:395:48
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:395:48
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:395:33
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:398:23
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:398:49
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorepostgres/store.go:403:23
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:403:23
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:408:39
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:408:31
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:408:24
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:407:51
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:406:62
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorepostgres/store.go:410:24
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:410:24
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:411:73
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:411:47
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:413:67
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:413:38
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:415:48
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:415:13
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:459:9
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:464:80
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:464:68
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:463:59
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:463:40
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:463:25
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:467:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:475:10
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:480:28
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:489:11
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:497:86
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:497:74
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:501:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:523:39
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:527:10
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:538:11
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:541:56
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:541:69
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:549:13
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:555:40
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:557:11
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:574:11
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:580:12
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:586:30
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:592:22
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:599:18
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:606:84
+ NOT COVERED INCREMENT_DECREMENT at adapters/driven/eventstorepostgres/store.go:610:12
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:612:58
+ NOT COVERED INVERT_NEGATIVES at adapters/driven/eventstorepostgres/store.go:612:39
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:612:39
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:615:10
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:628:65
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:637:9
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:648:36
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:648:21
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:654:9
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorepostgres/store.go:658:15
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:658:15
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:660:10
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:666:11
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:672:29
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:678:17
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:682:32
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:686:49
+ NOT COVERED INVERT_NEGATIVES at adapters/driven/eventstorepostgres/store.go:686:30
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:686:30
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:692:11
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:700:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:704:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:731:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:734:25
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorepostgres/store.go:736:86
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:739:57
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:744:49
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:744:75
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:750:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:754:17
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorepostgres/store.go:756:10
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:321:9
+      KILLED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:342:28
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:342:28
+      KILLED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:349:17
+      KILLED INCREMENT_DECREMENT at adapters/driven/eventstorememory/store.go:353:11
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/app.go:78:11
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/app.go:145:13
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/app.go:146:47
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/app.go:164:9
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/app.go:195:39
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/app.go:231:11
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/app.go:234:13
+ NOT COVERED INVERT_NEGATIVES at application/ports/events/events.go:32:18
+ NOT COVERED ARITHMETIC_BASE at application/ports/events/events.go:32:18
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/security.go:69:13
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/security.go:72:13
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/security.go:76:16
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/security.go:76:87
+      KILLED CONDITIONALS_NEGATION at adapters/driving/http/security.go:93:68
+      KILLED ARITHMETIC_BASE at application/ports/events/events.go:166:59
+      KILLED CONDITIONALS_NEGATION at application/ports/events/events.go:207:17
+      KILLED CONDITIONALS_NEGATION at application/ports/events/events.go:207:38
+ NOT COVERED ARITHMETIC_BASE at checkpointstorecontract/contract.go:34:19
+      KILLED CONDITIONALS_NEGATION at application/ports/events/events.go:210:18
+      KILLED CONDITIONALS_BOUNDARY at application/ports/events/events.go:210:18
+      KILLED CONDITIONALS_NEGATION at application/ports/events/events.go:392:17
+      KILLED ARITHMETIC_BASE at application/ports/events/events.go:395:27
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:44:9
+      KILLED INVERT_NEGATIVES at application/ports/events/events.go:395:27
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:65:74
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:76:69
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:100:69
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:88:69
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:117:75
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:120:61
+      KILLED ARITHMETIC_BASE at checkpointstorecontract/contract.go:58:54
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:129:69
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:133:10
+      KILLED ARITHMETIC_BASE at checkpointstorecontract/contract.go:112:27
+      KILLED ARITHMETIC_BASE at checkpointstorecontract/contract.go:168:78
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:136:18
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:147:25
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:185:25
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:198:67
+      KILLED ARITHMETIC_BASE at checkpointstorecontract/contract.go:170:48
+      KILLED ARITHMETIC_BASE at checkpointstorecontract/contract.go:183:80
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:237:69
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:246:9
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:213:71
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:233:67
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:280:38
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:292:38
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:254:80
+      KILLED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:268:9
+      KILLED CONDITIONALS_BOUNDARY at config/config.go:95:24
+      KILLED CONDITIONALS_NEGATION at config/config.go:75:45
+      KILLED CONDITIONALS_NEGATION at config/config.go:95:24
+      KILLED CONDITIONALS_NEGATION at config/config.go:95:9
+      KILLED CONDITIONALS_NEGATION at config/config.go:100:26
+      KILLED CONDITIONALS_BOUNDARY at config/config.go:95:36
+      KILLED CONDITIONALS_NEGATION at config/config.go:118:24
+      KILLED CONDITIONALS_NEGATION at config/config.go:95:36
+      KILLED CONDITIONALS_NEGATION at config/config.go:108:37
+      KILLED CONDITIONALS_NEGATION at config/config.go:150:21
+      KILLED CONDITIONALS_BOUNDARY at health/health.go:12:14
+      KILLED CONDITIONALS_NEGATION at config/config.go:137:52
+      KILLED ARITHMETIC_BASE at observability/tracing.go:80:106
+      KILLED CONDITIONALS_NEGATION at health/health.go:12:14
+      KILLED ARITHMETIC_BASE at observability/tracing.go:142:81
+      KILLED ARITHMETIC_BASE at observability/tracing.go:148:22
+      KILLED CONDITIONALS_NEGATION at observability/tracing.go:81:10
+      KILLED ARITHMETIC_BASE at observability/tracing.go:147:85
+      KILLED ARITHMETIC_BASE at observability/tracing.go:147:79
+      KILLED ARITHMETIC_BASE at observability/tracing.go:147:58
+      KILLED ARITHMETIC_BASE at observability/tracing.go:147:52
+      KILLED ARITHMETIC_BASE at config/config.go:153:29
+ NOT COVERED ARITHMETIC_BASE at projections/projections.go:57:25
+      KILLED ARITHMETIC_BASE at observability/tracing.go:147:32
+      KILLED ARITHMETIC_BASE at observability/tracing.go:147:26
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:76:11
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:83:17
+      KILLED ARITHMETIC_BASE at observability/tracing.go:148:28
+      KILLED CONDITIONALS_NEGATION at observability/tracing.go:75:24
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:113:9
+      KILLED CONDITIONALS_NEGATION at observability/tracing.go:100:30
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:165:9
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:200:10
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:171:43
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:205:31
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:176:9
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:210:51
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:205:10
+      KILLED INVERT_NEGATIVES at projections/projections.go:215:28
+      KILLED ARITHMETIC_BASE at projections/projections.go:215:28
+      KILLED ARITHMETIC_BASE at projections/projections.go:216:61
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:218:10
+      KILLED CONDITIONALS_BOUNDARY at projections/projections.go:223:17
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:229:10
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:223:17
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:255:17
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:260:9
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:260:23
+      KILLED CONDITIONALS_NEGATION at projections/ticker.go:116:13
+      KILLED CONDITIONALS_NEGATION at projections/ticker.go:105:13
+      KILLED CONDITIONALS_NEGATION at projections/projections.go:140:10
+      KILLED CONDITIONALS_BOUNDARY at projections/ticker.go:123:13
+      KILLED CONDITIONALS_NEGATION at projections/ticker.go:126:77
+      KILLED CONDITIONALS_NEGATION at projections/ticker.go:126:98
+      KILLED CONDITIONALS_BOUNDARY at projections/ticker.go:126:98
+      KILLED CONDITIONALS_NEGATION at projections/ticker.go:123:13
+      KILLED CONDITIONALS_NEGATION at projections/ticker.go:77:16
+      KILLED CONDITIONALS_NEGATION at projections/ticker.go:88:73
+      KILLED CONDITIONALS_NEGATION at projections/ticker.go:92:19
+      KILLED ARITHMETIC_BASE at projections/ticker.go:127:36
+
+Mutation testing completed in 25 seconds 989 milliseconds
+Killed: 134, Lived: 0, Not covered: 117
+Timed out: 0, Not viable: 0, Skipped: 0
+Test efficacy: 100.00%
+Mutator coverage: 53.39%
+mutation: report written to apps/service/gremlins.json
+mutation: 251 mutants, none timed out; Gremlins' threshold held
+exit 0

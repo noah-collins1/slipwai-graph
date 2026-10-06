@@ -1,0 +1,5 @@
+mutation: scoped to 2 changed file(s) since `main` at 3acaa6a: apps/service/src/adapters/driven/event-store-memory.ts, apps/service/src/adapters/driving/http/app.ts
+mutation: refuse apps/service — Configure the repository-selected Stryker mutator, then run its checked-in configuration; the scope will apply once a tool is wired; it would mutate: apps/service/src/adapters/driven/event-store-memory.ts, apps/service/src/adapters/driving/http/app.ts
+mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/service
+make: *** [Makefile:218: mutation] Error 2
+exit=2

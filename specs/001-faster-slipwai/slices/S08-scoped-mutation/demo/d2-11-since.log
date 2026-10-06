@@ -1,0 +1,36 @@
+## literal: fresh single-service starter, before add-service, on main
+created: /tmp/s08-demo2/demo-one
+c486255 Scaffold demo-one
+main
+$ make mutation SINCE=HEAD~1
+mutation: SINCE `HEAD~1` names no commit
+make: *** [Makefile:271: mutation] Error 2
+exit 2
+
+## two-service starter (after add-service), on main
+d8a0229 billing
+31e7389 Scaffold demo-go
+$ make -n mutation SINCE=HEAD~1
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: the sweep runs — `Makefile` changed
+mutation: `make mutation-full` would run here; it starts nothing under a dry run
+
+## two-service starter, one production-file commit on main
+$ make mutation SINCE=HEAD~1
+mutation: scoped to 1 changed file(s) since `HEAD~1`: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: scoped to 1 given file(s): health/health.go
+mutation: Gremlins found nothing to mutate. A module with no mutable code, or a misconfigured run — either way a pass on nothing is not a pass.
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; failed: apps/service
+make: *** [Makefile:306: mutation] Error 1
+exit 2
+$ make mutation SINCE=nope
+mutation: SINCE `nope` names no commit
+make: *** [Makefile:306: mutation] Error 2
+exit 2
+$ make -n mutation SINCE=
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: the sweep runs — SINCE is set and empty
+mutation: `make mutation-full` would run here; it starts nothing under a dry run
+exit 0

@@ -81,12 +81,13 @@ At the end-of-phase PR-readiness gate, prove test effectiveness with Stryker whe
 ```bash
 rg --files | rg '(^|/)(package.json|stryker\.config\.(mjs|cjs|js|json)|stryker\.conf\.(js|json))$'
 git status --porcelain
-git diff <review-base>...HEAD --name-only
+git diff <merge-base> --name-only
+git ls-files --others --exclude-standard
 ```
 
 - Identify the package manager, test runner, affected package(s), and existing Stryker config.
 - Use the actual review boundary: the detected default branch for a single PR, or the immediately lower branch for a stacked PR layer.
-- Diff-scoped mutation intentionally covers committed branch changes only. Require a clean working tree before running it. If `git status --porcelain` is non-empty, stop and explain that staged, unstaged, and untracked work is excluded; do not silently commit, stash, or claim a complete diff result.
+- Diff-scoped mutation covers the whole change under review: staged, unstaged and untracked production files are included and mutated, and nothing is committed or stashed to run it. The working tree does not need to be clean.
 - For a stacked slice, mutate the focused layer against its parent. The top also runs the cumulative acceptance and repository gates required by `stack-pull-requests`.
 - In monorepos, start in the smallest affected package, then widen to the repo-level command when the targeted run is healthy.
 - If no Stryker setup exists in a JS/TS project, recommend adding it before doing manual mutation analysis.
@@ -128,8 +129,8 @@ Suggest project scripts for full-project, cached, and branch-diff mutation runs:
 The `mutation:diff` helper should:
 
 - Read the base branch argument, defaulting to the repository's detected default branch.
-- Refuse to run when `git status --porcelain` is non-empty, explaining that `<base>...HEAD` excludes staged, unstaged, and untracked work.
-- Collect changed files with `git diff --name-only -z --diff-filter=ACMRTUXB <base>...HEAD` and parse NUL-delimited records; filenames may contain whitespace or newlines.
+- Run on a dirty working tree: it does not refuse, because the change under review includes staged, unstaged, and untracked work.
+- Collect changed files with `git diff --name-only -z --diff-filter=ACMRTUXB <merge-base>` (the base's merge-base with `HEAD`, compared with the working tree) and `git ls-files -z --others --exclude-standard` for untracked files, and parse NUL-delimited records; filenames may contain whitespace or newlines.
 - Keep changed production files matching the project's source extensions.
 - Exclude test/spec files, fixtures, snapshots, generated files, declaration files, and build output.
 - Invoke the repository-local Stryker binary without a shell. If its `--mutate` option requires comma-separated patterns, reject a candidate filename containing a comma with a clear message before joining; never silently change the scope.

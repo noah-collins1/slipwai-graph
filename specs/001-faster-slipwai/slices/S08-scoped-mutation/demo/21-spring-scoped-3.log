@@ -1,0 +1,74 @@
+mutation: scoped to 1 changed file(s) since `main` at ec2db17: apps/service/src/main/java/com/example/demospring/health/HealthStatus.java
+mutation: scope apps/service — src/main/java/com/example/demospring/health/HealthStatus.java
+5:19:25 PM PIT >> INFO : Verbose logging is disabled. If you encounter a problem, please enable it before reporting an issue.
+5:19:25 PM PIT >> INFO : Created 2 mutation test units in pre scan
+5:19:25 PM PIT >> INFO : Sending 6 test classes to minion
+5:19:25 PM PIT >> INFO : Sent tests to minion
+/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/5:19:27 PM PIT >> INFO : MINION : Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+5:19:27 PM PIT >> INFO : MINION : WARNING: A Java agent has been loaded dynamically (/home/noahc/.m2/repository/net/bytebuddy/byte-buddy-agent/1.18.11/byte-buddy-agent-1.18.11.jar)
+5:19:27 PM PIT >> INFO : MINION : WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+5:19:27 PM PIT >> INFO : MINION : WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+5:19:27 PM PIT >> INFO : MINION : WARNING: Dynamic loading of agents will be disallowed by default in a future release
+5:19:27 PM PIT >> INFO : MINION : OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|5:19:27 PM PIT >> INFO : Calculated coverage in 2 seconds.
+5:19:27 PM PIT >> INFO : 0 tests took longer than 2000 ms
+5:19:27 PM PIT >> INFO : Slowest test ([engine:junit-jupiter]/[class:com.example.demospring.adapters.driving.http.HttpAppTest]/[method:contributesItsOwnReadinessToThatProbe()]) took 374 ms
+5:19:27 PM PIT >> INFO : Largest test ([engine:junit-jupiter]/[class:com.example.demospring.health.HealthStatusTest]/[method:reportsReady()]) covered 9 blocks
+5:19:27 PM PIT >> INFO : Created 2 mutation test units
+/-5:19:33 PM PIT >> INFO : Completed in 8 seconds
+================================================================================
+- Mutators
+================================================================================
+> org.pitest.mutationtest.engine.gregor.mutators.ConditionalsBoundaryMutator
+>> Generated 1 Killed 1 (100%)
+> KILLED 1 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.returns.NullReturnValsMutator
+>> Generated 1 Killed 1 (100%)
+> KILLED 1 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.returns.EmptyObjectReturnValsMutator
+>> Generated 1 Killed 1 (100%)
+> KILLED 1 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.NegateConditionalsMutator
+>> Generated 1 Killed 1 (100%)
+> KILLED 1 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+================================================================================
+- Timings
+================================================================================
+> pre-scan for mutations : < 1 second
+> scan classpath : < 1 second
+> coverage and dependency analysis : 2 seconds
+> build mutation tests : < 1 second
+> run mutation analysis : 5 seconds
+--------------------------------------------------------------------------------
+> Total  : 8 seconds
+--------------------------------------------------------------------------------
+> 0 tests took longer than 2000 ms
+> Slowest test ([engine:junit-jupiter]/[class:com.example.demospring.adapters.driving.http.HttpAppTest]/[method:contributesItsOwnReadinessToThatProbe()]) took 374 ms
+> Largest test ([engine:junit-jupiter]/[class:com.example.demospring.health.HealthStatusTest]/[method:reportsReady()]) covered 9 blocks
+================================================================================
+- Statistics
+================================================================================
+>> Line Coverage (for mutated classes only): 3/4 (75%)
+>> 6 tests examined
+>> Generated 4 mutations Killed 4 (100%)
+>> Mutations with no coverage 0. Test strength 100%
+>> Ran 4 tests (1 tests per mutation)
+Enhanced functionality available at https://www.arcmutate.com/
+
+Build messages:- 
+* Project uses Spring, but the Arcmutate Spring plugin is not present. (https://docs.arcmutate.com/docs/spring.html)
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed
+exit=0
+run 3 wall=14.860743176

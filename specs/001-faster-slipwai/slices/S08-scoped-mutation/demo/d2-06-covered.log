@@ -1,0 +1,18 @@
+mutation: scoped to 1 changed file(s) since `main` at d8a0229: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: scoped to 1 given file(s): health/health.go
+Starting...
+Gathering coverage... done in 1.896465147s
+      KILLED CONDITIONALS_BOUNDARY at health/health.go:11:14
+      KILLED CONDITIONALS_NEGATION at health/health.go:11:14
+
+Mutation testing completed in 1 second 192 milliseconds
+Killed: 2, Lived: 0, Not covered: 0
+Timed out: 0, Not viable: 0, Skipped: 0
+Test efficacy: 100.00%
+Mutator coverage: 100.00%
+mutation: report written to apps/service/gremlins.json
+mutation: 2 mutants, none timed out; Gremlins' threshold held
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; passed
+exit 0

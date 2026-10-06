@@ -2,7 +2,7 @@
 """`make mutation` for a Go service: Gremlins, over a staged copy of the module and the workspace modules
 it imports, held to what its own report says.
 
-    python3 scripts/go-mutation.py <service> [--since <branch-or-commit>]
+    python3 scripts/go-mutation.py <service> [--since <branch-or-commit> | --file <path within the service> ...]
 
 Why a stage. Gremlins copies the module it mutates — the nearest `go.mod` upwards, never the workspace — to
 a temporary directory and runs the tests there. Nothing above that copy exists: not the root `go.work`, not
@@ -24,6 +24,9 @@ than a red one:
   no mutable code; here that is exit 1.
 - **A timed-out mutant is a failure.** Gremlins leaves timed-out mutants out of the score, so a suite that
   slowed past `timeout-coefficient` passes on the mutants it managed. The fix is in `.gremlins.yaml`.
+- **A scoped run whose mutants are all not covered passes.** Gremlins scores zero tested mutants as 0% efficacy
+  and exits below its threshold; `--since` and `--file` read that from the report and say how many mutants no
+  test reached, because *not covered is reported, never failed; a survivor fails*. The sweep is unchanged.
 
 Only this module is mutated. A shared module under `packages/` is built here and never mutated: run this
 against it as a service of its own if its rules deserve a gate of their own.
@@ -32,7 +35,7 @@ against it as a service of its own if its rules deserve a gate of their own.
 difference between a stage priced per repository and one priced per change: every mutant of every file the
 change did not touch re-proves work that shipped weeks ago, at the price of a full suite run each, and a
 stage that expensive gets routed around rather than read. Without it the whole module is mutated, which is
-what a scheduled sweep wants.
+what a scheduled sweep wants. `--file`, repeatable, hands the files over instead and asks git nothing; it wins.
 
 It is done here rather than with Gremlins' own `--diff`, which does not survive this layout. `--diff`
 resolves changed paths against the repository root and matches them against paths within the module, so from
@@ -64,6 +67,13 @@ GREMLINS = "__GO_GREMLINS__"
 REPORT = "gremlins.json"
 CONFIG = ".gremlins.yaml"
 TIMED_OUT = "TIMED OUT"
+NOT_COVERED = "NOT COVERED"
+
+
+def say(text: str) -> None:
+    """A line of this script's own, flushed: Gremlins writes to the same pipe from another process, and a line
+    buffered here until exit would print after the output it introduces."""
+    print(text, flush=True)
 
 
 def module_path(go_mod: Path) -> str:
@@ -140,7 +150,7 @@ def stage(service: Path, root: Path, modules: dict[str, Path], into: Path) -> Pa
             text += f"\nrequire {path} v0.0.0\n"
         text += f"replace {path} => {staged}\n"
         sums.append(staged / "go.sum")
-        print(f"mutation: staged {directory.relative_to(root)} for {path}")
+        say(f"mutation: staged {directory.relative_to(root)} for {path}")
     go_mod.write_text(text, encoding="utf-8", newline="\n")
     # A workspace keeps the checksums of a shared module's dependencies in go.work.sum; with GOWORK=off the
     # staged service needs them in its own go.sum. Every line once, whichever file it came from.
@@ -231,6 +241,10 @@ def changed(service: Path, since: str) -> set[str]:
     return {path for path in paths if path.endswith(".go") and not path.endswith("_test.go")}
 
 
+def files(service: Path, since: str | None, given: list[str]) -> set[str]:
+    return {p for p in given if p.endswith(".go") and not p.endswith("_test.go")} if given else changed(service, str(since))
+
+
 def mutable(keep: set[str], own: list[str]) -> set[str]:
     """Of the changed files, the ones this project has not already excluded from mutation.
 
@@ -265,7 +279,7 @@ def keep_report(report: Path, service: Path) -> Path | None:
         return None
     kept = service / REPORT
     shutil.copyfile(report, kept)
-    print(f"mutation: report written to {os.path.relpath(kept)}")
+    say(f"mutation: report written to {os.path.relpath(kept)}")
     return kept
 
 
@@ -289,11 +303,53 @@ def assess(report: Path) -> int:
             "and rerun.\n"
         )
         return 1
-    print(f"mutation: {sum(statuses.values())} mutants, none timed out; Gremlins' threshold held")
+    say(f"mutation: {sum(statuses.values())} mutants, none timed out; Gremlins' threshold held")
     return 0
 
 
-USAGE = "usage: go-mutation.py <service> [--since <branch-or-commit>]\n"
+def tally(report: Path) -> Counter[str] | None:
+    """The mutants in Gremlins' report by status, or None when there is no report or it cannot be read."""
+    if not report.is_file():
+        return None
+    try:
+        result = json.loads(report.read_text(encoding="utf-8"))
+        return Counter(m["status"] for f in result.get("files", []) for m in f.get("mutations", []))
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return None
+
+
+def judge_scoped(report: Path, code: int) -> int:
+    """A scoped run's exit status, from Gremlins' report and not from the exit code of what started it.
+
+    `go run` turns the program's exit 10 into its own 1 (and prints "exit status 10"), a built binary exits 10,
+    so the code says only whether Gremlins passed; which way it failed is in the report. The sweep's configuration
+    says *not covered is reported, never failed; a survivor fails*: Gremlins scores zero tested mutants as 0%
+    efficacy and exits below the threshold, which a scoped run meets whenever the change it was scoped to is code
+    no test reaches. So a failing run whose report holds mutants and none was killed, lived or timed out passes
+    with them counted. A failing run with no report, or one that cannot be read, is a build or setup failure and
+    stays red; and Gremlins' "No results to report." (exit 0, no report) after a scope is a change with no mutant
+    of its own to answer for.
+    """
+    statuses = tally(report)
+    if code == 0:
+        if not statuses:
+            say("mutation: no mutant to run — Gremlins found nothing to mutate in the scoped file(s), "
+                "such as a change to comments only")
+            return 0
+        return assess(report)
+    if statuses and not (statuses["KILLED"] or statuses["LIVED"] or statuses[TIMED_OUT]) and statuses[NOT_COVERED]:
+        say(f"mutation: {statuses[NOT_COVERED]} mutants not covered by any test, none killed or lived; not covered is "
+            "reported, never failed")
+        return 0
+    return code
+
+
+USAGE = "usage: go-mutation.py <service> [--since <branch-or-commit> | --file <path> ...]\n"
+
+
+def take_files(argv: list[str]) -> tuple[list[str], list[str]]:  # the --file values ("" for none), then the rest
+    given = [argv[i + 1] if i + 1 < len(argv) else "" for i, word in enumerate(argv) if word == "--file"]
+    return given, [w for i, w in enumerate(argv) if w != "--file" and not (i and argv[i - 1] == "--file")]
 
 
 def arguments(argv: list[str]) -> tuple[Path, str | None] | None:
@@ -308,8 +364,9 @@ def arguments(argv: list[str]) -> tuple[Path, str | None] | None:
 
 
 def main(argv: list[str]) -> int:
+    given_files, argv = take_files(argv)
     parsed = arguments(argv)
-    if parsed is None:
+    if parsed is None or "" in given_files:
         sys.stderr.write(USAGE)
         return 2
     given, since = parsed
@@ -318,19 +375,24 @@ def main(argv: list[str]) -> int:
         sys.stderr.write(f"{service}: no go.mod; the argument is a Go service's directory\n")
         return 2
     scoped: list[str] = []
-    if since is not None:
+    if since is not None or given_files:
         own = excluded(service / CONFIG)
-        keep = mutable(changed(service, since), own)
+        asked = files(service, since, given_files)
+        keep = mutable(asked, own)
+        for path in sorted(asked - keep) if given_files else []:
+            say(f"mutation: not mutated {given}/{path} — outside Gremlins' configured targets")
         if not keep:
             # Not the "nothing mutated" failure below, and the difference is worth keeping: that one is a run
             # that found no mutable code, which can only mean a misconfigured scope. This is a change with no
             # mutant of its own to answer for — it touched no production Go file, or only files this project
             # excludes — said out loud, because an unexplained green is what this script exists to refuse.
-            print(f"mutation: nothing under {given} that differs from {since} is a file Gremlins would "
-                  "mutate; no mutant to run")
+            say(f"mutation: nothing under {given} that {'was given' if given_files else 'differs from ' + str(since)}"
+                  " is a file Gremlins would mutate; no mutant to run")
             return 0
         scoped = scope(service, keep, own)
-        print(f"mutation: scoped to {len(keep)} changed file(s) since {since}: {', '.join(sorted(keep))}")
+        said = "given file(s)" if given_files else f"changed file(s) since {since}"
+        wins = f" (--file wins; --since {since} is not read)" if given_files and since is not None else ""
+        say(f"mutation: scoped to {len(keep)} {said}: {', '.join(sorted(keep))}{wins}")
     root, modules = workspace(service)
     into = Path(tempfile.mkdtemp(prefix="go-mutation-"))
     try:
@@ -341,6 +403,8 @@ def main(argv: list[str]) -> int:
             cwd=staged, env={**os.environ, "GOWORK": "off"},
         )
         keep_report(report, service)
+        if scoped:
+            return judge_scoped(report, run.returncode)
         if run.returncode != 0:
             return run.returncode
         return assess(report)

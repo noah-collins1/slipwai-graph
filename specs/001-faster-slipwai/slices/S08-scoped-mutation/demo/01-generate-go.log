@@ -1,0 +1,14 @@
+added apps/billing: the billing service, go on port 3001 (event-store postgres, http net-http, auth none, users none; 42 files)
+registered it in project.json; regenerated from that list: .claude/settings.json, .github/workflows/verify.yml, AGENTS.md, Makefile, README.md, commands/add-frontend.md, commands/add-service.md, docker-compose.yml, docs/architecture.md, docs/whats-included.md, go.work, renovate.json, scripts/verify, scripts/verify_scoped/rules.json, skills/run-the-app/SKILL.md
+it holds the bounded context `billing`
+no purpose recorded: say what it owns (`slipwai describe-service billing --purpose "..."`), or /drive will ask before it places a slice here
+
+Nothing is committed. Review with `git status` and `git diff`; `git checkout . && git clean -fd` undoes it.
+Next: make verify
+exit=0
+b9b5141 billing
+dac830f Scaffold demo-go
+main
+billing
+service
+web

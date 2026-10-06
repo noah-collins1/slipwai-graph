@@ -83,11 +83,16 @@ GO_MUTATION_NOTE = """\
 # ignored by git: it is one run on one machine, and the next run replaces it. It is written whether the run
 # passed or failed, because a red run's report is the one worth reading.
 #
-# `make mutation SINCE=<branch-or-commit>` scopes the run to the production files that differ from that ref
-# and leaves the unscoped target as the full sweep. That is the difference between a stage priced per
-# repository and one priced per change: every mutant costs a run of this module's suite, so an unscoped run
-# re-proves every file that shipped weeks ago at full price, and a stage that expensive gets routed around
-# rather than read. The scope is computed from git before staging, not handed to Gremlins' own `--diff`:
+# `make mutation` scopes itself on a `slice/<id>` branch, to the production files that differ from the trunk commit
+# the branch was cut from — staged, unstaged and untracked ones included, nothing committed or stashed to run it —
+# and `make mutation SINCE=<branch-or-commit>` does the same against that ref on any checkout, CI included. CI, the
+# trunk and a checkout the script cannot read run the sweep, `make mutation-full`, which is also what an empty
+# `SINCE` runs. That is the difference between a stage priced per repository and one priced per change: every
+# mutant costs a run of this module's suite, so a sweep re-proves every file that shipped weeks ago at full price,
+# and a stage that expensive gets routed around rather than read. Phase 4 on `main` runs `make mutation SINCE=<the
+# commit before the merge>`, so the check is priced by the change that merged. A change to `__APP__/.gremlins.yaml` or to
+# `scripts/go-mutation.py` sweeps the service, since no scope can be trusted across it. The scope is computed from
+# git before staging, not handed to Gremlins' own `--diff`:
 # `--diff` resolves changed paths against the repository root and matches them against paths within the
 # module, so from a service directory it skips every mutant and reports success having mutated nothing. Gremlins has no
 # include list either, so a scope is a complement of exclusions, generated per run — and since
@@ -158,6 +163,11 @@ JAVA_QUARKUS_MUTATION_NOTE = """\
 #      first PIT setup silently passes.
 #
 # Then run it, look at the survivors, and only afterwards let anything depend on the score.
+#
+# `make mutation` scopes itself on a `slice/<id>` branch, and `make mutation SINCE=<ref>` does the same on any
+# checkout; `make mutation-full` is the sweep, and CI and the trunk get the sweep. Phase 4 on `main` runs
+# `make mutation SINCE=<the commit before the merge>`. Until PIT is wired here `make mutation` refuses a changed
+# service with the message above, and the scope will apply once a tool is wired.
 """
 
 # What `make mutation` does on the Spring backend, where it is a working target rather than a placeholder.
@@ -182,7 +192,12 @@ JAVA_SPRING_MUTATION_NOTE = """\
 #
 # The report lands in `target/pit-reports/`. It fails rather than passes when it finds nothing to mutate,
 # which is deliberate: `failWhenNoMutations` is `true` in the pom because "0 mutations" here can only mean
-# a misconfigured run, and a silent pass on a target no gate runs is worse than a red one.
+# a misconfigured run, and a silent pass on a target no gate runs is worse than a red one. A scoped run is the
+# exception: `make mutation` scopes itself on a `slice/<id>` branch, and `make mutation SINCE=<ref>` does the same on
+# any checkout, narrowing PIT to the changed classes, `Foo` and `Foo$*`, within the targets above; a class PIT finds
+# nothing to mutate in (an interface, a record with no logic) is reported as no mutant to run, not as a failure.
+# `make mutation-full` is the sweep, unchanged, and CI and the trunk get the sweep. Phase 4 on `main` runs
+# `make mutation SINCE=<the commit before the merge>`.
 #
 # So a clean run here does NOT mean the adapters are well tested; it means the rules are. Widen
 # `targetClasses` as use cases arrive, and leave the adapters out — their tests are about wiring, and
@@ -227,18 +242,26 @@ def mutation_notes(apps: list[App]) -> str:
     return "".join(dict.fromkeys(notes))
 
 
+# Said once, read by the command text: how `make mutation` is scoped and what sweeps (D137 to D139).
+SCOPING = """
+`make mutation` scopes itself on a `slice/<id>` branch: it mutates only the production files that differ from the trunk
+commit the branch was cut from, staged, unstaged and untracked ones included, and nothing is committed or stashed to run
+it. `make mutation SINCE=<review-base>` scopes it to what differs from that ref on any checkout, CI included. `make
+mutation-full` is the sweep, and CI and the trunk get the sweep. Phase 4 on `main` runs `make mutation SINCE=<the commit
+before the merge>`, so the check is priced by the change that merged.
+"""
+GO_REPORT = """The Go run leaves its report at `<service>/gremlins.json` — read that, not the scrollback.
+"""
+UNWIRED = """TypeScript, Python and Quarkus have no mutation tool wired: the target refuses until a tool is wired for the
+backend, with the setup message, and names the files it would mutate.
+"""
+
+
 def mutation_command(backends: list[str]) -> str:
     tools = {"typescript": "Stryker", "python": "mutmut", "go": "Gremlins", "java-quarkus": "PIT (pitest)",
              "java-spring": "PIT (pitest)"}
-    # Said here and only where a Go service exists, because `SINCE` is the Go target's: the skill teaches
-    # diff-scoped runs as the posture at this gate and the other backends reach for their own tool's way of
-    # doing it. Without this line the scoped run is a flag in a Makefile nobody reading the command knows to
-    # pass, and the unscoped run is the one that gets skipped for costing an hour.
-    scoping = ("""
-`make mutation SINCE=<review-base>` scopes the Go run to the production files that differ from that ref;
-without `SINCE` it mutates the whole module, which is a sweep rather than a check on this change. Either way
-the run leaves its report at `<service>/gremlins.json` — read that, not the scrollback.
-""" if "go" in backends else "")
+    unwired = any(backend in ("typescript", "python", "java-quarkus") for backend in backends)
+    scoping = SCOPING + (GO_REPORT if "go" in backends else "") + (UNWIRED if unwired else "")
     return f"""---
 description: Evaluate test effectiveness with mutation testing
 argument-hint: [changed-production-paths]
@@ -251,3 +274,10 @@ project has configured it. Mutation tooling is intentionally not part of the man
 is absent, report the exact setup decision needed instead of pretending mutations ran. Classify survivors,
 add tests only for meaningful behavioural gaps, then finish with `make verify`.
 {scoping}"""
+
+
+def scope_command(services: list[App]) -> str:
+    """The one line `make mutation` is: the scope script, handed the make and the Makefile that are running and one
+    `<backend>:<path>` word per service in service order. The spelling is written here and read by the script."""
+    words = " ".join(f"{service.backend}:{service.path}" for service in services)
+    return f'@python3 scripts/mutation-scope.py --make "$(MAKE)" --makefile "$(firstword $(MAKEFILE_LIST))" {words}'.rstrip()

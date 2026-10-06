@@ -105,8 +105,8 @@ class MutationCommandTest(unittest.TestCase):
 
         self.assertIn("make mutation SINCE=<review-base>", mutation_command(["go"]))
         self.assertIn("gremlins.json", mutation_command(["go", "typescript"]))
-        # It is the Go target's flag; a project with no Go service is not told to pass it.
-        self.assertNotIn("SINCE", mutation_command(["typescript"]))
+        # Every backend is told how the target scopes (D139): `SINCE` is read by the script, not the Go recipe.
+        self.assertIn("make mutation SINCE=<review-base>", mutation_command(["typescript"]))
 
 
 class GitignoreTest(unittest.TestCase):

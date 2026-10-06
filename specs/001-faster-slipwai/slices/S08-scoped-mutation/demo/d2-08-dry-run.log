@@ -1,0 +1,7 @@
+python3 scripts/mutation-scope.py --make "make" --makefile "Makefile" go:apps/service go:apps/billing
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: scoped to 1 changed file(s) since `main` at d8a0229: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; planned
+exit 0

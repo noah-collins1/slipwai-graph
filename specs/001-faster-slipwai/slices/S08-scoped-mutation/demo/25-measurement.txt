@@ -1,0 +1,14 @@
+AC-S08-19 measurement — wall time from `date +%s.%N` around each command, three runs each, median given.
+Machine: 12th Gen Intel(R) Core(TM) i5-12400, nproc 12, Linux 7.0.0-31-generic, go1.27.1, OpenJDK 25.0.4.1, GNU Make 4.4.1.
+CI, GITHUB_ACTIONS and GITLAB_CI unset. Factory: slice/S08-scoped-mutation at a70c4f3 (VERSION 1.6.0.dev0).
+
+Two-service Go starter (demo-go + billing), branch slice/demo, one file changed: apps/service/health/health.go (04-one-file-covered.diff)
+  make mutation       3.438  3.404  3.417  median 3.417 s   mutants 2 (killed 2, not covered 0); billing skipped
+  make mutation-full 55.947 62.275 56.413  median 56.413 s  mutants 500 (service 251: killed 134, not covered 117; billing 249: killed 132, not covered 117)
+  ratio scoped/full 0.061
+
+Spring starter (demo-spring), branch slice/demo, one class changed: health/HealthStatus.java (21-spring-one-class.diff)
+  make mutation      14.694 14.754 14.861  median 14.754 s  mutations 4 (killed 4; HealthStatus 1, HealthStatus$Label 3)
+  make mutation-full 25.608 25.639 25.486  median 25.608 s  mutations 67 (killed 53, no coverage 9)
+  ratio scoped/full 0.576
+  (Trunk sweep before the change, Maven cache already warm: 23.1 s, 64 mutations — the plan-time baseline was 28.5 s, 64.)

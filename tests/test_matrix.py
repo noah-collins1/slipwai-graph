@@ -156,7 +156,9 @@ class MatrixTest(FactoryTestCase):
             scoped = subprocess.run([*run, "SINCE=HEAD"], cwd=repo, text=True,
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self.assertEqual(scoped.returncode, 0, scoped.stdout)
-            self.assertIn("scoped to 1 changed file(s) since HEAD: health/health.go", scoped.stdout)
+            self.assertIn("mutation: scoped to 1 changed file(s) since `HEAD`: apps/service/health/health.go",
+                          scoped.stdout)
+            self.assertIn("mutation: scoped to 1 given file(s): health/health.go", scoped.stdout)  # Go's own line
             self.assertEqual({entry["file_name"] for entry in json.loads(report.read_text())["files"]},
                              {"health/health.go"})
             self.assertLess(sum(len(entry["mutations"]) for entry in json.loads(report.read_text())["files"]),

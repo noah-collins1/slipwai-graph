@@ -20,7 +20,7 @@ from ..backends import APP, MAVEN, MAVEN_READY, VERIFY
 from ..services import App, services_of, web_apps, wrapped_of
 from ..tooling import for_app, verify_path
 from .languages.go import GO_COVDATA_READY, GO_COVERAGE_GATE, GO_STATICCHECK, GO_TEST
-from .mutation import GO_MUTATION_SCRIPT, JAVA_QUARKUS_MUTATION_PLACEHOLDER
+from .mutation import GO_MUTATION_SCRIPT, JAVA_QUARKUS_MUTATION_PLACEHOLDER, scope_command
 from .shared_packages import PACKAGES
 
 # How a recipe with several shell lines is spelled: each line after the first on a new line behind a tab,
@@ -315,4 +315,6 @@ def native_commands(apps: list[App]) -> dict[str, str]:
             native[target] += "".join(f"{STEP}{recipe[target]}" for recipe in web_recipes(web))
         if not node_backend:
             native["audit"] += "\n\tnpm audit --audit-level=critical"
+    native["mutation-full"] = native["mutation"]  # today's merged recipe; `mutation` is the scope line over it
+    native["mutation"] = scope_command(services)
     return native

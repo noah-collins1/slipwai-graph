@@ -1,0 +1,28 @@
+== CI=1 make -n mutation
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: the sweep runs — CI is set, so this is a CI run
+== GITHUB_ACTIONS=true make -n mutation
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: the sweep runs — GITHUB_ACTIONS is set, so this is a CI run
+== GITLAB_CI=true make -n mutation
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: the sweep runs — GITLAB_CI is set, so this is a CI run
+== detached
+== CI=1 make -n mutation SINCE=main (slice/demo)
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: scoped to 1 changed file(s) since `main`: apps/service/health/health.go
+mutation: scope apps/service — health/health.go
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; passed
+== feature/x
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: the sweep runs — `feature/x` is not a slice/<id> branch
+== detached HEAD
+mutation: dry run (make was run with -n) — the plan below starts no tool
+mutation: the sweep runs — HEAD is detached
+== make help
+  mutation               Run native mutation testing, or explain the missing project decision
+  mutation-full          Run native mutation testing over every service, as `make mutation` did before it was scoped
+== .PHONY
+230:.PHONY: test test-integration test-integration-service test-integration-billing adversarial mutation audit
+307:.PHONY: mutation-full
