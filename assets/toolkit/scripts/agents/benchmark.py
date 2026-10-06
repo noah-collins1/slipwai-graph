@@ -88,9 +88,19 @@ def moment(text: str) -> datetime:
     return datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
+GIT_SECONDS = 30
+
+
 def git(*arguments: str) -> str | None:
-    result = subprocess.run(["git", *arguments], cwd=ROOT, text=True, capture_output=True)
-    return result.stdout.strip() if result.returncode == 0 else None
+    """A git command's stripped stdout, or None where it failed, was not found or took over `GIT_SECONDS`. The output
+    is decoded with replacement, never raising: history can hold a copy of a file that is not UTF-8. Nothing here
+    reaches the network: a partial clone's missing blobs are not fetched on demand."""
+    try:
+        result = subprocess.run(["git", *arguments], cwd=ROOT, capture_output=True, timeout=GIT_SECONDS,
+                                env={**os.environ, "GIT_NO_LAZY_FETCH": "1"})
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return result.stdout.decode("utf-8", errors="replace").strip() if result.returncode == 0 else None
 
 
 _LOADED: dict[str, Any] = {}

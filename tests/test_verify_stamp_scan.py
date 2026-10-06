@@ -86,6 +86,8 @@ EXPLAINED = {
     **_because("set in a child's environment to stop an update check, never read from this one",
                _variables("scripts/agents/code_index.py", "CODEGRAPH_NO_UPDATE_CHECK")
                | _variables("scripts/extensions/codegraph/init.py", "CODEGRAPH_NO_UPDATE_CHECK")),
+    **_because("set in `git`'s environment so a partial clone never fetches a blob to answer a read, never read from "
+               "this one", _variables("scripts/agents/benchmark.py", "GIT_NO_LAZY_FETCH")),
     **_because("a directory name in the set of directories the flag scan walks past, never read",
                _reads("scripts/check-flags.py", ".build")),
     **_because("written by the `go test` on the line before it in the same recipe, on every run",

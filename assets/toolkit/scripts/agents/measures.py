@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
@@ -151,6 +152,7 @@ class Reader:
         self.kept: dict[tuple[str, str], Found | None] = {}
         self.seen: bool | None = None
         self.shallow_seen: bool | None = None
+        self.partial_seen: bool | None = None
         self.failure: str | None = None  # the first `git` command a lookup depended on that failed
 
     @property
@@ -160,6 +162,16 @@ class Reader:
         if self.shallow_seen is None:
             self.shallow_seen = self.git("rev-parse", "--is-shallow-repository") == "true"
         return self.shallow_seen
+
+    @property
+    def partial(self) -> bool:
+        """Whether the clone is partial (`--filter`): a blob it lacks is not in the history it can read, and fetching it
+        would reach the network."""
+        if self.partial_seen is None:
+            promisors = self.git("config", "--get-regexp", r"^remote\..*\.promisor$") or ""
+            self.partial_seen = bool(self.git("config", "extensions.partialClone")) or any(
+                line.split()[-1:] == ["true"] for line in promisors.splitlines())
+        return self.partial_seen
 
     def ask(self, *arguments: str) -> str | None:
         """`git`'s answer: an empty string is an answer (nothing found), None is a failure, kept in `failure`."""
@@ -266,8 +278,13 @@ def moments(reader: Reader, ident: str | None, entries: list[dict[str, Any]]) ->
         out.update({key: unknown("a feature record is not a slice") for key in ("ready", "accepted", "elapsed")})
         return out
     if not reader.readable:
-        out.update({key: unknown("git could not be read: not a repository, or git failed")
+        out.update({key: unknown("git not found: no git on the PATH" if shutil.which("git") is None
+                                 else "git could not be read: not a repository, or git failed")
                     for key in ("ready", "accepted", "elapsed")})
+        return out
+    if reader.partial:
+        out.update({key: unknown("git history is a partial clone: the blobs of past commits are not here and are not "
+                                 "fetched to read them; fetch the full history") for key in ("ready", "accepted", "elapsed")})
         return out
     if reader.shallow:
         out.update({key: unknown("git history is shallow: the oldest commit is where the clone was cut, not where a "
