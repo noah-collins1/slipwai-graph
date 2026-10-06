@@ -78,8 +78,9 @@ class ElapsedTest(unittest.TestCase):
 
     def test_e2b_a_merge_of_s10_is_not_a_merge_of_s1(self) -> None:
         self.standard()
+        record(self.repo, "S1", entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")))
         merge(self.repo, stamp(3, "14:00:00"), "S10-other")
-        self.assertNotIn("merged", summaries(self.repo)["S2"]["moments"])
+        self.assertNotIn("merged", summaries(self.repo)["S1"]["moments"])
 
     def test_e3_a_slice_with_no_row_is_open_since_its_ready_moment(self) -> None:
         self.standard(own_row=False)

@@ -110,6 +110,14 @@ def measures() -> Any:
     return _LOADED["measures"]
 
 
+def cruise_log() -> list[dict[str, Any]]:
+    """`specs/cruise-log.jsonl`'s rows, parsed once per run; none where the project has no log."""
+    if "log" not in _LOADED:
+        path = ROOT / measures().LOG
+        _LOADED["log"] = measures().parse_log(path.read_text(encoding="utf-8")) if path.is_file() else []
+    return _LOADED["log"]  # type: ignore[no-any-return]
+
+
 def reader(feature: str) -> Any:
     """The moments git holds for one feature's slices, read once per run."""
     key = f"reader:{feature}"
@@ -799,6 +807,7 @@ def summarise(record: dict[str, Any]) -> dict[str, Any]:
     rework = [entry["stage"] for index, entry in enumerate(ended)
               if index > first_implemented and order(entry["stage"]) < order("gaps")]
     found = measures().moments(reader(str(record.get("feature"))), record.get("slice"), stages)
+    parts = measures().waiting(found, reader(str(record.get("feature"))), str(record.get("slice")), stages, cruise_log())
     last = {key: next((entry["signals"][key] for entry in reversed(ended) if key in entry.get("signals", {})), None)
             for key in ("mutation_score", "outcome")}
     return {
@@ -830,7 +839,8 @@ def summarise(record: dict[str, Any]) -> dict[str, Any]:
         "elapsed": found["elapsed"],
         "moments": {key: measures().printed(found[key]) for key in ("ready", "accepted", "demo_accepted", "merged")
                     if key in found},
-        "read_from": found["read_from"],
+        "worked_seconds": parts["worked"], "waiting": parts["waiting"],
+        "read_from": {**found["read_from"], **parts["read_from"]},
     }
 
 
@@ -859,10 +869,21 @@ def row(summary: dict[str, Any]) -> list[str]:
     ]
 
 
-def table(rows: list[list[str]]) -> str:
-    widths = [max(len(line[index]) for line in [list(COLUMNS), *rows]) for index in range(len(COLUMNS))]
+def table(rows: list[list[str]], columns: tuple[str, ...] = COLUMNS) -> str:
+    widths = [max(len(line[index]) for line in [list(columns), *rows]) for index in range(len(columns))]
     return "\n".join("  " + "  ".join(cell.ljust(widths[index]) for index, cell in enumerate(line))
-                     for line in [list(COLUMNS), *rows])
+                     for line in [list(columns), *rows])
+
+
+WAITING_COLUMNS = ("slice", "elapsed", "worked", "dependency", "worker", "review", "integration", "unattributed")
+
+
+def waiting_rows(summaries: list[dict[str, Any]]) -> list[list[str]]:
+    """Each slice's elapsed and where it went; a figure no record supports reads `unknown`."""
+    shown = lambda figure: "unknown" if isinstance(figure, dict) else wall(figure)  # noqa: E731
+    return [[summary["slice"], shown(summary["elapsed"]), shown(summary["worked_seconds"]),
+             *(shown(summary["waiting"][name]) for name in WAITING_COLUMNS[3:])]
+            for summary in summaries if summary["slice"]]
 
 
 LEGEND = ("delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge "
@@ -928,6 +949,14 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
               for summary in summaries if summary["slice"] and summary["rework"]]
     lines += [f"{summary['slice']}: implemented as {' and '.join(summary['delegation'])} — its wall compares with "
               "neither" for summary in summaries if summary["slice"] and len(summary["delegation"]) > 1]
+    lines += [f"{summary['slice']}: elapsed unknown — {summary['elapsed']['unknown']}; worked time and every waiting "
+              "cause are unknown for the same reason" for summary in summaries
+              if summary["slice"] and isinstance(summary["elapsed"], dict)
+              and not summary["elapsed"]["unknown"].startswith("open since")]
+    lines += [f"{summary['slice']}: {summary['elapsed']['unknown']} — elapsed, worked time and every waiting cause "
+              "are unknown until its done mark exists" for summary in summaries
+              if summary["slice"] and isinstance(summary["elapsed"], dict)
+              and summary["elapsed"]["unknown"].startswith("open since")]
     for record in records_:
         for entry in record.get("stages", []):
             usage = entry.get("usage")
@@ -956,7 +985,9 @@ def aggregate() -> str:
         total = {"seconds": sum(s["seconds"] for s in summaries),
                  "unbracketed": any(s["unbracketed"] for s in summaries)}
         head = f"{feature} — {len(slices)} slice(s) recorded, {summary_wall(total)} in all"
+        waits = waiting_rows(summaries)
         blocks.append("\n".join([head, table([row(summary) for summary in summaries]),
+                                 *([table(waits, WAITING_COLUMNS)] if waits else []),
                                  *(f"  {line}" for line in notes(summaries, [record for _, record in entries]))]))
     return "\n\n".join(blocks) + f"\n\n{LEGEND}"
 
@@ -1027,7 +1058,9 @@ def overview(feature: str | None = None) -> list[Path]:
             f"## Slices\n\n{len(slices)} slice(s) recorded, "
             f"{summary_wall({'seconds': sum(s['seconds'] for s in summaries), 'unbracketed': any(s['unbracketed'] for s in summaries)})} "
             "in all.\n\n"
-            + markdown([row(summary) for summary in summaries], COLUMNS) + f"\n\n{LEGEND}.",
+            + markdown([row(summary) for summary in summaries], COLUMNS)
+            + (f"\n\n{markdown(waiting_rows(summaries), WAITING_COLUMNS)}" if waiting_rows(summaries) else "")
+            + f"\n\n{LEGEND}.",
             "## Stages\n\n" + "\n\n".join(
                 f"### {record.get('slice') or 'The feature, above the slice loop'} — {summary_wall(summary)}\n\n"
                 + (f"{moment_line(summary)}\n\n" if summary["slice"] else "")

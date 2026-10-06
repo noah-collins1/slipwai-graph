@@ -264,3 +264,137 @@ def parse_log(text: str) -> list[dict[str, Any]]:
         if isinstance(row, dict):
             rows.append(row)
     return rows
+
+
+# --- worked time and waiting ------------------------------------------------------------------------------------
+
+FOREVER = 1 << 62
+LOG = "specs/cruise-log.jsonl"
+
+
+def bounds(entry: dict[str, Any], last_line: int | None = None) -> Interval | None:
+    """An ended entry's bracket: from `started` to `ended`, or to the last transcript line attributed to it where
+    one is given (a cut-off entry's `ended` is when the cut-off ran, not when the work did)."""
+    try:
+        start, end = epoch(entry["started"]), epoch(entry["ended"])
+    except (KeyError, ValueError, TypeError):
+        return None
+    if last_line is not None and entry.get("cut_off"):
+        end = min(end, max(start, last_line))
+    return (start, end)
+
+
+def is_person_demo(entry: dict[str, Any]) -> bool:
+    """A `demo` bracket whose signals name no `driver`: a person at the demo, which is review's wait, not work."""
+    return entry.get("stage") == "demo" and not (entry.get("signals") or {}).get("driver")
+
+
+def brackets(entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None,
+             keep: Callable[[dict[str, Any]], bool] = lambda entry: True) -> list[Interval]:
+    found = []
+    for index, entry in enumerate(entries):
+        if "ended" in entry and keep(entry):
+            span = bounds(entry, (last_lines or {}).get(index))
+            if span:
+                found.append(span)
+    return found
+
+
+def worked(entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> list[Interval]:
+    """The union of the record's brackets, less the `gate` (integration's) and a person's `demo` (review's), so a
+    skipper nested inside an implement counts once."""
+    return union(brackets(entries, last_lines,
+                          lambda entry: entry.get("stage") != "gate" and not is_person_demo(entry)))
+
+
+def iterations(rows: list[dict[str, Any]]) -> list[Interval]:
+    spans = []
+    for row in rows:
+        try:
+            spans.append((epoch(row["started"]), epoch(row["ended"])))
+        except (KeyError, ValueError, TypeError):
+            continue
+    return spans
+
+
+def parks(rows: list[dict[str, Any]]) -> list[Interval]:
+    """Each iteration ending `stopped: human`, up to the next iteration's start (open-ended where none follows)."""
+    found = []
+    for index, row in enumerate(rows):
+        if str(row.get("last_line", "")).rstrip().endswith("stopped: human"):
+            try:
+                begun = epoch(row["ended"])
+                later = epoch(rows[index + 1]["started"]) if index + 1 < len(rows) else FOREVER
+            except (KeyError, ValueError, TypeError):
+                continue
+            found.append((begun, later))
+    return found
+
+
+def landing(reader: Reader, ident: str) -> Found | None:
+    """When a sibling reached the branch: its merge commit, else its done mark."""
+    return reader.merged(ident) or reader.done(ident)
+
+
+def sibling_wait(reader: Reader, ident: str, demo: int, before: int) -> tuple[Interval, str] | None:
+    """The wait a slice had after its demo was accepted: until the latest sibling earlier in split order landed,
+    where that landing falls before `before` (the slice's own merge, or its acceptance)."""
+    best: Found | None = None
+    for sibling, _ in reader.order():
+        if sibling == ident:
+            break
+        found = landing(reader, sibling)
+        if found and demo < found[0] < before and (best is None or found[0] > best[0]):
+            best = (found[0], found[1], f"{found[2]} of {sibling}")
+    return ((demo, best[0]), f"{best[1]} ({best[2]})") if best else None
+
+
+def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dict[str, Any]],
+            log: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> dict[str, Any]:
+    """worked, and each cause's seconds, inside [ready, accepted]: every second goes to the first claimant in the
+    order worked, integration, dependency, review, worker, and what no record claims is unattributed, so the parts
+    add up to elapsed exactly. Unknown wherever elapsed is."""
+    names = (*CAUSES, "unattributed")
+    read_from: dict[str, str] = {}
+    if is_unknown(found["elapsed"]):
+        reason = found["elapsed"]
+        return {"worked": reason, "waiting": {name: reason for name in names}, "read_from": read_from}
+    low, high = found["ready"], found["accepted"]
+    taken = clip(worked(entries, last_lines), low, high)
+    read_from["worked_seconds"] = "the record's brackets"
+    claimed: dict[str, list[Interval]] = {}
+    gates = brackets(entries, last_lines, lambda entry: entry.get("stage") == "gate")
+    integration = list(gates)
+    if "merged" in found:
+        integration.append((found["merged"], high))
+    read_from["integration"] = ", ".join(
+        part for part in ((found["read_from"]["merged"] if "merged" in found else ""),
+                          f"{len(gates)} gate bracket(s)" if gates else "") if part) or "none present: no merge commit, no gate bracket"
+    claimed["integration"] = integration
+    claimed["dependency"] = []
+    read_from["dependency"] = "none present: no accepted demo, or no sibling landed after it"
+    if "demo_accepted" in found:
+        waited = sibling_wait(reader, ident, found["demo_accepted"], found.get("merged", high))
+        if waited:
+            claimed["dependency"], read_from["dependency"] = [waited[0]], waited[1]
+    review = brackets(entries, last_lines, is_person_demo)
+    claimed["review"] = review
+    read_from["review"] = "the demo bracket with no driver" if review else "none present: no park, no person's demo"
+    claimed["worker"] = []
+    read_from["worker"] = "none present: no cruise log"
+    if log:
+        parked = parks(log)
+        span = iterations(log)
+        claimed["review"] = review + parked
+        read_from["review"] = f"{LOG}: stopped: human" if parked else read_from["review"]
+        if span:
+            claimed["worker"] = [(min(start for start, _ in span), max(end for _, end in span))]
+            read_from["worker"] = f"{LOG}: the log's span, less parks"
+    seconds: dict[str, int] = {}
+    for cause in CAUSES:
+        mine = subtract(clip(claimed[cause], low, high), taken)
+        seconds[cause] = length(mine)
+        taken = union(taken + mine)
+    in_worked = length(clip(worked(entries, last_lines), low, high))
+    seconds["unattributed"] = (high - low) - length(taken)
+    return {"worked": in_worked, "waiting": seconds, "read_from": read_from}
