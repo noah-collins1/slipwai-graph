@@ -9,6 +9,7 @@ from __future__ import annotations
 import functools
 import importlib
 import importlib.util
+import os
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -141,6 +142,25 @@ class Choice(NamedTuple):
     reason: str
 
 
+ROOT_MAKEFILES = ("Makefile", "GNUmakefile", "makefile")  # make reads them whatever git says of them (T028, D140)
+
+
+def makefile_changes(root: Path, scoped: Scoped, base: Base) -> frozenset[str]:
+    """The root makefiles whose raw bytes, mode or presence differ from the base's, ignored by git or not: the scoped
+    gate hands them to a text border the selector has none of, so the selector compares them itself (AC-S38-14)."""
+    held = scoped.changes.tree(scoped.scope, base.commit)
+    found = set()
+    for name in ROOT_MAKEFILES:
+        path = root / name
+        entry = held.get(name)
+        if entry is None:
+            if os.path.lexists(path):
+                found.add(name)
+        elif scoped.changes.raw_differs(scoped.scope, base.commit, entry, name, str(path)):
+            found.add(name)
+    return frozenset(found)
+
+
 def change_set(root: Path, base: Base) -> ChangeSet:
     """D117 rule 2 as D125 counts it, from `changes.changed`, plus D153's unpushed range for the trunk (rows 10, 11)."""
     scoped = load_scoped(root)
@@ -150,7 +170,7 @@ def change_set(root: Path, base: Base) -> ChangeSet:
             span = scoped.changes.unpushed(scoped.scope, base.commit)
         if span.failure:
             raise Full(full_line(printable(span.failure, 600, quote=False)))
-        own = frozenset(scoped.changes.changed(scoped.scope, base.commit))
+        own = frozenset(scoped.changes.changed(scoped.scope, base.commit)) | makefile_changes(root, scoped, base)
     except Full:
         raise
     except (Exception, SystemExit) as error:  # `CouldNotCompare` is git's own first line; the rest, the error's

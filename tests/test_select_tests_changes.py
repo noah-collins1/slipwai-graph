@@ -159,3 +159,46 @@ class TestWhatCannotBeEstablished(ChangesCase):
         path = f"{bin_dir}:{Path('/usr/bin')}:/bin"
         line = self.first_line(SINCE="main", PATH=path)
         self.assertEqual(line, "full: the change set cannot be established — fatal: fake git cannot diff")
+
+
+class TestARootMakefileGitDoesNotSee(ChangesCase):
+    """Make reads these three names whatever git says of them: any raw difference from the base is whole (T028)."""
+
+    def whole(self, name: str) -> None:
+        line = self.first_line(SINCE="HEAD")
+        self.assertEqual(line, f"full: `{name}` changed — the root Makefile: its effect cannot be established")
+
+    def test_a_makefile_edited_under_assume_unchanged_is_a_change(self) -> None:
+        self.slice_branch()
+        git(self.repo, "update-index", "--assume-unchanged", "Makefile")
+        self.write("Makefile", (self.repo / "Makefile").read_text(encoding="utf-8") + "# edited\n")
+        self.whole("Makefile")
+
+    def test_a_makefile_edited_under_skip_worktree_is_a_change(self) -> None:
+        self.slice_branch()
+        git(self.repo, "update-index", "--skip-worktree", "Makefile")
+        self.write("Makefile", (self.repo / "Makefile").read_text(encoding="utf-8") + "# edited\n")
+        self.whole("Makefile")
+
+    def test_an_ignored_gnumakefile_is_a_change(self) -> None:
+        self.slice_branch()
+        self.exclude("GNUmakefile")
+        self.write("GNUmakefile", "include Makefile\n")
+        self.whole("GNUmakefile")
+
+    def test_an_ignored_lowercase_makefile_is_a_change(self) -> None:
+        self.slice_branch()
+        self.exclude("makefile")
+        self.write("makefile", "include Makefile\n")
+        self.whole("makefile")
+
+    def test_a_makefile_that_lost_its_executable_bit_is_a_change(self) -> None:
+        self.slice_branch()
+        git(self.repo, "update-index", "--assume-unchanged", "Makefile")
+        (self.repo / "Makefile").chmod(0o755)
+        self.whole("Makefile")
+
+    def test_an_untouched_makefile_is_no_change(self) -> None:
+        self.slice_branch()
+        self.write(GO, "package main\n")
+        self.assertTrue(self.first_line(SINCE="HEAD").startswith("compared with `HEAD` at "))
