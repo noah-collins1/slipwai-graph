@@ -82,8 +82,8 @@ Every changed path is matched by the first row that claims it.
 | `tests/test_<m>.py` | module `m` runs, and every module importing it |
 | `tests/<helper>.py` | every module whose import closure holds it |
 | `tests/**` (anything else) | the modules whose `reads` name it |
-| `assets/languages/<b>/**`, `assets/backing-services/<b>/**` — `<b>` a catalog backend or family | `backend` ∈ that backend or family's backends; plus R-5's cross-read rows (`typescript/biome/**`, `typescript/app/package.json` → also `frontend` `react-vite`; `java/build/**` → also `command` `adopt`) |
-| `assets/backing-services/<other>` (not `prune.py`) | every configuration |
+| `assets/languages/<b>/**`, `assets/backing-services/<b>/**` — `<b>` a catalog backend or family | `backend` ∈ that backend or family's backends; plus R-5's cross-read rows (`typescript/biome/**`, `typescript/app/package.json` → also `frontend` `react-vite`; `java/build/**` → also `command` `adopt`; and `assets/frontends/react-vite/app/package.json` → also `backend` `typescript`, which `biome.py` reads for the Biome version — found by the held scan at T007). A pair reached only by a cross-read never narrows |
+| `assets/backing-services/keycloak/**`, `sql/**`, `docker-compose.yml`, `env.example` | every configuration (any other entry there is **full** — *no rule claims it*) |
 | `assets/frontends/<f>/**` | `frontend` = `f` |
 | `assets/profiles/<p>/**` | `profile` = `p` |
 | `assets/targets/<t>/**` | `target` = `t` |
