@@ -1914,6 +1914,32 @@
         "outcome": "accepted",
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "gate",
+      "started": "2026-10-06T19:37:50Z",
+      "planned": "gate: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 0,
+          "done": 55
+        }
+      },
+      "cursor": {
+        "source": "claude",
+        "session": "2382cd35-c30b-4143-ab92-9beb7e6d8378",
+        "files": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 1557335
+        },
+        "subagents": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a1a84f2460acb575a.jsonl": 537757,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a2045a0dde4c23c18.jsonl": 464388,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a665ad8b9056cf10b.jsonl": 1070428,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ad35fb8612de06ffc.jsonl": 596635,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ae91a4fe8081de3da.jsonl": 712064,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-afa1c5c3c21190387.jsonl": 942815
+        }
+      }
     }
   ]
 }
