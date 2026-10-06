@@ -42,3 +42,7 @@ def skipped_line(module: str, reason: str) -> str:
 def narrowed_line(module: str, backends: tuple[str, ...], left_out: tuple[str, ...]) -> str:
     only = ("backend " if len(backends) == 1 else "backends ") + ", ".join(backends)
     return f"narrowed {module}: {only} only ({', '.join(left_out)} unaffected)"
+
+
+def summary_line(selected: int, total: int, against: str) -> str:
+    return f"selected {selected} of {total} modules against {against}"

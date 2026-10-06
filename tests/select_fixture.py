@@ -128,6 +128,12 @@ class SelectCase(unittest.TestCase):
         return subprocess.run(["make", *args], cwd=self.repo, env=self.environment(**env), text=True,
                               capture_output=True, timeout=180)
 
+    def selector_merged(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
+        """The selector with its two streams in one, in the order they were written: for what came before what."""
+        return subprocess.run(["python3", "-B", "scripts/select-tests.py", *args], cwd=self.repo,
+                              env=self.environment(**env), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                              timeout=180)
+
     def selector(self, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
         """`python3 -B scripts/select-tests.py <args>` in the repository, as the patched `make test` runs it."""
         return subprocess.run(["python3", "-B", "scripts/select-tests.py", *args], cwd=self.repo,

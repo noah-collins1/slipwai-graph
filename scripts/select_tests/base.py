@@ -131,6 +131,7 @@ class ChangeSet(NamedTuple):
     own: frozenset[str]
     span: Any
     line: str
+    against: str = ""  # the base as the summary names it: `main` at 8072724
 
 
 class Choice(NamedTuple):
@@ -155,7 +156,7 @@ def change_set(root: Path, base: Base) -> ChangeSet:
     except (Exception, SystemExit) as error:  # `CouldNotCompare` is git's own first line; the rest, the error's
         raise cannot_be_established(error) from error
     line = base.line + (f"; {printable(span.note, 600, quote=False)}" if span.note else "")
-    return ChangeSet(sorted(own | set(span.paths)), own, span, line)
+    return ChangeSet(sorted(own | set(span.paths)), own, span, line, f"`{base.name}` at {base.short}")
 
 
 def changed_words(root: Path, found: ChangeSet, path: str) -> str:

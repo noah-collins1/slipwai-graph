@@ -8,6 +8,7 @@ The full run is exactly today's `PYTHONPATH=src python3 -m unittest discover -s 
 """
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -71,7 +72,14 @@ def plan() -> tuple[base.ChangeSet, choose.Selection]:
     return found, choose.select(tree, found.paths, catalog)
 
 
-def main() -> int:
+def arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="select-tests.py", description=__doc__.split("\n\n")[0] if __doc__ else None)
+    parser.add_argument("--dry-run", action="store_true", help="print what would run and why, and run nothing")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str]) -> int:
+    given = arguments(argv)
     try:
         refusal = full_rows(os.environ, ROOT)
         if refusal is not None:
@@ -79,20 +87,24 @@ def main() -> int:
         found, selection = plan()
     except Full as full:
         print(full.line, flush=True)
-        return run_full()
+        return 0 if given.dry_run else run_full()
     print(found.line, flush=True)
     for verdict in selection.verdicts:
         if not verdict.runs:
             print(report.skipped_line(verdict.module, verdict.skip), flush=True)
     narrowed = [verdict.module for verdict in selection.narrowed()]
-    if narrowed:
-        for module in narrowed:
-            print(report.narrowed_line(module, selection.backends, selection.left_out), flush=True)
-    others = [verdict.module for verdict in selection.verdicts if verdict.runs and verdict.module not in narrowed]
-    status = run_modules(others)
+    for module in narrowed:
+        print(report.narrowed_line(module, selection.backends, selection.left_out), flush=True)
+    running = [verdict.module for verdict in selection.verdicts if verdict.runs]
+    summary = report.summary_line(len(running), len(selection.verdicts), found.against)
+    print(summary, flush=True)
+    if given.dry_run:
+        return 0
+    status = run_modules([module for module in running if module not in narrowed])
     narrowed_status = run_modules(narrowed, ",".join(selection.backends))  # both run; either failing fails the run
+    print(summary, flush=True)
     return status or narrowed_status
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
