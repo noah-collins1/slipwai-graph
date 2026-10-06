@@ -50,7 +50,7 @@ class BenchmarkRenderingTest(unittest.TestCase):
         self.assertEqual(benchmark.stage_rows(record)[0][2:5], ["unbracketed", "unknown", "unknown"])
         self.assertIn(
             "S1 demo: not bracketed around its work — start and end were called in the same moment, "
-            "so this stage's wall and tokens are missing, not zero.",
+            "so this stage's time and tokens are missing, not zero.",
             benchmark.notes([summary], [record]),
         )
 

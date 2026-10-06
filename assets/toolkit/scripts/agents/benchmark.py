@@ -15,7 +15,7 @@ slice loop, `specs/<feature>/benchmark.json`. `/drive` opens an entry before a s
     python3 scripts/agents/benchmark.py check                             # warns: anything open, a done slice unrecorded
 
 Everything that a transcript, `tasks.md`, git or the record itself can say is read from there, never asked:
-wall time; the agent type each delegate ran as, where the transcript attributes one; tokens by model, from the
+stage time; the agent type each delegate ran as, where the transcript attributes one; tokens by model, from the
 harness's own transcript between the two cursors — Claude Code's
 `~/.claude/projects/<slug>/<session>.jsonl` and the sub-agent transcripts beside it, Codex's rollout under
 `~/.codex/sessions/` — where `scripts/agents/registry.json` records one for the running harness, and `null`
@@ -672,7 +672,7 @@ def close(directory: Path) -> None:
 
 
 def cut_off_entry(path: Path, index: int, entry: dict[str, Any], reason: str) -> None:
-    """Close an entry nothing will `end`: the session that opened it is gone. Its wall is real, and its tokens are
+    """Close an entry nothing will `end`: the session that opened it is gone. Its stage time is real, and its tokens are
     read from the transcript the cursor names — a file on this machine, whoever's session it was — up to where
     that transcript stopped, so the hours before the interruption still count; its signals were never reported,
     and the record says so rather than guessing. The window is kept, so a bracket that enclosed it leaves it its
@@ -1058,7 +1058,7 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
               for summary in summaries if summary["slice"] and summary["converge_passes"] >= REPEATED]
     lines += [f"{summary['slice']}: re-entered {', '.join(summary['reentered'])} after implementation"
               for summary in summaries if summary["slice"] and summary["reentered"]]
-    lines += [f"{summary['slice']}: implemented as {' and '.join(summary['delegation'])} — its wall compares with "
+    lines += [f"{summary['slice']}: implemented as {' and '.join(summary['delegation'])} — its stage time compares with "
               "neither" for summary in summaries if summary["slice"] and len(summary["delegation"]) > 1]
     lines += [f"{summary['slice']}: elapsed unknown — {summary['elapsed']['unknown']}; worked time and every waiting "
               "cause are unknown for the same reason" for summary in summaries
@@ -1082,7 +1082,7 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
             if is_unbracketed(entry):
                 lines.append(
                     f"{record.get('slice') or '(feature)'} {entry['stage']}: not bracketed around its work — "
-                    "start and end were called in the same moment, so this stage's wall and tokens are missing, not zero."
+                    "start and end were called in the same moment, so this stage's time and tokens are missing, not zero."
                 )
     if summaries:
         lines += attributed()["features"].get(str(summaries[0]["feature"]), {}).get("notes", [])
