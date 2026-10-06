@@ -480,18 +480,27 @@ def iterations(rows: list[dict[str, Any]]) -> list[Interval]:
     return spans
 
 
-def parks(rows: list[dict[str, Any]]) -> list[Interval]:
-    """Each iteration ending `stopped: human`, up to the next iteration's start (open-ended where none follows)."""
-    found = []
+def parks(rows: list[dict[str, Any]], starts: list[int] | None = None) -> tuple[list[Interval], list[int], list[int]]:
+    """Each iteration ending `stopped: human`, up to the next iteration's start. The last row has none, and a park
+    open at the end of the log ends at the first bracket any record started after it (`starts`): the person's wait
+    is over when work began again. Where no bracket did, it is not recorded when the wait ended — the second result
+    names where such a park began, and the third where a bracket ended one."""
+    found: list[Interval] = []
+    endless: list[int] = []
+    bracketed: list[int] = []
     for index, row in enumerate(rows):
         if str(row.get("last_line", "")).rstrip().endswith("stopped: human"):
             try:
                 begun = epoch(row["ended"])
-                later = epoch(rows[index + 1]["started"]) if index + 1 < len(rows) else FOREVER
+                later = epoch(rows[index + 1]["started"]) if index + 1 < len(rows) else None
             except (KeyError, ValueError, TypeError):
                 continue
-            found.append((begun, later))
-    return found
+            if later is None:
+                later = min((moment for moment in (starts or []) if moment > begun), default=None)
+                (endless if later is None else bracketed).append(later or begun)
+            if later is not None:
+                found.append((begun, later))
+    return found, endless, bracketed
 
 
 def landing(reader: Reader, ident: str) -> Found | None:
@@ -514,7 +523,7 @@ def sibling_wait(reader: Reader, ident: str, demo: int, before: int) -> tuple[In
 
 def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dict[str, Any]],
             log: list[dict[str, Any]] | None, last_lines: dict[int, int] | None = None,
-            damaged: list[int] | None = None) -> dict[str, Any]:
+            damaged: list[int] | None = None, starts: list[int] | None = None) -> dict[str, Any]:
     """worked, and each cause's seconds, inside [ready, accepted]: every second goes to the first claimant in the
     order worked, integration, dependency, review, worker, and what no record claims is unattributed, so the parts
     add up to elapsed exactly. Unknown wherever elapsed is, and — for review, worker and unattributed — wherever the
@@ -549,13 +558,17 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
     claimed["review"] = review
     read_from["review"] = "the demo bracket with no driver" if review else "none present: no park, no person's demo"
     claimed["worker"] = []
+    endless: list[int] = []
     read_from["worker"] = "none present: no cruise log"
     if log is not None:  # the log is there, whatever it holds
         read_from["worker"] = f"none present: {LOG} has no row"
-        parked = parks(log)
+        parked, endless, bracketed = parks(log, starts)
+        endless = [begun for begun in endless if begun < high]
         span = iterations(log)
         claimed["review"] = review + parked
         read_from["review"] = f"{LOG}: stopped: human" if parked else read_from["review"]
+        if bracketed:
+            read_from["review"] += f"; the park left open ends at the first bracket begun after it, {utc(bracketed[0])}"
         if span:
             claimed["worker"] = [(min(start for start, _ in span), FOREVER)]
             read_from["worker"] = (f"{LOG}: from the log's first row to accepted, less every cause above; counts "
@@ -567,9 +580,12 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
         taken = union(taken + mine)
     in_worked = length(clip(worked(entries, last_lines), low, high))
     seconds["unattributed"] = (high - low) - length(taken)
-    if damaged:
-        lines = ", ".join(f"line {number}" for number in damaged)
-        reason = unknown(f"{LOG} could not be read whole: {lines}")
+    if damaged or endless:
+        if damaged:
+            reason = unknown(f"{LOG} could not be read whole: " + ", ".join(f"line {number}" for number in damaged))
+        else:
+            reason = unknown(f"{LOG}'s last iteration ended `stopped: human` at {utc(endless[0])} and no bracket of any "
+                             "record began after it, so when the wait ended is not recorded")
         for name in ("review", "worker", "unattributed"):
             seconds[name] = reason
             read_from[name] = reason["unknown"]

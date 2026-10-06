@@ -173,6 +173,20 @@ def cruise_log() -> tuple[list[dict[str, Any]] | None, list[int]]:
     return _LOADED["log"]  # type: ignore[no-any-return]
 
 
+def bracket_starts() -> list[int]:
+    """When any record's bracket began, for the park the cruise log leaves open."""
+    if "starts" not in _LOADED:
+        found = []
+        for _, record in records():
+            for item in record.get("stages", []):
+                try:
+                    found.append(measures().epoch(item["started"]))
+                except (KeyError, ValueError, TypeError):
+                    continue
+        _LOADED["starts"] = sorted(found)
+    return _LOADED["starts"]  # type: ignore[no-any-return]
+
+
 def reader(feature: str) -> Any:
     """The moments git holds for one feature's slices, read once per run."""
     key = f"reader:{feature}"
@@ -881,7 +895,7 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
               for index, entry in enumerate(stages)]
     moved = measures().moments(reader(str(record.get("feature"))), record.get("slice"), stages)
     parts = measures().waiting(moved, reader(str(record.get("feature"))), str(record.get("slice")), stages, cruise_log()[0],
-                               last_lines, cruise_log()[1])
+                               last_lines, cruise_log()[1], bracket_starts())
     last = {key: next((entry["signals"][key] for entry in reversed(ended) if key in entry.get("signals", {})), None)
             for key in ("mutation_score", "outcome")}
     return {
