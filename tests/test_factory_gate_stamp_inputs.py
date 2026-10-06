@@ -56,6 +56,9 @@ UNCHANGING = {
              "`test_gitea_pages_environment.py` runs its tests with an odd value for each"
        for name in ("GITEA_REPOS_DIR", "GITEA_PAGES_ROOT", "GITEA_PAGES_HOST", "GITEA_PAGES_PORT",
                     "GITEA_PAGES_BRANCH", "GITEA_PAGES_POLL_SECONDS")},
+    **{name: "what the fake `go` of `test_go_mutation_signal.py` prints and writes; the test sets both around its "
+             "own call and restores the environment, so a value from outside never reaches an assertion"
+       for name in ("FAKE_SAY", "FAKE_REPORT")},
     "TMPDIR": "where `tempfile` makes directories; no test's outcome turns on it since T023 (git is given "
               "`GIT_CEILING_DIRECTORIES` where it could see above one)",
 }
