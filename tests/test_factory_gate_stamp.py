@@ -282,8 +282,11 @@ class TestNothingElseMoves(GateCase):
         self.assertEqual(self.dry("typecheck"),
                          ["python3 -m compileall -q src scripts tests", "./scripts/verify --typecheck-only"])
         self.assertEqual(self.dry("check-structure"), ["python3 scripts/check-structure.py"])
-        self.assertEqual(self.dry("test"), ["PYTHONPATH=src python3 -m unittest discover -s tests -v"])
-        self.assertEqual(self.dry("test", TESTS="test_x"), ["PYTHONPATH=src:tests python3 -m unittest -v test_x"])
+        # The patched recipe (S38) runs the selector, and says so when TESTS names the modules; today's recipe does not.
+        self.assertIn(self.dry("test")[-1], ("PYTHONPATH=src python3 -m unittest discover -s tests -v",
+                                             "PYTHONPATH=src python3 -B scripts/select-tests.py"))
+        self.assertEqual(self.dry("test", TESTS="test_x")[-1].split("; ")[-1],
+                         "PYTHONPATH=src:tests python3 -m unittest -v test_x")
         workflow = (ROOT / ".github/workflows/verify.yml").read_text(encoding="utf-8")
         self.assertNotIn("verify-stamp", workflow)
         for step in ("make lint", "make typecheck", "make check-structure"):
