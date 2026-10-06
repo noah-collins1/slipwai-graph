@@ -1197,16 +1197,18 @@ def overview(feature: str | None = None) -> list[Path]:
 
 
 def json_records() -> list[dict[str, Any]]:
-    """`--json`: every record's summary, and on each feature's own record that feature's figures."""
+    """`--json`: every record's summary, and each feature's figures once — on the feature's own record, or, where
+    the feature has none, on its first slice record in path order, which says so in `read_from`."""
     found = [{"path": str(path.relative_to(ROOT)), **summary_of(path, record)} for path, record in records()]
     for name in {str(item["feature"]) for item in found}:
         mine = [item for item in found if str(item["feature"]) == name]
-        for item in mine:
-            if not item["slice"]:
-                item["feature_figures"] = figures(mine)
-                item["session_totals"] = attributed()["features"][str(item["feature"])]["sessions"]
-                item["decision_health"] = decision_health(
-                    str(item["feature"]), [record for _, record in by_feature()[str(item["feature"])]])
+        carrier = next((item for item in mine if not item["slice"]), mine[0])
+        carrier["feature_figures"] = figures(mine)
+        carrier["session_totals"] = attributed()["features"][name]["sessions"]
+        carrier["decision_health"] = decision_health(name, [record for _, record in by_feature()[name]])
+        if carrier["slice"]:
+            carrier["read_from"] = {**carrier["read_from"], "feature_figures":
+                                    "this record: the feature has no feature record to carry its figures"}
     return [{key: value for key, value in item.items() if not key.startswith("_")} for item in found]
 
 

@@ -55,6 +55,35 @@ class FeatureFiguresTest(unittest.TestCase):
             write(repo, REGISTER, register(["S1", "S2", "S3"][:index + 1]))
             commit(repo, stamp(2, f"{21 + index}:00:00"), f"{ident} done", REGISTER)
 
+    def keyed(self, found: dict[str, dict]) -> list[str]:
+        """The slices whose record carries each of the feature's three figures, in the order `--json` lists them."""
+        keys = ("feature_figures", "session_totals", "decision_health")
+        return [ident for ident, item in found.items() if any(key in item for key in keys)]
+
+    def test_e1_with_no_feature_record_the_first_slice_record_carries_the_three_figures_once(self) -> None:
+        repo = self.repo
+        write(repo, SPLIT, graph([("S1", []), ("S2", [])]))
+        paths = [SPLIT] + [record(repo, ident, entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")))
+                           for ident in ("S2", "S1")]
+        commit(repo, stamp(1), "records", *paths)
+        write(repo, REGISTER, register(["S1", "S2"]))
+        commit(repo, stamp(2, "21:00:00"), "done", REGISTER)
+        found = summaries(self.repo)
+        self.assertEqual(self.keyed(found), ["S1"])  # path order: slices/S1 before slices/S2
+        carrier = found["S1"]
+        for key in ("feature_figures", "session_totals", "decision_health"):
+            self.assertIn(key, carrier)
+        self.assertEqual(carrier["feature_figures"]["stage_seconds"], 2 * 3600)
+        self.assertIn("feature_figures", carrier["read_from"])
+        self.assertIn("no feature record", carrier["read_from"]["feature_figures"])
+        self.assertIn("2h00m in all", bench(self.repo).stdout)
+
+    def test_e2_with_a_feature_record_the_figures_stay_on_it_and_no_slice_carries_them(self) -> None:
+        self.overlapping(3)
+        found = summaries(self.repo)
+        self.assertEqual(self.keyed(found), ["(feature)"])
+        self.assertNotIn("feature_figures", found["(feature)"]["read_from"])
+
     def test_e1_three_overlapping_slices_elapsed_is_less_than_their_stage_time(self) -> None:
         self.overlapping(3)
         out = bench(self.repo).stdout
