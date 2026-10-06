@@ -525,6 +525,9 @@ Delegate 1 owns `measures.py` and `benchmark.py` (T040–T050); delegate 2 owns 
 - [x] *(Done by the host, iteration 25.)* **T055 — LOW · The quickstart's step 4 counts what the script counts:** a streamed request's usage is the largest each field reaches, and the page says a copy from another session is the first session's; it prints 360 184 669, the script's figure. **Files:** `quickstart.md`.
 - The actor's other notes (the first table's key two tables away, the waiting key skipping elapsed, worked and rework, bare `unknown` in the stage tables' `in`/`out`, the cost note not naming the stage, why S06's unbracketed stage still has a cost) are design notes for the next slice that touches the page: the Parking Lot.
 
+- [x] *(Done at `9f7dec5`, iteration 25.)* **T056 — The full gate's one stale example:** `test_drive_settings` still read the note as *its wall compares with neither*, which D166 renamed to *its stage time*. **Files:** `tests/test_drive_settings.py`.
+- [x] *(Iteration 25.)* **Gates:** `make verify` and `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify` green at `9f7dec5` (2948 tests). The first `make verify` at `1d15f09` was red on T056 and on a mypy `INTERNAL ERROR` in the generated python-postgres variant; the second, at `9f7dec5`, on the mypy error alone, with `/tmp` starting at 8.6G of 16G used (the S38 demo's stopped runs had left two 900M matrix directories). It passed standalone and, once `/tmp` was cleared to 5.3G, in both gates.
+
 ## Convergence
 
 ### Pass 1 — 2026-10-06, cruise iteration 24, `drive-converge` (worktree at `957c808`)

@@ -1923,23 +1923,86 @@
         "start": {
           "open": 0,
           "done": 55
+        },
+        "end": {
+          "open": 0,
+          "done": 55
         }
       },
-      "cursor": {
-        "source": "claude",
-        "session": "2382cd35-c30b-4143-ab92-9beb7e6d8378",
-        "files": {
-          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 1557335
-        },
-        "subagents": {
+      "ended": "2026-10-06T23:16:18Z",
+      "seconds": 13108,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 1557335,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a1a84f2460acb575a.jsonl": 537757,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a2045a0dde4c23c18.jsonl": 464388,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a665ad8b9056cf10b.jsonl": 1070428,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ad35fb8612de06ffc.jsonl": 596635,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ae91a4fe8081de3da.jsonl": 712064,
           "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-afa1c5c3c21190387.jsonl": 942815
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 2099721,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a1a84f2460acb575a.jsonl": 537757,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a2045a0dde4c23c18.jsonl": 464388,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a27b3687de86038df.jsonl": 648781,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a665ad8b9056cf10b.jsonl": 1077262,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ad35fb8612de06ffc.jsonl": 596635,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-ae91a4fe8081de3da.jsonl": 712064,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-afa1c5c3c21190387.jsonl": 942815
         }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "2382cd35-c30b-4143-ab92-9beb7e6d8378",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 106,
+            "output": 26368,
+            "cache_read": 11947864,
+            "cache_creation": 53238
+          }
+        },
+        "subagents": {
+          "claude-sonnet-5-5": {
+            "input": 104,
+            "output": 5381,
+            "cache_read": 3485453,
+            "cache_creation": 106944
+          },
+          "claude-opus-5-5": {
+            "input": 2,
+            "output": 2094,
+            "cache_read": 164886,
+            "cache_creation": 391
+          }
+        },
+        "agents": [
+          "drive-hand",
+          "drive-implement"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "agents": [
+        "drive-hand",
+        "drive-implement"
+      ],
+      "delegated": true,
+      "signals": {
+        "driver": "cruise"
       }
     }
-  ]
+  ],
+  "shape": {
+    "tasks": 57,
+    "files": 81,
+    "added": 23082,
+    "removed": 242,
+    "from": "525399bf890c6c067264780f9492c26f78991652",
+    "to": "9f7dec5f285741fbf68d950223af21e3db12117c"
+  }
 }
