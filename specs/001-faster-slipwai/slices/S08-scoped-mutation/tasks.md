@@ -756,6 +756,21 @@ the gaps:** T026, T027, T028 and T029 land before the demo; T030–T032 and T022
 - [x] *(Done at `0b48473`; the delegate's three real-Gremlins runs, and the host's own real run of the untested `Degraded` case: `2 mutants not covered … passed`, exit 0.)* **Finding** (drive-hand, demo 2, iteration 23; `demo/d2-03-uncovered-scoped.log`, `demo/d2-04-go-run-exit-code.txt`). T033's fix never runs in a real project: `go-mutation.py` starts Gremlins through `go run`, which turns Gremlins' exit 10 into its own exit 1, and T033's branch reads the report only on 10 or 11. `tests/test_mutation_uncovered.py`'s fake `go` exits with Gremlins' own 10, so the test passed on a path no real run takes. And the sibling: a Go change with nothing to mutate (a comment) fails the scoped run with "a pass on nothing is not a pass", exit 2, while Spring's scoped run passes the same case by decision (research R3, AC-S08-4) and D138 item 5 gives it the words *no mutant to run — <why>*. **RED:** the fakes exit as `go run` does (1, with "exit status 10" on stderr) and as a built binary does (10), and each example — not covered only; nothing to mutate in a scoped run; a survivor; a timeout; no report — is observed with both. **GREEN — the class:** the scoped run's verdict for every wired backend comes from the tool's report, never from the exit code of the wrapper that started it; a scoped run whose changed files hold nothing to mutate is *no mutant to run*, exit 0, on Go as on Spring; the sweep keeps its own rule. **Also:** quickstart scenario 5 reads "after a commit on `main` that changes one production file Gremlins can mutate". **Files:** `assets/languages/go/scripts/go-mutation.py`, `tests/test_mutation_uncovered.py`, the Go fakes in `tests/mutation_scope_fixture.py`, `quickstart.md`.
 
 
+### T035 — [US2] After the rebase onto S06's final tip (`66e49e8`): the hold reads D140, and the scoped run takes S06's two new rules (host, at rebase)
+
+- [ ] **(a) Re-pin, no behaviour change.** S06 replaced `rules.judge` with D140's text hold, so T002's e4 hold, its teeth
+  and `test_mutation_migrate`'s e6 error with `AttributeError`. The hold becomes: for every shape, `rules.json`'s
+  `makefile` digest is `rules.text_digest` of the generated Makefile (S08's `mutation`/`mutation-full` lines are factory
+  text), `rules.text_problem` is None, and `rules.difference` is None; teeth: the `SHELL := /bin/sh` edit makes
+  `text_problem` say `NOT_THE_TEXT`. **(b) The `index` border (S06 T044).** `mutation-scope.py` asks `index` after `told`:
+  an index the stamp will not vouch for (assume-unchanged, skip-worktree, a submodule) makes the run the sweep with that
+  border's own words, where today it reads as *no mutant to run*. **(c) D153.** On the implicit slice-branch scope, the
+  files `verify_scoped.changes.unpushed(scope, base)` names join the change set as changed, and its `failure` makes the
+  run the sweep with S06's own words; with no remote, nothing changes (D117); an explicit `SINCE` stays `git diff
+  <ref>` (D138 item 4). Loaded from S06's code, never copied. **Files:** `assets/toolkit/scripts/mutation-scope.py`,
+  `tests/test_mutation_targets.py`, `tests/test_mutation_migrate.py`, `tests/test_mutation_borders.py`, a new
+  `tests/test_mutation_unpushed.py`; `changelog.d/scoped-mutation.md` gains one clause if (c) changes what it promises.
+
 ## Phase 4: After acceptance (host tasks)
 
 ### T014 — The adversary pass (host task)
