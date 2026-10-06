@@ -40,14 +40,18 @@ class Reach(NamedTuple):
     every: bool
     configs: tuple[tuple[str, str], ...]
     plain: bool  # some changed path carries no configuration at all
+    narrowable: frozenset[tuple[str, str]]  # the pairs only a backend's own assets reached
 
 
 def reach(paths: list[str], claims: Mapping[str, rules.Claim]) -> Reach:
     pairs: list[tuple[str, str]] = []
     for path in paths:
         pairs.extend(pair for pair in claims[path].configs if pair not in pairs)
+    narrow = {pair for pair in pairs
+              if all(pair in claims[path].narrowable for path in paths if pair in claims[path].configs)
+              and not any(claims[path].every for path in paths)}
     return Reach(tuple(paths), any(claims[path].every for path in paths), tuple(pairs),
-                 any(not claims[path].every and not claims[path].configs for path in paths))
+                 any(not claims[path].every and not claims[path].configs for path in paths), frozenset(narrow))
 
 
 def reads_match(path: str, entry: str) -> bool:
@@ -64,7 +68,7 @@ def reasons_for(declaration: declarations.Declaration, reached: Reach) -> list[R
         found.append(Reason("reads every configuration"))
     for axis, option in reached.configs:
         if declaration.admits(axis, option):
-            found.append(Reason(f"reads the {option} configuration", narrowable=axis == "backend"))
+            found.append(Reason(f"reads the {option} configuration", narrowable=(axis, option) in reached.narrowable))
     return found
 
 

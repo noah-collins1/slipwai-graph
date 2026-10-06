@@ -19,13 +19,15 @@ UNCLAIMED = "no rule claims it"
 class Claim(NamedTuple):
     """The row that claims a path: its words, whether it makes the run whole, and what it reaches — every
     configuration, or the `(axis, option)` pairs named; `backend_asset` says the path is a backend's own asset, which
-    is what lets the matrix narrow to the backends it names."""
+    is what lets the matrix narrow to the backends it names, and `narrowable` the pairs it is true of (a cross-read
+    pair is not: it reaches the configuration for another reason)."""
 
     rule: str
     full: bool
     every: bool = False
     configs: tuple[tuple[str, str], ...] = ()
     backend_asset: bool = False
+    narrowable: frozenset[tuple[str, str]] = frozenset()
 
 
 class Row(NamedTuple):
@@ -87,6 +89,20 @@ def names(catalog: Mapping[str, Any], axis: str) -> frozenset[str]:
     return frozenset(value) if isinstance(value, dict) else frozenset()
 
 
+# Research R-5: what `src/slipwai/` reads from a directory besides the configuration its name suggests. A path under the
+# prefix also reaches the pairs named; each row says who reads it. `tests/test_select_tests_cross_reads.py` holds this
+# table to the generator by scanning every reference to an asset root.
+CROSS_READS = (
+    # `project/biome.py` writes the Biome configuration and plugin into every project with an npm workspace
+    ("assets/languages/typescript/biome/", (("frontend", "react-vite"),)),
+    # ... and pins its version from the two manifests that declare it
+    ("assets/languages/typescript/app/package.json", (("frontend", "react-vite"),)),
+    ("assets/frontends/react-vite/app/package.json", (("backend", "typescript"),)),
+    # `wrappers.py` gives an adopted Maven project the wrapper every generated Java project carries
+    ("assets/languages/java/build/", (("command", "adopt"),)),
+)
+
+
 def backends_named(catalog: Mapping[str, Any], name: str) -> tuple[str, ...]:
     """The backends a directory name stands for: the backend of that name, and the backends of the family of it."""
     found = catalog.get("backends")
@@ -97,14 +113,23 @@ def backends_named(catalog: Mapping[str, Any], name: str) -> tuple[str, ...]:
 
 
 def asset_claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
-    """The row below the first that claims a path under `assets/`, with what it reaches (data-model *The path rules*).
-    A directory the catalog does not name is not claimed: nothing says what it reaches."""
+    """The row below the first that claims a path under `assets/`, with what it reaches (data-model *The path rules*)
+    and what else reads it (`CROSS_READS`). A directory the catalog does not name is not claimed."""
+    own = own_asset_claim(path, catalog)
+    if own is None:
+        return None
+    extra = tuple(pair for prefix, pairs in CROSS_READS if path.startswith(prefix) for pair in pairs)
+    return own._replace(configs=own.configs + extra) if extra else own
+
+
+def own_asset_claim(path: str, catalog: Mapping[str, Any]) -> Claim | None:
     parts = path.split("/")
     if len(parts) < 3:
         return None
     tree, name = parts[1], parts[2]
     if tree in ("languages", "backing-services") and len(parts) > 3 and (backends := backends_named(catalog, name)):
-        return Claim(f"the {name} assets", False, configs=tuple(("backend", b) for b in backends), backend_asset=True)
+        pairs = tuple(("backend", b) for b in backends)
+        return Claim(f"the {name} assets", False, configs=pairs, backend_asset=True, narrowable=frozenset(pairs))
     if tree == "backing-services" and name in OTHER_BACKING_SERVICES:
         return Claim("the shared backing services", False, every=True)
     if tree == "toolkit":
