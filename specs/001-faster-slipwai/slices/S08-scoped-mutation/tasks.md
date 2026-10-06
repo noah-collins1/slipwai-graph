@@ -758,7 +758,7 @@ the gaps:** T026, T027, T028 and T029 land before the demo; T030–T032 and T022
 
 ### T035 — [US2] After the rebase onto S06's final tip (`66e49e8`): the hold reads D140, and the scoped run takes S06's two new rules (host, at rebase)
 
-- [ ] **(a) Re-pin, no behaviour change.** S06 replaced `rules.judge` with D140's text hold, so T002's e4 hold, its teeth
+- [x] *(Done at `e455113` (a), `d5a4bdf` (b), `ce3beec` and `5b14fbb` (c), `2cfe927` (a subdirectory project with an unpushed trunk commit, a hold with teeth), `d684d80` (the fragment's words).)* **(a) Re-pin, no behaviour change.** S06 replaced `rules.judge` with D140's text hold, so T002's e4 hold, its teeth
   and `test_mutation_migrate`'s e6 error with `AttributeError`. The hold becomes: for every shape, `rules.json`'s
   `makefile` digest is `rules.text_digest` of the generated Makefile (S08's `mutation`/`mutation-full` lines are factory
   text), `rules.text_problem` is None, and `rules.difference` is None; teeth: the `SHELL := /bin/sh` edit makes
