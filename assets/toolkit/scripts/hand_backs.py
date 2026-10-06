@@ -499,8 +499,7 @@ class Arrival(NamedTuple):
 def git_out(directory: Path, *args: str) -> str | None:
     """`git <args>` run in `directory`, its stdout; None where git is not there or refuses."""
     try:
-        done = subprocess.run(["git", "-C", str(directory), *args], capture_output=True, text=True, check=False,
-                              env={**os.environ, "LC_ALL": "C", "GIT_OPTIONAL_LOCKS": "0"})
+        done = subprocess.run(["git", "-C", str(directory), *args], capture_output=True, text=True, check=False)
     except OSError:
         return None
     return done.stdout if done.returncode == 0 else None
