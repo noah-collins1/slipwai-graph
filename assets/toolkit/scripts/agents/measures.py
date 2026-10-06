@@ -557,6 +557,22 @@ def parks(rows: list[dict[str, Any]], starts: list[int] | None = None) -> tuple[
     return found, endless, bracketed
 
 
+def disordered(rows: list[dict[str, Any]]) -> str | None:
+    """Where a park's row is followed by one that started before the park began: the wait would end before it began, so
+    what it claims is unsaid. The first such row, named by its `iteration` (or its place in the log)."""
+    for index, row in enumerate(rows[:-1]):
+        if not re.search(r"stopped: human\s*$|\bparked:", str(row.get("last_line", ""))):
+            continue
+        try:
+            begun, later = epoch(row["ended"]), epoch(rows[index + 1]["started"])
+        except (KeyError, ValueError, TypeError):
+            continue
+        if later < begun:
+            return (f"{LOG} is out of time order: row {row.get('iteration', index + 1)} ended a park at {utc(begun)} and "
+                    f"the next row began earlier, at {utc(later)}")
+    return None
+
+
 def landing(reader: Reader, ident: str) -> Found | None:
     """When a sibling reached the branch: its merge commit, else its done mark."""
     return reader.merged(ident) or reader.done(ident)
@@ -644,8 +660,11 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
     in_worked = length(clip(worked(entries, last_lines), low, high))
     person = seconds.pop("person")
     seconds["unattributed"] = (high - low) - length(taken) + person  # the person's time is a part of it, named apart
-    if damaged or endless:
-        if damaged:
+    muddled = disordered(log) if log else None
+    if damaged or endless or muddled:
+        if muddled and not damaged:
+            reason = unknown(muddled)
+        elif damaged:
             reason = unknown(f"{LOG} could not be read whole: " + ", ".join(f"line {number}" for number in damaged))
         else:
             reason = unknown(f"{LOG}'s last iteration ended `stopped: human` or `parked:` at {utc(endless[0])} and no bracket of any "

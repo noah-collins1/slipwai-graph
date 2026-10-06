@@ -57,6 +57,16 @@ class OpenParkTest(unittest.TestCase):
             self.assertIn("no bracket of any record began after it", figure["unknown"])
         self.assertNotIn("until accepted", json.dumps(found["read_from"]))
 
+    def test_e4_a_log_out_of_time_order_makes_review_worker_and_unattributed_unknown_naming_the_row(self) -> None:
+        """A9: a park row that ended 11:00 followed by a row that started 09:30."""
+        write(self.repo, "specs/cruise-log.jsonl", row(1, "08:00:00", "10:00:00", "cruise: continue")
+              + row(2, "10:00:00", "11:00:00", "cruise: stopped: human") + row(3, "09:30:00", "12:00:00", "cruise: continue"))
+        found = self.accept(entry("implement", stamp(1, "13:00:00"), stamp(1, "14:00:00")))
+        for figure in (*(found["waiting"][cause] for cause in ("review", "worker", "unattributed")),
+                       found["unattributed_person"]):
+            self.assertIn("out of time order", figure["unknown"])
+            self.assertIn("row 2", figure["unknown"])
+
 
 if __name__ == "__main__":
     unittest.main()
