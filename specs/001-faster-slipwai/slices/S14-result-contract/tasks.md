@@ -578,5 +578,5 @@ Phase 4 task; the slice goes to its demo carrying them.
 
 - [x] **T038 — The adversary pass.** Two seams, fourteen findings (`adversary-log.md`, row S14); T029–T037 carry them; A7 and B4 fold into T024; B5 declined.
 - [x] **T039 — Mutation.** N/A — `project.json` records no mutation command for this repository (`"mutation": null`).
-- [ ] **T040 — Both full gates on the final tip** (`make verify`, then the delivery gate under CI markers), after every suite that reads a generated gate.
-- [ ] **T041 — Register row (`accepted-by: drive-hand`), close the record; remove the slice's worktrees and branch.**
+- [x] *(Done at `717cd5a`, iteration 24: 2799 tests each, green.)* **T040 — Both full gates on the final tip** (`make verify`, then the delivery gate under CI markers), after every suite that reads a generated gate.
+- [x] *(Done, iteration 24.)* **T041 — Register row (`accepted-by: drive-hand`), close the record; remove the slice's worktrees and branch.**

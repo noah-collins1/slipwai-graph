@@ -2651,7 +2651,7 @@ row; *stage time* is what today's `wall` column sums; *elapsed* is accepted minu
   ending `stopped: human` up to the next iteration, a demo waiting on a person), *integration* (merge to register row,
   the full gate inside it, timed by a new host-bracketed `gate` stage) — are separate numbers, each read from a record
   (git, `specs/cruise-log.jsonl`, `decisions.md`, the brackets), and the causes plus *unattributed* plus the union of the
-  slice's brackets equal elapsed, to the second.
+  slice's brackets equal elapsed, to the second. *D167:* review and dependency count only what a record names; a park whose cause no record says (`stopped: human`, `parked:`) is time *a person held the run, cause unrecorded*, inside *unattributed* and named there, never guessed as review.
 - **AC-S39-3** — *G3.* Given a skipper bracket nested inside an `implement` bracket of the same slice, then the slice's
   worked time counts that interval once; given an entry cut off at the next iteration's start hours after its last
   transcript line, then its stage time ends at that last line and the report says so; the `wall` column is renamed
@@ -2679,10 +2679,10 @@ row; *stage time* is what today's `wall` column sums; *elapsed* is accepted minu
 - **AC-S39-9** — *G9, what S37 reads.* Given any record, then `benchmark.py --json` carries `elapsed`, `stage_seconds`,
   `waiting{dependency, worker, review, integration, unattributed}`, `rework{seconds, tokens}` and `cost{tokens, shared}`,
   each a number or `{"unknown": "<reason>"}`, with the record each was read from; the page's reading notes say in one
-  sentence how elapsed differs from stage time.
+  sentence how elapsed differs from stage time. *D167:* `--json` also carries `unattributed_person` beside `waiting`, not inside it, so the five keys still sum to elapsed less worked; *D166:* each entry carries `recorded_seconds`.
 - **AC-S39-10** — *G10.* Given a generated project with one slice driven by `/drive` and no `specs/cruise-log.jsonl`,
   when `make benchmark` runs, then elapsed and stage time are reported, every waiting cause the project has no record for
-  is *unattributed*, and it exits 0 with no warning about the cruise log.
+  is *unattributed*, and it exits 0 with no warning about the cruise log. *D167:* a demo is a person's (review) only when its entry was closed with `outcome=` and carries no `driver` signal; a cut-off demo is stage time.
 - **AC-S39-11** — *G11.* Given the real records of iterations 23–24 (S06, S08, S14, S14's worktree record included),
   when the demo runs the asset copy of the script in place, then S08's elapsed, stage time and waiting by cause match
   figures recomputed by hand from git and the cruise log; the tokens over all records plus the shared bucket equal the

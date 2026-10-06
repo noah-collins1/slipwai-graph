@@ -3776,3 +3776,77 @@
 - **Confidence:** high · **Would reverse if:** the register's ranges turn out not to be the slices' whole change sets (a slice whose records landed after its range), which would send the ranges back to the skipper.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
+
+## D166 — "Stage time" names two figures: which one does the name carry, and where do the recorded seconds go?
+- **Stage:** after-converge gaps · **Slice:** S39-benchmark-elapsed · **When:** 2026-10-06T09:24:30Z · **Iteration:** 24
+- **Scope:** S39-benchmark-elapsed
+- **Question:** F6 (MEDIUM). Two figures are both called *stage time*. The renamed column (formerly `wall`), the `### S<n> — stage time` heading and the stage rows show each entry's recorded `seconds`. The feature line, `--json`'s `stage_seconds`, `worked` and `rework.seconds` end a cut-off entry at its last transcript line. On a cut-off fixture the column shows 3h30m while the feature line says `stage time 30m00s in all`. AC-S39-3 says a cut-off entry's stage time ends at its last transcript line and that `wall` is renamed *stage time*. The plan's R8 pinned the renamed column to its old values.
+- **Options:** (a) the column keeps the recorded seconds under the name *recorded time*, and *stage time* means only the trimmed figure, in the feature line, the heading and `--json` (stage's recommendation); (b) the column, the stage rows and the heading show the trimmed figure as *stage time*, and the recorded seconds go to `--json` only, besides the cut-off note that already names them; (c) both in the column, as `trimmed (recorded)`.
+- **Decision:** (b). Every place the page or `--json` says *stage time* shows the one figure `measures.stage_seconds` / `entry_seconds` computes: a cut-off entry ends at its last attributed transcript line, where one was read and does not precede `started`; otherwise it ends at its recorded end. The renamed column, each stage row, the per-slice heading and the feature line all use it, so the column's cells add up to the feature line. The recorded seconds are not dropped:
+  - the record's `seconds` field is never rewritten;
+  - each cut-off entry's note already prints both moments (`stage time ends at its last transcript line <t>, not at the recorded end <t>`);
+  - each item of `--json`'s `entries` gains `recorded_seconds` (the record's `seconds`, or `{"unknown": "<reason>"}` where the entry has none).
+
+  AC-S39-8 is not amended: its text covers only the columns S39 does not rename. The plan's R8 bracket *(`wall` → `stage time` and `rework` → `re-entered` keep their values)* is reworded so the renamed column keeps its value except on a cut-off entry AC-S39-3 ends at a transcript line. That cell differs from the old `wall` cell by exactly the recorded end minus that line, and the page carries its note. On a record with no cut-off entry, or with no transcripts on the machine, every cell equals the old one. `check-benchmark` is untouched (D65). (a) is refused because it amends AC-S39-3's rename and keeps the cut-off-inflated figure as the column. (c) puts two figures under one name, the opposite of what the finding asks.
+- **Why:** The developer reading the page sees one figure per word, and the column adds up to the line under it. With (a), the column would sum to 3h30m while the feature line says 30m, under two names they must learn. Three of those hours are the time a cut-off waited for the next iteration, not work. The owner brief's priority 6 says a measure is made honest before anything relies on it, and the recorded end of a cut-off entry is the one figure here known to be wrong as stage time. AC-S39-3 already asks for the trimmed figure under the name *stage time* and for the report to say so, which the note does. D65 holds: no old record is refused or newly warned about, and the only cells that change are cut-off entries whose transcript says when the work ended. S37 reads `--json`, whose `stage_seconds` is already the trimmed figure, so nothing S37 reads changes meaning; `recorded_seconds` is added and nothing is removed. The owner's taste (one plain word per figure) rules out (c) and is better kept by (b) than by (a), which adds a fifth time vocabulary word beside elapsed, worked, stage time and time with any slice in flight.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the owner says the 16 records' renamed column must stay byte-identical to `wall` even where a transcript dates the end of a cut-off entry. Then (a) is the fallback, with AC-S39-3's rename amended to *recorded time*.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`; the S39 slice's plan (R3, R8 e1, R9) and tasks (T035), on its branch until it merges
+- **Status:** standing
+
+## D167 — What record says a person is what a slice waits on, and where time with a person but no recorded cause goes
+
+- **Stage:** after-converge gaps · **Slice:** S39-benchmark-elapsed · **When:** 2026-10-06T09:25:10Z · **Iteration:** 24
+- **Scope:** S39-benchmark-elapsed
+- **Question:** The slice handed back plan Q2, and gaps raised F7 (MEDIUM). Both concern which record tells waiting on a person apart from other time.
+  - **Q2.** No record tells a park for a person's patch apart from a park for a person's review. The build therefore counts every `stopped: human` park as *review*. AC-S39-2 puts "a person's patch the slice needs" under *dependency*.
+  - **F7.** `is_person_demo` treats any `demo` bracket with no `driver` signal as a person reviewing. Two cases break that:
+    - A cruise demo cut off before its `end` has no signals at all.
+    - `/drive` never writes `driver`, so every `/drive` demo reads as review rather than work.
+    - Repro: a cruise slice with a cut-off demo from 11:00 to 12:00 reads review 3 600 s "from the demo bracket with no driver".
+- **Options:**
+  - (a) Add a separate bucket, *a person, cause unrecorded*, for park time whose reason does not say which kind of wait it was. Review and dependency count only what a record names: a park reason naming a patch or a file a person applies is *dependency*, and a `told:` answering a question is *review*. A demo counts as a person's only on positive evidence. A cut-off demo is stage time. **Recommended by the host.**
+  - (b) Keep everything unrecorded under *review*, and say so in the note.
+  - (c) Everything without a positive record is *unattributed*.
+- **Decision:** (a)'s rules for review, dependency and demos, with one change: person time whose cause is unrecorded goes inside *unattributed* and is shown as a named part of it, not as a sixth cause.
+  1. **A demo is a person's only on positive evidence.** A `demo` bracket counts as *review* only when both of these hold:
+     - its entry was closed by `end` with `outcome=` recorded, and
+     - it carries no `driver` signal.
+
+     A closed cruise entry always carries `driver=cruise`, so a closed entry without one was driven by a person. This covers `/drive`'s demos and AC-S39-10.
+
+     A demo with no `end`, which is cut off, is stage time. It counts in *worked* up to its last transcript line, by AC-S39-3's rule, and the report's cut-off note says so. `read_from` for review reads `a person's demo: outcome recorded, no driver`.
+  2. **Parks are not sorted into review or dependency by reading their wording.** A `cruise: stopped: human` row and a `cruise: parked: <reason>` row both say that a person holds the run. Neither says, in a form code can read without guessing, whether that person owes a patch or a review.
+     - Both kinds claim `[ended, next row's started]`, the same interval and end rule as T033, as *a person, cause unrecorded*.
+     - That claim comes after review and before worker. The seconds are not the worker's: the record says a person held the run.
+     - Review's patch-free half and dependency's patch half each count `0` from parks. Their `read_from` says `none present: no record names a park's cause`.
+     - A structured cause belongs to FR-046's coordination record (S34a). When one exists, a single row of `measures.py`'s table reads it.
+  3. **Where the person time goes.**
+     - The seconds sit inside `waiting.unattributed`. The five keys AC-S39-9 fixes for S37 stay exactly as they are, and so does AC-S39-2's sum: worked + four causes + unattributed = elapsed, to the second.
+     - `--json` adds `unattributed_person` beside `waiting`, not inside it. It is a number or `{"unknown": …}`, with its own `read_from` naming the log rows. Summing `waiting`'s values therefore still gives elapsed − worked.
+     - The page prints it as `unattributed <n> s (<m> s a person held the run, cause unrecorded)`.
+  4. **What does not change.** No new record or field is written, and nothing is changed in what `cruise.md` or `drive.md` write. The derivation is read-time only.
+- **Why:**
+  - **The slice would be pointless if a figure came from a record that does not say it.** That is the one thing that would make it pointless.
+    - (b) does exactly that: every `stopped: human` in this repository's log (iterations 13, 14, 17, 18 and 20) has no reason at all, yet each would be printed as *review*.
+    - F7's mistake does it too, for every cut-off cruise demo and every `/drive` demo.
+    - (a)'s classification by reason wording reads a cause from free text. That is the heuristic Q2 itself rejected as option (b).
+  - **Why not a sixth cause.** FR-049 names four causes. D159 (standing) fixed the rest as *unattributed*, and AC-S39-9's key set is what S37 reads. A peer bucket would change both. Placing the time inside unattributed keeps that contract. Naming its part in unattributed keeps what (c) alone would lose: the actor can see how long the slice sat waiting on them, not just "unknown".
+  - **Why claim it before worker.** Otherwise those seconds would land in *worker* as "outside any iteration". That would also be a figure the record does not say.
+  - **Taste.** No new record, field or setting, and one plain parenthesis on the page.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** S37 needs a person's wait as its own top-level cause to calibrate on. FR-049 and AC-S39-9 would then be amended together to add the bucket, which is (a) as the host put it.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S39-2: review and dependency only from a record that names them, and person time with no recorded cause inside unattributed; AC-S39-9: unattributed_person beside waiting; AC-S39-10: a /drive demo closed with outcome= is review). In the slice worktree, outside the main checkout: the slice's data-model.md (the review row, a new claimant row after it, the ordering sentence), plan.md Q2 answered by D167, tasks.md T036, assets/toolkit/scripts/agents/measures.py (is_person_demo, parks covering parked: too, waiting's claim order and the read_from strings), and tests/test_benchmark_waiting.py.
+- **Status:** standing
+
+## D168 — S39's calls made on its own recommendation while it converged: the decision-health spellings, a feature with no record, and time outside any iteration
+- **Stage:** after-converge gaps · **Slice:** S39-benchmark-elapsed · **When:** 2026-10-06T10:44:33Z · **Iteration:** 24
+- **Scope:** S39-benchmark-elapsed
+- **Question:** The `drive-slice` delegate handed back, as non-blocking, three calls it proceeded on: Q1 — how a decision records its tier, an escalation and a review (S26 and S28 own those lines and have not started); T021 — where a feature with no record of its own carries its figures in `--json`; T024 — whether time outside any iteration counts as worker.
+- **Options:** for each, the delegate's recommendation (recommended) or leaving it open: Q1, read `Reversibility: <tier>`, an escalation as `guarded → hard`, a review from `Status:` saying `ratified` or `reverted`, and the wait from the skipper bracket that holds the decision's `When:`, the spellings in one table in `measures.py`; T021, on its first slice record; T024, worker, with only the time before the cruise log begins unattributed.
+- **Decision:** the recommendation for each. The gaps pass found each consistent with its criterion (AC-S39-7, AC-S39-9, AC-S39-2) — Q1 is only spelling S26 will own, and every decision-health figure reads unknown on this repository's log until then.
+- **Why:** each is the stage's own recommendation and none contradicts a standing entry; one table is what S26 edits when it writes the line, so the spelling is not fixed anywhere else.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** S26 spells the tier line differently, which changes one row of that table.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing
