@@ -19,10 +19,19 @@ PATCH = "specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch"
 UNPATCHED = f"the root Makefile is not yet patched \u2014 apply {PATCH}"
 MAKEFILE = ROOT / "Makefile"
 
-# `test` calls the selector unless TESTS is given (SKIP fills TESTS in, so its origin is the file), and then says so.
+# `test` calls the selector unless TESTS or SKIP is given (SKIP fills TESTS in, so its origin is the file), and then
+# says so; a SKIP that names every module leaves TESTS empty, so it says so and runs no module rather than the selector.
 TEST_RECIPE = [
-    "\t$(if $(TESTS),echo 'selection off: $(if $(filter file,$(origin TESTS)),SKIP,TESTS) given'; "
-    "PYTHONPATH=src:tests python3 -m unittest -v $(TESTS),PYTHONPATH=src python3 -B scripts/select-tests.py)",
+    "\t$(if $(strip $(TESTS)$(SKIP)),echo 'selection off: $(if $(filter file,$(origin TESTS)),SKIP,TESTS) given'"
+    "$(if $(strip $(TESTS)),; PYTHONPATH=src:tests python3 -m unittest -v $(TESTS)),"
+    "PYTHONPATH=src python3 -B scripts/select-tests.py)",
+]
+# `verify-checks` is whole however it is reached: a target-specific, overriding, exported FULL its prerequisites get.
+FULL_RULE = [
+    "# Run directly or through `verify`, the gate is whole: `override` holds against FULL on the command line, in "
+    "MAKEFLAGS and",
+    "# under `make -e`, `export` hands it to the `test` prerequisite's recipe, which the selector reads.",
+    "verify-checks: override export FULL := 1",
 ]
 BYPASS_TEST = "ifneq ($(strip $(TESTS)$(SKIP)$(FACTORY_BACKENDS)),)"
 CHECKS = '"$(MAKE)" --no-print-directory -f "$(firstword $(MAKEFILE_LIST))" verify-checks FULL=1'
@@ -79,6 +88,9 @@ class TestTheMakefileHoldsThePatchedText(unittest.TestCase):
         self.patched()
         text = lines()
         self.assertIn("verify-checks: lint typecheck check-structure test", text)
+        at = text.index(FULL_RULE[0])
+        self.assertEqual(text[at:at + 4], [*FULL_RULE, "verify-checks: lint typecheck check-structure test"])
+        self.assertEqual(text[at - 1], ".PHONY: verify-checks")
         self.assertIn("TESTS ?= $(if $(SKIP),$(filter-out $(SKIP),$(ALL_TESTS)),)", text)
 
     def test_the_stamp_bypass_list_is_the_recorded_one_and_since_is_not_on_it(self) -> None:  # e1

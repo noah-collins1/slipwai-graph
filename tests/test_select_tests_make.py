@@ -83,6 +83,32 @@ class TestAGivenTestsOrSkipTurnsSelectionOff(MakeCase):
         self.assertEqual({line.split("\t")[2] for line in lines}, {"PYTHONPATH=src:tests"})
 
 
+class TestSkipNamingEveryModuleStillTurnsSelectionOff(MakeCase):
+    def test_it_says_so_runs_no_module_and_never_calls_the_selector(self) -> None:  # AC-S38-13
+        out = self.ok("test", "SKIP=" + " ".join(EVERY))
+        self.assertIn("selection off: SKIP given", out)
+        self.assertNotIn("selected", out)
+        self.assertEqual(self.ran(), [])
+
+
+class TestVerifyChecksRunDirectlyIsWhole(MakeCase):
+    def test_every_module_runs_whatever_full_holds_wherever_it_is_set(self) -> None:  # AC-S38-6
+        cases = {
+            "plain": ((), {}),
+            "FULL= on the command line": (("FULL=",), {}),
+            "FULL=0 on the command line": (("FULL=0",), {}),
+            "FULL=0 in the environment": ((), {"FULL": "0"}),
+            "FULL= in the environment under make -e": (("-e",), {"FULL": ""}),
+            "FULL=0 in the environment under make -e": (("-e",), {"FULL": "0"}),
+            "FULL= in MAKEFLAGS": ((), {"MAKEFLAGS": "FULL="}),
+        }
+        for how, (args, env) in cases.items():
+            with self.subTest(how):
+                self.ok("verify-checks", *args, **env)
+                self.assertEqual(self.modules_run(), EVERY)
+                self.ran()
+
+
 class TestMakeVerifyIsWhole(MakeCase):
     def test_every_check_and_every_module_run_and_the_stamp_is_recorded(self) -> None:  # e2
         self.ok("verify")
