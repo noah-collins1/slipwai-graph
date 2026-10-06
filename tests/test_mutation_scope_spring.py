@@ -226,6 +226,20 @@ class SpringRunnerTest(SpringCase):
         self.run_spring(execute)
         self.assertFalse([word for argv, _ in execute.seen for word in argv if "failWhenNoMutations" in word])
 
+    def test_t032_the_pits_own_test_selection_stays_the_poms_under_target_classes(self) -> None:
+        """AC-S08-3: `-DtargetClasses` narrows the classes only, so the pom's `targetTests` and its `*IT` exclusion stay
+        what PIT reads and nothing on the command line may name either."""
+        self.pom(("com.example.x.*",))
+        self.java("health/HealthStatus")
+        execute = FakeExecute()
+        self.run_spring(execute)
+        (argv, _), = execute.seen
+        self.assertEqual([word for word in argv if word.startswith("-D")], [
+            "-DtargetClasses=com.example.x.health.HealthStatus,com.example.x.health.HealthStatus$*"])
+        pom = (self.repo / "apps/spring/pom.xml").read_text(encoding="utf-8")
+        self.assertIn("<targetTests><param>com.example.x.*Test</param></targetTests>", pom)
+        self.assertIn("<excludedTestClasses><param>com.example.x.*IT</param></excludedTestClasses>", pom)
+
     def test_e6_hold_the_pom_is_read_and_never_written(self) -> None:
         self.pom(("com.example.x.*",))
         self.java("health/HealthStatus")

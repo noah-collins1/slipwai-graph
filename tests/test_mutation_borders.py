@@ -171,6 +171,8 @@ class BordersTest(FactoryTestCase):
         first = (done.stdout.splitlines() or [""])[0]
         self.assertEqual(first, "mutation: this layout has no mutation scope — the recorded command runs",
                          done.stdout + done.stderr)
+        self.assertEqual(done.stdout.splitlines()[1:], ["shop: no mutation command recorded in project.json (.)"],
+                         "the recorded command is the one that ran")
         self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
 
     def test_e9_an_adopted_layout_sweeps_through_the_makefile_it_was_given(self) -> None:

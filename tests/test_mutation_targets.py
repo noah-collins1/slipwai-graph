@@ -6,6 +6,7 @@ into the temp directory that logs its arguments.
 """
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import os
@@ -50,6 +51,32 @@ SERVICES = {
     "go-typescript": ["go:apps/service", "typescript:apps/second"],
 }
 PORTS = {"typescript": 3000}
+# sha256 of each generated CI workflow, from the commit before this slice (66e49e8): AC-S08-13 holds them byte for byte.
+# A workflow that changes on purpose regenerates these; no mutation target is named in any of them.
+WORKFLOWS = {
+    "go-typescript": {
+        "verify.yml": "15cd6b20318f523b171677bb9ac99864f850b912c0c7fb35d66acf6e38a7eace",
+    },
+    "go-web": {
+        "verify.yml": "15cd6b20318f523b171677bb9ac99864f850b912c0c7fb35d66acf6e38a7eace",
+    },
+    "model-typescript-web": {
+        "event-model.yml": "d9490215acf131821553a38d8fa53469e65f99cec58dadb3f84761f4b992d5bc",
+        "verify.yml": "6f2a6e08a8ceec7a7f602980ae893706361a48d88d221f9b27d29076c5b1c552",
+    },
+    "standard-python": {
+        "verify.yml": "bcbf9340fa50712b3329a074f2eb9d6a07713202f9d954013a746bfea7a6ea21",
+    },
+    "standard-quarkus": {
+        "verify.yml": "292b09ee060cfab151204f435be7e557f5247e23f64d6ecd108dabf1557b7772",
+    },
+    "standard-spring-web": {
+        "verify.yml": "e96b80473aac92985d536ce3bf5e45cbc57d9041775d019f4b233f9a003d4401",
+    },
+    "two-go": {
+        "verify.yml": "14b0927117363a0e0cb083d44e54e2d0d8d9644f3d60feb74c8435209cb1b6fd",
+    },
+}
 
 
 def clean_environment() -> dict[str, str]:
@@ -175,6 +202,10 @@ class MutationTargetsTest(FactoryTestCase):
                 self.assertTrue((self.project(name) / ".github/workflows").is_dir())
                 for workflow in (self.project(name) / ".github/workflows").glob("*"):
                     self.assertNotIn("mutation", workflow.read_text(encoding="utf-8"), workflow.name)
+                    self.assertEqual(hashlib.sha256(workflow.read_bytes()).hexdigest(), WORKFLOWS[name][workflow.name],
+                                     f"{name}: {workflow.name} is not the workflow it was before this slice")
+                self.assertEqual(sorted(p.name for p in (self.project(name) / ".github/workflows").glob("*")),
+                                 sorted(WORKFLOWS[name]))
 
     def hold(self, project: Path) -> tuple[Any, str, str | None, str | None]:
         """S06's own hold (D140) over this project's Makefile: the rules module, the Makefile text, `text_problem` and
