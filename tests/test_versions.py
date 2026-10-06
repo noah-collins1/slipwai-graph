@@ -26,6 +26,8 @@ from slipwai.versions import (
 )
 
 SCRIPT = ROOT / "scripts/snapshot-version.py"
+# The two scripts it runs or loads, and the module it copies beside the first into a temporary repository.
+TEST_SELECTION = {"reads": ["scripts/snapshot-version.py", "scripts/publish-wheel.py", "src/slipwai/versions.py"]}
 
 
 class VersionsTest(unittest.TestCase):

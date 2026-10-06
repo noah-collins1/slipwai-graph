@@ -24,6 +24,7 @@ from slipwai.assets import LANGUAGE_ROOT
 
 sys.dont_write_bytecode = True
 SCRIPT = LANGUAGE_ROOT / "go" / "scripts/go-mutation.py"
+TEST_SELECTION = {"reads": ["assets/languages/go/scripts/go-mutation.py"]}
 FAKE_GO = """#!/usr/bin/env python3
 import json, os, sys
 with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as log:

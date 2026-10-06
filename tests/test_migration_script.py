@@ -12,6 +12,9 @@ import unittest
 
 from slipwai.assets import ROOT
 
+# It loads `scripts/test-migration.py` and calls two pure functions of it; nothing it generates.
+TEST_SELECTION = {"reads": ["scripts/test-migration.py"]}
+
 SPEC = importlib.util.spec_from_file_location("test_migration", ROOT / "scripts/test-migration.py")
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)

@@ -26,6 +26,8 @@ from slipwai.assets import ROOT
 
 SCRIPT = ROOT / "scripts/gitea-pages.py"
 INSTALLER = ROOT / "scripts/install-gitea-pages"
+# The installer copies the daemon from beside itself, so both are read.
+TEST_SELECTION = {"reads": ["scripts/gitea-pages.py", "scripts/install-gitea-pages"]}
 
 
 def load_daemon(**overrides: str) -> ModuleType:
