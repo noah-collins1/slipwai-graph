@@ -3179,7 +3179,7 @@
 - **Decided by:** host (standing decision D134)
 - **Confidence:** high · **Would reverse if:** D134 is overridden.
 - **Written to:** `specs/001-faster-slipwai/decisions.md` (and the slice's tasks.md on slice/S14-result-contract until it merges)
-- **Status:** standing
+- **Status:** overridden by D163
 
 ## D144 — S14: AC-S14-18's file list and the three modules the plan needed
 
@@ -3565,4 +3565,214 @@
 - **Decided by:** host (stage recommendation)
 - **Confidence:** medium — G5's spawn-chain attribution rests on the harness's `meta.json` fields, which a harness update may change · **Would reverse if:** the transcripts stop carrying the spawning tool-use id, which would send G5 back to the skipper.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D160 — How is a hand-back entry attributed to the stage it answers?
+
+- **Stage:** adversary (Phase 4) · **Slice:** S14-result-contract · **When:** 2026-10-06T07:29:26Z · **Iteration:** 24
+- **Scope:** S14-result-contract
+- **Question:** `coverage()` counts an entry for a stage only when the entry's heading time falls inside that stage's benchmark window, `[started, ended]`, ends included.
+  - **B1 (HIGH):** this breaks the way AC-S14-11 closes a finding. A continuation for a missed block always runs after the stage's entry has ended, so neither its block nor its `Missing:` line can ever close the finding, and the finding comes back on every converge pass.
+  - **A2 (MEDIUM):** `repeats()` compares a new entry only with the last entry of the same type and stage name, in any window. A later run's identical `Missing:` reason, or a byte-identical block, is dropped as if it were a retry.
+  - **A5 (LOW):** both ends of the window are included, so a block written at the exact second two stages meet covers both.
+  - **The constraint:** whatever replaces the window must keep the plan's e5 guard, so that a stale block never covers a stage.
+- **Options:**
+  - (a) An entry counts for the latest stage of that name whose agents include the entry's type, that started before the entry and has no other entry yet. `repeats` becomes "the same content already answers that same stage", and windows become half-open, `[started, next start)`. **The host's recommendation.**
+  - (b) The verb takes the stage's start instant as an argument. The entry records it, and coverage matches on it exactly.
+  - (c) Keep the windows, and have the method tell the host to reopen a bracket of the same stage for the continuation.
+- **Decision:** (b), refined so that an on-time block needs no new argument. This departs from the recommendation.
+  1. **What the record says.** An entry's heading gains an optional fourth part: `## <UTC time> — drive-<name> — <stage> — <started>`. `<started>` is the `started` instant, `YYYY-MM-DDTHH:MM:SSZ`, of the `benchmark.json` entry this entry answers. The time the entry was written stays first and is still the verb's.
+     - The gate accepts a heading with or without the fourth part. Any other shape stays a finding naming the entry.
+     - A heading without it answers no benchmark entry. That is the case for `ready-set` and any stage that has no benchmark entry.
+  2. **How the verbs fill it in.** Both verbs take `--started <instant>`: `--hand-back <dir> <type> <stage> [--started <instant>]` and `--hand-back-missing <dir> <type> <stage> [--started <instant>] <reason>`.
+     - **With `--started`:** the instant must be the `started` of an entry of that stage name in `<dir>/benchmark.json`. If it is not, the verb exits 1, writes nothing, and prints one line naming the stage and the instant.
+     - **Without `--started`, open entry found:** if `<dir>/benchmark.json` has an open entry of that stage name (no `ended`), the verb records that entry's `started`. That is the on-time path, because the method already tells the host to append before ending the entry.
+     - **Without `--started`, entries but none open:** if the file has entries of that stage name but none is open, the verb exits 1, writes nothing, and says to pass `--started` with the instant the `--hand-backs` line names. It does not guess.
+     - **Without `--started`, no entry at all:** if there is no `benchmark.json`, or no entry of that stage name, the verb writes the heading without the fourth part and prints a note: `answers no benchmark entry; --hand-backs will not count it`.
+  3. **How coverage matches.** An ended stage that owes a block is covered only by an entry whose stage name matches, whose type is one of the stage's owed types (`owed()`), and whose `<started>` equals the stage's `started` exactly. Windows are gone, so both B1 and A5 go with them.
+     - A continuation written at any later time answers the stage it names.
+     - An entry naming a different start of the same stage, or no start at all, covers nothing. This replaces e5 and keeps its purpose: a stale block can never cover a later stage.
+     - The `--hand-backs` line for a gap already prints `<name> <started>`, which is exactly what the host passes to `--started`.
+  4. **What counts as a retry.** `repeats()` compares a new entry only with the last entry that has the same type, stage and `<started>`.
+     - If that entry holds the same block byte for byte, or the same `Missing:` reason, the new one is a retry and nothing is written (constitution II).
+     - The same reason or block for a different start of the stage is a different key and is appended. That closes A2.
+     - The ADR's existing rule still holds within one key: the same block after a different entry is not a retry.
+  5. **The method's text.** It says a continuation is recorded with `--started` set to the instant the converge, demo-stop or adversary-stop line names. The two stops keep D136 item 2 unchanged.
+- **Why:**
+  - **The host already knows the stage, so the record should say it.** The developer cruising this needs a missed block to cost one continuation (D136) and then stay closed. Every inference rule gets some real ordering wrong, because the record cannot know which stage the host meant.
+  - **(a) can produce a false green, which owner priority 5 forbids.** Under "the latest stage of that name with no other entry yet", the second block from the same stage goes to an earlier stage of the same name that had none, and marks it covered. Implement fans out to several `drive-implement` delegates, and the adversary sends several `drive-adversary` delegates. Both stages repeat in one slice: S14's own `benchmark.json` has `implement` and `converge` twice each.
+  - **(a) without that clause still misattributes.** Plain half-open windows send a continuation for implement pass 1, sent after implement pass 2 has started, to pass 2. Pass 1's finding then never closes.
+  - **(c) adds a step that is easy to forget, and distorts the measurement.** Every forgotten reopen brings the finding back. Reopening an ended bracket also changes the stage times `make benchmark` reports, and owner priority 6 says measurement comes first.
+  - **(b) is exact and stays safe when it fails.** An unknown instant is refused. An omitted instant either takes the one open entry or is refused, and is never guessed. An entry with no instant counts for nothing, which can only produce a false red, never a false green.
+  - **The cost is lowest now.** The shape is fixed while it costs nothing to change it. `find specs -name hand-backs.md` finds no record anywhere, and S14 has not reached `main`: `main` carries `1.5.2.dev0` and `adopt-method` carries `1.6.0.dev0`. Nothing has been released, so no project holds an old-shape record, and ADR 0006 is still `Proposed`.
+  - **Consistent with the owner's taste.** No new dependency, one flag with a stated default, and every refusal is one line a person can act on.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** S14 ships before this lands, so projects already hold records with three-part headings. The rule would then have to read those records under a fallback, and that is a choice for a person.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S14-10, -11), `specs/001-faster-slipwai/slices/S14-result-contract/plan.md` (R5, R6 e5), `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`, `assets/toolkit/docs/result-contract.md`, `src/slipwai/project/result_contract.py`, `changelog.d/result-contract.md`, `delivery/docs/adr/0006-result-contracts-in-hand-backs.md` (amended at Proposed)
+- **Status:** standing
+
+## D161 — What does hand-back coverage say about a stage that ran before the project had the result contract?
+
+- **Stage:** adversary (Phase 4, finding B2, MEDIUM) · **Slice:** S14-result-contract · **When:** 2026-10-06T07:30:25Z · **Iteration:** 24
+- **Scope:** S14-result-contract
+- **Question:** After `slipwai migrate`, some stages in a slice's `benchmark.json` ended before the result contract existed in the project. `coverage()` still says those stages owe a block. Two things follow. The converge brief grades each one as a MEDIUM finding (D141). `make benchmark` also prints `hand-backs with a result contract: 0 of m` for every older slice: 17 lines over this repository's own records, from `S00-run-path: 0 of 9` to `S14-result-contract: 0 of 8`. The fragment's catch-up says nothing is asked of existing logs. That is true of `check-decisions`' gate, but not of converge's grading or the benchmark line. What does coverage say about such a stage?
+- **Options:**
+  - **(a) Recommended by the host.** A stage that ended before the contract arrived owes nothing. "Arrived" means the first commit that added `hand_backs.py`, read from git. Such a stage is listed as *predates the result contract* and is never a finding. Where git cannot tell, the stage is listed as *could not tell* and is not a finding either. The benchmark line counts only stages after the cut-off.
+  - **(b)** Take the same cut-off from the version history in `project.json`'s `generator`.
+  - **(c)** Leave coverage alone. Add a sentence to the catch-up telling a project that is mid-slice to run `--hand-back-missing … predates the contract` for each old stage.
+- **Decision:** (a), with five additions that settle where (a) left room for a false green or an extra question.
+  1. **The cut-off is computed, not stored.** It is the author time of the earliest commit that added the module file `coverage` was loaded from. That path is taken relative to the git top level, so the generated layout (`scripts/hand_backs.py`), the adopted layout (`delivery/scripts/hand_backs.py`) and a project in a subdirectory (D36) all work without a list of paths. The reason for author time: a rebase moves the committer time later, which would excuse more stages, and author time does not.
+     - The reading is one `git log --diff-filter=A` per run, done in its own function and passed into `coverage()`. `coverage()` stays pure.
+  2. **A stage predates the contract only when its `ended` is strictly earlier than the cut-off.** Both times are parsed as UTC instants, not compared as strings. A stage that started before the cut-off and ended after it still owes a block. D136's single continuation closes it, so erring this way costs one exchange and never hides anything.
+  3. **The *could not tell* cases.** Each is listed per stage with its reason. It is not a finding and is not counted in either `n` or `m`; the count is stated, the same way unattributed stages already are. The cases:
+     - no `git` on the PATH, or not a repository git can read;
+     - a **shallow** clone (`git rev-parse --is-shallow-repository`). Its earliest visible commit can make the arrival look later than it was, which would be a false excuse;
+     - a module on disk that no commit has added yet. Here the line tells the person what to do: `commit what slipwai migrate wrote, and this can tell`;
+     - a stage whose `ended` does not parse.
+
+     This is self-correcting. The record is append-only, so the first read after the module is committed classifies those stages properly. Stages missed during that window are still caught at D136's demo and adversary stops and by the completion audit.
+  4. **What a person reads.**
+     - **`--hand-backs`:** for a stage before the cut-off, `hand-backs: <stage> <started>: predates the result contract (<short sha>, <date>) — owes nothing`. The total becomes `with a result contract: n of m`, plus `; k predate the contract` and `; j could not tell — not counted` only when those counts are non-zero.
+     - **`make benchmark`:** a per-slice line appears only where `m`, the unattributed count or the could-not-tell count is non-zero. All the slices that only predate the contract are reported in **one** line: `hand-backs: <k> stage(s) in <s> slice(s) ended before the result contract reached this project (<short sha>, <date>) — not counted`. Seventeen lines of `0 of m` become one sentence.
+  5. **Nothing new is written anywhere.** No `Missing:` reason is added, no field goes into `project.json`, and the catch-up still asks nothing. The fragment's catch-up gains one sentence saying that stages which ended before `hand_backs.py` first reached the project's history owe no block, and that `--hand-backs` and `make benchmark` say so instead of counting them. The level stays MINOR, in the same fragment.
+
+  Effect on standing entries: D134, D136 and D141 all stand. D141's MEDIUM grade applies only to stages that owe a block, and from now on "owe" excludes stages that predate the contract.
+- **Why:**
+  - **The developer's view.** Someone who runs `migrate` partway through a slice should not get a converge verdict full of findings for stages that ran under briefs that had no contract. Nor should `make benchmark` tell them that 0% of history complied. Both are noise about work they could not have done differently, and acting on any of it is wasted time.
+  - **The precedent and the promise.** D65 sets the rule for the gate: content a project already had must not newly fail after a migrate. Converge's grading and the benchmark line are not the gate, but the catch-up's promise, *nothing is asked of an existing … log*, is about this same developer, and today it is false for them.
+  - **No false green (priority 5).** Every judgement call above goes towards owing a block:
+    - author time rather than committer time;
+    - a strict "earlier than";
+    - a stage that straddles the cut-off owes;
+    - a shallow clone does not get to claim an earlier arrival;
+    - *could not tell* is said out loud and never counted as held.
+
+    So no stage after the contract can drop out of `m`.
+  - **Why not (b).** `project.json`'s `generator` holds only the current version, and `migrate` overwrites it. There is no version history to read. Building one means reading git anyway, through a version table kept in the factory. (b) is (a) made indirect and more fragile.
+  - **Why not (c).**
+    - It asks something of every existing repository, which breaks the catch-up's promise.
+    - It needs a fourth `Missing:` reason, which AC-S14-11's closed set (`refused | malformed | no continuation`) does not allow.
+    - It has a person write record entries for delegates, which goes against the spirit of D136's rule that the host never writes on a delegate's behalf.
+    - It is per-stage manual work, against the brief's taste for one line a person can act on.
+  - **Verified by reading:**
+    - `coverage()` in `assets/toolkit/scripts/hand_backs.py` (lines 341–376) counts every ended stage that is delegated and typed, with no cut-off.
+    - `hand_back_lines()` in `assets/toolkit/scripts/agents/benchmark.py` (lines 858–883) prints a line for every record with `delegated > 0`.
+    - `coverage_verb()` in `assets/toolkit/scripts/check-decisions.py` (lines 613–632) is the converge brief's reading, so one change to `coverage()` fixes both.
+    - `git log --diff-filter=A` shows the module first added to the factory in commit 15b43bb. In this repository, `delivery/scripts/hand_backs.py` does not exist yet, so the cut-off here will be the commit of a person's migrate.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high
+- **Would reverse if:** projects' histories routinely lack the commit that added the module, for example repositories imported by squash or harnesses that always run in shallow clones, so that *could not tell* becomes the usual answer. In that case `migrate` would have to record the arrival in `project.json`. That is a persisted field, so it would need an ADR.
+- **Written to:**
+  - `specs/001-faster-slipwai/spec.md`: AC-S14-11 and AC-S14-15 reworded to "stages that owe a block, as of the contract's arrival", plus the criteria below.
+  - `specs/001-faster-slipwai/slices/S14-result-contract/tasks.md`: one adversary task.
+  - `assets/toolkit/scripts/hand_backs.py`, `assets/toolkit/scripts/check-decisions.py`, `assets/toolkit/scripts/agents/benchmark.py`, `assets/toolkit/docs/result-contract.md`, `src/slipwai/project/result_contract.py` (the converge brief's wording, if it names the grading), `changelog.d/result-contract.md` (the catch-up sentence).
+- **Status:** standing
+
+## D162 — Does the write-time verb accept a `contract` it does not know, and does coverage count such a block as held?
+
+- **Stage:** adversary (Phase 4), finding A8 (LOW), handed back by the adversary · **Slice:** S14-result-contract · **When:** 2026-10-06T07:29:18Z · **Iteration:** 24
+- **Scope:** S14-result-contract
+- **Question:** `--hand-back <dir> <type> <stage>` takes `newer()` from the gate. A block that says only `{"contract": 2}` therefore exits 0 and is appended without any field being checked. `--hand-backs` then counts that stage as held. Should the write-time verb, which ships with contract 1, accept a `contract` it does not know? And how should coverage count such a block?
+- **Options:**
+  - (a) The verb refuses any `contract` it does not know, and the delegate gets the refusal and D136's one continuation. The gate keeps AC-S14-5's forward reading of a record already written. Coverage counts an unknown-contract entry as *a block this factory cannot check*, not as held. **This is the host's recommendation.**
+  - (b) The verb refuses it, and coverage counts it as held, which is the gate's reading.
+  - (c) Keep today's behaviour.
+- **Decision:** (a), the host's recommendation, with these limits:
+  1. **The verb.** `--hand-back` and the dispatching session's own validation (AC-S14-10) refuse a block whose `contract` is anything other than `1`. Values above 1 are included. They exit 1, write nothing, and print one line on stderr: `contract: 2 is not a contract this checker can check (it checks 1); hand back a contract 1 block`. The rest follows D136 unchanged. There is one continuation. If the second block also fails, the host records `- **Missing:** malformed: contract`. The host never rewrites the block.
+  2. **Unknown keys stay accepted at write time.** A contract 1 block that has extra keys is still appended (constitution VIII, first half of AC-S14-5). Only an unknown `contract` value is refused.
+  3. **The gate does not change.** `check-decisions` reading a `hand-backs.md` still passes a block with `contract` > 1, prints its note and checks no field (second half of AC-S14-5, ADR 0006). The merge root and CI check exactly what they checked before.
+  4. **Coverage.** In `--hand-backs`, an entry whose block has `contract` > 1 is not held. Its line reads `hand-backs: <stage> <started> <type>: block of contract <n> — this factory cannot check it; not counted as held`.
+     - The stage counts in `m` and not in `n`, the same way a `Missing:` line counts. `make benchmark`'s *n of m* stays honest.
+     - It is not a `nothing recorded — a finding for converge` line. A block is there, and asking again would spend a continuation for nothing. Converge reads the line as information, not as a finding.
+- **Why:**
+  - **Owner priority 5.** A block that nothing checked, counted as held, is exactly the false green the brief rules out. Today one line with `"contract": 2` is enough to make a stage read as covered, and SC-008 is overstated by it. (b) closes the hole in the verb but leaves it open in the count, for any newer-contract block that reaches a record some other way.
+  - **AC-S14-5 is not weakened.** Its purpose is that an older gate does not turn red on a record a newer factory wrote. The verb is not in that situation. It validates a hand-back that was produced just now, by delegates whose briefs ship in the same release as the verb. `slipwai migrate` replaces the agent files, the shape's page and `check-decisions.py` together (AC-S14-17). So a delegate in this checkout that writes `contract: 2` has not been upgraded. It has made a mistake, and the verb can vouch only for the contract it knows.
+  - **Refusing is the safe way to fail.** The cost is one short continuation, and if that fails, a visible `Missing:` line. That miss still counts in SC-008 (D136 item 1).
+  - **Constitution VIII is kept.** Readers keep tolerating unknown fields, and the gate keeps tolerating a newer contract. A writer refusing to vouch for a schema it does not have is not a reader being intolerant.
+  - **Taste.** The refusal is one line a person can act on, and it says what the checker checks.
+  - **(c) is out.** It keeps the false green.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** a supported path turns up where the verb really does validate hand-backs from delegates briefed by a newer factory than its own. One example would be a harness keeping user-level agent files that `migrate` does not re-project. Then the verb would take the gate's forward reading, but the coverage half of this decision would still hold.
+- **Written to:**
+  - `specs/001-faster-slipwai/spec.md`:
+    - AC-S14-10 says the write-time validation refuses an unknown contract.
+    - AC-S14-5 says its forward reading is the gate's, for a record already written.
+    - A new criterion covers coverage's not-held line. The host numbers it.
+  - `assets/toolkit/scripts/hand_backs.py`: append stops calling newer(), and coverage adds the new line.
+  - `assets/toolkit/docs/result-contract.md`: the contract row and the verbs table.
+  - `delivery/docs/adr/0006-result-contracts-in-hand-backs.md`: one clause under *Decision*, saying the reader's "passed with a note" applies to records and not to the write path. The ADR is still Proposed.
+- **Status:** standing
+
+## D163 — Does an `unavailable` skipper answer get a `decisions.md` entry, and where does the skipper's own number go in its block?
+
+- **Stage:** adversary (Phase 4) · **Slice:** S14-result-contract · **When:** 2026-10-06T07:29:28Z · **Iteration:** 24
+- **Scope:** S14-result-contract
+- **Question:** The adversary handed back B6 (LOW), found by reading the code, not by running it. The cruise text tells the skipper to put "the entry's `D<n>` in `decisions`" of its `result-contract` block, and to return the entry first even when its answer is `unavailable`. If the host writes no entry for an `unavailable` answer, the block names a `D<n>` that has no heading. `--hand-back` then refuses it on the `decisions` field (AC-S14-8), so the delegate is charged a continuation for following its brief. The page does not say whether an `unavailable` answer gets an entry.
+- **Options:** (a) yes. The host appends it as the protocol's entry with `Decision: unavailable — <what nobody here has>` and `Status: standing`, so the block's `D<n>` resolves; the page and the cruise text each say so in one sentence. This was the host's recommendation. (b) No entry: the skipper's block for an `unavailable` answer carries an empty `decisions` list, and the cruise text and the brief say so. (c) The `D<n>` is reserved, and the verb accepts any number at or above the log's next number.
+- **Decision:** (a) on the entry, with one departure.
+  1. **Every skipper answer is an entry, including an `unavailable` one.** The skipper returns it under its allocated number with **Decision:** `unavailable: <what a person must provide>`. The host appends it like any other entry, at `Status: standing`. The cruise report lists it among the entries a person has not reviewed. A person answers it the way they override any entry: they set its `Status` to `overridden by human <date>` and write their answer into the artifact.
+  2. **Departure from (a):** the skipper's own number goes in the block's `change_summary` and never in `decisions`, whether the block's `status` is `decided` or `unavailable`. That is what D134 item 4 and D143 (a) already say. `decisions` lists only the standing entries the work relied on, which ADR 0006 also says. The line in `cruise_sentences` ("the entry's `D<n>` in `decisions`", added in `b772608`, S14 T008) contradicts both standing entries. It is the cause of B6, and it is corrected rather than endorsed.
+  3. This **overrides only D143's second sentence** ("Whether an `unavailable` answer is an entry … it is no entry"). D143 (a) and D134 item 4 stand unchanged.
+  4. (c) is not taken: it would weaken AC-S14-8's check into accepting numbers that may never get a heading.
+- **Why:** The developer cruising a repository reads `decisions.md` as "the only place a person can read every decision this run took". A question the run could not answer is exactly the entry that person most needs to find. Stop table row 10 already says an unavailable input is recorded as "a decision entry", and the log already holds such answers (D10's, D29's and D33's `unavailable: a person's approval`). Recording that the run lacked a fact is not deciding the fact, so "it is never decided" still holds. An allocated number that never gets an entry leaves a hole in the log that nobody can explain. Moving the number to `change_summary` matters separately. Without it, B6 comes back whenever the host appends the block before the entry. It would also make FR-032's revert (S28) read the skipper's output as a decision the skipper relied on. One brief sentence and one page sentence settle it, which fits the taste ("one line a person can act on").
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** a person rules that `decisions.md` holds only answers actually taken, and that unanswered questions belong in the cruise report and checkpoint alone. Item 1 would then become (b), and item 2 would stand either way.
+- **Written to:** `src/slipwai/project/result_contract.py` (cruise_sentences); `src/slipwai/project/cruise.py` (the *skipper protocol* paragraph); `src/slipwai/project/cruise_agents.py` (the skipper brief); `assets/toolkit/docs/result-contract.md` (the decisions row); `tests/test_result_contract_briefs.py`; `specs/001-faster-slipwai/spec.md` (one criterion beside AC-S14-2, numbered by the host); `specs/001-faster-slipwai/adversary-log.md` (B6); `specs/001-faster-slipwai/decisions.md` (D143's Status becomes overridden by D163 for its second sentence only, and its first sentence stays standing). `delivery/commands/cruise.md` and the projected agent files are generated from these sources and are refreshed by migrate/agents, never by hand.
+- **Status:** standing
+
+## D164 — How S38 checks that a module which generates projects still generates only what its declaration says
+
+- **Stage:** after-converge gaps · **Slice:** S38-factory-test-selection · **When:** 2026-10-06T07:34:01Z · **Iteration:** 24
+- **Scope:** S38-factory-test-selection
+- **Question:** Gaps finding 2 (HIGH). Nothing checks that a declared test module's code still reads only what its `TEST_SELECTION` says. The `real_*` tests compare each declaration with a list typed into the test. `held()` notices only calls to `generate(`/`refuse(` and the launcher. A later edit can add a by-path load, an in-process generator call, or a new frontend or profile to a declared module. Every check stays green, and a later slice then skips that module. This was reproduced on `test_pit_globs`. The gaps pass recommends a Python audit hook for the modules that only read files. For the seven declared modules that generate projects, may the check record what `support.FactoryTestCase.generate` is called with, given that AC-S38-17 says "no change to how a test runs"?
+- **Options:**
+  - (a) A recording seam in `tests/support.py`. `generate` appends its arguments to a file, but only when an environment variable set by the audit test names one. The audit runs the seven modules under it and compares. *(The host recommended this one.)*
+  - (b) A static check of the arguments at each `generate(` call site. As offered, a module with computed arguments counts as undeclared.
+  - (c) Leave the seven generating modules undeclared, so they always run, and keep only the audit for read-only modules.
+- **Decision:** (b), made stronger in five places. This departs from the host's recommendation.
+  1. **The check is part of the selector's scan (`declarations.read_source`/`Tree.effective`).** It runs on the tree being selected, every time selection runs.
+     - Any problem it finds voids the declaration. The module then counts as undeclared and runs, and `held()` names it.
+     - It never relies on a record from an earlier run.
+  2. **Every `generate(` call in a declared module or its `tests/` closure is resolved per axis (backend, frontend, profile, command).**
+     - Positional and keyword arguments are bound to `FactoryTestCase.generate`'s signature, which is read by `ast` from `tests/support.py`. An omitted argument takes that signature's default.
+     - A literal, or a loop over a literal tuple, resolves to its values.
+     - **An argument the check cannot resolve counts as every option of its axis.** That includes a parameter, a call, `backends_under_test()` and `CATALOG[...]`. Such a call fits only where the declaration leaves that axis unnamed or names every option.
+     - A call that fixes an option the declaration lacks voids the declaration. So does a computed argument on an axis the declaration narrows.
+  3. **Every other way to a generated project counts as every option of every axis.** That covers `refuse(` with axes it does not fix, the launcher by path or on `PATH`, and `slipwai.cli` (T036's routes, read over the closure). A declared module that reaches one must declare `"every"`, or its declaration is void.
+  4. **A declared generating module must not reach into the repository in-process.** If the module or its closure does any of the following, its declaration is void unless `reads` names the target by a literal path:
+     - names `ROOT` other than as `ROOT / "slipwai"`, or names `__file__`;
+     - calls `.load(`, `importlib`, `runpy`, `exec`, `open(`/`read_text` on a path rooted there, or changes `sys.path`.
+
+     A helper this voids (possibly `stamp_fixture`, whose `importlib` loads a generated project's script) is named by `held()`, and its `real_*` expectation changes in the same commit. That way, whatever ends up undeclared is a visible decision and not a silent one.
+  5. **Nothing changes in `tests/support.py` or in how any test runs, and there is no second run of any module.** The audit hook for read-only modules stays as the gaps pass recommended. This check covers what that hook cannot: the seven modules that generate projects, and their helpers.
+
+  On the question asked: a seam gated by an environment variable would not break AC-S38-17's intent, because with the variable unset nothing a test does or asserts changes. That is not the reason I turned it down. The reasons are cost, coverage, and when the check runs (below).
+- **Why:**
+  - **The brief's one thing that would make this pointless is a skipped module that would have failed.** The check that prevents it has to judge the tree being selected, at the moment the module is skipped.
+    - (b) does: the scan reads the current source on every selected run.
+    - (a) checks only during full runs. A skip rests on the base tree's declarations, and nothing ties the most recent audit to that tree.
+  - **(a) only sees what actually ran, and in the environment it ran in.** A branch skipped for lack of Docker or a toolchain records nothing and passes the comparison. That is the false green priority 5 rules out.
+    - (b) reads every call site whether or not it executes.
+    - Counting an unresolved argument as every option makes it fail closed: when in doubt, the module runs. That is "fail slow, not wrong", as D156 put it.
+  - **(a) runs the most expensive modules twice on every full run.** `test_matrix` runs `make verify` in every generated project, and `test_images` and `test_postgres` build images and use Docker. Priority 2, fewer runs of the same check on the same content, rules out paying a large share of the forty-minute gate a second time for a check that reading the source can answer.
+  - **(c) gives up the slice's purpose for no gain in soundness over (b).** `test_matrix`'s narrowing to `FACTORY_BACKENDS` (AC-S38-9) and AC-S38-8's skips depend on these declarations.
+    - Under (b), all seven keep their declarations today. Their computed arguments fall on the backend axis, which each declares in full (`backends_under_test()`, `test_postgres`'s `generate_aws(backend)`), or are fixed by literal rows (`test_matrix`'s `native_gate_rows`, `CATALOG["frontends"]` against a declaration of both).
+    - Their files name no `ROOT`, `__file__` or `importlib` (checked by text search of `tests/`).
+  - **Nothing here changes what the merge root or CI checks.** The full run stays exactly today's command, so this is not one of the brief's *Always ask a person* items. It adds no dependency, and it costs milliseconds.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium. The rule is sound by construction, but how many declarations survive it depends on how readable the call sites are, and only the implementation will show that.
+- **Would reverse if:** the static check voids enough of the seven declarations that AC-S38-9's narrowing or AC-S38-8's skips no longer hold on the real tree. If the call sites cannot be written so the check reads them, (a) comes back. It would record only on runs the suite already makes, at no extra cost, with the comparison read at selection time and keyed by the content of the module, its closure and `catalog.json`.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S38: a new criterion after AC-S38-17, which the host numbers, stating rules 1 to 4 above), `specs/001-faster-slipwai/decisions.md`. The slice's tasks.md gets a new task for gaps finding 2, which the host numbers. Nothing is written to `tests/support.py`.
+- **Status:** standing
+
+## D165 — Which change sets S38's demo replays, and what a replay that runs everything prints
+- **Stage:** after-converge gaps · **Slice:** S38-factory-test-selection · **When:** 2026-10-06T07:36:45Z · **Iteration:** 24
+- **Scope:** S38-factory-test-selection
+- **Question:** The gaps pass (finding 3) found the quickstart's four replays not runnable as written: S06 and S33 landed on `adopt-method`'s main line with no merge commit, S14 has merged since the plan, and a replay that runs everything prints only its `full:` line where AC-S38-15 asks for the count selected out of the total and the base.
+- **Options:** (a) the ranges are each slice's register *Merged as* range, or its merge commit's first parent to the merge (S06 `51c6de4..45ebedb`, S33 `1e8f880..e82bb06`, S08 `3138416^1..3138416`, S14 `37cdf3f^1..37cdf3f`), and a full replay also prints `selected N of N against <base>` — recommended; (b) record a full replay's `full:` line alone, as printed.
+- **Decision:** (a). D157 already says the demo log records all four replays as printed, a full selection included; printing the count and base on a full replay makes that record carry what AC-S38-15 asks of every replay.
+- **Why:** the register is the run's record of what each slice merged as, so the ranges are read, not chosen; a full replay is the likeliest result for slices that touched the generator, and its line must still say against what it was measured.
+- **Decided by:** host (standing decision D157)
+- **Confidence:** high · **Would reverse if:** the register's ranges turn out not to be the slices' whole change sets (a slice whose records landed after its range), which would send the ranges back to the skipper.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
