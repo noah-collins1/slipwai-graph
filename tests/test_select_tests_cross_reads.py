@@ -43,6 +43,9 @@ SERVES = {
     "platform.py": {("command", "adopt")},
     "scaffold.py": {("command", "adopt")},
     "project/strangle_command.py": {("command", "adopt")},
+    # `speakers_of` gives a project with no service of the factory's the TypeScript speaker, and `snippet` reads its
+    # `examples/` through the f-string below
+    "examples.py": {("command", "adopt")},
 }
 ASSET_STRING = re.compile(r"assets/(languages|backing-services|frontends|profiles|targets|toolkit|adoption)/([\w.-]+)")
 
@@ -78,6 +81,12 @@ class TestTheCrossReads(DeclarationCase):
         ran, skipped = self.selected()
         self.assertEqual(ran, ["test_a", "test_c"])
         self.assertEqual(skipped, ["skipped test_b: reads no java-quarkus, java-spring, adopt configuration"])
+
+    def test_the_typescript_examples_reach_adoption_which_falls_back_to_them(self) -> None:
+        self.declare(test_a='{"configurations": {"command": ["adopt"]}}',
+                     test_b='{"configurations": {"command": ["generate"], "backend": ["go"]}}')
+        self.slice_changing("assets/languages/typescript/examples/tdd/x.md")
+        self.assertEqual(self.selected()[0], ["test_a"])
 
 
 def references() -> list[tuple[str, int, str, str, str]]:
@@ -122,6 +131,26 @@ def references() -> list[tuple[str, int, str, str, str]]:
                 dynamic = "yes"
                 break
             found.append((shown, node.lineno, tree, "/".join(known), dynamic))
+        found.extend(fstring_references(shown, ast.parse(file.read_text(encoding="utf-8"))))
+    return found
+
+
+def fstring_references(shown: str, module: ast.Module) -> list[tuple[str, int, str, str, str]]:
+    """A path written as `f"assets/languages/{owner}/{name}"`, where `name` is a variable the file gives an f-string
+    that opens with a directory (`f"examples/..."`): read for the owner the TypeScript fallback names, the one a
+    project with no service of the factory's is given (`speakers_of`)."""
+    openings = {target.id: str(node.value.values[0].value).rstrip("/")
+                for node in ast.walk(module) if isinstance(node, ast.Assign) and isinstance(node.value, ast.JoinedStr)
+                and node.value.values and isinstance(node.value.values[0], ast.Constant)
+                for target in node.targets if isinstance(target, ast.Name)}
+    found: list[tuple[str, int, str, str, str]] = []
+    for node in ast.walk(module):
+        if not (isinstance(node, ast.JoinedStr) and len(node.values) == 4 and isinstance(node.values[0], ast.Constant)
+                and str(node.values[0].value) == "assets/languages/"):
+            continue
+        tail = node.values[3]
+        if isinstance(tail, ast.FormattedValue) and isinstance(tail.value, ast.Name) and tail.value.id in openings:
+            found.append((shown, node.lineno, "languages", f"typescript/{openings[tail.value.id]}", "yes"))
     return found
 
 

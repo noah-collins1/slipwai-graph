@@ -105,6 +105,8 @@ CROSS_READS = (
     ("assets/frontends/react-vite/app/package.json", (("backend", "typescript"),)),
     # `wrappers.py` gives an adopted Maven project the wrapper every generated Java project carries
     ("assets/languages/java/build/", (("command", "adopt"),)),
+    # `examples.py` gives an adopted repository, which has no service of the factory's, the TypeScript speaker's snippets
+    ("assets/languages/typescript/examples/", (("command", "adopt"),)),
 )
 
 
