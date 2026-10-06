@@ -329,7 +329,7 @@ nothing is run and the branch rules (not a slice branch) do not apply.
 
 ### T012 — [US2] The helpers say what they read (R5 · AC-S38-8; plan *Which modules are declared*)
 
-- [ ] **Declaration task.** Follows T011 (the selector is complete). A module whose closure holds an undeclared
+- [x] **Declaration task.** Follows T011 (the selector is complete). A module whose closure holds an undeclared
   helper is undeclared (T006 e4), so the helpers come first. Adds one `TEST_SELECTION` assignment to each helper of
   the manifest **where a reading proves it**; any helper whose reading does not prove it **stays undeclared** and
   is named, with the reason, in the report (its importers then always run). Creates `tests/test_select_tests_real_helpers.py`.
@@ -431,7 +431,7 @@ of the edited modules. Commit by path.
 
 ### T016 — [P] [US2] `docs/maintaining.md` says what `make test` does on a slice branch (D156 point 6)
 
-- [ ] **Docs.** Follows T011 (the flags are final). Edits *Verify it* in `docs/maintaining.md`: what `make test`
+- [x] **Docs.** Follows T011 (the flags are final). Edits *Verify it* in `docs/maintaining.md`: what `make test`
   does on a `slice/<id>` branch (selects; names every skip; full elsewhere and under CI); `SINCE` — its default, the trunk,
   and **one sentence** on when to set it (when your branch was cut from a branch other than the trunk, and that
   branch's tip passed the full suite); `FULL=1`; `TESTS`/`SKIP`/`FACTORY_BACKENDS` turn selection off; `make verify`
@@ -453,7 +453,7 @@ lint/typecheck/structure. Commit by path.
 
 ### T017 — [P] [US3] The tests that hold the patched `Makefile` (R9 · AC-S38-6, -13, -14)
 
-- [ ] **Rule R9, tests.** Follows T011 (the selector exists); disjoint from T012–T016. Creates the two modules that
+- [x] **Rule R9, tests.** Follows T011 (the selector exists); disjoint from T012–T016. Creates the two modules that
   drive the **real** root `Makefile` copied into the fixture. **They fail on the unpatched tree, by design, with
   the line `the root Makefile is not yet patched — apply
   specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch`** (AC-S38-14), asserted by a first test that
