@@ -8,6 +8,7 @@ fault in a toolkit script a declared module loads selects that module, and one n
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import unittest
@@ -104,7 +105,7 @@ class TestWhatTheLoadersDeclare(unittest.TestCase):
             for entry in reads:
                 reasons = self.found["ran"][through(entry)].get(name)
                 self.assertIsNotNone(reasons, f"{name} is skipped when {entry} changes")
-                self.assertEqual(reasons, [f"reads `{entry}`"], f"{name} {entry}")
+                self.assertEqual(reasons[0], f"reads `{entry}`", f"{name} {entry}")
 
     def test_a_change_none_of_them_reads_skips_the_modules_that_read_files_only(self) -> None:
         # README.md is read by none of the eight; the bytecode scan reads `assets` and `tests`, which it is not under
@@ -134,6 +135,78 @@ class TestAToolkitScriptFaultStillReachesItsLoaders(unittest.TestCase):
     def test_the_go_mutation_script_selects_the_two_modules_that_load_it(self) -> None:
         self.assertEqual(sorted(self.found["ran"][GO + "scripts/go-mutation.py"]),
                          ["test_assets_bytecode", "test_go_mutation_file", "test_mutation"])
+
+
+ASSET_ALIAS = re.compile(r'^(\w+_ROOT) = ROOT / "assets/([\w-]+)"', re.M)
+CHAIN = re.compile(r'(?:\b(\w+_ROOT)|\bROOT / "assets"|\bROOT)((?:\s*/\s*"[^"{}]+")+)(?!\s*/)')
+LITERAL = re.compile(r'"(assets/(?:languages|backing-services|frontends|profiles|targets|toolkit|adoption)/[\w./-]+)"')
+IMPORTERS = """
+import json, sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, 'scripts')
+from pathlib import Path
+from select_tests import choose, declarations, rules
+root = Path('.').resolve()
+catalog = json.loads((root / 'catalog.json').read_text(encoding='utf-8'))
+tree = declarations.scan(root, catalog)
+out = {"importers": sorted(m for m in tree.sources if declarations.is_module(m) and "slipwai" in tree.imported[m]
+                           and tree.effective(m)[0] is not None),
+       "paths": {}}
+for path in json.loads(sys.argv[1]):
+    claim = rules.claim(path, catalog)
+    ran = {v.module: [r.text for r in v.reasons] for v in choose.select(tree, [path], catalog).verdicts if v.runs}
+    out["paths"][path] = {"full": bool(claim and claim.full), "ran": ran}
+print(json.dumps(out))
+"""
+
+
+def asset_paths_the_generator_reads() -> list[str]:
+    """Every asset path `src/slipwai/` names, found by reading the source as text: the `<TREE>_ROOT / "..."` chains of
+    `assets.py`'s roots, `ROOT / "assets/..."` and the literal `"assets/..."` strings. A directory is probed through
+    a file in it."""
+    found: set[str] = set()
+    roots = dict(ASSET_ALIAS.findall((ROOT / "src/slipwai/assets.py").read_text(encoding="utf-8")))
+    for file in sorted((ROOT / "src/slipwai").rglob("*.py")):
+        text = file.read_text(encoding="utf-8")
+        for alias, parts in CHAIN.findall(text):
+            if alias and alias not in roots:
+                continue  # a root another file composes from these: its own definition is a chain read here too
+            head = f"assets/{roots[alias]}" if alias else ""
+            rest = "/".join(part.strip().strip('"') for part in re.findall(r'"[^"]+"', parts))
+            path = f"{head}/{rest}" if head else rest
+            if path.startswith("assets/") and path.count("/") > 1:
+                found.add(path)
+        found.update(LITERAL.findall(text))
+    return sorted(path if "." in path.rsplit("/", 1)[-1] else path.rstrip("/") + "/x" for path in found)
+
+
+class TestWhatTheGeneratorReadsReachesEveryModuleThatImportsIt(unittest.TestCase):
+    """AC-S38-10, AC-S38-16: a module that imports `slipwai` runs the generator's import-time and in-process reads, so a
+    fault in any asset path `src/slipwai/` names selects it, or the run is whole."""
+
+    def test_a_change_to_each_asset_path_the_generator_names_selects_every_module_importing_slipwai(self) -> None:
+        paths = asset_paths_the_generator_reads()
+        self.assertIn(SCRIPTS + "check-styles.py", paths)
+        self.assertIn(SCRIPTS + "agents/registry.json", paths)
+        self.assertGreater(len(paths), 25)
+        done = subprocess.run(["python3", "-B", "-c", IMPORTERS, json.dumps(paths)], cwd=ROOT, text=True,
+                              capture_output=True, timeout=180)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        found = json.loads(done.stdout)
+        self.assertGreater(len(found["importers"]), 5)
+        missed = {path: sorted(set(found["importers"]) - set(row["ran"])) for path, row in found["paths"].items()
+                  if not row["full"] and set(found["importers"]) - set(row["ran"])}
+        self.assertEqual(missed, {})
+
+    def test_the_reason_says_what_the_module_imports_and_the_asset_it_reads(self) -> None:
+        done = subprocess.run(["python3", "-B", "-c", IMPORTERS, json.dumps([SCRIPTS + "check-styles.py"])],
+                              cwd=ROOT, text=True, capture_output=True, timeout=180)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        found = json.loads(done.stdout)
+        ran = found["paths"][SCRIPTS + "check-styles.py"]["ran"]
+        self.assertTrue(found["importers"])
+        for module in found["importers"]:
+            self.assertIn(f"imports `slipwai`, which reads `{SCRIPTS}check-styles.py`", ran[module], module)
 
 
 if __name__ == "__main__":

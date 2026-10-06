@@ -13,6 +13,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, NamedTuple
 
+from . import loaded
 from .rules import load_catalog, names
 
 sys.dont_write_bytecode = True
@@ -202,6 +203,7 @@ class Tree(NamedTuple):
     sources: Mapping[str, Source]
     closures: Mapping[str, frozenset[str]]
     imported: Mapping[str, frozenset[str]]  # every name a file imports, directly or through the helpers it imports
+    reads: frozenset[str] = frozenset()  # the asset paths `src/slipwai/` reads: a module importing it reads them (T037)
 
     def effective(self, name: str) -> tuple[Declaration | None, str]:
         """The declaration a module runs under, or None and why it is undeclared: its own is missing or unusable, or a
@@ -242,7 +244,7 @@ def scan(root: Path, catalog: Mapping[str, Any] | None = None) -> Tree:
     closures = {name: closure_of(name, sources) for name in sources}
     imported = {name: frozenset().union(*(sources[member].imports or frozenset() for member in {name, *closure}))
                 for name, closure in closures.items()}
-    return Tree(sources, closures, imported)
+    return Tree(sources, closures, imported, loaded.scan(root))
 
 
 def is_module(name: str) -> bool:

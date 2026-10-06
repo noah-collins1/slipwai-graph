@@ -64,7 +64,7 @@ def reads_match(path: str, entry: str) -> bool:
 def reasons_for(module: str, tree: declarations.Tree, declaration: declarations.Declaration,
                 reached: Reach) -> list[Reason]:
     """Every reason a declared module is reached, in the one order they are told: its own file, the files it reads, the
-    configurations it generates, the helpers it imports."""
+    configurations it generates, the generator it imports, the helpers it imports."""
     found: list[Reason] = []
     if module in reached.test_files:
         found.append(Reason(f"`tests/{module}.py` changed"))
@@ -76,6 +76,10 @@ def reasons_for(module: str, tree: declarations.Tree, declaration: declarations.
     for axis, option in reached.configs:
         if declaration.admits(axis, option):
             found.append(Reason(f"reads the {option} configuration", narrowable=(axis, option) in reached.narrowable))
+    if "slipwai" in tree.imported[module]:
+        for entry in sorted(tree.reads):
+            if any(reads_match(path, entry) for path in reached.paths):
+                found.append(Reason(f"imports `slipwai`, which reads `{entry}`"))
     for name in reached.test_files:
         if name != module and name in tree.imported[module]:
             found.append(Reason(f"imports `tests/{name}.py`"))
