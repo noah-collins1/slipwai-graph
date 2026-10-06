@@ -37,7 +37,9 @@ def stage(name: str, started: str, ended: str, delegated: bool = True, source: s
 def project(directory: str, stages: list[dict[str, Any]], record: str | None = None) -> Path:
     repo = scratch(directory, record)
     (repo / "scripts/agents").mkdir()
-    shutil.copy(SCRIPTS / "agents/benchmark.py", repo / "scripts/agents/benchmark.py")
+    # The toolkit ships `scripts/agents/` whole: benchmark.py loads measures.py and attribution.py from beside it.
+    for name in ("benchmark.py", "measures.py", "attribution.py"):
+        shutil.copy(SCRIPTS / "agents" / name, repo / "scripts/agents" / name)
     (repo / SLICE / "benchmark.json").write_text(
         json.dumps({"feature": "f", "slice": "S1", "stages": stages}), encoding="utf-8")
     return repo
