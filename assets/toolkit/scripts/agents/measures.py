@@ -304,15 +304,17 @@ def printed(figure: Any) -> Any:
     return figure if is_unknown(figure) or figure is None else utc(figure)
 
 
-def parse_log(text: str) -> tuple[list[dict[str, Any]], list[int]]:
-    """The cruise log's readable rows, and the line number of each line that could not be read whole: not JSON, not
-    an object, or a `started`/`ended` that is not a UTC second. A blank line is nothing."""
+def parse_log(data: bytes) -> tuple[list[dict[str, Any]], list[int]]:
+    """The cruise log's readable rows, and the line number of each line that could not be read whole: not UTF-8
+    (a runner killed mid-append can cut a multi-byte character), not JSON, not an object, or a `started`/`ended`
+    that is not a UTC second. A blank line is nothing. The log is bytes, read line by line."""
     rows: list[dict[str, Any]] = []
     damaged: list[int] = []
-    for number, line in enumerate(text.splitlines(), 1):
-        if not line.strip():
-            continue
+    for number, raw in enumerate(data.split(b"\n"), 1):
         try:
+            line = raw.decode("utf-8")
+            if not line.strip():
+                continue
             row = json.loads(line)
             epoch(row["started"])
             epoch(row["ended"])
@@ -503,7 +505,7 @@ def sibling_wait(reader: Reader, ident: str, demo: int, before: int) -> tuple[In
 
 
 def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dict[str, Any]],
-            log: list[dict[str, Any]], last_lines: dict[int, int] | None = None,
+            log: list[dict[str, Any]] | None, last_lines: dict[int, int] | None = None,
             damaged: list[int] | None = None) -> dict[str, Any]:
     """worked, and each cause's seconds, inside [ready, accepted]: every second goes to the first claimant in the
     order worked, integration, dependency, review, worker, and what no record claims is unattributed, so the parts
@@ -540,7 +542,8 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
     read_from["review"] = "the demo bracket with no driver" if review else "none present: no park, no person's demo"
     claimed["worker"] = []
     read_from["worker"] = "none present: no cruise log"
-    if log:
+    if log is not None:  # the log is there, whatever it holds
+        read_from["worker"] = f"none present: {LOG} has no row"
         parked = parks(log)
         span = iterations(log)
         claimed["review"] = review + parked

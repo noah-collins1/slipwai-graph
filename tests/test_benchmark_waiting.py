@@ -176,6 +176,27 @@ class WaitingTest(unittest.TestCase):
         self.assertIn("line 2", found["waiting"]["worker"]["unknown"])
         self.assertNotIn("no cruise log", json.dumps(found["read_from"]))
 
+    def test_e4_a_row_cut_inside_a_character_is_a_damaged_line_not_a_crash(self) -> None:
+        self.accept(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")), row=stamp(1, "20:00:00"))
+        whole = park(1, stamp(1, "09:30:00"), stamp(1, "12:00:00"), "cruise: stopped: human").encode("utf-8")
+        row = {"iteration": 2, "started": stamp(1, "14:00:00"), "ended": stamp(1, "18:00:00"),
+               "last_line": "told \u2014 x"}
+        cut = json.dumps(row, ensure_ascii=False).encode("utf-8")
+        cut = cut[:cut.index("\u2014".encode("utf-8")) + 1]
+        (self.repo / "specs/cruise-log.jsonl").write_bytes(whole + cut)
+        done = bench(self.repo, "--json")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        found = next(item for item in json.loads(done.stdout) if item["slice"] == "S2")
+        for cause in ("review", "worker", "unattributed"):
+            self.assertIn("line 2", found["waiting"][cause].get("unknown", ""), cause)
+        self.assertEqual(bench(self.repo).returncode, 0)
+        self.assertEqual(bench(self.repo, "overview").returncode, 0)
+
+    def test_e5_an_empty_log_says_it_exists_and_has_no_row(self) -> None:
+        found = self.damaged("")
+        self.assertNotIn("no cruise log", json.dumps(found["read_from"]))
+        self.assertIn("no row", found["read_from"]["worker"])
+
     def test_e3_a_clean_log_reads_as_it_did(self) -> None:
         found = self.damaged(park(1, stamp(1, "09:30:00"), stamp(1, "12:00:00"), "cruise: stopped: human")
                              + "\n" + park(2, stamp(1, "14:00:00"), stamp(1, "18:00:00"), "cruise: continue"))

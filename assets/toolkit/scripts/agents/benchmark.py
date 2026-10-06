@@ -164,12 +164,12 @@ def attributed() -> dict[str, Any]:
     return _LOADED["attributed"]  # type: ignore[no-any-return]
 
 
-def cruise_log() -> tuple[list[dict[str, Any]], list[int]]:
+def cruise_log() -> tuple[list[dict[str, Any]] | None, list[int]]:
     """`specs/cruise-log.jsonl`'s readable rows and the numbers of the lines that were not, parsed once per run;
-    none of either where the project has no log."""
+    no rows (`None`, not an empty list: a log with no row is there) where the project has no log."""
     if "log" not in _LOADED:
         path = ROOT / measures().LOG
-        _LOADED["log"] = measures().parse_log(path.read_text(encoding="utf-8")) if path.is_file() else ([], [])
+        _LOADED["log"] = measures().parse_log(path.read_bytes()) if path.is_file() else (None, [])
     return _LOADED["log"]  # type: ignore[no-any-return]
 
 
