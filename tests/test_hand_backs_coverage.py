@@ -184,9 +184,10 @@ class CoverageVerbTest(unittest.TestCase):
                 "hand-backs: implement 2026-10-05T17:00:00Z: the harness could not attribute its delegates — "
                 "not counted", "hand-backs: with a result contract: 0 of 0"], self.verb(stages).stdout.splitlines())
 
+    def test_a_harness_that_reads_no_subagents_names_a_typed_delegate_it_could_not_attribute(self) -> None:
         """A3: on Codex the reader returns no sub-agents, so `delegated` is false; a typed delegate named still owes."""
-        """A3: on Codex the reader returns none, so `delegated` is false; the typed delegate named still owes a block."""
-        named = stage("implement", "2026-10-05T17:00:00Z", "2026-10-05T17:10:00Z", delegated=False, source="codex")
+        named = stage("implement", "2026-10-05T17:00:00Z", "2026-10-05T17:10:00Z", delegated=False,
+                      source="codex")
         signalled = stage("converge", "2026-10-05T18:00:00Z", "2026-10-05T18:10:00Z", delegated=False, source="codex",
                           agents=None) | {"signals": {"agent": "drive-converge"}}
         for one, word in ((named, "implement 2026-10-05T17:00:00Z"), (signalled, "converge 2026-10-05T18:00:00Z")):
