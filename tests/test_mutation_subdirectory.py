@@ -11,6 +11,7 @@ import contextlib
 import io
 import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -146,3 +147,20 @@ class SubdirectoryTest(ScopeCase):
         ran, recording = self.recorded(SPRING)
         self.assertEqual(recording.swept, ["apps/spring"], ran.out)
         self.assertIn("mutation: sweep apps/spring — `apps/spring/pom.xml` changed", ran.lines)
+
+    def test_a_file_of_an_unpushed_trunk_commit_is_scoped_by_its_project_relative_path(self) -> None:
+        """T035(c) in a subdirectory: git names the unpushed file `sub/apps/…`; the run says `health/health.go`."""
+        self.start()
+        outer = self.repo.parent
+        bare = outer.parent / "origin.git"
+        subprocess.run(["git", "init", "-q", "--bare", str(bare)], check=True, capture_output=True, timeout=60)
+        git(outer, "remote", "add", "origin", str(bare))
+        git(outer, "push", "-q", "origin", "main")
+        git(outer, "fetch", "-q", "origin")
+        git(outer, "checkout", "-q", "main")
+        self.edit(HEALTH)
+        self.commit("main, unpushed")
+        git(outer, "checkout", "-q", "-B", SLICE)
+        ran, recording = self.recorded()
+        self.assertEqual(recording.seen, [("apps/service", ["health/health.go"])], ran.out)
+        self.assertIn("has 1 commits `origin/main`", ran.first)
