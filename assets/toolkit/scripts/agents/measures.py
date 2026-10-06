@@ -212,20 +212,30 @@ class Reader:
             self.kept[key] = min(options) if options else None
         return self.kept[key]
 
-    def merged(self, ident: str) -> Found | None:
-        key = ("merged", ident)
+    def merges(self, ident: str) -> list[Found]:
+        """Every first-parent merge of the slice's own branch, oldest first: a subject whose merged branch is
+        `slice/<ident>` exactly — `Merge slice/<ident> …` or `Merge branch 'slice/<ident>' …` — and not prose naming it
+        or a longer branch (`slice/<ident>-v2`). The first parent is the branch the merge landed on: a catch-up merge
+        of the integration branch into the slice is on the slice's own line, and a subject saying
+        `into slice/<ident>` is one wherever it is read."""
+        key = ("merges", ident)
         if key not in self.kept:
-            # the first parent is the branch the merge landed on: a catch-up merge of the integration branch into the
-            # slice is on the slice's own line, and a subject saying `into slice/<ident>` is one wherever it is read
             listed = self.ask("log", "--merges", "--first-parent", "--reverse", "--fixed-strings",
                               f"--grep=slice/{ident}", "--format=%H %ct %s") or ""
-            name = r"slice/" + re.escape(ident) + r"(?![A-Za-z0-9])"
-            pattern, catching_up = re.compile(name), re.compile(r"\binto\s+['\"]?" + name)
-            self.kept[key] = next(((int(parts[1]), parts[0][:7], "merge commit") for parts in
-                                   (line.split(" ", 2) for line in listed.splitlines())
-                                   if len(parts) == 3 and pattern.search(parts[2]) and not catching_up.search(parts[2])),
-                                  None)
-        return self.kept[key]
+            name = r"slice/" + re.escape(ident) + r"(?![A-Za-z0-9_.-])"
+            pattern = re.compile(r"Merge (?:branch |remote-tracking branch )?['\"]?" + name)
+            catching_up = re.compile(r"\binto\s+['\"]?" + name)
+            self.kept[key] = [(int(parts[1]), parts[0][:7], "merge commit") for parts in
+                              (line.split(" ", 2) for line in listed.splitlines())
+                              if len(parts) == 3 and pattern.match(parts[2]) and not catching_up.search(parts[2])]
+        return self.kept[key]  # type: ignore[return-value]
+
+    def merged(self, ident: str, low: int | None = None, high: int | None = None) -> Found | None:
+        """The slice's merge: the last of its own merges that is not before `low` (its ready commit) nor after `high`
+        (its accepted commit)."""
+        chosen = [found for found in self.merges(ident)
+                  if (low is None or found[0] >= low) and (high is None or found[0] <= high)]
+        return chosen[-1] if chosen else None
 
     def order(self) -> list[tuple[str, list[str]]]:
         path = self.root / self.split
@@ -264,9 +274,6 @@ def moments(reader: Reader, ident: str | None, entries: list[dict[str, Any]]) ->
             read_from["demo_accepted"] = f"the demo bracket ended {demo['ended']}"
         except ValueError:
             pass
-    merged = reader.merged(ident)
-    if merged:
-        out["merged"], read_from["merged"] = merged[0], f"{merged[1]} ({merged[2]}: slice/{ident})"
     added = reader.added(ident)
     ready: Any
     if added is None:
@@ -282,6 +289,9 @@ def moments(reader: Reader, ident: str | None, entries: list[dict[str, Any]]) ->
             if landed[0] > ready:
                 ready, read_from["ready"] = landed[0], f"{landed[1]} ({landed[2]})"
     own = reader.done(ident)
+    merged = reader.merged(ident, ready if isinstance(ready, int) else None, own[0] if own else None)
+    if merged:
+        out["merged"], read_from["merged"] = merged[0], f"{merged[1]} ({merged[2]}: slice/{ident})"
     if reader.failure:
         out.update({key: unknown(reader.failure) for key in ("ready", "accepted", "elapsed")})
         for key in ("ready", "accepted", "merged"):

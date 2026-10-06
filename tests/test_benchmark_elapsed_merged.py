@@ -74,6 +74,56 @@ class MergedTest(unittest.TestCase):
         git(self.repo, "checkout", "-q", "slice/S2")
         self.assertNotIn("merged", summaries(self.repo)["S2"]["moments"])
 
+    def land(self, branch: str, subject: str, when: str) -> None:
+        """A branch with one commit, merged into `main` with this subject."""
+        git(self.repo, "checkout", "-q", "-b", branch)
+        write(self.repo, f"{branch.replace('/', '-')}-{when}.txt", branch)
+        git(self.repo, "add", "-A", "--", ".")
+        git(self.repo, "commit", "-q", "-m", f"work {branch}", when=when)
+        self.merge(branch, "main", subject, when)
+
+    def merged_of(self, ident: str) -> object:
+        return summaries(self.repo)[ident]["moments"].get("merged")
+
+    def accept(self, ident: str, when: str) -> None:
+        git(self.repo, "checkout", "-q", "main")
+        write(self.repo, REGISTER, register([ident]))
+        commit(self.repo, when, f"{ident} done", REGISTER)
+
+    def test_e4_a_merge_subject_naming_the_slice_in_prose_is_not_its_merge(self) -> None:
+        """A1: `Merge slice/S2-b … ahead of slice/S1-a` is S2-b's merge, not S1-a's."""
+        repo = self.repo
+        write(repo, SPLIT, graph([("S1-a", []), ("S2-b", [])]))
+        commit(repo, stamp(2), "split", SPLIT)
+        for ident in ("S1-a", "S2-b"):
+            record(repo, ident, entry("implement", stamp(3, "09:00:00"), stamp(3, "10:00:00")))
+        commit(repo, stamp(3, "10:30:00"), "records", f"specs/{FEATURE}/slices/S1-a/benchmark.json",
+               f"specs/{FEATURE}/slices/S2-b/benchmark.json")
+        self.land("slice/S2-b", "Merge slice/S2-b into main — merged ahead of slice/S1-a, which waits",
+                  stamp(3, "14:00:00"))
+        self.accept("S1-a", stamp(5))
+        self.assertIsNone(self.merged_of("S1-a"))
+        self.assertEqual(self.merged_of("S2-b"), stamp(3, "14:00:00"))
+
+    def test_e5_a_longer_branch_name_is_not_the_slices_branch(self) -> None:
+        self.land("slice/S2-v2", "Merge branch 'slice/S2-v2' into main", stamp(3, "14:00:00"))
+        self.accept("S2", stamp(5))
+        self.assertIsNone(self.merged_of("S2"))
+
+    def test_e6_the_plain_merge_subject_is_the_slices_merge(self) -> None:
+        self.land("slice/S2", "Merge slice/S2 into main — prose", stamp(3, "14:00:00"))
+        self.accept("S2", stamp(5))
+        self.assertEqual(self.merged_of("S2"), stamp(3, "14:00:00"))
+
+    def test_e7_a_merge_later_merged_again_is_the_last_one_not_after_accepted(self) -> None:
+        self.land("slice/S2", "Merge branch 'slice/S2' into main", stamp(3, "14:00:00"))
+        git(self.repo, "checkout", "-q", "slice/S2")
+        write(self.repo, "more.txt", "m")
+        commit(self.repo, stamp(4, "13:00:00"), "more work", "more.txt")
+        self.merge("slice/S2", "main", "Merge branch 'slice/S2' into main (again)", stamp(4, "14:00:00"))
+        self.accept("S2", stamp(4, "20:00:00"))
+        self.assertEqual(self.merged_of("S2"), stamp(4, "14:00:00"))
+
     def overview(self) -> str:
         bench(self.repo, "overview", FEATURE)
         return (self.repo / f"specs/{FEATURE}/benchmark.md").read_text(encoding="utf-8")
