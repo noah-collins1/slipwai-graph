@@ -493,3 +493,16 @@ Findings: twenty — three `HIGH`, five `MEDIUM`, twelve `LOW` or unverified. Wh
 | B7 | B | LOW | 20,000 obligations take 17 s. New | Declined: nobody writes that list | declined |
 | C4 | C | LOW | SIGTERM to the outer make orphans the sub-make, which keeps running checks. Older (S04's `make verify` does the same) | Declined: not this slice's; the cruise report | declined |
 | C5 | C | unverified | GNU Make 3.81 may print the `override` origin in backtick style, which `record.py`'s pattern would miss (read, not run). Older class (S04's 3.81 lines) | The cruise report | parked |
+
+## S08 · 3138416 · 2026-10-06
+
+Slice `S08-scoped-mutation` (cruise iterations 22–24), diff `66e49e8..3138416` (merged into adopt-method at `3138416`): the generated `make mutation` scoped to the change and `make mutation-full` as the sweep (`src/slipwai/project/mutation.py`, `src/slipwai/project/native_commands.py`, `src/slipwai/project/makefile.py`), the toolkit script that decides and runs the scope (`assets/toolkit/scripts/mutation-scope.py`), Go's `--file` and report reading (`assets/languages/go/scripts/go-mutation.py`), the mutation skill's commands, one fragment.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | `make mutation` changes from the sweep to a scoped run on a slice branch and under `SINCE`; `make mutation-full` is new (`src/slipwai/project/mutation.py`, `assets/toolkit/scripts/mutation-scope.py`) |
+| driven adapter or the provider types behind one | widened | The script drives git (merge-base, diff, ls-files, unpushed commits), make (`mutation-full`, `-n`/`-q`/`-t`, `MAKEFLAGS`), Gremlins through `go-mutation.py` and its report, and PIT through `./mvnw` with `-DtargetClasses` (`assets/toolkit/scripts/mutation-scope.py`, `assets/languages/go/scripts/go-mutation.py`) |
+| authorisation decision (who can reach one that already exists) | not present | The diff decides nothing about who may do what |
+| concurrency, idempotency, ordering, retention, or time | not present | One run, one tool at a time; the stamp is untouched (`tests/test_mutation_stamp_untouched.py`) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: two triggers `widened`.
