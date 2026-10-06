@@ -1,6 +1,8 @@
 """R5, by spawn chain: a request belongs to the slice whose `drive-slice` spawned it, read from `meta.json`."""
 from __future__ import annotations
 
+import json
+import os
 import sys
 import tempfile
 import unittest
@@ -93,9 +95,7 @@ class ChainTest(unittest.TestCase):
         self.assertEqual(found["entries"][1]["delegates"], ["Implement T9"])
 
 
-class BrokenChainTest(unittest.TestCase):
-    """B3: a spawn chain that cannot be followed is not a host's: its requests are shared, and the note says why."""
-
+class Laid(unittest.TestCase):
     def setUp(self) -> None:
         self.scratch = tempfile.TemporaryDirectory()
         self.addCleanup(self.scratch.cleanup)
@@ -113,7 +113,12 @@ class BrokenChainTest(unittest.TestCase):
         said.say(None, "h1", 170, stamp(1, "09:03:00"))
         record(self.repo, "S1", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), c1))
         record(self.repo, "S2", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), c2))
+        feature_record(self.repo)
         return {}
+
+
+class BrokenChainTest(Laid):
+    """B3: a spawn chain that cannot be followed is not a host's: its requests are shared, and the note says why."""
 
     def test_e1_with_the_metadata_present_the_chain_is_followed(self) -> None:
         self.run_it()
@@ -142,6 +147,75 @@ class BrokenChainTest(unittest.TestCase):
         self.assertEqual((found["S1"]["cost"]["tokens"], found["S2"]["cost"]["tokens"]), (10, 170))
         self.assertEqual(found["S2"]["cost"]["shared"], 5000)
         self.assertIn("ghost", bench(self.repo).stdout)
+
+
+@unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root reads every file")
+class UnreadableTest(Laid):
+    """B7: one file that cannot be read makes that session or link `unknown`, with its reason, never a failed run."""
+
+    def test_e1_an_unreadable_meta_is_a_broken_link_not_an_error(self) -> None:
+        self.run_it()
+        meta = self.session.agents / "agent-ds.meta.json"
+        meta.chmod(0)
+        self.addCleanup(meta.chmod, 0o600)
+        found = summaries(self.repo)
+        self.assertEqual((found["S1"]["cost"]["tokens"], found["S2"]["cost"]["tokens"]), (0, 170))
+        self.assertIn("agent-ds.meta.json", bench(self.repo).stdout)
+
+    def test_e2_an_unreadable_sub_agent_transcript_makes_its_session_unknown_naming_it(self) -> None:
+        self.run_it()
+        child = self.session.agents / "agent-ci.jsonl"
+        child.chmod(0)
+        self.addCleanup(child.chmod, 0o600)
+        total = summaries(self.repo)["(feature)"]["session_totals"]["sess"]["total"]
+        self.assertIn("agent-ci.jsonl", total["unknown"])
+
+    def test_e3_a_dangling_symlink_is_the_same(self) -> None:
+        self.run_it()
+        (self.session.agents / "agent-zz.jsonl").symlink_to(self.repo / "nowhere.jsonl")
+        self.assertIn("agent-zz.jsonl", summaries(self.repo)["(feature)"]["session_totals"]["sess"]["total"]["unknown"])
+
+
+class MalformedTest(Laid):
+    def test_e4_a_line_that_is_json_but_not_an_object_is_skipped(self) -> None:
+        self.run_it()
+        with self.session.main.open("a", encoding="utf-8") as handle:
+            handle.write('["usage"]\n')
+        found = summaries(self.repo)
+        self.assertEqual((found["S1"]["cost"]["tokens"], found["S2"]["cost"]["tokens"]), (5010, 170))
+
+    def test_e5_a_parent_that_is_not_a_plain_name_is_a_broken_link_naming_it(self) -> None:
+        self.run_it()
+        meta = self.session.agents / "agent-ci.meta.json"
+        meta.write_text(json.dumps({"agentType": "drive-implement", "parentAgentId": "../x"}), encoding="utf-8")
+        found = summaries(self.repo)
+        self.assertEqual((found["S1"]["cost"]["tokens"], found["S2"]["cost"]["shared"]), (10, 5000))
+        self.assertIn("../x", bench(self.repo).stdout)
+
+
+class DescriptionTest(unittest.TestCase):
+    """B8: the slice a `drive-slice` description names is the word after `drive-slice`."""
+
+    def test_e1_a_parenthetical_after_the_id_does_not_make_it_another_slice(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            repo = project(Path(scratch))
+            said = Session(repo)
+            owner = said.agent("ds", "drive-slice S1-alpha (resumed)", "drive-slice")
+            cursor = said.open(None, "implement", P1)
+            said.say(owner, "ra", 40, stamp(1, "09:01:00"), "drive-slice")
+            record(repo, "S1-alpha", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), cursor))
+            found = summaries(repo)["S1-alpha"]["cost"]
+            self.assertEqual((found["tokens"], found["shared"]), (40, 0))
+
+    def test_e2_two_ids_are_still_no_one_slice(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            repo = project(Path(scratch))
+            said = Session(repo)
+            owner = said.agent("ds", "drive-slice S1 S2", "drive-slice")
+            cursor = said.open(None, "implement", P1)
+            said.say(owner, "ra", 40, stamp(1, "09:01:00"), "drive-slice")
+            record(repo, "S1", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), cursor))
+            self.assertEqual(summaries(repo)["S1"]["cost"]["tokens"], 0)
 
 
 if __name__ == "__main__":

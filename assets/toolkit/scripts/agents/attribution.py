@@ -24,6 +24,7 @@ Nothing is written; the figures are derived again each time. A figure is a numbe
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +34,7 @@ OPENER_BYTES = 1 << 20
 FIELDS = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
 PARTS = ("total", "attributed", "shared")
 UNRESOLVED = "<unresolved>"
+PLAIN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")  # a sub-agent's id: a name, never a path
 Figure = Any  # an int, or {"unknown": reason}
 
 
@@ -83,7 +85,9 @@ def read_requests(files: list[Path]) -> dict[str, Request]:
                     item = json.loads(raw.decode("utf-8", errors="replace"))
                 except ValueError:
                     continue
-                message = item.get("message") if isinstance(item, dict) else None
+                if not isinstance(item, dict):
+                    continue
+                message = item.get("message")
                 usage = message.get("usage") if isinstance(message, dict) else None
                 if item.get("type") != "assistant" or not isinstance(usage, dict):
                     continue
@@ -133,7 +137,14 @@ class Session:
         self.name = name
         self.files = [path for path in [main, *sorted(subagents)] if path is not None]
         self.present = bool(self.files)
-        self.requests = read_requests(self.files) if self.present else {}
+        self.why: str | None = None  # what stopped a file being read: the session is then not costed
+        self.requests: dict[str, Request] = {}
+        if self.present:
+            try:
+                self.requests = read_requests(self.files)
+            except OSError as error:
+                self.present, self.why = False, f"{Path(error.filename).name if error.filename else 'a transcript'} " \
+                                                f"cannot be read ({error.strerror or error})"
         self._meta: dict[str, dict[str, Any] | None] = {}
         self.main = str(main) if main is not None else None
 
@@ -145,7 +156,7 @@ class Session:
                 try:
                     loaded = json.loads(path.read_text(encoding="utf-8"))
                     found = loaded if isinstance(loaded, dict) else None
-                except ValueError:
+                except (ValueError, OSError):
                     found = None
             self._meta[key] = found
         return self._meta[key]
@@ -175,7 +186,7 @@ class Session:
             parent = found.get("parentAgentId")
             if parent is None or parent == "":
                 return None, None
-            if not isinstance(parent, str) or parent in seen:
+            if not isinstance(parent, str) or parent in seen or not PLAIN.fullmatch(parent):
                 return None, f"{name} names a parent, {parent!r}, that is not a chain it can follow"
             seen.add(parent)
             name = f"agent-{parent.removeprefix('agent-')}.meta.json"
@@ -189,10 +200,13 @@ class Session:
         for file in self.files:
             if str(file) not in window_from:
                 continue
-            with file.open("rb") as handle:
-                handle.seek(window_from[str(file)])
-                if needle in handle.read(OPENER_BYTES):
-                    return str(file)
+            try:
+                with file.open("rb") as handle:
+                    handle.seek(window_from[str(file)])
+                    if needle in handle.read(OPENER_BYTES):
+                        return str(file)
+            except OSError:
+                continue
         return None
 
 
@@ -222,10 +236,14 @@ def session_of(entry: dict[str, Any], window: Any) -> str | None:
 
 
 def slice_word(description: str) -> str:
-    """The name a `drive-slice` description gives: the text after `drive-slice `, else the first word."""
+    """The name a `drive-slice` description gives: the word after `drive-slice `, which may be followed by a
+    parenthetical (`S1-alpha (resumed)`) and by nothing else — more words are two names or none, and stay whole so
+    that no record is named; else the first word."""
     text = description.strip()
     if text.startswith("drive-slice "):
-        return text[len("drive-slice "):].strip()
+        rest = text[len("drive-slice "):].strip()
+        word, _, after = rest.partition(" ")
+        return word if not after.strip() or after.strip().startswith("(") else rest
     return text.split()[0] if text.split() else ""
 
 
@@ -529,7 +547,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
         mine = {name: part(name, feature) for name in names if sessions[name].present}
         result["features"][feature] = {
             "sessions": {name: mine[name] if sessions[name].present else
-                         dict.fromkeys(PARTS, unknown("the transcripts are not on this machine"))
+                         dict.fromkeys(PARTS, unknown(sessions[name].why or "the transcripts are not on this machine"))
                          for name in names},
             "notes": sorted({*(note for name in names for note in notes[name]),
                              *(f"{file} is not on this machine: the entries that span it are costed from their "
