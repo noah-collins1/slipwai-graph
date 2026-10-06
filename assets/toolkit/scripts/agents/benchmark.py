@@ -822,7 +822,9 @@ def compact(number: int) -> str:
     return str(number)
 
 
-def wall(seconds: int) -> str:
+def wall(seconds: Any) -> str:
+    if isinstance(seconds, dict):  # an unknown figure
+        return "unknown"
     hours, rest = divmod(seconds, 3600)
     minutes, secs = divmod(rest, 60)
     return f"{hours}h{minutes:02d}m" if hours else f"{minutes}m{secs:02d}s" if minutes else f"{secs}s"
@@ -845,7 +847,7 @@ def summary_wall(summary: dict[str, Any]) -> str:
     """A record's stage time as the page prints it: the figure `--json` calls `stage_seconds`, a cut-off entry ended
     at its last transcript line."""
     measured = wall(summary["stage_seconds"])
-    return f"{measured}+" if summary.get("unbracketed") else measured
+    return f"{measured}+" if summary.get("unbracketed") and not isinstance(summary["stage_seconds"], dict) else measured
 
 
 def order(stage: str) -> int:

@@ -296,7 +296,7 @@ def moments(reader: Reader, ident: str | None, entries: list[dict[str, Any]]) ->
         try:
             out["demo_accepted"] = epoch(demo["ended"])
             read_from["demo_accepted"] = f"the demo bracket ended {demo['ended']}"
-        except ValueError:
+        except (ValueError, TypeError):
             pass
     added = reader.added(ident)
     ready: Any
@@ -384,7 +384,7 @@ def bounds(entry: dict[str, Any], last_line: int | None = None) -> Interval | No
         return None
     if last_line is not None and entry.get("cut_off") and last_line >= start:  # one before the start contradicts it
         end = min(end, last_line)
-    return (start, end)
+    return (start, end) if end >= start else None
 
 
 def is_person_demo(entry: dict[str, Any]) -> bool:
@@ -413,14 +413,26 @@ def worked(entries: list[dict[str, Any]], last_lines: dict[int, int] | None = No
                           lambda entry: entry.get("stage") != "gate" and not is_person_demo(entry)))
 
 
-def stage_seconds(entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> int:
+def backwards(entry: dict[str, Any]) -> bool:
+    """Whether an ended entry's `ended` precedes its `started`: a bracket no time can be read from."""
+    try:
+        return epoch(entry["ended"]) < epoch(entry["started"])
+    except (KeyError, ValueError, TypeError):
+        return False
+
+
+def stage_seconds(entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> Any:
     """Stage time: what the entries add up to, each counted whole, so a skipper inside an implement is added to it
     (worked time counts that interval once). `last_lines` maps an entry's index to the moment of the last
-    transcript line attributed to it, which ends a cut-off entry there; where none is given the recorded end stands."""
+    transcript line attributed to it, which ends a cut-off entry there; where none is given the recorded end stands.
+    An entry that ended before it started has no time to read: the figure is unknown, naming it."""
     total = 0
     for index, entry in enumerate(entries):
         if "ended" not in entry:
             continue
+        if backwards(entry):
+            return unknown(f"{entry.get('stage')}: the bracket ended ({entry['ended']}) before it started "
+                           f"({entry['started']})")
         span = bounds(entry, (last_lines or {}).get(index))
         total += span[1] - span[0] if span else int(entry.get("seconds", 0))
     return total
@@ -722,7 +734,7 @@ def feature_figures(parts: list[dict[str, Any]]) -> dict[str, Any]:
         elapsed = unknown(f"open since {utc(min(readies))}")
     else:
         elapsed = max(part["accepted"] for part in slices) - min(readies)
-    return {"elapsed": elapsed, "stage_seconds": sum(part["stage_seconds"] for part in parts),
+    return {"elapsed": elapsed, "stage_seconds": sum_figures([part["stage_seconds"] for part in parts]),
             "in_flight_seconds": length([span for part in slices for span in part["worked"]])}
 
 

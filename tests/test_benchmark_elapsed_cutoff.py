@@ -13,6 +13,7 @@ from elapsed_fixture import (
     Session,
     bench,
     commit,
+    entry,
     graph,
     project,
     record,
@@ -79,6 +80,37 @@ class OneFigureTest(unittest.TestCase):
                 self.assertEqual(found["entries"][0]["recorded_seconds"], 12600)
                 row = next(line for line in bench(self.repo).stdout.splitlines() if line.lstrip().startswith("S2 "))
                 self.assertEqual(row.split()[2], "3h30m", row)
+
+    def accepted(self, *stages: dict) -> None:
+        repo = self.repo
+        write(repo, SPLIT, graph([("S2", [])]))
+        commit(repo, stamp(1), "split", SPLIT)
+        path = record(repo, "S2", *stages)
+        write(repo, REGISTER, register(["S2"]))
+        commit(repo, stamp(2), "S2 done", REGISTER, path)
+
+    def test_e4_a_bracket_that_ended_before_it_started_makes_stage_time_unknown_not_negative(self) -> None:
+        """A7: an implement bracket 12:00 to 10:00 and a half-hour converge: no `-2h30m`."""
+        self.accepted(entry("implement", stamp(1, "12:00:00"), stamp(1, "10:00:00")),
+                      entry("converge", stamp(1, "13:00:00"), stamp(1, "13:30:00")))
+        found = summaries(self.repo)["S2"]
+        self.assertIn("implement", found["stage_seconds"]["unknown"])
+        self.assertIn("before it started", found["stage_seconds"]["unknown"])
+        self.assertIn("unknown", found["entries"][0]["stage_seconds"])
+        self.assertEqual(found["entries"][1]["stage_seconds"], 1800)
+        out = bench(self.repo).stdout
+        self.assertIn("stage time unknown", out)
+        self.assertNotIn("stage time -", out)
+        self.assertEqual(0, bench(self.repo, "overview", FEATURE).returncode)
+
+    def test_e5_an_accepted_demo_with_a_null_end_is_not_a_demo_moment_and_no_traceback(self) -> None:
+        """A8: `"ended": null` on the accepted demo."""
+        demo = entry("demo", stamp(1, "12:00:00"), stamp(1, "12:30:00"), outcome="accepted", driver="human")
+        demo["ended"] = None
+        self.accepted(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")), demo)
+        done = bench(self.repo, "--json")
+        self.assertEqual((0, ""), (done.returncode, done.stderr))
+        self.assertNotIn("demo_accepted", summaries(self.repo)["S2"]["moments"])
 
 
 if __name__ == "__main__":
