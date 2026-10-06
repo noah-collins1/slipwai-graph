@@ -479,6 +479,23 @@ T029 is LOW, for Phase 4.
   `assets/toolkit/scripts/agents/measures.py`, `assets/toolkit/scripts/agents/attribution.py`,
   `tests/test_benchmark_elapsed.py`, `tests/test_benchmark_attribution.py`.
 
+## Phase 10: After-converge gaps (2026-10-06, iteration 24, `drive-gaps` over `d27e921`) — before the demo
+
+AC-S39-1, -4, -6…-10, -12 held (AC-S39-8 checked against the real tree: every unrenamed cell and `--json` key equal,
+`check` byte-identical); -2, -3, -5 partly; -11 not met as written. F1–F5, F8–F10 land before the demo; F6 and F7
+wait on D166 and D167. Each task's RED is the gaps report's reproduction.
+
+- [ ] **T030 — HIGH (F1) · A sibling's delegate never inflates a slice's cost when transcripts are present.** Windows of brackets held on other branches take part in coverage on the transcript path; a request they claim goes to *shared* with a note, and so does a delegate type some stage owns but the only covering stage does not. **Files:** `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/benchmark.py`, `tests/test_benchmark_attribution.py`.
+- [ ] **T031 — HIGH (F2) · Every token a session spent lands in exactly one record or the shared bucket, and the demo can check it.** A searched entry with zero seconds keeps its attributed tokens (its stage time stays unknown); `--json` carries `cost.sessions` (attributed tokens per session); the session's total is read from the transcript, never as `attributed + shared`; RED: the same-second `gaps` repro reads 1 500, and Σ costs + shared = Σ totals over a feature whose sessions are all present. **Files:** `attribution.py`, `benchmark.py`, `tests/test_benchmark_attribution.py`, `quickstart.md` (step 4).
+- [ ] **T032 — HIGH (F3) · *Merged* is the slice's own merge on the first-parent history of the integration branch,** never a catch-up merge into the slice (`git log --merges --first-parent`). **Files:** `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_elapsed.py`.
+- [ ] **T033 — HIGH (F4) · An open park ends at the first bracket any record started after it,** and says so; with none, it reads unknown, never *until accepted*. **Files:** `measures.py`, `tests/test_benchmark_waiting.py`.
+- [ ] **T034 — HIGH (F5) · A partly missing session is not costed as whole.** An entry whose span names a transcript file not on disk is not read from the transcripts; it falls back to the recorded path with the overlap rules, naming the missing file. **Files:** `attribution.py`, `tests/test_benchmark_attribution.py`.
+- [ ] **T035 — MEDIUM (F6) · One name, one figure for stage time — decided by D166.** **Files:** `benchmark.py`, `tests/test_benchmark_elapsed.py`.
+- [ ] **T036 — MEDIUM (F7, plan Q2) · Review is read from a record that says a person — decided by D167.** **Files:** `measures.py`, `tests/test_benchmark_waiting.py`.
+- [ ] **T037 — MEDIUM (F8) · Two features sharing a session split its shared bucket,** never both counting it (or the overlap is flagged). **Files:** `attribution.py`, `tests/test_benchmark_attribution.py`.
+- [ ] **T038 — LOW (F9) · The quickstart runs as written:** `mkdir -p /tmp/s39`, the log copied to scratch (never into the worktree), step 4 as T031 rewrites it, step 2 derived the way the code derives. **Files:** `quickstart.md`.
+- [ ] **T039 — LOW (F10) · No note beside the renamed column says *wall*.** **Files:** `benchmark.py`, `tests/test_benchmark_elapsed.py`.
+
 ## Convergence
 
 ### Pass 1 — 2026-10-06, cruise iteration 24, `drive-converge` (worktree at `957c808`)
