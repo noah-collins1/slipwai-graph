@@ -40,7 +40,8 @@ class Recording:
         return self.result(0, [], [])
 
 
-class SweepsTest(ScopeCase):
+class Recorded(ScopeCase):
+    """A project whose scoped run is read through the recording `Runner`: shared by the suites that need one."""
     makefile_arg = "Makefile"  # what the recipe's `$(firstword $(MAKEFILE_LIST))` is, which T041's examples vary
 
     def on_main(self, *names: str, text: str = "package x\n") -> None:
@@ -69,6 +70,8 @@ class SweepsTest(ScopeCase):
             os.environ.update(saved)
         return status, out.getvalue().splitlines(), recording
 
+
+class SweepsTest(Recorded):
     def test_e1_a_changed_added_or_deleted_gremlins_yaml_sweeps_that_service_only(self) -> None:
         self.on_main(YAML, text="unleash: {}\n")
         self.write("apps/service/health/more.go")

@@ -6,10 +6,8 @@ the base commit holding the old pom; the tool is the recording `Runner` of `test
 """
 from __future__ import annotations
 
-import test_mutation_sweeps
-from mutation_scope_fixture import ScopeCase
 from test_mutation_scope_spring import POM, SWEEP, FakeExecute, SpringCase, params
-from test_mutation_sweeps import SPRING
+from test_mutation_sweeps import SPRING, Recorded
 
 JAVA = "apps/spring/src/main/java/com/example/x/A.java"
 POM_PATH = "apps/spring/pom.xml"
@@ -25,10 +23,7 @@ PROPERTIES = (PIT.replace("<param>com.example.x.*</param></targetClasses>", READ
               .replace("<build>", SET + "<build>"))
 
 
-class PomTest(ScopeCase):
-    on_main = test_mutation_sweeps.SweepsTest.on_main  # type: ignore[assignment]
-    run_recording = test_mutation_sweeps.SweepsTest.run_recording  # type: ignore[assignment]
-
+class PomTest(Recorded):
     def swept(self, text: str, base: str = PIT) -> tuple[list[str], list[str]]:
         """The pom changes from `base` to `text` beside a changed class: which services swept, and the lines said."""
         self.on_main(POM_PATH, text=base)

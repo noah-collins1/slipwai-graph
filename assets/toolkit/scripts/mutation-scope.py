@@ -179,8 +179,10 @@ def shown(text: str) -> str:
 
 
 def resolved(scope: Any, ref: str) -> str:
-    """The commit `SINCE` names, or a refusal naming it."""
-    found = scope.git("rev-parse", "--verify", "--end-of-options", ref + "^{commit}")
+    """The commit `SINCE` names, as git resolves it (`:/<message>`, a tag, a hash, a branch), or a refusal naming it: the ref
+    is resolved first and `^{commit}` is applied to the hash it gave, since `:/<message>^{commit}` is a different message."""
+    named = scope.git("rev-parse", "--verify", "--end-of-options", ref)
+    found = scope.git("rev-parse", "--verify", "--end-of-options", named.strip() + "^{commit}") if named else None
     if not found or not found.strip():
         raise Refused(f"SINCE `{shown(ref)}` names no commit")
     return str(found.strip())
@@ -224,7 +226,10 @@ def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str], Any, str]:
             prefix = (scope.git("rev-parse", "--show-prefix") or "").strip()
             for path in sorted(span.paths):  # from the top of the repository; the changes here start at the project
                 if path.startswith(prefix) and path[len(prefix):]:
-                    found.setdefault(path[len(prefix):], "M")
+                    # a file the unpushed commits removed is not in the base's tree, and is deleted whatever else happened
+                    here = path[len(prefix):]
+                    gone = scope.git("cat-file", "-e", f"{base.commit}:./{here}") is None
+                    found.setdefault(here, "D" if gone else "M")
             clause = f"; {span.note}" if span.paths else ""
             return f"`{shown(str(base.named))}` at {short}{clause}", found, scope, base.commit
         commit = resolved(where.scope, since)
@@ -343,6 +348,11 @@ def pom_changed(tool: Any, commit: str, path: str) -> bool:
         return True
 
 
+IGNORED = "`{path}` is a path git ignores, so whether it changed cannot be told"
+NESTED = "`{path}` is a nested repository, so the files in it cannot be told apart"
+# Directories of dependencies and build output, which no sweep of a service mutates and a scope never names.
+DEPENDENCIES = ("vendor", "node_modules", "target", "build", "dist", ".venv", "venv", "__pycache__", ".gradle")
+PRODUCTION_ROOT = {"go": "", "java-spring": "src/main/java/"}  # where a wired service's production sources live
 OTHER_JVM = (".kt", ".groovy", ".scala")
 
 
@@ -363,6 +373,37 @@ def own_makefile(makefile: str) -> str:
     if os.path.normpath(makefile) not in named:
         return makefile
     return next((name for name in DEFAULT_MAKEFILES if os.path.exists(name)), "Makefile")
+
+
+def unlisted(changes: dict[str, str], services: list[tuple[str, str]], tool: Any) -> list[tuple[Unlisted, str]]:
+    """The paths under a wired service's production sources that git does not list as changed, whatever they hold: files and
+    directories it ignores, and a nested repository (listed once as `dir/`). Each is a sweep of that service, since a sweep
+    mutates what a scope cannot name. Dependency and build-output directories are left out."""
+    wired = [(backend, root) for backend, root in services if backend in PRODUCTION_ROOT]
+    if not wired:
+        return []
+    listing = tool.git("ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory", "--",
+                       *sorted({root for _, root in wired}))
+    if listing is None:
+        raise Sweep(unreadable(RuntimeError("git cannot list the ignored files")))
+    found: list[tuple[Unlisted, str]] = []
+    for path in [*(name for name in listing.split("\0") if name), *(name for name in changes if name.endswith("/"))]:
+        owners = [(backend, root) for backend, root in wired if path.startswith(root + "/")]
+        if not owners:
+            continue
+        backend, root = max(owners, key=lambda owner: len(owner[1]))
+        inside = path[len(root) + 1:]
+        if any(part in DEPENDENCIES for part in inside.split("/")):
+            continue
+        prefix = PRODUCTION_ROOT[backend]
+        if path.endswith("/"):
+            reads = inside.startswith(prefix) or prefix.startswith(inside)
+        else:
+            reads = KINDS[backend](inside) == "production"
+        if reads:
+            nested = path in changes
+            found.append((Unlisted(path, (NESTED if nested else IGNORED).format(path=shown(path))), root))
+    return found
 
 
 def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool: Any, commit: str,
@@ -386,6 +427,8 @@ def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool:
                                               or other_jvm(path, root)))
             if wired:
                 per.setdefault(root, []).append(path)
+    for path, root in unlisted(changes, services, tool):
+        per.setdefault(root, []).append(path)
     return whole, per
 
 
@@ -694,8 +737,19 @@ class Tools:
         return refusal(backend, path, [])
 
 
+class Unlisted(str):
+    """A path git cannot say changed — one it ignores, or one in a nested repository — with the words that say so."""
+
+    words: str
+
+    def __new__(cls, path: str, words: str) -> "Unlisted":
+        found = super().__new__(cls, path)
+        found.words = words
+        return found
+
+
 def said(paths: list[str]) -> str:
-    return ", ".join(f"`{shown(path)}` changed" for path in paths)
+    return ", ".join(path.words if isinstance(path, Unlisted) else f"`{shown(path)}` changed" for path in paths)
 
 
 def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], runner: Runner,

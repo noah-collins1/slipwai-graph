@@ -5,9 +5,14 @@ is a production file, so a Python or TypeScript service is declared on the Go pr
 """
 from __future__ import annotations
 
+import subprocess
+
 from mutation_scope_fixture import HEALTH, ScopeCase
 from stamp_fixture import git
 from test_mutation_borders import clean_environment
+from test_mutation_sweeps import Recorded
+
+TWO = ("go:apps/service", "go:apps/billing")
 
 
 class ChangeSetTest(ScopeCase):
@@ -87,3 +92,73 @@ class ChangeSetTest(ScopeCase):
         ran = self.run_in_process()
         self.assertEqual(ran.first, "mutation: no mutant to run — no production file changed")
         self.assertEqual((ran.status, ran.runner.seen, ran.make_calls), (0, [], []))
+
+
+class UnlistedTest(Recorded):
+    """T042 (A4, A8): a file git does not list as changed is a sweep cause; `SINCE` is resolved as git does."""
+
+    def exclude(self, pattern: str) -> None:
+        with (self.repo / ".git/info/exclude").open("a", encoding="utf-8") as handle:
+            handle.write(pattern + "\n")
+
+    def swept(self, *words: str) -> tuple[list[str], list[str], int]:
+        status, lines, recording = self.run_recording(*(words or TWO))
+        return recording.swept, lines, status
+
+    def test_a4_an_ignored_production_file_under_a_service_sweeps_that_service(self) -> None:
+        self.exclude("apps/service/health/ignored_gen.go")
+        self.write("apps/service/health/ignored_gen.go")
+        swept, lines, status = self.swept()
+        said = "`apps/service/health/ignored_gen.go` is a path git ignores, so whether it changed cannot be told"
+        self.assertEqual((swept, status), (["apps/service"], 0), lines)
+        self.assertEqual(lines[0], f"mutation: the sweep runs — {said}", lines)
+        self.assertIn(f"mutation: sweep apps/service — {said}", lines)
+        self.assertNotIn("mutation: no mutant to run — no production file changed", lines)
+
+    def test_a4_an_ignored_directory_of_sources_and_a_nested_repository_sweep_that_service(self) -> None:
+        for name, make in (("an ignored directory", self.ignored_directory), ("a nested repository", self.nested)):
+            with self.subTest(case=name):
+                self.setUp()
+                path = make()
+                swept, lines, _ = self.swept()
+                self.assertEqual(swept, ["apps/service"], lines)
+                self.assertTrue(lines[0].startswith(f"mutation: the sweep runs — `{path}` is a "), lines)
+
+    def ignored_directory(self) -> str:
+        self.exclude("apps/service/gen/")
+        self.write("apps/service/gen/x.go")
+        return "apps/service/gen/"
+
+    def nested(self) -> str:
+        (self.repo / "apps/service/inner").mkdir()
+        self.write("apps/service/inner/x.go")
+        subprocess.run(["git", "init", "-q"], cwd=self.repo / "apps/service/inner", check=True, timeout=60)
+        return "apps/service/inner/"
+
+    def test_a4_hold_ignored_files_that_are_not_sources_or_are_dependencies_stay_scoped(self) -> None:
+        for pattern, path in (("*.log", "apps/service/run.log"), ("vendor/", "apps/service/vendor/x/x.go"),
+                              ("gremlins.json", "apps/service/gremlins.json")):
+            with self.subTest(path=path):
+                self.setUp()
+                self.exclude(pattern)
+                self.write(path)
+                self.write("apps/billing/b.go")
+                swept, lines, _ = self.swept()
+                self.assertEqual(swept, [], lines)
+                self.assertTrue(lines[0].startswith("mutation: scoped to 1 changed file(s)"), lines)
+
+    def test_a8_since_resolves_as_git_resolves_it(self) -> None:
+        git(self.repo, "checkout", "-q", "main")
+        self.write("apps/service/config/marked.go")
+        self.commit("marker commit")
+        self.write("apps/service/config/later.go")
+        self.commit("later")
+        for ref in (":/marker commit", ":/marker"):
+            with self.subTest(ref=ref):
+                ran = self.run_in_process(env=clean_environment(SINCE=ref))
+                self.assertEqual(ran.status, 0, ran.out)
+                self.assertEqual(ran.first, f"mutation: scoped to 1 changed file(s) since `{ref}`: "
+                                 "apps/service/config/later.go", ran.out)
+        ran = self.run_in_process(env=clean_environment(SINCE=":/no commit says this"))
+        self.assertEqual((ran.status, ran.runner.seen), (2, []))
+        self.assertIn("names no commit", ran.first)

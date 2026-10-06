@@ -70,3 +70,34 @@ class UnpushedTrunkTest(ScopeCase):
         ran = self.run_in_process(env=clean_environment(SINCE="main"))
         self.assertEqual(ran.first, "mutation: no mutant to run — no production file changed", ran.out)
         self.assertEqual((ran.make_calls, ran.runner.seen), ([], []))
+
+    def test_a6_a_file_an_unpushed_trunk_commit_deleted_is_named_deleted_and_is_not_scoped(self) -> None:
+        self.remote(push=True)
+        git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "rm", "-q", HEALTH)
+        self.commit("main deletes, unpushed")
+        git(self.repo, "checkout", "-q", "-B", SLICE)
+        ran = self.run_in_process()
+        self.assertIn(f"mutation: not mutated {HEALTH} — deleted, no mutants", ran.lines)
+        self.assertEqual((ran.runner.seen, ran.make_calls, ran.status), ([], [], 0), ran.out)
+
+    def test_a6_the_old_path_of_an_unpushed_rename_is_deleted_and_the_new_one_scoped(self) -> None:
+        self.remote(push=True)
+        git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "mv", HEALTH, "apps/service/health/status.go")
+        self.commit("main renames, unpushed")
+        git(self.repo, "checkout", "-q", "-B", SLICE)
+        ran = self.run_in_process()
+        self.assertIn(f"mutation: not mutated {HEALTH} — deleted, no mutants", ran.lines)
+        self.assertEqual(ran.runner.seen, [("apps/service", ["health/status.go"])], ran.out)
+
+    def test_a6_a_file_added_then_deleted_in_unpushed_commits_is_a_change_not_a_deletion_of_a_known_file(self) -> None:
+        self.remote(push=True)
+        git(self.repo, "checkout", "-q", "main")
+        self.write("apps/service/health/flash.go")
+        self.commit("main adds")
+        git(self.repo, "rm", "-q", "apps/service/health/flash.go")
+        self.commit("main removes it again")
+        git(self.repo, "checkout", "-q", "-B", SLICE)
+        ran = self.run_in_process()
+        self.assertEqual((ran.runner.seen, ran.status), ([], 0), ran.out)
