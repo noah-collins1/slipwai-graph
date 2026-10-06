@@ -499,3 +499,104 @@ def feature_figures(parts: list[dict[str, Any]]) -> dict[str, Any]:
         elapsed = max(part["accepted"] for part in slices) - min(readies)
     return {"elapsed": elapsed, "stage_seconds": sum(part["stage_seconds"] for part in parts),
             "in_flight_seconds": length([span for part in slices for span in part["worked"]])}
+
+
+# --- decision health --------------------------------------------------------------------------------------------
+
+# How a decision entry spells what decision health reads. This is the plan's Q1 option (a), pending the host's number
+# (S26 writes the `Reversibility:` line, S28 the review statuses): when either changes a spelling, it changes here.
+SPELLING = {
+    "entry": re.compile(r"^## D\d+ — ", re.M),      # an entry opens on this line
+    "tier_line": re.compile(r"^- \*\*Reversibility:\*\*(.*)$", re.M),
+    "tiers": ("easy", "guarded", "hard"),           # the first of these on the line is the entry's tier
+    "escalation": re.compile(r"\b(?:easy|guarded)\s*(?:→|->)\s*hard\b"),
+    "status_line": re.compile(r"^- \*\*Status:\*\*(.*)$", re.M),
+    "reviewed": ("ratified", "reverted"),           # a review's verdict, as the Status line says it
+    "reverted": "reverted",
+    "when": re.compile(r"\*\*When:\*\*\s*(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)"),
+}
+NO_TIER = "no decision entry carries a Reversibility: line"
+BAND = (5, 15)      # escalation share, percent, inclusive: outside it is flagged
+OVER = 5            # misclassification rate, percent: over it is flagged
+
+
+def decision_entries(text: str) -> list[dict[str, Any]]:
+    """Each entry's tier (None where it has none), whether it escalated, its status and the moment it was written."""
+    found = []
+    for part in SPELLING["entry"].split(text)[1:]:
+        line = SPELLING["tier_line"].search(part)
+        status = SPELLING["status_line"].search(part)
+        when = SPELLING["when"].search(part)
+        value = line.group(1) if line else ""
+        words = re.findall(r"\b(" + "|".join(SPELLING["tiers"]) + r")\b", value)
+        found.append({"tier": words[0] if words else None, "escalated": bool(SPELLING["escalation"].search(value)),
+                      "status": status.group(1) if status else "", "when": epoch(when.group(1)) if when else None})
+    return found
+
+
+def share(numerator: int, denominator: int, none: str, flagged: Callable[[int, int], bool], why: str) -> dict[str, Any]:
+    """A rate in percent (a whole number where it is whole, else one decimal), or unknown naming the empty denominator."""
+    if denominator == 0:
+        return unknown(none)
+    exact = numerator * 100 / denominator
+    return {"percent": int(exact) if numerator * 100 % denominator == 0 else round(exact, 1),
+            "numerator": numerator, "denominator": denominator,
+            "flagged": flagged(numerator, denominator), "why": why if flagged(numerator, denominator) else None}
+
+
+def median(values: list[int]) -> int | float:
+    ordered = sorted(values)
+    middle = len(ordered) // 2
+    return ordered[middle] if len(ordered) % 2 else (ordered[middle - 1] + ordered[middle]) / 2
+
+
+def decision_health(text: str, skippers: list[tuple[int, int, int]]) -> dict[str, Any]:
+    """The feature's escalation share, misclassification rate and median wait by tier, from its `decisions.md` and
+    the `skipper` brackets of its records, each `(start, end, seconds)`. A figure nothing supports is unknown, with why."""
+    entries = decision_entries(text)
+    tiered = [entry for entry in entries if entry["tier"]]
+    if not tiered:
+        return {key: unknown(NO_TIER) for key in ("escalation_share", "misclassification_rate", "median_wait")}
+    scored = [entry for entry in tiered if entry["tier"] != "hard"]
+    reviewed = [entry for entry in tiered if any(word in entry["status"] for word in SPELLING["reviewed"])]
+    waits: dict[str, Any] = {}
+    for tier in SPELLING["tiers"]:
+        mine = [entry for entry in tiered if entry["tier"] == tier]
+        # The shortest bracket holding the moment is the skipper that decided it, not an enclosing one.
+        reads = [min(held, key=lambda span: span[1] - span[0])[2] for entry in mine if entry["when"] is not None
+                 if (held := [span for span in skippers if span[0] <= entry["when"] <= span[1]])]
+        waits[tier] = median(reads) if reads else unknown(
+            f"no {tier} entry" if not mine else f"no skipper bracket holds a {tier} entry's When: moment")
+    return {
+        "escalation_share": share(sum(entry["escalated"] for entry in scored), len(scored),
+                                  "no entry is scored easy or guarded",
+                                  lambda top, bottom: not BAND[0] * bottom <= top * 100 <= BAND[1] * bottom,
+                                  f"outside the healthy band {BAND[0]}–{BAND[1]}%"),
+        "misclassification_rate": share(sum(SPELLING["reverted"] in entry["status"] for entry in reviewed),
+                                        len(reviewed), "no tiered entry was ratified or reverted",
+                                        lambda top, bottom: top * 100 > OVER * bottom, f"over {OVER}%"),
+        "median_wait": waits,
+    }
+
+
+def percent_text(percent: int | float) -> str:
+    return f"{percent}%"
+
+
+def health_lines(health: dict[str, Any], wall: Callable[[int], str]) -> list[str]:
+    """The three lines the aggregate and the page print: a figure with its numerator and denominator and, where it is
+    flagged, why; or `unknown — <reason>` with no number."""
+    def rate(figure: Any, name: str, of: str) -> str:
+        if is_unknown(figure):
+            return f"{name}: unknown — {figure['unknown']}"
+        return (f"{name}: {percent_text(figure['percent'])} ({figure['numerator']} of {figure['denominator']} {of})"
+                + (f" — {figure['why']}" if figure["flagged"] else ""))
+    waits = health["median_wait"]
+    if is_unknown(waits):
+        wait = f"median wait: unknown — {waits['unknown']}"
+    else:
+        wait = "median wait: " + ", ".join(
+            f"{tier} unknown ({figure['unknown']})" if is_unknown(figure) else f"{tier} {wall(round(figure))}"
+            for tier, figure in waits.items())
+    return [rate(health["escalation_share"], "escalation share", "entries scored easy or guarded"),
+            rate(health["misclassification_rate"], "misclassification rate", "reviewed"), wait]

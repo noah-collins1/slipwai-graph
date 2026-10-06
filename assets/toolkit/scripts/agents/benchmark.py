@@ -1046,6 +1046,19 @@ def feature_text(summaries: list[dict[str, Any]]) -> str:
             f"time with any slice in flight {wall(found['in_flight_seconds'])}")
 
 
+def decision_health(feature: str, records_: list[dict[str, Any]]) -> dict[str, Any]:
+    """The feature's decision health: `specs/<feature>/decisions.md` and every `skipper` bracket its records hold."""
+    log = ROOT / "specs" / feature / "decisions.md"
+    spans = [(span[0], span[1], int(item.get("seconds", 0))) for record in records_
+             for item in record.get("stages", []) if item.get("stage") == "skipper"
+             if (span := measures().bounds(item)) is not None]
+    return measures().decision_health(log.read_text(encoding="utf-8") if log.is_file() else "", spans)
+
+
+def health_lines(feature: str, records_: list[dict[str, Any]]) -> list[str]:
+    return measures().health_lines(decision_health(feature, records_), wall)
+
+
 def aggregate() -> str:
     grouped = by_feature()
     if not grouped:
@@ -1056,7 +1069,8 @@ def aggregate() -> str:
         slices = [summary for summary in summaries if summary["slice"]]
         head = f"{feature} — {len(slices)} slice(s) recorded, {feature_text(summaries)}"
         waits = waiting_rows(summaries)
-        blocks.append("\n".join([head, table([row(summary) for summary in summaries]),
+        blocks.append("\n".join([head, *(f"  {line}" for line in health_lines(feature, [r for _, r in entries])),
+                                 table([row(summary) for summary in summaries]),
                                  *([table(waits, WAITING_COLUMNS)] if waits else []),
                                  *(f"  {line}" for line in notes(summaries, [record for _, record in entries]))]))
     return "\n\n".join(blocks) + f"\n\n{LEGEND}"
@@ -1139,6 +1153,7 @@ def overview(feature: str | None = None) -> list[Path]:
         found = notes(summaries, records_)
         parts.append("## Notes\n\n" + ("\n".join(f"- {line}" for line in found) if found else "Nothing open, no rework, "
                                                                                           "every stage's tokens read."))
+        parts.append("## Decision health\n\n" + "\n".join(f"- {line}" for line in health_lines(name, records_)))
         parts.append(f"## Reading these numbers\n\n{READING}")
         page = ROOT / "specs" / name / OVERVIEW
         page.write_text("\n\n".join(parts) + "\n", encoding="utf-8", newline="\n")
@@ -1155,6 +1170,8 @@ def json_records() -> list[dict[str, Any]]:
             if not item["slice"]:
                 item["feature_figures"] = figures(mine)
                 item["session_totals"] = attributed()["features"][str(item["feature"])]["sessions"]
+                item["decision_health"] = decision_health(
+                    str(item["feature"]), [record for _, record in by_feature()[str(item["feature"])]])
     return [{key: value for key, value in item.items() if not key.startswith("_")} for item in found]
 
 
