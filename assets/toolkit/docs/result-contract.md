@@ -115,5 +115,16 @@ harness could not read, is listed as not attributable and counted as neither owe
 Each line names the stage and the type(s), and the one for nothing recorded reads `nothing recorded — a finding for
 converge`. The `<stage>` you pass `--hand-back` is the name of the stage's open benchmark entry, so the record and
 `benchmark.json` agree.
+A stage owes a block only if it ended after the contract reached the project: the arrival is the author time of the
+earliest commit that added `hand_backs.py`, read from git, and a stage whose `ended` is strictly earlier is listed as
+`predates the result contract (<short sha>, <date>) — owes nothing` and is counted in neither number. A stage that
+began before the arrival and ended after it still owes one. Where git cannot say (no `git`, not a repository, a
+shallow clone, a module no commit has added yet, a stage whose `ended` does not parse) the stage is listed as
+`could not tell` with the reason, and is not counted either; `commit what slipwai migrate wrote, and this can tell`
+is the line for the module no commit has added. The total reads `with a result contract: n of m`, then `; k predate the
+contract` and `; j could not tell — not counted` when those are not 0. `make benchmark` prints one line for every
+slice's predating stages together, `hand-backs: k stage(s) in s slice(s) ended before the result contract reached this
+project (<short sha>, <date>) — not counted`, and a line of a slice's own only where it has a stage that owes a block,
+could not be attributed or could not be told.
 `make check-decisions` holds every `hand-backs.md` to the shape above and prints one line per fault, naming the file,
 the entry's heading and the field. A project with no `hand-backs.md` gets the gate it always had.

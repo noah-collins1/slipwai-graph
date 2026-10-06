@@ -856,8 +856,9 @@ def by_feature() -> dict[str, list[tuple[Path, dict[str, Any]]]]:
 
 
 def hand_back_lines(records_: list[dict[str, Any]]) -> list[str]:
-    """Per record with a delegated or unattributed stage, how many delegated stages handed back a result-contract
-    block (`scripts/hand_backs.py`, loaded by path with bytecode off). None where a project lacks the module."""
+    """Per record with a delegated, unattributed or could-not-tell stage, how many delegated stages handed back a
+    result-contract block, and in one line the stages of every slice that ended before the contract reached the
+    project (`scripts/hand_backs.py`, loaded by path with bytecode off). None where a project lacks the module."""
     path = Path(__file__).resolve().parent.parent / "hand_backs.py"
     if not path.is_file():
         return []
@@ -867,19 +868,28 @@ def hand_back_lines(records_: list[dict[str, Any]]) -> list[str]:
         return []
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    arrived = module.contract_arrived()
     lines = []
+    predated = slices = 0
     for record in records_:
         folder = ROOT / "specs" / str(record.get("feature"))
         if record.get("slice"):
             folder = folder / "slices" / str(record["slice"])
         kept = folder / "hand-backs.md"
         text = kept.read_text(encoding="utf-8") if kept.is_file() else ""
-        _, held, delegated, unattributed = module.coverage(
-            record.get("stages", []), text, module.decision_ids(ROOT / "specs" / str(record.get("feature"))))
-        if delegated or unattributed:
-            lines.append(f"{record.get('slice') or '(feature)'}: hand-backs with a result contract: {held} of {delegated}"
-                         + (f"; {unattributed} stage(s) the harness could not attribute — not counted"
-                            if unattributed else ""))
+        found = module.coverage(
+            record.get("stages", []), text, module.decision_ids(ROOT / "specs" / str(record.get("feature"))), arrived)
+        predated += found.predates
+        slices += bool(found.predates)
+        if found.delegated or found.unattributed or found.untold:
+            lines.append(f"{record.get('slice') or '(feature)'}: hand-backs with a result contract: "
+                         f"{found.held} of {found.delegated}"
+                         + (f"; {found.unattributed} stage(s) the harness could not attribute — not counted"
+                            if found.unattributed else "")
+                         + (f"; {found.untold} could not tell — not counted" if found.untold else ""))
+    if predated:
+        lines.append(f"hand-backs: {predated} stage(s) in {slices} slice(s) ended before the result contract reached "
+                     f"this project ({arrived.short}, {arrived.date}) — not counted")
     return lines
 
 

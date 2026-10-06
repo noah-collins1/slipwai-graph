@@ -11,8 +11,10 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 SCHEMA = 1
 FENCE = "result-contract"
@@ -382,27 +384,123 @@ def owed(stage: dict[str, Any]) -> list[str]:
     return [agent for agent in stage.get(AGENTS) or [] if stage["stage"] in OWNERS.get(agent, ())]
 
 
-def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None) -> tuple[list[str], int, int, int]:
+class Arrival(NamedTuple):
+    """When this module reached the project (D161): `at` is the author time of the earliest commit that added it, with
+    that commit's short id and date; where git cannot tell, `at` is None and `why` says what stops it."""
+    at: datetime | None
+    short: str = ""
+    date: str = ""
+    why: str = ""
+
+
+def git_out(directory: Path, *args: str) -> str | None:
+    """`git <args>` run in `directory`, its stdout; None where git is not there or refuses."""
+    try:
+        done = subprocess.run(["git", "-C", str(directory), *args], capture_output=True, text=True, check=False,
+                              env={**os.environ, "LC_ALL": "C", "GIT_OPTIONAL_LOCKS": "0"})
+    except OSError:
+        return None
+    return done.stdout if done.returncode == 0 else None
+
+
+def contract_arrived(module: Path | None = None) -> Arrival:
+    """The arrival of `module` (default: this file): one `git log --diff-filter=A` for the commits that added it,
+    the earliest by author time, since a rebase moves the committer time later and would excuse more stages. The path
+    is taken from the git top level, so every layout works without a list of them. Where git cannot say — no git, not
+    a repository, a shallow clone (its earliest visible commit can look later than it was), a module no commit has
+    added — `at` is None and `why` is the reason. Reads git and writes nothing."""
+    path = (module or Path(__file__)).resolve()
+    top = git_out(path.parent, "rev-parse", "--show-toplevel")
+    if top is None:
+        return Arrival(None, why="git is not on the PATH or this is not a repository it can read")
+    if (git_out(path.parent, "rev-parse", "--is-shallow-repository") or "").strip() == "true":
+        return Arrival(None, why="this is a shallow clone, so the first commit git can see may not be the first")
+    root = Path(top.strip()).resolve()
+    relative = path.relative_to(root).as_posix()
+    log = git_out(root, "log", "--diff-filter=A", "--format=%at%x09%h%x09%aI", "--", relative)
+    commits = [line.split("\t") for line in (log or "").splitlines() if line.count("\t") == 2]
+    if not commits:
+        return Arrival(None, why=f"no commit has added {path.name} yet: commit what slipwai migrate wrote, "
+                                 "and this can tell")
+    seconds, short, when = min(commits, key=lambda commit: int(commit[0]))
+    return Arrival(datetime.fromtimestamp(int(seconds), timezone.utc), short, when[:10])
+
+
+def instant(value: object) -> datetime | None:
+    """A `YYYY-MM-DDTHH:MM:SSZ` string as a UTC instant; None for anything else."""
+    if not isinstance(value, str) or not re.fullmatch(INSTANT, value):
+        return None
+    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+
+class Coverage(NamedTuple):
+    """`lines` to print; `held` stages with a passing block of `delegated` that owe one; `unattributed` stages whose
+    delegates could not be read, `predates` that ended before the contract arrived and `untold` where it could not be
+    told whether they did (each said once and counted as neither owed nor held)."""
+    lines: list[str]
+    held: int
+    delegated: int
+    unattributed: int
+    predates: int = 0
+    untold: int = 0
+
+
+def cut_off(stage: dict[str, Any], arrived: Arrival | None) -> tuple[str, str] | None:
+    """For a stage that would owe or be listed: `("predates", line)` where it ended strictly before the arrival,
+    `("untold", line)` where that cannot be told, None where it owes as before (also when no arrival was asked for)."""
+    if arrived is None:
+        return None
+    if arrived.at is None:
+        return "untold", f"could not tell whether it predates the result contract ({arrived.why}) — not counted"
+    ended = instant(stage.get("ended"))
+    if ended is None:
+        return "untold", ("could not tell whether it predates the result contract (its ended instant "
+                          f"{stage.get('ended')!r} does not parse) — not counted")
+    if ended < arrived.at:
+        return "predates", f"predates the result contract ({arrived.short}, {arrived.date}) — owes nothing"
+    return None
+
+
+def attributable(stage: dict[str, Any]) -> bool:
+    """Whether the harness's reading names the stage's delegates: it read a usage, and the stage's `agents` are
+    recorded where a delegate ran."""
+    usage = stage.get("usage")
+    if usage is not None and not usage.get("source"):
+        return False
+    return not (stage.get("delegated") and not stage.get(AGENTS))
+
+
+def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None,
+             arrived: Arrival | None = None) -> Coverage:
     """For each ended stage of a slice's `benchmark.json`, whether the record holds what the stage's delegates
     handed back: the lines to print, how many stages that owe a block have a passing one, how many owe one and how
     many could not be attributed (no usage read, or delegated with no agent types recorded: counted as neither, said
-    once). A stage owes a block when a typed delegate that belongs to it ran (`owed`); one that only started untyped
-    helpers, or `drive-slice`, owes this record nothing and is not listed. A block belongs to a stage when its heading
-    names the stage and one of the types that owe it, and the `started` of its heading is the stage's own (D160)."""
+    once). A stage owes a block when a typed delegate
+    that belongs to it ran (`owed`); one that only started untyped helpers, or `drive-slice`, owes this record nothing
+    and is not listed. A stage that ended strictly before `arrived` (`contract_arrived`, read by the caller so this
+    stays pure) owes nothing and is said to predate the contract; where the arrival could not be told, the stage is
+    said and not counted. A block belongs to a stage when its heading names the stage and one of the types that owe it
+    and the `started` of its heading is the stage's own (D160)."""
     entries = [entry for entry in extract(record) if entry["match"] is not None and not entry_faults(entry)]
     lines: list[str] = []
-    held = delegated = unattributed = 0
+    held = delegated = unattributed = predates = untold = 0
     for stage in stages:
-        usage = stage.get("usage")
         if "ended" not in stage:
             continue
         name, started = stage["stage"], stage.get("started", "")
-        if (usage is not None and not usage.get("source")) or (stage.get("delegated") and not stage.get(AGENTS)):
+        types = owed(stage)
+        unreadable = not attributable(stage)
+        if not unreadable and (not stage.get("delegated") or not types):
+            continue
+        cut = cut_off(stage, arrived)
+        if cut is not None:
+            predates += cut[0] == "predates"
+            untold += cut[0] == "untold"
+            lines.append(f"hand-backs: {name} {started}: {cut[1]}")
+            continue
+        if unreadable:
             unattributed += 1
             lines.append(f"hand-backs: {name} {started}: the harness could not attribute its delegates — not counted")
-            continue
-        types = owed(stage)
-        if not stage.get("delegated") or not types:
             continue
         delegated += 1
         mine = [entry for entry in entries
@@ -417,4 +515,4 @@ def coverage(stages: list[dict[str, Any]], record: str, known: set[str] | None) 
             lines.append(f"hand-backs: {name} {started} {', '.join(types)}: missing — {reason}")
         else:
             lines.append(f"hand-backs: {name} {started} {', '.join(types)}: nothing recorded — a finding for converge")
-    return lines, held, delegated, unattributed
+    return Coverage(lines, held, delegated, unattributed, predates, untold)

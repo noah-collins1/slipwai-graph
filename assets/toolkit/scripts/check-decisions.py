@@ -643,11 +643,14 @@ def coverage_verb(arguments: list[str]) -> int:
     stages = json.loads(bench.read_text(encoding="utf-8")).get("stages", []) if bench.is_file() else []
     record = where / HAND_BACKS
     module = hand_backs_module()
-    lines, held, delegated, _ = module.coverage(
-        stages, read(record) if record.is_file() else "", module.decision_ids(ROOT / "specs" / folder.group(1)))
-    for line in lines:
+    found = module.coverage(
+        stages, read(record) if record.is_file() else "", module.decision_ids(ROOT / "specs" / folder.group(1)),
+        module.contract_arrived())
+    for line in found.lines:
         print(line)
-    print(f"hand-backs: with a result contract: {held} of {delegated}")
+    print(f"hand-backs: with a result contract: {found.held} of {found.delegated}"
+          + (f"; {found.predates} predate the contract" if found.predates else "")
+          + (f"; {found.untold} could not tell — not counted" if found.untold else ""))
     return 0
 
 

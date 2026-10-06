@@ -3,6 +3,7 @@ under `specs/f/slices/S1/`, a valid block, and the checker run as `python3 -B` t
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -74,3 +75,24 @@ def gate(record: str, decisions: int = 134, path: str = RECORD) -> subprocess.Co
 def findings(result: subprocess.CompletedProcess[str]) -> list[str]:
     """The finding lines on stderr, indentation removed."""
     return [line.strip() for line in result.stderr.splitlines() if line.startswith("  ")]
+
+
+def git(repo: Path, *args: str, author: str | None = None, committer: str | None = None) -> str:
+    """`git <args>` in `repo`, as a throwaway identity; `author` and `committer` are the commit's two instants."""
+    env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull,
+           "GIT_AUTHOR_NAME": "a", "GIT_AUTHOR_EMAIL": "a@x", "GIT_COMMITTER_NAME": "a", "GIT_COMMITTER_EMAIL": "a@x"}
+    if author:
+        env["GIT_AUTHOR_DATE"] = author
+    if committer or author:
+        env["GIT_COMMITTER_DATE"] = committer or author or ""
+    return subprocess.run(["git", "-C", str(repo), *args], check=True, text=True, capture_output=True, env=env).stdout
+
+
+def commit(repo: Path, author: str, *paths: str, committer: str | None = None, root: Path | None = None) -> None:
+    """Commit `paths` (default `scripts`) of the project at `repo`, made a repository at `root` (default `repo`) if it
+    is not one, with author time `author`."""
+    top = root or repo
+    if not (top / ".git").exists():
+        git(top, "init", "-q")
+    git(top, "add", "--", *[(repo / path).relative_to(top).as_posix() for path in paths or ("scripts",)])
+    git(top, "commit", "-q", "-m", "arrive", author=author, committer=committer)

@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from hand_backs_fixture import SCRIPTS, entry, run, scratch, valid
+from hand_backs_fixture import SCRIPTS, commit, entry, run, scratch, valid
 
 SLICE = "specs/f/slices/S1"
 IMPLEMENT = "## 2026-10-05T17:01:02Z — drive-implement — implement — 2026-10-05T17:00:00Z"
@@ -34,12 +34,16 @@ def stage(name: str, started: str, ended: str, delegated: bool = True, source: s
             "agents": kept, "usage": {"source": source, "reason": None if source else "no transcript"}}
 
 
-def project(directory: str, stages: list[dict[str, Any]], record: str | None = None) -> Path:
+def project(directory: str, stages: list[dict[str, Any]], record: str | None = None,
+            arrived: str | None = "2000-01-01T00:00:00Z") -> Path:
+    """A scratch project; its scripts are committed at `arrived` (D161), or it is no repository at all."""
     repo = scratch(directory, record)
     (repo / "scripts/agents").mkdir()
     shutil.copy(SCRIPTS / "agents/benchmark.py", repo / "scripts/agents/benchmark.py")
     (repo / SLICE / "benchmark.json").write_text(
         json.dumps({"feature": "f", "slice": "S1", "stages": stages}), encoding="utf-8")
+    if arrived:
+        commit(repo, arrived)
     return repo
 
 
