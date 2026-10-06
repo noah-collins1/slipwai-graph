@@ -46,6 +46,10 @@
 # `eventstorecontract` is the suite every store adapter runs, shipped as a non-test package so an adapter's
 # tests can import it, where a survivor is a weakness in a test helper and not a rule nothing checks. Lower
 # the threshold only for an equivalent mutant you have named in the commit that lowers it.
+#
+# A threshold below 99.99 is a share of the whole module's mutants, so `make mutation` with `SINCE` cannot judge it on
+# the changed files alone: where a scoped run meets a survivor under one, it runs the whole module, says so, and that
+# run's verdict is the target's. All of a scoped run's mutants killed still passes without it.
 unleash:
   integration: true
   coverpkg: "./..."

@@ -27,6 +27,10 @@ than a red one:
 - **A scoped run whose mutants are all not covered passes.** Gremlins scores zero tested mutants as 0% efficacy
   and exits below its threshold; `--since` and `--file` read that from the report and say how many mutants no
   test reached, because *not covered is reported, never failed; a survivor fails*. The sweep is unchanged.
+- **A threshold below "no survivor" is judged on the whole module.** A scoped run under an `efficacy` lower than
+  99.99, or with `mutant-coverage` set, that meets a lived mutant or a Gremlins failure runs the service's whole
+  module and takes that run's verdict, saying so on a line of its own: a percentage is a share of the module's
+  mutants and cannot be judged on a subset (D155). All mutants killed passes under any threshold.
 
 Only this module is mutated. A shared module under `packages/` is built here and never mutated: run this
 against it as a service of its own if its rules deserve a gate of their own.
@@ -60,6 +64,7 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 
 # The pinned release the factory wrote here; `go run` fetches it, so it is never a dependency of the module.
@@ -272,6 +277,33 @@ def excluded(config: Path) -> list[str]:
     return patterns
 
 
+def threshold(config: Path) -> tuple[bool, str, bool]:
+    """What the config's efficacy threshold is worth on a subset (D155): whether it is scope-invariant, how to say it,
+    and whether `mutant-coverage` is set.
+
+    It is scope-invariant when `efficacy` under `unleash:` is a bare number of at least 99.99 and no
+    `mutant-coverage` is set: one survivor then fails any subset of fewer than ten thousand mutants as it fails
+    the module. Anything lower is a share of the whole module's mutants; a value that is absent, quoted or not a
+    number is not claimed to be either, so the answer is no. Read through the same lines and `key_of` as
+    `exclude-files`.
+    """
+    efficacy, coverage, section = None, False, ""
+    for line in config.read_text(encoding="utf-8").splitlines() if config.is_file() else []:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        name, rest = key_of(line.strip())
+        if line[0] not in " \t":
+            section = name
+        elif section == "unleash" and name == "efficacy":
+            efficacy = rest
+        elif section == "unleash" and name == "mutant-coverage":
+            coverage = True
+    number = efficacy is not None and re.fullmatch(r"[0-9]+(\.[0-9]+)?", efficacy) is not None
+    said = f"efficacy {efficacy}" if number else "an efficacy that is not a number"
+    return bool(number and float(str(efficacy)) >= 99.99 and not coverage), said + (
+        " with mutant-coverage set" if coverage else ""), coverage
+
+
 def sources(module: Path) -> set[str]:
     """Every file in the module Gremlins could mutate, by path within it: Go production files, never tests."""
     return {str(path.relative_to(module)) for path in module.rglob("*.go") if not path.name.endswith("_test.go")}
@@ -397,7 +429,7 @@ def found_nothing(heard: str) -> bool:
     return NOTHING in lines and not any(STOPPED in line for line in lines)
 
 
-def judge_scoped(report: Path, code: int, heard: str) -> int:
+def judge_scoped(report: Path, code: int, heard: str, service: Path, sweep: Callable[[], int]) -> int:
     """A scoped run's exit status, from Gremlins' report and not from the exit code of what started it.
 
     `go run` turns the program's exit 10 into its own 1 (and prints "exit status 10"), a built binary exits 10,
@@ -410,8 +442,22 @@ def judge_scoped(report: Path, code: int, heard: str) -> int:
     of its own to answer for — only when it said so: an exit 0 with no report and no such line is a run a signal
     stopped ("Shutting down gracefully", which it also exits 0 on), and one with a report that cannot be read is
     no evidence either, so both fail as the sweep's do.
+
+    A threshold below "no survivor" (D155) is a share of the whole module's mutants, and a share cannot be judged
+    on a subset: it is an allowance for the module, spent on two mutants it reds every touch of a file the project
+    named an equivalent mutant in, and it can pass a subset the module fails. Where `invariant` says the
+    threshold is not scope-invariant, a scoped run that met a survivor, or that Gremlins failed, runs the whole
+    module and that run's verdict and report are this run's. A scoped run whose mutants were all killed passes
+    under any threshold, and a timed-out mutant is red before any of this.
     """
     statuses = tally(report)
+    solid, said, coverage = threshold(service / CONFIG)
+
+    def hand_over(cause: str) -> int:
+        say(f"mutation: {service.name} — {cause} and {said} is a share of the whole module, not `no survivor`; "
+            "the whole module is run and judges")
+        return sweep()
+
     if code == 0:
         if not statuses:
             if statuses is None and report.is_file() or not found_nothing(heard):
@@ -422,12 +468,21 @@ def judge_scoped(report: Path, code: int, heard: str) -> int:
             say("mutation: no mutant to run — Gremlins found nothing to mutate in the scoped file(s), "
                 "such as a change to comments only")
             return 0
+        if statuses["LIVED"] and not statuses[TIMED_OUT] and not solid:
+            return hand_over("a scoped mutant lived")
         return assess(report)
-    if statuses and not (statuses["KILLED"] or statuses["LIVED"] or statuses[TIMED_OUT]) and statuses[NOT_COVERED]:
+    if not statuses or statuses[TIMED_OUT]:
+        return code
+    if not (statuses["KILLED"] or statuses["LIVED"]) and statuses[NOT_COVERED] and not coverage:
         say(f"mutation: {statuses[NOT_COVERED]} mutants not covered by any test, none killed or lived; not covered is "
             "reported, never failed")
         return 0
-    return code
+    if solid:
+        return code
+    if statuses["KILLED"] and not statuses["LIVED"] and not statuses[NOT_COVERED]:
+        say(f"mutation: {statuses['KILLED']} scoped mutants, all killed; passes under any threshold")
+        return 0
+    return hand_over("a scoped mutant lived" if statuses["LIVED"] else "Gremlins failed the scoped run")
 
 
 USAGE = "usage: go-mutation.py <service> [--since <branch-or-commit> | --file <path> ...]\n"
@@ -479,6 +534,11 @@ def main(argv: list[str]) -> int:
         said = "given file(s)" if given_files else f"changed file(s) since {since}"
         wins = f" (--file wins; --since {since} is not read)" if given_files and since is not None else ""
         say(f"mutation: scoped to {len(keep)} {said}: {', '.join(sorted(keep))}{wins}")
+    return execute(service, scoped)
+
+
+def execute(service: Path, scoped: list[str]) -> int:
+    """Stage the service, run Gremlins over it (scoped to the complement `scoped` names, or whole), and judge it."""
     root, modules = workspace(service)
     into = Path(tempfile.mkdtemp(prefix="go-mutation-"))
     try:
@@ -487,7 +547,7 @@ def main(argv: list[str]) -> int:
         code, heard = gremlins(["go", "run", GREMLINS, "unleash", "--output", str(report), *scoped, "."], staged)
         keep_report(report, service)
         if scoped:
-            return judge_scoped(report, code, heard)
+            return judge_scoped(report, code, heard, service, lambda: execute(service, []))
         if code != 0:
             return code
         return assess(report)
