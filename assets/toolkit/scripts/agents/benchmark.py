@@ -93,6 +93,31 @@ def git(*arguments: str) -> str | None:
     return result.stdout.strip() if result.returncode == 0 else None
 
 
+_LOADED: dict[str, Any] = {}
+
+
+def measures() -> Any:
+    """`measures.py` beside this script, loaded by path with bytecode off (as `hand_backs.py` is) and once per run;
+    it never imports this file, so everything it needs is passed to it."""
+    if "measures" not in _LOADED:
+        sys.dont_write_bytecode = True
+        spec = importlib.util.spec_from_file_location("measures", Path(__file__).resolve().with_name("measures.py"))
+        if spec is None or spec.loader is None:
+            raise RuntimeError("measures.py cannot be loaded")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _LOADED["measures"] = module
+    return _LOADED["measures"]
+
+
+def reader(feature: str) -> Any:
+    """The moments git holds for one feature's slices, read once per run."""
+    key = f"reader:{feature}"
+    if key not in _LOADED:
+        _LOADED[key] = measures().Reader(ROOT, feature, git)
+    return _LOADED[key]
+
+
 # --- the record -------------------------------------------------------------------------------------------------
 
 def load(directory: Path) -> dict[str, Any]:
@@ -773,6 +798,7 @@ def summarise(record: dict[str, Any]) -> dict[str, Any]:
     # The post-converge `/gaps` pass is the ladder, not rework; a stage above it, re-entered, is.
     rework = [entry["stage"] for index, entry in enumerate(ended)
               if index > first_implemented and order(entry["stage"]) < order("gaps")]
+    found = measures().moments(reader(str(record.get("feature"))), record.get("slice"), stages)
     last = {key: next((entry["signals"][key] for entry in reversed(ended) if key in entry.get("signals", {})), None)
             for key in ("mutation_score", "outcome")}
     return {
@@ -801,6 +827,10 @@ def summarise(record: dict[str, Any]) -> dict[str, Any]:
         }),
         "split": sum(entry["signals"].get("split", 0) for entry in ended),
         "rework": rework, "shape": record.get("shape"),
+        "elapsed": found["elapsed"],
+        "moments": {key: measures().printed(found[key]) for key in ("ready", "accepted", "demo_accepted", "merged")
+                    if key in found},
+        "read_from": found["read_from"],
     }
 
 
@@ -938,6 +968,23 @@ def markdown(rows: list[list[str]], columns: tuple[str, ...]) -> str:
     return "\n".join(lines)
 
 
+def figure_text(figure: Any) -> str:
+    """A figure as the tables and the page say it: a duration, or why it is not one."""
+    if isinstance(figure, dict):
+        reason = str(figure["unknown"])
+        return reason if reason.startswith("open since") else f"unknown ({reason})"
+    return wall(figure)
+
+
+def moment_line(summary: dict[str, Any]) -> str:
+    """Elapsed, and the moments inside it that the records and git hold."""
+    shown = {name: summary["moments"][key] for name, key in (("ready", "ready"), ("demo accepted", "demo_accepted"),
+                                                              ("merged", "merged"), ("accepted", "accepted"))
+             if isinstance(summary["moments"].get(key), str)}
+    return f"elapsed {figure_text(summary['elapsed'])}" + (
+        ": " + ", ".join(f"{name} {when}" for name, when in shown.items()) if shown else "")
+
+
 def stage_rows(record: dict[str, Any]) -> list[list[str]]:
     rows = []
     for entry in record.get("stages", []):
@@ -983,6 +1030,7 @@ def overview(feature: str | None = None) -> list[Path]:
             + markdown([row(summary) for summary in summaries], COLUMNS) + f"\n\n{LEGEND}.",
             "## Stages\n\n" + "\n\n".join(
                 f"### {record.get('slice') or 'The feature, above the slice loop'} — {summary_wall(summary)}\n\n"
+                + (f"{moment_line(summary)}\n\n" if summary["slice"] else "")
                 + markdown(stage_rows(record), STAGE_COLUMNS)
                 for record, summary in zip(records_, summaries, strict=True)
             ),
