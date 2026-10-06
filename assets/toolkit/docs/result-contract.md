@@ -33,7 +33,7 @@ reader of an old record and vouches only for the contract it knows: it refuses a
 | `contracts_changed` | list | strings; may be empty |
 | `invariants_checked` | list | strings; may be empty |
 | `tests` | list | strings; may be empty |
-| `decisions` | list | strings, each `D<n>` and a `## D<n> — ` heading in the feature's `decisions.md` |
+| `decisions` | list | strings, each `D<n>` and a `## D<n> — ` heading in the feature's `decisions.md`. A skipper's own `D<n>` goes in its block's `change_summary` and never in `decisions`, whether its `status` is `decided` or `unavailable`; `decisions` lists only the standing entries the work relied on. An `unavailable` answer is an entry too, appended at `Status: standing`, so that number resolves |
 | `assumptions` | list | strings; may be empty |
 | `unresolved` | list | strings; may be empty |
 | `change_summary` | string | non-empty |
