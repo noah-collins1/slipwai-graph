@@ -136,6 +136,35 @@ class WaitingTest(unittest.TestCase):
         found = self.found()
         self.assertEqual((found["waiting"]["dependency"], found["waiting"]["review"]), (0, 2 * 3600))
 
+    def damaged(self, log: str) -> dict:
+        self.accept(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")), row=stamp(1, "20:00:00"))
+        write(self.repo, "specs/cruise-log.jsonl", log)
+        return summaries(self.repo)["S2"]
+
+    def test_e1_a_torn_park_row_makes_review_worker_and_unattributed_unknown_naming_its_line(self) -> None:
+        whole = park(1, stamp(1, "09:30:00"), stamp(1, "12:00:00"), "cruise: stopped: human")
+        rest = park(2, stamp(1, "14:00:00"), stamp(1, "18:00:00"), "cruise: continue")
+        found = self.damaged(whole[:60] + "\n" + rest)
+        for cause in ("review", "worker", "unattributed"):
+            self.assertIn("line 1", found["waiting"][cause].get("unknown", ""), cause)
+        self.assertEqual(found["waiting"]["integration"], 0)
+        self.assertNotIn("none present", found["read_from"]["review"])
+        self.assertIn("line 1", found["read_from"]["worker"])
+
+    def test_e2_times_the_log_cannot_parse_are_unknown_never_no_cruise_log(self) -> None:
+        log = park(1, stamp(1, "09:30:00").replace("Z", ".5Z"), stamp(1, "12:00:00"), "cruise: continue") \
+            + park(2, stamp(1, "14:00:00").replace("Z", ".5Z"), stamp(1, "18:00:00"), "cruise: continue")
+        found = self.damaged(log)
+        self.assertIn("line 1", found["waiting"]["worker"]["unknown"])
+        self.assertIn("line 2", found["waiting"]["worker"]["unknown"])
+        self.assertNotIn("no cruise log", json.dumps(found["read_from"]))
+
+    def test_e3_a_clean_log_reads_as_it_did(self) -> None:
+        found = self.damaged(park(1, stamp(1, "09:30:00"), stamp(1, "12:00:00"), "cruise: stopped: human")
+                             + "\n" + park(2, stamp(1, "14:00:00"), stamp(1, "18:00:00"), "cruise: continue"))
+        self.assertEqual(found["waiting"]["review"], 2 * 3600)
+        self.assertIsInstance(found["waiting"]["worker"], int)
+
     def test_an_open_slice_has_no_worked_figure_and_no_waiting(self) -> None:
         write(self.repo, SPLIT, graph([("S2", [])]))
         commit(self.repo, stamp(1), "split", SPLIT)

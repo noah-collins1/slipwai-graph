@@ -162,11 +162,12 @@ def attributed() -> dict[str, Any]:
     return _LOADED["attributed"]  # type: ignore[no-any-return]
 
 
-def cruise_log() -> list[dict[str, Any]]:
-    """`specs/cruise-log.jsonl`'s rows, parsed once per run; none where the project has no log."""
+def cruise_log() -> tuple[list[dict[str, Any]], list[int]]:
+    """`specs/cruise-log.jsonl`'s readable rows and the numbers of the lines that were not, parsed once per run;
+    none of either where the project has no log."""
     if "log" not in _LOADED:
         path = ROOT / measures().LOG
-        _LOADED["log"] = measures().parse_log(path.read_text(encoding="utf-8")) if path.is_file() else []
+        _LOADED["log"] = measures().parse_log(path.read_text(encoding="utf-8")) if path.is_file() else ([], [])
     return _LOADED["log"]  # type: ignore[no-any-return]
 
 
@@ -872,8 +873,8 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
     tokens = [shown[index]["tokens"] if index in shown else measures().recorded_tokens(entry)
               for index, entry in enumerate(stages)]
     moved = measures().moments(reader(str(record.get("feature"))), record.get("slice"), stages)
-    parts = measures().waiting(moved, reader(str(record.get("feature"))), str(record.get("slice")), stages, cruise_log(),
-                               last_lines)
+    parts = measures().waiting(moved, reader(str(record.get("feature"))), str(record.get("slice")), stages, cruise_log()[0],
+                               last_lines, cruise_log()[1])
     last = {key: next((entry["signals"][key] for entry in reversed(ended) if key in entry.get("signals", {})), None)
             for key in ("mutation_score", "outcome")}
     return {

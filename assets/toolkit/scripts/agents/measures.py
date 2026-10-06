@@ -304,17 +304,23 @@ def printed(figure: Any) -> Any:
     return figure if is_unknown(figure) or figure is None else utc(figure)
 
 
-def parse_log(text: str) -> list[dict[str, Any]]:
-    """The cruise log's rows (a line that is not JSON is skipped)."""
-    rows = []
-    for line in text.splitlines():
+def parse_log(text: str) -> tuple[list[dict[str, Any]], list[int]]:
+    """The cruise log's readable rows, and the line number of each line that could not be read whole: not JSON, not
+    an object, or a `started`/`ended` that is not a UTC second. A blank line is nothing."""
+    rows: list[dict[str, Any]] = []
+    damaged: list[int] = []
+    for number, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
         try:
             row = json.loads(line)
-        except ValueError:
+            epoch(row["started"])
+            epoch(row["ended"])
+        except (ValueError, KeyError, TypeError):
+            damaged.append(number)
             continue
-        if isinstance(row, dict):
-            rows.append(row)
-    return rows
+        rows.append(row)
+    return rows, damaged
 
 
 # --- worked time and waiting ------------------------------------------------------------------------------------
@@ -488,10 +494,12 @@ def sibling_wait(reader: Reader, ident: str, demo: int, before: int) -> tuple[In
 
 
 def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dict[str, Any]],
-            log: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> dict[str, Any]:
+            log: list[dict[str, Any]], last_lines: dict[int, int] | None = None,
+            damaged: list[int] | None = None) -> dict[str, Any]:
     """worked, and each cause's seconds, inside [ready, accepted]: every second goes to the first claimant in the
     order worked, integration, dependency, review, worker, and what no record claims is unattributed, so the parts
-    add up to elapsed exactly. Unknown wherever elapsed is."""
+    add up to elapsed exactly. Unknown wherever elapsed is, and — for review, worker and unattributed — wherever the
+    cruise log has a line (`damaged`) that could not be read whole, because the seconds it would claim are unsaid."""
     names = (*CAUSES, "unattributed")
     read_from: dict[str, str] = {}
     if is_unknown(found["elapsed"]):
@@ -531,13 +539,19 @@ def waiting(found: dict[str, Any], reader: Reader, ident: str, entries: list[dic
         if span:
             claimed["worker"] = [(min(start for start, _ in span), max(end for _, end in span))]
             read_from["worker"] = f"{LOG}: the log's span, less parks"
-    seconds: dict[str, int] = {}
+    seconds: dict[str, Any] = {}
     for cause in CAUSES:
         mine = subtract(clip(claimed[cause], low, high), taken)
         seconds[cause] = length(mine)
         taken = union(taken + mine)
     in_worked = length(clip(worked(entries, last_lines), low, high))
     seconds["unattributed"] = (high - low) - length(taken)
+    if damaged:
+        lines = ", ".join(f"line {number}" for number in damaged)
+        reason = unknown(f"{LOG} could not be read whole: {lines}")
+        for name in ("review", "worker", "unattributed"):
+            seconds[name] = reason
+            read_from[name] = reason["unknown"]
     return {"worked": in_worked, "waiting": seconds, "read_from": read_from}
 
 
