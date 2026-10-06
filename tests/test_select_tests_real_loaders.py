@@ -155,7 +155,10 @@ out = {"importers": sorted(m for m in tree.sources if declarations.is_module(m) 
 for path in json.loads(sys.argv[1]):
     claim = rules.claim(path, catalog)
     ran = {v.module: [r.text for r in v.reasons] for v in choose.select(tree, [path], catalog).verdicts if v.runs}
-    out["paths"][path] = {"full": bool(claim and claim.full), "ran": ran}
+    generated = bool(claim and not claim.full and not claim.every and claim.configs)  # read when a project is generated
+    owed = [m for m in out["importers"] if not generated
+            or any(tree.effective(m)[0].admits(axis, option) for axis, option in claim.configs)]
+    out["paths"][path] = {"full": bool(claim and claim.full), "ran": ran, "owed": owed}
 print(json.dumps(out))
 """
 
@@ -194,8 +197,10 @@ class TestWhatTheGeneratorReadsReachesEveryModuleThatImportsIt(unittest.TestCase
         self.assertEqual(done.returncode, 0, done.stderr)
         found = json.loads(done.stdout)
         self.assertGreater(len(found["importers"]), 5)
-        missed = {path: sorted(set(found["importers"]) - set(row["ran"])) for path, row in found["paths"].items()
-                  if not row["full"] and set(found["importers"]) - set(row["ran"])}
+        # a path read only when a project is generated reaches the importers that generate it (T044): the rest import
+        # `slipwai` and read none of it, which `test_select_tests_go_app` and the audit hold
+        missed = {path: sorted(set(row["owed"]) - set(row["ran"])) for path, row in found["paths"].items()
+                  if not row["full"] and set(row["owed"]) - set(row["ran"])}
         self.assertEqual(missed, {})
 
     def test_the_reason_says_what_the_module_imports_and_the_asset_it_reads(self) -> None:

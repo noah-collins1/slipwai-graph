@@ -15,7 +15,7 @@ from typing import Any, NamedTuple
 
 from . import generation as statics
 from . import loaded
-from .rules import load_catalog, names
+from .rules import claim, load_catalog, names
 
 sys.dont_write_bytecode = True
 
@@ -257,6 +257,19 @@ def closure_of(name: str, sources: Mapping[str, Source]) -> frozenset[str]:
     return frozenset(seen)
 
 
+def import_reads(root: Path, catalog: Mapping[str, Any]) -> frozenset[str]:
+    """The asset paths a module reads by importing `slipwai`: those the package reads at import or from a function that
+    is not a generation. What it reads to generate a project (a backend's app, a frontend, `adopt`'s files) is the
+    configuration the module declares, and `choose` reaches the module through that (importing reads none of it)."""
+    reads = loaded.scan(root)
+    return frozenset(entry for entry in reads if not _generating(claim(entry if "." in entry.rsplit("/", 1)[-1]
+                                                                       else entry.rstrip("/") + "/x", catalog)))
+
+
+def _generating(found: Any) -> bool:
+    return found is not None and not found.full and not found.every and bool(found.configs)
+
+
 def scan(root: Path, catalog: Mapping[str, Any] | None = None) -> Tree:
     """Read every `tests/*.py` file once."""
     catalog = load_catalog(root) if catalog is None else catalog
@@ -265,7 +278,7 @@ def scan(root: Path, catalog: Mapping[str, Any] | None = None) -> Tree:
     imported = {name: frozenset().union(*(sources[member].imports or frozenset() for member in {name, *closure}))
                 for name, closure in closures.items()}
     options = {axis: valid_options(catalog, axis) for axis in AXES}
-    return Tree(sources, closures, imported, loaded.scan(root), options)
+    return Tree(sources, closures, imported, import_reads(root, catalog), options)
 
 
 def is_module(name: str) -> bool:
