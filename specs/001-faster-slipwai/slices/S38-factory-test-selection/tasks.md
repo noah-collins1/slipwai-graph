@@ -500,9 +500,9 @@ the patch line; `make lint typecheck check-structure` passes. Commit by path.
 **Files:** `specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch` (new, committed alone by path; it is
 not a control). The clone and the check copy are scratch under `/tmp/s38/` and are not committed.
 
-### T019 — BLOCKED: a person applies `s38.patch` (⛔)
+### T019 — a person applies `s38.patch` (done at `75150f9`)
 
-- [ ] **Not a delegate's task and not the host's: the root `Makefile` is a control (AC-S38-14).** A person runs the
+- [x] *(Done by a person at `75150f9`, 2026-10-06, told to cruise iteration 24: the plan's checks passed — lint, typecheck, check-structure; `test_select_tests_makefile` and `test_select_tests_make`, 22 tests OK.)* **Not a delegate's task and not the host's: the root `Makefile` is a control (AC-S38-14).** A person runs the
   three commands in plan.md's *Summary* (`git apply …/s38.patch`; `make lint typecheck check-structure && make test
   TESTS="test_select_tests_makefile test_select_tests_make"`; the commit by path with the message there). Until then
   the slice is blocked at the demo: T020–T022 run on a patched scratch copy, T023–T025 wait for this one.
