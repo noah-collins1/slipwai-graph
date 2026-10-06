@@ -1700,6 +1700,27 @@
         "outcome": "accepted",
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "adversary",
+      "started": "2026-10-06T10:47:29Z",
+      "planned": "adversary: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 3,
+          "done": 39
+        }
+      },
+      "cursor": {
+        "source": "claude",
+        "session": "2382cd35-c30b-4143-ab92-9beb7e6d8378",
+        "files": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378.jsonl": 632088
+        },
+        "subagents": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2382cd35-c30b-4143-ab92-9beb7e6d8378/subagents/agent-a665ad8b9056cf10b.jsonl": 248310
+        }
+      }
     }
   ]
 }

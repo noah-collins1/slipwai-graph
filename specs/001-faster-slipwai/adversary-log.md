@@ -565,3 +565,17 @@ Findings: fourteen — two `HIGH`, five `MEDIUM`, seven `LOW`; no `CRITICAL`. Wh
 | A8 | A | LOW | A block reading `{"contract": 2}` passes the verb with no field checked and counts as covered. New | Question: D162; S14 T036 | open |
 | B6 | B | LOW | An `unavailable` skipper answer cites a `D<n>` the host may never write, and the verb refuses the block. New (read, not run) | Question: D163; S14 T037 | open |
 | B5 | B | LOW | On harnesses with no agent file of their own the instruction never reaches a delegate. Older (the safety page is the same) | Declined: not this slice's; those stages read as *could not attribute*; the cruise report | declined |
+
+## S39 · 02cf1ed · 2026-10-06
+
+Slice `S39-benchmark-elapsed` (cruise iterations 22–25), diff `525399b..02cf1ed` (merged into adopt-method at `02cf1ed`): elapsed ready-to-accepted time read from git, waiting by cause read from the cruise log and the records, stage time with cut-off entries ended at their last transcript line (`assets/toolkit/scripts/agents/measures.py`), each request charged to one slice by the harness's spawn chain and cost with rework (`assets/toolkit/scripts/agents/attribution.py`), the overview and `--json` that print them and the new `gate` stage (`assets/toolkit/scripts/agents/benchmark.py`), the ladder text that asks for `drive-slice <id>` descriptions and the gate bracket (`src/slipwai/project/benchmark.py`, `src/slipwai/project/cruise.py`, `src/slipwai/project/parallel_slices.py`), one fragment.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | `benchmark.py`'s overview and `--json` change shape (`rework` an object, `reentered`, `feature_figures`, `session_totals`, `decision_health`, `read_from`, `unattributed_person`) and `start`/`end` take a new stage `gate` (`assets/toolkit/scripts/agents/benchmark.py`) |
+| driven adapter or the provider types behind one | widened | New readers of git history (ready, accepted and merged commits, every local branch's copy of a record), of `specs/cruise-log.jsonl`, of the harness's transcripts and sub-agent metadata (`assets/toolkit/scripts/agents/measures.py`, `assets/toolkit/scripts/agents/attribution.py`) |
+| authorisation decision (who can reach one that already exists) | not present | The diff decides nothing about who may do what |
+| concurrency, idempotency, ordering, retention, or time | widened | Elapsed and waiting are claims about time and ordering (windows, overlaps, cut-off ends, a park's span); figures must not double-count across branches or overlapping brackets (`assets/toolkit/scripts/agents/measures.py`, `assets/toolkit/scripts/agents/attribution.py`) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
+
