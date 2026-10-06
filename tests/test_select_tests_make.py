@@ -83,10 +83,31 @@ class TestAGivenTestsOrSkipTurnsSelectionOff(MakeCase):
         self.assertEqual({line.split("\t")[2] for line in lines}, {"PYTHONPATH=src:tests"})
 
 
+class TestAnEmptyTestsIsNotGiven(MakeCase):
+    def test_skip_beside_an_empty_tests_runs_every_other_module_and_says_skip(self) -> None:  # T034, R-9
+        for how, args, env in (("on the command line", ("TESTS=", "SKIP=test_b"), {}),
+                               ("exported empty", ("SKIP=test_b",), {"TESTS": ""})):
+            with self.subTest(how):
+                out = self.ok("test", *args, **env)
+                self.assertIn("selection off: SKIP given", out)
+                self.assertNotIn("selection off: TESTS given", out)
+                self.assertNotIn("no module runs", out)
+                self.assertEqual(self.modules_run(), ["test_a", "test_c"])
+
+    def test_an_empty_tests_alone_is_unset_and_the_selector_runs(self) -> None:  # T034, R-9
+        out = self.ok("test", "TESTS=")
+        self.assertNotIn("selection off", out)
+        self.assertEqual(self.modules_run(), ["test_a", "test_c"])
+
+    def test_the_gate_with_an_empty_tests_and_skip_runs_the_rest(self) -> None:  # T034
+        self.ok("verify-checks", "TESTS=", "SKIP=test_b")
+        self.assertEqual(self.modules_run(), ["test_a", "test_c"])
+
+
 class TestSkipNamingEveryModuleStillTurnsSelectionOff(MakeCase):
-    def test_it_says_so_runs_no_module_and_never_calls_the_selector(self) -> None:  # AC-S38-13
+    def test_it_says_so_runs_no_module_and_never_calls_the_selector(self) -> None:  # AC-S38-13, R-9
         out = self.ok("test", "SKIP=" + " ".join(EVERY))
-        self.assertIn("selection off: SKIP given", out)
+        self.assertIn("selection off: SKIP given - no module runs", out)
         self.assertNotIn("selected", out)
         self.assertEqual(self.ran(), [])
 
@@ -107,6 +128,16 @@ class TestVerifyChecksRunDirectlyIsWhole(MakeCase):
                 self.ok("verify-checks", *args, **env)
                 self.assertEqual(self.modules_run(), EVERY)
                 self.ran()
+
+
+class TestVerifyChecksIsWholeWhateverTheOrderOfTheGoals(MakeCase):
+    def test_all_gates_passed_is_said_only_after_every_module_ran(self) -> None:  # T035, AC-S38-6
+        for goals in (["test", "verify-checks"], ["verify-checks", "test"], ["lint", "verify-checks"],
+                      ["verify-checks"]):
+            with self.subTest(" ".join(goals)):
+                out = self.ok(*goals)
+                self.assertIn("verify: all gates passed", out)
+                self.assertIn("test_b", self.modules_run())
 
 
 class TestMakeVerifyIsWhole(MakeCase):
