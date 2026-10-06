@@ -6,8 +6,10 @@ imports it, so everything it needs is passed to `attribute()`: the records, the 
 session's transcripts, one that makes an entry's window, the table of which stage owns which delegate type, and one
 that reads an entry's recorded usage. The reading is of what a transcript already says, never asked:
 
-1. a *request* is the first assistant line of its `requestId` (else `message.id`, else `uuid`) that carries
-   `message.usage`, the main transcript first, then the sub-agent files in name order;
+1. a *request* is the assistant lines of one `requestId` (else `message.id`, else `uuid`) that carry
+   `message.usage`, the main transcript first, then the sub-agent files in name order; a streamed response's lines
+   carry usage that grows, so its usage is the largest each field reaches, and a request another session's
+   transcript holds a copy of is counted only where its earliest line is;
 2. a sub-agent's *chain* is its `agent-<a>.meta.json` and then its `parentAgentId`'s, upwards, to the first
    `agentType == "drive-slice"`, whose description names the slice;
 3. a window's *opener* is the file whose bytes at the window's cursor print `benchmark: <stage> started (<record>`;
@@ -57,16 +59,18 @@ class Request:
     """One API response. `when` is its first line's moment (where it began); `last` is the latest moment any of its
     lines carries (where it ended) — a response is written as a line per content block, seconds apart."""
 
-    __slots__ = ("key", "file", "offset", "when", "agent", "tokens", "last")
+    __slots__ = ("key", "file", "offset", "when", "agent", "tokens", "last", "fields")
 
     def __init__(self, key: str, file: str, offset: int, when: str | None, agent: str | None, tokens: int) -> None:
         self.key, self.file, self.offset, self.when, self.agent, self.tokens = key, file, offset, when, agent, tokens
         self.last = when
+        self.fields: dict[str, int] = {}
 
 
 def read_requests(files: list[Path]) -> dict[str, Request]:
     """Every request in `files`, once: only the lines that carry `"usage"` are parsed, and a repeated key (one API
-    response is written as a line per content block) keeps its first line, and the latest moment of any."""
+    response is written as a line per content block, its usage growing as it streams) keeps its first line's place,
+    the largest of each usage field over its lines, and the latest moment of any."""
     found: dict[str, Request] = {}
     for path in files:
         with path.open("rb") as handle:
@@ -88,14 +92,38 @@ def read_requests(files: list[Path]) -> dict[str, Request]:
                     continue
                 if str(key) in found:
                     again = found[str(key)]
+                    grown(again, usage)
                     moment = stamp(item.get("timestamp"))
                     if moment and (again.last is None or moment > again.last):
                         again.last = moment
                     continue
                 agent = item.get("attributionAgent") if isinstance(item.get("attributionAgent"), str) else None
-                tokens = sum(usage[field] for field in FIELDS if isinstance(usage.get(field), int))
-                found[str(key)] = Request(str(key), str(path), start, stamp(item.get("timestamp")), agent, tokens)
+                made = Request(str(key), str(path), start, stamp(item.get("timestamp")), agent, 0)
+                grown(made, usage)
+                found[str(key)] = made
     return found
+
+
+def grown(request: Request, usage: dict[str, Any]) -> None:
+    """Take the largest of each usage field the request's lines have reached, and total them."""
+    for field in FIELDS:
+        value = usage.get(field)
+        if isinstance(value, int) and not isinstance(value, bool) and value > request.fields.get(field, 0):
+            request.fields[field] = value
+    request.tokens = sum(request.fields.values())
+
+
+def once(sessions: dict[str, Session]) -> None:
+    """A request another session's transcript holds a copy of belongs to the session its earliest line is in (the
+    first by name where moments tie); the copies are dropped from the others."""
+    owner: dict[str, tuple[str, str]] = {}
+    for name in sorted(sessions):
+        for key, request in sessions[name].requests.items():
+            moment = (request.when or "9", name)
+            if key not in owner or moment < owner[key]:
+                owner[key] = moment
+    for name, session in sessions.items():
+        session.requests = {key: request for key, request in session.requests.items() if owner[key][1] == name}
 
 
 class Session:
@@ -284,6 +312,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                     notes_gone.update(missing[(key, index)])
                 else:
                     held.append(Held(key, index, entry, window, name))
+    once(sessions)
     seen_windows: set[Any] = set()
     for item in held:  # a record merged from two branches carries the same bracket twice: it is counted once
         identity = (by_key[item.path].get("slice"), item.entry["stage"], item.entry.get("started"),
