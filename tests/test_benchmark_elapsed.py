@@ -127,5 +127,59 @@ class ElapsedTest(unittest.TestCase):
         self.assertTrue(json.dumps(found))
 
 
+class StageTimeTest(unittest.TestCase):
+    """R3: worked once, stage time renamed."""
+
+    def setUp(self) -> None:
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.repo = project(Path(self.scratch.name))
+
+    def accepted(self, *stages: dict) -> None:
+        write(self.repo, SPLIT, graph([("S2", [])]))
+        commit(self.repo, stamp(1), "split", SPLIT)
+        path = record(self.repo, "S2", *stages)
+        write(self.repo, REGISTER, register(["S2"]))
+        commit(self.repo, stamp(2), "S2 done", REGISTER, path)
+
+    def test_e1_a_skipper_nested_in_an_implement_adds_stage_time_but_not_worked_time(self) -> None:
+        self.accepted(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")),
+                      entry("skipper", stamp(1, "10:10:00"), stamp(1, "10:20:00")))
+        found = summaries(self.repo)["S2"]
+        self.assertEqual((found.get("stage_seconds"), found["worked_seconds"]), (70 * 60, 60 * 60))
+
+    def test_e3_a_cut_off_entry_with_no_transcript_keeps_its_recorded_end_and_says_why(self) -> None:
+        cut = entry("implement", stamp(1, "10:00:00"), stamp(1, "14:00:00"))
+        cut["cut_off"] = "iteration 3 ended with the entry open"
+        self.accepted(cut)
+        found = summaries(self.repo)["S2"]
+        self.assertEqual((found.get("stage_seconds"), found["worked_seconds"]), (4 * 3600, 4 * 3600))
+        notes = bench(self.repo).stdout
+        self.assertIn(f"S2 implement: stage time ends at its recorded end {stamp(1, '14:00:00')} — its transcript's "
+                      "last line could not be read", notes)
+
+    def test_e4_stage_time_is_never_called_wall_and_no_heading_sums_it_as_elapsed(self) -> None:
+        self.accepted(entry("implement", stamp(1, "10:00:00"), stamp(1, "11:00:00")),
+                      entry("converge", stamp(1, "11:00:00"), stamp(1, "11:30:00")),
+                      entry("example-map", stamp(1, "11:30:00"), stamp(1, "11:40:00")))
+        record(self.repo, "S3", entry("implement", stamp(1, "10:00:00"), stamp(1, "10:05:00")))
+        out = bench(self.repo).stdout
+        header = next(line for line in out.splitlines() if line.lstrip().startswith("slice  delegate/cycle"))
+        self.assertIn("stage time", header)
+        self.assertIn("re-entered", header)
+        self.assertNotRegex(header, r"\bwall\b|rework")
+        self.assertIn("f — 2 slice(s) recorded, stage time 1h45m in all", out)
+        self.assertEqual(bench(self.repo, "overview", FEATURE).returncode, 0)
+        page = (self.repo / f"specs/{FEATURE}/benchmark.md").read_text(encoding="utf-8")
+        self.assertIn("2 slice(s) recorded, stage time 1h45m in all", page)
+        self.assertIn("### S2 — stage time 1h40m", page)
+        self.assertIn("| stage | started (UTC) | stage time |", page)
+        headings = [line for line in page.splitlines() if line.startswith("### ")]
+        self.assertTrue(headings and all("stage time" in line for line in headings), headings)
+        found = summaries(self.repo)["S2"]
+        self.assertEqual(found["reentered"], ["example-map"])
+        self.assertNotIn("rework", found)
+
+
 if __name__ == "__main__":
     unittest.main()

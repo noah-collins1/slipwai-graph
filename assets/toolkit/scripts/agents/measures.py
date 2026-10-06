@@ -307,6 +307,36 @@ def worked(entries: list[dict[str, Any]], last_lines: dict[int, int] | None = No
                           lambda entry: entry.get("stage") != "gate" and not is_person_demo(entry)))
 
 
+def stage_seconds(entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> int:
+    """Stage time: what the entries add up to, each counted whole, so a skipper inside an implement is added to it
+    (worked time counts that interval once). `last_lines` maps an entry's index to the moment of the last
+    transcript line attributed to it, which ends a cut-off entry there; where none is given the recorded end stands."""
+    total = 0
+    for index, entry in enumerate(entries):
+        if "ended" not in entry:
+            continue
+        span = bounds(entry, (last_lines or {}).get(index))
+        total += span[1] - span[0] if span else int(entry.get("seconds", 0))
+    return total
+
+
+def cut_off_notes(label: str, entries: list[dict[str, Any]], last_lines: dict[int, int] | None = None) -> list[str]:
+    """For each cut-off entry, where its stage time ends and why: its last attributed transcript line, or its
+    recorded end because no transcript line could be read."""
+    notes = []
+    for index, entry in enumerate(entries):
+        if not entry.get("cut_off") or "ended" not in entry:
+            continue
+        last = (last_lines or {}).get(index)
+        if last is None:
+            notes.append(f"{label} {entry['stage']}: stage time ends at its recorded end {entry['ended']} — its "
+                         "transcript's last line could not be read")
+        else:
+            notes.append(f"{label} {entry['stage']}: stage time ends at its last transcript line {utc(last)}, not at "
+                         f"the recorded end {entry['ended']}")
+    return notes
+
+
 def iterations(rows: list[dict[str, Any]]) -> list[Interval]:
     spans = []
     for row in rows:

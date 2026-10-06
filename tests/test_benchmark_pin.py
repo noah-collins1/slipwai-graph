@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -28,9 +29,9 @@ BEFORE = "525399b"  # benchmark.py as it stood before S39
 RECORDS = "8072724"  # the records as committed when S39's criteria were written
 SCRIPTS = ("assets/toolkit/scripts/agents", "assets/toolkit/scripts/hand_backs.py")
 # Columns S39 renames, old name → new name: compared under the new name, values unchanged.
-RENAMED: dict[str, str] = {}
+RENAMED: dict[str, str] = {"wall": "stage time", "rework": "re-entered"}
 # `--json` keys S39 renames, old → new.
-RENAMED_KEYS: dict[str, str] = {}
+RENAMED_KEYS: dict[str, str] = {"rework": "reentered"}
 
 
 def archive(commit: str, *paths: str) -> tarfile.TarFile:
@@ -66,10 +67,11 @@ def run(repo: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
 
 
 def columns(header: str) -> list[tuple[str, int]]:
-    """Each column's name and where it starts: names are left-justified and joined by two spaces."""
+    """Each column's name and where it starts: names are left-justified and joined by two spaces (a name may hold
+    one space, `stage time`)."""
     found: list[tuple[str, int]] = []
     position = 0
-    for name in header.split():
+    for name in re.split(r" {2,}", header.strip()):
         start = header.index(name, position)
         found.append((name, start))
         position = start + len(name)

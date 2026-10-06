@@ -780,7 +780,7 @@ def usage_unread(entry: dict[str, Any]) -> bool:
     return not (entry.get("ran") or [])
 
 
-def summarise(record: dict[str, Any]) -> dict[str, Any]:
+def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None) -> dict[str, Any]:
     """One row's worth of a record: what the entries add up to, and what they show by their sequence."""
     stages = record.get("stages", [])
     ended = [entry for entry in stages if "ended" in entry]
@@ -814,6 +814,7 @@ def summarise(record: dict[str, Any]) -> dict[str, Any]:
         "feature": record.get("feature"), "slice": record.get("slice"),
         "stages": [entry["stage"] for entry in stages], "open": [entry["stage"] for entry in stages if "ended" not in entry],
         "seconds": sum(entry.get("seconds", 0) for entry in ended),
+        "stage_seconds": measures().stage_seconds(stages, last_lines),
         "unbracketed": any(is_unbracketed(entry) for entry in ended),
         "tokens": total, "usage_unknown": unknown,
         "models": sorted({model for entry in ended for model in (entry.get("ran") or [])}),
@@ -835,7 +836,7 @@ def summarise(record: dict[str, Any]) -> dict[str, Any]:
             for entry in ended if {"delegate", "cycle"} & set(entry.get("signals", {}))
         }),
         "split": sum(entry["signals"].get("split", 0) for entry in ended),
-        "rework": rework, "shape": record.get("shape"),
+        "reentered": rework, "shape": record.get("shape"),
         "elapsed": found["elapsed"],
         "moments": {key: measures().printed(found[key]) for key in ("ready", "accepted", "demo_accepted", "merged")
                     if key in found},
@@ -849,8 +850,8 @@ def records() -> list[tuple[Path, dict[str, Any]]]:
     return [(path, json.loads(path.read_text(encoding="utf-8"))) for path in sorted(specs.rglob(RECORD))] if specs.is_dir() else []
 
 
-COLUMNS = ("slice", "delegate/cycle", "wall", "in", "out", "models", "sessions", "converge", "+tasks", "gaps", "mutation",
-           "adversary", "demo", "verify✗", "rework", "tasks", "files", "±lines")
+COLUMNS = ("slice", "delegate/cycle", "stage time", "in", "out", "models", "sessions", "converge", "+tasks", "gaps", "mutation",
+           "adversary", "demo", "verify✗", "re-entered", "tasks", "files", "±lines")
 
 
 def row(summary: dict[str, Any]) -> list[str]:
@@ -864,7 +865,7 @@ def row(summary: dict[str, Any]) -> list[str]:
         str(summary["converge_passes"]), str(summary["tasks_appended"]),
         f"{summary['gaps']['before']}/{summary['gaps']['after']}", summary["mutation_score"] or "—",
         str(summary["findings"]), summary["outcome"] or "—", str(summary["verify_failures"]),
-        str(len(summary["rework"])), str(shape.get("tasks", "—")), str(shape.get("files", "—")),
+        str(len(summary["reentered"])), str(shape.get("tasks", "—")), str(shape.get("files", "—")),
         f"+{shape['added']}/-{shape['removed']}" if shape.get("added") is not None else "—",
     ]
 
@@ -888,14 +889,14 @@ def waiting_rows(summaries: list[dict[str, Any]]) -> list[list[str]]:
 
 LEGEND = ("delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge "
           "appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly "
-          "uncounted); a trailing + makes wall a floor because an unbracketed stage is missing; tokens are not prices")
+          "uncounted); a trailing + makes stage time a floor because an unbracketed stage is missing; tokens are not prices")
 READING = """These numbers compare the slices of this project on this harness, and one slice before and after a change
 to a prompt, a skill or the layout. They are tokens, not prices. They do not compare harnesses, whose transcripts
 count different things, or projects, whose slices are not the same size — the shape columns normalise, they do not
 equate. A stage's tokens are a floor: the turn that closes the entry is still being written when it is read. A
 number the script could not read is written as unknown with its reason, never estimated. A stage whose start and end
-were called in the same moment is unbracketed: its wall and tokens are missing, not zero, and a slice containing one
-shows its measured wall as a floor with a trailing `+`. Host context grows through a session, so otherwise identical
+were called in the same moment is unbracketed: its stage time and tokens are missing, not zero, and a slice containing one
+shows its measured stage time as a floor with a trailing `+`. Host context grows through a session, so otherwise identical
 slices spanning different numbers or lengths of sessions are not directly comparable on host tokens."""
 
 
@@ -945,8 +946,8 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
               f"{summary['tasks_appended']} task(s) — a slice too large, or fixes too narrow to close the "
               "class of what they found"
               for summary in summaries if summary["slice"] and summary["converge_passes"] >= REPEATED]
-    lines += [f"{summary['slice']}: re-entered {', '.join(summary['rework'])} after implementation"
-              for summary in summaries if summary["slice"] and summary["rework"]]
+    lines += [f"{summary['slice']}: re-entered {', '.join(summary['reentered'])} after implementation"
+              for summary in summaries if summary["slice"] and summary["reentered"]]
     lines += [f"{summary['slice']}: implemented as {' and '.join(summary['delegation'])} — its wall compares with "
               "neither" for summary in summaries if summary["slice"] and len(summary["delegation"]) > 1]
     lines += [f"{summary['slice']}: elapsed unknown — {summary['elapsed']['unknown']}; worked time and every waiting "
@@ -958,13 +959,14 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
               if summary["slice"] and isinstance(summary["elapsed"], dict)
               and summary["elapsed"]["unknown"].startswith("open since")]
     for record in records_:
+        lines += measures().cut_off_notes(record.get("slice") or "(feature)", record.get("stages", []))
         for entry in record.get("stages", []):
             usage = entry.get("usage")
             if "ended" in entry and usage is not None and not usage.get("source"):
                 lines.append(f"{record.get('slice') or '(feature)'} {entry['stage']}: tokens unknown — {usage.get('reason')}")
             if entry.get("cut_off"):
                 lines.append(f"{record.get('slice') or '(feature)'} {entry['stage']}: cut off — {entry['cut_off']}; "
-                             "its wall is real, its signals were never reported"
+                             "its stage time is real, its signals were never reported"
                              + ("" if (entry.get("usage") or {}).get("source") else ", its tokens unknown"))
             if is_unbracketed(entry):
                 lines.append(
@@ -984,7 +986,7 @@ def aggregate() -> str:
         slices = [summary for summary in summaries if summary["slice"]]
         total = {"seconds": sum(s["seconds"] for s in summaries),
                  "unbracketed": any(s["unbracketed"] for s in summaries)}
-        head = f"{feature} — {len(slices)} slice(s) recorded, {summary_wall(total)} in all"
+        head = f"{feature} — {len(slices)} slice(s) recorded, stage time {summary_wall(total)} in all"
         waits = waiting_rows(summaries)
         blocks.append("\n".join([head, table([row(summary) for summary in summaries]),
                                  *([table(waits, WAITING_COLUMNS)] if waits else []),
@@ -1034,7 +1036,7 @@ def stage_rows(record: dict[str, Any]) -> list[list[str]]:
     return rows
 
 
-STAGE_COLUMNS = ("stage", "started (UTC)", "wall", "in", "out", "model", "agent", "delegated", "reported")
+STAGE_COLUMNS = ("stage", "started (UTC)", "stage time", "in", "out", "model", "agent", "delegated", "reported")
 
 
 def overview(feature: str | None = None) -> list[Path]:
@@ -1055,14 +1057,14 @@ def overview(feature: str | None = None) -> list[Path]:
             f"Drawn {now()} at `{(git('rev-parse', '--short', 'HEAD') or 'no commit')}` from {len(entries)} record(s) "
             f"under `specs/{name}/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing "
             f"a slice. Regenerated whole, never edited: the records beside each slice are the source.",
-            f"## Slices\n\n{len(slices)} slice(s) recorded, "
+            f"## Slices\n\n{len(slices)} slice(s) recorded, stage time "
             f"{summary_wall({'seconds': sum(s['seconds'] for s in summaries), 'unbracketed': any(s['unbracketed'] for s in summaries)})} "
             "in all.\n\n"
             + markdown([row(summary) for summary in summaries], COLUMNS)
             + (f"\n\n{markdown(waiting_rows(summaries), WAITING_COLUMNS)}" if waiting_rows(summaries) else "")
             + f"\n\n{LEGEND}.",
             "## Stages\n\n" + "\n\n".join(
-                f"### {record.get('slice') or 'The feature, above the slice loop'} — {summary_wall(summary)}\n\n"
+                f"### {record.get('slice') or 'The feature, above the slice loop'} — stage time {summary_wall(summary)}\n\n"
                 + (f"{moment_line(summary)}\n\n" if summary["slice"] else "")
                 + markdown(stage_rows(record), STAGE_COLUMNS)
                 for record, summary in zip(records_, summaries, strict=True)
