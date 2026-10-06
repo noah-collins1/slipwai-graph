@@ -47,6 +47,37 @@ class CommandTextTest(unittest.TestCase):
         self.assertIn("gremlins.json", mutation_command(["go", "typescript"]))
 
 
+# T024: the two whole-run causes T018 added, in the words every published place that lists what sweeps uses (D154).
+CAUSES = ("`mutation-full` rule", "recipe that is not the one the factory wrote", "runs as written")
+
+
+class CauseWordsTest(unittest.TestCase):
+    def assertCauses(self, text: str) -> None:
+        for words in CAUSES:
+            self.assertIn(words, text)
+
+    def test_t024_the_command_text_of_every_backend_names_both_causes(self) -> None:
+        for backends in [[b] for b in BACKENDS] + [list(BACKENDS)]:
+            with self.subTest(backends=backends):
+                self.assertCauses(flat(mutation_command(backends)))
+
+    def test_t024_the_go_and_spring_notes_name_both_causes(self) -> None:
+        for backend in ("go", "java-spring"):
+            with self.subTest(backend=backend):
+                self.assertCauses(flat(mutation_notes([service("orders", backend)])))
+
+    def test_t024_the_skill_names_both_causes(self) -> None:
+        self.assertCauses(" ".join(SKILL.read_text(encoding="utf-8").split()))
+
+    def test_t024_the_fragments_paragraph_and_catch_up_each_name_both_causes(self) -> None:
+        text = FRAGMENT.read_text(encoding="utf-8")
+        catch_up = next(block for block in text.split("\n\n") if block.startswith("**Catch-up.**"))
+        body = text.split("\n\n")[1]
+        for where, words in (("paragraph", body), ("catch-up", catch_up)):
+            with self.subTest(where=where):
+                self.assertCauses(" ".join(words.split()))
+
+
 class NoteTest(unittest.TestCase):
     def test_e2_each_backends_note_says_the_same_in_its_own_words(self) -> None:
         for backend in ("go", "java-spring", "java-quarkus"):

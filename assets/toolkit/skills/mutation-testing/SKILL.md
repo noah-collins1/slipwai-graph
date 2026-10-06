@@ -88,6 +88,7 @@ git ls-files --others --exclude-standard
 - Identify the package manager, test runner, affected package(s), and existing Stryker config.
 - Use the actual review boundary: the detected default branch for a single PR, or the immediately lower branch for a stacked PR layer.
 - Diff-scoped mutation covers the whole change under review: staged, unstaged and untracked production files are included and mutated, and nothing is committed or stashed to run it. The working tree does not need to be clean.
+- `make mutation` runs the whole sweep instead of a scope when the `mutation` or `mutation-full` rule changed, or when the project has a `mutation-full` recipe that is not the one the factory wrote; that recipe runs as written, `SINCE` included.
 - For a stacked slice, mutate the focused layer against its parent. The top also runs the cumulative acceptance and repository gates required by `stack-pull-requests`.
 - In monorepos, start in the smallest affected package, then widen to the repo-level command when the targeted run is healthy.
 - If no Stryker setup exists in a JS/TS project, recommend adding it before doing manual mutation analysis.

@@ -91,7 +91,9 @@ GO_MUTATION_NOTE = """\
 # mutant costs a run of this module's suite, so a sweep re-proves every file that shipped weeks ago at full price,
 # and a stage that expensive gets routed around rather than read. Phase 4 on `main` runs `make mutation SINCE=<the
 # commit before the merge>`, so the check is priced by the change that merged. A change to `__APP__/.gremlins.yaml` or to
-# `scripts/go-mutation.py` sweeps the service, since no scope can be trusted across it. The scope is computed from
+# `scripts/go-mutation.py` sweeps the service, since no scope can be trusted across it; a change to the `mutation` or
+# `mutation-full` rule, or a `mutation-full` recipe that is not the one the factory wrote, makes the whole run the sweep,
+# and that recipe runs as written. The scope is computed from
 # git before staging, not handed to Gremlins' own `--diff`:
 # `--diff` resolves changed paths against the repository root and matches them against paths within the
 # module, so from a service directory it skips every mutant and reports success having mutated nothing. Gremlins has no
@@ -196,8 +198,9 @@ JAVA_SPRING_MUTATION_NOTE = """\
 # exception: `make mutation` scopes itself on a `slice/<id>` branch, and `make mutation SINCE=<ref>` does the same on
 # any checkout, narrowing PIT to the changed classes, `Foo` and `Foo$*`, within the targets above; a class PIT finds
 # nothing to mutate in (an interface, a record with no logic) is reported as no mutant to run, not as a failure.
-# `make mutation-full` is the sweep, unchanged, and CI and the trunk get the sweep. Phase 4 on `main` runs
-# `make mutation SINCE=<the commit before the merge>`.
+# `make mutation-full` is the sweep, unchanged, and CI and the trunk get the sweep, as does a change to the `mutation`
+# or `mutation-full` rule; a `mutation-full` recipe that is not the one the factory wrote also makes the whole run the
+# sweep, and it runs as written. Phase 4 on `main` runs `make mutation SINCE=<the commit before the merge>`.
 #
 # So a clean run here does NOT mean the adapters are well tested; it means the rules are. Widen
 # `targetClasses` as use cases arrive, and leave the adapters out — their tests are about wiring, and
@@ -247,8 +250,10 @@ SCOPING = """
 `make mutation` scopes itself on a `slice/<id>` branch: it mutates only the production files that differ from the trunk
 commit the branch was cut from, staged, unstaged and untracked ones included, and nothing is committed or stashed to run
 it. `make mutation SINCE=<review-base>` scopes it to what differs from that ref on any checkout, CI included. `make
-mutation-full` is the sweep, and CI and the trunk get the sweep. Phase 4 on `main` runs `make mutation SINCE=<the commit
-before the merge>`, so the check is priced by the change that merged.
+mutation-full` is the sweep, and CI and the trunk get the sweep, as does a change to the `mutation` or `mutation-full`
+rule. A `mutation-full` recipe that is not the one the factory wrote also makes the whole run the sweep, and it runs as
+written, `SINCE` included. Phase 4 on `main` runs `make mutation SINCE=<the commit before the merge>`, so the check is
+priced by the change that merged.
 """
 GO_REPORT = """The Go run leaves its report at `<service>/gremlins.json` — read that, not the scrollback.
 """
