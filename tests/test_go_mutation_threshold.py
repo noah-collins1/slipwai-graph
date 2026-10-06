@@ -80,7 +80,13 @@ class ThresholdTest(unittest.TestCase):
         finally:
             os.environ.clear()
             os.environ.update(saved)
+        self.last_out = out.getvalue()
         return status, out.getvalue(), err.getvalue()
+
+    def line(self, cause: str, what: str) -> str:
+        return (f"mutation: the sweep runs for {os.path.relpath(self.service)} — {cause}, and .gremlins.yaml's "
+                f"{what} is a "
+                'share of the whole module, not "no survivor", so the whole module decides')
 
     def runs(self) -> list[list[str]]:
         return self.tools.runs()
@@ -94,8 +100,7 @@ class ThresholdTest(unittest.TestCase):
                 first, second = self.runs()
                 self.assertIn("--exclude-files", first)
                 self.assertNotIn("--exclude-files", second)  # the unscoped path
-                self.assertIn("mutation: svc — a scoped mutant lived and efficacy 98.9 is a share of the whole module, "
-                              "not `no survivor`; the whole module is run and judges", out.splitlines())
+                self.assertIn(self.line("1 scoped mutant(s) lived", "efficacy threshold of 98.9"), out.splitlines())
 
     def test_e2_the_sweeps_verdict_and_report_are_the_runs(self) -> None:
         for style, expected in (("binary", 10), ("run", 1)):
@@ -112,7 +117,8 @@ class ThresholdTest(unittest.TestCase):
                 plan = [run(report("KILLED", "NOT COVERED"), 10), run(report("KILLED"))]
                 status, out, err = self.main(LOWERED, plan, style)
                 self.assertEqual((status, len(self.runs())), (0, 2), out + err)
-                self.assertIn("Gremlins failed the scoped run", out)
+                self.assertIn(self.line("Gremlins failed the scoped mutants", "efficacy threshold of 98.9"),
+                              out.splitlines())
 
     def test_e4_a_scope_invariant_threshold_judges_the_scoped_run_alone(self) -> None:
         for style, expected in (("binary", 10), ("run", 1)):
@@ -138,7 +144,12 @@ class ThresholdTest(unittest.TestCase):
                 coverage = LOWERED + "  mutant-coverage: 60\n"
                 status, out, err = self.main(coverage, [run(report("NOT COVERED"), 10), run(report("KILLED"))], style)
                 self.assertEqual((status, len(self.runs())), (0, 2), out + err)
-                self.assertIn("mutant-coverage", out)
+                self.assertIn(self.line("Gremlins failed the scoped mutants", "efficacy threshold of 98.9"),
+                              out.splitlines())
+                self.assertEqual(self.main(FACTORY + "  mutant-coverage: 60\n", [run(report("NOT COVERED"), 10),
+                                                                               run(report("KILLED"))], style)[0], 0)
+                self.assertIn(self.line("Gremlins failed the scoped mutants", "mutant-coverage threshold of 60"),
+                              self.last_out.splitlines())
 
     def test_e7_what_stays_red_stays_red_without_a_sweep(self) -> None:
         for style in STYLES:
@@ -148,6 +159,14 @@ class ThresholdTest(unittest.TestCase):
                     status, out, err = self.main(LOWERED, plan, style)
                     self.assertNotEqual(status, 0, out + err)
                     self.assertEqual(len(self.runs()), 1)
+
+    def test_e9_the_line_says_what_the_threshold_is(self) -> None:
+        for yaml, what in ((None, "efficacy threshold, which is not set"),
+                           ("unleash:\n  threshold:\n    efficacy: high\n", "efficacy threshold, which cannot be read"),
+                           ("unleash:\n  threshold:\n    efficacy: 99\n", "efficacy threshold of 99")):
+            with self.subTest(what=what):
+                _, out, _ = self.main(yaml, [run(report("LIVED"), 10), run(report("LIVED"), 10)])
+                self.assertIn(self.line("1 scoped mutant(s) lived", what), out.splitlines())
 
     def test_e8_a_threshold_it_cannot_read_as_a_number_is_not_invariant(self) -> None:
         for yaml in (None, "unleash:\n  integration: true\n", "unleash:\n  threshold:\n    efficacy: high\n",
