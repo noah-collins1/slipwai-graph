@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True  # before the package loads: nothing may be written beside the selector or under assets/
 
-from select_tests import base, full_rows  # noqa: E402
+from select_tests import base, full_rows, rules  # noqa: E402
 from select_tests.report import Full, full_line, printable  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -31,9 +31,16 @@ def run_full() -> int:
 def measure() -> Full | None:
     """The base, what changed since, and whether it can be told what that reaches; the line of the base is printed."""
     found = base.change_set(ROOT, base.establish(ROOT, os.environ))
-    for path in found.paths:  # provisional until the path rules (T005): the catalog is the one path that broadens
-        if path == "catalog.json":
-            return Full(full_line(f"{base.changed_words(ROOT, found, path)} — the catalog"))
+    try:
+        catalog = rules.load_catalog(ROOT)
+    except Full:
+        if "catalog.json" not in found.paths:
+            raise
+        catalog = {}  # a catalog that was changed and no longer reads is itself the first full row's path
+    for path in found.paths:  # the first that broadens, in the order the change set is sorted
+        why = rules.broadening(path, catalog)
+        if why is not None:
+            return Full(full_line(f"{base.changed_words(ROOT, found, path)} — {why}"))
     for path in base.ignored_files(ROOT):
         return Full(full_line(f"`{printable(path)}` is a file git ignores — what it changes cannot be established"))
     print(found.line, flush=True)
