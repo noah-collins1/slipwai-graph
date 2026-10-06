@@ -95,3 +95,13 @@ The selector is under `scripts/`, which the wheel does not carry (`pyproject.tom
 `catalog.json`, `VERSION`). The declarations and the selector's tests are under `tests/`; the root `Makefile` comes by
 patch; `docs/maintaining.md` is a factory page. Nothing under `assets/`, `src/slipwai/` or `catalog.json` changes, so
 there is no bump and no fragment (AC-S38-17, G14).
+
+## R-9 `SKIP` naming every module (converge pass 2's question, answered by the host)
+
+T032 made `make test SKIP="<every module>"` say `selection off: SKIP given` and run no module, where the unpatched
+recipe ran the whole suite — by accident: `filter-out` left `TESTS` empty and the empty branch was `discover`.
+Converge pass 2 asked whether priority 5 should make it run every module instead. It stays as T032 left it, with the
+line saying no module runs: AC-S38-13 gives `SKIP` the meaning *every module but these*, the person named every module,
+and a run with `SKIP` set never reads, writes or removes a stamp (the bypass list), so nothing is recorded as a pass.
+That is not a doubt about what changed — the only thing priority 5 broadens on. An explicitly empty `TESTS` is not
+*given* (T034): it reads as unset.
