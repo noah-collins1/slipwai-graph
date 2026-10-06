@@ -12,6 +12,7 @@ import os
 import re
 
 from mutation_scope_fixture import ScopeCase
+from stamp_fixture import git
 from test_mutation_borders import calls, clean_environment, loaded
 
 PACKAGE = "com/example/x"
@@ -131,6 +132,20 @@ class SpringRunnerTest(SpringCase):
         self.assertIn(f"mutation: scope apps/spring — {kept}", lines)
         self.assertIn(f"mutation: not mutated apps/spring/{left} — outside PIT's configured targets", lines)
         self.assertFalse([line for line in lines if line.startswith("mutation: scope ") and "Outside" in line], lines)
+
+    def test_t030_a_deleted_service_whose_makefile_was_not_regenerated_fails_by_name_and_starts_nothing(self) -> None:
+        git(self.repo, "checkout", "-q", "main")
+        self.pom(("com.example.x.*",))
+        self.java("health/HealthStatus")
+        self.commit("the service")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        git(self.repo, "rm", "-rq", "apps/spring")
+        execute = FakeExecute()
+        status, lines = self.run_spring(execute)
+        self.assertEqual((status, execute.seen), (2, []), "\n".join(lines))
+        self.assertIn("mutation: refuse apps/spring — the service directory `apps/spring` does not exist; "
+                      "the Makefile still names it, so regenerate it or restore the service", lines)
+        self.assertEqual(lines[-1], "mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/spring")
 
     def test_e4_an_unreadable_pom_or_pattern_is_reported_as_unreadable_naming_the_file(self) -> None:
         self.java("health/HealthStatus")

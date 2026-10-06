@@ -116,6 +116,21 @@ class GoScopeTest(ScopeCase):
         _, lines, _ = self.run_default()
         self.assertIn("mutation: scope apps/service — health/health.go", lines)
 
+    def test_t030_a_service_directory_that_is_gone_fails_that_service_by_name_and_the_run_closes(self) -> None:
+        git(self.repo, "checkout", "-q", "main")
+        self.write("apps/ghost/.gremlins.yaml", "unleash:\n  integration: true\n")
+        self.commit("a service the Makefile still names")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        git(self.repo, "rm", "-rq", "apps/ghost")
+        self.write(HEALTH, "package health\n// edited\n")
+        status, lines, tools = self.run_default("go:apps/service", "go:apps/ghost")
+        self.assertEqual(status, 2, "\n".join(lines))
+        self.assertEqual(self.service_lines(lines, "apps/ghost"), [
+            "mutation: refuse apps/ghost — the service directory `apps/ghost` does not exist; "
+            "the Makefile still names it, so regenerate it or restore the service"])
+        self.assertIn("mutation: scope apps/service — health/health.go", lines)
+        self.assertEqual(lines[-1], "mutation: 1 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/ghost")
+
     def test_e4_the_tools_failure_is_the_services_failure(self) -> None:
         self.fit_recipe(TWO)
         (self.repo / HEALTH).write_text("package health\n// edited\n", encoding="utf-8")

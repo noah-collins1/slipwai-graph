@@ -710,6 +710,14 @@ def refusal(backend: str, path: str, files: list[str]) -> Result:
                   + (" (" + PYTHON_REFUSED + ")" if backend == "python" else ""))
 
 
+def gone(path: str) -> str | None:
+    """The words of the refusal for a service whose directory is not there (a Makefile that still names a deleted service)."""
+    if os.path.isdir(path):
+        return None
+    return (f"the service directory `{shown(path)}` does not exist; the Makefile still names it, so regenerate it or "
+            "restore the service")
+
+
 class Tools:
     """The runner of the wired backends. Any other backend refuses until its tool is wired, so the target can fail but
     never pass for it."""
@@ -725,7 +733,13 @@ class Tools:
             return spring_plan(path, files)
         return Plan(list(files), [])
 
+    def gone(self, backend: str, path: str) -> str | None:
+        """The refusal's words where this runner would start a tool for a service whose directory is not there."""
+        return gone(path) if backend in WIRED else None
+
     def run(self, backend: str, path: str, files: list[str]) -> Result:
+        if (why := self.gone(backend, path)) is not None:
+            return Result(2, [], [], why)
         if backend == "go":
             return go(path, files)
         if backend == "java-spring":
@@ -734,6 +748,8 @@ class Tools:
 
     def sweep(self, backend: str, path: str) -> Result:
         """The service's whole run, as `make mutation-full` would: no scope."""
+        if (why := self.gone(backend, path)) is not None:
+            return Result(2, [], [], why)
         if backend == "go":
             command = [sys.executable, os.path.join(HERE, "go-mutation.py"), path]
             return Result(subprocess.run(command, close_fds=False, check=False).returncode, [], [])
@@ -820,6 +836,15 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     status = 0
     for backend, root in services:
         plan = plans.get(root)
+        runs = root in causes or root in unread or (plan is not None and bool(plan.keep))
+        missing = getattr(runner, "gone", lambda *_: None)(backend, root)  # a runner with no `gone` has no tool to start
+        if runs and missing is not None:  # no tool starts for a service that is not there
+            why = missing
+            say(f"refuse {root} — {why}")
+            counts["refused"] += 1
+            failed.append(root)
+            status = status or 2
+            continue
         if root in causes:
             say(f"sweep {root} — {said(causes[root])}")
             result, kind = (Result(0, [], []) if dry and backend in WIRED else runner.sweep(backend, root)), "swept"
