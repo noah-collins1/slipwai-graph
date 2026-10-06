@@ -1,0 +1,12 @@
+$ --hand-back specs/f/slices/S4 drive-implement implement < bad.txt   (extra probe: wrong type, bad id, absolute and .. paths, score 9, no scope missing)
+Done.
+
+```result-contract
+{"contract": 1, "delegate": "drive-implement", "scope": "S4", "status": "green", "contracts_changed": [], "invariants_checked": [], "tests": "none", "decisions": ["X7"], "assumptions": [], "unresolved": [], "change_summary": "x", "files_changed": ["/etc/passwd", "../up.txt"], "difficulty_observed": {"score": 9, "reason": ""}}
+```
+check-decisions: tests: 'none' is not a list of strings
+check-decisions: decisions: 'X7' is not a decision id `D<n>`
+check-decisions: files_changed: '/etc/passwd' is absolute; a path is repository-relative
+check-decisions: files_changed: '../up.txt' has a `..` segment; a path stays inside the repository
+check-decisions: difficulty_observed: {'score': 9, 'reason': ''} is not valid; it is an object of exactly an integer `score` 1-5 and a non-empty string `reason`
+exit 1

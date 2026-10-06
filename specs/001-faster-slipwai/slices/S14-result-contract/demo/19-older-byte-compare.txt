@@ -1,0 +1,17 @@
+base commit (merge-base with adopt-method): c3c760b2a9b690cfefc8a059ba919dfaf84bec6b
+--- base-generated project:
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+exit 0
+python3 scripts/agents/benchmark.py
+benchmark: no record yet — /drive writes specs/<feature>/slices/<id>/benchmark.json from its next stage
+exit 0
+--- this branch (02-nothing-older.log, without its $ lines):
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+exit 0
+python3 scripts/agents/benchmark.py
+benchmark: no record yet — /drive writes specs/<feature>/slices/<id>/benchmark.json from its next stage
+exit 0
+--- diff:
+identical

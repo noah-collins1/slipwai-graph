@@ -1,0 +1,18 @@
+$ python3 scripts/check-decisions.py --hand-back specs/f/slices/S1 drive-gaps gaps < handback-gaps.txt
+exit 0
+$ head -4 specs/f/slices/S1/hand-backs.md
+# Hand-backs — S1
+
+## 2026-10-05T22:36:50Z — drive-gaps — gaps
+
+$ python3 scripts/check-decisions.py
+check-decisions: 0 decision(s) in 0 file(s), 0 demo(s) in 0 log(s), 1 hand-back(s) in 1 record(s), every field present and every path in the tree, every done slice in the adversary log
+exit 0
+$ (again) --hand-back same file
+check-decisions: note: specs/f/slices/S1/hand-backs.md already ends this drive-gaps gaps entry with the same content; nothing appended
+exit 0
+$ wc -l hand-backs.md
+8 specs/f/slices/S1/hand-backs.md
+$ --hand-back < empty.txt
+check-decisions: no result-contract block in the hand-back
+exit 1

@@ -1,0 +1,38 @@
+## Converge verdict: S2 has not converged. There is nothing here to converge yet.
+
+`specs/f/slices/S2/` contains only `benchmark.json`. It has no `spec.md`, `plan.md`, `tasks.md` or example map, and nothing has been built for it. `git diff HEAD` is empty, there is no `slice/S2` branch or worktree, and `main` is at `ef97166 init`. With no plan, no tasks and no diff, I can't check anything against the constitution. So I'm not calling this converged, and I'm not inventing a pass either.
+
+**Constitution principles, one by one** (`.specify/memory/constitution.md`). None is satisfied, because no file or line exists that could satisfy one. None is violated either:
+- **I. Domain correctness** (integer minor units plus currency, state derived by folding events, compensating events): no code to check.
+- **II. Idempotency and replay** (idempotency key on public writes, decisions checked against the stream, at-least-once consumers, a test that retries don't duplicate): no write endpoint in the diff.
+- **III. Decider / event-sourced core** (written stream identity, where each read model lives, every event has a trigger, every field traces to an event): no plan or model entry for S2.
+- **IV. Hexagonal** (domain has no framework, clock or UUID imports; every port has a fake; dependency direction enforced): no code.
+- **V. Acceptance-driven** (at least one Given-When-Then scenario entering through the real entry point, tests in `tests/edge/` for adapters, RED-GREEN-REFACTOR): there are no examples or scenarios at all. This is unmet by absence.
+
+**Each level:**
+
+| Level | What the diff proves | What it doesn't |
+|---|---|---|
+| Domain | nothing | there are no Decider, events or rules |
+| Use case | nothing | there is no use case or port |
+| Delivery adapter | nothing | there is no route; `make check-openapi` has nothing new to hold |
+| Screen | nothing | there is no `apps/web` change |
+| Published contract | nothing | `GET /openapi.json` and `packages/api-client` are unchanged |
+
+**Hand-back record:** `scripts/check-decisions.py --hand-backs specs/f/slices/S2` reports `gaps 2026-10-05T18:30:00Z drive-gaps: nothing recorded — a finding for converge`, and 0 of 1 stages carry a result contract. That is a **MEDIUM** finding for the `gaps` stage (delegate type `drive-gaps`). `specs/f/slices/S2/hand-backs.md` has no block and no `Missing:` line. To close it, either continue that `drive-gaps` delegate for its block, or record `--hand-back-missing specs/f/slices/S2 drive-gaps gaps "<reason>"`. One more thing doesn't add up: a gaps stage is recorded as having run on a slice with no artifacts for it to read.
+
+## Tasks appended: none
+
+My manifest only lets me append to `specs/f/slices/S2/tasks.md`, and that file doesn't exist. Appending would mean creating it. `/drive` works out a slice's stage from which artifacts exist, so a new `tasks.md` would make it look as if the tasks stage had finished on a slice that has no plan. I left the file alone. The MEDIUM finding above is the task I would have appended:
+
+- `[MEDIUM]` Record the `gaps` stage's `drive-gaps` result contract, or a `Missing:` line, in `specs/f/slices/S2/hand-backs.md`.
+
+## For you to decide
+
+Converge was started before this slice had been planned. Run `/drive` on S2 so it steps back to the earliest stage still missing an artifact, which here is the spec or example map. Running another converge pass now would give the same result. Also check that "S2" is the slice you meant: `specs/f/slices/` also contains `S2x`, `S1`, `S1m` and `S3`.
+
+I didn't change any code or run any gate. The working tree is as I found it (`specs/` was already untracked).
+
+```result-contract
+{"contract": 1, "delegate": "drive-converge", "scope": "specs/f/slices/S2 converge pass 1", "status": "not-converged", "contracts_changed": [], "invariants_checked": ["constitution I-V: no diff to satisfy or violate any MUST", "hand-backs: gaps/drive-gaps nothing recorded (0 of 1)"], "tests": ["python3 scripts/check-decisions.py --hand-backs specs/f/slices/S2: exit 0, 1 stage owing a block, nothing recorded", "git diff --stat HEAD: empty"], "decisions": [], "assumptions": ["the slice meant is S2, not S2x", "no slice/S2 branch or worktree holds unseen work (git branch -a and git worktree list show main only)"], "unresolved": ["S2 has no spec.md, plan.md, tasks.md, examples or diff; converge ran before planning, so /drive should step back to the earliest stage owing an artifact", "MEDIUM: gaps stage (drive-gaps) has no result-contract block or Missing: line in specs/f/slices/S2/hand-backs.md; not appended as a task because tasks.md does not exist and creating it would make /drive misread S2's stage", "a gaps stage is recorded for a slice with no artifacts; check benchmark.json is for this slice"], "change_summary": "Read S2 (only benchmark.json), the constitution and the empty diff, and ran the hand-back check. Not converged: there is nothing to verify, and one MEDIUM hand-back finding is reported rather than appended because tasks.md does not exist.", "files_changed": [], "difficulty_observed": {"score": 1, "reason": "slice has no artifacts or diff; the verdict follows from their absence"}}
+```

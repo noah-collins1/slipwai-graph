@@ -1,0 +1,14 @@
+$ python3 scripts/check-decisions.py --hand-back specs/f/slices/S2 drive-converge converge < handback-converge.txt   (first pass, acceptEdits only)
+exit 0
+$ python3 scripts/check-decisions.py --hand-back specs/f/slices/S2 drive-converge converge < handback-converge2.txt   (registry permissions)
+exit 0
+$ grep "^## " specs/f/slices/S2/hand-backs.md
+## 2026-10-05T22:39:45Z — drive-converge — converge
+## 2026-10-05T22:39:46Z — drive-converge — converge
+$ python3 scripts/check-decisions.py --hand-backs specs/f/slices/S2
+hand-backs: gaps 2026-10-05T18:30:00Z drive-gaps: nothing recorded — a finding for converge
+hand-backs: with a result contract: 0 of 1
+exit 0
+$ python3 scripts/check-decisions.py   (S3 fixture set aside)
+check-decisions: 0 decision(s) in 0 file(s), 0 demo(s) in 0 log(s), 4 hand-back(s) in 3 record(s), every field present and every path in the tree, every done slice in the adversary log
+exit 0

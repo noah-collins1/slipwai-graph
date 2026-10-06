@@ -1,0 +1,24 @@
+I found 10 gaps in `specs/f/slices/S1/spec.md`, and none of them is addressed anywhere else. The spec is two lines, and the slice has no example map, plan, tasks or `decisions.md`. I searched `apps/` for "item" in `.ts`/`.tsx` files and found no code for this slice, so this is a check of the spec alone, not of anything built. There is no `.codegraph/` index here; I used text search only.
+
+The spec says, in full:
+> A visitor can add an item to a list.
+> An empty name is refused.
+
+### Gaps
+
+1. **Nothing says what an item is** (line 3). "Name" is the only field the spec hints at, and only through the refusal rule. It doesn't say whether an item has other fields, an ID or an order. Fixing this needs the item's fields written down.
+2. **Nothing says which list** (line 3). It could be one global list, one list per visitor, or a list identified by an ID that has to exist first. If lists have IDs, it's open what happens when the list doesn't exist. This decides the stream identity, which is costly to change later. Fixing it needs a rule naming the list, plus the refusal for an unknown list.
+3. **"Empty" isn't defined** (line 4). Whitespace-only names (`"   "`), a missing field and `null` are all undecided, as is whether names are trimmed before saving. Fixing it needs a rule with examples for `""`, `"   "`, a missing name and `" milk "`.
+4. **No maximum length.** Nothing limits how long a name can be, so a very large input is undefined behaviour. Fixing it needs a stated limit and its refusal.
+5. **Duplicates aren't covered.** Adding "milk" twice could succeed twice, be refused, or merge, and the spec doesn't say. Case-sensitivity is also open. Fixing it needs a rule with examples.
+6. **What the visitor sees on success isn't stated.** The spec doesn't say whether the new item appears in a visible list, where in the order, or whether the input clears. Without a read side there's nothing for the demo to show. Fixing it needs acceptance criteria for the list after an add.
+7. **What the visitor sees on refusal isn't stated** (line 4). "Refused" doesn't say whether there's a message, what it says, whether the typed input is kept, or what the HTTP status is (400 or 422, and the error shape). As written, it can't be tested from the browser. Fixing it needs criteria for the refusal message and the API status.
+8. **Who a "visitor" is isn't settled** (line 3). It's open whether a visitor is anonymous, whether a visitor's items are kept separate from other visitors', and whether anyone can add to any list. That makes authorisation undecided, and it's a product decision, not one to assume.
+9. **Failure, double-submit and concurrent adds aren't covered.** The spec doesn't say what happens when saving fails, when the form is submitted twice, or when two adds to the same list happen at once. Fixing it needs criteria for each.
+10. **Nothing can be tested yet.** There are no numbered criteria and no Given/When/Then examples, so no test can point back to a criterion. Fixing it needs an example map (`/example-map`) that turns the items above into numbered criteria.
+
+Gaps 2, 5 and 8 need a product owner's answer before planning.
+
+```result-contract
+{"contract": 1, "delegate": "drive-gaps", "scope": "specs/f/slices/S1/spec.md artifact review (pre-planning)", "status": "gaps", "contracts_changed": [], "invariants_checked": ["spec.md lines 3-4 against implied states: item shape, list identity, empty definition, length bound, duplicates, success/refusal observability, actor identity, failure/concurrency, testability"], "tests": [], "decisions": [], "assumptions": ["No implementation exists for S1: text search of apps/ for 'item' in .ts/.tsx found nothing, so this is a spec-only review", "No .codegraph/ index is present; text search was the route used"], "unresolved": ["List identity/ownership (gap 2) needs a product decision", "Duplicate-name policy (gap 5) needs a product decision", "Visitor identity and authorisation (gap 8) needs a product decision", "Slice has no example map, plan, tasks or decisions.md to cross-check"], "change_summary": "Read the two-line S1 spec and found ten gaps: item shape, list identity, empty-name definition, length bound, duplicates, success and refusal observability, actor identity, failure and concurrency, and no testable criteria. No code exists to compare against.", "files_changed": [], "difficulty_observed": {"score": 1, "reason": "two-line artifact, no code to trace"}}
+```

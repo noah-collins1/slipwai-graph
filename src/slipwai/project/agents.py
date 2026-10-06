@@ -23,6 +23,7 @@ from ..layout import AT_ROOT, Layout
 from .converge_stage import levels
 from .cruise_agents import cruise_body, cruise_summary
 from .design_stage import tasks_brief as design_tasks_brief
+from .result_contract import brief_paragraph, converge_sentence, slice_record_sentence
 from .stage_models import AGENT, ANY, MANIFEST, NO_STAGE, STAGES
 
 # Where the canonical types live, beside `skills/` and `commands/`.
@@ -158,7 +159,8 @@ an assertion failure rather than a build failure, and whether it was observed be
 same type, under four constraints: a sub-delegate's manifest is a subset of yours, never wider; you verify each
 one's evidence against the tree rather than relaying its claim; nothing you spawn writes `tasks.md`; and you
 report as one delegate with one cycle's evidence, saying that you split and into how many groups. The obvious
-implementation hands a sub-delegate your whole write scope, and that is the one this forbids.
+implementation hands a sub-delegate your whole write scope, and that is the one this forbids. Your sub-delegates get no `result-contract` block and no entry
+of their own: what each did, and its evidence, goes in your one block.
 
 Return what you finished, the boundary you were given and the cycle unit you ran, whether you fanned out and
 into how many groups, the tests you added with their names, the commands you ran and their
@@ -180,6 +182,8 @@ past the ladder's bound, so the grade is a decision about what the slice may shi
 brief names your budget; when you reach it, return what you have found marked incomplete rather than
 continuing — an incomplete verdict with three findings is worth more than a complete one nobody waited for.
 
+{converge_sentence(layout)}
+
 Where you prove a finding by changing the code and watching the suite, you own leaving the tree clean on every
 exit path, including the one where you are stopped: make a branch or a commit before your first mutation so an
 abandoned pass is recoverable by construction, restore each file with `git checkout -- <exact path>` before
@@ -199,7 +203,7 @@ named — with what the code and tests actually do. A gap is a consequential dif
 handles, a criterion no test pins, a promise the implementation quietly narrowed. Say where each one is, with
 the file and line, and what it would take to close it.
 
-Return the gaps and nothing else. Do not fix one, do not add a test, and do not rewrite an artifact to make a
+Return the gaps, then your block, and nothing else. Do not fix one, do not add a test, and do not rewrite an artifact to make a
 gap go away: a paper edit here is a rewritten test later, and the session that delegated you decides which
 gaps become tasks.""",
 
@@ -251,7 +255,9 @@ slice's to write, and needing one is a stop rather than a small exception.
 Return the converged verdict, what you built, and anything you left. A product question, an ambiguity the
 artifacts do not settle, or a need outside that scope goes back to the session that delegated you — recorded
 in the slice's `plan.md`, with the slice marked blocked. Never guess past one: a sibling is building against
-the same contract, and a guess here becomes their rework.""",
+the same contract, and a guess here becomes their rework.
+
+{slice_record_sentence()}""",
         **cruise_body(layout),
     }[agent.name]
 
@@ -269,6 +275,8 @@ commands: {agent.commands}
 # {agent.name}
 
 {body(agent, layout)}
+
+{brief_paragraph(agent.name)}
 
 ## What holds for every delegate here
 

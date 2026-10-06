@@ -43,6 +43,7 @@ NOT_AN_INPUT = {
     ".": "the project's own directory, as a working directory",
     "init": "a subcommand of a tool a check launches, not a path",
     ".claude/projects": "under the user's home (`Path.home()`), where the benchmark reads session transcripts",
+    "agents": "a key of a benchmark.json stage, not a path",
 }
 
 
@@ -316,7 +317,6 @@ class TableHeldTest(RecordCase):
 
     def findings(self) -> list[str]:
         records = importlib.import_module("verify_scoped.record")  # the script's own reading of the make database
-
         findings = []
         fired: set[str] = set()
         for shape in self.SHAPES:

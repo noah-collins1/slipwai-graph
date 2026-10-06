@@ -1,0 +1,9 @@
+# Plan: S1
+
+## Rule
+
+R1 — An empty name is refused: `addItem({ name: "" })` returns a refusal and appends no event.
+
+## Structure
+
+`apps/service/src/items/add-item.ts` holds the decider; `apps/service/src/items/add-item.test.ts` its test.

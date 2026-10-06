@@ -22,6 +22,7 @@ from .cruise_seat import watch_seat_body
 from .cruise_stops import LOG, REPORT, stop_table
 from .cruise_told import boundary_asks, told_argument
 from .cruise_unblock import unblock_section
+from .result_contract import cruise_sentences
 
 # The last line of every iteration: the one thing the outer loop reads.
 LAST_LINES = ("cruise: continue", "cruise: done", "cruise: parked: <what a person must provide>",
@@ -191,6 +192,8 @@ decision by editing its `Status` and writing the answer they want into the artif
 re-derives the entry stage from that artifact, the way demo feedback re-enters the ladder.
 
 {ADR_RULE.replace('{REPORT}', REPORT)}
+
+{cruise_sentences(layout)}
 
 {hand_section(layout.make)}
 ## When the ready set is empty: the completion audit

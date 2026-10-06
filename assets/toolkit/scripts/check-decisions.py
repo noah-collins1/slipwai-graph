@@ -51,15 +51,24 @@ printed and counted as an entry; the gate does not.
 writes, once, a `## <id> · predates the adversary gate · <date>` row for every done slice without one, which the gate accepts
 and which says the slice was never attacked. A second baseline is refused.
 
+Every `specs/<feature>/hand-backs.md` and `specs/<feature>/slices/<id>/hand-backs.md` is held to the result-contract
+shape `docs/result-contract.md` writes down: an entry `## <UTC time> — drive-<name> — <stage>` holding one fenced
+`result-contract` block, or a `- **Missing:** <reason>` line, one finding per fault naming the file, the heading and
+the field. The shape itself lives in `hand_backs.py` beside this script. Where no such record exists the gate says and
+does exactly what it did before them; where one does, its summary gains `, <n> hand-back(s) in <m> record(s)`.
+
 A project with no record anywhere passes and says so: the gate runs in `make verify` from the first commit.
 """
 
 from __future__ import annotations
 
+import importlib.util
+import json
 import re
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
+from typing import Any
 
 
 def project_root(script: Path, depth: int) -> Path:
@@ -74,6 +83,7 @@ SPECS = ROOT / "specs"
 DECISIONS = "decisions.md"
 DEMO_LOG = "demo-log.md"
 ADVERSARY_LOG = "adversary-log.md"
+HAND_BACKS = "hand-backs.md"
 # The fields of one decision entry, in order, as the bold label each line opens with.
 DECISION_FIELDS = ("Stage", "Question", "Options", "Decision", "Why", "Decided by", "Confidence", "Written to",
                    "Status")
@@ -470,14 +480,45 @@ def verb_options(arguments: list[str]) -> dict[str, str] | None:
     return options
 
 
+def hand_backs_module() -> Any:
+    """`hand_backs.py` beside this script, loaded by path with bytecode off (a `__pycache__` under scripts/ would
+    make every later scoped run the full gate)."""
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location("hand_backs", Path(__file__).resolve().with_name("hand_backs.py"))
+    if spec is None or spec.loader is None:
+        raise ImportError("cannot load hand_backs.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int]:
+    """The findings, the notes and the count of hand-backs in every record, each finding naming its file."""
+    findings: list[str] = []
+    if not records:  # no record: the module is not even loaded, and the gate is what it was
+        return findings, [], 0
+    module = hand_backs_module()
+    notes: list[str] = []
+    blocks = 0
+    for path in records:
+        feature = path.parent if path.parent.parent == SPECS else path.parent.parent.parent
+        known = module.decision_ids(feature)
+        found, said, count = module.check_record(read(path), path.relative_to(ROOT).as_posix(), known)
+        findings += found
+        notes += said
+        blocks += count
+    return findings, notes, blocks
+
+
 def gate() -> int:
     for ident in unowned():
         print(f"check-decisions: note: {ident} is implemented in docs/event-model/model.yaml but names no feature "
               "and has no specs/*/slices/ folder, so no adversary log is asked for it")
     decisions = sorted(SPECS.glob(f"*/{DECISIONS}")) if SPECS.is_dir() else []
     logs = sorted(SPECS.glob(f"*/slices/*/{DEMO_LOG}")) if SPECS.is_dir() else []
+    records = sorted([*SPECS.glob(f"*/{HAND_BACKS}"), *SPECS.glob(f"*/slices/*/{HAND_BACKS}")]) if SPECS.is_dir() else []
     findings: list[str] = check_adversary_rows()
-    if not decisions and not logs and not findings:
+    if not decisions and not logs and not records and not findings:
         print("check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet")
         return 0
     for path in decisions:
@@ -486,6 +527,10 @@ def gate() -> int:
         findings += check_decisions(path)
     for path in logs:
         findings += check_demo_log(path)
+    held, said, blocks = check_hand_backs(records)
+    for note in said:
+        print(note)
+    findings += held
     if findings:
         print("check-decisions: the record is not in the shape commands/cruise.md shows\n", file=sys.stderr)
         for finding in findings:
@@ -494,8 +539,95 @@ def gate() -> int:
         return 1
     counted = sum(len(entries(read(p), DECISION_HEADING, legacy=True)) for p in decisions)
     demos = sum(len(entries(read(p), DEMO_HEADING, legacy=True)) for p in logs)
-    print(f"check-decisions: {counted} decision(s) in {len(decisions)} file(s), {demos} demo(s) in {len(logs)} log(s), "
-          "every field present and every path in the tree, every done slice in the adversary log")
+    kept = f", {blocks} hand-back(s) in {len(records)} record(s)" if records else ""
+    print(f"check-decisions: {counted} decision(s) in {len(decisions)} file(s), {demos} demo(s) in {len(logs)} log(s)"
+          f"{kept}, every field present and every path in the tree, every done slice in the adversary log")
+    return 0
+
+
+HAND_USAGE = (
+    "usage: check-decisions.py --hand-back <specs/feature[/slices/id]> <drive-type> <stage>   (the hand-back on stdin)\n"
+    "       check-decisions.py --hand-back-missing <specs/feature[/slices/id]> <drive-type> <stage> <reason>\n"
+    "       check-decisions.py --hand-backs <specs/feature/slices/id>")
+FOLDER = re.compile(r"specs/([A-Za-z0-9][A-Za-z0-9._-]*)(?:/slices/([A-Za-z0-9][A-Za-z0-9._-]*))?")
+
+
+def refuse(reason: str) -> int:
+    """Usage, exit 2, led by one line naming the argument that failed."""
+    print(f"check-decisions: {reason}", file=sys.stderr)
+    print(HAND_USAGE, file=sys.stderr)
+    return 2
+
+
+def folder_of(argument: str, slice_only: bool) -> tuple[str, re.Match[str] | None, str]:
+    """The folder an argument names, without a leading `./` or a trailing `/`; its `FOLDER` match; and, where it is
+    not a folder the verb takes, why."""
+    path = argument
+    while path.startswith("./"):
+        path = path[2:]
+    path = path.rstrip("/")
+    found = FOLDER.fullmatch(path)
+    if found is None or (slice_only and not found.group(2)):
+        want = "specs/<feature>/slices/<id>" if slice_only else "specs/<feature> or specs/<feature>/slices/<id>"
+        return path, None, f"folder {argument!r} is not {want}"
+    if not (ROOT / path).is_dir():
+        return path, None, f"folder {argument!r} does not exist"
+    return path, found, ""
+
+
+def hand_back_verb(arguments: list[str]) -> int:
+    """`--hand-back` and `--hand-back-missing`: append one entry to the record under a feature or a slice. Usage
+    (exit 2, with a line naming the argument) unless the folder is `specs/<feature>` or `specs/<feature>/slices/<id>`
+    and exists, the type is one of the ten and the stage is a lower-case word."""
+    module = hand_backs_module()
+    missing = arguments[0] == "--hand-back-missing"
+    wanted = 5 if missing else 4
+    if len(arguments) < wanted or (not missing and len(arguments) != wanted):
+        return refuse(f"{len(arguments) - 1} argument(s) given; {arguments[0]} takes {wanted - 1}")
+    where, folder, why = folder_of(arguments[1], False)
+    if folder is None:
+        return refuse(why)
+    if arguments[2] not in module.STATUSES:
+        return refuse(f"type {arguments[2]!r} is not one of the ten drive-* delegate types")
+    if not re.fullmatch(r"[a-z][a-z0-9-]*", arguments[3]):
+        return refuse(f"stage {arguments[3]!r} is not a lower-case word (a-z, 0-9, -; no underscore)")
+    if missing and not " ".join(arguments[4:]).strip():
+        return refuse("the reason is empty; --hand-back-missing says why")
+    record = ROOT / where / HAND_BACKS
+    title = folder.group(2) or folder.group(1)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if missing:
+        wrote = module.append_missing(record, title, arguments[2], arguments[3], " ".join(arguments[4:]).strip(), now)
+        faults: list[str] = []
+    else:
+        faults, wrote = module.append(record, title, arguments[2], arguments[3], sys.stdin.read(),
+                                      module.decision_ids(ROOT / "specs" / folder.group(1)), now)
+    for fault in faults:
+        print(f"check-decisions: {fault}", file=sys.stderr)
+    if not faults and not wrote:
+        print(f"check-decisions: note: {where}/{HAND_BACKS} already ends this {arguments[2]} {arguments[3]} "
+              "entry with the same content; nothing appended", file=sys.stderr)
+    return 1 if faults else 0
+
+
+def coverage_verb(arguments: list[str]) -> int:
+    """`--hand-backs <specs/feature/slices/id>`: for each ended stage of the slice's benchmark.json the transcript
+    shows was delegated, whether the record holds a passing block for it. A reading, not a gate: exit 0."""
+    if len(arguments) != 2:
+        return refuse(f"{len(arguments) - 1} argument(s) given; --hand-backs takes 1")
+    path, folder, why = folder_of(arguments[1], True)
+    if folder is None:
+        return refuse(why)
+    where = ROOT / path
+    bench = where / "benchmark.json"
+    stages = json.loads(bench.read_text(encoding="utf-8")).get("stages", []) if bench.is_file() else []
+    record = where / HAND_BACKS
+    module = hand_backs_module()
+    lines, held, delegated, _ = module.coverage(
+        stages, read(record) if record.is_file() else "", module.decision_ids(ROOT / "specs" / folder.group(1)))
+    for line in lines:
+        print(line)
+    print(f"hand-backs: with a result contract: {held} of {delegated}")
     return 0
 
 
@@ -508,6 +640,10 @@ def main() -> int:
         return 0
     if arguments == ["--adversary-baseline"]:
         return baseline()
+    if arguments[0] in ("--hand-back", "--hand-back-missing"):
+        return hand_back_verb(arguments)
+    if arguments[0] == "--hand-backs":
+        return coverage_verb(arguments)
     options = verb_options(arguments)
     if options is None:
         print(USAGE, file=sys.stderr)
