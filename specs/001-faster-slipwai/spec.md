@@ -2506,6 +2506,28 @@ to the session that dispatched it; *the block* is the fenced `result-contract` b
   its own headless harness produce hand-backs, and two seeded fixtures (no block; a malformed block) show the converge
   finding — in a real `drive-converge` verdict over the no-block fixture (D145) — and the field-naming refusal; the share of real hand-backs carrying a block is written into the quickstart
   with the project's axes, the harness and the number.
+- **AC-S14-20** — *D160, adversary B1, A2, A5.* Given a stage whose benchmark entry has ended and a continuation
+  recorded afterwards with `--hand-back … --started <that stage's started>` (or `--hand-back-missing … --started …`),
+  when `--hand-backs` runs, then that stage reads `block` (or `missing — <reason>`) and no other stage of the same name
+  does; an entry's heading carries ` — <started>` as its fourth part, the verb fills it from the stage's open entry and
+  refuses, writing nothing, an instant naming no entry or an omitted one where only ended entries exist; an entry with no
+  instant covers no stage; the same reason or block for a different start of the stage is appended, the same for the
+  same start is not.
+- **AC-S14-21** — *D161, adversary B2.* Given a project where `hand_backs.py` first reached the history at instant T
+  (the earliest adding commit's author time), then a stage whose entry ended strictly before T owes nothing and is listed
+  as *predates the result contract*, a stage that ended at or after T still owes a block, a shallow clone, no git, an
+  uncommitted module or an unparseable time read as *could not tell* and are counted in neither n nor m, and
+  `make benchmark` reports every predating stage in one line instead of a `0 of m` line per slice.
+- **AC-S14-22** — *D162, adversary A8.* Given a block whose `contract` is anything other than 1, `--hand-back` exits 1
+  and writes nothing, in one line naming the value; the gate keeps AC-S14-5's forward reading of a record already
+  written; and `--hand-backs` reads such an entry as *a block this factory cannot check*, counted in m and not in n.
+- **AC-S14-23** — *D163, adversary B6.* An `unavailable` skipper answer is a `decisions.md` entry with **Decision:**
+  `unavailable: <what a person must provide>`; a skipper's own entry number goes in its block's `change_summary`,
+  never in `decisions`, and the cruise text, the skipper's brief and the page say so.
+- **AC-S14-24** — *Adversary A1, B3, A3, A4, A6.* Every value a verb writes outside the delegate's verbatim block is
+  one line or is refused; every page that owns a stop with delegates says to append each block before ending the
+  stage's entry; a harness whose reader attributes no subagents reads as *could not attribute*; stdin is read as
+  UTF-8 whatever the locale; a damaged record, benchmark file or body ends in the page's exits, never a traceback.
 
 ### S38-factory-test-selection
 
