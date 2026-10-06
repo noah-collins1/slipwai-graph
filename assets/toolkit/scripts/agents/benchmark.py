@@ -917,7 +917,7 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
             "tokens": measures().sum_figures([figure for entry, figure in zip(stages, tokens, strict=True)
                                               if "ended" in entry]) if ended else measures().unknown(
                                                   "no bracket ended"),
-            "shared": measures().unknown("no transcript was read")},
+            "shared": measures().unknown("no transcript was read"), "sessions": {}},
         "entries": [{"stage": entry["stage"], "started": entry.get("started"),
                      "stage_seconds": measures().entry_seconds(
                          entry, last_lines[index] if last_lines and index in last_lines else None),

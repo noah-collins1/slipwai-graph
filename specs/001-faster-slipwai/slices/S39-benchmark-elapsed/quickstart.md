@@ -85,8 +85,18 @@ print(total)
 EOF
 ```
 
-Expect that number to equal the `d883234c…` session's `total` in the feature record's `session_totals`, and `attributed +
-shared` to equal it too.
+Expect that number to equal the `d883234c…` session's `total` in the feature record's `session_totals` (which the
+script reads from the transcript, not as `attributed + shared`), and the records to account for all of it: the sum,
+over every record, of its `cost.sessions` for that session, plus that session's `shared`, is the same number.
+
+```sh
+python3 -B -c "
+import json
+rows = json.load(open('/tmp/s39/all.json')); name = 'd883234c-5eb4-40de-976d-81f2874b2842'
+mine = sum(r['cost']['sessions'].get(name, 0) for r in rows)
+whole = next(r['session_totals'][name] for r in rows if 'session_totals' in r)
+print(mine, whole['shared'], mine + whole['shared'], whole['total'])"
+```
 
 ## 5. The page
 

@@ -321,6 +321,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
 
     entries: dict[tuple[str, int], Totals] = {}
     loose: dict[str, int] = {key: 0 for key in keys}  # a slice's requests that no bracket of it covers
+    spent: dict[str, dict[str, int]] = {key: {} for key in keys}  # attributed tokens, by record and session
     summary: dict[str, dict[str, Any]] = {}
     shared_requests: dict[str, list[Request]] = {}
     for name, session in sessions.items():
@@ -367,11 +368,15 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 shared_requests[name].append(request)
                 continue
             attributed += request.tokens
+            spent[target][name] = spent[target].get(name, 0) + request.tokens
             if chosen is None:
                 loose[target] += request.tokens
             else:
                 entries.setdefault((target, chosen.index), Totals()).add(request, session.description(request.file))
-        summary[name] = {"total": attributed + shared_total, "attributed": attributed, "shared": shared_total}
+        # the total is what the transcripts hold, summed on its own: a request the loop above dropped would show
+        # as a total larger than the two parts
+        summary[name] = {"total": sum(request.tokens for request in session.requests.values()),
+                         "attributed": attributed, "shared": shared_total}
 
     others = {key: [item for item in by_key[key].get("stages", []) if "ended" in item] for key in keys}
     result: dict[str, Any] = {"records": {}, "features": {}}
@@ -404,8 +409,10 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 shown[index] = {"tokens": figure, "delegates": [], "last_line": None, "searched": False}
             if not done:
                 read["open"] += 1
-            if not done and shown[index]["searched"] and shown[index]["tokens"]:
-                source = "open"  # the requests read into it are counted, so far: they are in no other figure
+            if shown[index]["searched"] and shown[index]["tokens"]:
+                # the requests read into it are counted: they are in no other figure, so they stay in this one; an
+                # open entry's are so far, and a same-second entry keeps them with its stage time unknown
+                source = "transcripts" if done else "open"
             elif not done or entry.get("seconds") == 0:  # an open or unbracketed entry has no tokens to read
                 shown[index]["tokens"] = recorded(entry)
             if not isinstance(shown[index]["tokens"], int):
@@ -416,7 +423,8 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 read["transcripts" if source == "open" else source] += 1
         bad = next((figure for figure in figures if isinstance(figure, dict)), None)
         result["records"][key] = {"entries": shown, "cost_read": read, "cost": {
-            "tokens": bad if bad is not None else sum(figures) + loose[key], "shared": None}}
+            "tokens": bad if bad is not None else sum(figures) + loose[key], "shared": None,
+            "sessions": {name: spent[key][name] for name in sorted(spent[key])}}}
     for feature in {str(record.get("feature")) for record in by_key.values()}:
         members = [key for key in keys if str(by_key[key].get("feature")) == feature]
         names = sorted(set().union(*(used[key] for key in members)))

@@ -52,7 +52,7 @@ class ChainTest(unittest.TestCase):
         said.say(stray, "hs", 300, stamp(1, "09:02:00"), "drive-implement")
         record(self.repo, "S1", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), cursor))
         found = summaries(self.repo)["S1"]
-        self.assertEqual(found["cost"], {"tokens": 10, "shared": 300})
+        self.assertEqual((found["cost"]["tokens"], found["cost"]["shared"]), (10, 300))
         self.assertNotIn("Implement S6 T001", found["entries"][0]["delegates"])
 
     def test_e6_a_drive_slice_naming_no_record_leaves_its_requests_shared_and_says_so(self) -> None:
@@ -62,7 +62,8 @@ class ChainTest(unittest.TestCase):
         said.say(lost, "ra", 70, stamp(1, "09:01:00"), "drive-slice")
         said.say(None, "h1", 5, stamp(1, "09:02:00"))
         record(self.repo, "S1", said.entry("implement", stamp(1, "09:00:00"), stamp(1, "09:10:00"), cursor))
-        self.assertEqual(summaries(self.repo)["S1"]["cost"], {"tokens": 5, "shared": 70})
+        cost = summaries(self.repo)["S1"]["cost"]
+        self.assertEqual((cost["tokens"], cost["shared"]), (5, 70))
         self.assertIn('drive-slice "drive-slice S99-unknown" names no recorded slice — its requests are in the '
                       "shared bucket", bench(self.repo).stdout)
 

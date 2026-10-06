@@ -95,8 +95,8 @@ class ShareTest(unittest.TestCase):
         record(self.repo, "S2", said.entry("implement", stamp(1, "09:01:30"), stamp(1, "09:10:00"), second))
         feature_record(self.repo)
         found = summaries(self.repo)
-        self.assertEqual(found["S1"]["cost"], {"tokens": 7, "shared": 50})
-        self.assertEqual(found["S2"]["cost"], {"tokens": 900, "shared": 50})
+        self.assertEqual((found["S1"]["cost"]["tokens"], found["S1"]["cost"]["shared"]), (7, 50))
+        self.assertEqual((found["S2"]["cost"]["tokens"], found["S2"]["cost"]["shared"]), (900, 50))
         self.assertEqual(found["(feature)"]["cost"]["shared"], 50)
 
     def test_e4_a_bracket_merged_from_two_branches_counts_its_requests_once(self) -> None:
@@ -135,7 +135,8 @@ class ShareTest(unittest.TestCase):
         reason = "brackets of {} overlap this one and the transcripts are not on this machine"
         self.assertEqual(found["S1"]["cost"]["tokens"], {"unknown": reason.format("S2")})
         self.assertEqual(found["S2"]["cost"]["tokens"], {"unknown": reason.format("S1")})
-        self.assertEqual(found["S3"]["cost"], {"tokens": 500, "shared": {"unknown": "no transcript was read"}})
+        self.assertEqual(found["S3"]["cost"],
+                         {"tokens": 500, "shared": {"unknown": "no transcript was read"}, "sessions": {}})
         self.assertEqual(found["(feature)"]["session_totals"]["gone"]["total"],
                          {"unknown": "the transcripts are not on this machine"})
 
