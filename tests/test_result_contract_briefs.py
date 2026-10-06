@@ -151,7 +151,7 @@ class LadderTest(FactoryTestCase):
                         f"{check} --hand-back-missing <dir> <type> <stage> <reason>",
                         f"{check} --hand-backs specs/<feature>/slices/<id>", "`specs/<feature>/slices/<id>`",
                         "`specs/<feature>`", "`ready-set`", "before it closes the stage's benchmark entry",
-                        "one continuation", "`refused: <the delegate's words>`", "`malformed: <field>`",
+                        "one continuation", "`refused: <the first line of the delegate's words>`", "`malformed: <field>`",
                         "`no continuation`", "`stopped: <reason>`", "never re-run", "never writes a block",
                         "A stage run in this context has no delegate, so it has no entry",
                         "Before the hand, at the demo stop", "at the adversary stop",

@@ -81,8 +81,8 @@ finds the open entry itself. If that does not produce one, record the miss with 
 python3 scripts/check-decisions.py --hand-back-missing <dir> <type> <stage> <reason>
 ```
 
-The reason is `refused: <the delegate's words>`, `malformed: <field>` or `no continuation`; a delegate that was
-stopped is recorded `stopped: <reason>`. The stage is never re-run for a block, and this session never writes a block
+The reason is one line — `refused: <the first line of the delegate's words>`, `malformed: <field>` or `no
+continuation`; the verb refuses a reason with a line break. A delegate that was stopped is recorded `stopped: <reason>`. The stage is never re-run for a block, and this session never writes a block
 for a delegate — one it wrote would be the session grading the work it was handed.
 A stage run in this context has no delegate, so it has no entry and nothing to record.
 
