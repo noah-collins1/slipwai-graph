@@ -42,12 +42,13 @@ final message captured is the delegate's, not an outer session's:
 ```sh
 mkdir -p specs/f/slices/S1
 printf '# S1\n\nA visitor can add an item to a list.\nAn empty name is refused.\n' > specs/f/slices/S1/spec.md
-claude -p "Read specs/f/slices/S1/spec.md and report the gaps in it." --agent drive-gaps \
-  --output-format text --permission-mode acceptEdits > /tmp/s14/handback.txt
+CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p "Read specs/f/slices/S1/spec.md and report the gaps in it." \
+  --agent drive-gaps --output-format text --permission-mode acceptEdits \
+  --allowedTools 'Bash,Skill,Agent,WebFetch,WebSearch,mcp__codegraph__*' > /tmp/s14/handback.txt
 ```
 
 This is the registry's `claude` headless command (`claude -p {prompt} --output-format stream-json --verbose
-{permissions}`) with `--agent <type>` added and `--output-format text` so the file holds the final text and nothing
+{permissions}`, where `{permissions}` is the registry's `--permission-mode acceptEdits --allowedTools 'Bash,Skill,Agent,WebFetch,WebSearch,mcp__codegraph__*'` and its `env` sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`; without the allowlist a fresh untrusted project refuses every shell call) with `--agent <type>` added and `--output-format text` so the file holds the final text and nothing
 else; `CRUISE_HARNESS_COMMAND` may wrap it, never replace it with a script that prints hand-backs. For `drive-tasks`
 the same command is run with `--agent drive-tasks` over a one-rule `plan.md`. Do each once; a call that needs the model
 is the point at which this script stops being checkable without one.

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -63,13 +64,21 @@ def specs_digest(repo: Path) -> dict[str, str]:
             for p in sorted((repo / "specs").rglob("*")) if p.is_file()}
 
 
+def findings(run: subprocess.CompletedProcess[str]) -> tuple[int, list[str]]:
+    """What the gate's checks said, without the counts and timings a migrate legitimately moves: the exit code, the
+    name of every check that spoke, and whether the gate ended passed (a failing check prints its fault under its name)."""
+    lines = (run.stdout + run.stderr).splitlines()
+    spoke = sorted({match.group(1) for line in lines if (match := re.match(r"^(check-[\w-]+):", line))})
+    return run.returncode, [*spoke, *(line for line in lines if line.startswith("verify:"))]
+
+
 def install_claude(repo: Path) -> None:
     (repo / ".specify").mkdir(exist_ok=True)
     (repo / ".specify/integration.json").write_text(json.dumps({"installed_integrations": ["claude"]}))
 
 
 class AProjectMadeBeforeGainsTheResultContractTest(FactoryTestCase):
-    def migrated(self, directory: str, repo: Path, base: str, make: list[str]) -> Path:
+    def migrated(self, directory: str, repo: Path, base: str, make: list[str], checks: list[str]) -> Path:
         """Migrate `repo` with a newer factory and check what arrived; `base` is where the method lives."""
         prefix = "" if not base else base + "/"
         for name in ("scripts/hand_backs.py", "docs/result-contract.md"):
@@ -77,6 +86,7 @@ class AProjectMadeBeforeGainsTheResultContractTest(FactoryTestCase):
         install_claude(repo)
         own_records(repo)
         before = specs_digest(repo)
+        gate_before = findings(subprocess.run(checks, cwd=repo, text=True, capture_output=True, timeout=300))
         old_checker = (repo / prefix / "scripts/check-decisions.py").read_text(encoding="utf-8")
         factory = newer_factory(Path(directory), "\n## A section a newer factory added\n")
         shutil.copytree(ROOT / "changelog.d", factory / "changelog.d")  # the fragments are the unreleased entry
@@ -101,6 +111,9 @@ class AProjectMadeBeforeGainsTheResultContractTest(FactoryTestCase):
         gate = subprocess.run(make, cwd=repo, text=True, capture_output=True, timeout=120)
         self.assertEqual(gate.returncode, 0, gate.stdout + gate.stderr)
         self.assertNotIn("hand-backs", gate.stdout + gate.stderr, "a slice with no hand-backs.md is not refused")
+        gate_after = findings(subprocess.run(checks, cwd=repo, text=True, capture_output=True, timeout=300))
+        self.assertTrue(gate_before[1], "the gate's checks printed findings to compare")
+        self.assertEqual(gate_after, gate_before, "the full gate's checks say what they said before migrate")
         note = squashed((repo / ".slipwai/catch-up.md").read_text(encoding="utf-8"))
         (paragraph,) = catch_up_paragraphs(FRAGMENT.read_text(encoding="utf-8"))
         owed = squashed(paragraph).removeprefix("**Catch-up.**").strip()
@@ -113,7 +126,8 @@ class AProjectMadeBeforeGainsTheResultContractTest(FactoryTestCase):
             subprocess.run([str(old / "slipwai"), "generate", "product", "--profile", "event-modelling", "--backend",
                             "typescript", "--frontend", "none", "--output", directory, "--skip-checks"],
                            check=True, capture_output=True, timeout=300)
-            self.migrated(directory, Path(directory) / "product", "", ["make", "check-decisions"])
+            self.migrated(directory, Path(directory) / "product", "", ["make", "check-decisions"],
+                          ["make", "verify-checks"])
 
     def test_e2_an_adopted_repository_gains_the_same_under_delivery(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -122,7 +136,8 @@ class AProjectMadeBeforeGainsTheResultContractTest(FactoryTestCase):
             adopt = subprocess.run([str(old / "slipwai"), "adopt", "--yes"], cwd=repo, text=True, capture_output=True,
                                    stdin=subprocess.DEVNULL, timeout=300)
             self.assertEqual(adopt.returncode, 0, adopt.stderr)
-            self.migrated(directory, repo, "delivery", ["make", "-f", "delivery/Makefile", "check-decisions"])
+            self.migrated(directory, repo, "delivery", ["make", "-f", "delivery/Makefile", "check-decisions"],
+                          ["make", "-f", "delivery/Makefile", "verify"])  # the adopted gate has no matrix
 
 
 class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
