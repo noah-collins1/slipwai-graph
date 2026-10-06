@@ -1005,14 +1005,22 @@ def table(rows: list[list[str]], columns: tuple[str, ...] = COLUMNS) -> str:
                      for line in [list(columns), *rows])
 
 
+UNKNOWN_CELL = "unknown (see notes)"  # the reason is in the notes under the table
 WAITING_COLUMNS = ("slice", "elapsed", "worked", "dependency", "worker", "review", "integration", "unattributed",
                    "rework", "cost")
 
 
+WAITING_KEY = ("dependency = from an accepted demo until a sibling earlier in the split landed; worker = from the cruise "
+               "log's first row to accepted, less every other cause; review = a person's demo (an outcome, no driver); "
+               "integration = from the merge commit or a gate bracket to accepted; unattributed = what no record "
+               "claims, a held run included; cost = the tokens attributed to the slice by spawn chain; `--json` names "
+               "where each was read from")
+
+
 def waiting_rows(summaries: list[dict[str, Any]]) -> list[list[str]]:
     """Each slice's elapsed and where it went; a figure no record supports reads `unknown`."""
-    shown = lambda figure: "unknown" if isinstance(figure, dict) else wall(figure)  # noqa: E731
-    tokens = lambda figure: "unknown" if isinstance(figure, dict) else compact(figure)  # noqa: E731
+    shown = lambda figure: UNKNOWN_CELL if isinstance(figure, dict) else wall(figure)  # noqa: E731
+    tokens = lambda figure: UNKNOWN_CELL if isinstance(figure, dict) else compact(figure)  # noqa: E731
     return [[summary["slice"], shown(summary["elapsed"]), shown(summary["worked_seconds"]),
              *(shown(summary["waiting"][name]) + (
                  f" ({wall(summary['unattributed_person'])} a person held the run, cause unrecorded)"
@@ -1023,7 +1031,9 @@ def waiting_rows(summaries: list[dict[str, Any]]) -> list[list[str]]:
             for summary in summaries if summary["slice"]]
 
 
-LEGEND = ("delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge "
+LEGEND = ("delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens "
+          "as recorded (a stage's own, which may hold a sibling's delegates where brackets overlapped), while cost is "
+          "attributed by spawn chain, each request charged to one slice; gaps = before/after converge; +tasks = tasks converge "
           "appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly "
           "uncounted); a trailing + makes stage time a floor because an unbracketed stage is missing; tokens are not prices")
 READING = """These numbers compare the slices of this project on this harness, and one slice before and after a change
@@ -1112,6 +1122,16 @@ def notes(summaries: list[dict[str, Any]], records_: list[dict[str, Any]]) -> li
               "are unknown until its done mark exists" for summary in summaries
               if summary["slice"] and isinstance(summary["elapsed"], dict)
               and summary["elapsed"]["unknown"].startswith("open since")]
+    for summary in summaries:
+        if not summary["slice"]:
+            continue
+        said = [name for name in ("review", "worker", "unattributed") if isinstance(summary["waiting"][name], dict)]
+        if said and not isinstance(summary["elapsed"], dict):  # elapsed unknown has its own note, above
+            lines.append(f"{summary['slice']}: {', '.join(said[:-1])} and {said[-1]} unknown — "
+                         f"{summary['waiting'][said[0]]['unknown']}" if len(said) > 1 else
+                         f"{summary['slice']}: {said[0]} unknown — {summary['waiting'][said[0]]['unknown']}")
+        if isinstance(summary["cost"]["tokens"], dict):
+            lines.append(f"{summary['slice']}: cost unknown — {summary['cost']['tokens']['unknown']}")
     for summary, record in zip(summaries, records_, strict=True):
         lines += measures().cut_off_notes(record.get("slice") or "(feature)", record.get("stages", []),
                                           summary["_last_lines"], summary["_searched"])
@@ -1171,7 +1191,7 @@ def aggregate() -> str:
         waits = waiting_rows(summaries)
         blocks.append("\n".join([head, *(f"  {line}" for line in health_lines(feature, [r for _, r in entries])),
                                  table([row(summary) for summary in summaries]),
-                                 *([table(waits, WAITING_COLUMNS)] if waits else []),
+                                 *([table(waits, WAITING_COLUMNS), f"  {WAITING_KEY}"] if waits else []),
                                  *(f"  {line}" for line in notes(summaries, [record for _, record in entries]))]))
     return "\n\n".join(blocks) + f"\n\n{LEGEND}"
 
@@ -1241,7 +1261,8 @@ def overview(feature: str | None = None) -> list[Path]:
             f"a slice. Regenerated whole, never edited: the records beside each slice are the source.",
             f"## Slices\n\n{len(slices)} slice(s) recorded, {feature_text(summaries)}.\n\n"
             + markdown([row(summary) for summary in summaries], COLUMNS)
-            + (f"\n\n{markdown(waiting_rows(summaries), WAITING_COLUMNS)}" if waiting_rows(summaries) else "")
+            + (f"\n\n{markdown(waiting_rows(summaries), WAITING_COLUMNS)}\n\n{WAITING_KEY}."
+               if waiting_rows(summaries) else "")
             + f"\n\n{LEGEND}.",
             "## Stages\n\n" + "\n\n".join(
                 f"### {record.get('slice') or 'The feature, above the slice loop'} — stage time {summary_wall(summary)}\n\n"
