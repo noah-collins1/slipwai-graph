@@ -167,6 +167,7 @@ class Held:
         self.path, self.index, self.entry, self.window, self.session = path, index, entry, window, session
         self.cls: str | None = None
         self.duplicate = False
+        self.label = ""
 
 
 def session_of(entry: dict[str, Any], window: Any) -> str | None:
@@ -289,6 +290,35 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
         description = session.chain(file) if file else None
         item.cls = None if description is None else (resolve(slice_word(description), slices) or UNRESOLVED)
 
+    far: tuple[dict[str, list[dict[str, Any]]], dict[str, str], str | None] | None = None
+    abroad: list[Held] | None = None
+
+    def elsewhere_once() -> tuple[dict[str, list[dict[str, Any]]], dict[str, str], str | None]:
+        nonlocal far
+        if far is None:
+            far = elsewhere() if elsewhere is not None else ({}, {}, None)
+        return far
+
+    def foreign() -> list[Held]:
+        """The brackets kept on other branches, as windows over the sessions read here, each with its class."""
+        nonlocal abroad
+        if abroad is None:
+            abroad = []
+            for fkey, items in elsewhere_once()[0].items():
+                label = elsewhere_once()[1].get(fkey, fkey)
+                for index, item in enumerate(items):
+                    window = make_window(item)
+                    who = session_of(item, window)
+                    if window is None or who not in sessions or not sessions[who].present:
+                        continue
+                    needle = f"benchmark: {item['stage']} started ({fkey.split(':', 1)[1]}".encode()
+                    file = sessions[who].opener(window.from_, needle)
+                    other = Held(fkey, index, item, window, who)
+                    other.cls = None if not file or sessions[who].chain(file) is None else UNRESOLVED
+                    other.label = label
+                    abroad.append(other)
+        return abroad
+
     entries: dict[tuple[str, int], Totals] = {}
     loose: dict[str, int] = {key: 0 for key in keys}  # a slice's requests that no bracket of it covers
     summary: dict[str, dict[str, Any]] = {}
@@ -312,10 +342,24 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                     chosen = pick(request, [item for item in inside if item.cls == target] or inside) if inside else None
             else:
                 host = [item for item in covering if item.cls is None]
+                if host and elsewhere is not None:
+                    host += [item for item in foreign() if item.session == name and item.cls is None
+                             and item.window.covers(request.file, request.offset)]
+                    if elsewhere_once()[2] is not None:
+                        notes[name].add(f"{elsewhere_once()[2]}, so a request here may be a bracket of another "
+                                        "slice's")
                 targets = {item.path for item in host}
                 if len(targets) > 1:
                     targets = {item.path for item in host if item.window.owns(request.agent)}
-                if len(targets) == 1:
+                    away = [item for item in host if item.path in targets and item.path not in by_key]
+                    if away:
+                        notes[name].add(f"requests of a bracket kept on {away[0].label} are in the shared bucket")
+                if len(targets) == 1 and not any(item.window.owns(request.agent) for item in host) \
+                        and covering and covering[0].window.owned(request.agent):
+                    targets = set()  # a delegate type some stage runs, in a bracket of a stage that does not
+                    notes[name].add(f"a {request.agent} delegate ran in no bracket of a stage that runs it — its "
+                                    "requests are in the shared bucket")
+                if len(targets) == 1 and next(iter(targets)) in by_key:
                     target = next(iter(targets))
                     chosen = pick(request, [item for item in host if item.path == target])
             if target is None:
@@ -330,7 +374,6 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
         summary[name] = {"total": attributed + shared_total, "attributed": attributed, "shared": shared_total}
 
     others = {key: [item for item in by_key[key].get("stages", []) if "ended" in item] for key in keys}
-    far: tuple[dict[str, list[dict[str, Any]]], dict[str, str], str | None] | None = None
     result: dict[str, Any] = {"records": {}, "features": {}}
     absent = lambda names: any(not sessions[name].present for name in names)  # noqa: E731
     for key, record in by_key.items():
@@ -349,8 +392,7 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                 figure = recorded(entry)
                 clash = overlapping(key, entry, others, labels) if isinstance(figure, int) else None
                 if isinstance(figure, int) and clash is None and elsewhere is not None:
-                    if far is None:
-                        far = elsewhere()
+                    far = elsewhere_once()
                     if far[2] is not None:
                         figure = unknown(f"{far[2]}, so brackets of another slice that overlap this one cannot be "
                                          "ruled out and the transcripts are not on this machine")

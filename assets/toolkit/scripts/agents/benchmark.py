@@ -330,6 +330,11 @@ class Window:
     def owns(self, agent: str | None) -> bool:
         return self.stage in OWNERS.get(agent or "", ())
 
+    @staticmethod
+    def owned(agent: str | None) -> bool:
+        """Whether some stage runs this delegate type."""
+        return bool(OWNERS.get(agent or ""))
+
     def counts(self, path: str, offset: int, agent: str | None, others: list["Window"]) -> bool:
         covering = [other for other in others if other.covers(path, offset)]
         if agent is not None and self.owns(agent) and not any(other.owns(agent) and other.later_than(self)
