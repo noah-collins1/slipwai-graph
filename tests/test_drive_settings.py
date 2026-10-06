@@ -102,7 +102,8 @@ class DriveSettingsTest(FactoryTestCase):
             record(repo, "S3")
             aggregate = bench(repo, env=env).stdout
             self.assertIn("delegate/cycle", aggregate)
-            self.assertIn("S2: implemented as story/rule and task/example — its wall compares with neither", aggregate)
+            self.assertIn("S2: implemented as story/rule and task/example — its stage time compares with neither",
+                          aggregate)
             self.assertNotIn("S1: implemented as", aggregate)
             slice_ = "specs/f/slices/S4"
             self.assertEqual(bench(repo, "start", slice_, "implement", env=env).returncode, 0)
