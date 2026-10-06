@@ -404,7 +404,7 @@ then T027 and T028 (`measures.py`), then T029. Only T025 re-opens the loop. T026
 loop because they touch the same files and the same class, but they may go to Phase 4 if the ladder's bound is reached.
 T029 is LOW, for Phase 4.
 
-- [ ] T025 [US2] **HIGH — without transcripts, every copy of every record that could overlap is seen** (AC-S39-5
+- [x] T025 [US2] **HIGH — without transcripts, every copy of every record that could overlap is seen** (AC-S39-5
   "brackets kept in a worktree and on the integration branch do not see each other"; R5 e7; constitution VII).
   T017 has two holes. (a) `branch_records()` reads `slice/*` and `TRUNKS = ("main", "master")`
   (benchmark.py:126, 139), so it never reads an integration branch with another name, and this repository's is
@@ -424,7 +424,7 @@ T029 is LOW, for Phase 4.
   `tests/test_benchmark_attribution.py`, `tests/elapsed_fixture.py`, `changelog.d/benchmark-elapsed.md`,
   `specs/001-faster-slipwai/slices/S39-benchmark-elapsed/{plan,research,data-model}.md`.
 
-- [ ] T026 [US2] **MEDIUM — a request read into an open entry is counted somewhere, and the record says so**
+- [x] T026 [US2] **MEDIUM — a request read into an open entry is counted somewhere, and the record says so**
   (AC-S39-5 "each request is counted in exactly one slice's record"; R5 e5; D159 G11's conservation check). An open
   entry has a window (benchmark.py `window_of`, the cursor case), so `attribute()` assigns it requests and counts them
   in the session's `attributed`. attribution.py:359-366 then replaces the entry's tokens with `unknown — the entry is
@@ -440,7 +440,7 @@ T029 is LOW, for Phase 4.
   Files: `assets/toolkit/scripts/agents/attribution.py`, `assets/toolkit/scripts/agents/measures.py`,
   `tests/test_benchmark_attribution.py`.
 
-- [ ] T027 [US1] **MEDIUM — a cruise log whose bytes cannot be decoded is a damaged log, not a crash** (AC-S39-8
+- [x] T027 [US1] **MEDIUM — a cruise log whose bytes cannot be decoded is a damaged log, not a crash** (AC-S39-8
   "nothing a project already has may newly fail" (D65); T019's class). `cruise_log()` (benchmark.py:170) reads the
   log with `read_text(encoding="utf-8")`. A log cut inside a multi-byte character (a runner killed mid-append; the
   log's `told` text carries `—`) raises `UnicodeDecodeError`, so the aggregate, `--json` and `overview` exit 1. Before
@@ -452,7 +452,7 @@ T029 is LOW, for Phase 4.
   Files: `assets/toolkit/scripts/agents/benchmark.py`, `assets/toolkit/scripts/agents/measures.py`,
   `tests/test_benchmark_waiting.py`.
 
-- [ ] T028 [US1] **MEDIUM — a done mark is found by what the file holds, not by how often a word appears**
+- [x] T028 [US1] **MEDIUM — a done mark is found by what the file holds, not by how often a word appears**
   (AC-S39-1; T015's class). `Reader.first()` (measures.py:177-188) lists only the commits `git log -S<needle>` names.
   The pickaxe lists a commit only when the needle's *count* changes, and T015 widened the needle to the bare id. So a
   commit that adds the register row while removing a prose mention of the same id (net zero) is never examined. The
@@ -466,7 +466,7 @@ T029 is LOW, for Phase 4.
   `open since` · e3 T015's e1–e4 unchanged.
   Files: `assets/toolkit/scripts/agents/measures.py`, `tests/test_benchmark_elapsed.py`, `tests/elapsed_fixture.py`.
 
-- [ ] T029 **LOW — what the demo script and the notes say** (Phase 4). `quickstart.md` step 4 compares against "the
+- [x] T029 **LOW — what the demo script and the notes say** (Phase 4). `quickstart.md` step 4 compares against "the
   feature record's `sessions`", but the key is `session_totals` (`sessions` is a count, held by the pin). The cut-off
   note reads "stage time ends at its last transcript line 2026-10-04T12:18:03Z, not at the recorded end
   2026-10-04T12:18:03Z" where the two are the same moment (S04 `implement`, S33 `skipper`). It should say that the
@@ -741,3 +741,22 @@ feature).
   T025–T028.
 - *Published contract* (`--json`, the fragment): the old keys are pinned. Not proven: the new keys' conservation
   (T026), and the catch-up's overlap and damaged-log sentences (T025, T027).
+
+### Verdict at the bound (host, after pass 2)
+
+**Converged at the bound of two passes.** Pass 1's ten findings were closed by T014–T023 and the host's T024; pass 2
+confirmed each closed as a class, with teeth (14 single-line breaks, each failing its module), and found one HIGH, three
+MEDIUM and one LOW. With no CRITICAL open, no third pass was run: T025–T029 were taken in the same loop and closed
+after the bound, each by its own test (`c2514a6`, `0371ba5`, `52074f0`, `659c966`, `98266a8`), and every pass-2
+reproduction now reads honestly — without transcripts, a recorded cost overlapped by a bracket on any local branch
+reads unknown; an open entry's tokens count, labelled *so far*; an undecodable cruise-log line is a damaged line; a
+done mark is found by content over every commit. Gate at the close: `make lint typecheck check-structure` clean; 444
+tests over every suite the diff touches or that reads the changed generators and scripts, OK (1 skipped, the
+changelog's history guard), with `test_toolkit`, `test_utf8_io` and `test_changelog` among them. Not run here: the
+full `make verify` and the starters' matrix (the host's). AC-S39-11 is the demo ([quickstart.md](quickstart.md)); the
+S08 figures it re-derives by hand match the code's (elapsed 133 433 s; dependency 7 538, integration 10 995, review
+20 322, worker 63 139, unattributed 0).
+
+Left for the cruise report, none blocking: the catch-up does not mention the *so far* label on an open entry's tokens
+or that a bracket of another session is not an overlap (true behaviour, not stated); plan Q1 and Q2 and the host's
+readings of T021 and T024 want numbers.
