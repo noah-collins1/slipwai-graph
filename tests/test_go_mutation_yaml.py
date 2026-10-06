@@ -15,8 +15,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from slipwai.assets import LANGUAGE_ROOT
 from test_go_mutation_file import loaded
+
+from slipwai.assets import LANGUAGE_ROOT
 
 sys.dont_write_bytecode = True
 FACTORY = LANGUAGE_ROOT / "go" / "app/.gremlins.yaml"
@@ -36,7 +37,7 @@ class YamlTest(unittest.TestCase):
     def read(self, text: str) -> list[str]:
         config = self.directory / ".gremlins.yaml"
         config.write_text(text, encoding="utf-8")
-        return self.wrapper.excluded(config)  # type: ignore[no-any-return]
+        return self.wrapper.excluded(config)
 
     def refused(self, text: str) -> None:
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
@@ -58,8 +59,8 @@ class YamlTest(unittest.TestCase):
         self.assertEqual(self.read(document('- "x/.*"', head='"unleash":', key="  'exclude-files':")), ["x/.*"])
 
     def test_e4_an_empty_list_is_empty_however_it_is_written(self) -> None:
-        for key in ("  exclude-files: []", "  exclude-files: [ ]  # none", "  exclude-files: # none", "  exclude-files: ~",
-                    "  exclude-files: null # none"):
+        for key in ("  exclude-files: []", "  exclude-files: [ ]  # none", "  exclude-files: # none",
+                    "  exclude-files: ~", "  exclude-files: null # none"):
             with self.subTest(key):
                 self.assertEqual(self.read(document(key=key)), [])
 
