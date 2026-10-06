@@ -496,6 +496,12 @@ wait on D166 and D167. Each task's RED is the gaps report's reproduction.
 - [x] *(Done at `4ebfed6`, iteration 24.)* **T038 — LOW (F9) · The quickstart runs as written:** `mkdir -p /tmp/s39`, the log copied to scratch (never into the worktree), step 4 as T031 rewrites it, step 2 derived the way the code derives. **Files:** `quickstart.md`.
 - [x] *(Done at `44e4677`, iteration 24.)* **T039 — LOW (F10) · No note beside the renamed column says *wall*.** **Files:** `benchmark.py`, `tests/test_benchmark_elapsed.py`.
 
+## Phase 11: Demo 1 (2026-10-06, iteration 24) — `accepted` by drive-hand; the actor's notes, for Phase 4
+
+- [ ] **T040 — LOW · The waiting table carries its key:** one line under it saying what worker, dependency, review, integration, unattributed and cost mean and that `--json` names where each was read from.
+- [ ] **T041 — LOW · The page says which token figure is the cost:** one sentence that `in` is as recorded (and may hold a sibling's delegates where brackets overlapped) and `cost` is attributed by spawn chain.
+- [ ] **T042 — LOW · An `unknown` cell carries its reason, or points at the note that does** (S00, S01, S20 cost; S14 and S39 waiting), as the page's own notes promise.
+
 ## Convergence
 
 ### Pass 1 — 2026-10-06, cruise iteration 24, `drive-converge` (worktree at `957c808`)
