@@ -328,9 +328,9 @@ OWNERS: dict[str, tuple[str, ...]] = {
 }
 
 
-# The benchmark entry's key for the types that ran. Spelled in two pieces because it is also the name of a directory at a
-# project's root, and the verify-scoped table reads a bare literal like that as a path this check reads.
-AGENTS = "agent" + "s"
+# The benchmark entry's key for the types that ran. Also the name of a directory at a project's root, so the verify-scoped
+# table's test lists it under `NOT_AN_INPUT`: a key of a stage, never a path check-decisions reads.
+AGENTS = "agents"
 
 
 def owed(stage: dict[str, Any]) -> list[str]:
