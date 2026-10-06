@@ -881,8 +881,8 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
                                                   "no bracket ended"),
             "shared": measures().unknown("no transcript was read")},
         "entries": [{"stage": entry["stage"], "started": entry.get("started"),
-                     "stage_seconds": measures().stage_seconds([entry], {0: last_lines[index]}
-                                                               if last_lines and index in last_lines else None),
+                     "stage_seconds": measures().entry_seconds(
+                         entry, last_lines[index] if last_lines and index in last_lines else None),
                      "tokens": tokens[index],
                      "read_from": measures().entry_source(shown.get(index, {}).get("source"), tokens[index]),
                      "delegates": shown.get(index, {}).get("delegates", [])} for index, entry in enumerate(stages)],

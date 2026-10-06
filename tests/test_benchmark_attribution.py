@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -158,6 +159,44 @@ class CostProvenanceTest(unittest.TestCase):
                          "the entries' recorded usage (1 entry)")
         self.assertEqual([item["read_from"] for item in found["entries"]],
                          ["the transcripts, by delegate and bracket", "the entries' recorded usage"])
+
+
+class UnreadEntriesTest(unittest.TestCase):
+    """AC-S39-8: an unbracketed or open entry has no tokens and no stage time to read — unknown, never a bare `0`,
+    with the transcripts on the machine and without them."""
+
+    def setUp(self) -> None:
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.repo = project(Path(self.scratch.name))
+
+    def lay(self) -> None:
+        said = Session(self.repo)
+        cursor = said.open(None, "implement", P1)
+        said.say(None, "h1", 40, stamp(1, "09:30:00"))
+        bracketed = said.entry("implement", stamp(1, "09:00:00"), stamp(1, "10:00:00"), cursor)
+        bracketed["usage"]["host"] = {"m": {"input": 40, "output": 0, "cache_read": 0, "cache_creation": 0}}
+        unbracketed = said.entry("gaps", stamp(1, "10:00:00"), stamp(1, "10:00:00"), said.open(None, "gaps", P1))
+        left_open = said.entry("converge", stamp(1, "10:05:00"), stamp(1, "10:05:00"), said.open(None, "converge", P1))
+        del left_open["ended"], left_open["seconds"]
+        record(self.repo, "S1", bracketed, unbracketed, left_open)
+
+    def test_e1_per_entry_figures_and_the_records_cost_are_the_same_with_and_without_transcripts(self) -> None:
+        self.lay()
+        runs = [summaries(self.repo)["S1"]]
+        shutil.rmtree(self.repo / ".home/.claude")
+        runs.append(summaries(self.repo)["S1"])
+        for found in runs:
+            for item in found["entries"][1:]:
+                with self.subTest(stage=item["stage"]):
+                    self.assertIsInstance(item["tokens"], dict, item)
+                    self.assertIsInstance(item["stage_seconds"], dict, item)
+            self.assertIn("not bracketed", found["entries"][1]["tokens"]["unknown"])
+            self.assertIn("still open", found["entries"][2]["stage_seconds"]["unknown"])
+            self.assertEqual(found["entries"][0]["stage_seconds"], 3600)
+            self.assertEqual((found["stage_seconds"], found["seconds"]), (3600, 3600))  # the pin: today's sum stands
+        self.assertEqual(runs[0]["cost"]["tokens"], runs[1]["cost"]["tokens"])
+        self.assertIsInstance(runs[0]["cost"]["tokens"], dict)
 
 
 if __name__ == "__main__":

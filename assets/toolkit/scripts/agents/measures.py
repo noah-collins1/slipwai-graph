@@ -342,6 +342,16 @@ def stage_seconds(entries: list[dict[str, Any]], last_lines: dict[int, int] | No
     return total
 
 
+def entry_seconds(entry: dict[str, Any], last_line: int | None = None) -> Any:
+    """One entry's stage time; unknown, with the reason, for an entry still open or one never bracketed — it has no
+    stage time to read, and `0` would say it had one."""
+    if "ended" not in entry:
+        return unknown("the entry is still open")
+    if entry.get("seconds") == 0:
+        return unknown("not recorded: the stage was not bracketed around its work")
+    return stage_seconds([entry], {0: last_line} if last_line is not None else None)
+
+
 REFUSED = ("behaviour", "implementation")
 TOKEN_KEYS = ("input", "output", "cache_read", "cache_creation")
 

@@ -93,6 +93,26 @@ def table(output: str, rows: int) -> dict[str, dict[str, str]]:
     return cells
 
 
+def assert_no_bare_zero(case: unittest.TestCase, records: list[dict], tokens: bool = True) -> None:
+    """`tokens`: also that no record's cost, and no rework's tokens, is `0` (a transcript that is present and
+    holds no request reads 0 and says it read the transcripts, so the example that lays empty ones turns this
+    off)."""
+    for record in records:
+        read = record["read_from"]
+        with case.subTest(record=record["path"]):
+            for cause, seconds in record["waiting"].items():
+                case.assertIn(cause, read)
+                if seconds == 0:
+                    case.assertTrue(read[cause].startswith(("none present", "elapsed less")), read[cause])
+            case.assertIn("rework", read)
+            if 0 in (record["rework"]["seconds"], *([record["rework"]["tokens"]] if tokens else [])):
+                case.assertTrue(read["rework"].startswith("none present"), read["rework"])
+            case.assertIn("cost", read)
+            if tokens:
+                case.assertNotEqual(0, record["cost"]["tokens"])
+                case.assertNotEqual(0, record["cost"]["shared"])
+
+
 class BenchmarkPinTest(unittest.TestCase):
     scratch: tempfile.TemporaryDirectory[str]
     before: Path
@@ -132,27 +152,66 @@ class BenchmarkPinTest(unittest.TestCase):
                     self.assertEqual(value, now[RENAMED_KEYS.get(key, key)])
 
     def test_e3_no_new_figure_is_a_bare_zero_where_nothing_was_read(self) -> None:
-        self.assertNoBareZero(json.loads(run(self.after, "--json").stdout))
-
-    def assertNoBareZero(self, records: list[dict]) -> None:
-        for record in records:
-            read = record["read_from"]
-            with self.subTest(record=record["path"]):
-                for cause, seconds in record["waiting"].items():
-                    self.assertIn(cause, read)
-                    if seconds == 0:
-                        self.assertTrue(read[cause].startswith(("none present", "elapsed less")), read[cause])
-                self.assertIn("rework", read)
-                if 0 in (record["rework"]["seconds"], record["rework"]["tokens"]):
-                    self.assertTrue(read["rework"].startswith("none present"), read["rework"])
-                self.assertIn("cost", read)
-                self.assertNotEqual(0, record["cost"]["tokens"])
-                self.assertNotEqual(0, record["cost"]["shared"])
+        assert_no_bare_zero(self, json.loads(run(self.after, "--json").stdout))
 
     def test_e2_check_benchmark_is_byte_for_byte_the_same(self) -> None:
         before, after = run(self.before, "check"), run(self.after, "check")
         self.assertEqual((before.returncode, before.stdout, before.stderr),
                          (after.returncode, after.stdout, after.stderr))
+
+
+def dated_copy(where: Path, home: bool) -> Path:
+    """The RECORDS tree as a git repository: everything on 2026-09-29, the register alone on 2026-10-07 — so every
+    slice's ready and accepted moments are read — and, where `home` is set, an empty transcript for every session
+    the records name."""
+    repo = project(where, None)
+    register = repo / "specs/001-faster-slipwai/slices/README.md"
+    text = register.read_text(encoding="utf-8")
+    register.unlink()
+    environment = {key: value for key, value in os.environ.items() if not key.startswith(("CLAUDE", "CODEX"))}
+
+    def git(when: str, *arguments: str) -> None:
+        env = {**environment, "GIT_COMMITTER_DATE": when, "GIT_AUTHOR_DATE": when, "HOME": str(repo / ".home")}
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@local", *arguments], cwd=repo, env=env,
+                       check=True, capture_output=True)
+
+    (repo / ".gitignore").write_text("scripts/\n.home/\n", encoding="utf-8")
+    git("2026-09-29T09:00:00+0000", "init", "-q", "-b", "main")
+    git("2026-09-29T09:00:00+0000", "add", ".gitignore", "project.json", "specs")
+    git("2026-09-29T09:00:00+0000", "commit", "-q", "-m", "records")
+    register.write_text(text, encoding="utf-8")
+    git("2026-10-07T09:00:00+0000", "add", "specs")
+    git("2026-10-07T09:00:00+0000", "commit", "-q", "-m", "register")
+    if home:
+        sessions = {entry["usage"]["session"] for path in (repo / "specs").rglob("benchmark.json")
+                    for entry in json.loads(path.read_text(encoding="utf-8"))["stages"]
+                    if (entry.get("usage") or {}).get("session")}
+        for name in sessions:
+            main = repo / ".home/.claude/projects/-x" / f"{name}.jsonl"
+            main.parent.mkdir(parents=True, exist_ok=True)
+            main.write_text("", encoding="utf-8")
+    return repo
+
+
+class PinGitCopyTest(unittest.TestCase):
+    """The pin's third example, where git can be read: waiting is computed, and `entries` is read."""
+
+    def test_e2_no_figure_of_an_unbracketed_or_open_entry_is_a_bare_zero_with_and_without_transcripts(self) -> None:
+        with tempfile.TemporaryDirectory() as base:
+            for home in (False, True):
+                repo = dated_copy(Path(base) / f"copy-{home}", home)
+                records = json.loads(run(repo, "--json").stdout)
+                self.assertEqual(sum(isinstance(item["elapsed"], int) for item in records) > 5, True)
+                for item in records:
+                    stages = json.loads((repo / item["path"]).read_text(encoding="utf-8"))["stages"]
+                    with self.subTest(home=home, record=item["path"]):
+                        assert_no_bare_zero(self, [item], tokens=not home)
+                        for shown, raw in zip(item["entries"], stages, strict=True):
+                            if "ended" not in raw or raw.get("seconds") == 0:
+                                self.assertIsInstance(shown["tokens"], dict, (raw["stage"], shown))
+                                self.assertIsInstance(shown["stage_seconds"], dict, (raw["stage"], shown))
+                            else:
+                                self.assertIn("read_from", shown)
 
 
 if __name__ == "__main__":

@@ -332,6 +332,8 @@ def attribute(records: list[tuple[Path, dict[str, Any]]], root: Path,
                     figure = unknown(f"brackets of {clash} overlap this one and the transcripts are not on this "
                                      "machine")
                 shown[index] = {"tokens": figure, "delegates": [], "last_line": None}
+            if not done or entry.get("seconds") == 0:  # an open or unbracketed entry has no tokens to read
+                shown[index]["tokens"] = recorded(entry)
             if not isinstance(shown[index]["tokens"], int):
                 source = "unread"
             shown[index]["source"] = source
