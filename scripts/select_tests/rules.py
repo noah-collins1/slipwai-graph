@@ -58,6 +58,9 @@ FULL_ROWS = (
     Row("the ignore rules", paths=(".gitignore",), full=True),
     Row("the attribute rules", paths=(".gitattributes",), full=True),
     Row("the selector", paths=("scripts/select-tests.py",), trees=("scripts/select_tests/",), full=True),
+    # the scripts that compute the change set: a change to them can hide itself from the set they compute (T029)
+    Row("the selector's change-set scripts", paths=("assets/toolkit/scripts/check-slice-scope.py",),
+        trees=("assets/toolkit/scripts/verify_scoped/",), full=True),
 )
 # `assets/backing-services/` holds files and directories no backend owns: every configuration reads them.
 OTHER_BACKING_SERVICES = ("keycloak", "sql", "docker-compose.yml", "env.example")

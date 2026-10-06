@@ -29,6 +29,9 @@ FULL = {
     ".gitattributes": "the attribute rules",
     "scripts/select-tests.py": "the selector",
     "scripts/select_tests/__init__.py": "the selector",
+    "assets/toolkit/scripts/check-slice-scope.py": "the selector's change-set scripts",
+    "assets/toolkit/scripts/verify_scoped/changes.py": "the selector's change-set scripts",
+    "assets/toolkit/scripts/verify_scoped/new.py": "the selector's change-set scripts",
     "tests/test_select_tests_x.py": "the selector's own tests",
     "tests/select_fixture.py": "the selector's own tests",
 }
