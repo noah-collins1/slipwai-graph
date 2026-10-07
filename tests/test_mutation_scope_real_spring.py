@@ -12,9 +12,16 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from stamp_fixture import git
+from mutation_env import clean_environment
+from stamp_names import git
 from support import FactoryTestCase, backends_under_test
-from test_mutation_borders import clean_environment
+
+# `spring_project` generates the one Spring starter the run builds, through `FactoryTestCase.generate` with literal
+# arguments; `support` carries the launcher into the join, and the module opens no other repository path.
+TEST_SELECTION: dict[str, object] = {
+    "configurations": {"backend": ["java-spring"], "profile": ["event-modelling"], "frontend": ["none"]},
+    "reads": [],
+}
 
 
 def pit_report(project: Path) -> str:

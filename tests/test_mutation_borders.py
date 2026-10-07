@@ -15,7 +15,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE, git
+from mutation_env import clean_environment  # noqa: F401  (re-exported: the mutation suites import it from here)
+from stamp_fixture import CI_MARKERS, git
 from support import FactoryTestCase
 from test_parallel_gate_adopted import confirmed
 
@@ -25,12 +26,6 @@ sys.dont_write_bytecode = True
 SLICE = "slice/S1"
 SWEEPS = "mutation: the sweep runs — "
 FULL = ["--no-print-directory", "-f", "Makefile", "mutation-full"]
-
-
-def clean_environment(**extra: str) -> dict[str, str]:
-    """The machine's environment without CI, make or git state (and `SINCE`), then what the example sets."""
-    kept = {k: v for k, v in os.environ.items() if k not in CI_MARKERS + MAKE_STATE + GIT_STATE + ("SINCE",)}
-    return {**kept, **extra}
 
 
 def fake_make(directory: Path, status: int = 0) -> tuple[Path, Path]:
