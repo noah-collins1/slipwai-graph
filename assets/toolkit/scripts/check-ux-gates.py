@@ -212,12 +212,14 @@ def changed_since(ref: str) -> set[str] | None:
     """What differs from the merge base with `ref`, working tree and untracked files included, relative to
     this project; None when Git cannot say, or when something every preview depends on is among it."""
     base = git("merge-base", ref, "HEAD")
-    diff = git("diff", "--name-only", "--relative", base.strip()) if base else None
-    untracked = git("ls-files", "--others", "--exclude-standard")
+    # NUL-separated and without renames: a name with a space or a byte git would quote is one name, and the old name
+    # of a renamed stylesheet is a changed path a preview may still link by.
+    diff = git("diff", "--name-only", "--relative", "-z", "--no-renames", base.strip()) if base else None
+    untracked = git("ls-files", "--others", "--exclude-standard", "-z")
     if diff is None or untracked is None:
         say(f"check-ux-gates: UX_GATES_SINCE={ref} — Git cannot name a merge base, so every preview is in scope")
         return None
-    changed = set(diff.split()) | set(untracked.split())
+    changed = {name for name in diff.split("\0") + untracked.split("\0") if name}
     here = Path(__file__).resolve()
     everything = {here, here.parent / "extensions/ux-gates/init.py", ROOT / "package-lock.json",
                   ROOT / ".github/workflows/verify.yml"}
