@@ -20,6 +20,8 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import NamedTuple
 
+from . import argv
+
 sys.dont_write_bytecode = True
 
 SEAM_CLASS = "FactoryTestCase"
@@ -229,8 +231,12 @@ def facts(module: ast.Module, shape: Signature | None, trusted: bool, launcher: 
     calls: list[Call] = []
     routes: list[tuple[int, str]] = []
     reaches: list[Reach] = []
+    read_argv: set[int] = set()  # launcher nodes inside an argv `argv.read` takes: a `Call`, not also a route
     for node in ast.walk(module):
         line = getattr(node, "lineno", 0)
+        if not trusted and (literal := argv.read(node, root)) is not None:
+            calls.append(Call(line, literal[0]))
+            read_argv.update(id(part) for part in ast.walk(literal[1]))
         if isinstance(node, ast.Call):
             name = called(node)
             if name == SEAM_METHOD:
@@ -246,7 +252,7 @@ def facts(module: ast.Module, shape: Signature | None, trusted: bool, launcher: 
                                      and isinstance(first.value, str) else None))
         if trusted:
             continue
-        if launcher(node):
+        if launcher(node) and id(node) not in read_argv:
             routes.append((line, "the launcher or `slipwai.cli`"))
         if isinstance(node, ast.Constant) and isinstance(node.value, str) and names_a_path(node.value, root) \
                 and not anchored_elsewhere(node, parents):
