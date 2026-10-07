@@ -1,8 +1,9 @@
 """A reads-only declared module opens only what it declares (S38 T038, D164, AC-S38-8, AC-S38-16).
 
-Each declared module that generates nothing runs under an audit hook (`sys.addaudithook`, `open` events). Every path
-it opens in the repository outside `src/` and `tests/` must be named by its `reads` or be one a run-everything row
-claims; a path that is neither is a read the selector does not know about, and a change to it would skip the module.
+Each declared module that generates nothing runs under an audit hook (`sys.addaudithook`: `open` events and the files
+a `subprocess.Popen` is handed). Every path it opens in the repository outside `src/` (under `tests/`: outside the
+imports it ran, so a fixture) must be named by its `reads` or be one a run-everything row claims; a path that is
+neither is a read the selector does not know about, and a change to it would skip the module (adversary B3, T055).
 The declarations are read from the real tree, so a later edit that adds a by-path load to a declared module fails
 here. The teeth are a copy of `test_pit_globs` with the gaps pass's `self.module.load("verify-stamp.py")` added.
 """
@@ -36,16 +37,28 @@ print(json.dumps({name: sorted(source.declaration.reads) for name, source in sor
 """
 # runs one module under the hook, then (the hook no longer recording) says which opened paths nothing accounts for
 AUDIT = """
-import json, os, sys, unittest
+import json, os, shlex, sys, unittest
 sys.dont_write_bytecode = True
 root, module, reads = os.path.realpath('.'), sys.argv[1], json.loads(sys.argv[2])
 opened, recording = set(), [True]
 
 
 def hook(event, args):
-    if recording[0] and event in ("open", "os.listdir", "os.scandir") and isinstance(
-            args[0], (str, bytes, os.PathLike)):
+    if not recording[0]:
+        return
+    if event in ("open", "os.listdir", "os.scandir") and isinstance(args[0], (str, bytes, os.PathLike)):
         opened.add((event, os.path.realpath(os.fsdecode(args[0]))))
+    elif event == "subprocess.Popen":
+        # what a child process is handed to run or read: an argument that names a file is read by the module
+        argv = args[1] if isinstance(args[1], (list, tuple)) else shlex.split(str(args[1]))
+        for argument in argv:
+            if isinstance(argument, (str, bytes, os.PathLike)):
+                try:
+                    named = os.path.realpath(os.path.join(args[2] or ".", os.fsdecode(argument)))
+                    if os.path.isfile(named):
+                        opened.add(("open", named))
+                except (ValueError, OSError):
+                    pass
 
 
 sys.addaudithook(hook)
@@ -63,10 +76,16 @@ imports = declarations.imported_names(ast.parse(origin.read_text(encoding="utf-8
 reads = reads + (sorted(loaded.scan(Path(root))) if "slipwai" in imports else [])
 # an open relative to a directory descriptor (`shutil.rmtree`) reports a bare name, so an `open` of a path that no
 # longer exists, or of a directory, is not a read of the repository; a directory is read by listing it
+# a file under `tests/` is read when it is opened and is no module the run imported: a fixture, a data file
+closure = {os.path.realpath(m.__file__) for m in list(sys.modules.values()) if getattr(m, "__file__", None)}
 seen = sorted({os.path.relpath(path, root) for event, path in opened if path.startswith(root + os.sep)
                and os.path.exists(path) and (event != "open" or not os.path.isdir(path))})
-outside = [path for path in seen if path.split(os.sep)[0] not in ("src", "tests", ".git")
-           and "__pycache__" not in path and not path.endswith((".pyc", ".pyo"))]
+def counts(path: str) -> bool:
+    top = path.split(os.sep)[0]
+    return top not in ("src", "tests", ".git") or (top == "tests" and os.path.join(root, path) not in closure)
+
+
+outside = [path for path in seen if "__pycache__" not in path and not path.endswith((".pyc", ".pyo")) and counts(path)]
 uncovered = [path for path in outside if not any(choose.reads_match(path, entry) for entry in reads)
              and not (rules.claim(path, catalog) or rules.Claim("", False)).full]
 print(json.dumps({"ok": result.wasSuccessful(), "ran": result.testsRun, "opened": outside, "uncovered": uncovered}))
@@ -136,6 +155,30 @@ class TestTheAuditHasTeeth(unittest.TestCase):
         self.assertTrue(found["ok"], found)
         self.assertEqual(found["uncovered"], [])
         self.assertIn("assets/toolkit/scripts/mutation-scope.py", found["opened"])
+
+
+class TestTheAuditSeesFixturesAndSubprocesses(unittest.TestCase):
+    """Adversary B3: a fixture read through `__file__` and a script a child process runs are reads too."""
+
+    def run_module(self, body: str) -> dict[str, Any]:
+        SCRATCH.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=SCRATCH) as directory:
+            (Path(directory) / "test_probe.py").write_text(
+                "import subprocess, sys, unittest\nfrom pathlib import Path\nfrom slipwai.assets import ROOT\n\n\n"
+                "class T(unittest.TestCase):\n    def test_it(self) -> None:\n" + body, encoding="utf-8")
+            return audited("test_probe", [], Path(directory))
+
+    def test_a_fixture_under_tests_outside_the_imports_is_named(self) -> None:
+        found = self.run_module('        (ROOT / "tests/fixtures/adopt/go-module/go.mod").read_text()\n')
+        self.assertTrue(found["ok"], found)
+        self.assertIn("tests/fixtures/adopt/go-module/go.mod", found["uncovered"])
+
+    def test_a_script_a_subprocess_runs_is_named(self) -> None:
+        found = self.run_module(
+            '        subprocess.run([sys.executable, str(ROOT / "scripts/publish-to-gitea.py"), "--help"],'
+            " capture_output=True)\n")
+        self.assertTrue(found["ok"], found)
+        self.assertIn("scripts/publish-to-gitea.py", found["uncovered"])
 
 
 if __name__ == "__main__":
