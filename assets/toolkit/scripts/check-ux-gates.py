@@ -55,6 +55,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import NamedTuple
+from urllib.parse import unquote
 
 sys.dont_write_bytecode = True  # an untracked file under scripts/ would make every later scoped run the full gate
 
@@ -106,10 +107,13 @@ playwright.chromium.launch = async (options = {}) => {
 FILE_GATE = "lint_hardcodes.py"
 # A local stylesheet a preview links or imports, which is what `UX_GATES_SINCE` follows from a changed file to
 # the previews that render it. A reference with a scheme, protocol-relative or rooted at `/` is not a file here.
+# An attribute value is quoted either way or unquoted, which HTML ends at whitespace or `>`; an `@import` names a quoted
+# string, whole, spaces and all, or a `url(…)` of one; and either is a URL, so `%20` is the space of the file's name.
 LINK = re.compile(r"<link\b[^>]*>", re.IGNORECASE)
-HREF = re.compile(r"""\bhref\s*=\s*["']([^"']+)["']""", re.IGNORECASE)
+HREF = re.compile(r"""\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))""", re.IGNORECASE)
 STYLESHEET = re.compile(r"""\brel\s*=\s*["']?[^"'>]*\bstylesheet\b""", re.IGNORECASE)
-IMPORT = re.compile(r"""@import\s+(?:url\(\s*)?["']?([^"')\s;]+)""", re.IGNORECASE)
+IMPORT = re.compile(r"""@import\s+(?:url\(\s*(?:"([^"]*)"|'([^']*)'|([^"')\s;]+))|"([^"]*)"|'([^']*)'|([^"')\s;]+))""",
+                    re.IGNORECASE)
 # The words Playwright's launch failure carries, on stderr, when a kit script could not open a browser.
 LAUNCH_FAILED = "browserType.launch"
 
@@ -277,15 +281,24 @@ def local(reference: str, beside: Path) -> Path | None:
     reference = reference.split("?")[0].split("#")[0]
     if not reference or reference.startswith(("/", "data:")) or re.match(r"^[a-z][a-z0-9+.-]*:", reference, re.I):
         return None
-    return (beside / reference).resolve()
+    return (beside / unquote(reference)).resolve()
+
+
+def matched(found: re.Match[str]) -> str:
+    """The one alternative of `HREF` or `IMPORT` that matched."""
+    return next(group for group in found.groups() if group is not None)
+
+
+def imports(text: str) -> list[str]:
+    return [matched(found) for found in IMPORT.finditer(text)]
 
 
 def styles_of(page: Path) -> set[Path]:
     """Every local stylesheet a preview links or imports, and every one those import in turn."""
     text = page.read_text(errors="replace", encoding="utf-8")
-    pending = [local(href.group(1), page.parent) for link in LINK.findall(text) if STYLESHEET.search(link)
+    pending = [local(matched(href), page.parent) for link in LINK.findall(text) if STYLESHEET.search(link)
                for href in [HREF.search(link)] if href]
-    pending += [local(reference, page.parent) for reference in IMPORT.findall(text)]
+    pending += [local(reference, page.parent) for reference in imports(text)]
     found: set[Path] = set()
     while pending:
         sheet = pending.pop()
@@ -293,7 +306,7 @@ def styles_of(page: Path) -> set[Path]:
             continue
         found.add(sheet)
         if sheet.is_file():
-            imported = IMPORT.findall(sheet.read_text(errors="replace", encoding="utf-8"))
+            imported = imports(sheet.read_text(errors="replace", encoding="utf-8"))
             pending += [local(reference, sheet.parent) for reference in imported]
     return found
 
