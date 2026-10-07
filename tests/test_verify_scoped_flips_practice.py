@@ -3,7 +3,7 @@
 `present_practice` tests each skill a requirement points at for existence, inside `findings()`, and only for a
 requirement whose signals are not all present: a requirement already reported as a failure. So deleting the skills turns
 `; see skills/…/SKILL.md` into nothing in the failure text and leaves the verdict where it was, for a constitution that
-fails and for one that passes. That is why `skills/` is not on the row (`NOT_AN_INPUT_PATTERN`'s reason says so).
+fails and for one that passes. That is why `skills/` is not on the row (`NOT_AN_INPUT_PATTERN_FOR`'s reason says so).
 """
 from __future__ import annotations
 

@@ -173,7 +173,7 @@ class AuditHeldTest(HeldCase):
         self.assertEqual(findings_of(project, events["check-agents"], narrowed, report), [".specify/drive.json"])
 
     def test_the_report_only_reads_are_still_made(self) -> None:
-        """An exemption nothing needs any more is stale, as `NOT_AN_INPUT` is when no check fires it."""
+        """An exemption nothing needs is stale, as a `NOT_AN_INPUT_FOR` entry is once its check stops firing."""
         project, events, files = self.audit("standard-python")
         bare = findings_of(project, events["check-agents"], files["check-agents"])
         self.assertEqual(bare, reported(project))
