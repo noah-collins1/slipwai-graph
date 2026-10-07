@@ -69,3 +69,48 @@ class PropagatedListTest(FactoryTestCase):
             listed = verb().propagated(repo)
             self.assertEqual(listed, set((repo / PROPAGATED).read_text(encoding="utf-8").splitlines()))
             self.assertIn(PROPAGATED, listed)
+
+
+LINE = "- **Reversibility:** <tier> · rules <n> · <facts> — from python3 scripts/reversibility.py"
+RULE_LINE = "- **Proposed rule:** <one sentence written to sit in the owner brief> (same shape as D<a>, D<b>)"
+
+
+def flat(text: str) -> str:
+    return " ".join(text.split())
+
+
+class LineWritersTest(FactoryTestCase):
+    def test_e1_the_entry_shape_shows_both_lines_in_the_command_and_the_owner_brief(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "shape", "standard", "python")
+            for text in ((repo / "commands/cruise.md").read_text(encoding="utf-8"),
+                         (repo / ".specify/product-owner.md").read_text(encoding="utf-8")):
+                lines = text.split("- **Confidence:**", 1)[1].splitlines()
+                self.assertEqual(lines[1], LINE)
+                self.assertEqual(lines[2], RULE_LINE)
+                self.assertTrue(lines[3].startswith("- **Written to:**"), lines[3])
+
+    def test_e2_the_skipper_brief_names_the_verb_the_escalation_and_the_proposal(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "skipper", "standard", "python")
+            skipper = flat((repo / "agents/drive-skipper.md").read_text(encoding="utf-8"))
+            for words in ("python3 scripts/reversibility.py", "--raise", "one tier at a time", "never lowers",
+                          "Proposed rule:", "never edits", "evidence for the count, never binding"):
+                self.assertIn(words, skipper)
+
+    def test_e3_the_command_tells_the_host_to_run_the_verb_and_add_the_headings(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "command", "standard", "python")
+            cruise = flat((repo / "commands/cruise.md").read_text(encoding="utf-8"))
+            self.assertIn("runs `python3 scripts/reversibility.py` for every entry it writes", cruise)
+            self.assertIn("with that entry's facts, `Scope:` and `Written to`", cruise)
+            self.assertIn("each `D<n>` with its heading, Stage and Scope", cruise)
+            self.assertIn("to every skipper brief", cruise)
+
+    def test_e4_an_adopted_repository_carries_the_same_text_with_the_delivery_path(self) -> None:
+        files = adopted([wrapped("shop", ".")])
+        verb = "python3 delivery/scripts/reversibility.py"
+        self.assertIn(LINE.replace("python3 scripts/reversibility.py", verb),
+                      files["delivery/commands/cruise.md"])
+        self.assertIn(f"runs `{verb}` for every entry it writes", flat(files["delivery/commands/cruise.md"]))
+        self.assertIn(verb, flat(files["delivery/agents/drive-skipper.md"]))

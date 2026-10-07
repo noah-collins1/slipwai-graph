@@ -17,7 +17,7 @@ from ..origin import Adoption
 from ..services import App
 from .cruise_agents import DECISIONS, OWNER_BRIEF, SCOPE_VERB, SKIPPER
 from .cruise_hand import hand_section
-from .cruise_record import ADR_RULE, CHECKPOINT, CHECKPOINT_ENTRY, CONFIG, DECISION_ENTRY, SCRIPT, STOP_FILE
+from .cruise_record import CHECKPOINT, CHECKPOINT_ENTRY, CONFIG, DECISION_ENTRY, ENTRY_RULES, SCRIPT, STOP_FILE
 from .cruise_seat import watch_seat_body
 from .cruise_stops import LOG, REPORT, stop_table
 from .cruise_told import boundary_asks, told_argument
@@ -193,7 +193,7 @@ appended like any other, so the log has no number nobody can explain. A person o
 decision by editing its `Status` and writing the answer they want into the artifact; the next iteration
 re-derives the entry stage from that artifact, the way demo feedback re-enters the ladder.
 
-{ADR_RULE.replace('{REPORT}', REPORT)}
+{ENTRY_RULES.replace('{REPORT}', REPORT)}
 
 {cruise_sentences(layout)}
 

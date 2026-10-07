@@ -9,7 +9,7 @@ in one small file and re-reads it, and the harnesses that can run a command afte
 """
 from __future__ import annotations
 
-from .cruise_agents import BOSUN, BROWSER, HAND, SKIPPER
+from .cruise_agents import BOSUN, BROWSER, HAND, SCORE_VERB, SKIPPER
 
 CHECKPOINT = "specs/cruise-checkpoint.md"
 STOP_FILE = ".specify/cruise.stop"
@@ -38,6 +38,13 @@ published contract? Where it would, write `docs/adr/NNNN-<title>.md` in Nygard's
 the run never accepts its own architecture decision — with the next unused number, allocated here the way
 `D<n>` is, and name it in the entry's `Written to` beside the artifact. The entry is the log of what was
 decided; the ADR is where the next slice looks for why, and `{REPORT}` lists every ADR still `Proposed`."""
+# The line a decision's reversibility is written on, and what the session does about it (D174, D177, D178).
+REVERSIBILITY_RULE = f"""\
+**Every entry says how hard it is to reverse.** This session runs `{SCORE_VERB}` for every entry it writes,
+host-decided or skipper-decided, with that entry's facts, `Scope:` and `Written to`, and writes the line the verb
+prints after `Confidence`. It also adds the feature's entry headings — each `D<n>` with its heading, Stage and
+Scope, out-of-scope entries included — to every skipper brief, so the skipper can count what it has decided alike. `Proposed rule:` is the skipper's alone, and
+only where the count is three."""
 DECISION_ENTRY = f"""## D<n> — <the question, in one line>
 - **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
 - **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
@@ -47,8 +54,11 @@ DECISION_ENTRY = f"""## D<n> — <the question, in one line>
 - **Why:** <in the actor's terms>
 - **Decided by:** host (stage recommendation) | host (standing decision D<m>) | {SKIPPER} (<model>) | {BOSUN} | human
 - **Confidence:** high | medium | low · **Would reverse if:** <the one condition>
+- **Reversibility:** <tier> · rules <n> · <facts> — from {SCORE_VERB}
+- **Proposed rule:** <one sentence written to sit in the owner brief> (same shape as D<a>, D<b>)
 - **Written to:** <the artifact paths the answer went into>
 - **Status:** standing | overridden by D<m> | overridden by human <date>"""
+ENTRY_RULES = f"{REVERSIBILITY_RULE}\n\n{ADR_RULE}"
 DEMO_ENTRY = f"""## <ISO instant> — <accepted | behaviour | implementation> · iteration <n> · {HAND} (<model>)
 - **Started with:** <the literal command or URL> · **Seeded:** <what, or none>
 - **Driven through:** {BROWSER} | <harness browser tool> | HTTP | CLI — <why, where not the first>
