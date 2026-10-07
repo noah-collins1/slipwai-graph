@@ -57,11 +57,12 @@ def branch_rows(root: Path) -> str:
     if status:
         raise Full(full_line(f"the change set cannot be established — git could not read HEAD: {printable(out)}"))
     name = out.strip().removeprefix("refs/heads/")
-    if git_out(root, "rev-parse", "--verify", "-q", "HEAD")[0]:
-        raise Full(full_line("HEAD is not on a branch"))
     identifier = name.removeprefix(SLICE_PREFIX)
     if not name.startswith(SLICE_PREFIX) or not identifier or "/" in identifier or identifier.startswith("-"):
         raise Full(full_line(f"not a slice branch (`{printable(name)}`)"))
+    if git_out(root, "rev-parse", "--verify", "-q", "HEAD")[0]:  # on a branch, with no commit to compare (T052)
+        raise Full(full_line(f"`{printable(name)}` has no commits of its own — there is nothing beyond the base to "
+                             "compare"))
     return name
 
 
