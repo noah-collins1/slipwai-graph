@@ -28,8 +28,8 @@ sys.dont_write_bytecode = True
 SCRIPTS = Path(__file__).resolve().parent.parent
 LINE = "check-ux-gates: "
 EVERY = LINE + "every preview in scope — "
-SCOPED = (LINE + "{branch} — previews scoped to what changed since {short} (the base of `{trunk}`){note}; "
-          "UX_GATES_SINCE=all renders every preview")
+SCOPED = (LINE + "{branch} — previews scoped to what changed since {short} (the commit on `{trunk}` this branch is "
+          "built on){note}; UX_GATES_SINCE=all renders every preview")
 
 
 class Scope(NamedTuple):
@@ -49,6 +49,12 @@ def load(filename: str) -> Any:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def no_base(branch: str, said: str) -> str:
+    """Why a slice branch has no base, said once: `check-slice-scope`'s own line names the branch already."""
+    words = said.removeprefix("check-slice-scope: ")
+    return f"no usable base: {words}" if words else f"{branch} has no usable base"
 
 
 def every(why: str) -> Scope:
@@ -90,8 +96,7 @@ def reason(stamp: Any, scope: Any, root: Path, ref: str, has_commit: bool) -> st
     if not scope.SLICE_BRANCH.match(branch):
         return f"`{printable(branch)}` is not a slice/<id> branch"
     if scope.merge_base().commit is None:
-        words = scope.check(branch)[3].removeprefix("check-slice-scope: ")
-        return f"{branch} has no usable base — {words}"
+        return no_base(branch, scope.check(branch)[3])
     problem = stamp.trunk_problem()[1]
     if problem is not None:
         return f"the trunk cannot be told — {problem}"

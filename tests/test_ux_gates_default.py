@@ -174,8 +174,8 @@ class RefTest(GatesCase):
 
 
 def scoped_line(branch: str, short: str, extra: str = "") -> str:
-    return (f"check-ux-gates: {branch} — previews scoped to what changed since {short} (the base of `main`){extra}; "
-            "UX_GATES_SINCE=all renders every preview")
+    return (f"check-ux-gates: {branch} — previews scoped to what changed since {short} "
+            f"(the commit on `main` this branch is built on){extra}; UX_GATES_SINCE=all renders every preview")
 
 
 class DefaultTest(GatesCase):

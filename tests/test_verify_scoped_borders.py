@@ -55,7 +55,7 @@ class BordersTest(ScopedCase):
         git(self.repo, "branch", "-D", "main")
         run = self.scoped()
         (line,) = self.scoped_lines(run)
-        self.assertTrue(line.startswith(FULL + f"{SLICE} has no usable base — "), line)
+        self.assertTrue(line.startswith(FULL + f"no usable base: {SLICE} has no "), line)
         self.assertIn("has no `main` to compare with", line)
         self.assertEqual(len(self.verify_calls()), 1)
 

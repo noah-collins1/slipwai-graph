@@ -31,12 +31,16 @@ from verify_scoped import choose  # noqa: E402
 from verify_scoped import methods  # noqa: E402
 from verify_scoped import record as records  # noqa: E402
 from verify_scoped import rules  # noqa: E402
+from verify_scoped.since import no_base  # noqa: E402
 
 LINE = "verify-scoped: "
 FULL = LINE + "the full gate runs, as `make verify` — {reason}"
 INCOMPLETE = "dependency knowledge was incomplete"
 EVERY = "every check was chosen"
 IGNORED = "a file git ignores differs from the baseline"
+# The person's own edit as much as a check's write: the stamp says only the second, of a key that moved mid-run.
+IGNORED_HINT = ("you may have edited one, or a check written one; `git status --ignored` shows it, and the next run "
+                "records")
 
 
 def load(name: str, filename: str) -> Any:
@@ -100,8 +104,7 @@ def slice_branch(ground: Ground) -> str | None:
 def base(ground: Ground) -> str | None:
     if ground.scope.merge_base().commit is not None:
         return None
-    words = ground.scope.check(ground.branch)[3].removeprefix("check-slice-scope: ")
-    return f"{ground.branch} has no usable base — {words}"
+    return no_base(ground.branch, ground.scope.check(ground.branch)[3])
 
 
 def told(ground: Ground) -> str | None:
@@ -262,7 +265,7 @@ def run(make: str, makefile: str) -> int:
         note = f"no usable baseline ({why}) — every check that reads a tool or a variable runs"
         return broaden(make, makefile, EVERY, [note])
     if drifted.ignored:  # a check reads a file git ignores, and no changed path names one: as the stamp's key has it (D125)
-        return broaden(make, makefile, IGNORED, then=ground.stamp.WRITTEN_IGNORED.removeprefix(" — "))
+        return broaden(make, makefile, IGNORED, then=IGNORED_HINT)
     choices = changes.unpushed_words(choose.choose(record, data, changed, drifted), own, span, ground.scope)
     if all(choice.runs for choice in choices):
         return broaden(make, makefile, EVERY)

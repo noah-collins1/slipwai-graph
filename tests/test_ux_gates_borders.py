@@ -59,7 +59,7 @@ class BorderTest(BordersCase):
     def test_e3_a_checkout_with_no_main_has_no_usable_base(self) -> None:
         self.sliced()
         git(self.repo, "branch", "-D", "main")
-        self.said_every("slice/S1 has no usable base — ")
+        self.said_every("no usable base: slice/S1 has no `main` to compare with")
 
     def test_e3_a_trunk_that_cannot_be_told_renders_every_preview(self) -> None:
         self.sliced()
