@@ -38,8 +38,9 @@ is unreadable whole: the verb carries it as global. The gate refuses a second `S
 line, naming the entry; a second `Status:` line it only notes (`check-decisions: note:`, exit code unchanged), because a
 log written before this release can hold one and the gate does not newly refuse what an earlier checker passed. For a log
 with no `Scope:` line the gate answers exactly as the checker before it did, a byte-order mark included. It ends with one line of counts, names
-each overridden entry with what overrode it, writes nothing, and needs `--feature` only when `specs/` holds more
-than one `decisions.md`.
+each overridden entry with what overrode it, prints a `provisional …` or `ratified …` entry as binding
+(naming the provisional ones in the summary) and leaves a `reverted <date>` one out like an overridden one, writes
+nothing, and needs `--feature` only when `specs/` holds more than one `decisions.md`.
 
 A call it does not understand is usage and exit 2, never a run of something else: `--scope` wants an id of upper-case
 letters and a number, `--feature` a name, each once, and `--help` prints the usage and exits 0. A block under a `##`
@@ -108,6 +109,7 @@ DEMO_HEADING = re.compile(r"^## (\S+) — (\w+) · iteration (\d+) · drive-hand
 DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decision D\d+\)|drive-skipper \(.+\)|"
                         r"drive-bosun( \(.+\))?|human)$")
 STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
+REVERTED = re.compile(r"^reverted [0-9]{4}-[0-9]{2}-[0-9]{2}$")
 NEW_FIRST = [["provisional"], ["ratified"], ["reverted"]]  # a Status whose first word `provisional.py` reads
 PROVISIONAL_LABEL = re.compile(r"^- \*\*Status:\*\*[^\S\n]*(?:provisional|ratified|reverted)\b|"
                                r"^- \*\*(?:Revert|Provisional \((?:shadow|advisory)\)):\*\*", re.M)
@@ -470,24 +472,30 @@ def scope_verb(wanted: str, feature: str | None) -> int:
     found = entries(text, DECISION_HEADING)
     count = {"scope": 0, "global": 0, "unlined": 0, "unread": 0, "out": 0}
     overridden: list[str] = []
+    provisional: list[str] = []
     for index, (line, heading, fields) in enumerate(found):
         if heading is None:  # a block under a heading it cannot read: carried, never placed, never dropped
             where = "unread"
         else:
-            status = STATUS.match(fields.get("Status", "standing"))
-            if status and status.group(0).startswith("overridden") and "Status" not in fields.twice:
+            text_of = fields.get("Status", "standing")
+            status = STATUS.match(text_of) or REVERTED.fullmatch(text_of)
+            if status and status.group(0).startswith(("overridden", "reverted")) and "Status" not in fields.twice:
                 overridden.append(f"D{heading.group(1)} ({status.group(0)})")
                 continue
             where = placed(wanted, fields)
         count[where] += 1
         if where != "out":
+            if heading is not None and fields.get("Status", "").startswith("provisional") \
+                    and "Status" not in fields.twice:
+                provisional.append(f"D{heading.group(1)}")
             end = found[index + 1][0] - 1 if index + 1 < len(found) else len(lines)
             print("\n".join(lines[line - 1:end]).rstrip() + "\n")
     carried = count["scope"] + count["global"] + count["unlined"] + count["unread"]
     unread = f", {count['unread']} carried for want of a heading it can read" if count["unread"] else ""
     print(f"check-decisions: carried {carried} of {len(found)} entries for {wanted}: {count['scope']} in scope, "
           f"{count['global']} global, {count['unlined']} carried as global for want of a line{unread}; "
-          f"{count['out']} left out as out of scope; overridden and left out: {', '.join(overridden) or 'none'}")
+          f"{count['out']} left out as out of scope; overridden and left out: {', '.join(overridden) or 'none'}"
+          + (f"; provisional and binding: {', '.join(provisional)}" if provisional else ""))
     if count["unread"]:
         print(f"check-decisions: {logs[0].relative_to(ROOT).as_posix()} does not pass check-decisions: "
               f"{count['unread']} block(s) under a heading that is not `## D<n> — <question>`", file=sys.stderr)
