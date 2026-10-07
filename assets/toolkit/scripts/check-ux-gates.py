@@ -36,7 +36,8 @@ spread that, and none changes what passing means:
   the previews that changed since it render; on the trunk, in CI, and wherever that base cannot be found,
   every preview renders, and one line says why. `UX_GATES_SINCE=all` renders every preview anywhere; a ref
   literally named `all` is passed as `refs/heads/all`. Set `UX_GATES_SINCE=all` when a change the scope
-  cannot follow — a script or asset a preview loads, a browser upgrade — could alter a preview. The file
+  cannot follow — a script or asset a preview loads, a browser upgrade, a reinstalled ux-gates kit
+  (`tools/ux-gates/`) — could alter a preview. The file
   gate over `src/` always runs.
 
 Standard library only, like every gate script here; the kit's scripts are run as subprocesses.

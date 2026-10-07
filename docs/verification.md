@@ -58,7 +58,8 @@ wherever the base cannot be found every preview renders, and one line says why. 
 scoped gate never skips it, so `make check-ux-gates` on a `slice/<id>` branch outside CI scopes previews by default.
 `UX_GATES_SINCE=all` renders every
 preview anywhere (a ref literally named `all` is passed as `refs/heads/all`). Set `UX_GATES_SINCE=all` when a change the
-scope cannot follow — a script or asset a preview loads, a browser upgrade — could alter a preview.
+scope cannot follow — a script or asset a preview loads, a browser upgrade, a reinstalled ux-gates kit (`tools/ux-gates/`) — could alter a
+preview.
 
 ## Why the split is where it is
 

@@ -112,7 +112,7 @@ class TheStampedPageSaysWhatCheckUxGatesRendersTest(FactoryTestCase):
 
     def test_it_names_the_override_and_when_to_set_it(self) -> None:
         said = ("set `UX_GATES_SINCE=all` when a change the scope cannot follow, a script or asset a preview loads, "
-                "a browser upgrade, could alter a preview")
+                "a browser upgrade, a reinstalled ux-gates kit (`tools/ux-gates/`), could alter a preview")
         self.assertIn(said, self.page)
 
     def test_it_says_where_previews_are_scoped_and_where_every_one_renders(self) -> None:
