@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-from provisional_fixture import EASY_LINE, entry, run, scratch
+from provisional_fixture import EASY_LINE, audit, entry, run, scratch
 from test_decisions_gate_differential import checker_at
 
 sys.dont_write_bytecode = True
@@ -46,6 +46,39 @@ class ScopeReadsTheNewStatusesTest(unittest.TestCase):
         self.assertEqual((before.returncode, before.stdout, before.stderr),
                          (after.returncode, after.stdout, after.stderr))
         self.assertNotIn("provisional and binding", after.stdout)
+
+
+class CompletionAuditTest(unittest.TestCase):
+    """R8 (AC-S27-14): the run does not say `done` while a provisional decision waits for a person."""
+
+    def test_r8_e1_the_lowest_numbered_unratified_entry_is_named_and_the_audit_parks(self) -> None:
+        log = "\n".join([entry(1), entry(2, PROVISIONAL, revert="own", reversibility=EASY_LINE), entry(3),
+                         entry(4, PROVISIONAL, revert="own", reversibility=EASY_LINE)])
+        result = audit(log)
+        self.assertEqual((3, "cruise: parked: ratify D2\n"), (result.returncode, result.stdout), result.stderr)
+
+    def test_r8_e2_ratified_reverted_and_overridden_by_a_person_no_longer_hold_the_run(self) -> None:
+        log = "\n".join([entry(1), entry(2, "ratified 2026-10-09"), entry(3), entry(4, "reverted 2026-10-09"),
+                         entry(5, "overridden by human 2026-10-09")])
+        result = audit(log)
+        self.assertEqual((0, "provisional: no unratified provisional decision in specs/f/decisions.md\n"),
+                         (result.returncode, result.stdout), result.stderr)
+
+    def test_r8_e3_no_log_is_nothing_unratified(self) -> None:
+        result = audit(None)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("no decisions.md", result.stdout)
+
+    def test_r8_e4_two_features_and_no_choice_is_exit_two_naming_both(self) -> None:
+        logs = {"alpha": entry(1, PROVISIONAL, revert="own", reversibility=EASY_LINE), "beta": entry(1)}
+        result = audit(logs)
+        self.assertEqual((2, ""), (result.returncode, result.stdout))
+        self.assertEqual(1, len(result.stderr.strip().splitlines()), result.stderr)
+        self.assertTrue("alpha" in result.stderr and "beta" in result.stderr, result.stderr)
+        chosen = audit(logs, "--feature", "beta")
+        self.assertEqual((0, True), (chosen.returncode, "specs/beta/decisions.md" in chosen.stdout), chosen.stderr)
+        parked = audit(logs, "--feature", "alpha")
+        self.assertEqual((3, "cruise: parked: ratify D1\n"), (parked.returncode, parked.stdout))
 
 
 if __name__ == "__main__":

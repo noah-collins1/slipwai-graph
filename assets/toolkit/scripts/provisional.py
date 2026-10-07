@@ -6,6 +6,8 @@ decision entry carries (and, where provisional, its `Revert:` line), from the `d
 (passed, never read: the verb reads no file). Provisional is `provisional` with a final tier of easy or guarded and none
 of `ci_workflow=yes`, `migrate_file=yes`, `flag_default=yes` (FR-033); a fact, a constitution MUST and a release are
 unavailable whatever `decide` says. A missing `--reversibility` line is `hard`.
+`python3 scripts/provisional.py audit [--feature <name>]` is the completion audit: it prints `cruise: parked: ratify
+D<n>` and exits 3 while an entry of `specs/<feature>/decisions.md` has a first `Status` starting `provisional`.
 The gate (`check-decisions.py`) loads this file by path, only for a log carrying a `Status: provisional|ratified|
 reverted`, a `Revert:` or a `Provisional (shadow|advisory):` line, and `check_log()` holds those lines to their grammar.
 Nothing here prints or exits outside `main`; `reversibility.py` beside this file is loaded by path, bytecode off.
@@ -36,7 +38,8 @@ REQUIRED = OPTIONS[:4]
 DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 NUMBER = re.compile(r"D[1-9][0-9]*")
 USAGE = ("usage: provisional.py status --decide <" + "|".join(DECIDE) + "> --ask <" + "|".join(ASKS) +
-         "> --when <ISO instant> --number D<n> [--reversibility '<line>']")
+         "> --when <ISO instant> --number D<n> [--reversibility '<line>']"
+         " | audit [--feature <name>]")
 
 
 FORMS = ("provisional", "ratified", "reverted")
@@ -265,7 +268,58 @@ def status_verb(arguments: list[str]) -> int:
     return 0
 
 
-VERBS = {"status": status_verb}
+STATUS_LINE = re.compile(r"^- \*\*Status:\*\* ?(.*)$")
+HEADING = re.compile(r"^## D([0-9]+) — ")
+
+
+def unratified(text: str) -> list[int]:
+    """The numbers of the entries whose first `Status` starts with `provisional`, lowest first."""
+    found: list[int] = []
+    number, seen = None, False
+    for line in text.removeprefix("\ufeff").split("\n"):
+        heading = HEADING.match(line)
+        if line.startswith("## "):
+            number, seen = int(heading.group(1)) if heading else None, False
+        elif number is not None and not seen and (status := STATUS_LINE.match(line)):
+            seen = True
+            if status.group(1).strip().startswith("provisional"):
+                found.append(number)
+    return sorted(found)
+
+
+def project_root(script: Path) -> Path:
+    """The nearest parent of this script holding `project.json`, as the gate finds it."""
+    return next((parent for parent in script.parents if (parent / "project.json").is_file()), script.parents[1])
+
+
+def audit_verb(arguments: list[str]) -> int:
+    """`audit [--feature <name>]`: exit 3, `cruise: parked: ratify D<n>`, while a provisional decision is unratified."""
+    if arguments and (len(arguments) != 2 or arguments[0] != "--feature" or not arguments[1]):
+        raise Usage("audit takes only --feature <name>, once")
+    specs = project_root(Path(__file__).resolve()) / "specs"
+    logs = sorted(specs.glob("*/decisions.md")) if specs.is_dir() else []
+    if arguments:
+        logs = [log for log in logs if log.parent.name == arguments[1]]
+    elif len(logs) > 1:
+        raise Usage("specs/ holds several decisions.md; choose one with --feature <name>: "
+                    + ", ".join(log.parent.name for log in logs))
+    if not logs:
+        print("provisional: no decisions.md, so no unratified provisional decision")
+        return 0
+    relative = logs[0].relative_to(specs.parent).as_posix()
+    try:
+        waiting = unratified(logs[0].read_text(encoding="utf-8"))
+    except UnicodeDecodeError as error:
+        print(f"provisional: {relative}: not UTF-8 ({error.reason} at byte {error.start})", file=sys.stderr)
+        return 1
+    if waiting:
+        print(f"cruise: parked: ratify D{waiting[0]}")
+        return 3
+    print(f"provisional: no unratified provisional decision in {relative}")
+    return 0
+
+
+VERBS = {"status": status_verb, "audit": audit_verb}
 
 
 def main() -> int:
