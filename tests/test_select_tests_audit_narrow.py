@@ -16,6 +16,8 @@ from select_fixture import SelectCase
 from select_fixture_declare import GO, DeclarationCase
 from test_select_tests_real_audit import SCRATCH, SELECTED, audited, to_audit
 
+AUDIT_MODULE = "test_select_tests_real_audit"  # a real selected run always runs, and so hands down, the audit itself
+
 sys.dont_write_bytecode = True
 
 LOG = ("import os\nimport unittest\n\n\nclass Case(unittest.TestCase):\n    def test_it(self):\n"
@@ -86,13 +88,14 @@ class TestTheAuditNarrowsToWhatWasSelected(SelectCase):
     def test_without_the_variable_every_declared_module_is_audited(self) -> None:
         self.assertEqual(to_audit(self.declared, {}), self.declared)
 
+    # a space-separated list is not a module name, and a set without the audit itself was not handed to this run
     def test_an_empty_or_unreadable_handoff_falls_back_to_every_module(self) -> None:
-        for value in ("", " ", ",", " , "):
+        for value in ("", " ", ",", " , ", "test_two test_three,test_select_tests_real_audit", "test_two,test_three"):
             with self.subTest(value):
                 self.assertEqual(to_audit(self.declared, {SELECTED: value}), self.declared)
 
     def test_a_named_set_audits_the_declared_modules_in_it_only(self) -> None:
-        self.assertEqual(to_audit(self.declared, {SELECTED: "test_two,test_other,test_three"}),
+        self.assertEqual(to_audit(self.declared, {SELECTED: f"test_two,test_other,test_three,{AUDIT_MODULE}"}),
                          {"test_two": ["b"], "test_three": []})
 
     def test_the_real_listing_is_whole_when_nothing_is_handed(self) -> None:
@@ -120,7 +123,7 @@ class TestAPlantedUndeclaredReadIsSelectedAndAudited(DeclarationCase):
         self.assertNotIn("skipped test_probe", done.stdout)
         handed = [line.split("\t")[1] for line in self.ran() if line.startswith("handed\t")]
         self.assertEqual(handed, [repr("test_probe")])
-        chosen = to_audit({"test_probe": [DECLARED], "test_unselected": []}, {SELECTED: "test_probe"})
+        chosen = to_audit({"test_probe": [DECLARED], "test_unselected": []}, {SELECTED: f"test_probe,{AUDIT_MODULE}"})
         self.assertEqual(list(chosen), ["test_probe"])
         SCRATCH.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=SCRATCH) as directory:

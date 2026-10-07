@@ -347,11 +347,11 @@ The last column is the first thing that keeps the module running on a Go change 
 ## AC-S43-9 — the same test ids
 
 `unittest.defaultTestLoader.discover('tests')` walked without running, on `git archive adopt-method` (`0000e5b`, the
-rebased base) and on the slice's tip: 3271 ids at the base, 3319 at the tip, no import failure in either. The base's
+rebased base) and on the slice's tip: 3271 ids at the base, 3333 at the tip, no import failure in either. The base's
 ids are all at the tip but one: `test_select_tests_real_helpers…test_the_render_fixture_runs_the_launcher_so_it_declares_every_configuration`
 is now `…test_the_render_fixture_names_the_one_project_it_generates_and_reads_the_launcher_through_support` — a
 selector test about `render_fixture`'s declaration, which T006 narrowed from `"every"`, so its old name would be false.
-The 49 added ids are the slice's selector tests (`test_select_tests_argv` 9, `_argv_forms` 22, `_audit_narrow` 11,
+The 63 added ids are the slice's selector tests (`test_select_tests_argv` 9, `_argv_forms` 36, `_audit_narrow` 11,
 `_real_s43` 6, `_real_helpers` 1). Whether any test is newly skipped is not visible without running; the host's full
 run on the faulted tree (AC-S43-8) is where it shows.
 

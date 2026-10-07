@@ -112,10 +112,13 @@ def reads_only() -> dict[str, list[str]]:
 
 
 def to_audit(declared: dict[str, list[str]], environ: Mapping[str, str]) -> dict[str, list[str]]:
-    """The declared modules this run audits: those in `SELECTED_TEST_MODULES`, or every one where it is absent or
-    names no module (a broken handoff falls back to the full audit)."""
-    chosen = {name for name in environ.get(SELECTED, "").split(",") if name.strip()}
-    return {name: reads for name, reads in declared.items() if name in chosen} if chosen else declared
+    """The declared modules this run audits: those in `SELECTED_TEST_MODULES`, or every one where it is absent, names
+    no module, names something that is not a module name, or does not name this audit — a selected run that runs the
+    audit always hands it its own name, so anything else is not this run's handoff and falls back to the full audit."""
+    chosen = {name.strip() for name in environ.get(SELECTED, "").split(",") if name.strip()}
+    if not chosen or not all(name.isidentifier() for name in chosen) or __name__.rsplit(".", 1)[-1] not in chosen:
+        return declared
+    return {name: reads for name, reads in declared.items() if name in chosen}
 
 
 class TestEveryReadsOnlyModuleOpensWhatItDeclares(unittest.TestCase):
