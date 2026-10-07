@@ -179,4 +179,20 @@ recorded so the host can overturn it.
 
 ## Open questions
 
-None open. Product questions met in planning: none — D195–D201 settle every one the criteria raise.
+Product questions met in planning: none — D195–D201 settle every one the criteria raise.
+
+- **Q1 (open, raised by converge pass 1 at `76927e4`; the slice is blocked on it before pass 2) — where does a
+  feature's log with no mode entry take its baseline?** D196 part 4: *"A log with no mode entry: the first iteration
+  records the current mode as it finds it, with no order check, because the earlier mode is unknown."* Mode entries
+  are per feature log, so every new feature — and every project before its first iteration — accepts a hand edit
+  straight to `provisional` without the park AC-S27-12 promises for a skip. Observed: a second feature's
+  `cruise.py mode` printed `decide moved from unrecorded to provisional`, exit 0.
+  - (a) Keep D196 part 4 as written: the first entry of each log is unchecked.
+  - (b) Read `unrecorded` as rung 0: before this release only rung-0 values (`recommended-first`, `skipper-always`)
+    existed, so a log with no mode entry was at rung 0, and a first reading above `provisional-shadow` parks.
+  - (c) **Recommended:** take the last mode entry across every feature's `decisions.md` (by its `When`), falling back
+    to (b) where no log has one. It closes the hole without making a project that already reached `provisional` in one
+    feature climb again in the next; one more file read in `mode`, no new setting.
+
+  Either (b) or (c) overrides D196 part 4's "no order check" and needs the host's entry; (c) also changes R10 e4's
+  example and AC-S27-12's wording ("the last mode entry in the feature's log" → "in any feature's log").
