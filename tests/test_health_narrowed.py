@@ -18,6 +18,9 @@ from support import FactoryTestCase
 from test_codegraph_narrowed import CI_MARKERS, CURRENT, OWN, Project
 from test_cruise_index import bare_path
 
+# Generates nothing itself: the projects come from `Project`, imported from the modules above.
+TEST_SELECTION: dict[str, object] = {}
+
 HEALTH = "scripts/agents/code_index.py"
 # What `health()` says of a narrowed comparison: how many of how many, that only what changed was compared, and since
 # when; the moment is the gate's own (`2026-10-03 12:00:00`).

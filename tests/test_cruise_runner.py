@@ -14,8 +14,8 @@ import time
 from pathlib import Path
 from unittest import mock
 
+from gate_rules import gate_prerequisites
 from support import FactoryTestCase
-from test_verify_stamp_pinned import gate_prerequisites
 
 from slipwai.assets import TOOLKIT_ROOT
 from slipwai.project.cruise import CONFIG, LOG, SETTINGS, STOP_FILE, UNREAD, cruise_config
@@ -28,6 +28,14 @@ from slipwai.project.cruise_record import (
     RUNNER_PID,
     TOLD,
 )
+
+# Generates a project through the launcher; reads the harness registry the loop runs through.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["python", "typescript"], "profile": ["event-modelling", "standard"], "frontend": ["none"],
+    },
+    "reads": ["assets/toolkit/scripts/agents/registry.json"],
+}
 
 REGISTRY = json.loads((TOOLKIT_ROOT / "scripts/agents/registry.json").read_text())["harnesses"]
 # A harness the loop can stand in for: one shell script, its behaviour chosen by the first word of its script.

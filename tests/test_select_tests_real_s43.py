@@ -16,6 +16,8 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+import gate_rules
+import test_verify_stamp_pinned
 from test_select_tests_real_backends import DECLARED as BACKEND_MODULES
 
 from slipwai.assets import ROOT
@@ -25,8 +27,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from select_tests import choose, declarations, rules  # noqa: E402
 
-DECLARED: tuple[str, ...] = ()  # the test modules this slice declares
-HELPERS: tuple[str, ...] = ()  # the helper files this slice declares
+DECLARED: tuple[str, ...] = (  # the test modules this slice declares
+    "test_codegraph_memory", "test_health_memory", "test_health_memory_states", "test_codegraph_races",
+    "test_health_narrowed", "test_codegraph_narrowed", "test_cruise_runner", "test_cruise_index",
+    "test_code_index_health",
+)
+HELPERS: tuple[str, ...] = ("gate_rules",)  # the helper files this slice declares
 
 
 def pairs(tree: declarations.Tree, names: Iterable[str]) -> set[tuple[str, str]]:
@@ -117,6 +123,13 @@ class TestTheDeclarationsOfThisSliceAreHeldAndReached(unittest.TestCase):
         self.assertIn("test_matrix", {v.module for v in choose.select(self.tree, [go], self.catalog).verdicts
                                       if v.runs})
         self.assertTrue(set(BACKEND_MODULES) >= {"test_matrix", "test_postgres"})
+
+
+class TestAMovedHelperIsOneObjectByBothPaths(unittest.TestCase):
+    def test_the_gate_readers_are_the_same_objects_from_gate_rules_and_from_test_verify_stamp_pinned(self) -> None:
+        for name in ("gate_target_name", "gate_prerequisites", "gate_rule"):
+            with self.subTest(name=name):
+                self.assertIs(getattr(gate_rules, name), getattr(test_verify_stamp_pinned, name))
 
 
 if __name__ == "__main__":

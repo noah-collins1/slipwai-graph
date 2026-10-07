@@ -19,6 +19,9 @@ from pathlib import Path
 from support import FactoryTestCase
 from test_codegraph_narrowed import Project
 
+# Generates nothing itself: the projects come from `Project`, imported from the module above.
+TEST_SELECTION: dict[str, object] = {}
+
 FAKE = "0" * 64
 WRAPPER = """#!{python}
 import os, sqlite3, sys

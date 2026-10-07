@@ -18,6 +18,9 @@ from test_codegraph_narrowed import CI_MARKERS, Project
 from test_cruise_index import bare_path
 from test_health_narrowed import NARROWED, Health
 
+# Generates nothing itself: the projects come from `Project`, imported from the modules above.
+TEST_SELECTION: dict[str, object] = {}
+
 THE_CLAUSES = "compared everything: "
 
 

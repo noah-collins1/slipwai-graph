@@ -16,6 +16,13 @@ from test_cruise_runner import REGISTRY, cruise, enable, fake_harness
 
 from slipwai.project.cruise_record import RUNNER_STREAM
 
+# Generates a project through the launcher.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["python", "typescript"], "profile": ["event-modelling", "standard"], "frontend": ["none"],
+    },
+}
+
 MCP_CALL = json.dumps({"type": "assistant", "message": {"role": "assistant", "content": [
     {"type": "tool_use", "id": "toolu_mcp1", "name": "mcp__codegraph__codegraph_explore",
      "input": {"query": "what calls post_entry"}}]}, "parent_tool_use_id": None})

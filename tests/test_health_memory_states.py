@@ -22,6 +22,9 @@ from support import FactoryTestCase
 from test_codegraph_narrowed import Project
 from test_health_narrowed import Health
 
+# Generates nothing itself: the projects come from `Project`, imported from the modules above.
+TEST_SELECTION: dict[str, object] = {}
+
 Step = Callable[[Project], None]
 GARBAGE = b"garbage " * 1000
 

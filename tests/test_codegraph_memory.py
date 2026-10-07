@@ -20,6 +20,9 @@ from typing import Any
 from support import FactoryTestCase
 from test_codegraph_narrowed import Project
 
+# Generates nothing itself: the projects come from `Project`, imported from the modules above.
+TEST_SELECTION: dict[str, object] = {}
+
 NO_SYNC = {"CODEGRAPH_GATE_NO_SYNC": "1"}
 
 

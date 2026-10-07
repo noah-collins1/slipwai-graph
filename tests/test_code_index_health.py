@@ -21,6 +21,13 @@ from support import FactoryTestCase
 from test_cruise_index import bare_path
 from test_cruise_runner import cruise, enable, fake_harness, logged
 
+# Generates a project through the launcher.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["python", "typescript"], "profile": ["event-modelling", "standard"], "frontend": ["none"],
+    },
+}
+
 # `codegraph` as far as the index goes: `init`, `index` and `sync` write a real database describing every tracked
 # Python file and defining `decideCue`; `explore` and `callers` answer only from a database that passes SQLite's
 # integrity check, the way the real one fails on a malformed file. Every call is logged.

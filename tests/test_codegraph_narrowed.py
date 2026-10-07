@@ -21,6 +21,9 @@ from gate_audit import Audited
 from support import FactoryTestCase, commit_all
 from test_code_index_health import indexed
 
+# Generates nothing itself: the projects come from `Project`, defined below.
+TEST_SELECTION: dict[str, object] = {}
+
 GATE = "scripts/check-codegraph.py"
 CI_MARKERS = ("CI", "GITHUB_ACTIONS", "GITLAB_CI")
 # The gate's own two scripts are opened by any run (it is one of them, and it loads the other); everything else the
