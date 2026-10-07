@@ -67,6 +67,28 @@
       "signals": {
         "driver": "cruise"
       }
+    },
+    {
+      "stage": "plan",
+      "started": "2026-10-07T21:22:30Z",
+      "planned": "plan: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": null
+      },
+      "cursor": {
+        "source": "claude",
+        "session": "e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae",
+        "files": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae.jsonl": 1109486
+        },
+        "subagents": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-a2eb1ce7091869f6b.jsonl": 309848,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-a50665fb04a474384.jsonl": 245189,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-a779be48b5d00f158.jsonl": 284474,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-a885e7708374ee0d2.jsonl": 365552,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-ac66fef7f306a3cc1.jsonl": 555171
+        }
+      }
     }
   ]
 }
