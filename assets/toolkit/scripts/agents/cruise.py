@@ -298,13 +298,28 @@ MODE_ENTRY = """## D{number} — decide moved from {before} to {after}
 - **Scope:** global
 - **Question:** which `decide` mode does this run work under?
 - **Options:** {options}
-- **Decision:** {after}, as a person set it in `.specify/cruise.json` ({cited})
-- **Why:** a person changed the setting through /cruise-settings; the run records the move and never sets it (D62)
+- **Decision:** {decision}
+- **Why:** {why}
 - **Decided by:** human
 - **Confidence:** high · **Would reverse if:** a person sets `decide` again
 - **Written to:** `.specify/cruise.json`
 - **Status:** standing
 """
+
+
+def mode_words(before: str | None, after: str, cited: str) -> tuple[str, str]:
+    """The Decision and Why of a mode entry, each true of its case: no earlier mode entry (a mode recorded as found,
+    never a person's change), a step up the ladder, a step back down it, or a move between the two zero-rung modes."""
+    if before is None:
+        return (f"{after}, recorded as found in `.specify/cruise.json` ({cited}); the log had no earlier mode entry, "
+                "so what it was before is unknown",
+                "the log had no earlier mode entry, so the run records the mode as found and claims no change "
+                "(D196)")
+    way = ("raised the setting up the ladder" if RUNGS[after] > RUNGS[before] else
+           "stepped the setting back down the ladder" if RUNGS[after] < RUNGS[before] else
+           "moved the setting sideways between the two zero-rung modes")
+    return (f"{after}, as a person set it in `.specify/cruise.json` ({cited})",
+            f"a person {way} through /cruise-settings; the run records the move and never sets it (D62)")
 
 
 def git_output(*arguments: str) -> str:
@@ -340,9 +355,10 @@ def mode(arguments: list[str]) -> None:
     else:
         cited = f"commit {git_output('log', '-1', '--format=%h', '--', relative_config) or 'unknown'}"
     numbers = [int(number) for number in DECISION_HEADING.findall(text)]
+    decision, why = mode_words(recorded, value, cited)
     print(MODE_ENTRY.format(number=max(numbers, default=0) + 1, before=recorded or "unrecorded", after=value,
-                            when=now(), iteration=os.environ.get(ITERATION_VARIABLE) or "unknown", cited=cited,
-                            options=" · ".join(CHOICES["decide"])), end="")
+                            when=now(), iteration=os.environ.get(ITERATION_VARIABLE) or "unknown", decision=decision,
+                            why=why, options=" · ".join(CHOICES["decide"])), end="")
 
 
 def describe(table: dict[str, Any]) -> str:

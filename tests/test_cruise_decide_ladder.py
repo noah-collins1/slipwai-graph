@@ -211,6 +211,30 @@ class DecideModeTest(unittest.TestCase):
         result = cruise(project, "mode")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(result.stdout.startswith("## D1 — decide moved from unrecorded to recommended-first\n"))
+        decision, why = (self.line(result.stdout, name) for name in ("Decision", "Why"))
+        self.assertIn("recorded as found", decision)
+        self.assertIn("no earlier mode entry", decision)
+        self.assertRegex(decision, r"\((commit [0-9a-f]+|uncommitted at [^)]+)\)")
+        self.assertIn("records the mode as found", why)
+        self.assertIn("no earlier mode entry", why)
+        for text in (decision, why):
+            self.assertNotIn("a person", text)
+            self.assertNotIn("changed", text)
+
+    @staticmethod
+    def line(entry: str, name: str) -> str:
+        return next(row for row in entry.splitlines() if row.startswith(f"- **{name}:**"))
+
+    def test_each_case_the_mode_prints_gets_a_why_true_of_that_case(self) -> None:
+        for recorded, decide, word in (("provisional-shadow", "provisional-advisory", "raised"),
+                                       ("provisional", "recommended-first", "back down"),
+                                       ("recommended-first", "skipper-always", "sideways")):
+            project = mode_project(recorded, decide)
+            why = self.line(cruise(project, "mode").stdout, "Why")
+            self.assertIn("a person", why)
+            self.assertIn(word, why)
+            for other in {"raised", "back down", "sideways"} - {word}:
+                self.assertNotIn(other, why)
 
     def test_a_hand_edit_that_skips_a_rung_parks_with_nothing_to_append(self) -> None:
         project = mode_project("recommended-first", "provisional")
