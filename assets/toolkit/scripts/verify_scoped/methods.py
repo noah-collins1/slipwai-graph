@@ -170,6 +170,33 @@ def integration_files(root: Path, scope: Any, base: str | None, registry: Path) 
     return found
 
 
+HOLLOW = "an ignored projection directory with no files, whose existence the baseline cannot see"
+
+
+def bare(path: Path) -> bool:
+    """A directory with nothing under it, at any depth: no file and no link, which is all the baseline's digest sees."""
+    return not any(not found.is_dir() or found.is_symlink() for found in path.rglob("*"))
+
+
+def hollow(root: Path, scope: Any, base: str | None, registry: Path = REGISTRY) -> list[str]:
+    """The projection directories `check-agents` (an installed integration's) and `check-speckit` (every in-repo one the
+    registry names) judge by whether they exist, that exist with no file under them: `unprojected` turns on it, and
+    git ignores them, so the baseline's digest of files cannot see one appear."""
+    try:
+        table = rows(registry)
+        chosen = installed(root, scope, base)
+    except Unreadable:  # `add` leaves the check with no recorded inputs, which is the full gate
+        return []
+    found: set[str] = set()
+    for key, row in table.items():
+        agent = row.get("agentFile")
+        listed = [row.get("skillsDir"), row.get("commandsDir")]
+        if key in chosen and isinstance(agent, dict):
+            listed.append(agent.get("dir"))
+        found.update(value.strip("/") + "/" for value in listed if isinstance(value, str) and inside(value))
+    return sorted(directory for directory in found if (root / directory).is_dir() and bare(root / directory))
+
+
 def add(entry: dict[str, Any] | None, derive: Any) -> None:
     if entry is None or entry["inputs"] is None:
         return
