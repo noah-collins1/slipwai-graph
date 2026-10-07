@@ -349,5 +349,7 @@ S07's table; and L4, a sentence in ADR 0007, which is the host's.
 - [x] T022 [MEDIUM] B1, B4, B5: `Proposed rule:` citations are held only in a log carrying a `Reversibility:` line, a `note:` otherwise (D65); a near-miss label is a `note:` naming the entry; a second `Proposed rule:` line in an entry is refused; the differential test gains a `Proposed rule:` case with no `Reversibility:` line. — `61775d6`
 - [x] T023 [MEDIUM] B2: `measures.py` skips fenced lines exactly as the gate does, so decision health reads only the line the gate checked. — `8a73dad`
 - [x] T024 Mutation: N/A — no mutation tool is configured for the factory's own Python (the eleventh slice so).
-- [ ] T025 Both full gates once on the final tip: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify`.
-- [ ] T026 Register row with `accepted-by: drive-hand`; benchmark closed; worktree and `slice/S26-reversibility-line` removed.
+- [x] T025 Both full gates once on the final tip: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify`.
+- [x] T026 Register row with `accepted-by: drive-hand`; benchmark closed; worktree and `slice/S26-reversibility-line` removed.
+
+T025: green at `961bd5f` (`make verify` 3493 s, the delivery gate with CI markers 3490 s, 3296 tests each); the first `make verify` at `814acdc` was red on `test_verify_scoped_record` e4 — repaired by `6cfe48b`.
