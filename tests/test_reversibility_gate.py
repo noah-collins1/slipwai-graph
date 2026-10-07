@@ -1,0 +1,103 @@
+"""R4 (AC-S26-9, -10, -14): the gate holds a decision entry's `Reversibility:` line to its grammar and to its rules.
+
+Each case writes a log into a scratch project that holds both scripts and runs the gate as a `python3 -B` subprocess.
+"""
+from __future__ import annotations
+
+import sys
+import tempfile
+import unittest
+
+from reversibility_fixture import EASY, entry, gate, scratch
+
+sys.dont_write_bytecode = True
+
+
+def line(tiers: str = "easy", rules: str = "1", **changes: str) -> str:
+    """A `Reversibility:` line over the easy facts with `changes` applied; `""` drops a key."""
+    merged = {**EASY, **changes}
+    written = " ".join(f"{key}={value}" for key, value in merged.items() if value != "")
+    return f"- **Reversibility:** {tiers} · rules {rules} · {written}"
+
+
+class GateHoldsTheLineTest(unittest.TestCase):
+    def run_gate(self, *entries: str, listed: tuple[str, ...] | None = ("scripts/check-decisions.py",),
+                 ) -> tuple[int, str, str]:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = scratch(directory, "\n".join(entries), listed=listed)
+            result = gate(repo)
+        return result.returncode, result.stdout, result.stderr
+
+    def refused(self, found: tuple[int, str, str], *words: str) -> None:
+        code, out, err = found
+        self.assertEqual(1, code, out + err)
+        findings = [row for row in err.splitlines() if row.startswith("  ")]
+        self.assertEqual(1, len(findings), err)
+        for word in words:
+            self.assertIn(word, findings[0])
+
+    def test_e1_a_well_formed_easy_line_passes(self) -> None:
+        code, out, err = self.run_gate(entry(1, line()))
+        self.assertEqual((0, ""), (code, err), out)
+
+    def test_e2_a_tier_word_that_is_not_a_tier_is_refused_naming_the_entry_and_the_field(self) -> None:
+        self.refused(self.run_gate(entry(1, line("medium"))), "decisions.md:", ": D1 ", "`Reversibility`", "medium")
+
+    def test_e3_a_skipped_step_and_a_lowering_step_are_refused(self) -> None:
+        self.refused(self.run_gate(entry(1, line("easy → hard"))), "D1", "`Reversibility`", "skips")
+        self.refused(self.run_gate(entry(1, line("hard → guarded", ci_workflow="yes"))), "D1", "lowers")
+        self.refused(self.run_gate(entry(1, line("easy → easy"))), "D1", "repeats")
+
+    def test_e4_an_unknown_rules_version_is_refused(self) -> None:
+        self.refused(self.run_gate(entry(1, line(rules="9"))), "D1", "`Reversibility`", "rules 9")
+
+    def test_e5_a_key_that_is_not_a_fact_is_refused_naming_the_key(self) -> None:
+        self.refused(self.run_gate(entry(1, line() + " size=large")), "D1", "`size`")
+        self.refused(self.run_gate(entry(1, line() + " export=no")), "D1", "`export`", "twice")
+        self.refused(self.run_gate(entry(1, line() + " loose")), "D1", "'loose'", "key=value")
+
+    def test_e6_a_second_line_is_refused(self) -> None:
+        self.refused(self.run_gate(entry(1, line() + "\n" + line())), "D1", "more than one `Reversibility:`")
+
+    def test_e7_an_easy_line_the_facts_do_not_support_is_refused_naming_the_fact(self) -> None:
+        self.refused(self.run_gate(entry(1, line(ci_workflow="yes"))), "D1", "`Reversibility`", "ci_workflow=yes")
+
+    def test_e8_a_hard_line_with_an_unaccepted_fact_is_accepted(self) -> None:
+        code, out, err = self.run_gate(entry(1, line("hard", schema="maybe")))
+        self.assertEqual((0, ""), (code, err), out)
+        self.refused(self.run_gate(entry(1, line("easy", schema="maybe"))), "schema=maybe")
+
+    def test_e9_migrate_file_no_is_refused_while_a_written_path_is_on_the_list_or_no_list_exists(self) -> None:
+        listed = entry(1, line(), written="`scripts/check-decisions.py`")
+        self.refused(self.run_gate(listed), "D1", "migrate_file")
+        self.refused(self.run_gate(entry(1, line()), listed=None), "D1", "migrate_file", "no committed list")
+        self.assertEqual(0, self.run_gate(entry(1, line()), listed=("somewhere/else",))[0])
+
+    def test_e10_an_escalation_whose_first_tier_is_right_is_accepted(self) -> None:
+        code, out, err = self.run_gate(entry(1, line("easy → guarded → hard")))
+        self.assertEqual((0, ""), (code, err), out)
+
+    def test_a_log_with_no_line_is_not_refused_and_the_findings_name_each_entry_once(self) -> None:
+        code, out, err = self.run_gate(entry(1), entry(2, line()), entry(3, line("medium")))
+        self.assertEqual(1, code, out)
+        self.assertEqual(1, len([row for row in err.splitlines() if row.startswith("  ")]), err)
+        self.assertIn(": D3 ", err)
+
+    def test_the_gate_reads_scope_with_its_own_scope_tokens(self) -> None:
+        severals = entry(1, line("guarded"), scope="S1, S2")
+        self.assertEqual(0, self.run_gate(severals)[0])
+        self.refused(self.run_gate(entry(1, line("easy"), scope="S1, S2")), "D1", "guarded")
+        code, _, err = self.run_gate(entry(1, line("easy"), scope="S01-S03"))  # unreadable: the scope finding too
+        self.assertEqual(1, code)
+        self.assertIn("rules 1 derive hard", err)
+
+    def test_a_log_with_a_line_and_no_sibling_module_is_noted_not_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = scratch(directory, entry(1, line("whatever")), names=("check-decisions.py",))
+            result = gate(repo)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("reversibility.py is not beside this script", result.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()

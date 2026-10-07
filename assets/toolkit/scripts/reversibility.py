@@ -5,7 +5,8 @@ prints the whole `- **Reversibility:** ...` line a decision entry carries, and o
 that fired. The facts are a closed list; the tier is the highest any rule gives; a missing or unaccepted fact scores
 `hard`. `RULES` keeps every version of the table this file has shipped: a line names the version that scored it, and
 a shipped version is only ever added to, never edited (a new version is a decision taken at the hard tier).
-The gate (`check-decisions.py`) loads this file by path to re-derive a line's first tier. The scope is read by
+The gate (`check-decisions.py`) loads this file by path, only for a log that carries a `Reversibility:` or
+`Proposed rule:` line, and `check_log()` holds each line to the grammar and to the tier its named version derives. The scope is read by
 `scope_tokens`, a copy of the gate's own reading, so the verb works with nothing beside it; a caller that holds the
 gate's function passes it to `score()` instead. Nothing here prints or exits outside `main`.
 """
@@ -14,7 +15,7 @@ from __future__ import annotations
 import json
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 
 LABEL = "- **Reversibility:** "
@@ -162,6 +163,80 @@ def score(facts: dict[str, str], scope: str, raise_to: str | None = None, versio
     tier, fired = RULES[version](facts, dependants(scope, reader))
     written = " ".join(f"{key}={facts.get(key, 'missing')}" for key in FACTS)
     return f"{LABEL}{ARROW.join(steps(tier, raise_to))} · rules {version} · {written}", fired
+
+
+def parse_line(value: str) -> tuple[list[str], int, dict[str, str]]:
+    """(tiers, rules version, facts) from the text after the label; ValueError names the field or the key at fault."""
+    parts = value.split(" · ")
+    if len(parts) != 3:
+        raise ValueError("is not `<tiers> · rules <n> · <fact>=<value> ...`")
+    tiers = [word.strip() for word in re.split(r"→|->", parts[0])]
+    for word in tiers:
+        if word not in TIERS:
+            raise ValueError(f"names {word!r}, which is not a tier (easy, guarded or hard)")
+    for before, after in zip(tiers, tiers[1:], strict=False):
+        gap = TIERS.index(after) - TIERS.index(before)
+        if gap != 1:
+            raise ValueError(f"has a step {before} → {after} that " + (
+                "lowers a tier" if gap < 0 else "repeats a tier" if gap == 0 else "skips a tier"))
+    named = re.fullmatch(r"rules ([0-9]+)", parts[1].strip())
+    if named is None:
+        raise ValueError(f"names {parts[1].strip()!r}, not `rules <n>`")
+    if int(named.group(1)) not in RULES:
+        raise ValueError(f"names rules {named.group(1)}, which this gate does not know "
+                         f"(it knows {', '.join(map(str, RULES))})")
+    facts: dict[str, str] = {}
+    for token in parts[2].split():
+        key, separator, given = token.partition("=")
+        if not separator or not key or not given:
+            raise ValueError(f"has {token!r}, which is not key=value")
+        if key not in FACTS:
+            raise ValueError(f"has the key `{key}`, which is not a fact (the facts are {', '.join(FACTS)})")
+        if key in facts:
+            raise ValueError(f"has the key `{key}` twice")
+        facts[key] = given
+    return tiers, int(named.group(1)), facts
+
+
+def line_findings(where: str, fields: Mapping[str, str], twice: set[str], reader: Callable[[str], list[str] | None],
+                  listed: set[str] | None) -> list[str]:
+    """The findings for one entry's `Reversibility:` line (none where it has none); `where` is `<file>:<line>: D<n>`."""
+    if "Reversibility" not in fields:
+        return []
+    found = []
+    if "Reversibility" in twice:
+        found.append(f"{where} has more than one `Reversibility:` line; an entry says it once")
+    try:
+        tiers, version, facts = parse_line(fields["Reversibility"])
+    except ValueError as error:
+        return found + [f"{where} `Reversibility` {error}"]
+    if facts.get("migrate_file") == "no":
+        if listed is None:
+            found.append(f"{where} `Reversibility` says migrate_file=no, but this project has no committed list of "
+                         "migrate-propagated files, so nothing says it is no")
+        elif any(path in listed for path in written_paths(fields.get("Written to", ""))):
+            found.append(f"{where} `Reversibility` says migrate_file=no, but a `Written to` path is on the "
+                         "committed list")
+    derived, fired = RULES[version](facts, dependants(fields.get("Scope", ""), reader))
+    if tiers[0] != derived:
+        found.append(f"{where} `Reversibility` starts at {tiers[0]}, but rules {version} derive {derived} from its "
+                     f"facts ({'; '.join(fired) or 'no rule fired'})")
+    return found
+
+
+def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
+              reader: Callable[[str], list[str] | None], listed: set[str] | None) -> tuple[list[str], list[str]]:
+    """(findings, notes) for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
+    gate parsed them, `reader` the gate's own `scope_tokens`, `listed` the committed list. The seams for the
+    `Proposed rule:` check and the missing-line note are the two marked loops below."""
+    findings: list[str] = []
+    notes: list[str] = []
+    entries = [item for item in items if item[1] is not None]
+    for line, number, fields, twice in entries:
+        findings += line_findings(f"{relative}:{line}: D{number}", fields, twice, reader, listed)
+        # seam: `Proposed rule:` (cites two entries of the log) is checked here
+    # seam: an entry without the line after one that has it is noted here
+    return findings, notes
 
 
 def parse_arguments(arguments: list[str]) -> tuple[dict[str, str], dict[str, str]]:
