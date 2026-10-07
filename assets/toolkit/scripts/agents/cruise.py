@@ -25,6 +25,7 @@ with `start`, and the session that typed it runs no stage of the ladder.
     python3 scripts/agents/cruise.py loop        # what is reading this session's last line: the runner, or nobody
     python3 scripts/agents/cruise.py stopping    # a harness's stop hook: refuse to end a runner's iteration early
     python3 scripts/agents/cruise.py responded   # a harness's after-response hook: keep the last message for `stopping`
+    python3 scripts/agents/cruise.py mode [--feature F]  # the decision entry for a person's change to `decide`, or the park
 
 `run` marks every session it starts with `CRUISE_RUNNER=1` and `CRUISE_ITERATION=<n>`, which is how `loop` and
 `stopping` tell a runner's iteration from a `/cruise` a person typed — where nothing reads the last line, so the
@@ -284,6 +285,60 @@ def climb(table: dict[str, Any], assignment: str) -> None:
     if value in RUNGS and current in RUNGS and RUNGS[value] > RUNGS[current] + 1:
         step = next(name for name, rung in RUNGS.items() if rung == RUNGS[current] + 1)
         raise RuntimeError(f"`decide` moves one mode at a time: set `{step}` first")
+
+
+MODE_HEADING = re.compile(r"^## D(\d+) — decide moved from (\S+) to (\S+)\s*$", re.MULTILINE)
+DECISION_HEADING = re.compile(r"^## D(\d+) — ", re.MULTILINE)
+MODE_ENTRY = """## D{number} — decide moved from {before} to {after}
+- **Stage:** iteration start · **Slice:** none · **When:** {when} · **Iteration:** {iteration}
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** {options}
+- **Decision:** {after}, as a person set it in `.specify/cruise.json` ({cited})
+- **Why:** a person changed the setting through /cruise-settings; the run records the move and never sets it (D62)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+"""
+
+
+def git_output(*arguments: str) -> str:
+    done = subprocess.run(["git", *arguments], cwd=ROOT, text=True, capture_output=True, encoding="utf-8")
+    return done.stdout.strip() if done.returncode == 0 else ""
+
+
+def mode(arguments: list[str]) -> None:
+    """`mode [--feature F]`: compare `decide` with the last mode entry of the feature's log and print the entry to
+    append where a person moved it, or the park line where a hand edit skipped a rung. Writes nothing."""
+    if arguments[:1] == ["--feature"] and len(arguments) == 2:
+        logs = [ROOT / "specs" / arguments[1] / "decisions.md"]
+    elif not arguments:
+        logs = sorted((ROOT / "specs").glob("*/decisions.md"))
+        if len(logs) > 1:
+            raise RuntimeError("specs/ holds several decision logs; name one with `mode --feature <name>`")
+    else:
+        raise RuntimeError("usage: cruise.py mode [--feature <name>]")
+    text = logs[0].read_text(encoding="utf-8") if logs and logs[0].is_file() else ""
+    value = load()["decide"]
+    moves = MODE_HEADING.findall(text)
+    recorded = moves[-1][2] if moves else None
+    if moves and recorded == value:
+        print(f"cruise: decide is {value}, as D{moves[-1][0]} recorded")
+        return
+    if recorded in RUNGS and RUNGS[value] > RUNGS[recorded] + 1:
+        step = next(name for name, rung in RUNGS.items() if rung == RUNGS[recorded] + 1)
+        print(f"cruise: parked: decide={value} skips {step}; set it through /cruise-settings")
+        raise SystemExit(PARKED_EXIT)
+    relative_config = relative(CONFIG)
+    if git_output("status", "--porcelain", "--", relative_config):
+        cited = f"uncommitted at {now()}"
+    else:
+        cited = f"commit {git_output('log', '-1', '--format=%h', '--', relative_config) or 'unknown'}"
+    numbers = [int(number) for number in DECISION_HEADING.findall(text)]
+    print(MODE_ENTRY.format(number=max(numbers, default=0) + 1, before=recorded or "unrecorded", after=value,
+                            when=now(), iteration=os.environ.get(ITERATION_VARIABLE) or "unknown", cited=cited,
+                            options=" · ".join(CHOICES["decide"])), end="")
 
 
 def describe(table: dict[str, Any]) -> str:
@@ -1823,7 +1878,8 @@ def main() -> None:
              "watch": lambda: watch(arguments[1:]), "stop": lambda: stop(arguments[1:]), "status": status,
              "tell": lambda: tell(arguments[1:]), "told": told,
              "denials": denials, "resume": resume, "compacting": compacting, "loop": loop, "stopping": stopping,
-             "responded": responded, "guard": guard}
+             "responded": responded, "guard": guard,
+             "mode": lambda: mode(arguments[1:])}
     if arguments and arguments[0] in verbs:
         verbs[arguments[0]]()
         return

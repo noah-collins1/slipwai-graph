@@ -1,6 +1,7 @@
 """`decide` is a ladder of five modes (S27 R9): `--set` moves up one rung at a time, anything may step down, and
-an iteration never sets it. The script runs as a subprocess in a scratch project holding `scripts/agents/` copied
-from the toolkit, the way a generated project holds it."""
+an iteration never sets it; `cruise.py mode` (R10) records a person's move in the feature's log, or parks on a hand
+edit that skipped a rung. The script runs as a subprocess in a scratch project holding `scripts/agents/` copied
+from the toolkit, the way a generated project holds it; the mode verb's scratch is also a git repository."""
 from __future__ import annotations
 
 import json
@@ -104,6 +105,108 @@ class DecideLadderTest(unittest.TestCase):
         result = cruise(project, "--check")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("well-formed", result.stdout)
+
+
+ENTRY = """## D{n} — decide moved from {a} to {b}
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-07T09:00:00Z · **Iteration:** 1
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** {b}, as a person set it in `.specify/cruise.json` (commit abc1234)
+- **Why:** a person changed the setting through /cruise-settings; the run records the move and never sets it (D62)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+"""
+FACTS = ("contract=no", "schema=no", "auth=no", "customer_visible=no", "export=no", "ci_workflow=no",
+         "migrate_file=no", "behind_flag=no-code", "flag_default=no", "rollback_complexity=trivial")
+
+
+def git(project: Path, *arguments: str) -> str:
+    done = subprocess.run(["git", *arguments], cwd=project, text=True, capture_output=True, encoding="utf-8")
+    assert done.returncode == 0, done.stderr
+    return done.stdout.strip()
+
+
+def mode_project(recorded: str | None, decide: str, commit: bool = True) -> Path:
+    """A git repository holding the runner, the gate, `.specify/cruise.json` at `decide` (committed unless told
+    otherwise) and `specs/f/decisions.md` whose only entry, D1, moved `decide` to `recorded` (no log when None)."""
+    project = scratch_project(decide)
+    (project / "scripts").mkdir(exist_ok=True)
+    for name in ("check-decisions.py", "reversibility.py"):
+        shutil.copy(TOOLKIT / "scripts" / name, project / "scripts" / name)
+    if recorded is not None:
+        (project / "specs/f").mkdir(parents=True)
+        (project / "specs/f/decisions.md").write_text(ENTRY.format(n=1, a="unrecorded", b=recorded), encoding="utf-8")
+    git(project, "init", "-q")
+    git(project, "config", "user.name", "Test")
+    git(project, "config", "user.email", "test@example.invalid")
+    if commit:
+        git(project, "add", "-A")
+        git(project, "commit", "-q", "-m", "scratch")
+    return project
+
+
+class DecideModeTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.addCleanup(shutil.rmtree, SCRATCH, True)
+
+    def test_a_setting_that_matches_the_last_mode_entry_is_said_and_nothing_printed_to_append(self) -> None:
+        project = mode_project("provisional-shadow", "provisional-shadow")
+        result = cruise(project, "mode")
+        self.assertEqual((result.returncode, result.stdout),
+                         (0, "cruise: decide is provisional-shadow, as D1 recorded\n"))
+
+    def test_a_person_step_up_prints_the_entry_citing_the_commit_and_it_passes_the_gate(self) -> None:
+        project = mode_project("provisional-shadow", "provisional-shadow")
+        (project / ".specify/cruise.json").write_text(json.dumps({**BASE, "decide": "provisional-advisory"}) + "\n",
+                                                      encoding="utf-8")
+        git(project, "commit", "-q", "-am", "advisory")
+        result = cruise(project, "mode", iteration="5")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        entry = result.stdout
+        self.assertTrue(entry.startswith("## D2 — decide moved from provisional-shadow to provisional-advisory\n"))
+        self.assertIn(f"(commit {git(project, 'log', '-1', '--format=%h', '--', '.specify/cruise.json')})", entry)
+        self.assertIn("**Iteration:** 5", entry)
+        self.assertIn("- **Decided by:** human", entry)
+        scored = subprocess.run([sys.executable, "-B", "scripts/reversibility.py", "--scope", "global", *FACTS],
+                                cwd=project, text=True, capture_output=True, encoding="utf-8")
+        line = scored.stdout.strip()
+        self.assertTrue(line.startswith("- **Reversibility:**"), scored.stderr)
+        log = project / "specs/f/decisions.md"
+        scored_entry = entry.replace("- **Written to:**", line + "\n- **Written to:**")
+        log.write_text(log.read_text(encoding="utf-8") + "\n" + scored_entry, encoding="utf-8")
+        gate = subprocess.run([sys.executable, "-B", "scripts/check-decisions.py"], cwd=project, text=True,
+                              capture_output=True, encoding="utf-8")
+        self.assertEqual(gate.returncode, 0, gate.stdout + gate.stderr)
+
+    def test_a_change_not_yet_committed_is_cited_as_uncommitted(self) -> None:
+        project = mode_project("provisional-shadow", "provisional-shadow")
+        (project / ".specify/cruise.json").write_text(json.dumps({**BASE, "decide": "provisional-advisory"}) + "\n",
+                                                      encoding="utf-8")
+        result = cruise(project, "mode")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertRegex(result.stdout, r"\(uncommitted at \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\)")
+
+    def test_the_first_entry_moves_from_unrecorded(self) -> None:
+        project = mode_project(None, "recommended-first")
+        result = cruise(project, "mode")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.startswith("## D1 — decide moved from unrecorded to recommended-first\n"))
+
+    def test_a_hand_edit_that_skips_a_rung_parks_with_nothing_to_append(self) -> None:
+        project = mode_project("recommended-first", "provisional")
+        result = cruise(project, "mode")
+        self.assertEqual(result.returncode, 3, result.stderr)
+        self.assertEqual(result.stdout.strip(), "cruise: parked: decide=provisional skips provisional-shadow; "
+                                                "set it through /cruise-settings")
+
+    def test_a_step_back_is_an_entry(self) -> None:
+        project = mode_project("provisional", "recommended-first")
+        result = cruise(project, "mode")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.startswith("## D2 — decide moved from provisional to recommended-first\n"))
 
 
 if __name__ == "__main__":
