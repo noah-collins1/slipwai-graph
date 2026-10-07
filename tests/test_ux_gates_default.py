@@ -144,6 +144,20 @@ class RefTest(GatesCase):
         _, previews, _ = self.gate(UX_GATES_SINCE="HEAD")
         self.assertEqual(previews, {"a new one.html"})
 
+    def test_a_name_that_is_not_utf8_is_read_whole_and_does_not_crash_the_check(self) -> None:
+        """NUL-separated, git gives a name's bytes unquoted: one that is not UTF-8 is still one name, never a crash."""
+        try:
+            (self.repo / os.fsdecode(SCREENS_DIR.encode() + b"/odd\xff.png")).write_bytes(b"\x89PNG")
+        except OSError:
+            self.skipTest("this filesystem refuses a name that is not UTF-8")
+        self.edit(f"{STYLES}/linked.css")
+        for since in ("HEAD", ""):
+            with self.subTest(since=since or "the default"):
+                if not since:
+                    self.branch()
+                _, previews, _ = self.gate(UX_GATES_SINCE=since)
+                self.assertEqual(previews, {"linked.html"})
+
 
 def scoped_line(branch: str, short: str, extra: str = "") -> str:
     return (f"check-ux-gates: {branch} — previews scoped to what changed since {short} (the base of `main`){extra}; "

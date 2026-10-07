@@ -211,7 +211,9 @@ def shard(gates: list[Gate], spec: str) -> list[Gate] | None:
 
 
 def git(*arguments: str) -> str | None:
-    completed = subprocess.run(["git", *arguments], cwd=ROOT, check=False, text=True, capture_output=True)
+    # `surrogateescape`: a name `-z` gives unquoted need not be UTF-8, and is the same string a `Path` of it is
+    completed = subprocess.run(["git", *arguments], cwd=ROOT, check=False, text=True, errors="surrogateescape",
+                               capture_output=True)
     return completed.stdout if completed.returncode == 0 else None
 
 
