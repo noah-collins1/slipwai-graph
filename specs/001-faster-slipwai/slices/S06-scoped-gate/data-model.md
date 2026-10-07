@@ -50,7 +50,11 @@ file, rename) by `verify-stamp.py record`, right after the stamp, only where the
 Per gate check: the file inputs (a path, or a directory ending in `/`; `<dep>` is each deployable's path, `<web>` a
 web app's, `<svc>` a service's), the tools, the variables of `VARIABLES`, whether its file inputs claim, and why it
 runs always. Every check also reads `make` and `python3` (D116's *Why*). A `verify-checks` prerequisite the table does
-not name has no recorded inputs.
+not name, or a row that names no file, has no recorded inputs. *Amended by S07-scoped-checks (D190):* the four
+method-file checks have rows, and at record time `verify_scoped/methods.py` adds to `check-speckit` the paths the Spec Kit
+manifests list and to `check-agents` each installed integration's context file, hooks file and directories, or makes
+the check one with no recorded inputs where those cannot be read (D172); `check-ux-gates` reads the branch variables
+its slice-branch default asks (D170); `check-decisions` reads `.slipwai/propagated` (S26).
 
 | Check (unit) | File inputs | Tools (beyond make, python3) | Variables | Claims | Always |
 |---|---|---|---|---|---|
@@ -62,7 +66,7 @@ not name has no recorded inputs.
 | `check-imports` | `apps/`, `packages/`, `<dep>/` | — | — | yes | — |
 | `check-migrations` | `apps/`, `packages/` | `git` | — | yes | — |
 | `check-styles` | `<web>/` | — | — | yes | — |
-| `check-ux-gates` | `<web>/`, `.slipwai/extensions.json`, `AGENTS.md`, `package-lock.json`, `.github/workflows/verify.yml` | `git`, `node`, `npm` | `UX_GATES_REQUIRE`, `UX_GATES_SINCE`, `UX_GATES_SHARD`, `SLIPWAI_NO_INSTALL` | yes | — |
+| `check-ux-gates` | `<web>/`, `.slipwai/extensions.json`, `AGENTS.md`, `package-lock.json`, `.github/workflows/verify.yml` | `git`, `node`, `npm` | `UX_GATES_REQUIRE`, `UX_GATES_SINCE`, `UX_GATES_SHARD`, `SLIPWAI_NO_INSTALL`, `GITHUB_HEAD_REF`, `CI_COMMIT_REF_NAME`, `GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` | yes | — |
 | `check-model` | `docs/event-model/`, `<dep>/` | — | — | yes | — |
 | `check-drawio` | `docs/event-model/model.yaml`, `docs/event-model/model.drawio` | `node`, `npm` | — | yes | — |
 | `check-decisions` | `specs/`, `docs/event-model/model.yaml`, `.slipwai/propagated` | — | — | yes | — |
@@ -73,7 +77,10 @@ not name has no recorded inputs.
 | `check-python` | — | — | — | no | every check waits on it |
 | `check-slice-scope` | `./` | `git` | `GITHUB_HEAD_REF`, `CI_COMMIT_REF_NAME`, `GITHUB_BASE_REF`, `CI_MERGE_REQUEST_TARGET_BRANCH_NAME` | no | it compares the whole branch with its base |
 | `check-codegraph` | `./` | `git` | `CODEGRAPH_GATE_NO_SYNC` | no | it reads every tracked file |
-| `check-agents`, `check-speckit`, `check-extensions`, `check-constitution` | — | — | — | no | no recorded inputs |
+| `check-agents` | `.specify/integration.json`, `.specify/models.json`, `.specify/drive.json`, `.specify/cruise.json`, `skills/`, `commands/`, `agents/`, `AGENTS.md` | — | — | yes | — |
+| `check-speckit` | `.specify/integrations/`, `.specify/presets/`, `.specify/memory/constitution.md` | — | — | yes | — |
+| `check-extensions` | `.slipwai/extensions.json`, `AGENTS.md`, `<web>/` | — | — | yes | — |
+| `check-constitution` | `specs/`, `.specify/memory/constitution.md`, `.specify/memory/.constitution-template.json`, `.specify/templates/constitution-template.md`, `.specify/presets/` | — | — | yes | — |
 
 Reading the cells: `<dep>/` is each deployable's directory, `<web>/` each browser app's, `<svc>/` each service that
 exports an OpenAPI document, `packages/<p>/` an npm package; `./` is every path. A Python unit's `.python-version`,
@@ -204,8 +211,11 @@ indent:
       "always": null,
       "targets": ["lint-web"]
     },
-    "check-agents": { "gate": "check-agents", "components": [], "inputs": null, "claims": false,
-                      "always": "no recorded inputs", "targets": ["check-agents"] }
+    "check-agents": { "gate": "check-agents", "components": [],
+                      "inputs": { "files": [".specify/cruise.json", ".specify/drive.json", ".specify/integration.json",
+                                            ".specify/models.json", "AGENTS.md", "agents/", "commands/", "skills/"],
+                                  "tools": ["make", "python3"], "variables": [] },
+                      "claims": true, "always": null, "targets": ["check-agents"] }
   },
   "contracts": [
     { "id": "openapi:service", "kind": "openapi", "owner": "service", "paths": ["apps/service/"], "consumers": ["web"] },

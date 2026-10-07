@@ -298,7 +298,7 @@ recorded inputs for the checks declaring it (or adds the target), as `reach.link
 **Files:** `assets/toolkit/scripts/verify_scoped/record.py` or `methods.py`, a new test module. Owner: S06's follow-up
 or the Parking Lot, by the host's word.
 
-### T014 — The published table of rows is S06's, and still says what S06 shipped (converge pass 2 · **HIGH**)
+### T014 — [x] closed by D190 (a): The published table of rows is S06's, and still says what S06 shipped (converge pass 2 · **HIGH**)
 
 Pass 1's class again: `test_verify_scoped_contracts.PrintedRecordTest.test_e2_each_row_of_the_published_table_is_the_row_the_script_holds`
 holds `specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md` § *The table* equal to `table.CHECKS`, row by
@@ -350,7 +350,7 @@ Both full gates on the final tip; the register row and benchmark close; the demo
 
 Phase 1 Implementation (T001–T009; order T007, T009, then T008, from D188); Phase 2 After acceptance (host).
 
-**Done:** T010 (`dd629c7`), T011 (`94b8d6d`), T012 (`e968e03`, new `tests/test_verify_scoped_held_more.py`); T013 open for the host (S06-wide, LOW). T001 (`bf319cc`, `0af5588`), T002 (`d723281`), T003 (`6830517`), T004 (`a510c86`), T005 (`daef4d8`), T007 (`8d43eca`), T009 (`9cc0e6d`; re-run `test_verify_scoped_table_held` and `test_verify_scoped_held` after the rebase onto S26), T008 (no commit: the selector voids every one of S07's modules — each imports an undeclared helper (`parallel_gate`, `stamp_fixture`, `scoped_fixture`, `test_scoped_targets`, `test_add_service`, which `test_select_tests_real_declared` leaves undeclared on purpose), so all nine are listed below with its reason), T006 (`048e3c7`; the default lives in new `verify_scoped/since.py`, which reads git's `changed_files` for the tree and `changes.raw_differs` only for the previews, their stylesheets and the four every-preview files, so the audit hold stays true).
+**Done:** T010 (`dd629c7`), T011 (`94b8d6d`), T012 (`e968e03`, new `tests/test_verify_scoped_held_more.py`); T013 to the Parking Lot by the host (S06-wide, LOW); T014 closed (S06's published table and record example amended, D190). T001 (`bf319cc`, `0af5588`), T002 (`d723281`), T003 (`6830517`), T004 (`a510c86`), T005 (`daef4d8`), T007 (`8d43eca`), T009 (`9cc0e6d`; re-run `test_verify_scoped_table_held` and `test_verify_scoped_held` after the rebase onto S26), T008 (no commit: the selector voids every one of S07's modules — each imports an undeclared helper (`parallel_gate`, `stamp_fixture`, `scoped_fixture`, `test_scoped_targets`, `test_add_service`, which `test_select_tests_real_declared` leaves undeclared on purpose), so all nine are listed below with its reason), T006 (`048e3c7`; the default lives in new `verify_scoped/since.py`, which reads git's `changed_files` for the tree and `changes.raw_differs` only for the previews, their stylesheets and the four every-preview files, so the audit hold stays true).
 
 ## Differences from plan.md
 
@@ -461,3 +461,15 @@ test_pruning test_register_ids test_result_contract_briefs -migrate -stops test_
 -nonregular -pages test_skill_capabilities test_spec_kit test_stage_models test_verify_stamp_inputs -pinned -scan
 test_toolkit test_utf8_io test_changelog test_assets_bytecode test_select_tests_real_declared`: 215 OK, 1 skipped
 (`test_changelog`: no release tag fetched in this worktree).
+
+### Verdict (cruise iteration 27, after D190) — **converged**
+
+The two-pass bound was reached with one finding open, T014 (HIGH). It was a question of which file to change, and that
+file was outside this slice's scope, so it went back to the host as plan Q1. D190 chose option (a). This commit amends
+`specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md`. Its *The table* section now matches `table.py` on the six
+rows: `check-ux-gates`' variables, `check-decisions`' `.slipwai/propagated`, and the files, claims and always of the four
+method-file checks. Its record example shows `check-agents` with its inputs. A dated note says S07 amended the page. The
+test is unchanged. `make test TESTS="test_verify_scoped_contracts test_verify_scoped_table_held test_verify_scoped_held"`:
+21 tests, OK. No CRITICAL or HIGH finding is open. T013 (LOW, symlinked inputs, every S06 row) goes to the Parking Lot.
+The host writes that entry. The LOW on ignored stylesheets is documented by D171 rule 6's sentence. The slice is
+converged. Still to do: the host's after-converge gaps pass and the demo.
