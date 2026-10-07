@@ -101,6 +101,7 @@ DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decisi
                         r"drive-bosun( \(.+\))?|human)$")
 STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
 LINE_LABEL = re.compile(r"^- \*\*(?:Reversibility|Proposed rule):\*\*", re.M)
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 FIELD = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 PLACEHOLDER = re.compile(r"<[^>]*>")
 # A slice id as `done_slices()` reads it: the released head, then a slug after `-` or `.` that ends on a letter or digit.
@@ -501,10 +502,31 @@ def hand_backs_module() -> Any:
     return sibling("hand_backs")
 
 
+def unfenced(text: str) -> str:
+    """`text` with every line inside a ``` or ~~~ fence emptied, line endings kept, so the lines that remain are the
+    ones a reader sees as the log and every line number stands. A fence closes on its own character, at least as long;
+    one left open runs to the end."""
+    kept, opened = [], ""
+    for piece in text.splitlines(keepends=True):
+        content = piece.splitlines()[0] if piece.splitlines() else ""
+        fence = FENCE.match(content)
+        if opened and fence and fence.group(1)[0] == opened[0] and len(fence.group(1)) >= len(opened) \
+                and not content.strip().strip(opened[0]):
+            opened, hidden = "", True
+        elif opened:
+            hidden = True
+        elif fence:
+            opened, hidden = fence.group(1), True
+        else:
+            hidden = False
+        kept.append(piece[len(content):] if hidden else piece)
+    return "".join(kept)
+
+
 def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
     """The findings and notes for the `Reversibility:` lines of one log; `reversibility.py` is loaded only for a log
     that carries one of its labels, so any other log gets the answer it always did."""
-    text = read(path)
+    text = unfenced(read(path))
     if not LINE_LABEL.search(text):
         return [], []
     if not Path(__file__).resolve().with_name("reversibility.py").is_file():

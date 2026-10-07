@@ -5,6 +5,8 @@ Each case writes a log into a scratch project that holds both scripts and runs t
 from __future__ import annotations
 
 import importlib.util
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -12,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from reversibility_fixture import EASY, SCRIPTS, entry, gate, scratch
+from test_decisions_scope_gate import released_checker
 
 sys.dont_write_bytecode = True
 
@@ -171,6 +174,47 @@ class ProposedRuleTest(unittest.TestCase):
     def test_e6_an_entry_without_the_line_is_never_refused(self) -> None:
         code, out, err = self.run_gate(entry(1), entry(2, proposed("D1", "D3")), entry(3), entry(4))
         self.assertEqual((0, ""), (code, err), out)
+
+
+QUOTE = "- **Reversibility:** <tier> · rules <n> · <facts>"
+
+
+class FencedQuoteTest(unittest.TestCase):
+    """R5 (AC-S26-10, D65; M4): a label inside a code fence is a quotation, not the line, so a log whose only
+    labels are quoted gets the answer the released checker gave, and a quote beside the real line is not a second."""
+
+    def run_gate(self, text: str, released: bool = False) -> subprocess.CompletedProcess[str]:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as other:
+            repo = scratch(directory, text, listed=("scripts/check-decisions.py",))
+            if released:
+                shutil.copy(released_checker(other), repo / "scripts/check-decisions.py")
+            return gate(repo)
+
+    def quoted(self, fence: str, label: str = QUOTE) -> str:
+        return entry(1).replace("- **Written to:**", f"{fence}\n{label}\n{fence}\n- **Written to:**")
+
+    def test_e1_a_fenced_quote_and_no_real_line_passes_as_the_released_checker_passed_it(self) -> None:
+        for fence in ("```", "~~~", "````", "  ```"):
+            for label in (QUOTE, "- **Proposed rule:** x (same shape as D8)"):
+                with self.subTest(fence=fence, label=label):
+                    text = self.quoted(fence, label)
+                    before, after = self.run_gate(text, released=True), self.run_gate(text)
+                    self.assertEqual(0, before.returncode, before.stderr)
+                    self.assertEqual((before.returncode, before.stdout, before.stderr),
+                                     (after.returncode, after.stdout, after.stderr))
+
+    def test_e2_a_fenced_quote_beside_one_real_line_is_not_more_than_one(self) -> None:
+        text = self.quoted("```").replace("- **Written to:**", line() + "\n- **Written to:**", 1)
+        result = self.run_gate(text)
+        self.assertEqual((0, ""), (result.returncode, result.stderr), result.stdout)
+
+    def test_e3_a_line_after_the_fence_closes_is_real(self) -> None:
+        text = self.quoted("```").replace("- **Written to:**", "- **Reversibility:** whatever\n- **Written to:**", 1)
+        self.assertEqual(1, self.run_gate(text).returncode)
+
+    def test_e4_a_fence_left_open_hides_the_rest_of_the_log(self) -> None:
+        text = entry(1).replace("- **Written to:**", f"```\n{QUOTE}\n- **Written to:**", 1)
+        self.assertEqual(self.run_gate(text, released=True).returncode, self.run_gate(text).returncode)
 
 
 if __name__ == "__main__":
