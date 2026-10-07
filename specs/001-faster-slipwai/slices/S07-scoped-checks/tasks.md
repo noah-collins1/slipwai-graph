@@ -331,6 +331,9 @@ rows S07's data-model publishes over S06's (S07's table has a different column s
 | `tests/test_scoped_page.py` | it imports tests/test_add_service.py, which declares nothing |
 | `tests/test_verify_scoped_always.py` | it imports `tests/parallel_gate.py`, which declares nothing |
 | `tests/test_verify_scoped_held_more.py` | it imports `tests/parallel_gate.py`, which declares nothing |
+| `tests/test_verify_scoped_projections.py` | it imports `tests/parallel_gate.py`, which declares nothing |
+| `tests/test_verify_scoped_flips.py` | it imports `tests/parallel_gate.py`, which declares nothing |
+| `tests/test_verify_scoped_flips_practice.py` | it imports `tests/parallel_gate.py`, which declares nothing |
 
 ## Phase 2: After acceptance (host tasks)
 
@@ -528,4 +531,35 @@ finding.
   - AC-S07-5: a web deployable's directory added runs `check-extensions`.
   - AC-S07-11: one run with `UX_GATES_SINCE=refs/heads/all` scopes to the ref named `all`.
   - **Files:** `tests/test_verify_scoped_methods.py` and `tests/test_ux_gates_default.py`, or new modules.
+
+**After-converge status (cruise iteration 27):** all of T015 to T020 are done. Each started from a failing test, or from
+a hold shown to have teeth.
+
+- **T015**, `a5b75ad`:
+  - The scan follows S26's `sibling(name)` loads.
+  - Three literals are exempted, each for its own check. `check-decisions` reads only `.slipwai/propagated`, which it
+    already declares, so no row is widened.
+- **T016**, `bb71123`:
+  - A projection directory that git ignores and that exists with no file under it now makes the run the full gate, with
+    a line naming it.
+  - This covers the installed integrations' skills, commands and agent directories, and the registry's in-repo skills
+    and commands directories.
+  - The same hole is still open in `make verify`'s stamp key, because `verify-stamp.py` records ignored files and links,
+    not directories. That is S03's script, so it is left to the host to place. The scoped gate is closed.
+- **T017**, `a7dcee7`:
+  - Every declared input of the four rows has a change that flips its check's verdict, and the selection is exactly the
+    checks that declare that path.
+  - `check-constitution` reads `skills/*/SKILL.md` through `present_practice`, and that read only changes the failure
+    text. A test shows this, so `skills/` is not declared.
+- **T018**, `b87e68c`: `make check-<name>` always runs. On a `slice/<id>` branch, `make check-ux-gates` scopes previews
+  by default. The page and the docs say so, and a test runs the generated target. This follows D192, which the host
+  writes into AC-S07-9.
+- **T019** has three commits:
+  - `5e8ed25`: nested preset names are vetted.
+  - `6812e4a`: every exemption is keyed by the check it was written for.
+  - `21e8ec1`: the catch-up note and the pages are updated, and a reinstalled ux-gates kit is now one of the reasons to
+    set `UX_GATES_SINCE=all`.
+- **T020**, `649de87`: tests for AC-S07-5 with a directory added, and for AC-S07-11 with `UX_GATES_SINCE=refs/heads/all`.
+- Three more test modules have no `TEST_SELECTION` and are listed under *Undeclared modules* above.
+- The verdict stands: **converged**. No fix was larger than the finding it closed.
 
