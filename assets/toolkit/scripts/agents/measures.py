@@ -777,10 +777,34 @@ BAND = (5, 15)      # escalation share, percent, inclusive: outside it is flagge
 OVER = 5            # misclassification rate, percent: over it is flagged
 
 
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+
+
+def unfenced(text: str) -> str:
+    """`text` with every line inside a ``` or ~~~ fence emptied, as the decisions gate reads it: a fence closes on its
+    own character, at least as long; one left open runs to the end."""
+    kept, opened = [], ""
+    for piece in text.splitlines(keepends=True):
+        content = piece.splitlines()[0] if piece.splitlines() else ""
+        fence = FENCE.match(content)
+        if opened and fence and fence.group(1)[0] == opened[0] and len(fence.group(1)) >= len(opened) \
+                and not content.strip().strip(opened[0]):
+            opened, hidden = "", True
+        elif opened:
+            hidden = True
+        elif fence:
+            opened, hidden = fence.group(1), True
+        else:
+            hidden = False
+        kept.append(piece[len(content):] if hidden else piece)
+    return "".join(kept)
+
+
 def decision_entries(text: str) -> list[dict[str, Any]]:
-    """Each entry's tier (None where it has none), whether it escalated, its status and the moment it was written."""
+    """Each entry's tier (None where it has none), whether it escalated, its status and the moment it was written.
+    Lines inside a fenced code block are not read, as the gate does not read them."""
     found = []
-    for part in SPELLING["entry"].split(text)[1:]:
+    for part in SPELLING["entry"].split(unfenced(text))[1:]:
         line = SPELLING["tier_line"].search(part)
         status = SPELLING["status_line"].search(part)
         when = SPELLING["when"].search(part)
