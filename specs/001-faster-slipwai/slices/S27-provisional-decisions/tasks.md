@@ -303,7 +303,7 @@ The default is the order above, one delegate at a time. Disjoint manifests allow
 
 ## Phase 6: Gate before converge
 
-- [ ] T015 [US8] **The slice's gates, on the final tip.** Run `make lint typecheck check-structure` (each `$?` tested),
+- [x] T015 [US8] **The slice's gates, on the final tip.** Run `make lint typecheck check-structure` (each `$?` tested),
   then `make test SINCE=adopt-method TESTS="<every test_verify_scoped_* module> test_verify_stamp_scan test_toolkit
   test_utf8_io test_changelog test_assets_bytecode <every test_decisions_*, test_reversibility_*, test_cruise* and
   test_provisional_* module>"` (names from `ls tests/`, none dropped silently; T001's modules run once more inside it),
