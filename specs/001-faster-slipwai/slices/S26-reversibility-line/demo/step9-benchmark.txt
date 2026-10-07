@@ -1,0 +1,58 @@
+$ grep -n Reversibility specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+25:- **Reversibility:** guarded → hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+38:- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+51:- **Reversibility:** easy → guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ make benchmark
+python3 scripts/agents/benchmark.py
+benchmark: no record yet — /drive writes specs/<feature>/slices/<id>/benchmark.json from its next stage
+[exit 0]
+
+# Seeding one slice record so benchmark has a feature to report on
+$ mkdir -p specs/demo/slices/S1 && python3 scripts/agents/benchmark.py start specs/demo/slices/S1 plan && python3 scripts/agents/benchmark.py end specs/demo/slices/S1 plan
+benchmark: plan started (specs/demo/slices/S1/benchmark.json; usage from claude)
+benchmark: warning: plan was not bracketed around its work — start and end were called in the same moment
+benchmark: plan: unbracketed · tokens unknown — stage was not bracketed around its work · no transcript lines since start
+[exit 0]
+
+$ make benchmark
+python3 scripts/agents/benchmark.py
+demo — 1 slice(s) recorded, stage time 0s+ in all; elapsed unknown (S1: S1 is in neither specs/demo/story-split.md nor docs/event-model/model.yaml); time with any slice in flight 0s
+  escalation share: 33.3% (1 of 3 entries scored easy or guarded) — outside the healthy band 5–15%
+  misclassification rate: unknown — no tiered entry was ratified or reverted
+  median wait: easy unknown (no skipper bracket holds the When: moment of any easy entry), guarded unknown (no skipper bracket holds the When: moment of any guarded entry), hard unknown (no skipper bracket holds the When: moment of any hard entry)
+  slice  delegate/cycle  stage time  in             out  models  sessions  converge  +tasks  gaps  mutation  adversary  demo  verify✗  re-entered  tasks  files  ±lines
+  S1     —               0s+         0 (+1 unread)  0    —       1         0         0       0/0   —         0          —     0        0           —      —      —     
+  slice  elapsed              worked               dependency           worker               review               integration          unattributed         rework  cost               
+  S1     unknown (see notes)  unknown (see notes)  unknown (see notes)  unknown (see notes)  unknown (see notes)  unknown (see notes)  unknown (see notes)  0s · 0  unknown (see notes)
+  dependency = from an accepted demo until a sibling earlier in the split landed; worker = from the cruise log's first row to accepted, less every other cause; review = a person's demo (an outcome, no driver); integration = from the merge commit or a gate bracket to accepted; unattributed = what no record claims, a held run included; cost = the tokens attributed to the slice by spawn chain; `--json` names where each was read from
+  S1: elapsed unknown — S1 is in neither specs/demo/story-split.md nor docs/event-model/model.yaml; worked time and every waiting cause are unknown for the same reason
+  S1: cost unknown — not recorded: the stage was not bracketed around its work
+  S1 plan: not bracketed around its work — start and end were called in the same moment, so this stage's time and tokens are missing, not zero.
+  drive-slice "drive-slice S07-scoped-checks" names no recorded slice — its requests are in the shared bucket
+  drive-slice "drive-slice S26-reversibility-line" names no recorded slice — its requests are in the shared bucket
+  drive-slice "drive-slice S43-test-declarations" names no recorded slice — its requests are in the shared bucket
+
+delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens as recorded (a stage's own, which may hold a sibling's delegates where brackets overlapped), while cost is attributed by spawn chain, each request charged to one slice; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes stage time a floor because an unbracketed stage is missing; tokens are not prices
+[exit 0]
+
+$ python3 scripts/agents/benchmark.py --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps(d, indent=1)[:200]); import re' ; python3 scripts/agents/benchmark.py --json | grep -o '"decision_health": {[^}]*}[^}]*}' | head -3
+[
+ {
+  "path": "specs/demo/slices/S1/benchmark.json",
+  "feature": "demo",
+  "slice": "S1",
+  "stages": [
+   "plan"
+  ],
+  "open": [],
+  "seconds": 0,
+  "stage_seconds": 0,
+  "unbracketed": true,
+  "t
+[exit 0]
+

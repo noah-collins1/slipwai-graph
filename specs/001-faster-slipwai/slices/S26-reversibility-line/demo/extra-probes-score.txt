@@ -1,0 +1,154 @@
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+reversibility: R2 rollback_complexity=hours
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=days
+reversibility: R1 rollback_complexity=days
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=days
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=needs-migration
+reversibility: R1 rollback_complexity=needs-migration
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=needs-migration
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no
+reversibility: U1 rollback_complexity=missing
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=missing
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=maybe
+reversibility: U1 rollback_complexity=maybe
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=maybe
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1,S2 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+reversibility: D1 scope names several slices
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope global contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+reversibility: D2 scope is global or unreadable
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope '' contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+reversibility: D2 scope is global or unreadable
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=yes schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial --written-to docs/x.md
+reversibility: H1 contract=yes
+- **Reversibility:** hard · rules 1 · contract=yes schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no flag_default=no rollback_complexity=trivial
+reversibility: F1 behind_flag=no
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial --written-to .github/workflows/ci.yml
+reversibility: no rule fired
+- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=days --raise guarded
+reversibility: --raise guarded would lower the computed tier hard; a tier is never lowered — usage: reversibility.py --scope <value> [--written-to <value>] [--raise guarded|hard] <key>=<value>...
+[exit 2]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours --raise hard
+reversibility: R2 rollback_complexity=hours
+- **Reversibility:** guarded → hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial urgency=high
+reversibility: 'urgency' is not a fact (the facts are contract, schema, auth, customer_visible, export, ci_workflow, migrate_file, behind_flag, flag_default, rollback_complexity) — usage: reversibility.py --scope <value> [--written-to <value>] [--raise guarded|hard] <key>=<value>...
+[exit 2]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial --written-to scripts/check-decisions.py
+reversibility: H7 migrate_file=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial --written-to apps/x/src/a.ts
+reversibility: no rule fired
+- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ cd /home/noahc/math/.cruise27/s26-nolist && ls .slipwai 2>&1; python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial --written-to scripts/check-decisions.py
+ls: cannot access '.slipwai': No such file or directory
+reversibility: U1 migrate_file=no-list
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no-list behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ cd /home/noahc/math/.cruise27/s26-nolist && python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+reversibility: U1 migrate_file=no-list
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no-list behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope 'S1' --written-to '`Makefile`, `README.md`' contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+reversibility: H7 migrate_file=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope 'S1, S2' --written-to 'README.md' contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+reversibility: D1 scope names several slices
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1  contract=yes schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: H1 contract=yes
+- **Reversibility:** hard · rules 1 · contract=yes schema=
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1  contract=no schema=yes auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: H2 schema=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=y
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1  contract=no schema=no auth=yes customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: H3 auth=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=n
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1  contract=no schema=no auth=no customer_visible=yes export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: H4 customer_visible=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=n
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1  contract=no schema=no auth=no customer_visible=no export=yes ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: H5 export=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=n
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1  contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: H6 ci_workflow=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=n
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1  contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=yes flag_default=no rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: H7 migrate_file=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=n
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=yes rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: F2 flag_default=yes
+- **Reversibility:** guarded · rules 1 · contract=no schem
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=maybe flag_default=no rollback_complexity=trivial 2>&1 | cut -c1-60
+reversibility: U1 behind_flag=maybe
+- **Reversibility:** hard · rules 1 · contract=no schema=n
+[exit 0]
+
+# gate: a line naming rules 2 (no such version yet)
+$ make check-decisions 2>&1 | grep -v '^make'
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` names rules 2, which this gate does not know (it knows 1)
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+[exit 0]
+

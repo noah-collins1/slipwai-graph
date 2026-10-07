@@ -1,0 +1,25 @@
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+reversibility: no rule fired
+- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+reversibility: H6 ci_workflow=yes; H7 migrate_file=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial size=large 2>/tmp/s26err; echo "stdout-above; exit=$?"; echo '--- stderr:'; cat /tmp/s26err
+stdout-above; exit=2
+--- stderr:
+reversibility: 'size' is not a fact (the facts are contract, schema, auth, customer_visible, export, ci_workflow, migrate_file, behind_flag, flag_default, rollback_complexity) — usage: reversibility.py --scope <value> [--written-to <value>] [--raise guarded|hard] <key>=<value>...
+[exit 0]
+
+$ python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial --raise hard
+reversibility: no rule fired
+- **Reversibility:** easy → guarded → hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ python3 scripts/reversibility.py --help
+usage: reversibility.py --scope <value> [--written-to <value>] [--raise guarded|hard] <key>=<value>...
+[exit 0]
+

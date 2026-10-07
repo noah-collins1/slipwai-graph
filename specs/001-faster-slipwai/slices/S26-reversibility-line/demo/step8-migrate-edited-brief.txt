@@ -1,0 +1,65 @@
+$ cd /home/noahc/math/.cruise27/s26-demo/old/old26-edited && /home/noahc/math/slipwai-graph-S26-reversibility-line/slipwai migrate
+migrating old26 to slipwai 1.6.0.dev0 stopped at 1 conflict(s) — each a file both this project and the factory changed since the last migration, and the project decides:
+  .specify/product-owner.md
+
+Every other file is merged and staged. For each file above, edit it and `git add` it — or take a side whole: `git checkout --ours -- <file>` keeps this project's version, `--theirs` takes the factory's — then `git commit`. Or `git merge --abort` to walk away from all of it.
+Then: make agents, to re-derive the harness projections from the command and agent files this migration moved — the factory never writes those, so the merge cannot, and `check-agents` fails until they are re-derived.
+Then: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+[exit 1]
+
+$ cd /home/noahc/math/.cruise27/s26-demo/old/old26-edited && git status --short | head; git log --oneline | head -2
+A  .slipwai/propagated
+UU .specify/product-owner.md
+M  agents/drive-skipper.md
+M  commands/cruise.md
+M  scripts/check-decisions.py
+A  scripts/reversibility.py
+8d5a30b Owner edits the brief
+0dbb484 Decision log written before S26
+[exit 0]
+
+$ cd /home/noahc/math/.cruise27/s26-demo/old/old26-edited && diff /tmp/s26-po-edited-before.md .specify/product-owner.md
+9c9
+< This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` never rewrites it.
+---
+> This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` merges the factory's changes into it and never overwrites your own edits.
+67a68
+> <<<<<<< HEAD
+68a70,73
+> =======
+> - **Reversibility:** <tier> · rules <n> · <facts, as python3 scripts/reversibility.py prints the line>
+> - **Proposed rule:** <optional: one owner-brief sentence, where three entries share a reason> (same shape as D<a>, D<b>)
+> >>>>>>> 3c5a81be6e876da80d7336fcdce732e75225036d
+83a89,91
+> 
+> The `Reversibility:` line is what `python3 scripts/reversibility.py` prints for the entry's facts, `Scope:` and `Written to`; the
+> `Proposed rule:` line is optional.
+[exit 1]
+
+# second run: the owner's edit is only the actor paragraph, away from the entry shape
+$ cd /home/noahc/math/.cruise27/s26-demo/old/old26-edited && grep -n OWNER .specify/product-owner.md; /home/noahc/math/slipwai-graph-S26-reversibility-line/slipwai migrate
+13:A campaign organiser recording a night's battles. OWNER-EDIT-MARKER
+migrated old26 to slipwai 1.6.0.dev0: 6 files changed, 732 insertions(+), 5 deletions(-)
+One merge commit. The files this project had changed itself were kept; the rest are what the factory now generates for its answers.
+Nothing pushed; `git reset --hard ORIG_HEAD` undoes all of it.
+What the versions crossed ask of code already here — which no merge can do — is written to .slipwai/catch-up.md, git-ignored and disposable.
+Next: /catch-up, which reads .slipwai/catch-up.md — what these versions ask of code already here — and runs make verify against it.
+[exit 0]
+
+$ cd /home/noahc/math/.cruise27/s26-demo/old/old26-edited && diff /tmp/s26-po-edited-before.md .specify/product-owner.md; grep -n OWNER .specify/product-owner.md
+9c9
+< This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` never rewrites it.
+---
+> This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` merges the factory's changes into it and never overwrites your own edits.
+67a68,69
+> - **Reversibility:** <tier> · rules <n> · <facts, as python3 scripts/reversibility.py prints the line>
+> - **Proposed rule:** <optional: one owner-brief sentence, where three entries share a reason> (same shape as D<a>, D<b>)
+82a85,87
+> 
+> The `Reversibility:` line is what `python3 scripts/reversibility.py` prints for the entry's facts, `Scope:` and `Written to`; the
+> `Proposed rule:` line is optional.
+13:A campaign organiser recording a night's battles. OWNER-EDIT-MARKER
+[exit 0]
+
+python3 scripts/check-decisions.py
+check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log

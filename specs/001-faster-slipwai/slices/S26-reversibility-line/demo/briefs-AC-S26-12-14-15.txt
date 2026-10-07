@@ -1,0 +1,22 @@
+$ grep -n -i 'reversibility\|proposed rule\|escalat\|entry headings\|one tier' agents/drive-skipper.md
+39:**Say how hard it is to reverse.** Run `python3 scripts/reversibility.py --scope <the entry's Scope:> --written-to <its Written to
+40:paths> <fact>=<value>…` with the facts you declare for the decision — for example `python3 scripts/reversibility.py --scope 'S1, S2'
+43:(`Reversibility:`). Where you judge the decision harder to reverse than the verb computed, escalate one tier at
+46:instead of escalating it.
+51:`- **Proposed rule:** <one sentence written to sit in the owner brief> (same shape as D<a>, D<b>)` after
+52:`Reversibility:`, citing at least two earlier ids, and still decide the question in front of you. Open any listed
+[exit 0]
+
+$ grep -n -i 'reversibility.py\|Proposed rule\|entry headings' commands/cruise.md | head -20
+138:- **Reversibility:** <tier> · rules <n> · <facts, as python3 scripts/reversibility.py prints the line>
+139:- **Proposed rule:** <optional: one owner-brief sentence, where three entries share a reason> (same shape as D<a>, D<b>)
+152:**Every entry says how hard it is to reverse.** This session runs `python3 scripts/reversibility.py` for every entry it writes,
+156:quotes. It also adds the feature's entry headings — each `D<n>` with its heading, Stage and
+158:alike. `Proposed rule:` is the skipper's alone, and only where the count is three.
+[exit 0]
+
+$ grep -rn -i 'reversibility' .specify/product-owner.md
+66:- **Reversibility:** <tier> · rules <n> · <facts, as python3 scripts/reversibility.py prints the line>
+84:The `Reversibility:` line is what `python3 scripts/reversibility.py` prints for the entry's facts, `Scope:` and `Written to`; the
+[exit 0]
+
