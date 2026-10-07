@@ -4172,3 +4172,39 @@
 - **Confidence:** high · **Would reverse if:** a person relaxes or withdraws the target.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D183 — Which paths does a generated project's committed migrate list name?
+- **Stage:** 6 plan · **Slice:** S26-reversibility-line · **When:** 2026-10-07T06:55:42Z · **Iteration:** 27
+- **Scope:** S26-reversibility-line
+- **Question:** D175 asks for a committed list in a generated project with the same contents as an adopted repository's `delivery/.written`, and also for method material only. An adopted list also names `docs/` and `project.json`; in a generated event-modelling project almost every decision writes `docs/event-model/model.yaml`, so listing `docs/` would score nearly every such decision `hard` (plan Q1).
+- **Options:** (a) the enumerated method categories only — `scripts/`, `skills/`, `commands/`, `agents/`, `.specify/`, `Makefile`, `init` — an adopted list left as `adopt` writes it, one reader for both (recommended by the plan); (b) everything an adopted list names, `docs/` included.
+- **Decision:** (a). The generated list is `.slipwai/propagated`, written by `generate` and rewritten by `migrate` through replay; files an elected extension projects are left off it, the decider's declared `migrate_file` governing them, since the list only ever raises a tier (plan Q2).
+- **Why:** D175's own reason: the fact must mean *a file the factory will merge over on the next migrate*, and a project's model is the project's, not the factory's.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** `migrate` is shown to overwrite a file under `docs/` a generated project edits.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D184 — How an entry's dependants map to a tier
+- **Stage:** 6 plan · **Slice:** S26-reversibility-line · **When:** 2026-10-07T06:55:42Z · **Iteration:** 27
+- **Scope:** S26-reversibility-line
+- **Question:** D174 rule 2 reads dependants from the entry's `Scope:` line and left the mapping to planning (plan Q4); the plan also gives `behind_flag` a third value for a decision that changes no code, and reads D174 rule 4 beside D176.
+- **Options:** (a) one slice id adds nothing, two or more make it `guarded`, `global` or no readable `Scope:` make it `hard`; `behind_flag` takes `yes`, `no` or `no-code`; a missing or unaccepted fact is refused only where the line claims a tier below `hard` (recommended by the plan); (b) `global` as `guarded`.
+- **Decision:** (a).
+- **Why:** a feature-wide decision is the one whose reversal touches every slice, and an unreadable scope fails closed (FR-051); a decision that changes no code is neither behind a flag nor exposed.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** a person reads a `global` decision as one that names no dependants and wants it `guarded`.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D185 — A Proposed rule citing an entry a person later overrides
+- **Stage:** 6 plan · **Slice:** S26-reversibility-line · **When:** 2026-10-07T06:55:42Z · **Iteration:** 27
+- **Scope:** S26-reversibility-line
+- **Question:** AC-S26-15 (D178) refuses a `Proposed rule:` line citing an id that is not a standing entry of the feature. A person overriding a cited entry later would then turn the gate red on the entry that cited it, whose only remedy is editing an append-only log (plan Q3).
+- **Options:** (a) as written (the plan's default); (b) refuse only an id that is no entry of the feature; a cited entry that has since been overridden passes.
+- **Decision:** (b). AC-S26-15 is amended: the cited ids must be entries of the same feature; whether they still stand is not the gate's to hold.
+- **Why:** D65 — a gate refuses nothing that was valid when it was written; an override is a person's word and must not break the log around it.
+- **Decided by:** host (standing decision D65)
+- **Confidence:** high · **Would reverse if:** a person wants a rule proposed on overridden entries surfaced, which a note would do without a refusal.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
