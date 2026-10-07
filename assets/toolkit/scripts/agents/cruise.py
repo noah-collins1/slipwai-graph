@@ -331,6 +331,9 @@ def mode(arguments: list[str]) -> None:
     """`mode [--feature F]`: compare `decide` with the last mode entry of the feature's log and print the entry to
     append where a person moved it, or the park line where a hand edit skipped a rung. Writes nothing."""
     if arguments[:1] == ["--feature"] and len(arguments) == 2:
+        if not (ROOT / "specs" / arguments[1]).is_dir():
+            print(f"cruise: no specs/{arguments[1]}/ directory to name a feature", file=sys.stderr)
+            raise SystemExit(2)
         logs = [ROOT / "specs" / arguments[1] / "decisions.md"]
     elif not arguments:
         logs = sorted((ROOT / "specs").glob("*/decisions.md"))

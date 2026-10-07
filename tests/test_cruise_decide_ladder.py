@@ -236,6 +236,20 @@ class DecideModeTest(unittest.TestCase):
             for other in {"raised", "back down", "sideways"} - {word}:
                 self.assertNotIn(other, why)
 
+    def test_a_feature_naming_no_directory_under_specs_is_exit_2_naming_it(self) -> None:
+        project = mode_project("provisional-shadow", "provisional-shadow")
+        result = cruise(project, "mode", "--feature", "nope")
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertEqual(result.stderr.strip().splitlines(), ["cruise: no specs/nope/ directory to name a feature"])
+        self.assertEqual(result.stdout, "")
+
+    def test_a_named_feature_with_no_log_yet_still_prints_its_first_entry(self) -> None:
+        project = mode_project(None, "recommended-first")
+        (project / "specs/g").mkdir(parents=True)
+        result = cruise(project, "mode", "--feature", "g")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.startswith("## D1 — decide moved from unrecorded to recommended-first\n"))
+
     def test_a_hand_edit_that_skips_a_rung_parks_with_nothing_to_append(self) -> None:
         project = mode_project("recommended-first", "provisional")
         result = cruise(project, "mode")
