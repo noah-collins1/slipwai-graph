@@ -418,3 +418,29 @@ No form tried reads one configuration while generating another. Nothing was chan
     `timeout`, `cwd`, `env` or `encoding`, and there is one positional and no `**`.
   - **Status:** no instance is on the tree.
 - [x] **T014 LOW** — done (counts in `2d257a2`; the *Implementation record* corrected in this pass).
+
+### After-converge tasks (host, iteration 27, from `gaps-after-S43.md`)
+
+- [x] **A0** rebased onto `adopt-method` `814acdc` (no conflict); S26's modules declared where their reach can be stated
+  (`6a8616f`: 14 reads-only modules and the two fixtures; `test_reversibility_migrate`/`_writers`,
+  `test_result_contract_briefs`/`_stops`, `test_agent_types`, `test_stage_models` stay undeclared); `undeclared.md`
+  regenerated (`365ad71`: 387 modules, 62 declared, 325 undeclared; Go-change estimate 334 run, ≈ 2742 s; AC-S43-9 ids
+  3296 → 3384, the one rename accepted, D191 drafted).
+- [x] **A1** MEDIUM 1 (`d6bcc84`): a code string importing `slipwai.cli` or running `slipwai` through `runpy` is a
+  launcher route; four FORMS, each failing first.
+- [x] **A2** LOW 5 + T017 (`d8842e0`): an argv is read only from a plain call — one positional, allow-listed keywords,
+  `shell` only literal `False`; `shell=True`, `executable=`, `**kw`, a second positional, an unlisted keyword stay every
+  axis; six FORMS, each failing first; the 15 real-tree reads unchanged.
+- [x] **A3** LOW 4 (`ddad51c`): `test_select_tests_go_app` and `test_select_tests_declarations` scan the real tree in a
+  child probe, so they stay undeclared (reproduced: a deleted declared read fails them while they were skipped);
+  `_make`, `_makefile`, `_paths` passed on that tree and stay declared; a check pins the rule.
+- [x] **A4** T016 (`4e35a71`): converge pass 2's forms pinned.
+- [x] **T011** (the rest) → [`s43.patch`](s43.patch) for a person (D191, drafted): `env -u SELECTED_TEST_MODULES` in the
+  `TESTS`/`SKIP` branch of the root `Makefile`'s `test` recipe, and the same words in `test_select_tests_makefile`'s
+  pinned recipe so that test stays green once applied (checked on a patched scratch copy: 5 tests OK). Apply with
+  `git apply specs/001-faster-slipwai/slices/S43-test-declarations/s43.patch`, then
+  `make lint typecheck check-structure && make test TESTS="test_select_tests_makefile test_select_tests_make"`, and
+  commit both paths. Until applied, `test_select_tests_makefile` passes on the unpatched pair.
+- [x] **T012** accepted by the host (D191, drafted); noted in `undeclared.md`.
+- Still owed, LOW: T013 (the launcher detector over-matches `x / "slipwai"` and a `["slipwai", …]` list — extra runs only),
+  T015 (in-process routes D164 rule 3 never named, e.g. `__import__("slipwai.cli")`).

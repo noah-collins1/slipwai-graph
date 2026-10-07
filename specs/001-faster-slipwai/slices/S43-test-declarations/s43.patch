@@ -1,0 +1,26 @@
+diff --git a/Makefile b/Makefile
+index 66cc78f..f217e0e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -32,7 +32,7 @@ ALL_TESTS := $(patsubst tests/%.py,%,$(wildcard tests/test_*.py))
+ RUN_TESTS = $(or $(strip $(TESTS)),$(filter-out $(SKIP),$(ALL_TESTS)))
+ .PHONY: test
+ test: ## Run the modules this slice branch can reach (SINCE=<ref>, FULL=1 for all), or TESTS="test_a test_b" / SKIP="test_a"
+-	$(if $(strip $(TESTS)$(SKIP)),echo 'selection off: $(if $(strip $(TESTS)),TESTS,SKIP) given$(if $(RUN_TESTS),, - no module runs)'$(if $(RUN_TESTS),; PYTHONPATH=src:tests python3 -m unittest -v $(RUN_TESTS)),PYTHONPATH=src python3 -B scripts/select-tests.py)
++	$(if $(strip $(TESTS)$(SKIP)),echo 'selection off: $(if $(strip $(TESTS)),TESTS,SKIP) given$(if $(RUN_TESTS),, - no module runs)'$(if $(RUN_TESTS),; env -u SELECTED_TEST_MODULES PYTHONPATH=src:tests python3 -m unittest -v $(RUN_TESTS)),PYTHONPATH=src python3 -B scripts/select-tests.py)
+ 
+ # A tree that already passed is not judged again: the verify stamp every generated project carries answers first, from
+ # where it ships, so the factory's own gate is the one it generates. The four checks are `verify-checks`; CI never reads
+diff --git a/tests/test_select_tests_makefile.py b/tests/test_select_tests_makefile.py
+index 7c8e700..45f4e76 100644
+--- a/tests/test_select_tests_makefile.py
++++ b/tests/test_select_tests_makefile.py
+@@ -26,7 +26,7 @@ MAKEFILE = ROOT / "Makefile"
+ TEST_RECIPE = [
+     "\t$(if $(strip $(TESTS)$(SKIP)),echo 'selection off: $(if $(strip $(TESTS)),TESTS,SKIP) given"
+     "$(if $(RUN_TESTS),, - no module runs)'"
+-    "$(if $(RUN_TESTS),; PYTHONPATH=src:tests python3 -m unittest -v $(RUN_TESTS)),"
++    "$(if $(RUN_TESTS),; env -u SELECTED_TEST_MODULES PYTHONPATH=src:tests python3 -m unittest -v $(RUN_TESTS)),"
+     "PYTHONPATH=src python3 -B scripts/select-tests.py)",
+ ]
+ RUN_TESTS = "RUN_TESTS = $(or $(strip $(TESTS)),$(filter-out $(SKIP),$(ALL_TESTS)))"
