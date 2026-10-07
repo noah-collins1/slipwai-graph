@@ -75,6 +75,13 @@ FORMS: dict[str, tuple[str, str]] = {
     "a_code_string_running_the_cli_module_with_runpy": (
         '[sys.executable, "-c", \'import runpy\\nrunpy.run_module("slipwai.cli")\', "generate", "p", '
         '"--backend", "go"]', ""),
+    # after-converge A2: a literal argv whose call can still change the program it runs is not the argv it reads
+    "a_list_with_shell_true": (f"{PY}, shell=True", ""),
+    "a_list_with_a_computed_shell": (f"{PY}, shell=SHELL", ""),
+    "a_list_with_an_executable": (f'{PY}, executable="/bin/true"', ""),
+    "a_list_with_double_star_keywords": (f"{PY}, **KW", ""),
+    "a_list_with_a_second_positional": (f"{PY}, 4096", ""),
+    "a_list_with_an_unlisted_keyword": (f"{PY}, preexec_fn=hook", ""),
     "python_dash_m_slipwai_as_a_tuple": (
         f'("python3", "-m", "slipwai", "generate", "n", "--backend", "python", {NARROW})', ""),
     "the_launcher_on_path_as_a_tuple": (f'("slipwai", "generate", "n", "--backend", "python", {NARROW})', ""),

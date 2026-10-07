@@ -71,6 +71,24 @@ class TestAStampStyleArgv(ArgvCase):
         self.assertEqual(self.held(), [])
         self.assertTrue(self.skipped_on(GO))
 
+    def test_a_popen_chained_on_still_reads(self) -> None:
+        self.argv(STAMPED, STAMP.replace("[", "subprocess.Popen([", 1) + ").communicate()")
+        self.assertEqual(self.held(), [])
+        self.assertTrue(self.skipped_on(GO))
+
+    def reads_with(self, keywords: str) -> None:
+        self.argv(STAMPED, f"{STAMP}, {keywords}")
+        self.assertEqual(self.held(), [])
+        self.assertTrue(self.skipped_on(GO))
+
+    def test_a_working_directory_still_reads(self) -> None:
+        self.reads_with("cwd=base")
+
+    def test_an_environment_still_reads(self) -> None:
+        self.reads_with("env=env")
+
+    def test_the_usual_run_keywords_still_read(self) -> None:
+        self.reads_with("check=True, text=True, capture_output=True, timeout=60, input=b'', encoding='utf-8'")
 
 class TestWhatAnArgvLeavesOut(ArgvCase):
     def test_an_omitted_backend_is_every_backend_so_a_narrow_declaration_is_void_and_runs(self) -> None:

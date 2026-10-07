@@ -50,13 +50,26 @@ def launcher(node: ast.expr) -> ast.expr | None:
 
 
 RUNNERS = frozenset({"run", "Popen", "call", "check_call", "check_output"})
+# the keywords that leave the program run as the list says; any other (`executable`, `preexec_fn`, `**kw`, ...) may not
+PLAIN_KEYWORDS = frozenset({"check", "cwd", "env", "text", "capture_output", "stdout", "stderr", "stdin", "input",
+                            "timeout", "encoding", "errors", "universal_newlines"})
+
+
+def plain(call: ast.Call) -> bool:
+    """A call that runs the list as written: one positional, only allow-listed keywords, and `shell` only as a literal
+    `False` (a list with `shell=True` runs its first element as a shell command, not the launcher)."""
+    if len(call.args) != 1:
+        return False
+    return all(kw.arg in PLAIN_KEYWORDS or (kw.arg == "shell" and isinstance(kw.value, ast.Constant)
+                                            and kw.value.value is False) for kw in call.keywords)
 
 
 def whole(node: ast.List, parent: ast.AST | None) -> bool:
     """Whether the list is the whole argv as written: the first argument of a `subprocess` call, and nothing else. A
     list anywhere else (joined, bound to a name, returned, held in another container, handed to a helper) may be
-    changed before it runs, so it is not read (D187 rule 3)."""
-    return isinstance(parent, ast.Call) and bool(parent.args) and parent.args[0] is node \
+    changed before it runs, so it is not read (D187 rule 3). A call that can change the program it runs (`shell=`,
+    `executable=`, `**kw`, a second positional) is not read either."""
+    return isinstance(parent, ast.Call) and bool(parent.args) and parent.args[0] is node and plain(parent) \
         and isinstance(parent.func, ast.Attribute) and parent.func.attr in RUNNERS \
         and isinstance(parent.func.value, ast.Name) and parent.func.value.id == "subprocess"
 
