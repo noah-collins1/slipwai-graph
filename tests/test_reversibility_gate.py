@@ -171,6 +171,13 @@ class ProposedRuleTest(unittest.TestCase):
         code, out, err = self.run_gate(entry(1), entry(2), entry(3, proposed("D1", "D2") + "."))
         self.assertEqual((0, ""), (code, err), out)
 
+    def test_e5c_text_after_the_citation_is_allowed_and_a_d_number_outside_it_is_not_a_citation(self) -> None:
+        for tail in (" — host to adopt", ". Host to adopt (see D9).", " (a note, D7) and more"):
+            with self.subTest(tail=tail):
+                code, out, err = self.run_gate(entry(1), entry(2), entry(3, proposed("D1", "D2") + tail))
+                self.assertEqual((0, ""), (code, err), out)
+        self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D1") + " — as D2 did")), ": D3 ", "fewer")
+
     def test_e6_an_entry_without_the_line_is_never_refused(self) -> None:
         code, out, err = self.run_gate(entry(1), entry(2, proposed("D1", "D3")), entry(3), entry(4))
         self.assertEqual((0, ""), (code, err), out)
