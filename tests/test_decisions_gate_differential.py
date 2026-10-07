@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from test_decisions_scope import SCRIPT, entry, run, scratch
-from test_decisions_scope_gate import FIXTURE, released_checker
+from test_decisions_scope_gate import own_log, released_checker
 
 BOM = "﻿"
 TITLE = "# Decisions\n\n"
@@ -65,7 +65,7 @@ def logs() -> dict[str, bytes]:
     found["CRLF line endings"] = (TITLE + two).replace("\n", "\r\n").encode("utf-8")
     found["CRLF line endings, a second status"] = (
         TITLE + second("Status", "standing", "overridden by D1")).replace("\n", "\r\n").encode("utf-8")
-    found["this repository's own decisions.md"] = FIXTURE.read_bytes()
+    found["this repository's own decisions.md"] = own_log().encode("utf-8")
     return found
 
 
