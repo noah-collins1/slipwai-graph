@@ -16,6 +16,12 @@ from test_decisions_scope import entry, run, scratch
 
 from slipwai.assets import ROOT
 
+# `FIXTURE` is the real decisions log it feeds the gate; the released checker comes from `git show`, a stored object
+# no path change reaches.
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["assets/toolkit/scripts/check-decisions.py", "specs/001-faster-slipwai/decisions.md"],
+}
+
 RELEASED = "596740f"  # the last commit before the Scope: line was read by the checker
 FIXTURE = ROOT / "specs/001-faster-slipwai/decisions.md"
 

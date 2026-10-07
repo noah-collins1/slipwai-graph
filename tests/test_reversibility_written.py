@@ -14,6 +14,15 @@ from reversibility_fixture import EASY, SCRIPTS, entry, facts, gate, score, scra
 from test_reversibility_gate import loaded
 
 sys.dont_write_bytecode = True
+
+TEST_SELECTION: dict[str, object] = {
+    "reads": [
+        "assets/toolkit/scripts/check-decisions.py",
+        "assets/toolkit/scripts/check-styles.py",
+        "assets/toolkit/scripts/reversibility.py",
+    ],
+}
+
 LISTED = ("scripts/check-decisions.py", "Makefile")
 LINE = "- **Reversibility:** easy · rules 1 · " + " ".join(f"{key}={value}" for key, value in EASY.items())
 NAMED = ("`README.md`, scripts/check-decisions.py", "README.md, `docs/x.md`; scripts/check-decisions.py",

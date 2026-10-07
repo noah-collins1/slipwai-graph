@@ -15,6 +15,15 @@ from reversibility_fixture import entry, gate, scratch
 from test_reversibility_gate import line, proposed
 
 sys.dont_write_bytecode = True
+
+TEST_SELECTION: dict[str, object] = {
+    "reads": [
+        "assets/toolkit/scripts/check-decisions.py",
+        "assets/toolkit/scripts/check-styles.py",
+        "assets/toolkit/scripts/reversibility.py",
+    ],
+}
+
 LISTED = ("scripts/check-decisions.py",)
 BAD = "medium · rules 1 · contract=no"
 NEAR = ("- **Reversibility :** ", "- **reversibility:** ", "- **REVERSIBILITY:** ", "- __Reversibility:__ ",

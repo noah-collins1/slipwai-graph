@@ -15,6 +15,9 @@ from pathlib import Path
 
 from slipwai.assets import ROOT
 
+# `SCRIPT` is the checker it copies into a temporary project and runs.
+TEST_SELECTION: dict[str, object] = {"reads": ["assets/toolkit/scripts/check-decisions.py"]}
+
 SCRIPT = ROOT / "assets/toolkit/scripts/check-decisions.py"
 SLICE = "S02-runner-bookkeeping"
 

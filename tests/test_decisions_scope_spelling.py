@@ -14,6 +14,10 @@ import unittest
 
 from test_decisions_scope import SLICE, entry, printed, run, scratch
 
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["assets/toolkit/scripts/check-decisions.py", "assets/toolkit/scripts/check-styles.py"],
+}
+
 Pair = tuple["subprocess.CompletedProcess[str]", "subprocess.CompletedProcess[str]"]
 
 

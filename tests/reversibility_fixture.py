@@ -11,6 +11,12 @@ from pathlib import Path
 
 from slipwai.assets import ROOT
 
+# `scratch` copies the named toolkit scripts (by default these two) into a temporary project; `SCRIPTS` is the
+# directory the tests load them from.
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["assets/toolkit/scripts/check-decisions.py", "assets/toolkit/scripts/reversibility.py"],
+}
+
 SCRIPTS = ROOT / "assets/toolkit/scripts"
 EASY = {"contract": "no", "schema": "no", "auth": "no", "customer_visible": "no", "export": "no",
         "ci_workflow": "no", "migrate_file": "no", "behind_flag": "yes", "flag_default": "no",

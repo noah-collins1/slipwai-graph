@@ -18,6 +18,15 @@ from test_decisions_scope_gate import released_checker
 
 sys.dont_write_bytecode = True
 
+# the scripts it loads by path are the fixture's `SCRIPTS`.
+TEST_SELECTION: dict[str, object] = {
+    "reads": [
+        "assets/toolkit/scripts/check-decisions.py",
+        "assets/toolkit/scripts/check-styles.py",
+        "assets/toolkit/scripts/reversibility.py",
+    ],
+}
+
 
 def loaded(path: Path) -> Any:
     spec = importlib.util.spec_from_file_location(f"held_{path.stem.replace('-', '_')}", path)

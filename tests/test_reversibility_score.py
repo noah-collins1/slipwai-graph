@@ -16,6 +16,10 @@ from reversibility_fixture import EASY, facts, score
 
 sys.dont_write_bytecode = True
 
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["assets/toolkit/scripts/check-styles.py", "assets/toolkit/scripts/reversibility.py"],
+}
+
 SLICE = "S26-reversibility-line"
 HARD = ("contract", "schema", "auth", "customer_visible", "export", "ci_workflow", "migrate_file")
 

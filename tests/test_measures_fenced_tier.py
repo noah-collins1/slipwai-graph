@@ -10,6 +10,9 @@ from typing import Any
 
 sys.dont_write_bytecode = True
 
+# Loads the script by path under a name of its own.
+TEST_SELECTION: dict[str, object] = {"reads": ["assets/toolkit/scripts/agents/measures.py"]}
+
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "assets/toolkit/scripts/agents/measures.py"
 

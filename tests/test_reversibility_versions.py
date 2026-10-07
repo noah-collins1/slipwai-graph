@@ -24,6 +24,16 @@ from test_decisions_scope_gate import released_checker
 
 sys.dont_write_bytecode = True
 
+# `measures()` loads the script by path; the released copies come from `git show`.
+TEST_SELECTION: dict[str, object] = {
+    "reads": [
+        "assets/toolkit/scripts/check-decisions.py",
+        "assets/toolkit/scripts/check-styles.py",
+        "assets/toolkit/scripts/reversibility.py",
+        "assets/toolkit/scripts/agents/measures.py",
+    ],
+}
+
 
 def measures(path: Path = SCRIPTS / "agents/measures.py") -> Any:
     spec = importlib.util.spec_from_file_location(f"measures_under_guard_{path.parent.name}", path)

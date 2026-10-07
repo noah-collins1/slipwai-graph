@@ -13,6 +13,10 @@ import unittest
 from test_decisions_scope import SCRIPT, SLICE, entry, printed, run, scratch
 from test_decisions_scope_gate import released_checker
 
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["assets/toolkit/scripts/check-decisions.py", "assets/toolkit/scripts/check-styles.py"],
+}
+
 
 def text(log: str) -> bytes:
     return ("# Decisions\n\n" + log).encode("utf-8")

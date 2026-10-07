@@ -43,10 +43,15 @@ DECLARED: tuple[str, ...] = (  # the test modules this slice declares
     "test_mutation_scope_real_spring",
     "test_select_tests_make", "test_select_tests_paths", "test_select_tests_makefile", "test_gate_walks_pom",
     "test_gate_walks", "test_drawio_canvas", "test_design_extensions", "test_parallel_slices", "test_event_model",
+    # S26's, declared after S26 merged (D188 item 2)
+    "test_decisions_scope", "test_decisions_scope_edges", "test_decisions_scope_spelling", "test_decisions_scope_calls",
+    "test_decisions_scope_gate", "test_hand_backs_record", "test_reversibility_gate", "test_reversibility_versions",
+    "test_reversibility_labels", "test_reversibility_list", "test_reversibility_paths", "test_reversibility_score",
+    "test_reversibility_written", "test_measures_fenced_tier",
 )
 # the helper files this slice declares
 HELPERS: tuple[str, ...] = ("gate_rules", "render_fixture", "stamp_names", "stamp_case", "mutation_env",
-           "select_fixture", "select_fixture_declare")
+           "select_fixture", "select_fixture_declare", "hand_backs_fixture", "reversibility_fixture")
 
 
 def pairs(tree: declarations.Tree, names: Iterable[str]) -> set[tuple[str, str]]:
@@ -145,6 +150,40 @@ class TestTheDeclarationsOfThisSliceAreHeldAndReached(unittest.TestCase):
 # Such a module stays undeclared and always runs.
 SCANS_THE_REAL_TREE: tuple[str, ...] = ("test_select_tests_go_app", "test_select_tests_declarations")
 TREE_PROBES = ("declarations.scan(", "choose.select(", "declarations.held(", "HELD")
+
+
+S26_MODULES: tuple[str, ...] = DECLARED[DECLARED.index("test_decisions_scope"):]  # declared after S26 merged (D188)
+
+
+class TestS26ModulesAreReadsOnlyAndSkippedOnAGoChange(unittest.TestCase):
+    catalog: Any
+    tree: declarations.Tree
+    go: str
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.catalog = rules.load_catalog(ROOT)
+        cls.tree = declarations.scan(ROOT, cls.catalog)
+        cls.go = next(path for path in assets(ROOT) if path.startswith("assets/languages/go/"))
+
+    def test_each_is_declared_reads_only(self) -> None:
+        for name in S26_MODULES:
+            with self.subTest(module=name):
+                declaration, why = self.tree.effective(name)
+                self.assertIsNotNone(declaration, why)
+                self.assertFalse(declaration is not None and declaration.generates)
+
+    def test_a_go_asset_change_skips_every_one_of_them(self) -> None:
+        ran = {v.module for v in choose.select(self.tree, [self.go], self.catalog).verdicts if v.runs}
+        self.assertEqual(sorted(set(S26_MODULES) & ran), [])
+
+    def test_a_change_to_a_path_a_module_reads_runs_it(self) -> None:
+        for name in S26_MODULES:
+            reads = self.tree.sources[name].declaration.reads  # type: ignore[union-attr]
+            with self.subTest(module=name):
+                path = next(entry for entry in reads if (ROOT / entry).exists())
+                chosen = choose.select(self.tree, [path], self.catalog)
+                self.assertIn(name, {v.module for v in chosen.verdicts if v.runs})
 
 
 class TestAModuleThatScansTheRealTreeIsNotDeclared(unittest.TestCase):

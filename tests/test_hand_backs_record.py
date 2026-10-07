@@ -14,6 +14,12 @@ from test_decisions_scope import entry as scope_entry
 
 from slipwai.assets import ROOT
 
+# `with_own_specs` copies this repository's whole `specs/` tree and runs the checker over it; the released checker
+# comes from `git show`.
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["assets/toolkit/scripts/check-decisions.py", "assets/toolkit/scripts/hand_backs.py", "specs"],
+}
+
 RELEASED = "c3c760b"  # the checker as it stood before hand-backs.md was read
 
 

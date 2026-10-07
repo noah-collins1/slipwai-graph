@@ -12,6 +12,11 @@ from typing import Any
 
 from slipwai.assets import ROOT
 
+# `scratch` copies the two toolkit scripts into a project it builds in a temporary directory.
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["assets/toolkit/scripts/check-decisions.py", "assets/toolkit/scripts/hand_backs.py"],
+}
+
 SCRIPTS = ROOT / "assets/toolkit/scripts"
 HEADING = "## 2026-10-05T17:00:00Z — drive-gaps — gaps"
 RECORD = "specs/f/slices/S1/hand-backs.md"

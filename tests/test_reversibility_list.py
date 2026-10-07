@@ -15,6 +15,15 @@ from pathlib import Path
 from reversibility_fixture import EASY, entry, facts, gate, score, scratch
 
 sys.dont_write_bytecode = True
+
+TEST_SELECTION: dict[str, object] = {
+    "reads": [
+        "assets/toolkit/scripts/check-decisions.py",
+        "assets/toolkit/scripts/check-styles.py",
+        "assets/toolkit/scripts/reversibility.py",
+    ],
+}
+
 LISTED = ("scripts/check-decisions.py",)
 LINE = "- **Reversibility:** easy · rules 1 · " + " ".join(f"{key}={value}" for key, value in EASY.items())
 HARD = LINE.replace("easy", "hard", 1).replace("migrate_file=no", "migrate_file=yes")

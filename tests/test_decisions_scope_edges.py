@@ -8,6 +8,10 @@ from pathlib import Path
 
 from test_decisions_scope import SLICE, entry, printed, run, scratch
 
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["assets/toolkit/scripts/check-decisions.py", "assets/toolkit/scripts/check-styles.py"],
+}
+
 
 def tree_digest(root: Path) -> str:
     """Every path, byte and modification time under `root`: a created, changed or touched file changes it."""
