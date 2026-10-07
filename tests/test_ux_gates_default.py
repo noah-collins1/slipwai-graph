@@ -129,6 +129,20 @@ class RefTest(GatesCase):
         self.assertIn("check-ux-gates: UX_GATES_SINCE=HEAD~1 — ", said)
         self.assertNotIn("previews scoped to what changed since", said)
 
+    def test_t020_a_ref_named_all_is_a_ref_when_given_by_its_full_name(self) -> None:
+        """`all` is the word for every preview; `refs/heads/all` is the branch of that name, scoped as any ref is."""
+        self.branch()
+        self.edit(f"{STYLES}/linked.css")
+        commit_all(self.repo, "style")
+        git(self.repo, "branch", "all")
+        self.edit(f"{STYLES}/deep.css")
+        commit_all(self.repo, "deep")
+        said, previews, _ = self.gate(UX_GATES_SINCE="refs/heads/all")
+        self.assertEqual(previews, {"imported.html"})
+        self.assertIn("check-ux-gates: UX_GATES_SINCE=refs/heads/all — ", said)
+        self.assertNotIn("every preview in scope", said)
+        self.assertNotIn("previews scoped to what changed since", said)
+
     def test_e6_a_stylesheet_renamed_is_changed_where_a_preview_links_it_by_its_old_name(self) -> None:
         git(self.repo, "mv", f"{STYLES}/linked.css", f"{STYLES}/renamed.css")
         _, previews, _ = self.gate(UX_GATES_SINCE="HEAD")

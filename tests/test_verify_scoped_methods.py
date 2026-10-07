@@ -125,6 +125,19 @@ class MethodFilesTest(ShapeCase):
         self.assertRegex(ran.get("check-extensions", ""), r"^apps/web/.* changed$", (ran, skipped))
         self.assertNotIn("check-extensions", skipped)
 
+    def test_t020_a_web_apps_directory_added_with_project_json_unchanged_runs_check_extensions(self) -> None:
+        """The base holds no `apps/web/` though `project.json` lists the app; the branch brings its files in."""
+        git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "rm", "-rqf", "apps/web")
+        git(self.repo, "commit", "-qm", "the web app is not here yet")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        self.write_baseline()
+        git(self.repo, "checkout", "-q", "main~1", "--", "apps/web")
+        self.assertTrue((self.repo / "apps" / "web" / "src" / "App.tsx").is_file())
+        ran, skipped = self.decide()
+        self.assertRegex(ran.get("check-extensions", ""), r"^apps/web/.* changed$", (ran, skipped))
+        self.assertNotIn("check-extensions", skipped)
+
     def test_r4_e2_a_services_source_skips_check_extensions_and_apps_claim_nothing_for_it(self) -> None:
         self.edit("apps/service/src/main.ts", "\n// an edit\n")
         ran, skipped = self.decide()
