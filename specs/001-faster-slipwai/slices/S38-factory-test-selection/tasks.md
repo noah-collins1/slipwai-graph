@@ -547,7 +547,7 @@ converged verdict while the patch waits for a person. A fix to the root `Makefil
 
 ### T024 — The full gate (host task)
 
-- [ ] `make verify` at the worktree's root (a full run on a slice branch by design), green; then
+- [x] *(Iteration 25: `make verify` green at `51b2987`, 2838 tests. The delivery gate stops at `check-slice-scope`, which compares a slice branch with `main` (`e1a9e43`), behind which sits all of `adopt-method`; it runs on `adopt-method` after the merge, in Phase 4, as S08's and S14's did.)* `make verify` at the worktree's root (a full run on a slice branch by design), green; then
   `make -f delivery/Makefile verify`, green.
 
 ### T025 — Register row and benchmark (host task)
