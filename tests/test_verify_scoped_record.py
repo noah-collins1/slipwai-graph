@@ -148,7 +148,9 @@ class RecordTest(RecordCase):
             self.assertTrue(checks[name]["claims"], name)
             self.assertIsNone(checks[name]["always"], name)
         self.assertEqual(checks["check-ux-gates"]["inputs"]["variables"],
-                         ["SLIPWAI_NO_INSTALL", "UX_GATES_REQUIRE", "UX_GATES_SHARD", "UX_GATES_SINCE"])
+                         ["CI_COMMIT_REF_NAME", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME", "GITHUB_BASE_REF",
+                          "GITHUB_HEAD_REF", "SLIPWAI_NO_INSTALL", "UX_GATES_REQUIRE", "UX_GATES_SHARD",
+                          "UX_GATES_SINCE"])
 
     def test_e5_a_check_the_project_added_has_no_recorded_inputs(self) -> None:
         project = self.project("model-typescript-web")

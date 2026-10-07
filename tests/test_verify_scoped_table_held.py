@@ -64,6 +64,20 @@ NOT_AN_INPUT_PATTERN = {
     r"skills/[\w-]+/SKILL\.md": "`check-constitution.py`'s `practice` pointers, tested for existence by "
                                   "`present_practice` for `--requirements` only (a printed hint); `--check` opens none",
 }
+# Modules a check loads only to find the slice's base and the paths changed since it, by check (`check-ux-gates`'s
+# default, research R-6): not walked for the check that loads them, since the stamp's cruise files, the model and the
+# registry they name are the full gate's or another check's. Each is a file name, or a directory under `scripts/`; the
+# reason is the value. A module its check no longer reaches is stale, as `NOT_AN_INPUT` is when no check fires it.
+BASE_MODULES = {
+    "check-ux-gates": {
+        "verify-stamp.py": "loaded for `trunk_module()` and the questions the scoped gate's borders ask: CI markers, "
+                           "`HEAD`, the index and the trunk; nothing it names is read by the check that loads it",
+        "check-slice-scope.py": "the one definition of the trunk and the base (`merge_base`, `changed_files`); the "
+                                "check that loads it reads none of what it reads",
+        "verify_scoped": "`changes.changed` and `changes.unpushed` give the changed paths and `since.py` the borders; "
+                         "the package's own tables and rules are the scoped gate's, not the loading check's inputs",
+    },
+}
 
 
 def reads_of(path: Path, project: Path) -> set[str]:
@@ -88,7 +102,7 @@ def closure_literals(project: Path, name: str, recipes: dict[str, list[str]]) ->
     """Every string a check's scripts, and what they import or name, hold."""
     found: set[str] = set()
     for entry in entries_of(recipes.get(name, [])):
-        for module in modules_of(project, project / entry):
+        for module in modules_of(project, project / entry, exempt=BASE_MODULES.get(name)):
             found.update(node.value for node in ast.walk(ast.parse(module.read_text(encoding="utf-8")))
                          if isinstance(node, ast.Constant) and isinstance(node.value, str))
     return found
@@ -111,14 +125,28 @@ def explained(read: str) -> bool:
     return read in NOT_AN_INPUT or any(re.fullmatch(pattern, read) for pattern in NOT_AN_INPUT_PATTERN)
 
 
-def modules_of(project: Path, entry: Path) -> set[Path]:
-    """The script and every file of `scripts/` it imports or names, however far: what the check reads through."""
+def base_module(path: Path) -> str:
+    """What a file is called in `BASE_MODULES`: its name, or `verify_scoped` for a file of that package."""
+    return "verify_scoped" if path.parent.name == "verify_scoped" else path.name
+
+
+def modules_of(project: Path, entry: Path, skipped: set[str] | None = None,
+               exempt: dict[str, str] | None = None) -> set[Path]:
+    """The script and every file of `scripts/` it imports or names, however far: what the check reads through, but for
+    the modules `exempt` names (`BASE_MODULES` of the check walked), which are not walked; `skipped` collects the ones
+    the walk met."""
     scripts = project / "scripts"
+    exempt = exempt or {}
     seen: set[Path] = set()
     pending = [entry]
     while pending:
         path = pending.pop()
         if path in seen or not path.is_file():
+            continue
+        loaded_for_the_base = base_module(path)
+        if path != entry and loaded_for_the_base in exempt:
+            if skipped is not None:
+                skipped.add(loaded_for_the_base)
             continue
         seen.add(path)
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
@@ -175,7 +203,7 @@ class TableHeldTest(RecordCase):
                 entries = entries_of(recipes.get(name, []))
                 reads: set[str] = set()
                 for entry in entries:
-                    for module in modules_of(project, project / entry):
+                    for module in modules_of(project, project / entry, exempt=BASE_MODULES.get(name)):
                         reads |= reads_of(module, project)
                 files = check["inputs"]["files"]
                 findings += [f"{shape}: {name} reads {read}, under none of {files}" for read in sorted(reads)
@@ -205,3 +233,30 @@ class TableHeldTest(RecordCase):
         findings += [f"{name} is allowed to name a derived file, and no longer does"
                      for name in sorted(set(DERIVED_NOT_READ) - named)]
         self.assertEqual(findings, [])
+
+
+class BaseModulesTest(RecordCase):
+    """The named list is load-bearing and not stale (research R-6)."""
+
+    def walk(self, name: str, exempt: dict[str, str] | None) -> tuple[set[str], set[str]]:
+        """What a check's walk reached, as `BASE_MODULES` names a file, and the base modules it met and did not walk."""
+        project = self.project("model-typescript-web")
+        recipes = {key: lines for key, (_, lines) in database(project).items()}
+        reached: set[str] = set()
+        skipped: set[str] = set()
+        for entry in entries_of(recipes[name]):
+            reached |= {base_module(path) for path in modules_of(project, project / entry, skipped, exempt)}
+        return reached, skipped
+
+    def test_a_check_with_base_modules_meets_them_and_walks_none_of_them(self) -> None:
+        for name, modules in BASE_MODULES.items():
+            reached, skipped = self.walk(name, modules)
+            self.assertTrue(skipped, f"{name} loads no base module")
+            self.assertEqual(reached & set(modules), set(), f"{name} walks one of {sorted(modules)}")
+
+    def test_every_base_module_is_reached_by_the_walk_that_does_not_exempt_it(self) -> None:
+        """Without the list the walk reaches each one: each entry is load-bearing, and one no check loads is stale."""
+        for name, modules in BASE_MODULES.items():
+            reached, skipped = self.walk(name, None)
+            self.assertEqual(skipped, set())
+            self.assertEqual(set(modules) - reached, set(), f"{name}: a base module it no longer loads is stale")

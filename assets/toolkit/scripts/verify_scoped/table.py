@@ -48,7 +48,9 @@ CHECKS: dict[str, Row] = {
     "check-ux-gates": Row(
         ("{web}", ".slipwai/extensions.json", "AGENTS.md", "package-lock.json", ".github/workflows/verify.yml"),
         ("git", "node", "npm"),
-        ("UX_GATES_REQUIRE", "UX_GATES_SINCE", "UX_GATES_SHARD", "SLIPWAI_NO_INSTALL"),
+        ("UX_GATES_REQUIRE", "UX_GATES_SINCE", "UX_GATES_SHARD", "SLIPWAI_NO_INSTALL",
+         # the scope's base is `check-slice-scope.py`'s, which reads the pull request's branches from these
+         "GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME", "GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"),
     ),
     "check-model": Row(("docs/event-model/", "{dep}")),  # and every path the model names (`record.py` adds them)
     "check-drawio": Row(("docs/event-model/model.yaml", "docs/event-model/model.drawio"), ("node", "npm")),
