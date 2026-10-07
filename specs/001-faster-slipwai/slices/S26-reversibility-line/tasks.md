@@ -187,7 +187,7 @@ R4–R7 write `check-decisions.py` and `reversibility.py`, so they run in order,
   `src/slipwai/project/cruise.py`, `src/slipwai/project/decisions.py`, `tests/test_reversibility_writers.py`,
   `tests/test_cruise_record.py`, `tests/test_cruise.py`.
 
-- [ ] T009 [US4] **R10 — a project made before** (AC-S26-16; D65). `tests/test_reversibility_migrate.py` takes the
+- [x] T009 [US4] **R10 — a project made before** (AC-S26-16; D65). `tests/test_reversibility_migrate.py` takes the
   factory at `063c187` with `git archive` (as `test_benchmark_elapsed_migrate.old_factory` does) into a scratch dir,
   generates a project there, writes a decisions log (no line), runs this checkout's `slipwai migrate`; and completes
   `changelog.d/reversibility-line.md`: its one **Catch-up.** paragraph stands alone and names the line, the verb, the
