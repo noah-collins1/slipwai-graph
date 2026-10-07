@@ -180,7 +180,7 @@ No screen in this slice.
 
 ## Implementation record
 
-- T001 `139f1e8` (+ `315a153`), T002 `8e6c5f7`, T002b `fe98a42` (concatenation, string commands and `python -m slipwai` held; `names_launcher` moved to `scripts/select_tests/launcher.py`), T003 `11186e5`, T004 `8ce6f9e`, T005 `885960b`, T006 `7bf69f5`, T007 `3ea65da` (+ `a9f9364`), T008 `34c9874`, T009 `68005f4`, T010 `80529eb`; rebased onto `adopt-method` `0000e5b` after S26 merged (D188), no conflict.
+- T001 `a142fdd` (+ `0bd4d13`), T002 `bfefce8`, T002b `5eadc4e` (concatenation, string commands and `python -m slipwai` held; `names_launcher` moved to `scripts/select_tests/launcher.py`), T003 `5cf11c4`, T004 `db2953b`, T005 `b38dd0e`, T006 `0dfdad0`, T007 `623903f` (+ `a9f9364`), T008 `34c9874`, T009 `68005f4`, T010 `80529eb`; rebased onto `adopt-method` `0000e5b` after S26 merged (D188), no conflict.
 - T009 stopped at `test_slice_scope_base`, `test_slice_scope_forge_nobase` and `test_benchmark_brackets` (their closures reach `test_adopt`'s launcher route); S26's modules were not declared (≈ 9 s).
 - Estimated Go-change selection at the tip (`undeclared.md`): 342 of 383 modules, ≈ 2734 s of the table before `test_matrix`/`test_images` narrow to go; AC-S43-6 is expected to miss 900 s (plan *Status*).
 
@@ -272,7 +272,7 @@ constitution. One HIGH found and fixed in `98f1025`; nothing CRITICAL or HIGH is
 
 **Owed**
 
-- [ ] **T011 MEDIUM — `make test TESTS=…`/`SKIP=…` keeps an inherited `SELECTED_TEST_MODULES` (R4 e3, D187 rule 4).**
+- [ ] **T011 MEDIUM (partly done in `2d257a2`; the `TESTS=`/`SKIP=` recipe is still owed, see pass 2) — `make test TESTS=…`/`SKIP=…` keeps an inherited `SELECTED_TEST_MODULES` (R4 e3, D187 rule 4).**
   - **The problem:** those recipes run `python3 -m unittest` straight from the person's environment, so a value left
     exported in a shell narrows a run that has no change set.
   - **Evidence:** `SELECTED_TEST_MODULES=<six names> make test TESTS=test_select_tests_real_audit` audited 6 modules,
@@ -302,7 +302,7 @@ constitution. One HIGH found and fixed in `98f1025`; nothing CRITICAL or HIGH is
     order of `stamp_case`'s `["src/slipwai", "slipwai"]`, and it silently voids a planted declaration whose `reads`
     starts with `"slipwai"` (seen in this pass).
   - **The fix:** narrow the `Div` branch to `ROOT / "slipwai"`, and skip the `TEST_SELECTION` assignment's own value.
-- [ ] **T014 LOW — the records drift.**
+- [x] **T014 LOW — the records drift.** Done: the counts in `2d257a2`, the *Implementation record* in converge pass 2.
   - The *Implementation record* above cites the pre-rebase commits for T001–T007 (`139f1e8`, `315a153`, `8e6c5f7`,
     `fe98a42`, `11186e5`, `8ce6f9e`, `885960b`, `7bf69f5`, `3ea65da`), which no branch contains. On this branch they
     are T001 `a142fdd` (+ `0bd4d13`), T002 `bfefce8`, T002b `5eadc4e`, T003 `5cf11c4`, T004 `db2953b`, T005
@@ -314,3 +314,107 @@ constitution. One HIGH found and fixed in `98f1025`; nothing CRITICAL or HIGH is
     generator's own functions).
   - **The status:** none of them is on the real tree, and D187 did not ask for them. Record them for the next selector
     slice; do not widen this one.
+
+### Converge pass 2 (drive-converge, 2026-10-07, the last) — verdict: converged; nothing CRITICAL or HIGH open
+
+Read again against AC-S43-1…14, D187, D188 and the constitution, at the tip `2d257a2`. `98f1025` and `2d257a2` hold.
+No form tried reads one configuration while generating another. Nothing was changed in code by this pass.
+
+**The argv rule: forms tried against the new `argv.read`.** Each form was put through `generation.facts` with the real
+`launcher.detector` and the real `catalog.json`. A route means every option of every axis; a read means the literal axes.
+
+- **Kept as a route (correct):**
+  - `subprocess.run(args=[…])`;
+  - `run([…], **kw)` (a bare `run`);
+  - `from subprocess import run as r; r([…])`;
+  - `import subprocess as sp; sp.run([…])`;
+  - `os.execv(ROOT / "slipwai", […])`, which is two routes;
+  - `asyncio.create_subprocess_exec(*[…])`;
+  - an abbreviated flag (`--back`);
+  - a `--` separator.
+- **Read, and what it generates is what it says:**
+  - `subprocess.Popen([…]).communicate()`;
+  - `env=` and `cwd=`. The launcher puts `$root/src` first on `PYTHONPATH`, and `generate` reads no environment.
+- **Read narrow, but runs no project:** `subprocess.run([…], shell=True)`. With a list, POSIX runs
+  `sh -c <launcher> generate …`, so the launcher starts with no verb and `parser.error`s.
+- **Read narrow, but the program is not the one written (LOW, T017):** `executable=…`, `Popen([…], -1, other)` and
+  `subprocess.run([…], **kw)`. None of these is on the tree (`grep executable= tests/` finds nothing). A
+  different program would have to accept `generate <name> --backend …` to generate anything at all.
+- **A computed name at index 0, set at run time to a flag such as `--backend=go` or `--language=java`.** It leaves
+  `args.name` empty, and the literal argv cannot hold a second positional, so `generate` raises "project name is
+  required" (`src/slipwai/cli.py:247`). An injected axis flag is also overridden by any later literal one.
+- **A computed `--output` value.** argparse classes `-x` and `--backend=go` as options, so `--output` fails with
+  "expected one argument".
+
+**By level**
+
+- **Domain (D187 rules 1–3).** The cases above, plus the slice's modules:
+  - Passing: `test_select_tests_argv`, `_argv_forms` (36), `_audit_narrow`, `_real_s43`, `_real_declared`,
+    `_real_helpers`, `_real_backends`, `_declarations` and `_generation`, 120 tests in 46 s.
+  - Not pinned by a test: the forms the host named, listed above (T017).
+- **Use case (D187 rule 4, AC-S43-13).**
+  - `to_audit` now falls back to the full audit in these cases: an empty handoff, a malformed one (a name that is not
+    an identifier), or one without `test_select_tests_real_audit`. `test_select_tests_audit_narrow` pins each.
+  - A value that names the audit and an identifier that is not a module is still honoured. So is any well-formed
+    value left in a person's shell, through `make test TESTS=…`.
+  - Evidence: `SELECTED_TEST_MODULES=test_select_tests_real_audit,test_pit_globs make test TESTS=test_select_tests_real_audit`
+    audited one module and ran 6 tests in 4.1 s.
+  - Still owed as T011's remainder.
+  - A full run, CI and the merge root are unaffected: `run_unittest` pops the variable and `run_full` hands none.
+- **Adapter (the declarations).** As pass 1 found. `held()` on the tip is `[]`.
+- **Screen:** none in this slice.
+- **Published contract.**
+  - `make lint typecheck check-structure` passes (583 files typed; 154 modules, no upward imports).
+  - No changed `.py` file is over 350 lines.
+  - No `unittest.mock`, `MagicMock` or `patch(` was added.
+  - Nothing under `assets/`, `src/`, `catalog.json`, `VERSION` or `changelog.d/` changed, so no bump or fragment is
+    owed.
+  - No S07 or S26 module was touched.
+  - AC-S43-9: 3271 ids at the base and 3333 at the tip. That is 63 added (9 + 36 + 11 + 6 + 1, each re-counted by the
+    loader) and one renamed (T012).
+  - The branch is 3 records-only commits behind `adopt-method`, sharing no file with them. AC-S43-6 is measured
+    after the rebase D188 names.
+- **Not proven by the diff:**
+  - AC-S43-6 (under 900 s; the plan expects a miss, which is a `behaviour` demo and a person's word, D182);
+  - AC-S43-8 (the faulted full run);
+  - the "none newly skipped" half of AC-S43-9.
+
+  All three are the host's demo measurements.
+
+**Constitution**
+
+- **I (a scoped gate MUST be additive).** No form reads narrow and generates another configuration. The
+  `executable=`/`**kw` family is fail-open only in principle, with no instance on the tree (T017, LOW). The
+  remaining narrowing of the `TESTS=` audit needs a hand-set variable, and CI and the merge root audit everything
+  (T011, MEDIUM).
+- **I (VERSION and fragments).** Neither is owed.
+- **V (RED before GREEN).** `2d257a2` carries its cases together with the fallback.
+- **X (deterministic).** Unchanged from pass 1.
+- **Repository rule (no mocking framework).** Holds.
+- **II, IV, VI–IX:** not touched.
+
+**Final owed list**
+
+- [ ] **T011 MEDIUM — the remainder: the `TESTS=`/`SKIP=` recipe still honours an inherited `SELECTED_TEST_MODULES`.**
+  - **What is left:** the `Makefile` `test` recipe (line 35) runs `python3 -m unittest` with the person's
+    environment, and `to_audit` accepts any identifier, not only a `tests/test_*.py` module.
+  - **Fix:**
+    - `env -u SELECTED_TEST_MODULES` in that branch of the recipe;
+    - `to_audit` falls back where a chosen name is not a module in `tests/`;
+    - one `audit_narrow` case for each.
+- [ ] **T012 MEDIUM — a question for the host, not decided here.** Does AC-S43-9's "none renamed away" accept the one
+  selector-test id renamed because its old name became false (`test_select_tests_real_helpers…runs_the_launcher_so_it_declares_every_configuration`
+  → `…names_the_one_project_it_generates_and_reads_the_launcher_through_support`)? If it does, quickstart step 4
+  reads "equal but for the one recorded rename". If it does not, the old id is kept.
+- [ ] **T013 LOW — the launcher detector over-matches** (as pass 1 found).
+- [ ] **T015 LOW — the in-process routes D164 rule 3 never named** (as pass 1 found; predates the slice).
+- [ ] **T016 LOW — pin the forms pass 2 tried as `FORMS` cases in `test_select_tests_argv_forms`.**
+  - **The forms:** `subprocess.run(args=[…])`, an aliased `run`, `sp.run`, `os.execv`,
+    `asyncio.create_subprocess_exec(*[…])`, and a bare `run([…], **kw)`.
+  - **Why:** each holds today, but none is pinned, so a later loosening of `argv.whole` would pass the suite.
+- [ ] **T017 LOW — `argv.whole` reads a list whose call can swap the program.**
+  - **The forms:** a `subprocess` runner given `executable=`, a third positional to `Popen`, or `**kw`.
+  - **Fix:** read only when every keyword is one of `check`, `capture_output`, `text`, `stdout`, `stderr`, `input`,
+    `timeout`, `cwd`, `env` or `encoding`, and there is one positional and no `**`.
+  - **Status:** no instance is on the tree.
+- [x] **T014 LOW** — done (counts in `2d257a2`; the *Implementation record* corrected in this pass).
