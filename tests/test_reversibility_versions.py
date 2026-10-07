@@ -208,7 +208,7 @@ class MissingLineNoteTest(unittest.TestCase):
     def test_e6_in_an_adopted_layout_the_note_names_the_verb_where_it_is(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = scratch(directory, entry(1, line("guarded", 1)) + "\n" + entry(2), origin="adopted",
-                           delivery="delivery", listed=())
+                           delivery="delivery", listed=("delivery/.written",))  # an empty list is no list
             (repo / "delivery").mkdir(exist_ok=True)
             (repo / "scripts").rename(repo / "delivery/scripts")
             result = subprocess.run(["python3", "-B", "delivery/scripts/check-decisions.py"], cwd=repo, text=True,

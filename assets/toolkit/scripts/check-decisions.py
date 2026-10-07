@@ -536,7 +536,12 @@ def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
     items = [(line, int(heading.group(1)) if heading else None, fields, fields.twice)
              for line, heading, fields in entries(text, DECISION_HEADING, legacy=True)]
     verb = f"python3 {Path(module.__file__).resolve().relative_to(ROOT).as_posix()}"
-    return module.check_log(path.relative_to(ROOT).as_posix(), items, scope_tokens, module.propagated(ROOT), verb)
+    try:
+        listed, unread = module.propagated(ROOT), []
+    except module.Unreadable as error:  # a `layout.delivery` naming no directory here: one line, never a traceback
+        listed, unread = None, [str(error)]
+    findings, notes = module.check_log(path.relative_to(ROOT).as_posix(), items, scope_tokens, listed, verb, ROOT)
+    return unread + findings, notes
 
 
 def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int, int]:
