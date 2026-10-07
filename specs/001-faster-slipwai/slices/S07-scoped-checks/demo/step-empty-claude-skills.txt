@@ -1,0 +1,237 @@
+verify-scoped: dependency knowledge was incomplete for .claude/skills/ — an ignored projection directory with no files, whose existence the baseline cannot see
+verify-scoped: the full gate runs, as `make verify` — dependency knowledge was incomplete
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [13ms]
+npm --workspace apps/service run lint
+
+> s07demo-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 33 files in 19ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> s07demo-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 17 files in 5ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> s07demo-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> s07demo-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (121 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at ccec15a)
+python3 scripts/extensions/project.py --check
+check-extensions: 1 elected extension block(s) match
+python3 scripts/agents/project.py --check
+agent projection failed: agent projection drift:
+  - .claude/skills/LICENSE: missing
+  - .claude/skills/REFERENCES.md: missing
+  - .claude/skills/acceptance-review/LICENSE: missing
+  - .claude/skills/acceptance-review/SKILL.md: missing
+  - .claude/skills/acceptance-review/agents/openai.yaml: missing
+  - .claude/skills/acceptance-review/references/source-notes.md: missing
+  - .claude/skills/adversarial-testing/SKILL.md: missing
+  - .claude/skills/adversarial-testing/resources/attack-catalogue.md: missing
+  - .claude/skills/api-design/LICENSE: missing
+  - .claude/skills/api-design/SKILL.md: missing
+  - .claude/skills/api-design/resources/api-evolution.md: missing
+  - .claude/skills/api-design/resources/api-security.md: missing
+  - .claude/skills/api-design/resources/auth-security.md: missing
+  - .claude/skills/api-design/resources/http-fundamentals.md: missing
+  - .claude/skills/api-design/resources/problem-details.md: missing
+  - .claude/skills/api-design/resources/source-notes.md: missing
+  - .claude/skills/architecture-decisions/SKILL.md: missing
+  - .claude/skills/bff-design/SKILL.md: missing
+  - .claude/skills/bff-design/agents/openai.yaml: missing
+  - .claude/skills/bff-design/references/adoption-and-granularity.md: missing
+  - .claude/skills/bff-design/references/aggregation-and-resilience.md: missing
+  - .claude/skills/bff-design/references/alternatives.md: missing
+  - .claude/skills/bff-design/references/upstream-identity.md: missing
+  - .claude/skills/bff-entry-points/SKILL.md: missing
+  - .claude/skills/bff-entry-points/agents/openai.yaml: missing
+  - .claude/skills/bff-entry-points/references/browser-session-coordination.md: missing
+  - .claude/skills/bff-entry-points/references/endpoint-protection.md: missing
+  - .claude/skills/bff-entry-points/references/enforcement-and-testing.md: missing
+  - .claude/skills/bff-entry-points/references/hexagonal-auth-boundaries.md: missing
+  - .claude/skills/bff-entry-points/references/hono-example.md: missing
+  - .claude/skills/bff-entry-points/references/realtime-entry-points.md: missing
+  - .claude/skills/characterisation-tests/SKILL.md: missing
+  - .claude/skills/characterisation-tests/resources/modern-tooling.md: missing
+  - .claude/skills/characterisation-tests/resources/writing-process.md: missing
+  - .claude/skills/ci-debugging/SKILL.md: missing
+  - .claude/skills/cli-design/LICENSE: missing
+  - .claude/skills/cli-design/SKILL.md: missing
+  - .claude/skills/cli-design/resources/composability.md: missing
+  - .claude/skills/cli-design/resources/output-architecture.md: missing
+  - .claude/skills/cli-design/resources/source-notes.md: missing
+  - .claude/skills/cli-design/resources/stream-contracts.md: missing
+  - .claude/skills/cli-design/resources/testing-cli.md: missing
+  - .claude/skills/codebase-design/LICENSE: missing
+  - .claude/skills/codebase-design/SKILL.md: missing
+  - .claude/skills/codebase-design/agents/openai.yaml: missing
+  - .claude/skills/codebase-design/references/deepening.md: missing
+  - .claude/skills/codebase-design/references/design-it-twice.md: missing
+  - .claude/skills/codebase-design/references/source-notes.md: missing
+  - .claude/skills/debugging/SKILL.md: missing
+  - .claude/skills/debugging/agents/openai.yaml: missing
+  - .claude/skills/debugging/references/source-notes.md: missing
+  - .claude/skills/diagrams/NOTICE: missing
+  - .claude/skills/diagrams/SKILL.md: missing
+  - .claude/skills/diagrams/references/source-notes.md: missing
+  - .claude/skills/domain-driven-design/SKILL.md: missing
+  - .claude/skills/domain-driven-design/resources/aggregate-design.md: missing
+  - .claude/skills/domain-driven-design/resources/bounded-contexts.md: missing
+  - .claude/skills/domain-driven-design/resources/domain-events.md: missing
+  - .claude/skills/domain-driven-design/resources/domain-services.md: missing
+  - .claude/skills/domain-driven-design/resources/error-modeling.md: missing
+  - .claude/skills/domain-driven-design/resources/modelling-process.md: missing
+  - .claude/skills/domain-driven-design/resources/references.md: missing
+  - .claude/skills/domain-driven-design/resources/testing-by-layer.md: missing
+  - .claude/skills/double-check/SKILL.md: missing
+  - .claude/skills/double-check/resources/brief-template.md: missing
+  - .claude/skills/double-check/resources/providers.md: missing
+  - .claude/skills/evaluate-existing-solutions/SKILL.md: missing
+  - .claude/skills/evaluate-existing-solutions/agents/openai.yaml: missing
+  - .claude/skills/evaluate-existing-solutions/assets/solution-decision-template.md: missing
+  - .claude/skills/evaluate-existing-solutions/references/evaluation-dimensions.md: missing
+  - .claude/skills/evaluate-existing-solutions/references/evidence-and-currentness.md: missing
+  - .claude/skills/event-modeling/NOTICE: missing
+  - .claude/skills/event-modeling/SKILL.md: missing
+  - .claude/skills/event-modeling/references/gwt-template.md: missing
+  - .claude/skills/event-modeling/references/nine-steps.md: missing
+  - .claude/skills/event-sourcing/SKILL.md: missing
+  - .claude/skills/event-sourcing/resources/decider-and-rehydration.md: missing
+  - .claude/skills/event-sourcing/resources/event-store.md: missing
+  - .claude/skills/event-sourcing/resources/event-versioning.md: missing
+  - .claude/skills/event-sourcing/resources/modelling-events.md: missing
+  - .claude/skills/event-sourcing/resources/production-concerns.md: missing
+  - .claude/skills/event-sourcing/resources/projections-and-read-models.md: missing
+  - .claude/skills/event-sourcing/resources/references.md: missing
+  - .claude/skills/event-sourcing/resources/testing-event-sourced-systems.md: missing
+  - .claude/skills/event-sourcing/resources/when-to-use-event-sourcing.md: missing
+  - .claude/skills/expectations/SKILL.md: missing
+  - .claude/skills/find-gaps/SKILL.md: missing
+  - .claude/skills/find-skills/LICENSE: missing
+  - .claude/skills/find-skills/SKILL.md: missing
+  - .claude/skills/find-skills/references/source-notes.md: missing
+  - .claude/skills/finding-seams/SKILL.md: missing
+  - .claude/skills/finding-seams/resources/creating-seams.md: missing
+  - .claude/skills/finding-seams/resources/oop-patterns.md: missing
+  - .claude/skills/finding-seams/resources/seam-types.md: missing
+  - .claude/skills/folder-structure/SKILL.md: missing
+  - .claude/skills/folder-structure/agents/openai.yaml: missing
+  - .claude/skills/front-end-testing/SKILL.md: missing
+  - .claude/skills/front-end-testing/resources/async-patterns.md: missing
+  - .claude/skills/front-end-testing/resources/dom-testing-library-legacy.md: missing
+  - .claude/skills/front-end-testing/resources/msw.md: missing
+  - .claude/skills/front-end-testing/resources/playwright-e2e.md: missing
+  - .claude/skills/frontend-design/LICENSE: missing
+  - .claude/skills/frontend-design/SKILL.md: missing
+  - .claude/skills/frontend-design/references/source-notes.md: missing
+  - .claude/skills/functional/SKILL.md: missing
+  - .claude/skills/functional/resources/composition-patterns.md: missing
+  - .claude/skills/functional/resources/immutability-catalog.md: missing
+  - .claude/skills/global-event-model/SKILL.md: missing
+  - .claude/skills/hexagonal-architecture/SKILL.md: missing
+  - .claude/skills/hexagonal-architecture/resources/cqrs-lite.md: missing
+  - .claude/skills/hexagonal-architecture/resources/cross-cutting-concerns.md: missing
+  - .claude/skills/hexagonal-architecture/resources/greenfield-sequence.md: missing
+  - .claude/skills/hexagonal-architecture/resources/incremental-adoption.md: missing
+  - .claude/skills/hexagonal-architecture/resources/references.md: missing
+  - .claude/skills/hexagonal-architecture/resources/testing-hex-arch.md: missing
+  - .claude/skills/hexagonal-architecture/resources/worked-example.md: missing
+  - .claude/skills/improve-codebase-architecture/LICENSE: missing
+  - .claude/skills/improve-codebase-architecture/SKILL.md: missing
+  - .claude/skills/improve-codebase-architecture/agents/openai.yaml: missing
+  - .claude/skills/improve-codebase-architecture/references/html-report.md: missing
+  - .claude/skills/improve-codebase-architecture/references/source-notes.md: missing
+  - .claude/skills/mutation-testing/SKILL.md: missing
+  - .claude/skills/mutation-testing/resources/mutator-rules.md: missing
+  - .claude/skills/observability/SKILL.md: missing
+  - .claude/skills/observability/resources/node-patterns.md: missing
+  - .claude/skills/observability/resources/references.md: missing
+  - .claude/skills/observability/resources/slo-alerting.md: missing
+  - .claude/skills/observability/resources/testing-telemetry.md: missing
+  - .claude/skills/planning/SKILL.md: missing
+  - .claude/skills/production-parity-skill-builder/SKILL.md: missing
+  - .claude/skills/production-parity-skill-builder/resources/generated-skill-template.md: missing
+  - .claude/skills/production-parity-skill-builder/resources/parity-surface-catalog.md: missing
+  - .claude/skills/production-parity-skill-builder/resources/question-patterns.md: missing
+  - .claude/skills/react-testing/SKILL.md: missing
+  - .claude/skills/react-testing/resources/testing-library-react-legacy.md: missing
+  - .claude/skills/reduce-system-complexity/LICENSE: missing
+  - .claude/skills/reduce-system-complexity/SKILL.md: missing
+  - .claude/skills/reduce-system-complexity/agents/openai.yaml: missing
+  - .claude/skills/reduce-system-complexity/references/ledger-template.md: missing
+  - .claude/skills/reduce-system-complexity/references/source-notes.md: missing
+  - .claude/skills/refactoring/SKILL.md: missing
+  - .claude/skills/run-the-app/SKILL.md: missing
+  - .claude/skills/specification/SKILL.md: missing
+  - .claude/skills/specification/resources/references.md: missing
+  - .claude/skills/specification/resources/spec-review-template.html: missing
+  - .claude/skills/stack-pull-requests/SKILL.md: missing
+  - .claude/skills/stack-pull-requests/agents/openai.yaml: missing
+  - .claude/skills/stack-pull-requests/references/source-notes.md: missing
+  - .claude/skills/story-splitting/SKILL.md: missing
+  - .claude/skills/story-splitting/resources/pattern-catalog.md: missing
+  - .claude/skills/story-splitting/resources/source-notes.md: missing
+  - .claude/skills/storyboard/SKILL.md: missing
+  - .claude/skills/structure-codebase/SKILL.md: missing
+  - .claude/skills/structure-codebase/agents/openai.yaml: missing
+  - .claude/skills/structure-codebase/references/backend-patterns.md: missing
+  - .claude/skills/structure-codebase/references/enforcement-and-migration.md: missing
+  - .claude/skills/structure-codebase/references/frontend-patterns.md: missing
+  - .claude/skills/structure-codebase/references/research-notes.md: missing
+  - .claude/skills/structure-codebase/references/visible-hexagon.md: missing
+  - .claude/skills/tdd/SKILL.md: missing
+  - .claude/skills/tdd/resources/vitest-watch-feedback.md: missing
+  - .claude/skills/teach-me/SKILL.md: missing
+  - .claude/skills/teach-me/resources/assessment-patterns.md: missing
+  - .claude/skills/teach-me/resources/course-generation.md: missing
+  - .claude/skills/teach-me/resources/html-lessons.md: missing
+  - .claude/skills/teach-me/resources/learning-science.md: missing
+  - .claude/skills/teach-me/resources/session-management.md: missing
+  - .claude/skills/technical-writing/LICENSE: missing
+  - .claude/skills/technical-writing/SKILL.md: missing
+  - .claude/skills/technical-writing/resources/agent-docs.md: missing
+  - .claude/skills/technical-writing/resources/doc-types.md: missing
+  - .claude/skills/technical-writing/resources/docs-quality.md: missing
+  - .claude/skills/technical-writing/resources/formatting.md: missing
+  - .claude/skills/technical-writing/resources/readme.md: missing
+  - .claude/skills/technical-writing/resources/references.md: missing
+  - .claude/skills/technical-writing/resources/source-notes.md: missing
+  - .claude/skills/test-design-reviewer/SKILL.md: missing
+  - .claude/skills/test-design-reviewer/references/source-notes.md: missing
+  - .claude/skills/testing/SKILL.md: missing
+  - .claude/skills/twelve-factor/SKILL.md: missing
+  - .claude/skills/twelve-factor/resources/node-patterns.md: missing
+  - .claude/skills/typescript-strict/SKILL.md: missing
+  - .claude/skills/ubiquitous-language/SKILL.md: missing
+  - .claude/skills/ubiquitous-language/resources/glossary-format.md: missing
+  - .claude/skills/ubiquitous-language/resources/language-protocol.md: missing
+  - .claude/skills/web-interface-guidelines/LICENSE: missing
+  - .claude/skills/web-interface-guidelines/SKILL.md: missing
+  - .claude/skills/web-interface-guidelines/references/guidelines.md: missing
+  - .claude/skills/web-interface-guidelines/references/source-notes.md: missing
+  - .claude/skills/wtf/LICENSE: missing
+  - .claude/skills/wtf/SKILL.md: missing
+  - .claude/skills/wtf/agents/openai.yaml: missing
+  - .claude/skills/wtf/references/source-notes.md: missing
+make[2]: *** [Makefile:68: check-agents] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make[1]: *** [Makefile:229: verify] Error 2
+make: *** [Makefile:262: verify-scoped] Error 2

@@ -1,0 +1,53 @@
+=== AGENTS.md
+exit 2
+verify-scoped: run  check-extensions — AGENTS.md changed
+verify-scoped: run  check-agents — AGENTS.md changed
+verify-scoped: skip check-speckit — none of its inputs changed
+verify-scoped: run  check-ux-gates — AGENTS.md changed
+verify-scoped: skip check-constitution — none of its inputs changed
+verify-scoped: run  check-benchmark — AGENTS.md changed
+make[1]: *** [Makefile:107: check-slice-scope] Error 1
+verify-scoped: 7 run, 15 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+=== .specify/memory/constitution.md
+exit 2
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: skip check-agents — none of its inputs changed
+verify-scoped: run  check-speckit — .specify/memory/constitution.md changed
+verify-scoped: skip check-ux-gates — none of its inputs changed
+verify-scoped: run  check-constitution — .specify/memory/constitution.md changed
+verify-scoped: run  check-benchmark — .specify/memory/constitution.md changed
+make[1]: *** [Makefile:107: check-slice-scope] Error 1
+verify-scoped: 6 run, 16 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+=== CLAUDE.md (the installed harness's context file)
+exit 2
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: run  check-agents — CLAUDE.md changed
+verify-scoped: skip check-speckit — none of its inputs changed
+verify-scoped: skip check-ux-gates — none of its inputs changed
+verify-scoped: skip check-constitution — none of its inputs changed
+make[1]: *** [Makefile:107: check-slice-scope] Error 1
+verify-scoped: 4 run, 18 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+=== .specify/models.json (reformatted)
+exit 2
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: run  check-agents — .specify/models.json changed
+verify-scoped: skip check-speckit — none of its inputs changed
+verify-scoped: skip check-ux-gates — none of its inputs changed
+verify-scoped: skip check-constitution — none of its inputs changed
+verify-scoped: run  check-benchmark — .specify/models.json changed
+make[1]: *** [Makefile:107: check-slice-scope] Error 1
+verify-scoped: 5 run, 17 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+=== .slipwai/extensions.json (reformatted)
+exit 2
+verify-scoped: run  check-extensions — .slipwai/extensions.json changed
+verify-scoped: skip check-agents — none of its inputs changed
+verify-scoped: skip check-speckit — none of its inputs changed
+verify-scoped: run  check-ux-gates — .slipwai/extensions.json changed
+verify-scoped: skip check-constitution — none of its inputs changed
+make[1]: *** [Makefile:107: check-slice-scope] Error 1
+verify-scoped: 5 run, 17 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2

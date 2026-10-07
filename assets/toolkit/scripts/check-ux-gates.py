@@ -31,8 +31,14 @@ spread that, and none changes what passing means:
 - `UX_GATES_SINCE=<ref>` renders only the previews whose own file, or a local stylesheet they link or
   `@import`, changed since the merge base with `<ref>` (the working tree counts), and the directory gates
   only for an app with such a preview. Every preview again when this script, the extension, the lockfile
-  or `verify.yml` moved, or when Git cannot answer. A pull request sets it; `main` never does, because
-  `main` deploys and a browser upgrade arrives without a diff. The file gate over `src/` always runs.
+  or `verify.yml` moved, or when Git cannot answer. Unset or empty, the default depends on where it runs:
+  on a `slice/<id>` branch outside CI the base is the scoped gate's own (`verify_scoped/since.py`) and only
+  the previews that changed since it render; on the trunk, in CI, and wherever that base cannot be found,
+  every preview renders, and one line says why. `UX_GATES_SINCE=all` renders every preview anywhere; a ref
+  literally named `all` is passed as `refs/heads/all`. Set `UX_GATES_SINCE=all` when a change the scope
+  cannot follow — a script or asset a preview loads, a browser upgrade, a reinstalled ux-gates kit
+  (`tools/ux-gates/`) — could alter a preview. The file
+  gate over `src/` always runs.
 
 Standard library only, like every gate script here; the kit's scripts are run as subprocesses.
 """
@@ -49,6 +55,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import NamedTuple
+
+sys.dont_write_bytecode = True  # an untracked file under scripts/ would make every later scoped run the full gate
 
 KEY = "ux-gates"
 KIT = "tools/ux-gates"
@@ -204,7 +212,9 @@ def shard(gates: list[Gate], spec: str) -> list[Gate] | None:
 
 
 def git(*arguments: str) -> str | None:
-    completed = subprocess.run(["git", *arguments], cwd=ROOT, check=False, text=True, capture_output=True)
+    # `surrogateescape`: a name `-z` gives unquoted need not be UTF-8, and is the same string a `Path` of it is
+    completed = subprocess.run(["git", *arguments], cwd=ROOT, check=False, text=True, errors="surrogateescape",
+                               capture_output=True)
     return completed.stdout if completed.returncode == 0 else None
 
 
@@ -212,21 +222,55 @@ def changed_since(ref: str) -> set[str] | None:
     """What differs from the merge base with `ref`, working tree and untracked files included, relative to
     this project; None when Git cannot say, or when something every preview depends on is among it."""
     base = git("merge-base", ref, "HEAD")
-    diff = git("diff", "--name-only", "--relative", base.strip()) if base else None
-    untracked = git("ls-files", "--others", "--exclude-standard")
+    # NUL-separated and without renames: a name with a space or a byte git would quote is one name, and the old name
+    # of a renamed stylesheet is a changed path a preview may still link by.
+    diff = git("diff", "--name-only", "--relative", "-z", "--no-renames", base.strip()) if base else None
+    untracked = git("ls-files", "--others", "--exclude-standard", "-z")
     if diff is None or untracked is None:
         say(f"check-ux-gates: UX_GATES_SINCE={ref} — Git cannot name a merge base, so every preview is in scope")
         return None
-    changed = set(diff.split()) | set(untracked.split())
+    return moved_everything({name for name in diff.split("\0") + untracked.split("\0") if name},
+                            f"UX_GATES_SINCE={ref}")
+
+
+def relative(path: Path) -> str:
+    """A path as the changed set names it — from the project, with `/` — or empty for one outside the project."""
+    return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else ""
+
+
+def everything() -> set[Path]:
+    """What moves every preview when it changes: this script, the extension, the lockfile and `verify.yml`."""
     here = Path(__file__).resolve()
-    everything = {here, here.parent / "extensions/ux-gates/init.py", ROOT / "package-lock.json",
-                  ROOT / ".github/workflows/verify.yml"}
-    moved = sorted(path.relative_to(ROOT).as_posix() for path in everything
-                   if path.is_relative_to(ROOT) and path.relative_to(ROOT).as_posix() in changed)
+    return {here, here.parent / "extensions/ux-gates/init.py", ROOT / "package-lock.json",
+            ROOT / ".github/workflows/verify.yml"}
+
+
+def moved_everything(changed: set[str], label: str) -> set[str] | None:
+    """`changed`, or None, said, where one of `everything()` is among it: nothing a preview links tells whether those
+    moved what it renders, so every preview does."""
+    moved = sorted(relative(path) for path in everything() if relative(path) in changed)
     if moved:
-        say(f"check-ux-gates: UX_GATES_SINCE={ref} — {', '.join(moved)} changed, so every preview is in scope")
+        say(f"check-ux-gates: {label} — {', '.join(moved)} changed, so every preview is in scope")
         return None
     return changed
+
+
+def slice_default(gates: list[Gate]) -> set[str] | None:
+    """What a slice branch changed since its base, said in one line; None, with the reason said, for every preview.
+    Loaded only now, where there are previews to scope: `verify_scoped` is the scoped gate's, found beside this script.
+    The bytes on disk are compared with the base's for the files the scope can depend on, and no other."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from verify_scoped import since
+        previews = {gate.target for gate in gates if gate.render and gate.target.is_file()}
+        among = {relative(path) for path in everything() | previews | {sheet for page in previews
+                                                                         for sheet in styles_of(page)}} - {""}
+        found = since.default(ROOT, among)
+    except Exception as error:  # a package this script cannot load is a base it cannot read
+        say(f"check-ux-gates: every preview in scope — the slice's base could not be read ({type(error).__name__})")
+        return None
+    say(found.line)
+    return None if found.changed is None else moved_everything(found.changed, found.branch)
 
 
 def local(reference: str, beside: Path) -> Path | None:
@@ -257,9 +301,6 @@ def styles_of(page: Path) -> set[Path]:
 def scoped(gates: list[Gate], changed: set[str]) -> list[Gate]:
     """The gates a change can move: every file gate, a preview's gates where it or a stylesheet it renders
     with changed, and an app's directory gates where any of its previews is in scope or one was removed."""
-    def relative(path: Path) -> str:
-        return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else ""
-
     previews = {gate.target for gate in gates if gate.render and gate.target.is_file()}
     touched = {page for page in previews if {relative(page), *map(relative, styles_of(page))} & changed}
     moved_apps = {page.parent.parent for page in touched}
@@ -363,13 +404,20 @@ def main() -> int:
         gates = sharded
         say(f"check-ux-gates: shard {spec} — {len(gates)} of {whole} gate(s)")
     since = os.environ.get("UX_GATES_SINCE", "").strip()
-    changed = changed_since(since) if since else None
+    changed: set[str] | None = None
+    if since == "all":  # not a ref: every preview, wherever this runs (a branch named `all` is `refs/heads/all`)
+        say("check-ux-gates: UX_GATES_SINCE=all — every preview in scope")
+    elif since:
+        changed = changed_since(since)
+    elif any(gate.render for gate in gates):
+        changed = slice_default(gates)
+    after = f"since {since}" if since else "since the slice's base"
+    label = f"UX_GATES_SINCE={since}" if since else "the slice's base"
     unchanged = 0
     if changed is not None:
         kept = scoped(gates, changed)
         unchanged, gates = len(gates) - len(kept), kept
-        say(f"check-ux-gates: UX_GATES_SINCE={since} — {unchanged} render gate(s) over previews nothing changed, "
-            "not rendered")
+        say(f"check-ux-gates: {label} — {unchanged} render gate(s) over previews nothing changed, not rendered")
     skipped = 0
     render = [gate for gate in gates if gate.render]
     opened = ("no-node" if shutil.which("node") is None else browser()) if render else "chrome"
@@ -408,7 +456,7 @@ def main() -> int:
                             if not gate.render else gate.label())
         elif verdict == "skipped":
             skipped += 1
-    scope = (f" in shard {spec}" if spec else "") + (f"; {unchanged} unchanged since {since}, not rendered"
+    scope = (f" in shard {spec}" if spec else "") + (f"; {unchanged} unchanged {after}, not rendered"
                                                      if unchanged else "")
     if failures:
         say("check-ux-gates: FAILED\n  - " + "\n  - ".join(failures))

@@ -1,0 +1,139 @@
+$ git switch main; make check-ux-gates
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [12ms]
+python3 scripts/check-ux-gates.py
+check-ux-gates: every preview in scope — this is the trunk (`main`)
+check-ux-gates: apps/web/screens/ — 2 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+
+Scanned 6 file(s).
+OK: no hardcoded values found.
+OK   /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens [dark] — all 0 text element(s) meet WCAG AA
+
+OK: every rendered text element meets WCAG 2.2 AA.
+OK   /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens — all 0 text element(s) meet WCAG AA
+
+OK: every rendered text element meets WCAG 2.2 AA.
+verify_target_size: OK — 2 file(s), 0 targets @414/1280px, all >= 24x24 or exception-covered
+verify_responsive: OK — 2 file(s), no horizontal overflow at 280/320/414px
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html [dark]
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+OK: 0 violations.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html
+OK: 0 violations.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html [dark]
+OK: 0 violations.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+OK: 0 violations.
+check-ux-gates: every gate passed
+exit 0
+
+$ git switch slice/S1; make check-ux-gates
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [13ms]
+python3 scripts/check-ux-gates.py
+check-ux-gates: slice/S1 — previews scoped to what changed since ccec15a (the base of `main`); UX_GATES_SINCE=all renders every preview
+check-ux-gates: the slice's base — 12 render gate(s) over previews nothing changed, not rendered
+check-ux-gates: apps/web/src — literal values outside the tokens
+
+Scanned 6 file(s).
+OK: no hardcoded values found.
+check-ux-gates: every gate passed; 12 unchanged since the slice's base, not rendered
+exit 0
+
+$ UX_GATES_SINCE=all make check-ux-gates   (slice/S1)
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [12ms]
+python3 scripts/check-ux-gates.py
+check-ux-gates: UX_GATES_SINCE=all — every preview in scope
+check-ux-gates: apps/web/screens/ — 2 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+
+Scanned 6 file(s).
+OK: no hardcoded values found.
+OK   /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens [dark] — all 0 text element(s) meet WCAG AA
+
+OK: every rendered text element meets WCAG 2.2 AA.
+OK   /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens — all 0 text element(s) meet WCAG AA
+
+OK: every rendered text element meets WCAG 2.2 AA.
+verify_target_size: OK — 2 file(s), 0 targets @414/1280px, all >= 24x24 or exception-covered
+verify_responsive: OK — 2 file(s), no horizontal overflow at 280/320/414px
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html [dark]
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html [dark]
+OK: 0 violations.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+OK: 0 violations.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html
+OK: 0 violations.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+OK: 0 violations.
+check-ux-gates: every gate passed
+exit 0
+
+$ CI=1 make check-ux-gates   (slice/S1)
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [13ms]
+python3 scripts/check-ux-gates.py
+check-ux-gates: every preview in scope — CI is set, so this is a CI run
+check-ux-gates: apps/web/screens/ — 2 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+
+Scanned 6 file(s).
+OK: no hardcoded values found.
+OK   /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens [dark] — all 0 text element(s) meet WCAG AA
+
+OK: every rendered text element meets WCAG 2.2 AA.
+OK   /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens — all 0 text element(s) meet WCAG AA
+
+OK: every rendered text element meets WCAG 2.2 AA.
+verify_target_size: OK — 2 file(s), 0 targets @414/1280px, all >= 24x24 or exception-covered
+verify_responsive: OK — 2 file(s), no horizontal overflow at 280/320/414px
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html [dark]
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html
+OK: 0 violations.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html [dark]
+OK: 0 violations.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+OK: 0 violations.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+OK: 0 violations.
+check-ux-gates: every gate passed
+exit 0

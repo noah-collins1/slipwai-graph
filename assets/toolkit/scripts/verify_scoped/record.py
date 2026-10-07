@@ -19,7 +19,7 @@ from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
 
-from . import reach, rules  # noqa: E402
+from . import methods, reach, rules  # noqa: E402
 from .table import CHECKS, GATE_UNITS, NO_INPUTS, UNITS, Row  # noqa: E402
 
 SCHEMA = 1
@@ -242,7 +242,7 @@ def expand_tool(row: Row, deployable: dict[str, Any]) -> list[str]:
 
 
 def check_entry(gate: str, row: Row | None, own: str | None, context: Context, targets: list[str]) -> dict[str, Any]:
-    if row is None:
+    if row is None or not (row.files or row.always):  # a row that names nothing and gives no reason is no inputs
         return {"gate": gate, "components": [], "inputs": None, "claims": False, "always": NO_INPUTS,
                 "targets": targets}
     files, tools, components = expand(row, own, context)
@@ -562,6 +562,7 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
     services = [name for name, item in deployables.items() if item["kind"] == "service"]
     models = models_of(root, scope, base) if len(services) > 1 or "check-model" in checks else []
     with_named(checks, root, models)
+    methods.with_derived(checks, root, scope, base)
     obligations = obligations_of(declared(root, scope, base), deployables, checks)
     built = {"schema": SCHEMA, "deployables": deployables, "checks": checks,
              "contracts": contracts_of(deployables, context, models), "obligations": obligations}

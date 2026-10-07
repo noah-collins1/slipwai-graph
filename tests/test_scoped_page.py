@@ -104,6 +104,43 @@ class TheStampedPageSaysWhatTheScopedGateDoesTest(FactoryTestCase):
         self.assertIn(said, self.page)
 
 
+class TheStampedPageSaysWhatCheckUxGatesRendersTest(FactoryTestCase):
+    """R10 (AC-S07-14, D171 item 6): the default, the override, and when to use it."""
+
+    def setUp(self) -> None:
+        self.page = page(Layout("."))
+
+    def test_it_names_the_override_and_when_to_set_it(self) -> None:
+        said = ("set `UX_GATES_SINCE=all` when a change the scope cannot follow, a script or asset a preview loads, "
+                "a browser upgrade, a reinstalled ux-gates kit (`tools/ux-gates/`), could alter a preview")
+        self.assertIn(said, self.page)
+
+    def test_it_says_where_previews_are_scoped_and_where_every_one_renders(self) -> None:
+        for said in (
+            "`check-ux-gates` renders only the previews a slice branch changed",
+            "every preview renders on the trunk, in CI, and wherever the base cannot be found",
+            "`UX_GATES_SINCE=all` renders every preview anywhere",
+        ):
+            self.assertIn(said, self.page)
+
+    def test_a_ref_named_all_is_passed_by_its_full_name(self) -> None:
+        self.assertIn("a ref named `all` is passed as `refs/heads/all`", self.page)
+
+
+class TheStampedPageSaysAMakeCheckTargetAlwaysRunsTest(FactoryTestCase):
+    """T018 (D192, AC-S07-9): the scoped gate never skips a `make check-<name>`, and `check-ux-gates` scopes there."""
+
+    def setUp(self) -> None:
+        self.page = page(Layout("."))
+
+    def test_make_check_name_always_runs_and_the_scoped_gate_never_skips_it(self) -> None:
+        self.assertIn("`make check-<name>` always runs, and the scoped gate never skips it", self.page)
+
+    def test_make_check_ux_gates_scopes_its_previews_on_a_slice_branch_outside_ci(self) -> None:
+        self.assertIn("so `make check-ux-gates` on a `slice/<id>` branch outside CI scopes previews by default",
+                      self.page)
+
+
 class AnUnstampedPageHasTheOneSentenceAndNothingOfAStampTest(FactoryTestCase):
     def check(self, text: str, command: str) -> None:
         self.assertIn(f"`{command} verify-scoped` is the full gate: {NO_RECORD}", text)

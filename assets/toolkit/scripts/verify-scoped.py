@@ -28,6 +28,7 @@ sys.path.insert(0, HERE)
 
 from verify_scoped import changes  # noqa: E402
 from verify_scoped import choose  # noqa: E402
+from verify_scoped import methods  # noqa: E402
 from verify_scoped import record as records  # noqa: E402
 from verify_scoped import rules  # noqa: E402
 
@@ -252,6 +253,8 @@ def run(make: str, makefile: str) -> int:
     gate = ground.stamp.is_gate_script
     notes = [f"{INCOMPLETE} for {records.printable(path)} — {why}" for path, why in choose.unknown(
         record, changed, lambda path: bool(gate(path.encode("utf-8", "surrogateescape"))))]
+    notes += [f"{INCOMPLETE} for {directory} — {methods.HOLLOW}"  # existence is read by two checks; the digest cannot see it
+              for directory in methods.hollow(ground.scope.ROOT, ground.scope, base)]
     if notes:
         return broaden(make, makefile, INCOMPLETE, notes)
     drifted, why = compared(ground, make, data)

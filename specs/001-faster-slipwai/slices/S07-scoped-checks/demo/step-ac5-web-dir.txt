@@ -1,0 +1,3 @@
+$ mkdir apps/admin; add apps/admin/index.html (no project.json change); make verify-scoped
+verify-scoped: dependency knowledge was incomplete for apps/admin/index.html — no deployable, contract or check claims it
+verify-scoped: the full gate runs, as `make verify` — dependency knowledge was incomplete

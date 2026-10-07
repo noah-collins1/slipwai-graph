@@ -48,7 +48,9 @@ CHECKS: dict[str, Row] = {
     "check-ux-gates": Row(
         ("{web}", ".slipwai/extensions.json", "AGENTS.md", "package-lock.json", ".github/workflows/verify.yml"),
         ("git", "node", "npm"),
-        ("UX_GATES_REQUIRE", "UX_GATES_SINCE", "UX_GATES_SHARD", "SLIPWAI_NO_INSTALL"),
+        ("UX_GATES_REQUIRE", "UX_GATES_SINCE", "UX_GATES_SHARD", "SLIPWAI_NO_INSTALL",
+         # the scope's base is `check-slice-scope.py`'s, which reads the pull request's branches from these
+         "GITHUB_HEAD_REF", "CI_COMMIT_REF_NAME", "GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME"),
     ),
     "check-model": Row(("docs/event-model/", "{dep}")),  # and every path the model names (`record.py` adds them)
     "check-drawio": Row(("docs/event-model/model.yaml", "docs/event-model/model.drawio"), ("node", "npm")),
@@ -62,6 +64,14 @@ CHECKS: dict[str, Row] = {
     ),
     "check-flags": Row(("apps/", "packages/", "{dep}", "infra/service/flags.auto.tfvars"), ("git",)),  # SOURCE_TREES
     "check-deploy-role": Row(("infra/bootstrap/", "infra/service/")),
+    # The method-file checks. `record.py`/`methods.py` add what a manifest or an integration names at record time.
+    "check-agents": Row((".specify/integration.json", ".specify/models.json", ".specify/drive.json",
+                         ".specify/cruise.json", "skills/", "commands/", "agents/", "AGENTS.md")),
+    "check-speckit": Row((".specify/integrations/", ".specify/presets/", ".specify/memory/constitution.md")),
+    "check-extensions": Row((".slipwai/extensions.json", "AGENTS.md", "{web}")),  # a web app's existence is an input
+    "check-constitution": Row(("specs/", ".specify/memory/constitution.md",
+                               ".specify/memory/.constitution-template.json",
+                               ".specify/templates/constitution-template.md", ".specify/presets/")),
     "check-python": Row(claims=False, always=EVERY_CHECK_WAITS),
     "check-slice-scope": Row(
         (EVERYTHING,), ("git",),

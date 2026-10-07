@@ -1,0 +1,24 @@
+$ git switch -c feature/x; make check-ux-gates
+check-ux-gates: every preview in scope — `feature/x` is not a slice/<id> branch
+check-ux-gates: apps/web/screens/ — 2 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+check-ux-gates: every gate passed
+$ git switch --detach; make check-ux-gates
+check-ux-gates: every preview in scope — HEAD is detached
+check-ux-gates: apps/web/screens/ — 2 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+check-ux-gates: every gate passed
+$ (slice/S1) UX_GATES_SINCE=HEAD~1 make check-ux-gates   — explicit ref beats the default
+check-ux-gates: UX_GATES_SINCE=HEAD~1 — 4 render gate(s) over previews nothing changed, not rendered
+check-ux-gates: apps/web/screens/ — 1 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+check-ux-gates: every gate passed; 4 unchanged since HEAD~1, not rendered
+$ git branch all main; (slice/S1) UX_GATES_SINCE=refs/heads/all make check-ux-gates
+check-ux-gates: UX_GATES_SINCE=refs/heads/all — 12 render gate(s) over previews nothing changed, not rendered
+check-ux-gates: apps/web/src — literal values outside the tokens
+check-ux-gates: every gate passed; 12 unchanged since refs/heads/all, not rendered
+$ git branch -m main trunk-gone; (slice/S1) make check-ux-gates   — no base
+check-ux-gates: every preview in scope — slice/S1 has no usable base — slice/S1 has no `main` to compare with, so nothing can be held — create or fetch a local `main` branch
+check-ux-gates: apps/web/screens/ — 2 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+check-ux-gates: every gate passed

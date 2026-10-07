@@ -1,0 +1,92 @@
+verify-scoped: run  check-python — every check waits on it
+verify-scoped: skip lint-service — none of its inputs changed
+verify-scoped: run  lint-web — apps/web/src/styles/tokens.css changed
+verify-scoped: skip typecheck-service — none of its inputs changed
+verify-scoped: run  typecheck-web — apps/web/src/styles/tokens.css changed
+verify-scoped: run  check-imports — apps/web/src/styles/tokens.css changed
+verify-scoped: run  check-migrations — apps/web/src/styles/tokens.css changed
+verify-scoped: run  check-slice-scope — it compares the whole branch with its base
+verify-scoped: run  check-extensions — apps/web/src/styles/tokens.css changed
+verify-scoped: skip check-agents — none of its inputs changed
+verify-scoped: skip check-speckit — none of its inputs changed
+verify-scoped: run  check-codegraph — it reads every tracked file
+verify-scoped: run  check-ux-gates — apps/web/src/styles/tokens.css changed
+verify-scoped: skip check-constitution — none of its inputs changed
+verify-scoped: skip check-benchmark — none of its inputs changed
+verify-scoped: skip check-decisions — none of its inputs changed
+verify-scoped: skip test-service — none of its inputs changed
+verify-scoped: run  test-web — apps/web/src/styles/tokens.css changed
+verify-scoped: run  check-styles — apps/web/src/styles/tokens.css changed
+verify-scoped: run  check-model — apps/web/src/styles/tokens.css changed
+verify-scoped: skip check-drawio — none of its inputs changed
+verify-scoped: skip check-openapi — none of its inputs changed
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [12ms]
+npm --workspace apps/web run lint
+
+> s07demo-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 17 files in 5ms. No fixes applied.
+npm --workspace apps/web run typecheck
+
+> s07demo-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (121 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at ccec15a)
+python3 scripts/extensions/project.py --check
+check-extensions: 1 elected extension block(s) match
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: slice/S1 — previews scoped to what changed since ccec15a (the base of `main`); UX_GATES_SINCE=all renders every preview
+check-ux-gates: the slice's base — 4 render gate(s) over previews nothing changed, not rendered
+check-ux-gates: apps/web/screens/ — 1 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+
+Scanned 6 file(s).
+OK: no hardcoded values found.
+OK   /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens [dark] — all 0 text element(s) meet WCAG AA
+
+OK: every rendered text element meets WCAG 2.2 AA.
+OK   /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens — all 0 text element(s) meet WCAG AA
+
+OK: every rendered text element meets WCAG 2.2 AA.
+verify_responsive: OK — 2 file(s), no horizontal overflow at 280/320/414px
+verify_target_size: OK — 2 file(s), 0 targets @414/1280px, all >= 24x24 or exception-covered
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html [dark]
+OK: every interactive element passes WCAG AA in default, hover, and focus.
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/home.html [dark]
+OK: 0 violations.
+axe_audit: could not load axe-core (no local copy + no network) — SKIPPED
+check-ux-gates: passed where a gate could run; 4 unchanged since the slice's base, not rendered; 1 render gate(s) SKIPPED, not passed — each says above what it could not open
+npm --workspace apps/web test
+
+> s07demo-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  05:04:48
+   Duration  939ms (transform 115ms, setup 284ms, import 134ms, tests 282ms, environment 1.47s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+verify-scoped: 12 run, 10 skipped, compared with `main` at ccec15a; passed
