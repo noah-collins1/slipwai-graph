@@ -1,0 +1,15 @@
+$ (slice/S1, clean; last full run default-scoped and green) make verify
+check-ux-gates: slice/S1 — previews scoped to what changed since ccec15a (the base of `main`); UX_GATES_SINCE=all renders every preview
+check-ux-gates: the slice's base — 12 render gate(s) over previews nothing changed, not rendered
+check-ux-gates: apps/web/src — literal values outside the tokens
+check-ux-gates: every gate passed; 12 unchanged since the slice's base, not rendered
+
+$ UX_GATES_SINCE=all make verify
+check-ux-gates: UX_GATES_SINCE=all — every preview in scope
+check-ux-gates: apps/web/screens/ — 2 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+check-ux-gates: every gate passed
+verify: all gates passed
+
+$ UX_GATES_SINCE=all make verify   (again)
+verify: the full gate did not run; this tree already passed it at 2026-10-07T10:09:15Z (key a4123cec1fae); VERIFY_FORCE=1 runs it anyway

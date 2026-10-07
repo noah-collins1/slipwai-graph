@@ -1,0 +1,44 @@
+verify-scoped: no usable baseline (cannot read .specify/models.json (Permission denied)) — every check that reads a tool or a variable runs
+verify-scoped: the full gate runs, as `make verify` — every check was chosen
+verify: the full gate runs and this run records nothing — cannot read .specify/models.json (Permission denied)
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [12ms]
+npm --workspace apps/service run lint
+
+> s07demo-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 33 files in 19ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> s07demo-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 17 files in 5ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> s07demo-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> s07demo-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (121 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: a slice branch reaches outside what one slice may touch — compared with `main` at ccec15a
+
+  .specify/models.json: outside every deployable and not a slice's to write — shared configuration, tooling and docs are the host's. Land it on `main` before the fan-out, or hand it back as the question it is.
+
+make[2]: *** [Makefile:107: check-slice-scope] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make[1]: *** [Makefile:229: verify] Error 2
+make: *** [Makefile:262: verify-scoped] Error 2

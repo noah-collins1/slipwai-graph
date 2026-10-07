@@ -1,0 +1,45 @@
+verify-scoped: the full gate runs, as `make verify` — a file git ignores differs from the baseline
+verify-scoped: a check may have written one; `git status --ignored` shows it, and the next run records
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [12ms]
+npm --workspace apps/service run lint
+
+> s07demo-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 33 files in 23ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> s07demo-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 17 files in 4ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> s07demo-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> s07demo-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (121 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at ccec15a)
+python3 scripts/extensions/project.py --check
+check-extensions: 1 elected extension block(s) match
+python3 scripts/agents/project.py --check
+agent projection failed: agent projection drift:
+  - .claude/skills/acceptance-review/SKILL.md: differs from its canonical source
+make[2]: *** [Makefile:68: check-agents] Error 1
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make[1]: *** [Makefile:229: verify] Error 2
+make: *** [Makefile:262: verify-scoped] Error 2

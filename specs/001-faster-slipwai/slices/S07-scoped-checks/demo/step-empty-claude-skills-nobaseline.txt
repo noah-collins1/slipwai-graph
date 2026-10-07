@@ -1,0 +1,3 @@
+1:verify-scoped: dependency knowledge was incomplete for .claude/skills/ — an ignored projection directory with no files, whose existence the baseline cannot see
+2:verify-scoped: the full gate runs, as `make verify` — dependency knowledge was incomplete
+235:verify: the gate did not pass; each failed check is named above on a line carrying ***

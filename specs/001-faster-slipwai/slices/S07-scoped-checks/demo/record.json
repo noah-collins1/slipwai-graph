@@ -1,0 +1,623 @@
+{
+  "checks": {
+    "check-agents": {
+      "always": null,
+      "claims": true,
+      "components": [],
+      "gate": "check-agents",
+      "inputs": {
+        "files": [
+          ".claude/agents/",
+          ".claude/commands/",
+          ".claude/skills/",
+          ".specify/cruise.json",
+          ".specify/drive.json",
+          ".specify/integration.json",
+          ".specify/models.json",
+          "AGENTS.md",
+          "CLAUDE.md",
+          "agents/",
+          "commands/",
+          "skills/"
+        ],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-agents"
+      ]
+    },
+    "check-benchmark": {
+      "always": null,
+      "claims": true,
+      "components": [],
+      "gate": "check-benchmark",
+      "inputs": {
+        "files": [
+          ".specify/",
+          "AGENTS.md",
+          "agents/",
+          "commands/",
+          "docs/event-model/model.yaml",
+          "skills/",
+          "specs/"
+        ],
+        "tools": [
+          "git",
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-benchmark"
+      ]
+    },
+    "check-codegraph": {
+      "always": "it reads every tracked file",
+      "claims": false,
+      "components": [],
+      "gate": "check-codegraph",
+      "inputs": {
+        "files": [
+          "./"
+        ],
+        "tools": [
+          "git",
+          "make",
+          "python3"
+        ],
+        "variables": [
+          "CODEGRAPH_GATE_NO_SYNC"
+        ]
+      },
+      "targets": [
+        "check-codegraph"
+      ]
+    },
+    "check-constitution": {
+      "always": null,
+      "claims": true,
+      "components": [],
+      "gate": "check-constitution",
+      "inputs": {
+        "files": [
+          ".specify/memory/.constitution-template.json",
+          ".specify/memory/constitution.md",
+          ".specify/presets/",
+          ".specify/templates/constitution-template.md",
+          "specs/"
+        ],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-constitution"
+      ]
+    },
+    "check-decisions": {
+      "always": null,
+      "claims": true,
+      "components": [],
+      "gate": "check-decisions",
+      "inputs": {
+        "files": [
+          ".slipwai/propagated",
+          "docs/event-model/model.yaml",
+          "specs/"
+        ],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-decisions"
+      ]
+    },
+    "check-drawio": {
+      "always": null,
+      "claims": true,
+      "components": [],
+      "gate": "check-drawio",
+      "inputs": {
+        "files": [
+          "docs/event-model/model.drawio",
+          "docs/event-model/model.yaml"
+        ],
+        "tools": [
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-drawio"
+      ]
+    },
+    "check-extensions": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "web"
+      ],
+      "gate": "check-extensions",
+      "inputs": {
+        "files": [
+          ".slipwai/extensions.json",
+          "AGENTS.md",
+          "apps/web/"
+        ],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-extensions"
+      ]
+    },
+    "check-imports": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "service",
+        "web"
+      ],
+      "gate": "check-imports",
+      "inputs": {
+        "files": [
+          "apps/",
+          "apps/service/",
+          "apps/web/",
+          "packages/"
+        ],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-imports"
+      ]
+    },
+    "check-migrations": {
+      "always": null,
+      "claims": true,
+      "components": [],
+      "gate": "check-migrations",
+      "inputs": {
+        "files": [
+          "apps/",
+          "packages/"
+        ],
+        "tools": [
+          "git",
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-migrations"
+      ]
+    },
+    "check-model": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "service",
+        "web"
+      ],
+      "gate": "check-model",
+      "inputs": {
+        "files": [
+          "apps/service/",
+          "apps/web/",
+          "docs/event-model/"
+        ],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-model"
+      ]
+    },
+    "check-openapi": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "service"
+      ],
+      "gate": "check-openapi",
+      "inputs": {
+        "files": [
+          ".nvmrc",
+          "apps/service/",
+          "package-lock.json",
+          "package.json",
+          "packages/api-client/"
+        ],
+        "tools": [
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-openapi"
+      ]
+    },
+    "check-python": {
+      "always": "every check waits on it",
+      "claims": false,
+      "components": [],
+      "gate": "check-python",
+      "inputs": {
+        "files": [],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-python"
+      ]
+    },
+    "check-slice-scope": {
+      "always": "it compares the whole branch with its base",
+      "claims": false,
+      "components": [],
+      "gate": "check-slice-scope",
+      "inputs": {
+        "files": [
+          "./"
+        ],
+        "tools": [
+          "git",
+          "make",
+          "python3"
+        ],
+        "variables": [
+          "CI_COMMIT_REF_NAME",
+          "CI_MERGE_REQUEST_TARGET_BRANCH_NAME",
+          "GITHUB_BASE_REF",
+          "GITHUB_HEAD_REF"
+        ]
+      },
+      "targets": [
+        "check-slice-scope"
+      ]
+    },
+    "check-speckit": {
+      "always": null,
+      "claims": true,
+      "components": [],
+      "gate": "check-speckit",
+      "inputs": {
+        "files": [
+          ".claude/skills/speckit-analyze/SKILL.md",
+          ".claude/skills/speckit-checklist/SKILL.md",
+          ".claude/skills/speckit-clarify/SKILL.md",
+          ".claude/skills/speckit-constitution/SKILL.md",
+          ".claude/skills/speckit-converge/SKILL.md",
+          ".claude/skills/speckit-implement/SKILL.md",
+          ".claude/skills/speckit-plan/SKILL.md",
+          ".claude/skills/speckit-specify/SKILL.md",
+          ".claude/skills/speckit-tasks/SKILL.md",
+          ".claude/skills/speckit-taskstoissues/SKILL.md",
+          ".github/skills/speckit-analyze/SKILL.md",
+          ".github/skills/speckit-checklist/SKILL.md",
+          ".github/skills/speckit-clarify/SKILL.md",
+          ".github/skills/speckit-constitution/SKILL.md",
+          ".github/skills/speckit-converge/SKILL.md",
+          ".github/skills/speckit-implement/SKILL.md",
+          ".github/skills/speckit-plan/SKILL.md",
+          ".github/skills/speckit-specify/SKILL.md",
+          ".github/skills/speckit-tasks/SKILL.md",
+          ".github/skills/speckit-taskstoissues/SKILL.md",
+          ".specify/.gitignore",
+          ".specify/integrations/",
+          ".specify/memory/constitution.md",
+          ".specify/presets/",
+          ".specify/scripts/bash/check-prerequisites.sh",
+          ".specify/scripts/bash/common.sh",
+          ".specify/scripts/bash/create-new-feature.sh",
+          ".specify/scripts/bash/resolve-template.sh",
+          ".specify/scripts/bash/setup-plan.sh",
+          ".specify/scripts/bash/setup-tasks.sh",
+          ".specify/templates/checklist-template.md",
+          ".specify/templates/constitution-template.md",
+          ".specify/templates/plan-template.md",
+          ".specify/templates/spec-template.md",
+          ".specify/templates/tasks-template.md"
+        ],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-speckit"
+      ]
+    },
+    "check-styles": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "web"
+      ],
+      "gate": "check-styles",
+      "inputs": {
+        "files": [
+          "apps/web/"
+        ],
+        "tools": [
+          "make",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "check-styles"
+      ]
+    },
+    "check-ux-gates": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "web"
+      ],
+      "gate": "check-ux-gates",
+      "inputs": {
+        "files": [
+          ".github/workflows/verify.yml",
+          ".slipwai/extensions.json",
+          "AGENTS.md",
+          "apps/web/",
+          "package-lock.json"
+        ],
+        "tools": [
+          "git",
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": [
+          "CI_COMMIT_REF_NAME",
+          "CI_MERGE_REQUEST_TARGET_BRANCH_NAME",
+          "GITHUB_BASE_REF",
+          "GITHUB_HEAD_REF",
+          "SLIPWAI_NO_INSTALL",
+          "UX_GATES_REQUIRE",
+          "UX_GATES_SHARD",
+          "UX_GATES_SINCE"
+        ]
+      },
+      "targets": [
+        "check-ux-gates"
+      ]
+    },
+    "lint-service": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "service"
+      ],
+      "gate": "lint",
+      "inputs": {
+        "files": [
+          ".nvmrc",
+          "apps/service/",
+          "biome.jsonc",
+          "package-lock.json",
+          "package.json"
+        ],
+        "tools": [
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "lint-service"
+      ]
+    },
+    "lint-web": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "web"
+      ],
+      "gate": "lint",
+      "inputs": {
+        "files": [
+          ".nvmrc",
+          "apps/web/",
+          "biome.jsonc",
+          "package-lock.json",
+          "package.json"
+        ],
+        "tools": [
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "lint-web"
+      ]
+    },
+    "test-service": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "service"
+      ],
+      "gate": "test",
+      "inputs": {
+        "files": [
+          ".nvmrc",
+          "apps/service/",
+          "biome.jsonc",
+          "package-lock.json",
+          "package.json"
+        ],
+        "tools": [
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "test-service"
+      ]
+    },
+    "test-web": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "web"
+      ],
+      "gate": "test",
+      "inputs": {
+        "files": [
+          ".nvmrc",
+          "apps/web/",
+          "biome.jsonc",
+          "package-lock.json",
+          "package.json"
+        ],
+        "tools": [
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "test-web"
+      ]
+    },
+    "typecheck-service": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "service"
+      ],
+      "gate": "typecheck",
+      "inputs": {
+        "files": [
+          ".nvmrc",
+          "apps/service/",
+          "biome.jsonc",
+          "package-lock.json",
+          "package.json"
+        ],
+        "tools": [
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "typecheck-service"
+      ]
+    },
+    "typecheck-web": {
+      "always": null,
+      "claims": true,
+      "components": [
+        "web"
+      ],
+      "gate": "typecheck",
+      "inputs": {
+        "files": [
+          ".nvmrc",
+          "apps/web/",
+          "biome.jsonc",
+          "package-lock.json",
+          "package.json"
+        ],
+        "tools": [
+          "make",
+          "node",
+          "npm",
+          "python3"
+        ],
+        "variables": []
+      },
+      "targets": [
+        "typecheck-web"
+      ]
+    }
+  },
+  "contracts": [
+    {
+      "consumers": [
+        "web"
+      ],
+      "id": "openapi:service",
+      "kind": "openapi",
+      "owner": "service",
+      "paths": [
+        "apps/service/"
+      ]
+    },
+    {
+      "consumers": [
+        "service",
+        "web"
+      ],
+      "id": "package:api-client",
+      "kind": "package",
+      "owner": null,
+      "paths": [
+        "packages/api-client/"
+      ]
+    }
+  ],
+  "deployables": {
+    "service": {
+      "family": "typescript",
+      "kind": "service",
+      "path": "apps/service"
+    },
+    "web": {
+      "api": "service",
+      "family": "typescript",
+      "kind": "web",
+      "path": "apps/web"
+    }
+  },
+  "obligations": [],
+  "schema": 1
+}

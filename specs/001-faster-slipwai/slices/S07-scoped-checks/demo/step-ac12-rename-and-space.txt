@@ -1,0 +1,32 @@
+$ git mv apps/web/screens/plain.css apps/web/screens/renamed.css; git commit; make check-ux-gates
+check-ux-gates: slice/S1 — previews scoped to what changed since ccec15a (the base of `main`); UX_GATES_SINCE=all renders every preview
+check-ux-gates: the slice's base — 4 render gate(s) over previews nothing changed, not rendered
+check-ux-gates: apps/web/screens/ — 1 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+check-ux-gates: every gate passed; 4 unchanged since the slice's base, not rendered
+
+$ edit "apps/web/screens/plain page.html" (a space in its name); make check-ux-gates
+check-ux-gates: slice/S1 — previews scoped to what changed since ccec15a (the base of `main`); UX_GATES_SINCE=all renders every preview
+check-ux-gates: the slice's base — 4 render gate(s) over previews nothing changed, not rendered
+check-ux-gates: apps/web/screens/ — 1 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+check-ux-gates: every gate passed; 4 unchanged since the slice's base, not rendered
+
+$ edit apps/web/screens/plain.css; make check-ux-gates
+check-ux-gates: slice/S1 — previews scoped to what changed since ccec15a (the base of `main`); UX_GATES_SINCE=all renders every preview
+check-ux-gates: the slice's base — 4 render gate(s) over previews nothing changed, not rendered
+check-ux-gates: apps/web/screens/ — 1 preview(s) through the render gates on Playwright's Chromium, Chrome not being installed
+check-ux-gates: apps/web/src — literal values outside the tokens
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+Checked 0 element-state(s) in /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html [dark]
+axe-core WCAG 2.2 A/AA — /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web/screens/plain page.html
+check-ux-gates: every gate passed; 4 unchanged since the slice's base, not rendered

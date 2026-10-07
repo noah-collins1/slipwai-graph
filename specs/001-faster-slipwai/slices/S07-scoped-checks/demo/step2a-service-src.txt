@@ -1,0 +1,83 @@
+verify-scoped: run  check-python — every check waits on it
+verify-scoped: run  lint-service — apps/service/src/config.ts changed
+verify-scoped: skip lint-web — none of its inputs changed
+verify-scoped: run  typecheck-service — apps/service/src/config.ts changed
+verify-scoped: run  typecheck-web — consumes openapi:service (apps/service/src/config.ts)
+verify-scoped: run  check-imports — apps/service/src/config.ts changed
+verify-scoped: run  check-migrations — apps/service/src/config.ts changed
+verify-scoped: run  check-slice-scope — it compares the whole branch with its base
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: skip check-agents — none of its inputs changed
+verify-scoped: skip check-speckit — none of its inputs changed
+verify-scoped: run  check-codegraph — it reads every tracked file
+verify-scoped: skip check-ux-gates — none of its inputs changed
+verify-scoped: skip check-constitution — none of its inputs changed
+verify-scoped: skip check-benchmark — none of its inputs changed
+verify-scoped: skip check-decisions — none of its inputs changed
+verify-scoped: run  test-service — apps/service/src/config.ts changed
+verify-scoped: run  test-web — consumes openapi:service (apps/service/src/config.ts)
+verify-scoped: skip check-styles — none of its inputs changed
+verify-scoped: run  check-model — apps/service/src/config.ts changed
+verify-scoped: skip check-drawio — none of its inputs changed
+verify-scoped: run  check-openapi — apps/service/src/config.ts changed
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/packages/api-client/src/schema.ts [13ms]
+npm --workspace apps/service run lint
+
+> s07demo-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 33 files in 18ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> s07demo-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> s07demo-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (121 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (121 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at ccec15a)
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+npm --workspace apps/service test
+
+> s07demo-service@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/service
+
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  05:02:29
+   Duration  840ms (transform 348ms, setup 0ms, import 1.01s, tests 582ms, environment 1ms)
+
+npm --workspace apps/web test
+
+> s07demo-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /home/noahc/math/.cruise27/s07-demo/s07demo/s07demo/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  05:02:31
+   Duration  959ms (transform 103ms, setup 265ms, import 130ms, tests 283ms, environment 1.53s)
+
+python3 scripts/event-model/check.py
+check-model: valid
+verify-scoped: 12 run, 10 skipped, compared with `main` at ccec15a; passed

@@ -1,0 +1,49 @@
+=== .specify/scripts/bash/common.sh (named only by a Spec Kit manifest)
+exit 2
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: skip check-agents — none of its inputs changed
+verify-scoped: run  check-speckit — .specify/scripts/bash/common.sh changed
+verify-scoped: skip check-constitution — none of its inputs changed
+verify-scoped: 5 run, 17 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+=== .specify/presets/event-modelling/templates/plan-template.md
+exit 2
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: skip check-agents — none of its inputs changed
+verify-scoped: run  check-speckit — .specify/presets/event-modelling/templates/plan-template.md changed
+verify-scoped: run  check-constitution — .specify/presets/event-modelling/templates/plan-template.md changed
+verify-scoped: 6 run, 16 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+=== speckit.manifest.json does not parse
+exit 2
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: skip check-agents — none of its inputs changed
+verify-scoped: run  check-speckit — no recorded inputs
+verify-scoped: skip check-constitution — none of its inputs changed
+verify-scoped: 5 run, 17 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+record: check-speckit inputs None claims False
+=== .specify/integration.json does not parse
+exit 2
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: run  check-agents — no recorded inputs
+verify-scoped: skip check-speckit — none of its inputs changed
+verify-scoped: skip check-constitution — none of its inputs changed
+verify-scoped: 5 run, 17 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+record: check-agents inputs None claims False
+=== specs/001-demo/spec.md added (constitution still the template)
+exit 2
+verify-scoped: skip check-extensions — none of its inputs changed
+verify-scoped: skip check-agents — none of its inputs changed
+verify-scoped: skip check-speckit — none of its inputs changed
+verify-scoped: run  check-constitution — specs/001-demo/spec.md changed
+make[1]: *** [Makefile:117: check-constitution] Error 1
+verify-scoped: 6 run, 16 skipped, compared with `main` at ccec15a; the scoped gate did not pass — each failed check is named above on a line carrying ***
+make: *** [Makefile:262: verify-scoped] Error 2
+=== .specify/models.json unreadable (chmod 000)
+exit 2
+verify-scoped: the full gate runs, as `make verify` — every check was chosen
+verify: the gate did not pass; each failed check is named above on a line carrying ***
+make[1]: *** [Makefile:229: verify] Error 2
+make: *** [Makefile:262: verify-scoped] Error 2

@@ -1,0 +1,14 @@
+$ (slice/S1, nothing changed) make check-agents
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+exit 0
+
+$ (slice/S1) CI=1 make verify-scoped  [first lines]
+verify-scoped: the full gate runs, as `make verify` — CI is set, so this is a CI run
+verify: all gates passed
+
+$ (main) make verify-scoped  [first lines]
+verify-scoped: the full gate runs, as `make verify` — this is the trunk (`main`)
+verify: all gates passed
