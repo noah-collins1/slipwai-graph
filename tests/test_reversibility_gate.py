@@ -164,8 +164,16 @@ class ProposedRuleTest(unittest.TestCase):
         code, out, err = self.run_gate(entry(1), overridden, entry(3, proposed("D1", "D2")))
         self.assertEqual((0, ""), (code, err), out)
 
-    def test_e5_the_entrys_own_id_does_not_count(self) -> None:
-        self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D3", "D1"))), ": D3 ")
+    def test_e5_the_entrys_own_id_is_refused_naming_it(self) -> None:
+        self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D3", "D1"))), ": D3 ", "D3", "earlier")
+
+    def test_e5a_a_later_entry_is_refused_naming_it(self) -> None:
+        """L2 (AC-S26-15 'earlier'): D2 and D3 exist, but they are not before D1."""
+        found = self.run_gate(entry(1, proposed("D2", "D3")), entry(2), entry(3))
+        self.refused(found, ": D1 ", "D2, D3", "not earlier")
+        code, out, err = self.run_gate(entry(1), entry(2), entry(3), entry(4, proposed("D2", "D3")))
+        self.assertEqual((0, ""), (code, err), out)
+        self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D1", "D4")), entry(4)), ": D3 ", "D4")
 
     def test_e5b_a_period_after_the_citation_still_reads_it(self) -> None:
         code, out, err = self.run_gate(entry(1), entry(2), entry(3, proposed("D1", "D2") + "."))
@@ -179,7 +187,7 @@ class ProposedRuleTest(unittest.TestCase):
         self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D1") + " — as D2 did")), ": D3 ", "fewer")
 
     def test_e6_an_entry_without_the_line_is_never_refused(self) -> None:
-        code, out, err = self.run_gate(entry(1), entry(2, proposed("D1", "D3")), entry(3), entry(4))
+        code, out, err = self.run_gate(entry(1), entry(2), entry(3, proposed("D1", "D2")), entry(4))
         self.assertEqual((0, ""), (code, err), out)
 
 

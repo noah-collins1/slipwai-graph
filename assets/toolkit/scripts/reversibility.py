@@ -244,15 +244,18 @@ def line_findings(where: str, fields: Mapping[str, str], twice: set[str], reader
 
 
 def rule_findings(where: str, number: int, value: str, known: set[int]) -> list[str]:
-    """The findings for one entry's `Proposed rule:` value: two distinct cited ids other than its own, each an entry of
+    """The findings for one entry's `Proposed rule:` value: two distinct cited ids, each an earlier entry of
     the log (its `Status` is not read, D185). The ids counted are those in the parenthesis `(same shape as D<a>, D<b>)`,
     wherever it stands in the value and with any text after it, so a `D<n>` the sentence itself mentions is not one."""
     inside = re.findall(r"\(\s*same shape as([^()]*)\)", value, re.I)
     cited = {int(n) for n in re.findall(r"\bD([0-9]+)\b", " ".join(inside))}
     found = [f"{where} `Proposed rule` cites D{n}, which is no entry of this log" for n in sorted(cited - known)]
-    if len(cited - {number}) < 2:
-        found.append(f"{where} `Proposed rule` cites fewer than two entries other than its own "
-                     "(`(same shape as D<a>, D<b>)`)")
+    later = sorted(n for n in cited & known if n >= number)
+    if later:
+        found.append(f"{where} `Proposed rule` cites {', '.join(f'D{n}' for n in later)}, not earlier than D{number}; "
+                     "a citation names entries written before it")
+    if len(cited) < 2:
+        found.append(f"{where} `Proposed rule` cites fewer than two entries (`(same shape as D<a>, D<b>)`)")
     return found
 
 
