@@ -1,0 +1,11 @@
+diff --git a/assets/languages/go/app/health/health.go b/assets/languages/go/app/health/health.go
+index fe2e4ef..8d46d33 100644
+--- a/assets/languages/go/app/health/health.go
++++ b/assets/languages/go/app/health/health.go
+@@ -4,4 +4,5 @@ type Status struct {
+ 	Status string `json:"status"`
+ }
+ 
+-func Check() Status { return Status{Status: "ok"} }
++// Check reports the service as ready.
++func Check() Status { return Status{Status: "okay"} }

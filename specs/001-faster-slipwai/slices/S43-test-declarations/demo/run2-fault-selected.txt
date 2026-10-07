@@ -1,0 +1,124 @@
+# trimmed from /home/noahc/math/.cruise27/s43-demo/run2-fault-selected.log
+start 1791380029
+compared with `dbb723d` at dbb723d, named by SINCE — taken as passing on the word of whoever named it
+skipped test_code_index_health: reads no go configuration and none of the changed files
+skipped test_codegraph_memory: reads no go configuration and none of the changed files
+skipped test_codegraph_narrowed: reads no go configuration and none of the changed files
+skipped test_codegraph_races: reads no go configuration and none of the changed files
+skipped test_cruise_index: reads no go configuration and none of the changed files
+skipped test_cruise_runner: reads no go configuration and none of the changed files
+skipped test_decisions_scope: reads no go configuration and none of the changed files
+skipped test_decisions_scope_calls: reads no go configuration and none of the changed files
+skipped test_decisions_scope_edges: reads no go configuration and none of the changed files
+skipped test_decisions_scope_gate: reads no go configuration and none of the changed files
+skipped test_decisions_scope_spelling: reads no go configuration and none of the changed files
+skipped test_design_extensions: reads no go configuration and none of the changed files
+skipped test_drawio_canvas: reads no go configuration and none of the changed files
+skipped test_event_model: reads no go configuration and none of the changed files
+skipped test_factory_gate_stamp: reads no go configuration and none of the changed files
+skipped test_gate_walks: reads no go configuration and none of the changed files
+skipped test_gate_walks_pom: reads no go configuration and none of the changed files
+skipped test_gitea_pages: reads no go configuration and none of the changed files
+skipped test_go_mutation_file: reads no go configuration and none of the changed files
+skipped test_health_memory: reads no go configuration and none of the changed files
+skipped test_health_memory_states: reads no go configuration and none of the changed files
+skipped test_health_narrowed: reads no go configuration and none of the changed files
+skipped test_measures_fenced_tier: reads no go configuration and none of the changed files
+skipped test_migration_script: reads no go configuration and none of the changed files
+skipped test_mutation: reads no go configuration and none of the changed files
+skipped test_mutation_scope_real_spring: reads no go configuration and none of the changed files
+skipped test_parallel_slices: reads no go configuration and none of the changed files
+skipped test_pit_globs: reads no go configuration and none of the changed files
+skipped test_release: reads no go configuration and none of the changed files
+skipped test_render_browser: reads no go configuration and none of the changed files
+skipped test_render_current: reads no go configuration and none of the changed files
+skipped test_render_failures: reads no go configuration and none of the changed files
+skipped test_render_files: reads no go configuration and none of the changed files
+skipped test_render_files_report: reads no go configuration and none of the changed files
+skipped test_render_links: reads no go configuration and none of the changed files
+skipped test_render_once: reads no go configuration and none of the changed files
+skipped test_render_pinned: reads no go configuration and none of the changed files
+skipped test_reversibility_gate: reads no go configuration and none of the changed files
+skipped test_reversibility_labels: reads no go configuration and none of the changed files
+skipped test_reversibility_list: reads no go configuration and none of the changed files
+skipped test_reversibility_paths: reads no go configuration and none of the changed files
+skipped test_reversibility_score: reads no go configuration and none of the changed files
+skipped test_reversibility_versions: reads no go configuration and none of the changed files
+skipped test_reversibility_written: reads no go configuration and none of the changed files
+skipped test_select_tests_make: reads no go configuration and none of the changed files
+skipped test_select_tests_makefile: reads no go configuration and none of the changed files
+skipped test_select_tests_paths: reads no go configuration and none of the changed files
+skipped test_verify_stamp_key: reads no go configuration and none of the changed files
+skipped test_verify_stamp_reuse: reads no go configuration and none of the changed files
+skipped test_verify_stamp_stored: reads no go configuration and none of the changed files
+skipped test_verify_stamp_two_runs: reads no go configuration and none of the changed files
+skipped test_verify_stamp_working: reads no go configuration and none of the changed files
+skipped test_versions: reads no go configuration and none of the changed files
+narrowed test_images: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_line_widths: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_matrix: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_no_mocking_frameworks: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_postgres: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_readiness: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_stale_references: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+selected 335 of 388 modules against `dbb723d` at dbb723d
+selected 335 of 388 modules against `dbb723d` at dbb723d
+failed 3 of 335 modules: test_add_service, test_factory_gate_stamp_inputs, test_matrix
+
+## failures
+ERROR: test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate (test_add_service.AddServiceTest.test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate)
+A Go project generated with no frontend gets one; a TypeScript project with one gets a second,
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/noahc/math/slipwai-graph-S43-test-declarations/tests/test_add_service.py", line 138, in test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate
+    subprocess.run(["make", "verify"], cwd=repo, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['make', 'verify']' returned non-zero exit status 2.
+
+======================================================================
+FAIL: test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one (test_factory_gate_stamp_inputs.TestEveryVariableTheSuiteReadsIsAccountedFor.test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one)
+ERROR: test_every_distinct_variant_passes_its_native_repository_gate (test_matrix.MatrixTest.test_every_distinct_variant_passes_its_native_repository_gate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/noahc/math/slipwai-graph-S43-test-declarations/tests/test_matrix.py", line 52, in test_every_distinct_variant_passes_its_native_repository_gate
+    subprocess.run(["make", "verify"], cwd=repo, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['make', 'verify']' returned non-zero exit status 2.
+
+----------------------------------------------------------------------
+Ran 21 tests in 79.982s
+
+FAILED (errors=1, skipped=1)
+selected 335 of 388 modules against `dbb723d` at dbb723d
+failed 3 of 335 modules: test_add_service, test_factory_gate_stamp_inputs, test_matrix
+make: *** [Makefile:35: test] Error 1
+done rc=2 wall=2389s end=1791382418
+
+## generated-project go test lines
+175-	example.com/headless/service/eventstorecontract		coverage: 0.0% of statements
+176---- FAIL: TestReportsReady (0.00s)
+177:    health_test.go:7: got "okay"
+178-FAIL
+179-coverage: 0.1% of statements in ./...
+--
+5844-ok  	example.com/verify-standard-go-none/service/config	0.002s	coverage: 14.1% of statements in ./...
+5845---- FAIL: TestReportsReady (0.00s)
+5846:    health_test.go:7: got "okay"
+5847-FAIL
+5848-coverage: 0.5% of statements in ./...
+
+## tail
+Ran 2879 tests in 2305.897s
+FAILED (failures=1, errors=1, skipped=5)
+Ran 21 tests in 79.982s
+FAILED (errors=1, skipped=1)
+selected 335 of 388 modules against `dbb723d` at dbb723d
+failed 3 of 335 modules: test_add_service, test_factory_gate_stamp_inputs, test_matrix
+make: *** [Makefile:35: test] Error 1
+done rc=2 wall=2389s end=1791382418

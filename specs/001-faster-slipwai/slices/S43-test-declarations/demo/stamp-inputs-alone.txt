@@ -1,0 +1,45 @@
+echo 'selection off: TESTS given'; PYTHONPATH=src:tests python3 -m unittest -v test_factory_gate_stamp_inputs
+selection off: TESTS given
+test_a_value_that_is_blank_or_only_commas_is_refused_not_an_empty_matrix (test_factory_gate_stamp_inputs.TestABackendSliceThatNamesNoBackendIsAnError.test_a_value_that_is_blank_or_only_commas_is_refused_not_an_empty_matrix)
+make's `$(strip ...)` sees these as empty, so the stamped path runs; the suite must not pass over nothing. ... ok
+test_a_stand_in_tool_removed_from_a_path_that_holds_none_other_is_a_full_run (test_factory_gate_stamp_inputs.TestAListedToolLeavingPutsTheNextRunInFull.test_a_stand_in_tool_removed_from_a_path_that_holds_none_other_is_a_full_run)
+The `PATH` is built here so `tofu` is certainly absent after, whatever the host has installed. ... ok
+test_a_path_without_sort_never_reuses (test_factory_gate_stamp_inputs.TestCachesThatCannotBeListedAreNeverReused.test_a_path_without_sort_never_reuses)
+Where the caches under `assets/` cannot be listed, the probe line is unique to the run: no reuse. ... ok
+test_a_slice_of_the_suite_writes_no_probe_file (test_factory_gate_stamp_inputs.TestEveryToolTheSuiteLooksForIsAccountedFor.test_a_slice_of_the_suite_writes_no_probe_file) ... ok
+test_a_tool_the_tests_look_for_is_keyed_exempt_with_its_reason_or_keyed_through_the_probe_file (test_factory_gate_stamp_inputs.TestEveryToolTheSuiteLooksForIsAccountedFor.test_a_tool_the_tests_look_for_is_keyed_exempt_with_its_reason_or_keyed_through_the_probe_file) ... ok
+test_every_tool_acceptance_criterion_6_names_is_listed_with_ko_and_mvn (test_factory_gate_stamp_inputs.TestEveryToolTheSuiteLooksForIsAccountedFor.test_every_tool_acceptance_criterion_6_names_is_listed_with_ko_and_mvn) ... ok
+test_the_plugin_arriving_puts_the_next_run_in_full_and_the_run_after_reuses (test_factory_gate_stamp_inputs.TestEveryToolTheSuiteLooksForIsAccountedFor.test_the_plugin_arriving_puts_the_next_run_in_full_and_the_run_after_reuses)
+A stand-in `docker` answers `--version` the same throughout and fails `compose version` until it is told. ... ok
+test_the_real_tree_ignores_the_probe_file_and_the_key_does_not_exempt_it (test_factory_gate_stamp_inputs.TestEveryToolTheSuiteLooksForIsAccountedFor.test_the_real_tree_ignores_the_probe_file_and_the_key_does_not_exempt_it) ... ok
+test_the_tools_whose_absence_skips_an_image_or_wrapper_test_are_listed (test_factory_gate_stamp_inputs.TestEveryToolTheSuiteLooksForIsAccountedFor.test_the_tools_whose_absence_skips_an_image_or_wrapper_test_are_listed) ... ok
+test_a_bypass_writes_no_stamp_and_the_next_plain_run_is_full (test_factory_gate_stamp_inputs.TestEveryVariableTheSuiteReadsIsAccountedFor.test_a_bypass_writes_no_stamp_and_the_next_plain_run_is_full) ... ok
+test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one (test_factory_gate_stamp_inputs.TestEveryVariableTheSuiteReadsIsAccountedFor.test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one) ... FAIL
+test_a_site_the_scanners_cannot_read_is_listed_with_its_reason (test_factory_gate_stamp_inputs.TestEveryVariableTheSuiteReadsIsAccountedFor.test_a_site_the_scanners_cannot_read_is_listed_with_its_reason) ... ok
+test_each_bypass_runs_the_checks_straight_and_leaves_the_stamp_alone (test_factory_gate_stamp_inputs.TestEveryVariableTheSuiteReadsIsAccountedFor.test_each_bypass_runs_the_checks_straight_and_leaves_the_stamp_alone) ... ok
+test_i_with_a_failing_check_exits_0_writes_no_stamp_and_the_next_run_is_full (test_factory_gate_stamp_inputs.TestTheRootRecipeUnderMakesOwnFlags.test_i_with_a_failing_check_exits_0_writes_no_stamp_and_the_next_run_is_full) ... ok
+test_k_with_a_failing_check_exits_2_names_the_failure_and_writes_no_stamp (test_factory_gate_stamp_inputs.TestTheRootRecipeUnderMakesOwnFlags.test_k_with_a_failing_check_exits_2_names_the_failure_and_writes_no_stamp) ... ok
+test_n_starts_no_check_and_leaves_every_stamp_byte_alone (test_factory_gate_stamp_inputs.TestTheRootRecipeUnderMakesOwnFlags.test_n_starts_no_check_and_leaves_every_stamp_byte_alone) ... ok
+test_q_exits_1_and_says_nothing_on_a_tree_that_needs_the_checks (test_factory_gate_stamp_inputs.TestTheRootRecipeUnderMakesOwnFlags.test_q_exits_1_and_says_nothing_on_a_tree_that_needs_the_checks) ... ok
+
+======================================================================
+FAIL: test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one (test_factory_gate_stamp_inputs.TestEveryVariableTheSuiteReadsIsAccountedFor.test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/noahc/math/slipwai-graph-S43-test-declarations/tests/test_factory_gate_stamp_inputs.py", line 128, in test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one
+    self.assertEqual(sorted(reads() - set(BYPASSES) - set(UNCHANGING)), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['SELECTED_TEST_MODULES'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'SELECTED_TEST_MODULES'
+
+- ['SELECTED_TEST_MODULES']
++ []
+
+----------------------------------------------------------------------
+Ran 17 tests in 29.755s
+
+FAILED (failures=1)
+make: *** [Makefile:35: test] Error 1

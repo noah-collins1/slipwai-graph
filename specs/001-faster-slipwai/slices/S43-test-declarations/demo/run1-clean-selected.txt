@@ -1,0 +1,280 @@
+# trimmed from /home/noahc/math/.cruise27/s43-demo/run1-selected.log
+start 1791377517
+compared with `dbb723d` at dbb723d, named by SINCE — taken as passing on the word of whoever named it
+skipped test_code_index_health: reads no go configuration and none of the changed files
+skipped test_codegraph_memory: reads no go configuration and none of the changed files
+skipped test_codegraph_narrowed: reads no go configuration and none of the changed files
+skipped test_codegraph_races: reads no go configuration and none of the changed files
+skipped test_cruise_index: reads no go configuration and none of the changed files
+skipped test_cruise_runner: reads no go configuration and none of the changed files
+skipped test_decisions_scope: reads no go configuration and none of the changed files
+skipped test_decisions_scope_calls: reads no go configuration and none of the changed files
+skipped test_decisions_scope_edges: reads no go configuration and none of the changed files
+skipped test_decisions_scope_gate: reads no go configuration and none of the changed files
+skipped test_decisions_scope_spelling: reads no go configuration and none of the changed files
+skipped test_design_extensions: reads no go configuration and none of the changed files
+skipped test_drawio_canvas: reads no go configuration and none of the changed files
+skipped test_event_model: reads no go configuration and none of the changed files
+skipped test_factory_gate_stamp: reads no go configuration and none of the changed files
+skipped test_gate_walks: reads no go configuration and none of the changed files
+skipped test_gate_walks_pom: reads no go configuration and none of the changed files
+skipped test_gitea_pages: reads no go configuration and none of the changed files
+skipped test_go_mutation_file: reads no go configuration and none of the changed files
+skipped test_health_memory: reads no go configuration and none of the changed files
+skipped test_health_memory_states: reads no go configuration and none of the changed files
+skipped test_health_narrowed: reads no go configuration and none of the changed files
+skipped test_measures_fenced_tier: reads no go configuration and none of the changed files
+skipped test_migration_script: reads no go configuration and none of the changed files
+skipped test_mutation: reads no go configuration and none of the changed files
+skipped test_mutation_scope_real_spring: reads no go configuration and none of the changed files
+skipped test_parallel_slices: reads no go configuration and none of the changed files
+skipped test_pit_globs: reads no go configuration and none of the changed files
+skipped test_release: reads no go configuration and none of the changed files
+skipped test_render_browser: reads no go configuration and none of the changed files
+skipped test_render_current: reads no go configuration and none of the changed files
+skipped test_render_failures: reads no go configuration and none of the changed files
+skipped test_render_files: reads no go configuration and none of the changed files
+skipped test_render_files_report: reads no go configuration and none of the changed files
+skipped test_render_links: reads no go configuration and none of the changed files
+skipped test_render_once: reads no go configuration and none of the changed files
+skipped test_render_pinned: reads no go configuration and none of the changed files
+skipped test_reversibility_gate: reads no go configuration and none of the changed files
+skipped test_reversibility_labels: reads no go configuration and none of the changed files
+skipped test_reversibility_list: reads no go configuration and none of the changed files
+skipped test_reversibility_paths: reads no go configuration and none of the changed files
+skipped test_reversibility_score: reads no go configuration and none of the changed files
+skipped test_reversibility_versions: reads no go configuration and none of the changed files
+skipped test_reversibility_written: reads no go configuration and none of the changed files
+skipped test_select_tests_make: reads no go configuration and none of the changed files
+skipped test_select_tests_makefile: reads no go configuration and none of the changed files
+skipped test_select_tests_paths: reads no go configuration and none of the changed files
+skipped test_verify_stamp_key: reads no go configuration and none of the changed files
+skipped test_verify_stamp_reuse: reads no go configuration and none of the changed files
+skipped test_verify_stamp_stored: reads no go configuration and none of the changed files
+skipped test_verify_stamp_two_runs: reads no go configuration and none of the changed files
+skipped test_verify_stamp_working: reads no go configuration and none of the changed files
+skipped test_versions: reads no go configuration and none of the changed files
+narrowed test_images: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_line_widths: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_matrix: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_no_mocking_frameworks: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_postgres: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_readiness: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_stale_references: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+selected 335 of 388 modules against `dbb723d` at dbb723d
+selected 335 of 388 modules against `dbb723d` at dbb723d
+failed 1 of 335 modules: test_factory_gate_stamp_inputs
+
+## failures
+FAIL: test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one (test_factory_gate_stamp_inputs.TestEveryVariableTheSuiteReadsIsAccountedFor.test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/noahc/math/slipwai-graph-S43-test-declarations/tests/test_factory_gate_stamp_inputs.py", line 128, in test_a_name_the_tests_read_is_a_bypass_or_has_its_reason_for_not_being_one
+    self.assertEqual(sorted(reads() - set(BYPASSES) - set(UNCHANGING)), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['SELECTED_TEST_MODULES'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'SELECTED_TEST_MODULES'
+
+- ['SELECTED_TEST_MODULES']
++ []
+
+----------------------------------------------------------------------
+Ran 2879 tests in 2323.605s
+
+FAILED (failures=1, skipped=5)
+test_every_backends_image_starts_and_answers_its_probe (test_images.ImagesTest.test_every_backends_image_starts_and_answers_its_probe) ... 
+  test_every_backends_image_starts_and_answers_its_probe (test_images.ImagesTest.test_every_backends_image_starts_and_answers_its_probe) (backend='go') ... skipped "ko is needed for the go image; the factory's CI installs it"
+created: /tmp/tmpkmq_ei57/go-0/widths-at-the-longest-supported-project-name
+test_no_generated_line_is_too_wide_for_a_long_project_name (test_line_widths.LineWidthTest.test_no_generated_line_is_too_wide_for_a_long_project_name) ... ok
+test_the_check_measures_something (test_line_widths.LineWidthTest.test_the_check_measures_something)
+created: /tmp/tmpyjoav4iy/widths-python
+created: /tmp/tmpyjoav4iy/widths-java
+The reader of the limits, held to a project that has both — a sweep that found neither would ... ok
+test_a_go_service_importing_a_workspace_module_is_mutation_tested (test_matrix.MatrixTest.test_a_go_service_importing_a_workspace_module_is_mutation_tested)
+created: /tmp/tmpe0wm0cr2/mutation-go
+`make mutation` on the layout `docs/architecture.md` prescribes for shared Go code. ... ok
+created: /tmp/tmp4b1jm9bt/verify-standard-go-none
+make[1]: Entering directory '/tmp/tmp4b1jm9bt/verify-standard-go-none'
+test -z "$(gofmt -l apps/service)"
+cd apps/service && go vet ./...
+cd apps/service && go tool staticcheck ./...
+cd apps/service && go test -run '^$' ./...
+ok  	example.com/verify-standard-go-none/service/adapters/driving/http	0.002s [no tests to run]
+?   	example.com/verify-standard-go-none/service/cmd/serve	[no test files]
+ok  	example.com/verify-standard-go-none/service/config	0.002s [no tests to run]
+ok  	example.com/verify-standard-go-none/service/health	0.001s [no tests to run]
+ok  	example.com/verify-standard-go-none/service/observability	0.003s [no tests to run]
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (30 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (30 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+go tool covdata percent -i=. >/dev/null 2>&1 || true
+cd apps/service && go test -coverpkg=./... -coverprofile=coverage.out ./...
+ok  	example.com/verify-standard-go-none/service/adapters/driving/http	0.004s	coverage: 40.7% of statements in ./...
+	example.com/verify-standard-go-none/service/cmd/serve		coverage: 0.0% of statements
+ok  	example.com/verify-standard-go-none/service/config	0.002s	coverage: 14.1% of statements in ./...
+ok  	example.com/verify-standard-go-none/service/health	0.002s	coverage: 0.5% of statements in ./...
+ok  	example.com/verify-standard-go-none/service/observability	0.003s	coverage: 13.1% of statements in ./...
+python3 scripts/go-coverage.py apps/service 70
+  example.com/verify-standard-go-none/service/adapters/driving/http    94.2%  (81/86 statements)
+  example.com/verify-standard-go-none/service/config                   96.6%  (28/29 statements)
+  example.com/verify-standard-go-none/service/health                  100.0%  (1/1 statements)
+  example.com/verify-standard-go-none/service/observability            89.7%  (26/29 statements)
+  example.com/verify-standard-go-none/service/cmd/serve              not counted: entry point
+coverage: 93.8% of 145 statements, at or above the 70% minimum
+
+verify: all gates passed
+make[1]: Leaving directory '/tmp/tmp4b1jm9bt/verify-standard-go-none'
+created: /tmp/tmp4b1jm9bt/verify-event-modelling-go-react-vite
+make[1]: Entering directory '/tmp/tmp4b1jm9bt/verify-event-modelling-go-react-vite'
+npm ci
+
+added 154 packages, and audited 157 packages in 2s
+
+33 packages are looking for funding
+  run `npm fund` for details
+
+7 high severity vulnerabilities
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.yaml --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.yaml → file:///tmp/tmp4b1jm9bt/verify-event-modelling-go-react-vite/packages/api-client/src/schema.ts [15ms]
+test -z "$(gofmt -l apps/service)"
+cd apps/service && go vet ./...
+cd apps/service && go tool staticcheck ./...
+npm --workspace apps/web run lint
+
+> verify-event-modelling-go-react-vite-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+cd apps/service && go test -run '^$' ./...
+ok  	example.com/verify-event-modelling-go-react-vite/service/adapters/driven/checkpointstorememory	0.002s [no tests to run]
+?   	example.com/verify-event-modelling-go-react-vite/service/adapters/driven/checkpointstorepostgres	[no test files]
+ok  	example.com/verify-event-modelling-go-react-vite/service/adapters/driven/eventstorememory	0.002s [no tests to run]
+?   	example.com/verify-event-modelling-go-react-vite/service/adapters/driven/eventstorepostgres	[no test files]
+ok  	example.com/verify-event-modelling-go-react-vite/service/adapters/driving/http	0.002s [no tests to run]
+?   	example.com/verify-event-modelling-go-react-vite/service/application/ports/events	[no test files]
+?   	example.com/verify-event-modelling-go-react-vite/service/application/ports/readmodels	[no test files]
+?   	example.com/verify-event-modelling-go-react-vite/service/checkpointstorecontract	[no test files]
+ok  	example.com/verify-event-modelling-go-react-vite/service/cmd/migrate	0.002s [no tests to run]
+?   	example.com/verify-event-modelling-go-react-vite/service/cmd/serve	[no test files]
+ok  	example.com/verify-event-modelling-go-react-vite/service/config	0.002s [no tests to run]
+?   	example.com/verify-event-modelling-go-react-vite/service/eventstorecontract	[no test files]
+ok  	example.com/verify-event-modelling-go-react-vite/service/health	0.001s [no tests to run]
+?   	example.com/verify-event-modelling-go-react-vite/service/migrations	[no test files]
+ok  	example.com/verify-event-modelling-go-react-vite/service/observability	0.003s [no tests to run]
+ok  	example.com/verify-event-modelling-go-react-vite/service/projections	0.001s [no tests to run]
+npm --workspace apps/web run typecheck
+
+> verify-event-modelling-go-react-vite-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (92 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (92 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+go tool covdata percent -i=. >/dev/null 2>&1 || true
+cd apps/service && go test -coverpkg=./... -coverprofile=coverage.out ./...
+ok  	example.com/verify-event-modelling-go-react-vite/service/adapters/driven/checkpointstorememory	0.005s	coverage: 16.0% of statements in ./...
+	example.com/verify-event-modelling-go-react-vite/service/adapters/driven/checkpointstorepostgres		coverage: 0.0% of statements
+ok  	example.com/verify-event-modelling-go-react-vite/service/adapters/driven/eventstorememory	0.004s	coverage: 40.5% of statements in ./...
+	example.com/verify-event-modelling-go-react-vite/service/adapters/driven/eventstorepostgres		coverage: 0.0% of statements
+ok  	example.com/verify-event-modelling-go-react-vite/service/adapters/driving/http	0.006s	coverage: 4.6% of statements in ./...
+	example.com/verify-event-modelling-go-react-vite/service/application/ports/events		coverage: 0.0% of statements
+?   	example.com/verify-event-modelling-go-react-vite/service/application/ports/readmodels	[no test files]
+	example.com/verify-event-modelling-go-react-vite/service/checkpointstorecontract		coverage: 0.0% of statements
+ok  	example.com/verify-event-modelling-go-react-vite/service/cmd/migrate	0.011s	coverage: 0.5% of statements in ./...
+	example.com/verify-event-modelling-go-react-vite/service/cmd/serve		coverage: 0.0% of statements
+ok  	example.com/verify-event-modelling-go-react-vite/service/config	0.004s	coverage: 2.0% of statements in ./...
+	example.com/verify-event-modelling-go-react-vite/service/eventstorecontract		coverage: 0.0% of statements
+ok  	example.com/verify-event-modelling-go-react-vite/service/health	0.006s	coverage: 0.1% of statements in ./...
+?   	example.com/verify-event-modelling-go-react-vite/service/migrations	[no test files]
+ok  	example.com/verify-event-modelling-go-react-vite/service/observability	0.004s	coverage: 1.5% of statements in ./...
+ok  	example.com/verify-event-modelling-go-react-vite/service/projections	0.966s	coverage: 10.9% of statements in ./...
+python3 scripts/go-coverage.py apps/service 70
+  example.com/verify-event-modelling-go-react-vite/service/adapters/driven/checkpointstorememory     100.0%  (11/11 statements)
+  example.com/verify-event-modelling-go-react-vite/service/adapters/driven/eventstorememory           98.8%  (167/169 statements)
+  example.com/verify-event-modelling-go-react-vite/service/adapters/driving/http                      94.2%  (81/86 statements)
+  example.com/verify-event-modelling-go-react-vite/service/application/ports/events                   96.4%  (27/28 statements)
+  example.com/verify-event-modelling-go-react-vite/service/checkpointstorecontract                    86.9%  (186/214 statements)
+  example.com/verify-event-modelling-go-react-vite/service/config                                     94.6%  (35/37 statements)
+  example.com/verify-event-modelling-go-react-vite/service/eventstorecontract                         86.3%  (536/621 statements)
+  example.com/verify-event-modelling-go-react-vite/service/health                                    100.0%  (1/1 statements)
+  example.com/verify-event-modelling-go-react-vite/service/observability                              89.7%  (26/29 statements)
+  example.com/verify-event-modelling-go-react-vite/service/projections                                91.5%  (86/94 statements)
+  example.com/verify-event-modelling-go-react-vite/service/adapters/driven/checkpointstorepostgres  not counted: tests run under make test-integration
+  example.com/verify-event-modelling-go-react-vite/service/adapters/driven/eventstorepostgres       not counted: tests run under make test-integration
+  example.com/verify-event-modelling-go-react-vite/service/cmd/migrate                              not counted: entry point
+  example.com/verify-event-modelling-go-react-vite/service/cmd/serve                                not counted: entry point
+
+## generated-project go test lines
+
+## tail
+Ran 2879 tests in 2323.605s
+FAILED (failures=1, skipped=5)
+Ran 21 tests in 106.241s
+OK (skipped=1)
+selected 335 of 388 modules against `dbb723d` at dbb723d
+failed 1 of 335 modules: test_factory_gate_stamp_inputs
+make: *** [Makefile:35: test] Error 1
+done rc=2 wall=2433s end=1791379950
