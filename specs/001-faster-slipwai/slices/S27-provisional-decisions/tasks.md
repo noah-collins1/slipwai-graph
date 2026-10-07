@@ -242,7 +242,7 @@ neither, so the two chains are disjoint (Phase 5).
   Files: `src/slipwai/project/cruise_provisional.py`, `src/slipwai/project/cruise.py`,
   `assets/toolkit/scripts/agents/cruise.py`, `docs/cruise.md`, `tests/test_cruise_provisional_writers.py`.
 
-- [ ] T013 [US8] **R12 — the command and the briefs say it** (AC-S27-5 last clause, -6, -10 advisory park, -15 first
+- [x] T013 [US8] **R12 — the command and the briefs say it** (AC-S27-5 last clause, -6, -10 advisory park, -15 first
   half; D198, D200, D201; P5). New constants in `cruise_provisional.py` (`PROVISIONAL_VERB`, `AUDIT_VERB`, `MODE_VERB`,
   the command's provisional paragraph, the audit sentence, the mode-check sentence, the skipper's paragraph, the
   stop-row exception, the settings-words sentence), interpolated, never inlined in the capped files:
