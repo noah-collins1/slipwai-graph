@@ -270,7 +270,7 @@ neither, so the two chains are disjoint (Phase 5).
   `src/slipwai/project/cruise_stops.py`, `src/slipwai/project/decisions.py`, `docs/cruise.md`,
   `tests/test_cruise_provisional_writers.py`, `tests/test_cruise_record.py`, `tests/test_reversibility_writers.py`.
 
-- [ ] T014 [US8] **R13 — a project made before** (AC-S27-17; D196). `tests/test_provisional_migrate.py` takes the
+- [x] T014 [US8] **R13 — a project made before** (AC-S27-17; D196). `tests/test_provisional_migrate.py` takes the
   factory at `5f4fc00` with `git archive` (as `test_reversibility_migrate` does) into a scratch dir, generates a
   project there, runs this checkout's `slipwai migrate`; and completes `changelog.d/provisional-decisions.md`: first
   line `MINOR`, one standalone **Catch-up.** paragraph naming the three new values, that they are off by default and
