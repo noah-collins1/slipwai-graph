@@ -223,10 +223,32 @@ and only if a planted-fault case needs a module of its own, `tests/test_select_t
 **Run:** `make test TESTS="test_select_tests_real_declared test_select_tests_real_loaders test_select_tests_real_backends test_select_tests_real_helpers"` plus every module it declared.
 **Done when:** every S07 module is declared and held, or listed below with its reason.
 
+### T009 — `check-decisions` declares the reversibility list S26 makes it read (S26 converge O1, MEDIUM)
+
+S26 (merging into `adopt-method` before S07) makes the toolkit's `check-decisions` also read `.slipwai/propagated` in a
+generated project and `<delivery>/.written` in an adopted one, through a new `scripts/reversibility.py`. Without a row
+entry a scoped run skips `check-decisions` after a change to the list alone. On this branch: `scripts/reversibility.py`
+is under `scripts/`, so any change to it is already the full gate (`choose.unknown`, *it is a gate script*), and needs no
+row entry; `<delivery>/.written` exists only in an adopted repository, whose `verify-scoped` is always the full gate
+(D114 item 3), so it needs none either — both said in a comment on the row. `.slipwai/propagated` is added to
+`check-decisions`' files now (it does not need S26's code to be declared).
+**RED** — in `tests/test_verify_scoped_methods.py` (or a new module if it nears 350): the record's `check-decisions`
+files include `.slipwai/propagated`; on a slice branch with a baseline, a change to `.slipwai/propagated` alone runs
+`check-decisions` naming it (today: unclaimed, so the full gate).
+**GREEN** — the entry in `table.py`.
+**After the host rebases S07 onto S26's merge:** run `test_verify_scoped_table_held` (the literal-path scan then walks
+`reversibility.py` and must find `.slipwai/propagated` covered; if it raises the `.written` literal, it gets a reasoned
+`NOT_AN_INPUT` entry: adopted layout only, always the full gate there) and `test_verify_scoped_held`.
+**Files:** `assets/toolkit/scripts/verify_scoped/table.py`, `tests/test_verify_scoped_methods.py`.
+**Run:** `make test TESTS="test_verify_scoped_methods test_verify_scoped_record test_verify_scoped_table_held"` and TK.
+
 ### Undeclared modules (AC-S07-15; carried onto S43's AC-S43-7 list at the merge)
 
 | Module | The selector's reason |
 |---|---|
+| `tests/test_ux_gates_default.py` | it imports `tests/test_design_extensions.py`, which declares nothing |
+| `tests/test_ux_gates_borders.py` | it imports `tests/parallel_gate.py`, which declares nothing |
+| `tests/test_verify_scoped_methods_run.py` | it imports `tests/parallel_gate.py`, which declares nothing |
 
 ## Phase 2: After acceptance (host tasks)
 
@@ -244,9 +266,9 @@ Both full gates on the final tip; the register row and benchmark close; the demo
 
 ## Phase list
 
-Phase 1 Implementation (T001–T008; T008 after T007, from D188); Phase 2 After acceptance (host).
+Phase 1 Implementation (T001–T009; order T007, T009, then T008, from D188); Phase 2 After acceptance (host).
 
-**Done:** T001 (`bf319cc`, `0af5588`), T002 (`d723281`), T003 (`6830517`), T004 (`a510c86`).
+**Done:** T001 (`bf319cc`, `0af5588`), T002 (`d723281`), T003 (`6830517`), T004 (`a510c86`), T005 (`daef4d8`), T006 (`048e3c7`; the default lives in new `verify_scoped/since.py`, which reads git's `changed_files` for the tree and `changes.raw_differs` only for the previews, their stylesheets and the four every-preview files, so the audit hold stays true).
 
 ## Differences from plan.md
 
