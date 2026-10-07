@@ -130,7 +130,7 @@ class BordersTest(FactoryTestCase):
         git(self.repo, "branch", "-q", "-D", "main")
         done = self.run_script()
         first = (done.stdout.splitlines() or [""])[0]
-        self.assertTrue(first.startswith(SWEEPS + f"{SLICE} has no usable base"), first + done.stderr)
+        self.assertTrue(first.startswith(SWEEPS + f"no usable base: {SLICE} has no `main`"), first + done.stderr)
         self.assertEqual(calls(self.log), [FULL])
 
     def test_e6_a_directory_git_cannot_read_still_sweeps(self) -> None:
