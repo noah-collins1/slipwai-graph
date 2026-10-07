@@ -39,9 +39,9 @@ def old_factory(directory: str) -> Path:
     return old
 
 
-def make(repo: Path, target: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["make", target], cwd=repo, env=clean(HOME=str(repo / ".home-none")), text=True,
-                          capture_output=True, timeout=120)
+def make(repo: Path, target: str, *arguments: str, timeout: int = 120) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["make", target, *arguments], cwd=repo, env=clean(HOME=str(repo / ".home-none")),
+                          text=True, capture_output=True, timeout=timeout)
 
 
 def commit(repo: Path, message: str) -> None:
@@ -102,6 +102,25 @@ class AProjectMadeBeforeKeepsItsLogAfterMigrateTest(FactoryTestCase):
             notes = squashed((repo / ".slipwai/catch-up.md").read_text(encoding="utf-8"))
             self.assertIn("`Reversibility:`", notes)
             self.assertIn("`scripts/reversibility.py`", notes)
+
+    def test_e1_the_migrated_project_passes_its_whole_gate(self) -> None:
+        """AC-S26-16: after `migrate`, `make verify` passes. Passes once written (a guard, not a RED).
+
+        The gate is run whole: on this starter it takes about nine seconds, and it holds `lint`, `check-decisions`,
+        `check-agents` and `check-speckit`, which read the files `migrate` brought (the verb, the committed list,
+        the command, the owner brief). `VERIFY_FORCE=1` so a stamp from before the merge cannot stand in for it.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            repo = made_before(directory)
+            result = migrated(directory, repo)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+            gate = make(repo, "verify", "VERIFY_FORCE=1", timeout=400)
+
+            self.assertEqual(gate.returncode, 0, gate.stdout[-3000:] + gate.stderr[-3000:])
+            self.assertIn("verify: all gates passed", gate.stdout)
+            for check in ("lint", "check-decisions"):
+                self.assertEqual(make(repo, check).returncode, 0, check)
 
     def test_e1_an_owner_brief_the_project_edited_keeps_its_paragraph(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
