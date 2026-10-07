@@ -11,6 +11,7 @@ import importlib
 import os
 import re
 import sys
+import unittest
 from pathlib import Path
 from typing import Any
 
@@ -35,32 +36,49 @@ DERIVED_NOT_READ = {
 FOUR = ("check-agents", "check-speckit", "check-extensions", "check-constitution")
 # Read by a check and handled outside the table: a changed one runs the full gate (R5), or it is the gate's own.
 ROOT_OWN = ("project.json", "Makefile", "GNUmakefile", "makefile", "scripts", ".git")
-# A literal that names a path-looking thing a check does not read as an input of the project: the reason is the value.
-NOT_AN_INPUT = {
-    ".": "the project's own directory, as a working directory",
-    "init": "a subcommand of a tool a check launches, not a path",
-    ".claude/projects": "under the user's home (`Path.home()`), where the benchmark reads session transcripts",
-    "agents": "a key of a benchmark.json stage, not a path",
-    # The four method-file checks (R-1, R-9): what their scripts name that `--check` never reads.
-    ".claude/settings.json": "a control path of `agents/cruise.py` (`CONTROL_PATHS`), read by `run` and its guard",
-    ".github/workflows": "a control path of `agents/cruise.py` (`CONTROL_PATHS`), read by `run` and its guard",
-    ".specify/cruise-inbox.jsonl": "`agents/cruise.py`'s run file, read and written by `run`/`watch`/`tell`",
-    ".specify/cruise-last-response.txt": "`agents/cruise.py`'s run file, written by `run`",
-    ".specify/cruise-run.log": "`agents/cruise.py`'s run file, written by `run`",
-    ".specify/cruise-stream.jsonl": "`agents/cruise.py`'s run file, written by `run`",
-    ".specify/cruise-told.jsonl": "`agents/cruise.py`'s run file, written by `tell`",
-    ".specify/cruise-watch.cursor": "`agents/cruise.py`'s run file, written by `watch`",
-    ".specify/cruise.pid": "`agents/cruise.py`'s run file; `--check` only runs `load()` of `.specify/cruise.json`",
-    ".specify/cruise.stop": "`agents/cruise.py`'s run file; `--check` only runs `load()` of `.specify/cruise.json`",
-    "docs/event-model/model.yaml": "read by `agents/benchmark.py` and `measures.py` (imported by `cruise.py`), whose "
-                                   "`check` is a gate of its own (`check-benchmark`), not of the four `--check`s",
-    ".specify/integration.json": "`extensions/guidance.installed_harnesses`, called by `write_project_mcp` on the "
-                                 "write paths of an extension's `init.py`; `extensions/project.py --check` never does",
-    "agents/registry.json": "`scripts/agents/registry.json` beside the script (its first segment is the root's own "
-                            "`agents/`): a gate script, so the full gate already",
-}
-# The same, for one check only (the reason is the value): a literal the other checks' rows would still have to cover.
+
+
+def for_checks(checks: tuple[str, ...], literal: str, reason: str) -> dict[tuple[str, str], str]:
+    """One exemption for each check it was written for: a check not named is not excused by it."""
+    return {(check, literal): reason for check in checks}
+
+
+# A literal that names a path-looking thing one check does not read as an input of the project, by (check, literal): the
+# reason is the value. A literal the other checks' rows would still have to cover is never excused for them, and an
+# entry its check no longer fires is stale.
 NOT_AN_INPUT_FOR = {
+    **for_checks(("check-agents", "check-benchmark", "check-decisions", "check-deploy-role", "check-extensions",
+                  "check-imports", "check-migrations", "check-model", "check-styles", "check-ux-gates"), ".",
+                 "the project's own directory, as a working directory"),
+    **for_checks(("check-agents", "check-ux-gates"), "init", "a subcommand of a tool a check launches, not a path"),
+    **for_checks(("check-agents", "check-benchmark"), ".claude/projects",
+                 "under the user's home (`Path.home()`), where the benchmark reads session transcripts"),
+    ("check-decisions", "agents"): "a key of a benchmark.json stage, not a path",
+    # The four method-file checks (R-1, R-9): what their scripts name that `--check` never reads.
+    ("check-agents", ".claude/settings.json"): "a control path of `agents/cruise.py` (`CONTROL_PATHS`), read by `run` "
+                                              "and its guard",
+    ("check-agents", ".github/workflows"): "a control path of `agents/cruise.py` (`CONTROL_PATHS`), read by `run` and "
+                                          "its guard",
+    ("check-agents", ".specify/cruise-inbox.jsonl"): "`agents/cruise.py`'s run file, read and written by "
+                                                    "`run`/`watch`/`tell`",
+    ("check-agents", ".specify/cruise-last-response.txt"): "`agents/cruise.py`'s run file, written by `run`",
+    ("check-agents", ".specify/cruise-run.log"): "`agents/cruise.py`'s run file, written by `run`",
+    ("check-agents", ".specify/cruise-stream.jsonl"): "`agents/cruise.py`'s run file, written by `run`",
+    ("check-agents", ".specify/cruise-told.jsonl"): "`agents/cruise.py`'s run file, written by `tell`",
+    ("check-agents", ".specify/cruise-watch.cursor"): "`agents/cruise.py`'s run file, written by `watch`",
+    ("check-agents", ".specify/cruise.pid"): "`agents/cruise.py`'s run file; `--check` only runs `load()` of "
+                                            "`.specify/cruise.json`",
+    ("check-agents", ".specify/cruise.stop"): "`agents/cruise.py`'s run file; `--check` only runs `load()` of "
+                                             "`.specify/cruise.json`",
+    ("check-agents", "docs/event-model/model.yaml"): "read by `agents/benchmark.py` and `measures.py` (imported by "
+                                                    "`cruise.py`), whose `check` is a gate of its own "
+                                                    "(`check-benchmark`), not of the four `--check`s",
+    ("check-extensions", ".specify/integration.json"): "`extensions/guidance.installed_harnesses`, called by "
+                                                      "`write_project_mcp` on the write paths of an extension's "
+                                                      "`init.py`; `extensions/project.py --check` never does",
+    **for_checks(("check-extensions", "check-speckit"), "agents/registry.json",
+                 "`scripts/agents/registry.json` beside the script (its first segment is the root's own `agents/`): "
+                 "a gate script, so the full gate already"),
     ("check-decisions", ".slipwai"): "`reversibility.py` joins it to `propagated`, which the row names whole "
                                      "(`.slipwai/propagated`); the directory is never read as a path of its own",
     ("check-decisions", ".."): "`reversibility.py`'s `inside` refuses a path whose first segment is `..`; compared, "
@@ -68,17 +86,17 @@ NOT_AN_INPUT_FOR = {
     ("check-agents", ".slipwai/extensions.json"): "`agents/code_index.py`'s `adopted()`, which `cruise.py` imports "
                                                   "and calls on `health`/`run` paths; `cruise.py --check` never does",
 }
-# The same, as a pattern: one literal for each of a family of paths.
-NOT_AN_INPUT_PATTERN = {
-    r"skills/[\w-]+/SKILL\.md": "`check-constitution.py`'s `practice` pointers, tested for existence by "
-                                  "`present_practice` inside `findings()` for a requirement already reported as "
-                                  "failing: a missing skill changes the failure text (`; see skills/…`) and never "
-                                  "the exit status (`test_verify_scoped_flips_practice`)",
+# The same, as a pattern: one literal for each of a family of paths, by (check, pattern).
+NOT_AN_INPUT_PATTERN_FOR = {
+    ("check-constitution", r"skills/[\w-]+/SKILL\.md"): "`check-constitution.py`'s `practice` pointers, tested for "
+                                  "existence by `present_practice` inside `findings()` for a requirement already "
+                                  "reported as failing: a missing skill changes the failure text (`; see skills/…`) "
+                                  "and never the exit status (`test_verify_scoped_flips_practice`)",
 }
 # Modules a check loads only to find the slice's base and the paths changed since it, by check (`check-ux-gates`'s
 # default, research R-6): not walked for the check that loads them, since the stamp's cruise files, the model and the
 # registry they name are the full gate's or another check's. Each is a file name, or a directory under `scripts/`; the
-# reason is the value. A module its check no longer reaches is stale, as `NOT_AN_INPUT` is when no check fires it.
+# reason is the value. A module its check no longer reaches is stale, as `NOT_AN_INPUT_FOR` is when no check fires it.
 BASE_MODULES = {
     "check-ux-gates": {
         "verify-stamp.py": "loaded for `trunk_module()` and the questions the scoped gate's borders ask: CI markers, "
@@ -132,9 +150,9 @@ def derived_readers(project: Path, data: dict[str, Any], recipes: dict[str, list
     return found
 
 
-def explained(read: str, name: str = "") -> bool:
-    return read in NOT_AN_INPUT or (name, read) in NOT_AN_INPUT_FOR \
-        or any(re.fullmatch(pattern, read) for pattern in NOT_AN_INPUT_PATTERN)
+def explained(read: str, name: str) -> bool:
+    return (name, read) in NOT_AN_INPUT_FOR \
+        or any(check == name and re.fullmatch(pattern, read) for check, pattern in NOT_AN_INPUT_PATTERN_FOR)
 
 
 def base_module(path: Path) -> str:
@@ -199,7 +217,6 @@ class TableHeldTest(RecordCase):
     def findings(self) -> list[str]:
         records = importlib.import_module("verify_scoped.record")  # the script's own reading of the make database
         findings = []
-        fired: set[str] = set()
         fired_for: set[tuple[str, str]] = set()
         for shape in self.SHAPES:
             project = self.project(shape)
@@ -223,12 +240,10 @@ class TableHeldTest(RecordCase):
                 files = check["inputs"]["files"]
                 findings += [f"{shape}: {name} reads {read}, under none of {files}" for read in sorted(reads)
                              if not covered(read, files) and not explained(read, name)]
-                fired.update(read for read in reads if not covered(read, files))
                 fired_for.update((name, read) for read in reads if not covered(read, files))
-        stale = sorted(set(NOT_AN_INPUT) - fired)
-        findings += [f"{pattern} is explained, and no check reads it any more" for pattern in NOT_AN_INPUT_PATTERN
-                     if not any(re.fullmatch(pattern, read) for read in fired)]
-        findings += [f"{read} is explained, and no check reads it any more" for read in stale]
+        findings += [f"{name} is explained for {pattern}, and no longer reads it" for name, pattern in
+                     sorted(NOT_AN_INPUT_PATTERN_FOR) if not any(
+                         check == name and re.fullmatch(pattern, read) for check, read in fired_for)]
         findings += [f"{name} is explained for {read}, and no longer reads it" for name, read in
                      sorted(set(NOT_AN_INPUT_FOR) - fired_for)]
         return findings
@@ -251,6 +266,25 @@ class TableHeldTest(RecordCase):
         findings += [f"{name} is allowed to name a derived file, and no longer does"
                      for name in sorted(set(DERIVED_NOT_READ) - named)]
         self.assertEqual(findings, [])
+
+
+class ExemptionsAreScopedTest(unittest.TestCase):
+    """T019 (finding 6): an exemption excuses a literal for the check it was written for, and for no other."""
+
+    def test_a_literal_is_excused_for_its_check_and_not_for_another_that_names_it(self) -> None:
+        self.assertTrue(explained("init", "check-agents"))
+        self.assertFalse(explained("init", "check-model"))
+        self.assertTrue(explained(".github/workflows", "check-agents"))
+        self.assertFalse(explained(".github/workflows", "check-speckit"))
+        self.assertFalse(explained(".specify/integration.json", "check-agents"))
+        self.assertTrue(explained(".specify/integration.json", "check-extensions"))
+
+    def test_a_pattern_is_excused_for_its_check_only(self) -> None:
+        self.assertTrue(explained("skills/tdd/SKILL.md", "check-constitution"))
+        self.assertFalse(explained("skills/tdd/SKILL.md", "check-agents"))
+
+    def test_no_check_is_excused_by_a_literal_alone(self) -> None:
+        self.assertFalse(explained("init", ""))
 
 
 class BaseModulesTest(RecordCase):
