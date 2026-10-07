@@ -563,3 +563,14 @@ a hold shown to have teeth.
 - Three more test modules have no `TEST_SELECTION` and are listed under *Undeclared modules* above.
 - The verdict stands: **converged**. No fix was larger than the finding it closed.
 
+
+## Phase 4 (after acceptance, on adopt-method)
+
+- [ ] T021 [HIGH] A1: an input that is, or passes through, a symlink — in the working tree or at the base — gives its check no recorded inputs (it runs, `claims: false`), for every row of the record; tests for a linked file inside the project, a linked directory outside it, and a link only at the base. Closes T013.
+- [ ] T022 [HIGH] A2, A3: the agent projection (`scripts/agents/project.py`'s walks of `skills/`, `commands/`, `agents/`) never reads a path the verify stamp exempts (`__pycache__/`, `*.pyc`, `node_modules/`, `dist/`, `target/`, `coverage/`), from one shared list; a non-UTF-8 file it must read is one line naming it; a test holds every recursive walk a scoped check makes to that list.
+- [ ] T023 [MEDIUM] B1, B2, B3: `check-ux-gates` follows unquoted `href`s, `@import`s of names with spaces, and percent-encoded `href`s.
+- [ ] T024 [LOW] B4: every git question in `verify_scoped/since.py` runs at the project root.
+- [ ] T025 [LOW] The quickstart runs as written (the hand's notes: `generate` writes `<output>/<name>`; steps 2–3 name `./init --integration claude --extension ux-gates`, `npm install`, a green baseline on the slice branch, seeded previews and Playwright); the three lines the hand found hard to read (*the base of `main`*, *has no usable base* twice, *a check may have written one* on the person's own edit) are reworded.
+- [ ] T026 Mutation: N/A — no mutation tool is configured for the factory's own Python.
+- [ ] T027 Both full gates once on the final tip: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify`.
+- [ ] T028 Register row with `accepted-by: drive-hand`; benchmark closed; worktree and `slice/S07-scoped-checks` removed; S07's undeclared modules carried to S43's list when S43 merges (AC-S07-15).

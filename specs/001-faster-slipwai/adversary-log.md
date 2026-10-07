@@ -684,3 +684,19 @@ Slice `S07-scoped-checks` (cruise iteration 27), merged into adopt-method at `d5
 
 Not the slice that closes the split; `--full` not passed. A pass is owed: two triggers `widened`.
 
+Spawned: seam A — the four method-file checks under the scoped gate (rows, run-time derivation, projection directories, the check scripts) · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/toolkit/scripts/verify_scoped/`, `assets/toolkit/scripts/check-speckit.py`, `check-constitution.py`, `scripts/agents/project.py`
+Spawned: seam B — `check-ux-gates`' slice-branch default, its base and its keys · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/toolkit/scripts/verify_scoped/since.py`, `check-ux-gates.py`, `verify-stamp.py`
+Omitted: the actor's demo notes (quickstart prerequisites; wording of three lines) — known, LOW, Phase 4 tasks
+Findings: eight — two `HIGH`, three `MEDIUM`, three `LOW`; no `CRITICAL`. Both `HIGH` are reproduced false greens: `make verify-scoped` passes a tree `make verify` fails.
+
+| # | Seam | Severity | Finding | Triage | State |
+|---|---|---|---|---|---|
+| A1 | A | HIGH | A declared input that is a symlink (or sits under one) makes a check read a file no row names — a constitution moved behind a link, a skills projection linked outside the project — so the check is skipped while `make verify` fails. New | Confirmed; S07 T021: an input that is, or passes through, a symlink gives its check no recorded inputs, for every row of the record (closes S07's T013, the Parking Lot line) | open |
+| A2 | A | HIGH | `check-agents` walks every file under `skills/`, `__pycache__/*.pyc` included, which the baseline's ignored digest exempts; a skill's own script run on the branch writes one and the scoped gate skips a check that then fails. New false green over an older exempt list | Confirmed; S07 T022: the projection never reads a path the stamp exempts (one shared list), and a test holds every recursive walk of a check to it | open |
+| B1 | B | MEDIUM | A stylesheet linked without quotes (`href=app.css`) is never followed, so its change renders nothing on a slice branch. Older regex, now reached by default | Confirmed; S07 T023 | open |
+| B2 | B | MEDIUM | An `@import` of a file name with a space is cut at the space. Older, now reached by default | Confirmed; S07 T023 | open |
+| A3 | A | MEDIUM | `check-agents` crashes with a bare `UnicodeDecodeError` on any non-UTF-8 file under `skills/`. Older | Confirmed; S07 T022: one line naming the file | open |
+| B3 | B | LOW | A percent-encoded `href` never matches its file. Older | Confirmed; S07 T023 | open |
+| B4 | B | LOW | Run directly from inside another repository, `since.py` reads that repository's branch and scopes a trunk run. New | Confirmed; S07 T024: every git question in `since.py` runs at the project root | open |
+| B5 | B | LOW | An uncommitted `ci.branch` in `project.json` retargets a slice's own base | Declined: `check-slice-scope` refuses a `project.json` edit on a slice branch, and CI renders every preview whatever the branch says | declined |
+

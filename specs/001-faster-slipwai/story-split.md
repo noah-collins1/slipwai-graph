@@ -138,9 +138,6 @@ that cannot delegate takes the earliest ready slice in split order and names the
 
 ## Parking Lot
 
-- **A symlinked declared input (S07's T013, LOW), every row of S06's record.** A check reads a declared input that is a
-  symlink through its target; where another check claims the target, a change there can skip the reader. S06's
-  follow-up or a slice of its own owns it.
 - **Per-check verify stamps (D173), unowned.** Narrowing how many stamps `/cruise` reuses when a run writes under
   `specs/` between gates, and stamping only the factory's checks in an adopted repository (where D74 R7 says it never
   stamps), each need a slice of their own through `/story-splitting`, with a key and never-read places set out as
