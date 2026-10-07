@@ -42,7 +42,14 @@ rebased over the other. `S26-reversibility-line` owns `check-decisions.py` and t
   changes how it calls git and reads the environment) also `test_verify_stamp_scan`. Call it **TK** below.
 - **Before each commit** `make lint typecheck check-structure`, and test `$?` (never chain a commit after a pipe).
   Commit by path: `git commit -m … -- <the task's files>`, new files `git add`ed by exact path first.
-- **The machine is reserved** until the host says it is free: no test is run before then.
+- **The machine is reserved** until the host says it is free: no test is run before then. *(Released by the host
+  before T001.)*
+- **AC-S07-15 (D188), from T005 on.** Every test module a task adds or edits carries a `TEST_SELECTION` declaration in
+  the same commit, added to the `real_*` list `tests/test_select_tests_real_declared.py` requires and held with a
+  planted-fault case per declared axis — or, where the selector cannot state its reach (it imports an undeclared helper
+  such as `scoped_fixture`, `stamp_fixture` or the test module `test_scoped_targets`, or loads a script by `importlib`
+  without naming it), the module goes under *Undeclared modules* below with the selector's reason. The modules T001–T004
+  committed before D188 are T008's.
 
 ## Phase 1: Implementation
 
@@ -194,6 +201,33 @@ a slice branch now renders fewer previews and `UX_GATES_SINCE=all` renders them 
 **Run:** `make test TESTS="test_scoped_targets test_scoped_page test_gates test_verify_stamp_page test_docs_index test_ux_gates_default"` (drop a name not created; add any test the grep names), TK.
 **Done when:** the page test and `test_changelog` pass; no other page test changed outcome.
 
+### T008 — Each test module S07 adds or edits is declared, or listed with the selector's reason (AC-S07-15 · D188)
+
+Rides with implementation: T005–T007 declare their own modules in their own commits (constraint above); this task
+covers what T001–T004 committed before D188 — `tests/test_verify_scoped_record.py` (edited),
+`tests/test_verify_scoped_table_held.py`, `tests/test_verify_scoped_methods.py`, `tests/test_verify_scoped_derived.py`,
+`tests/test_verify_scoped_held.py` — and checks T005–T007's at the end.
+
+**RED** — for each module, run the selector's own reading (`scripts/select_tests/declarations.py`: `scan`, `held`,
+`effective`) and decide: declarable (its imports are all declared helpers or none, its by-path reads can be named) or
+not (the selector's reason). For a declarable module: add it to the right `real_*` test (`test_select_tests_real_loaders`
+`READS` for a reads-only module, `test_select_tests_real_backends` `DECLARED` for a generating one) first and see
+`test_select_tests_real_declared` and that `real_*` test fail; then a planted-fault case per declared axis (a copy of the
+declaration that omits an option or a read the source uses fails the selector's check), as the existing `real_*` tests do.
+**GREEN** — the `TEST_SELECTION` line in the module. A module that cannot be declared is written into *Undeclared
+modules* below with the selector's reason, verbatim from `declarations`' own output (S43's committed list does not exist
+on this branch; the host carries these rows onto it at the merge).
+**Files:** the five modules above, `tests/test_select_tests_real_loaders.py`, `tests/test_select_tests_real_backends.py`,
+and only if a planted-fault case needs a module of its own, `tests/test_select_tests_real_s07.py` *(new)*. Not
+`tasks.md`: the delegate returns the undeclared rows and the host writes them.
+**Run:** `make test TESTS="test_select_tests_real_declared test_select_tests_real_loaders test_select_tests_real_backends test_select_tests_real_helpers"` plus every module it declared.
+**Done when:** every S07 module is declared and held, or listed below with its reason.
+
+### Undeclared modules (AC-S07-15; carried onto S43's AC-S43-7 list at the merge)
+
+| Module | The selector's reason |
+|---|---|
+
 ## Phase 2: After acceptance (host tasks)
 
 Both full gates on the final tip; the register row and benchmark close; the demo (`drive-hand`). Not delegated here.
@@ -210,7 +244,9 @@ Both full gates on the final tip; the register row and benchmark close; the demo
 
 ## Phase list
 
-Phase 1 Implementation (T001–T007); Phase 2 After acceptance (host).
+Phase 1 Implementation (T001–T008; T008 after T007, from D188); Phase 2 After acceptance (host).
+
+**Done:** T001 (`bf319cc`, `0af5588`), T002 (`d723281`), T003 (`6830517`), T004 (`a510c86`).
 
 ## Differences from plan.md
 
