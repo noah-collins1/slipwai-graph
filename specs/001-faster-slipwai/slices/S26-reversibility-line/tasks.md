@@ -221,3 +221,97 @@ No screen in this slice.
 
 ## Convergence
 
+### Pass 1 — 2026-10-07, `drive-converge` — **converged** (no open CRITICAL or HIGH)
+
+Read against `.specify/memory/constitution.md`, AC-S26-1..17 (AC-S26-15 as amended and AC-S26-17 from `adopt-method`
+at `bfd3ff5`), D174–D178, D183–D185, ADR 0007 (Proposed) and this plan (Q5 taken as option (b)), over
+`git diff 063c187..b6f8c68` outside `specs/`. Evidence: probes in a scratch project under `.cruise27/`, mutations
+restored by path, and `make test TESTS="test_reversibility_score test_reversibility_gate test_reversibility_versions
+test_reversibility_writers test_decisions_gate_differential test_decisions_scope_gate test_toolkit test_utf8_io
+test_changelog test_assets_bytecode test_cruise test_cruise_record test_cruise_scope_writers"` (116 tests, OK) and
+`test_reversibility_migrate` (OK) after the fixes; `make lint typecheck check-structure` 0 before each commit.
+
+**Constitution, principle by principle the diff touches.**
+- I (owns its files): `.slipwai/propagated` and `scripts/reversibility.py` reach a project only through `generate` and
+  `migrate` (`src/slipwai/scaffold.py` `project_files`, `files[PROPAGATED] = propagated_file(files)`, so `replay`
+  regenerates it); the catch-up is `changelog.d/reversibility-line.md:9`. The fragment's line 1 is `MINOR`; `VERSION`
+  untouched. *Scoped gate additive*: holds — the merge root and CI run the full gate — but see O1.
+- VIII (a persisted shape is a contract): the line names `rules <n>`; `RULES` in `reversibility.py` keeps every
+  version and `test_reversibility_versions` e2 freezes version 1 by digest; `measures.py` and `SPELLING` unchanged
+  (e3). The gate refuses unknown keys only on a label this release defines (D176, D65; versions e2 states the one
+  moved log shape).
+- VII (auditability): one finding per fault naming `<file>:<line>: D<n>` and the field (`line_findings`,
+  `rule_findings`); the verb names the rules that fired on stderr.
+- XIV and the ADR rule: ADR 0007 stays `Proposed`; the plan's product questions went to the host (D183–D185, Q5).
+- *Persisted data records facts true on any machine*: the list is committed project-relative paths (not ignored in
+  `gitignore.py`, which ignores only `.slipwai/catch-up.md`); `.delivery-tools/written.json` is never read.
+- No money, time zone, identity or personal data is touched.
+
+**Findings by level** (severity; fixed or open):
+
+Domain — the rule table matches data-model.md (H1–H7, R1, R2, F1, F2, D1, D2, U1); fail-closed for a missing or
+unaccepted fact and an unreadable scope; `size`/`urgency` refused, never scored, by both verb and gate; version 1
+frozen. No finding.
+
+Use case
+- **F7 LOW, fixed `9e666a1`** — a full stop after the `(same shape as D<a>, D<b>)` parenthesis made the gate say
+  "cites fewer than two"; now read (`ProposedRuleTest` e5b).
+- **Guards added, `9e666a1`** — nothing held "a log with neither label never loads the module" (removing the guard
+  passed every test with the module present) nor the verb's copies of the gate's `scope_tokens`/`paths_of`. Now
+  `test_reversibility_versions` e5 (a fake `reversibility.py` that exits on load; shown to fail with the guard
+  mutated out) and `test_the_verb_reads_scope_and_written_to_as_the_gate_does` (shown to fail with `one_id` mutated
+  out of the verb's copy).
+- **O2 LOW, open, no change** — the verb accepts no `--written-to`; with a listed path in the entry's `Written to` it
+  prints `migrate_file=no` and the gate refuses it. The gate is right (under-declaration caught); both briefs pass
+  `--written-to`.
+- **O3 LOW, open, no change** — a log with the labels but no `reversibility.py` beside the gate gets a note and
+  passes; by design and tested (`test_a_log_with_a_line_and_no_sibling_module_is_noted_not_refused`).
+
+Adapter
+- **F5 LOW, fixed `9e666a1`** — a committed list that is not UTF-8 made the gate print a traceback (its rule is one
+  line, never a traceback) and the verb a codec message; an unreadable list is now no list, failing closed as a
+  missing one does (`test_a_list_that_is_not_utf8_is_no_list_said_in_one_finding`).
+- **F6 LOW, fixed `9e666a1`** — the missing-line note named `python3 scripts/reversibility.py` in an adopted layout,
+  where `layout.repoint` leaves `scripts/` content alone and the verb is `delivery/scripts/reversibility.py`; the gate
+  now passes the path it loaded (versions e6).
+- **O1 MEDIUM, open, outside this slice's files** — `assets/toolkit/scripts/verify_scoped/table.py`'s
+  `check-decisions` row names `specs/` and `docs/event-model/model.yaml`, but the gate now also reads
+  `.slipwai/propagated` (generated) and `<delivery>/.written` (adopted). A change to the list alone lets a scoped run
+  skip `check-decisions` although its answer can change (a `Written to` path newly listed refuses `migrate_file=no`).
+  `tests/test_verify_scoped_record.py` e4 cannot see it: its scan follows imports, not `sibling()`'s load by path.
+  The full gate still runs at the merge root and in CI, so principle I's additive MUST holds. The table is S07's
+  file: widen the row with `.slipwai/propagated` and the delivery `.written` (and teach the scan `sibling()` loads),
+  in S07 or a follow-up the host assigns.
+- Encoding and bytecode: every `read_text` names UTF-8; `sibling()` sets `dont_write_bytecode`; `test_utf8_io` and
+  `test_assets_bytecode` pass.
+
+Published contract
+- **F1 MEDIUM, fixed `9e666a1`** — the verb printed a line the gate refused: a fact value holding whitespace
+  (`schema="a b"`, a tab, a newline) was written as given, and the gate split the facts there (`has 'b', which is not
+  key=value`). The whole class is whitespace in a value; the verb now refuses it as usage, exit 2. No other value the
+  verb accepts splits the line (`·`, arrows and tier words were already refused).
+- **F2 MEDIUM, fixed `054150e`** — `DECISION_ENTRY`'s line ended `— from python3 scripts/reversibility.py`; a writer
+  filling the placeholders keeps it and the gate refuses (`has '—'`). One constant, so every copy (generated and
+  adopted `commands/cruise.md`, `.specify/product-owner.md`) is fixed: `<facts, as … prints the line>`.
+- **F3 MEDIUM, fixed `054150e`** — the `Proposed rule:` template line carried no optional marker; filled as shown it
+  is refused (`cites fewer than two`) while AC-S26-15 says lacking it is never refused. Now `<optional: …>`.
+- **F4 MEDIUM, fixed `054150e`** — the standalone Catch-up said `migrate` brings `scripts/reversibility.py` and
+  `.slipwai/propagated`, false for an adopted repository; it now says, labelled experimental, that the script lands
+  under the delivery directory and the verb reads the `.written` already there.
+- **F8 LOW, fixed `9e666a1`, `054150e`** — `REVERSIBILITY_RULE` had a 161-character line in the generated command;
+  the skipper paragraph broke mid-sentence; `reversibility.py` docstring lines at 135 and 124. Rewrapped; no line the
+  slice adds is over 120 but `DECISION_ENTRY`'s field lines, which cannot wrap.
+- **O4 LOW, open, the host's** — Q5: AC-S26-16's "keeps the old entry shape until edited by hand" and the owner-brief
+  page's "`slipwai migrate` never rewrites it" (`decisions.py`, predates the slice) disagree with what `migrate` does;
+  the Catch-up states the tree's behaviour.
+- **O5 LOW, open, predates the slice** — `DECISION_ENTRY`'s `Scope:` line carries the same kind of trailing annotation
+  (`— a feature-level or doubtful decision is \`global\``) that the gate refuses if kept.
+- `SPELLING` unchanged; lines the verb writes, chains included, are read by `decision_health` as computed (versions
+  R9 tests). A hand-written line with a tier word inside a fact value can only be accepted at `hard`, which the
+  escalation share does not count, so S39's reader is not misled.
+
+**Budgets.** `reversibility.py` 318 lines; every new test module and `src/` file is under 350.
+`assets/toolkit/scripts/check-decisions.py` was 699 at the base and is 728 (outside `check-structure`'s scope, and the
+reason the rules live in a module beside it); LOW, no change.
+
+**Tasks appended:** none that re-open the loop. O1 (MEDIUM) is for the host to assign to S07's table.
