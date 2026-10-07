@@ -1,0 +1,117 @@
+"""What the method-file checks read that a table row cannot name: a manifest's paths and a preset's files. Derived at
+record time and added to the checks' file inputs, as `record.with_named` does for `check-model`.
+
+A source that cannot be read, that does not parse, or that names a path outside the project (absolute, `~`, a `..`
+segment, a backslash, empty) leaves the check with no recorded inputs: it runs on every scoped run (D172 limit i). A
+source that is simply absent adds nothing. Both the working tree and the base are read, so a path the branch removed
+from a manifest is still an input for the change that removed it.
+"""
+from __future__ import annotations
+
+import json
+import re
+import sys
+from pathlib import Path, PurePosixPath
+from typing import Any
+
+sys.dont_write_bytecode = True
+
+from .table import NO_INPUTS  # noqa: E402
+
+# Copied from `check-speckit.py`'s `PRESET_FILE_ENTRY`: the `file:` values a `preset.yml` declares; a test holds both equal.
+PRESET_FILE_ENTRY = re.compile(r"""^\s*(?:-\s+)?file:\s*["']?([^"'\s#]+)["']?\s*(?:#.*)?$""", re.MULTILINE)
+INTEGRATIONS = ".specify/integrations"
+PRESETS = ".specify/presets"
+MANIFEST = re.compile(r"^\.specify/integrations/[^/]+\.manifest\.json$")
+PRESET = re.compile(r"^\.specify/presets/([^/]+)/preset\.yml$")
+
+
+class Unreadable(Exception):
+    """A source of derived inputs cannot be trusted: the check keeps no recorded inputs."""
+
+
+def inside(path: object) -> bool:
+    """A path the project holds: a non-empty string that is neither absolute nor `~`-relative, climbs nowhere and
+    holds no backslash, so joined to any directory of the project it stays under the project."""
+    if not isinstance(path, str) or not path or "\\" in path or "\0" in path or path.startswith("~"):
+        return False
+    posix = PurePosixPath(path)
+    return not posix.is_absolute() and ".." not in posix.parts
+
+
+def read(path: Path) -> str | None:
+    """A file's text, None where it is absent, `Unreadable` where it exists and cannot be read."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    except (OSError, UnicodeError) as error:
+        raise Unreadable(str(error)) from error
+
+
+def at_base(scope: Any, base: str | None, path: str) -> str | None:
+    if base is None:
+        return None
+    try:
+        return scope.git_show(base, "./" + path)  # type: ignore[no-any-return]
+    except scope.CouldNotCompare as error:
+        raise Unreadable(str(error)) from error
+
+
+def texts(root: Path, scope: Any, base: str | None, directory: str, wanted: re.Pattern[str]) -> list[tuple[str, str]]:
+    """Every file of `directory` the pattern names, as `(path, text)`, in the working tree and at the base."""
+    found: dict[str, list[str]] = {}
+    here = root / directory
+    for path in sorted(here.glob("**/*") if here.is_dir() else []):
+        relative = path.relative_to(root).as_posix()
+        if wanted.match(relative):
+            found.setdefault(relative, []).append(read(path) or "")
+    if base is not None:
+        listed = scope.git("ls-tree", "-r", "--name-only", base, "--", directory)
+        if listed is None:
+            raise Unreadable("the base's listing of " + directory + " cannot be read")
+        for relative in listed.splitlines():
+            if wanted.match(relative):
+                shown = at_base(scope, base, relative)
+                found.setdefault(relative, []).extend([shown] if shown is not None else [])
+    return [(path, text) for path, each in sorted(found.items()) for text in each]
+
+
+def parsed(text: str) -> dict[str, Any]:
+    try:
+        value = json.loads(text)
+    except (ValueError, RecursionError) as error:
+        raise Unreadable(str(error)) from error
+    if not isinstance(value, dict):
+        raise Unreadable("not an object")
+    return value
+
+
+def manifest_files(root: Path, scope: Any, base: str | None) -> set[str]:
+    """Every `files` key of every integration manifest, which `check-speckit` opens."""
+    found: set[str] = set()
+    for _, text in texts(root, scope, base, INTEGRATIONS, MANIFEST):
+        files = parsed(text).get("files")
+        if not isinstance(files, dict) or not all(inside(key) for key in files):
+            raise Unreadable("a manifest has no `files` map of project paths")
+        found.update(PurePosixPath(key).as_posix() + ("/" if key.endswith("/") else "") for key in files)
+    for path, text in texts(root, scope, base, PRESETS, PRESET):
+        if not all(inside(declared) for declared in PRESET_FILE_ENTRY.findall(text)):
+            raise Unreadable(f"{path} declares a file outside the project")
+    return found
+
+
+def add(entry: dict[str, Any] | None, derive: Any) -> None:
+    if entry is None or entry["inputs"] is None:
+        return
+    try:
+        more = derive()
+    except Unreadable:
+        entry.update(inputs=None, claims=False, always=NO_INPUTS)
+        return
+    entry["inputs"]["files"] = sorted(set(entry["inputs"]["files"]) | more)
+
+
+def with_derived(checks: dict[str, Any], root: Path, scope: Any, base: str | None) -> None:
+    """Add what manifests and presets name to `check-speckit`."""
+    add(checks.get("check-speckit"), lambda: manifest_files(root, scope, base))
