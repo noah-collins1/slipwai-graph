@@ -1,79 +1,126 @@
 # Implementation Plan: S43-test-declarations — a change that reaches one starter stops paying the whole factory suite
 
-**Branch**: `slice/S43-test-declarations` (local, cut from `adopt-method` at `063c187`; no push) | **Date**: 2026-10-07 |
-**Spec**: [spec.md](../../spec.md) → `### S43-test-declarations` (AC-S43-1 … AC-S43-11), FR-048, SC-016
+**Branch**: `slice/S43-test-declarations` (local, cut from `adopt-method` at `063c187`; no push; not rebased — D188 rebases
+it onto `adopt-method` only after S26 merges, and the host does that) | **Date**: 2026-10-07 |
+**Spec**: `### S43-test-declarations` as amended on `adopt-method` at `89ca20c` (AC-S43-1 … AC-S43-14; AC-S43-6 and
+AC-S43-11 amended, AC-S43-12 … 14 new), FR-048, SC-016
 
-**Input**: the slice's split and graph rows in [story-split.md](../../story-split.md); D169 (the owner's), D179–D182 and
-S38's D156–D158, D164, D165 in [decisions.md](../../decisions.md); the gaps report
-(`/home/noahc/math/.cruise27/gaps-S43.md`); the measured run, [runtime-table.md](runtime-table.md) (AC-S43-1, committed
-`3a9c808`). Research: [research.md](research.md).
+**Input**: D169, D179–D182, **D187** (the literal-argv rule and the narrowed audit), **D188** (AC-S43-6 is measured on the
+merged tree), S38's D156–D158, D164, D165; the measured table [runtime-table.md](runtime-table.md) (AC-S43-1, `3a9c808`);
+[research.md](research.md). The decisions and the amended criteria live on `adopt-method` (`89ca20c`), read from there
+and not merged into this branch (host's word).
 
-## Status: BLOCKED at plan — D179's *would reverse if* holds
+## Summary
 
-**AC-S43-1 is done** (`3a9c808`): 373 modules at `063c187`, 3448 s wall on the reference machine, the per-test sums
-3415.6 s (99.1% of it). The one error in the run was environmental and is named in the table (the host's word).
+The selector learns one thing (D187 rule 1–3): a **fully literal** `[str(ROOT / "slipwai"), "generate", …]` argv is read as
+the equivalent `generate(` call, so a fixture that generates python through the launcher no longer counts as every
+configuration. The reads-only audit narrows to the declared reads-only modules a run selects (D187 rule 4), the full
+audit staying wherever no selected set is handed over. Then, in the table's order, the heavy modules and the helpers they
+import are declared, after the borrowed non-generating helpers move into declared helper files (D179 (b)) so the join no
+longer drags in `test_adopt`'s, `test_candidates`'s or `parallel_gate`'s launcher routes. Selection only: no test's
+behaviour changes, and a full run has the same test ids (AC-S43-9). **No bump**: `scripts/select_tests/` and `tests/`
+are not in the wheel.
 
-**The table shows D179 (b) cannot meet AC-S43-6.** [research.md](research.md) R-2 to R-5: on a one-Go-file change, at
-least ≈ 2329 s of modules keep running whatever (b) does — 569 s the siblings' modules this slice must leave undeclared,
-580 s whose own source runs the launcher or `refuse(`, and 1180 s that generate nothing themselves but either import a
-fixture that generates a literal configuration through `./slipwai` (`stamp_fixture`, `parallel_gate`,
-`scoped_fixture`, `render_fixture`) or would become reads-only declarations the audit re-runs (D181). (b) can save at
-most ≈ 480 s beyond what S38's selector already saves; the gap to 900 s is 2548 s. D179 says that, in this case, "(b)
-could not then meet acceptance, and the launcher rule would have to be decided first, as its own decision" (condition 4),
-and the brief says to return the question rather than change a rule. Nothing has been declared or moved.
+## Status and the estimate the host should see now
 
-## Open questions (for the host; a person's where marked)
+**Expected outcome of AC-S43-6: a miss.** The per-name probe (`/tmp/s43w/ideal.py`: the scratch selector with the
+argv rule, every module declared as narrowly as the names it actually uses allow, the `".git" / "slipwai"` false route
+rewritten) still runs ≈ 2641 s of the 3448 s on a Go change; less the non-go share of `test_matrix` and `test_images`
+(already narrowed by S38, ≈ 380 s), ≈ **2250 s**, before any of this slice's work is measured. What keeps it there:
+the siblings' modules (570.7 s, of which S26's are declarable only after its merge, D188), `test_adopt.slipwai`'s
+`./slipwai adopt` route and `test_add_service`'s `add-service` (≈ 500 s; D187 rule 3 keeps them every axis),
+`stamp_fixture.load_script`'s `importlib` in generating closures (≈ 250 s; D164 rule 4 voids them), and the modules
+that generate go or a computed backend (≈ 650 s). D187 rule 7 says to measure after the work and leave a miss to D182
+(a person's word); this plan does that, and says it now so the question can be put early.
 
-1. **The launcher rule (D179 option (c), D164 rule 3).** May the selector resolve a *literal* `./slipwai generate` argv
-   per axis — `--backend python --profile standard` is the python and standard configurations, not every one — as it
-   already resolves `FactoryTestCase.generate`'s literal arguments? That is the only change the table shows reaching the
-   1060 s of fixture importers and most of the 580 s of own-route modules; `add-service`, `migrate`, `adopt` and
-   `replay` argv would need their own reading (or stay every). It is a selector rule change, which D169 allows only
-   when a declaration cannot be expressed — and here one cannot: a fixture that generates python through the launcher
-   has no declaration that skips it on a go change. D164 put rule 3 in after a reproduced false skip, so the decision
-   has to say how a literal argv is held (e.g. resolved like a `generate(` call: a computed part is every option).
-2. **The audit (D181's *would reverse if*).** The table shows the reads-only modules are not cheap once the launcher
-   routes are gone: up to 1180 s would be declared reads-only and re-run by `test_select_tests_real_audit` on every
-   run. Does the audit narrow to the reads-only modules a change reaches (it would still run each declared module
-   whenever that module runs, and every one on a full run)?
-3. **The sibling-claimed modules (569 s).** S07 and S26 claim `test_verify_scoped_*`, the ux-gates and
-   check-decisions tests and `test_result_contract_briefs`; undeclared, they run on every change. Is AC-S43-6 measured
-   only after those merge and a follow-up declares them, or with them running?
-4. **The target (D182, a person's word).** If (1) is not taken, no reading of D179 (b) reaches 900 s: the bound is about
-   2540 s selected on a go change (estimated; ≈ 3020 s today, also estimated from the table). Relax the 15 minutes, or take (1) and (2)?
+## The example map
 
-**Recommendation from the numbers, not a decision:** take (1) and (2) together as one named decision for this slice,
-measure after (b) and those, and keep (3) as an explicit exclusion of the 569 s from AC-S43-6's run until S07/S26 merge
-— or, if (1) is refused, put (4) to a person now, since (b) alone repeats demo 2's outcome by about 500 s.
-
-## What the slice would do once unblocked (outline only — no tasks written)
-
-- **Order:** the table's, top-down among the declarable: the own-generating B′ modules and class D first
-  (`test_mutation_stamp_untouched` 34.6, `test_mutation_scope_real_spring` 31.7, `test_confirm` 23.3,
-  `test_parallel_gate_carry` 16.9, `test_verify_stamp_scan` 16.7, `test_verify_stamp_ships` 15.7, `test_render_once`
-  13.1, `test_parallel_gate_output` 12.8, `test_gate_walks_pom` 10.0, …), then class C's backend loops.
-- **Helper files (D179 (b)):** `tests/git_helpers.py` (`git` from `test_replay` and `stamp_fixture`, `newer_factory`),
-  `tests/launchers.py` (`slipwai`, `migrate`, `add_service`, `replay` wrappers), each declaring its own
-  `TEST_SELECTION` and added to a `real_*` list; the old names re-exported from `test_replay`, `test_adopt`,
-  `test_migrate`, `test_add_service` and `stamp_fixture` so S07's and S26's branches still merge cleanly (host's word,
-  iteration 27). Every new file under 350 lines.
-- **Loops (AC-S43-10):** only `.github/workflows/verify.yml`'s `matrix` jobs set `FACTORY_BACKENDS` and they run only
-  `test_matrix test_images`; every other module runs in `checks` (or a job with no `FACTORY_BACKENDS`), where
-  `backends_under_test()` returns every backend — so switching a module outside those two leaves CI's (module, backend)
-  pairs the same by construction.
-- **Pin (stage 3):** factory code needs no pin; its tests are the pin. AC-S43-9 (same test ids) is the slice's check.
-- **Modules both this slice and a sibling might touch:** `test_verify_scoped_*` (S07; they import `scoped_fixture`,
-  `test_scoped_targets`, `test_verify_stamp_scan`, `stamp_fixture`), `test_decisions_*` and `test_hand_backs_record`
-  (S26 via `test_decisions_scope`), `test_result_contract_briefs`/`_stops` (S26), `test_ux_gates_scale`
-  (S07, imports `test_design_extensions`). This slice would edit none of them; a helper they import keeps its old name.
+| Rule | Criteria | Examples |
+|---|---|---|
+| **R1** a fully literal launcher `generate` argv resolves per axis | AC-S43-12, -14, -11 | e1 `[str(ROOT / "slipwai"), "generate", "fixture", "--profile", "standard", "--backend", "python", "--frontend", "none", "--http", "none", "--output", str(parent), "--skip-checks"]` is backend {python}, profile {standard}, frontend {none}, target every · e2 `ROOT / "slipwai"` without `str(…)` reads the same · e3 omitted `--backend` → every backend · e4 `--target aws` → target {aws}; `--event-store`/`--http`/`--auth`/`--users` (the catalog's `axes`) select nothing the declaration names · e5 the name and `--output`'s value may be computed |
+| **R2** every unreadable form stays every axis and is held | AC-S43-12 | planted copies, each selected on a one-Go-file change and named by `held()`: a computed `--backend`; `*SHAPES[name]`; `[…] + flags`; a list variable; `shlex.split(…)`; `shell=True` string; an unmapped flag (`--language`, `--service-name`, `--no-init`, `--backend=go`); `add-service`, `migrate`, `adopt`, `replay`; `["slipwai", "generate", …]` on `PATH`; `python -m slipwai`; `refuse(` |
+| **R3** a literal value the declaration omits voids it | AC-S43-14, -4 | e1 a copy of the stamp-style fixture declaring backend {typescript} with a literal `--backend python`: void, runs, `held()` names it · e2 one real `assets/languages/python/` path selects every importer of a literal-python fixture, the expectation from `generation.facts` |
+| **R4** the audit covers what the run selected | AC-S43-13 | e1 a selected run hands the selected set to the modules it starts; the audit covers the declared reads-only modules in it · e2 a planted undeclared read is audited and fails when the change is the module itself, a helper in its closure, or a file its `reads` names · e3 no set handed over (full run, `TESTS=`, CI, the merge root): every module `LISTING` names |
+| **R5** declarations, in the table's order, checked | AC-S43-1, -2, -3, -7 | e1 each newly declared module and helper is in a `real_*` list and `held()` names none · e2 for each (axis, option) any declaration names, one real path that pair claims selects every module whose facts generate that option or whose reads match · e3 the undeclared list, each with the selector's reason |
+| **R6** restructuring changes nothing a test does | AC-S43-9, -10 | e1 the full run's test ids at the slice's tip equal those at `063c187` · e2 a moved helper keeps its old import path (a re-export) so S07's and S26's branches merge · e3 a loop switched to `backends_under_test()` runs outside the `matrix` jobs, so CI's (module, backend) pairs are unchanged |
 
 ## Technical Context
 
-Python 3.14, `unittest`; the selector under `scripts/select_tests/` (unchanged, D179 condition 3); `tests/` only.
-No bump, no fragment: nothing under `tests/` or `scripts/select_tests/` is in the wheel (`pyproject.toml` force-includes
-`assets`, `catalog.json`, `VERSION`, `CHANGELOG.md`, `changelog.d`).
+**Language/Version**: Python 3.14, `unittest`. **Primary Dependencies**: none new. **Storage**: none.
+**Testing**: `make test TESTS="…"` on the modules a change touches only (the machine is shared with S07 and S26; no full
+run, no `make verify`). **Project Type**: the factory's own test tree and its selector. **Constraints**: every file under
+`tests/`, `scripts/` held to 350 lines (`scripts/check-structure.py`); the selector's rules change only as D187 says,
+D164 rules 1, 2 and 4 unchanged (AC-S43-11); no `unittest.mock` in new code.
 
 ## Constitution Check
 
-Not reached: the slice stops before design on a question its artifacts do not settle. Nothing was written outside
-this slice's folder.
+- **Additive gates (a scoped gate MUST be additive):** the full run, CI and the merge root keep the full audit and the
+  full suite; the argv rule fails closed on every form it cannot read (R2). Pass.
+- **Fakes, not mocking frameworks:** the planted copies and scratch trees are files written by the test. Pass.
+- **Size and structure:** new logic goes in new files (below), no file over 350. Pass.
+- **Versioning:** nothing user-visible; no bump, no fragment (AGENTS.md table: `tests/` and `scripts/select_tests/` do not
+  ship). Pass.
+
+## Structure decision
+
+New files:
+
+- `scripts/select_tests/argv.py` — reads one `ast.List` as a literal launcher `generate` argv and returns its axes, or
+  None. `generation.facts` (312 lines) calls it: a list it reads becomes a `Call`, and the launcher node inside it is not
+  also reported as a route. Every other route stays. The axis flags are `--backend` (→ backend), `--profile`,
+  `--frontend`, `--target`, and the catalog's `axes` keys read from `catalog.json` by the caller (they select nothing a
+  declaration names); `--output` (one value) and `--skip-checks` select nothing; anything else is None.
+- `tests/test_select_tests_argv.py` (and `_argv_forms.py` if one file would pass 350) — R1–R3 against scratch trees.
+- `tests/test_select_tests_audit_narrow.py` — R4.
+- `tests/test_select_tests_real_s43.py` — the slice's `real_*` list (`DECLARED`, `HELPERS_S43`) with R5 e1–e2; imported by
+  `test_select_tests_real_declared.py` beside the existing lists.
+- Helper files for D179 (b), each declaring its own `TEST_SELECTION`: named in the tasks per group (e.g.
+  `tests/gate_rules.py` for `test_verify_stamp_pinned.gate_prerequisites`/`gate_rule`, `tests/git_helpers.py` for
+  `stamp_fixture.git` and `test_replay.git`, `tests/mutation_env.py` for `test_mutation_borders.clean_environment`); the
+  old module re-exports each moved name.
+- `specs/001-faster-slipwai/slices/S43-test-declarations/undeclared.md` — AC-S43-7's list, written from `declarations.scan`
+  at the slice's tip.
+
+Edited: `scripts/select_tests/generation.py` (the hook only), `scripts/select-tests.py` (hands the selected set to the
+modules it starts, in an environment variable `SELECTED_TEST_MODULES`, and removes it for a full run),
+`tests/test_select_tests_real_audit.py` (`LISTING` filters by the variable where set), the declared modules and helpers.
+
+## Order of the declarations (the table's, among what can be declared)
+
+Groups, each one task, each ending with `held()` clean for what it declared and the group's modules run:
+
+1. **codegraph/health** — `test_codegraph_memory` 60.2, `test_health_memory` 58.0, `test_health_memory_states` 53.2,
+   `test_codegraph_races` 38.8, `test_health_narrowed` 36.0, `test_codegraph_narrowed` 30.6, plus their helpers
+   `test_code_index_health`, `test_cruise_index`, `test_cruise_runner` (≈ 277 s). Cut: `test_cruise_runner` imports
+   `test_verify_stamp_pinned.gate_prerequisites`, whose file imports `test_candidates` → `test_adopt` (launcher). Move
+   `gate_prerequisites`/`gate_rule`/`gate_target_name` to `tests/gate_rules.py`.
+2. **render** — `test_render_current` 46.2, `_files_report` 23.4, `_files` 19.5, `_links` 18.5, `_failures` 16.0, `_once`
+   13.1, `_browser` 8.4, `_pinned`, `_docs` (≈ 160 s). `render_fixture` narrows from `"every"` to what
+   `RenderCase.project` generates (`self.generate(directory, name)`: typescript, event-modelling, none), and drops the
+   `["slipwai"]` list from its own `reads` — a one-element list whose first element is `"slipwai"` is the launcher on
+   `PATH` to the selector (D164 rule 3); `support`'s `reads` already carries it into the join.
+3. **`test_factory_gate_stamp`** 46.4 — `self.repo / ".git" / "slipwai"` is read as the launcher by path (a `/ "slipwai"`
+   chain); written `self.repo / ".git/slipwai"` it is the same path and no route. Its `ROOT / name` copies are named in
+   `reads`.
+4. **mutation** — `test_mutation_scope_real_spring` 31.7 (and what else shares the cut): move `stamp_fixture.git` and
+   `test_mutation_borders.clean_environment` to helper files.
+5. **Then down the table** while each next module is declarable, ≥ 5 s first; the rest stays undeclared and goes on
+   AC-S43-7's list with the selector's reason. S26's modules wait for the host's rebase (D188 item 2); S07's are left.
+
+## Modules this slice and a sibling may both touch
+
+S07: `test_verify_scoped_*`, `test_verify_scoped_table_held` (new), the ux-gates tests — they import `scoped_fixture`,
+`test_scoped_targets`, `test_verify_stamp_scan`, `stamp_fixture`. S26: `test_decisions_*`, `test_hand_backs_record`,
+`test_result_contract_briefs`/`_stops`, the check-decisions and cruise-brief tests. This slice edits none of them. A
+helper they import that moves (`stamp_fixture.git`, anything from `test_verify_stamp_pinned`) keeps its old name by a
+re-export, so their branches merge cleanly.
+
+## Pin (stage 3)
+
+Factory code needs no pin: its tests are the pin. Behaviour is held by AC-S43-9 (same test ids at tip and base,
+quickstart step 4) and by running each touched module before and after its move.
+
+## Open questions
+
+None open. The four questions of the blocked plan were answered by D187 (1, 2) and D188 (3); (4) stays with D182 and is
+expected to be asked after the measurement (above).

@@ -73,3 +73,19 @@ What still runs whatever (b) does: A 569.2 + B 580.0 + B′ own-non-generating 1
 D179's *would reverse if* reads: "the per-module timing run shows that the modules (b) can narrow add up to less than
 the gap between the full suite and 900 s". The gap is 3448 − 900 = 2548 s; (b) can narrow at most ≈ 480 s beyond
 S38's. It holds, so per D179 condition 4 and the brief this goes back as a question before any declaration is written.
+
+## R-6 After D187 (rule and narrowed audit), the per-name ideal
+
+`/tmp/s43w/ideal.py` re-runs the probe on a scratch copy of the selector with the argv rule
+(`/tmp/s43w/sel/select_tests/argv.py`), crediting each module only with the facts of the names it actually uses from
+each `tests/` file (as if every borrowed helper had been moved), and with `".git" / "slipwai"` rewritten. On a Go change
+it still runs ≈ 2641 s: siblings 570.7, launcher routes the rule does not read (`adopt`, `add-service`, `migrate`,
+`*SHAPES[name]`, the module's own non-literal argvs) 1033.0, generating closures with `importlib` (`stamp_fixture.
+load_script`) 370.3, go or computed backends 653.3 (`test_matrix` 447.9 and `test_images` 31.6 of it, both narrowed to
+go by S38), reads of `assets/languages` 13.9. Skippable: 773.9 s, led by the codegraph/health group (≈ 277 s), the render
+group (≈ 160 s), `test_factory_gate_stamp` (46.4 s), `test_mutation_scope_real_spring` (31.7 s). With the matrix's and
+images' non-go share taken off, the estimated floor is ≈ 2250 s: AC-S43-6 is expected to miss (plan *Status*).
+
+Two false launcher routes found on the way, both rewritable without changing behaviour: a `/ "slipwai"` path chain
+naming a stamp directory (`self.repo / ".git" / "slipwai"`), and a `["slipwai"]` list in a declaration's own `reads`
+(`render_fixture`), which `names_launcher` reads as the launcher on `PATH`.
