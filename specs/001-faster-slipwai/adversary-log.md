@@ -625,16 +625,16 @@ Findings: thirteen — three `HIGH`, three `MEDIUM`, seven `LOW`; no `CRITICAL`.
 
 | # | Seam | Severity | Finding | Triage | State |
 |---|---|---|---|---|---|
-| A1 | A | HIGH | The change-set scripts run from the working tree judge their own change: a regression in `verify_scoped/changes.py` committed beside a test edit narrows the run and skips that test. New | Confirmed; S38 T050 | open |
-| B1 | B | HIGH | A generating module that reads the repository by a relative path (`Path("AGENTS.md")`, a subprocess with no `cwd`) keeps its declaration, so a change there skips it. New, latent | Confirmed; S38 T053 | open |
-| B3 | B | HIGH | The reads-only audit drops paths under `tests/` and does not see subprocesses, so a fixture read or a script run passes it and its change skips the module. New, latent | Confirmed; S38 T055 | open |
-| A2 | A | MEDIUM | `SINCE:=`/`SINCE::=` and a spaced value survive `without_knobs`; on the `TESTS`/`SKIP` path `SINCE` and `verify`'s `FULL=1` reach the modules, and a generated project's `make mutation` reads `SINCE`. New | Confirmed; S38 T051 | open |
-| B2 | B | MEDIUM | `names()` holds a read by any suffix of a `reads` entry, and `./README.md` is a valid entry, where the selector matches by prefix: a declaration held by a path the selector never matches. New, latent | Confirmed; S38 T054 | open |
-| B4 | B | MEDIUM | `from tests.support import X` records `tests`, so a change to the helper skips a declared module importing it so. New, latent | Confirmed; S38 T056 | open |
+| A1 | A | HIGH | The change-set scripts run from the working tree judge their own change: a regression in `verify_scoped/changes.py` committed beside a test edit narrows the run and skips that test. New | Confirmed; S38 T050 | fixed `4044de8` |
+| B1 | B | HIGH | A generating module that reads the repository by a relative path (`Path("AGENTS.md")`, a subprocess with no `cwd`) keeps its declaration, so a change there skips it. New, latent | Confirmed; S38 T053 | fixed `2a7f2dd`, `06873a4` |
+| B3 | B | HIGH | The reads-only audit drops paths under `tests/` and does not see subprocesses, so a fixture read or a script run passes it and its change skips the module. New, latent | Confirmed; S38 T055 | fixed `675c65e` |
+| A2 | A | MEDIUM | `SINCE:=`/`SINCE::=` and a spaced value survive `without_knobs`; on the `TESTS`/`SKIP` path `SINCE` and `verify`'s `FULL=1` reach the modules, and a generated project's `make mutation` reads `SINCE`. New | Confirmed; S38 T051 | fixed `d9d7bbd` (residual: a module importing neither `tests/support.py` nor the selector — the verify-stamp modules — still sees `SINCE` under an explicit `make test TESTS=… SINCE=…`; Parking Lot) |
+| B2 | B | MEDIUM | `names()` holds a read by any suffix of a `reads` entry, and `./README.md` is a valid entry, where the selector matches by prefix: a declaration held by a path the selector never matches. New, latent | Confirmed; S38 T054 | fixed `917a4bc` |
+| B4 | B | MEDIUM | `from tests.support import X` records `tests`, so a change to the helper skips a declared module importing it so. New, latent | Confirmed; S38 T056 | fixed `d837e74` |
 | A3 | A | LOW | A `git remote` that fails reads as no remote, dropping the trunk's unpushed commits from the change set. Older (`assets/toolkit/scripts/verify_scoped/changes.py`) | Declined: older generated-project code, needs a git that fails for `remote` alone; Parking Lot | declined |
 | A4 | A | LOW | A hanging git hangs `make test` silently: `check-slice-scope.run_git` has no time limit. Older | Declined: fails safe (never green), older generated-project code; Parking Lot | declined |
 | A5 | A | LOW | `make verify TESTS=x` prints `verify: all gates passed` after a partial run. Older (the same on `main`) | Declined: it now prints `selection off: TESTS given` first; the override is the person's | declined |
 | A6 | A | LOW | `MAKE=true` in the environment makes `verify-checks` pass with no test run. New (recursion) | Declined: redefining make's own variable defeats every recursive make; common values (`make -j8`) fail safe | declined |
 | A7 | A | LOW | `MAKEFILES=x.mk` makes `verify-checks` fail with no rule for `test`. New | Declined: fails safe | declined |
-| A8 | A | LOW | A slice branch with no commits of its own is reported as *HEAD is not on a branch*. New | Confirmed; S38 T052 | open |
+| A8 | A | LOW | A slice branch with no commits of its own is reported as *HEAD is not on a branch*. New | Confirmed; S38 T052 | fixed `792ed9a` |
 | A9 | A | LOW | Ignored files outside `assets/`, `src/`, `tests/` never make a run full (research R-6). New | Declined: no declared module reads such a directory; R-6 chose it | declined |
