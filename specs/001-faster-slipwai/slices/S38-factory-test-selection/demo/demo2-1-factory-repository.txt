@@ -1,0 +1,36 @@
+$ time make test TESTS=test_factory_repository   # /tmp/s38/c at be5b646 (slice/S38-factory-test-selection's tip), noahc-server
+echo 'selection off: TESTS given'; PYTHONPATH=src:tests python3 -m unittest -v test_factory_repository
+selection off: TESTS given
+test_a_family_question_is_never_asked_of_a_backend_key (test_factory_repository.FactoryRepositoryTest.test_a_family_question_is_never_asked_of_a_backend_key)
+`language` throughout this package is a *backend* key, and families are what have properties. ... ok
+test_an_option_s_feature_is_never_branched_on_by_name (test_factory_repository.FactoryRepositoryTest.test_an_option_s_feature_is_never_branched_on_by_name)
+"Needs a container, migrations, a suite outside the gate" is a *trait*, not the string `postgres`. ... ok
+test_every_asset_is_text_because_the_pipeline_can_carry_nothing_else (test_factory_repository.FactoryRepositoryTest.test_every_asset_is_text_because_the_pipeline_can_carry_nothing_else)
+`asset_tree` reads with `read_text` and `write_project` writes with `write_text`. ... ok
+test_gitea_publisher_has_the_exact_canonical_scope (test_factory_repository.FactoryRepositoryTest.test_gitea_publisher_has_the_exact_canonical_scope) ... ok
+test_no_derived_starter_copies_are_committed (test_factory_repository.FactoryRepositoryTest.test_no_derived_starter_copies_are_committed) ... ok
+test_the_ci_matrix_names_every_backend_the_catalog_has (test_factory_repository.FactoryRepositoryTest.test_the_ci_matrix_names_every_backend_the_catalog_has)
+The matrix suite runs one CI job per backend, sliced with `FACTORY_BACKENDS`. The list of backends ... ok
+test_the_factorys_own_gate_runs_the_same_checks_ci_does (test_factory_repository.FactoryRepositoryTest.test_the_factorys_own_gate_runs_the_same_checks_ci_does)
+`make verify` locally and CI run the same targets, which is the rule the factory generates. ... ok
+test_the_factorys_own_source_keeps_the_shape_it_claims (test_factory_repository.FactoryRepositoryTest.test_the_factorys_own_source_keeps_the_shape_it_claims) ... ok
+test_the_pinned_tooling_matches_what_a_generated_project_is_given (test_factory_repository.FactoryRepositoryTest.test_the_pinned_tooling_matches_what_a_generated_project_is_given)
+The factory is not checked by a looser tool than the one it hands its own output. ... ok
+test_the_snapshot_is_published_only_when_every_gate_is_green (test_factory_repository.FactoryRepositoryTest.test_the_snapshot_is_published_only_when_every_gate_is_green)
+The `snapshot` job packages `main` and publishes it — after every other job, on a push to `main` ... ok
+test_the_structure_gate_rejects_a_module_that_does_not_say_what_it_is (test_factory_repository.FactoryRepositoryTest.test_the_structure_gate_rejects_a_module_that_does_not_say_what_it_is) ... ok
+test_the_structure_gate_rejects_a_module_that_outgrew_its_budget (test_factory_repository.FactoryRepositoryTest.test_the_structure_gate_rejects_a_module_that_outgrew_its_budget) ... ok
+test_the_structure_gate_rejects_an_import_against_the_direction (test_factory_repository.FactoryRepositoryTest.test_the_structure_gate_rejects_an_import_against_the_direction) ... ok
+test_the_structure_gate_rejects_an_import_cycle (test_factory_repository.FactoryRepositoryTest.test_the_structure_gate_rejects_an_import_cycle) ... ok
+test_the_structure_gate_rejects_logic_hidden_in_a_package_facade (test_factory_repository.FactoryRepositoryTest.test_the_structure_gate_rejects_logic_hidden_in_a_package_facade) ... ok
+test_the_wheel_bundles_exactly_what_the_package_reads_from_the_root (test_factory_repository.FactoryRepositoryTest.test_the_wheel_bundles_exactly_what_the_package_reads_from_the_root)
+`assets.py` resolves `assets/`, `catalog.json` and `VERSION` from the checkout root — and ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 1.619s
+
+OK
+
+real	0m1.785s
+user	0m1.689s
+sys	0m0.095s

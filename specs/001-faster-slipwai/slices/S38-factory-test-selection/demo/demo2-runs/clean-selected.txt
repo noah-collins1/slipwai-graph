@@ -1,0 +1,38 @@
+# Summary of a run's log: its header, the selector's lines, every FAIL/ERROR block with its traceback, the go test lines that failed inside a generated project, and the tail. The full log (0.8 MB, 7170 lines) was in /tmp/s38 and is removed with the scratch clone.
+# machine: noahc-server (12 cores) · no CI variable set · one run on the machine at a time
+$ time make test SINCE=be5b646   # fe5e71b on slice/S38-demo2-go, 2026-10-06T23:17:35Z
+PYTHONPATH=src python3 -B scripts/select-tests.py
+compared with `be5b646` at be5b646, named by SINCE — taken as passing on the word of whoever named it
+skipped test_gitea_pages: reads no go configuration
+skipped test_go_mutation_file: reads no go configuration
+skipped test_migration_script: reads no go configuration
+skipped test_mutation: reads no go configuration
+skipped test_pit_globs: reads no go configuration
+skipped test_release: reads no go configuration
+skipped test_versions: reads no go configuration
+narrowed test_images: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_line_widths: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_matrix: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_no_mocking_frameworks: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_postgres: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_readiness: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_stale_references: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+selected 336 of 343 modules against `be5b646` at be5b646
+
+## Failures (module of each: none)
+## test_matrix's go mutation example (defect 2)
+test_a_go_service_importing_a_workspace_module_is_mutation_tested (test_matrix.MatrixTest.test_a_go_service_importing_a_workspace_module_is_mutation_tested)
+`make mutation` on the layout `docs/architecture.md` prescribes for shared Go code. ... created: /tmp/tmpiwpyn0kd/mutation-go
+ok
+
+## Tail
+selected 336 of 343 modules against `be5b646` at be5b646
+Ran 2741 tests in 2778.778s
+OK (skipped=5)
+Ran 21 tests in 105.335s
+OK (skipped=1)
+selected 336 of 343 modules against `be5b646` at be5b646
+real	48m6.659s
+user	46m7.429s
+sys	9m50.151s
+exit=0

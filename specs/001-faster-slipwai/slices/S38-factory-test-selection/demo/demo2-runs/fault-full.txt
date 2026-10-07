@@ -1,0 +1,49 @@
+# Summary of a run's log: its header, the selector's lines, every FAIL/ERROR block with its traceback, the go test lines that failed inside a generated project, and the tail. The full log (0.8 MB, 6878 lines) was in /tmp/s38 and is removed with the scratch clone.
+# machine: noahc-server (12 cores) · no CI variable set · one run on the machine at a time
+$ time make test FULL=1   # 2130852 on slice/S38-demo2-go, 2026-10-07T01:01:30Z
+PYTHONPATH=src python3 -B scripts/select-tests.py
+full: FULL=1 given
+
+## Failures (module of each: test_add_service test_matrix)
+ERROR: test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate (test_add_service.AddServiceTest.test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate)
+A Go project generated with no frontend gets one; a TypeScript project with one gets a second,
+Traceback (most recent call last):
+  File "/tmp/s38/c/tests/test_add_service.py", line 138, in test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate
+    subprocess.run(["make", "verify"], cwd=repo, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['make', 'verify']' returned non-zero exit status 2.
+
+
+ERROR: test_every_distinct_variant_passes_its_native_repository_gate (test_matrix.MatrixTest.test_every_distinct_variant_passes_its_native_repository_gate)
+Traceback (most recent call last):
+  File "/tmp/s38/c/tests/test_matrix.py", line 52, in test_every_distinct_variant_passes_its_native_repository_gate
+    subprocess.run(["make", "verify"], cwd=repo, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['make', 'verify']' returned non-zero exit status 2.
+
+
+## go test lines inside the generated projects
+--- FAIL: TestReportsReady (0.00s)
+    health_test.go:7: got "okay"
+--- FAIL: TestReportsReady (0.00s)
+    health_test.go:7: got "okay"
+
+## test_matrix's go mutation example (defect 2)
+test_a_go_service_importing_a_workspace_module_is_mutation_tested (test_matrix.MatrixTest.test_a_go_service_importing_a_workspace_module_is_mutation_tested)
+`make mutation` on the layout `docs/architecture.md` prescribes for shared Go code. ... created: /tmp/tmpqa1l32bq/mutation-go
+ok
+
+## Tail
+full: FULL=1 given
+Ran 2838 tests in 2922.439s
+FAILED (errors=2, skipped=8)
+real	48m43.186s
+user	45m46.414s
+sys	9m48.524s
+exit=2

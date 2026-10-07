@@ -72,3 +72,45 @@
      - Its `git switch adopt-method` line cannot run before the merge.
      - The `SINCE=adopt-method` line can only show a full run on this branch.
      - Case (b)'s skip reason, *reads no configuration*, omits *and none of the changed files*, which is the real reason a module reading files is skipped.
+
+## 2026-10-07T02:38:47Z — accepted · iteration 25 · drive-hand (claude-opus-5-5)
+- **Started with:** the slice tip `be5b646` cloned to `/tmp/s38/c`, on noahc-server (12 cores), with `CI`, `GITHUB_ACTIONS` and `GITLAB_CI` unset and one suite on the machine at a time. Commands, in order:
+  1. `time make test TESTS=test_factory_repository`, run at the tip.
+  2. On a throwaway `slice/S38-demo2-go`: `SINCE=be5b646 python3 -B scripts/select-tests.py --dry-run`, then `time make test SINCE=be5b646` and `time make test FULL=1`.
+  3. After the fault commit, on the same branch: `time make test FULL=1`, then `time make test SINCE=be5b646`.
+  4. In a second clone `/tmp/s38/q` on `slice/S38-factory-test-selection` itself: the quickstart's `SINCE=HEAD python3 -B scripts/select-tests.py --dry-run`, once after an uncommitted change and once after a committed one.
+
+  Both clones were removed afterwards. · **Seeded:** two commits on `slice/S38-demo2-go` over `be5b646`:
+  - `fe5e71b`: demo 1's case (a) line, the comment `// Check reports that the service is up.` in `assets/languages/go/app/health/health.go`.
+  - `2130852`: demo 1's fault (a), `Check()` returns `"okay"`.
+- **Driven through:** CLI. The slice has no screen, so agent-browser, a browser tool and HTTP do not apply. The setting's rung is `browser`; this demo dropped to the CLI for that reason.
+- **Examples:**
+  - **Defect 3, `test_factory_repository` on the tip:** passed. 16 tests OK in 1.6 s, including `test_the_factorys_own_gate_runs_the_same_checks_ci_does`. It is also green in all four runs below.
+  - **Defect 1 and AC-S38-8/-9/-12, a go-app line:** passed. `selected 336 of 343 modules against be5b646`, where demo 1 got 341 of 341.
+    - Seven modules narrowed to `backend go only (java-quarkus, java-spring, python, typescript unaffected)`: `test_images`, `test_line_widths`, `test_matrix`, `test_no_mocking_frameworks`, `test_postgres`, `test_readiness` and `test_stale_references`.
+    - Seven were skipped, each as *reads no go configuration*: `test_gitea_pages`, `test_go_mutation_file`, `test_migration_script`, `test_mutation`, `test_pit_globs`, `test_release` and `test_versions`.
+    - The other 329 ran whole. `make test` printed the same lines as the dry run.
+  - **Timed pair on `fe5e71b`:** passed. Selected: 2886.7 s, 336 of 343, green. `FULL=1`: 3320.0 s, `full: FULL=1 given`, green. The saving is 433 s (13.1%); demo 1's case (a) saved 46 s (1.4%).
+  - **Defect 2, `SINCE` leaking into the tests:** passed. The selected run on the clean change exits 0 with no FAIL or ERROR. `test_matrix.test_a_go_service_importing_a_workspace_module_is_mutation_tested` passes under `make test SINCE=be5b646`, where demo 1 saw ``mutation: SINCE `52ecbd3` names no commit``. It passes on the faulted selected run too.
+  - **AC-S38-16, soundness, on `2130852`:** passed.
+    - Full (2923.2 s, 343 modules) failed `test_add_service` and `test_matrix`. Both fail with `make verify` exit 2 in the generated project, which reports `--- FAIL: TestReportsReady … got "okay"`.
+    - Selected (2846.8 s, 336 of 343) failed the same two. `test_matrix`, narrowed to go, was red in the second batch (21 tests, 78.5 s).
+    - No module failed in full alone. With defect 3 fixed, `test_factory_repository` no longer pads either list.
+  - **The quickstart's `SINCE=HEAD` pointer (T045's rewrite):** passed, for an uncommitted change.
+    - After an uncommitted go-app edit on `slice/S38-factory-test-selection`, it prints the SINCE line, the seven skips (*reads no go configuration*), the seven narrowings and `selected 336 of 343`.
+    - After an uncommitted `mutation-scope.py` edit, it prints six skips, each with T045's *reads no configuration and none of the changed files*, and `selected 337 of 343`.
+    - After a committed change, `SINCE=HEAD` compares the commit with itself. All 15 declared modules are skipped as *reads none of the changed files* (328 of 343). That is right for an empty diff, but not what the reader wanted. `SINCE=HEAD~1` shows the change.
+    - The rest of the top block stands from demo 1. Its lines now say what they show before the merge.
+- **Evidence:**
+  - Step 1: `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-1-factory-repository.txt`.
+  - Dry run: `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-2-go-app-dryrun.txt`.
+  - Quickstart pointer: `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-5-quickstart-since-head.txt`.
+  - Branch and fault diffs: `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-branches-and-faults.txt`.
+  - Timings: `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-timings.md`.
+  - Run summaries (header, selector lines, every failure with its traceback, the generated project's go test failure, the mutation example's result, tail): `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-runs/clean-selected.txt`, `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-runs/clean-full.txt`, `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-runs/fault-full.txt`, `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-runs/fault-selected.txt`.
+- **Feedback:** All three demo 1 defects are fixed as the actor sees them. Nothing re-enters the ladder. Notes for the next slice:
+  1. **Skip reason for a go change.** *reads no go configuration* is not quite true of `test_go_mutation_file`, which declares `assets/languages/go/scripts/go-mutation.py`. It reads go material, just not the changed file. T045 gave the toolkit case *… and none of the changed files*; the go case wants the same tail.
+  2. **Quickstart, `SINCE=HEAD`.** "after a change" should read "after an uncommitted change". The alternative is to add `SINCE=HEAD~1` for a committed one. A reader who commits first sees every declared module skipped and may take the selector to be broken.
+  3. **Reading a selected run's result.** A narrowed run is two `unittest` batches (here 2741 tests, then 21), each with its own `Ran …`/`OK`/`FAILED`. The `selected N of M` line is printed again after them. A reader skimming the tail must read both batches or trust make's exit status. One closing line, *N modules, all passed* or *failed: <modules>*, would settle it.
+  4. **Figures, for D130 (reported, not judged).** A go-app change now saves 13.1% of a full run (433 s of 3320 s). All 15 declared modules either narrow or skip; the remaining cost is the 328 undeclared modules, which always run.
+  5. **S39.** None of these figures is a quantity S39 computes. This demo's roughly 3.5 h of runs lands in S38's open `hand` bracket (`be5b646`).

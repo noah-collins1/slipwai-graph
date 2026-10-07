@@ -1,0 +1,63 @@
+# On slice/S38-factory-test-selection at be5b646, clone /tmp/s38/q
+
+## 1. Uncommitted one-line change in assets/languages/go/app/health/health.go
+$ git status --short
+ M assets/languages/go/app/health/health.go
+$ SINCE=HEAD python3 -B scripts/select-tests.py --dry-run
+compared with `HEAD` at be5b646, named by SINCE — taken as passing on the word of whoever named it
+skipped test_gitea_pages: reads no go configuration
+skipped test_go_mutation_file: reads no go configuration
+skipped test_migration_script: reads no go configuration
+skipped test_mutation: reads no go configuration
+skipped test_pit_globs: reads no go configuration
+skipped test_release: reads no go configuration
+skipped test_versions: reads no go configuration
+narrowed test_images: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_line_widths: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_matrix: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_no_mocking_frameworks: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_postgres: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_readiness: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_stale_references: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+selected 336 of 343 modules against `HEAD` at be5b646
+exit=0
+
+## 2. Uncommitted one-line change in assets/toolkit/scripts/mutation-scope.py
+$ git status --short
+ M assets/toolkit/scripts/mutation-scope.py
+$ SINCE=HEAD python3 -B scripts/select-tests.py --dry-run
+compared with `HEAD` at be5b646, named by SINCE — taken as passing on the word of whoever named it
+skipped test_gitea_pages: reads no configuration and none of the changed files
+skipped test_go_mutation_file: reads no configuration and none of the changed files
+skipped test_migration_script: reads no configuration and none of the changed files
+skipped test_mutation: reads no configuration and none of the changed files
+skipped test_release: reads no configuration and none of the changed files
+skipped test_versions: reads no configuration and none of the changed files
+selected 337 of 343 modules against `HEAD` at be5b646
+exit=0
+
+## 3. The same go change committed, then SINCE=HEAD (HEAD is now the change itself)
+$ SINCE=HEAD python3 -B scripts/select-tests.py --dry-run
+compared with `HEAD` at 903a867, named by SINCE — taken as passing on the word of whoever named it
+skipped test_assets_bytecode: reads none of the changed files
+skipped test_gitea_pages: reads none of the changed files
+skipped test_go_mutation_file: reads none of the changed files
+skipped test_images: reads none of the changed files
+skipped test_line_widths: reads none of the changed files
+skipped test_matrix: reads none of the changed files
+skipped test_migration_script: reads none of the changed files
+skipped test_mutation: reads none of the changed files
+skipped test_no_mocking_frameworks: reads none of the changed files
+skipped test_pit_globs: reads none of the changed files
+skipped test_postgres: reads none of the changed files
+skipped test_readiness: reads none of the changed files
+skipped test_release: reads none of the changed files
+skipped test_stale_references: reads none of the changed files
+skipped test_versions: reads none of the changed files
+selected 328 of 343 modules against `HEAD` at 903a867
+exit=0
+$ SINCE=HEAD~1 python3 -B scripts/select-tests.py --dry-run
+compared with `HEAD~1` at be5b646, named by SINCE — taken as passing on the word of whoever named it
+skipped test_gitea_pages: reads no go configuration
+skipped test_go_mutation_file: reads no go configuration
+...
