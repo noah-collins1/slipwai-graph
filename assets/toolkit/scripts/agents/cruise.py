@@ -276,15 +276,16 @@ def assign(table: dict[str, Any], assignment: str) -> str:
     return f"{key} = {json.dumps(table[key])}"
 
 
-def climb(table: dict[str, Any], assignment: str) -> None:
-    """Refuse a `decide` change an iteration makes, or a step up of more than one rung; `check` judges the rest."""
+def climb(current: Any, assignment: str) -> None:
+    """Refuse a `decide` change an iteration makes, or a step up of more than one rung from `current`, the value
+    the file held when the call began, never one an earlier assignment in the same call set; `check` judges the
+    rest."""
     key, _, value = assignment.partition("=")
     if key != "decide":
         return
     if os.environ.get(ITERATION_VARIABLE):
         raise RuntimeError("`decide` changes only through /cruise-settings, a person's command; an iteration never "
                            "sets it (D62)")
-    current = table.get("decide")
     if value in RUNGS and current in RUNGS and RUNGS[value] > RUNGS[current] + 1:
         step = next(name for name, rung in RUNGS.items() if rung == RUNGS[current] + 1)
         raise RuntimeError(f"`decide` moves one mode at a time: set `{step}` first")
@@ -1892,8 +1893,9 @@ def main() -> None:
         if not assignments:
             raise RuntimeError(f"--set takes key=value with a key from {', '.join(DEFAULTS)}")
         changed = []
+        loaded = table.get("decide")
         for assignment in assignments:
-            climb(table, assignment)
+            climb(loaded, assignment)
             changed.append(assign(table, assignment))
         findings = check(table)
         if findings:

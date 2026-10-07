@@ -66,6 +66,23 @@ class DecideLadderTest(unittest.TestCase):
     def test_a_jump_from_shadow_to_provisional_is_refused_naming_advisory(self) -> None:
         self.refused("provisional-shadow", "provisional", "provisional-advisory")
 
+    def test_several_assignments_in_one_call_are_judged_against_the_value_the_file_held(self) -> None:
+        project = scratch_project("recommended-first")
+        before = self.config(project).read_bytes()
+        result = cruise(project, "--set", "decide=provisional-shadow", "decide=provisional-advisory",
+                        "decide=provisional")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("set `provisional-shadow` first", result.stderr)
+        self.assertEqual(self.config(project).read_bytes(), before, "a refusal wrote the file")
+        self.assertEqual(result.stdout, "")
+
+    def test_one_step_stated_twice_in_one_call_is_still_one_step(self) -> None:
+        project = scratch_project("recommended-first")
+        result = cruise(project, "--set", "decide=provisional-shadow", "decide=provisional-shadow")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(self.config(project).read_text(encoding="utf-8"))["decide"],
+                         "provisional-shadow")
+
     def test_the_ladder_is_climbed_one_written_rung_at_a_time(self) -> None:
         project = scratch_project("recommended-first")
         for rung in LADDER[1:]:
