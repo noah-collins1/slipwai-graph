@@ -6,6 +6,8 @@ decision entry carries (and, where provisional, its `Revert:` line), from the `d
 (passed, never read: the verb reads no file). Provisional is `provisional` with a final tier of easy or guarded and none
 of `ci_workflow=yes`, `migrate_file=yes`, `flag_default=yes` (FR-033); a fact, a constitution MUST and a release are
 unavailable whatever `decide` says. A missing `--reversibility` line is `hard`.
+The gate (`check-decisions.py`) loads this file by path, only for a log carrying a `Status: provisional|ratified|
+reverted`, a `Revert:` or a `Provisional (shadow|advisory):` line, and `check_log()` holds those lines to their grammar.
 Nothing here prints or exits outside `main`; `reversibility.py` beside this file is loaded by path, bytecode off.
 """
 from __future__ import annotations
@@ -13,6 +15,7 @@ from __future__ import annotations
 import importlib.util
 import re
 import sys
+from collections.abc import Iterable, Mapping
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -34,6 +37,12 @@ DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 NUMBER = re.compile(r"D[1-9][0-9]*")
 USAGE = ("usage: provisional.py status --decide <" + "|".join(DECIDE) + "> --ask <" + "|".join(ASKS) +
          "> --when <ISO instant> --number D<n> [--reversibility '<line>']")
+
+
+FORMS = ("provisional", "ratified", "reverted")
+STATUS_FORM = re.compile(r"provisional · ratify by ([0-9]{4}-[0-9]{2}-[0-9]{2})|(?:ratified|reverted) "
+                         r"([0-9]{4}-[0-9]{2}-[0-9]{2})")
+REVERT_FORM = re.compile(r"commits carrying Decision: D([1-9][0-9]*)")
 
 
 class Usage(Exception):
@@ -122,6 +131,56 @@ def status_lines(decide: str, ask: str, when: str, number: str, line: str | None
             err.append(f"cruise: parked: {number} needs a person's approval; recommended: provisional · ratify by "
                        f"{until} ({tier}) — answer accept through /cruise-tell")
     return [*out, STANDING], err
+
+
+def status_kind(fields: Mapping[str, str]) -> str:
+    """The first word of an entry's `Status` where it is one of the three this module reads, else the empty string."""
+    words = fields.get("Status", "").split()
+    return words[0] if words and words[0] in FORMS else ""
+
+
+def well_formed(status: str) -> bool:
+    """Whether `status` is exactly one of the three forms, its date a calendar date."""
+    found = STATUS_FORM.fullmatch(status)
+    return found is not None and calendar(found.group(1) or found.group(2)) is not None
+
+
+def revert_findings(where: str, number: int, fields: Mapping[str, str], twice: set[str], kind: str) -> list[str]:
+    """The findings for one entry's `Revert:` line: said once, only by a provisional, ratified or reverted entry, and
+    `commits carrying Decision: D<own number>`; a provisional entry must say it."""
+    found = [f"{where} `Revert` is on more than one line; an entry says it once"] if "Revert" in twice else []
+    if "Revert" not in fields:
+        return found
+    if not kind:
+        return found + [f"{where} `Revert` is on an entry whose `Status` is {fields.get('Status', '')!r}; only a "
+                        "provisional, ratified or reverted entry carries one"]
+    named = REVERT_FORM.fullmatch(fields["Revert"])
+    if named is None:
+        return found + [f"{where} `Revert` is {fields['Revert']!r}; it is `commits carrying Decision: D{number}`"]
+    if int(named.group(1)) != number:
+        found.append(f"{where} `Revert` names D{named.group(1)}; it names this entry, D{number}")
+    return found
+
+
+def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
+              ) -> list[str]:
+    """The findings for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
+    gate parsed them. Each is `<file>:<line>: D<n> ...`, one per fault, naming the field."""
+    findings: list[str] = []
+    for line, number, fields, twice in items:
+        if number is None:
+            continue
+        where = f"{relative}:{line}: D{number}"
+        kind = status_kind(fields)
+        sound = kind == "" or well_formed(fields["Status"])
+        if not sound:
+            findings.append(f"{where} `Status` is {fields['Status']!r}; it is `provisional · ratify by YYYY-MM-DD`, "
+                            "`ratified YYYY-MM-DD` or `reverted YYYY-MM-DD`, a calendar date")
+        findings += revert_findings(where, number, fields, twice, kind)
+        if sound and kind == "provisional" and "Revert" not in fields:
+            findings.append(f"{where} `Revert` is missing; a provisional entry says `commits carrying Decision: "
+                            f"D{number}`")
+    return findings
 
 
 def parse_status(arguments: list[str]) -> dict[str, str]:

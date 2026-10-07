@@ -16,6 +16,8 @@ from pathlib import Path
 from test_decisions_scope import SCRIPT, entry, run, scratch
 from test_decisions_scope_gate import own_log, released_checker
 
+from slipwai.assets import ROOT
+
 BOM = "﻿"
 TITLE = "# Decisions\n\n"
 
@@ -79,6 +81,25 @@ def gate_of(script: Path, log: bytes, beside: bool = False) -> subprocess.Comple
         return run(repo)
 
 
+def checker_at(ref: str, directory: str) -> Path:
+    """`check-decisions.py` as committed at `ref`, written beside nothing."""
+    path = Path(directory) / f"check-decisions-{ref}.py"
+    text = subprocess.run(["git", "show", f"{ref}:assets/toolkit/scripts/check-decisions.py"], cwd=ROOT, text=True,
+                          capture_output=True, check=True, encoding="utf-8").stdout
+    path.write_text(text, encoding="utf-8", newline="\n")
+    return path
+
+
+def gate_with(script: Path, log: bytes, scripts: tuple[str, ...]) -> subprocess.CompletedProcess[str]:
+    """The gate over `log` in a scratch project holding `scripts` (names under `assets/toolkit/scripts/`) beside it."""
+    with tempfile.TemporaryDirectory() as directory:
+        repo = scratch(directory, "", script=script)
+        for name in scripts:
+            shutil.copy(SCRIPT.with_name(name), repo / "scripts" / name)
+        (repo / "specs/f/decisions.md").write_bytes(log)
+        return run(repo)
+
+
 def without_notes(stdout: str) -> list[str]:
     return [line for line in stdout.splitlines() if not line.startswith("check-decisions: note:")]
 
@@ -128,6 +149,43 @@ class GateHoldsTheReleasedCheckersAnswerTest(unittest.TestCase):
         self.assertEqual((1, 1), (before.returncode, after.returncode))
         self.assertIn("Traceback", before.stderr)
         self.assertEqual(1, len(after.stderr.strip().splitlines()))
+
+
+BEFORE_S27 = "5f4fc00"  # the checker as S26 left it, the last one that knows nothing of `provisional.py`
+
+
+class GateHoldsTheEarlierAnswerBesideProvisionalPyTest(unittest.TestCase):
+    """S27 R6 (AC-S27-7): a log with no provisional, ratified, reverted or rehearsal line gets the earlier answer."""
+
+    def test_r6_e1_every_case_and_this_repositorys_log_with_all_three_scripts_beside_get_both_earlier_answers(
+            self) -> None:
+        with tempfile.TemporaryDirectory() as other:
+            released, before = released_checker(other), checker_at(BEFORE_S27, other)
+            for name, log in logs().items():
+                after = gate_with(SCRIPT, log, ("reversibility.py", "provisional.py"))
+                for earlier in (gate_of(released, log), gate_of(before, log, beside=True)):
+                    self.assertEqual((earlier.returncode, earlier.stderr), (after.returncode, after.stderr), name)
+                    self.assertEqual(without_notes(earlier.stdout), without_notes(after.stdout), name)
+
+    def test_r6_e2_a_revert_line_on_a_standing_entry_passed_before_and_is_refused_now(self) -> None:
+        """D65's carve-out (P4): `Revert:` is a label only this release defines, so a log that carried one passed an
+        earlier checker and is refused by this one, naming the entry and the field."""
+        log = (TITLE + entry(1).replace("- **Status:** standing\n", "- **Status:** standing\n"
+                                        "- **Revert:** commits carrying Decision: D1\n")).encode("utf-8")
+        with tempfile.TemporaryDirectory() as other:
+            before = gate_with(checker_at(BEFORE_S27, other), log, ("reversibility.py",))
+        after = gate_with(SCRIPT, log, ("reversibility.py", "provisional.py"))
+        self.assertEqual(0, before.returncode, before.stderr)
+        self.assertEqual(1, after.returncode, after.stdout)
+        self.assertIn("D1", after.stderr)
+        self.assertIn("`Revert`", after.stderr)
+
+    def test_r6_e3_without_provisional_py_beside_it_a_log_with_no_new_form_gets_the_same_answer(self) -> None:
+        for name, log in logs().items():
+            without = gate_with(SCRIPT, log, ("reversibility.py",))
+            beside = gate_with(SCRIPT, log, ("reversibility.py", "provisional.py"))
+            self.assertEqual((without.returncode, without.stdout, without.stderr),
+                             (beside.returncode, beside.stdout, beside.stderr), name)
 
 
 if __name__ == "__main__":

@@ -57,6 +57,12 @@ rule:**` citations among them. A log without the line never loads it and gets th
 `note:` where it has `Proposed rule:` lines, which are then not checked. A label written nearly right (another case, a
 space before the colon, underscores, another bullet) is never read, in any log, and is a `note:` naming entry and label.
 
+A log with a `Status: provisional · ratify by YYYY-MM-DD`, `ratified YYYY-MM-DD` or `reverted YYYY-MM-DD`, a
+`- **Revert:** commits carrying Decision: D<n>` or a `- **Provisional (shadow|advisory):**` line is also held to
+`provisional.py` beside this script, loaded for that log alone: a provisional entry says `Revert:` once and for its own
+number, only such an entry carries one, a malformed date is a finding naming the entry and `Status`. A log with none of
+those lines never loads it and gets the answer it always did.
+
 Every `specs/<feature>/hand-backs.md` and `specs/<feature>/slices/<id>/hand-backs.md` is held to the result-contract
 shape `docs/result-contract.md` writes down: an entry `## <UTC time> — drive-<name> — <stage>` holding one fenced
 `result-contract` block, or a `- **Missing:** <reason>` line, one finding per fault naming the file, the heading and
@@ -102,6 +108,9 @@ DEMO_HEADING = re.compile(r"^## (\S+) — (\w+) · iteration (\d+) · drive-hand
 DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decision D\d+\)|drive-skipper \(.+\)|"
                         r"drive-bosun( \(.+\))?|human)$")
 STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
+NEW_FIRST = [["provisional"], ["ratified"], ["reverted"]]  # a Status whose first word `provisional.py` reads
+PROVISIONAL_LABEL = re.compile(r"^- \*\*Status:\*\*[^\S\n]*(?:provisional|ratified|reverted)\b|"
+                               r"^- \*\*(?:Revert|Provisional \((?:shadow|advisory)\)):\*\*", re.M)
 LINE_LABEL = re.compile(r"^- \*\*(?:Reversibility|Proposed rule):\*\*", re.M)
 REVERSIBILITY_LABEL = re.compile(r"^- \*\*Reversibility:\*\*", re.M)
 NEAR_LABEL = re.compile(r"^\s*[-*+]\s*[*_]*\s*(?:reversibility|proposed\s*rule)\s*[*_]*\s*:[*_]*", re.I)
@@ -250,11 +259,19 @@ def scope_notes(path: Path) -> list[str]:
     return notes
 
 
+def provisional_wanted(text: str) -> bool:
+    """Whether `provisional.py` is beside this script and `text` carries a line only it reads (D65: any other log gets
+    the answer it always did, and `provisional.py` is not loaded)."""
+    return Path(__file__).resolve().with_name("provisional.py").is_file() and PROVISIONAL_LABEL.search(text) is not None
+
+
 def check_decisions(path: Path) -> list[str]:
     relative = path.relative_to(ROOT).as_posix()
     findings: list[str] = []
     expected = 1
-    for line, heading, fields in entries(read(path), DECISION_HEADING, legacy=True):
+    text = read(path)
+    held = provisional_wanted(text)  # the new Status forms are left to provisional.py, which then holds them
+    for line, heading, fields in entries(text, DECISION_HEADING, legacy=True):
         where = f"{relative}:{line}"
         if heading is None:
             findings.append(f"{where}: a heading that is not `## D<n> — <question>`")
@@ -274,7 +291,7 @@ def check_decisions(path: Path) -> list[str]:
             findings.append(f"{where}: D{number} `Decided by` is {fields['Decided by']!r}; it is host (stage "
                             "recommendation), host (standing decision D<m>), drive-skipper (<model>), drive-bosun "
                             "or human")
-        if not STATUS.match(fields["Status"]):
+        if not STATUS.match(fields["Status"]) and not (held and fields["Status"].split()[:1] in NEW_FIRST):
             findings.append(f"{where}: D{number} `Status` is {fields['Status']!r}; it is standing, overridden by "
                             "D<m> or overridden by human <date>")
         if "Scope" in fields.twice:
@@ -569,6 +586,17 @@ def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
     return unread + findings, notes + said
 
 
+def provisional_findings(path: Path) -> list[str]:
+    """The findings for the `Status` forms, `Revert:` and rehearsal lines of one log, from `provisional.py` beside this
+    script, loaded only for a log that carries one."""
+    text = read(path)
+    if not provisional_wanted(text):
+        return []
+    items = [(line, int(heading.group(1)) if heading else None, fields, fields.twice)
+             for line, heading, fields in entries(text, DECISION_HEADING, legacy=True)]
+    return sibling("provisional").check_log(path.relative_to(ROOT).as_posix(), items)
+
+
 def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int, int]:
     """The findings, the notes, the count of hand-backs and the count of `Missing:` entries in every record, each
     finding naming its file."""
@@ -606,6 +634,7 @@ def gate() -> int:
         findings += check_decisions(path)
         held_lines, line_notes = reversibility_findings(path)
         findings += held_lines
+        findings += provisional_findings(path)
         for note in line_notes:
             print(note)
     for path in logs:
