@@ -82,6 +82,16 @@ FORMS: dict[str, tuple[str, str]] = {
     "a_list_with_double_star_keywords": (f"{PY}, **KW", ""),
     "a_list_with_a_second_positional": (f"{PY}, 4096", ""),
     "a_list_with_an_unlisted_keyword": (f"{PY}, preexec_fn=hook", ""),
+    # after-converge A4: forms converge pass 2 tried, each of them a route
+    "a_keyword_args_list": (f"args={PY}", ""),
+    "run_imported_under_an_alias": (f"r({PY})", "from subprocess import run as r\n"),
+    "subprocess_imported_under_an_alias": (f"sp.run({PY})", "import subprocess as sp\n"),
+    "os_execv_with_a_launcher_path": (
+        f'os.execv(ROOT / "slipwai", [{L}, "generate", "n", "--backend", "python", {NARROW}])', ""),
+    "an_asyncio_exec_with_a_starred_list": (
+        f'asyncio.create_subprocess_exec(*[{L}, "generate", "n", "--backend", "python", {NARROW}])', ""),
+    "an_abbreviated_backend_flag": (f'[{L}, "generate", "n", "--back", "python", {NARROW}]', ""),
+    "a_double_dash_separator": (f'[{L}, "generate", "n", "--", "--backend", "python", {NARROW}]', ""),
     "python_dash_m_slipwai_as_a_tuple": (
         f'("python3", "-m", "slipwai", "generate", "n", "--backend", "python", {NARROW})', ""),
     "the_launcher_on_path_as_a_tuple": (f'("slipwai", "generate", "n", "--backend", "python", {NARROW})', ""),
