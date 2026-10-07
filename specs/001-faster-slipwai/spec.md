@@ -2758,6 +2758,9 @@ section and are moved to the Parking Lot (D173). No environment variable is read
   default, with one sentence on when to set `UX_GATES_SINCE=all`; the fragment claims MINOR (a new value of a setting,
   D171), `VERSION` stays where it is, and its catch-up note says a slice branch now renders fewer previews and how to
   get them all.
+- **AC-S07-15** — *D188.* Given each test module S07 adds or edits, then it carries a `TEST_SELECTION` declaration in
+  the same commit, held by the selector's checks with a planted-fault case per declared axis, or it is named on S43's
+  committed list of undeclared modules with the selector's reason.
 
 ### S26-reversibility-line
 
@@ -2826,7 +2829,10 @@ today's rules declaring every module as narrowly as its source allows still sele
 because the join is per imported test file and about 96 modules inherit `test_replay`'s, `test_adopt`'s,
 `test_migrate`'s or `test_add_service`'s launcher routes through a helper they borrow, so shared helpers move into
 declared helper files and `CATALOG["backends"]` loops switch to `backends_under_test()` with CI's coverage unchanged,
-and the selector's rules stay (D179); the audit of reads-only modules stays (D181); 15 minutes is acceptance (D182);
+and the selector's rules stay (D179); the audit of reads-only modules stays (D181); after the measured
+table showed (b) saves at most about 480 s of a 2548 s gap, D187 overrides D179 condition 3 and D181: a fully literal
+`./slipwai generate` argv resolves per axis, every other form failing closed, and the audit narrows to the declared
+reads-only modules a run selects; D188 measures AC-S43-6 on the whole tree S43 merges; 15 minutes is acceptance (D182);
 shared generation code already selects every module; eleven test files sit at the 350-line budget. No bump: nothing
 under `tests/` or `scripts/select_tests/` is in the wheel.
 
@@ -2844,7 +2850,10 @@ under `tests/` or `scripts/select_tests/` is in the wheel.
 - **AC-S43-5** — Given a change under `src/`, `catalog.json` or `assets/backing-services/prune.py`, then every module
   runs.
 - **AC-S43-6** — *D169, D182.* Given one Go app file changed on the slice branch, when `make test` runs inside an S39
-  `gate` bracket, then it finishes in under 900 s on the reference machine, reported against AC-S43-1's total; a miss is
+  `gate` bracket, then it finishes in under 900 s on the reference machine, reported against AC-S43-1's total — measured on
+  the slice rebased onto adopt-method after S26 merged, every module running as the selector decides, the seconds in
+  S07's still-undeclared modules reported on a line of their own (D188); S43 may declare S26's modules once S26 has
+  merged; a miss is
   a `behaviour` demo, and relaxing the target is a person's word.
 - **AC-S43-7** — Given a module left undeclared, then a committed list names it with the selector's own reason.
 - **AC-S43-8** — *D180.* Given the demo's planted Go fault, then the one full run of the demo is made on the faulted
@@ -2853,5 +2862,18 @@ under `tests/` or `scripts/select_tests/` is in the wheel.
   same set: none lost, none renamed away, none newly skipped.
 - **AC-S43-10** — *D179 condition 2.* Given each module switched to `backends_under_test()`, then the set of (module,
   backend) pairs CI's jobs run is the same before and after; a module that cannot be shown so keeps its loop.
-- **AC-S43-11** — Given `make check-structure`, then it passes, no test file over 350 lines; the selector's rules,
-  `rules.py` and the audit module are unchanged (D179 condition 3, D181).
+- **AC-S43-11** — Given `make check-structure`, then it passes, no test file over 350 lines; the selector's rules
+  change only as D187 says, D164 rules 1, 2 and 4 unchanged.
+- **AC-S43-12** — *D187 rules 1–3.* Given a fixture whose argv is `ROOT / "slipwai"`, `"generate"` and string
+  literals only, then it resolves as the equivalent `generate(` call (`--backend` as `language`, an omitted axis flag as
+  every option of that axis, `--output`, `--skip-checks` and the name selecting nothing, any other flag every option of
+  every axis); given each unreadable form — a computed or starred element, concatenation, a list variable,
+  `shlex.split`, `shell=True`, an unmapped flag, `add-service`, `migrate`, `adopt`, `replay`, the launcher on `PATH`,
+  `python -m slipwai`, `refuse(` — then a planted copy is selected on a one-Go-file change and `held()` names it.
+- **AC-S43-13** — *D187 rule 4.* Given a change set, then the audit covers the declared reads-only modules the run
+  selects, and a planted undeclared read in a changed module, in a helper of its closure, or in a file its `reads`
+  names, fails the audit; given no change set, or no selected set handed over, then every module `LISTING` names is
+  audited.
+- **AC-S43-14** — *D187 rule 5.* Given a copy whose literal `--backend python` its declaration omits, then it is void
+  and runs; given one real `assets/languages/python/` path, then every importer of a literal-python fixture is
+  selected, the expectation derived from `generation.facts`.

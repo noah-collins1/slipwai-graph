@@ -4220,3 +4220,86 @@
 - **Confidence:** high · **Would reverse if:** the module fails at `063c187` with every slot link pointing at a file that exists.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
+
+## D187 — Does S43 resolve a literal `./slipwai generate` argv per axis, and narrow the reads-only audit to the modules a change reaches?
+
+- **Stage:** 6 plan · **Slice:** S43-test-declarations · **When:** 2026-10-07T07:43:36Z · **Iteration:** 27
+- **Scope:** S43-test-declarations
+- **Question:** The measured run at `063c187` took 3448 s, and the target is under 900 s on a one-Go-app-file change (D169, D182). D179 (b) saves at most about 480 s. About 1060 s sits in modules that import a fixture generating a fixed configuration through a literal `ROOT / "slipwai" generate …` argv, which D164 rule 3 counts as every axis. About 580 s sits in modules whose own source runs the launcher or `refuse(`. Up to 1180 s would become reads-only declarations that `test_select_tests_real_audit` re-runs on every run. Does S43 take (1) a selector rule that resolves a literal `generate` argv per axis, and (2) an audit narrowed to the reads-only modules a change reaches?
+- **Options:**
+  - (a) Take (1) and (2) as one named decision, then measure. *(The slice recommended this one.)*
+  - (b) Take (1) only.
+  - (c) Take neither, and put relaxing the 15 minutes to a person now (D182), with the run parking on that question.
+- **Decision:** (a), the slice's recommendation, under the conditions below. This entry changes three standing entries, each through its own *would reverse if* or condition:
+  - It overrides **D179 condition 3**. D179's *would reverse if* holds: (b) can narrow about 480 s, and the gap is 2548 s. D179 condition 4 sends exactly this question here.
+  - It overrides **D181**. Its *would reverse if* holds: research R-4 and R-5 show the audit re-running up to 1180 s, enough on its own to keep a Go change above 15 minutes.
+  - It narrows **D164 rule 3** for one route only, the repository launcher's `generate` subcommand. Every other part of rule 3 stands.
+  1. **The literal argv rule: only a fully literal argv is read.** The selector resolves a `subprocess` argv only when all of these hold:
+     - its first element is `ROOT / "slipwai"`, as a literal chain;
+     - its second element is the literal `"generate"`;
+     - every other element is a string literal, except the values of `--output` and the project-name positional, which select nothing.
+  2. **The argv becomes the equivalent `generate(` call, then D164 rule 2 resolves it unchanged.**
+     - `--backend` maps to `language`. `--profile` and `--frontend` map to themselves. Any other axis flag maps to the `**axes` keyword of the same name.
+     - `--output`, `--skip-checks` and the name are named as selecting nothing.
+     - Any other flag is every option of every axis.
+     - An omitted `--backend`, `--profile` or `--frontend` is every option of that axis. The CLI's defaults are not the seam's, so the signature defaults are not borrowed.
+  3. **Anything the rule cannot read stays as rule 3 has it: every option of every axis.** That covers:
+     - a starred or computed element, so `*SHAPES[name]` and a variable `--backend` value both count;
+     - an argv built by `+`, a list variable, `shlex.split` or a `shell=True` string;
+     - a non-literal subcommand, or `add-service`, `migrate`, `adopt` or `replay`, which each wait for a decision of their own;
+     - the launcher reached on `PATH`, through `python -m slipwai` or through `slipwai.cli`;
+     - `refuse(`.
+
+     D164 rules 1, 2 and 4 are unchanged. A fixture that also reaches into the repository in-process (`stamp_fixture`'s `importlib`) is still void unless `reads` names the target.
+  4. **The audit narrows to the declared reads-only modules this run selects.**
+     - A module is selected when the change set touches it, anything in its `tests/` closure, or a path its `reads` matches.
+     - A run with no change set (a full run, the merge root, CI) audits every module `LISTING` names, exactly as today.
+     - The selector passes the selected set to the audit. With no set passed, the audit covers everything, so a broken handoff falls back to the full audit.
+  5. **Fault-planting tests guard both changes.** They go in new selector test modules, each under 350 lines, and each case is written to fail before the rule exists.
+     - **Each argv form in 3 skips nothing.** For each form a copy of a fixture module is planted: a computed `--backend`, a starred element, concatenation, `shell=True`, an unmapped flag, an omitted `--backend`, a literal `add-service`, and the launcher on `PATH`. On a one-Go-file change set, each copy is selected and `held()` names it.
+     - **A declaration that leaves out a literal value is void.** A copy whose literal `--backend python` is missing from its declaration is void and runs. This is AC-S43-4 for this route.
+     - **A literal argv is selected by its own option.** A change set of one real `assets/languages/python/` path selects every importer of the literal-python fixtures. The expected set is derived from `generation.facts`, not typed (AC-S43-3).
+     - **A changed reads-only module is audited.** A declared reads-only module is given an undeclared by-path read, and the change set is that file. It is selected, it is audited, and the audit fails. The same case is repeated with the change in a helper in its closure, and again with the change in a file its `reads` names.
+     - **A full run audits everything.** With no change set, the number of modules audited equals the number `LISTING` names.
+  6. **D179 (b) still applies first, and rewriting call sites is allowed.** A fixture call site may be rewritten into literal per-shape argvs, under D179 condition 1 (same test ids). This decision does not rewrite any argv on the slice's behalf.
+  7. **Then measure.** AC-S43-6 is run once after (b), (1) and (2). A miss stays D182's: it is a `behaviour` demo, and relaxing the target is a person's word.
+- **Why:**
+  - **(1) closes the gap D169 allows a rule change for.** No declaration can be written that skips a fixture generating python through the launcher on a Go change. So this is the case where a declaration cannot be expressed.
+  - **It is no looser than what D164 already trusts.** It resolves a literal argv by the same arguments it already resolves for a literal `generate(` call, and nothing the rule cannot read gets through.
+  - **D164 rule 3 was a response to unreadable reach.** The reproduced false skip came from reach the check did not notice. A literal argv that the check reads, and that fails closed on every other form, does not reopen that hole. The planted cases in 5 are what show it.
+  - **(2) still checks every declaration, and does not trust any.**
+    - A skipped module's source, closure and `reads` are, by definition of selection, unchanged from the base.
+    - The base's declarations were audited on the full run that every change to `main` gets at the merge root and in CI (owner priority 1).
+    - Anything a change touches is audited on that run.
+    - What (2) removes is a second run of the same check on unchanged content. That is owner priority 2.
+  - **Nothing here changes what the merge root or CI checks.** Their full run and full audit stay exactly as they are. So this is not on the brief's *Always ask a person* list.
+  - **Priority 5, deterministic over fast, holds.** The rule reads the tree being selected on every run and caches nothing.
+  - **Neither (b) nor (c) would meet acceptance.** With (b), research R-5 puts the floor at about 2209 s, a known miss. (c) puts relaxing the target to a person before the cheaper sound fix has been measured, and parks the run. D182 keeps that question for after a measured miss.
+  - **No user sees any of this.** `scripts/select_tests/` and `tests/` ship to no user. No bump, no fragment.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** any case in 5 shows a module skipped on a change its generated project or its reads actually reach. (1) or (2) is then withdrawn and D164 rule 3 or D181 stands as before.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`, `specs/001-faster-slipwai/spec.md` (the S43 preamble, AC-S43-11 amended, AC-S43-12 to AC-S43-14; the slice's plan.md *Status* and *Open questions* 1, 2 and 4)
+- **Status:** standing
+
+## D188 — How are the sibling-claimed test modules handled when AC-S43-6 is measured?
+- **Stage:** 6 plan · **Slice:** S43-test-declarations · **When:** 2026-10-07T07:43:48Z · **Iteration:** 27
+- **Scope:** S43-test-declarations, S07-scoped-checks, S26-reversibility-line
+- **Question:** S07 and S26 claim some test modules. These are `test_verify_scoped_*`, the ux-gates tests, `test_decisions_*`, `test_hand_backs_record` and `test_result_contract_briefs`/`_stops`. S43 was told to leave them alone. They are undeclared, so they run on every change. On a change to one Go file they cost about 569 s of the run, against AC-S43-6's 900 s budget (runtime table, plan *Open questions* 3). How does AC-S43-6 treat them?
+- **Options:** (a) leave them out of AC-S43-6's measured run until S07 and S26 merge, and declare them later in a follow-up *(the slice's recommendation)*; (b) S43 merges last, after S26 and S07 and outside split order, rebases onto both, and declares their modules itself; (c) measure with them running and undeclared, inside the 900 s budget.
+- **Decision:** (c), with one refinement. The slice's recommendation (a) is not taken.
+  1. **What counts.** AC-S43-6 is measured as `make test` on the tree S43 merges. That is the slice branch rebased onto `adopt-method` after S26 has merged, because S26 comes first in split order (D129). Every module on that tree runs as the selector decides. Nothing is left out of the run or subtracted from the number.
+  2. **S26's modules.** Once S26 has merged and S43 has rebased onto it, S43 may declare the test modules S26 claimed. S26 is finished with them by then, so there is no conflict and the order is unchanged. A module whose reach cannot be stated stays undeclared and goes on AC-S43-7's committed list with the selector's reason.
+  3. **S07's modules.** S43 leaves them as they are. S07 merges after S43. Each test module S07 adds or edits, it declares in the same commit, under S43's rules: checked, with a planted-fault case per declared axis. A module whose reach cannot be stated is added to AC-S43-7's list. The host numbers that criterion when it writes this entry into S07's acceptance.
+  4. **The report.** The demo log reports the seconds spent in the still-undeclared S07 modules as their own line in the S39 report, beside the total. Whoever answers plan Q4 (D182: relaxing the target is a person's word) then sees how much S07's declarations will recover.
+  5. **No change** to D129's merge order, the selector's rules or what CI runs.
+- **Why:**
+  - **The owner's acceptance is about the suite a developer actually runs.** Right after S43 merges, a developer on `adopt-method` waits through those 569 s.
+  - **(a) is a disguised relaxation.** Measuring a smaller suite than the one that runs lowers the target without saying so. D182 leaves that to a person.
+  - **(b) breaks D129.** D129 is the owner's own word: merge in split order, never finishing order. A planning stage cannot move a slice out of that order.
+  - **(c) gives the honest number.** It runs every check every time, and it puts the remaining cost where the next decision can see it.
+  - **The refinements win back what is safe to win back.** Declaring S26's modules after S26 merges, and having S07 declare its own, recovers the time without slices competing for the same files. It also delivers the payoff D169 added this slice for.
+  - **Nothing reaches a user.** `tests/` is not in the wheel.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** a person says AC-S43-6 measures only the modules S43 may touch, or changes D129's merge order for this slice.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`, `specs/001-faster-slipwai/spec.md` (AC-S43-6's measured tree; AC-S07-15)
+- **Status:** standing
