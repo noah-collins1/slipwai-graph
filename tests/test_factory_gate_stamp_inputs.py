@@ -59,6 +59,10 @@ UNCHANGING = {
     **{name: "what the fake `go` of `test_go_mutation_signal.py` prints and writes; the test sets both around its "
              "own call and restores the environment, so a value from outside never reaches an assertion"
        for name in ("FAKE_SAY", "FAKE_REPORT")},
+    "SELECTED_TEST_MODULES": "narrows the reads-only audit, but never under the gate: `make verify` runs `test` "
+                             "with `FULL=1`, and the selector removes it from every run it starts and sets it only on "
+                             "a selected one (`test_select_tests_audit_narrow`: a full run drops an inherited value); "
+                             "the one path that keeps it, `TESTS=`/`SKIP=`, is a bypass already (D187 rule 4, S43)",
     "TMPDIR": "where `tempfile` makes directories; no test's outcome turns on it since T023 (git is given "
               "`GIT_CEILING_DIRECTORIES` where it could see above one)",
 }
