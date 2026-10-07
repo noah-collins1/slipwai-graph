@@ -338,15 +338,15 @@ The last column is the first thing that keeps the module running on a Go change 
 
 ## AC-S43-9 — the same test ids
 
-`unittest.defaultTestLoader.discover('tests')` walked without running, on `git archive adopt-method` (`814acdc`, the
-rebased base) and on `git archive HEAD` of the slice's tip (`6a8616f`): 3296 ids at the base, 3384 at the tip, no import
-failure in either. The base's ids are all at the tip but one: `test_select_tests_real_helpers…test_the_render_fixture_runs_the_launcher_so_it_declares_every_configuration`
+`unittest.defaultTestLoader.discover('tests')` walked without running, on `git archive adopt-method` (`c101e5c`; the
+slice was last rebased onto `25447d8`, and nothing between them is under `tests/`) and on the slice's tip (`6a2e3d2`):
+3296 ids at the base, 3389 at the tip, no import failure in either. The base's ids are all at the tip but one:
+`test_select_tests_real_helpers…test_the_render_fixture_runs_the_launcher_so_it_declares_every_configuration`
 is now `…test_the_render_fixture_names_the_one_project_it_generates_and_reads_the_launcher_through_support` — a
 selector test about `render_fixture`'s declaration, which T006 narrowed from `"every"`, so its old name would be false.
-The host accepted this one rename (D191, drafted). The 89 added ids are the slice's selector tests
-(`test_select_tests_argv` 13, `_argv_forms` 53, `_audit_narrow` 11, `_real_s43` 11, `_real_helpers` 1: the renamed id);
-3296 − 1 + 89 = 3384. The tip count moves while the argv tests grow: it was recounted at the end of the A3 and A0 work and
-is that run's. Whether any test is newly skipped is not visible without running; the host's full run on the faulted tree
+The host accepted this one rename (D191, drafted). The 94 added ids are the slice's selector tests
+(`test_select_tests_argv` 13, `_argv_forms` 53, `_audit_narrow` 11, `_real_s43` 11, `_unclaimed` 3, `_real_mutation` 2,
+`_real_helpers` 1: the renamed id); 3296 − 1 + 94 = 3389. Whether any test is newly skipped is not visible without running; the host's full run on the faulted tree
 (AC-S43-8) is where it shows.
 
 ## AC-S43-10 — CI's (module, backend) pairs
