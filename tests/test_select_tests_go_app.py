@@ -17,10 +17,10 @@ from slipwai.assets import ROOT
 
 sys.dont_write_bytecode = True
 
-TEST_SELECTION: dict[str, object] = {
-    "reads": ["scripts/select_tests", "tests", "assets/languages/go/scripts/go-mutation.py",
-              "assets/toolkit/scripts/verify-stamp.py"],
-}
+# No TEST_SELECTION, on purpose: the child probe below scans the whole real tree with `declarations.scan` and
+# `choose.select`, so this module depends on every declared module's `reads` targets existing and on git's tracked
+# set -- neither could be a `reads` entry. Declared, it was skipped on a tree where a path some declaration reads was
+# deleted, while running it failed (S43 gaps report LOW 4). Undeclared, it always runs.
 
 HEALTH = "assets/languages/go/app/health/health.go"
 PROBE = """

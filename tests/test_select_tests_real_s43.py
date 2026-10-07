@@ -41,9 +41,8 @@ DECLARED: tuple[str, ...] = (  # the test modules this slice declares
     "test_factory_gate_stamp", "test_verify_stamp_key", "test_verify_stamp_working", "test_verify_stamp_reuse",
     "test_verify_stamp_stored", "test_verify_stamp_two_runs",
     "test_mutation_scope_real_spring",
-    "test_select_tests_make", "test_select_tests_paths", "test_select_tests_declarations", "test_select_tests_go_app",
-    "test_select_tests_makefile", "test_gate_walks_pom", "test_gate_walks", "test_drawio_canvas",
-    "test_design_extensions", "test_parallel_slices", "test_event_model",
+    "test_select_tests_make", "test_select_tests_paths", "test_select_tests_makefile", "test_gate_walks_pom",
+    "test_gate_walks", "test_drawio_canvas", "test_design_extensions", "test_parallel_slices", "test_event_model",
 )
 # the helper files this slice declares
 HELPERS: tuple[str, ...] = ("gate_rules", "render_fixture", "stamp_names", "stamp_case", "mutation_env",
@@ -138,6 +137,37 @@ class TestTheDeclarationsOfThisSliceAreHeldAndReached(unittest.TestCase):
         self.assertIn("test_matrix", {v.module for v in choose.select(self.tree, [go], self.catalog).verdicts
                                       if v.runs})
         self.assertTrue(set(BACKEND_MODULES) >= {"test_matrix", "test_postgres"})
+
+
+# A reads-only module's `reads` is the whole of what it depends on. A child probe run with `cwd=ROOT` that scans the
+# real tree depends on every declared module's `reads` targets existing and on git's tracked set: neither is a `reads`
+# entry, so a deleted path some declaration reads skips the module while running it fails (S43 gaps report, LOW 4).
+# Such a module stays undeclared and always runs.
+SCANS_THE_REAL_TREE: tuple[str, ...] = ("test_select_tests_go_app", "test_select_tests_declarations")
+TREE_PROBES = ("declarations.scan(", "choose.select(", "declarations.held(", "HELD")
+
+
+class TestAModuleThatScansTheRealTreeIsNotDeclared(unittest.TestCase):
+    tree: declarations.Tree
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.tree = declarations.scan(ROOT, rules.load_catalog(ROOT))
+
+    def test_the_two_probes_of_the_real_tree_stay_undeclared(self) -> None:
+        for name in SCANS_THE_REAL_TREE:
+            with self.subTest(module=name):
+                self.assertIsNone(self.tree.sources[name].declaration, f"tests/{name}.py scans the real tree")
+
+    def test_no_declared_reads_only_module_runs_the_selector_over_the_real_tree(self) -> None:
+        found = []
+        for name, source in sorted(self.tree.sources.items()):
+            if not declarations.is_module(name) or source.declaration is None or source.declaration.generates:
+                continue
+            text = (ROOT / "tests" / f"{name}.py").read_text(encoding="utf-8")
+            if "cwd=ROOT" in text and any(probe in text for probe in TREE_PROBES):
+                found.append(name)
+        self.assertEqual(found, [], "a reads-only module whose probe scans the real tree cannot state its reads")
 
 
 class TestAMovedHelperIsOneObjectByBothPaths(unittest.TestCase):
