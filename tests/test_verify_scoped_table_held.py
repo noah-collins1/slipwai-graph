@@ -98,6 +98,14 @@ NOT_AN_INPUT_PATTERN_FOR = {
 # registry they name are the full gate's or another check's. Each is a file name, or a directory under `scripts/`; the
 # reason is the value. A module its check no longer reaches is stale, as `NOT_AN_INPUT_FOR` is when no check fires it.
 BASE_MODULES = {
+    "check-agents": {
+        "verify-stamp.py": "loaded by `agents/project.py` for `exempt_entry`, so the projection reads nothing the "
+                           "stamp leaves out of its key (S07 T022); nothing the stamp names is read by the check",
+    },
+    "check-benchmark": {
+        "verify-stamp.py": "reached as `check-agents` reaches it, through `agents/models.py` naming `project.py`; "
+                           "nothing the stamp names is read by the check",
+    },
     "check-ux-gates": {
         "verify-stamp.py": "loaded for `trunk_module()` and the questions the scoped gate's borders ask: CI markers, "
                            "`HEAD`, the index and the trunk; nothing it names is read by the check that loads it",

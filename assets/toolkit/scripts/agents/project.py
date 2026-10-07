@@ -3,10 +3,13 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import sys
+from functools import cache
 from pathlib import Path
+from types import ModuleType
 
 # `models.py` beside this script resolves a stage to a model, and this script writes that model into the agent
 # types it projects. Importing it rather than shelling out keeps one resolver; `dont_write_bytecode` is what
@@ -39,6 +42,11 @@ DELIVERY = Path(__file__).resolve().parents[2]
 # `<layout.delivery>/skills/x` where the delivery material lives elsewhere.
 PREFIX = "" if DELIVERY == ROOT else f"{DELIVERY.relative_to(ROOT).as_posix()}/"
 REGISTRY = Path(__file__).with_name("registry.json")
+# The verify stamp leaves an ignored path out of its key where its closed `EXEMPT` list names it (`__pycache__/`,
+# `*.pyc`, `node_modules/` …), so a change there is no change to `make verify-scoped` either. A projection that read
+# one would be a check the scoped gate skips and `make verify` fails, so the canonical sources are walked through that
+# list — the stamp's own, loaded from beside this script's directory, never a copy of it.
+STAMP_SCRIPT = Path(__file__).resolve().parents[1] / "verify-stamp.py"
 AGENTS = ROOT / "AGENTS.md"
 STAMP = "Generated from {source}. Edit the canonical file and rerun ./init."
 CHECK = "--check" in sys.argv[1:]
@@ -122,12 +130,51 @@ def selected_integrations(arguments: list[str]) -> list[str]:
     raise RuntimeError("Spec Kit did not record an installed integration")
 
 
+@cache
+def stamp() -> ModuleType:
+    """`verify-stamp.py`, for `exempt_entry` and the list it reads. Loaded on first use, without its bytecode."""
+    spec = importlib.util.spec_from_file_location("verify_stamp", STAMP_SCRIPT)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"{STAMP_SCRIPT} cannot be loaded, so what the projection may read is unknown")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def shown(path: Path) -> str:
+    """A path as the project names it: from its root, with `/`."""
+    return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
+
+
+def exempt(path: Path) -> bool:
+    """Whether the verify stamp's exempt list leaves this path out of its key, and so out of the projection."""
+    return path.is_relative_to(ROOT) and stamp().exempt_entry(shown(path)) is not None
+
+
+def canonical(directory: str, pattern: str | None = None) -> list[Path]:
+    """The files of a canonical `skills/`, `commands/` or `agents/` matching `pattern`, or every file under it where
+    there is none, in order, but for any the stamp's exempt list names: a skill's own script run on a branch writes a
+    `__pycache__/` beside it."""
+    top = DELIVERY / directory
+    found = top.glob(pattern) if pattern else top.rglob("*")
+    return [path for path in sorted(found) if path.is_file() and not exempt(path)]
+
+
+def read(path: Path) -> str:
+    """A file's text, or one line naming the file where it is not UTF-8, rather than the codec's bare message."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as error:
+        raise RuntimeError(f"{shown(path)} is not UTF-8 text (byte {error.start} does not decode), and the "
+                           "projection reads it as text: save it as UTF-8, or move it out") from None
+
+
 def materialize(path: Path, content: str) -> None:
     EXPECTED.add(path)
     if CHECK:
         if not path.is_file():
             FINDINGS.append(f"{path.relative_to(ROOT)}: missing")
-        elif path.read_text(encoding="utf-8") != content:
+        elif read(path) != content:
             FINDINGS.append(f"{path.relative_to(ROOT)}: differs from its canonical source")
         return
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -135,7 +182,7 @@ def materialize(path: Path, content: str) -> None:
 
 
 def parse_command(path: Path) -> tuple[str, str, str]:
-    source = path.read_text(encoding="utf-8")
+    source = read(path)
     description = f"Run the {path.stem} project workflow"
     argument_hint = ""
     body = source
@@ -223,7 +270,7 @@ def rendered_command(path: Path, harness: dict[str, object]) -> tuple[str, str]:
 
 def parse_agent(path: Path) -> tuple[dict[str, str], str]:
     """A canonical `agents/<name>.md`: its neutral declaration, and the standing brief below it."""
-    source = path.read_text(encoding="utf-8")
+    source = read(path)
     if not source.startswith("---\n"):
         raise RuntimeError(f"{PREFIX}agents/{path.name} has no frontmatter; a type declares name, description, "
                            "stage, writes and commands")
@@ -354,19 +401,17 @@ def project_agents(harness: dict[str, object]) -> None:
     if not isinstance(file_row, dict):
         return
     target = ROOT / str(file_row["dir"])
-    for path in sorted((DELIVERY / "agents").glob("*.md")):
+    for path in canonical("agents", "*.md"):
         declared, body = parse_agent(path)
         materialize(target / f"{declared['name']}{file_row['extension']}",
                     rendered_agent(declared, body, harness, file_row))
 
 
 def copy_skills(destination: Path) -> None:
-    for source in sorted((DELIVERY / "skills").rglob("*")):
-        if not source.is_file():
-            continue
+    for source in canonical("skills"):
         relative = source.relative_to(DELIVERY / "skills")
         target = destination / relative
-        content = source.read_text(encoding="utf-8")
+        content = read(source)
         materialize(
             target,
             stamp_markdown(content, f"{PREFIX}skills/{relative.as_posix()}") if source.suffix == ".md" else content,
@@ -401,7 +446,7 @@ def sync_context(harness: dict[str, object]) -> None:
 
 def write_context_import(path: Path, name: str) -> None:
     """Own a marker-fenced `@AGENTS.md` include in an import harness's context file."""
-    content = path.read_text(encoding="utf-8") if path.is_file() else ""
+    content = read(path) if path.is_file() else ""
     found = IMPORT_REGION_PATTERN.search(content)
     if found is not None and found.group(0) == IMPORT_REGION:
         EXPECTED.add(path)
@@ -430,8 +475,8 @@ def copy_context_blocks(path: Path) -> None:
         # Spec Kit wrote no context file for this harness, so there is no copy to keep in step. Silent
         # rather than a finding: an absent file is that integration's business, not a drifted projection.
         return
-    content = path.read_text(encoding="utf-8")
-    expected = extension_blocks(AGENTS.read_text(encoding="utf-8"))
+    content = read(path)
+    expected = extension_blocks(read(AGENTS))
     findings: list[str] = []
     updated = content
     for key, block in expected:
@@ -557,7 +602,7 @@ def project(harness: dict[str, object]) -> None:
     else:
         skill_target = None
 
-    commands = sorted((DELIVERY / "commands").glob("*.md"))
+    commands = canonical("commands", "*.md")
     if isinstance(commands_dir, str) and commands_dir not in absent:
         target_dir = ROOT / commands_dir
         extension = harness.get("commandExtension") or ".md"
@@ -645,8 +690,8 @@ def report_unjustified_skills() -> None:
     capabilities = project_capabilities()
     if not capabilities:
         return
-    for skill in sorted((DELIVERY / "skills").glob("*/SKILL.md")):
-        declared = declared_capabilities(skill.read_text(encoding="utf-8"))
+    for skill in canonical("skills", "*/SKILL.md"):
+        declared = declared_capabilities(read(skill))
         if declared is None or serves(declared, capabilities):
             continue
         print(
