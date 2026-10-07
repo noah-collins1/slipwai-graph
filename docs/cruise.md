@@ -123,7 +123,7 @@ with no production target has no release rows. An adopted repository has three m
 | 9 | Converge appended tasks and the `/gaps` pass says stop | Already bounded by the ladder. Continue to the demo. | — |
 | 10 | The demo stop | Delegate to `drive-hand` with what the stop hands a person, plus the acceptance script. Take its verdict as the actor's. Acceptance is marked `accepted-by: drive-hand`. | `demo-log.md`, the benchmark `outcome=`, the register |
 | 11 | The ready set is empty | Not a stop. Run the completion audit. Only an audit with nothing left is `done`. | `specs/<feature>/cruise-report.md`, decision entries |
-| 12 | An input nobody has: a credential, an external system, a person's approval | Never decided. Record it as blocked with what is needed. Take the next ready slice. Park only when nothing can move. Under `decide: provisional` the skipper takes a person's approval provisionally where the change is easy or guarded to reverse (see [Provisional decisions](#provisional-decisions)): that is not a block, so no bosun and no ⛔. | a `parked` line in the log, ⛔ on the board |
+| 12 | An input nobody has: a credential, an external system, a person's approval | Never decided. Record it as blocked with what is needed. Take the next ready slice. Park only when nothing can move. Under `decide: provisional` the skipper takes a person's approval provisionally where the change is easy or guarded to reverse and none of `flag_default=yes`, `ci_workflow=yes` or `migrate_file=yes` holds, and never for a gate, a check or CI question (see [Provisional decisions](#provisional-decisions)): that is not a block, so no bosun and no ⛔. | a `parked` line in the log, ⛔ on the board |
 
 **The completion audit** runs where `/drive` would say the split is exhausted. `/gaps` runs over the whole of
 `spec.md` against what shipped, one `drive-gaps` delegate per feature area. Each finding goes to the skipper:
@@ -143,7 +143,7 @@ names the recommendation, and `/cruise-tell accept` takes it: the skipper return
 verbatim in `unresolved`, and a park on that item ends the run on it. Under all three provisional values every
 always-ask item goes to the skipper, even where the stage recommends an answer, and the host names `decide` in its
 brief. Under `provisional`, and only there, an easy or guarded
-item goes ahead with `Status: provisional · ratify by <date>` and a `Revert:` line, and every commit made under it
+item that holds none of `flag_default=yes`, `ci_workflow=yes` or `migrate_file=yes` goes ahead with `Status: provisional · ratify by <date>` and a `Revert:` line, and every commit made under it
 carries the trailer `Decision: D<n>`. A gate, a
 check, CI, a credential, a third party's behaviour, a constitution MUST and a release are never provisional. At
 the start of an iteration `python3 scripts/agents/cruise.py mode` records any change of `decide` as an entry, and the

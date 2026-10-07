@@ -30,19 +30,24 @@ REVERT_LINE = ("- **Revert:** <on a provisional, ratified or reverted entry: com
 MODE_LINE = ("- **Provisional (shadow | advisory):** <optional: final tier> · <provisional · ratify by <date> | "
              "blocks (hard) | blocks (<fact>=yes)> · Revert: commits carrying Decision: D<n>")
 
+# What `provisional` takes, as the verb decides it: the held-back facts are FR-033's three and the exclusion is D200's.
+TAKES = ("where the change is easy or guarded to reverse and none of `flag_default=yes`, `ci_workflow=yes` or "
+         "`migrate_file=yes` holds, and never for a gate, a check or CI question")
+
 # The command's paragraph for the skipper protocol: who, how, and what an enforced one is not. Each `decide` value has
 # its own sentence, and shadow and advisory take nothing: the rehearsal line is all they add.
 COMMAND_PARAGRAPH = f"""\
 **Provisional decisions.** Only the skipper takes an always-ask item provisionally, only a person's approval, and
 only under one value of `decide`. It scores the tier first with `{_SCORE}`, then runs `{PROVISIONAL_VERB}` with
 `--decide` the value in `.specify/cruise.json`, `--ask` the kind (`approval`, or `fact`, `must` or `release`),
-`--when` the entry's `When` and `--number D<n>`, and quotes the owner-brief line the item falls under. Under
+`--when` the entry's `When`, `--number D<n>` and `--reversibility` the line `reversibility.py` printed, and without
+it the verb reads the item as hard, so nothing is taken. It quotes the owner-brief line the item falls under. Under
 `decide: provisional-shadow` an always-ask item is not taken: it stays `unavailable`, the skipper's `status` is
 `unavailable`, and the entry only gains the `Provisional (shadow):` line saying what `provisional` would have done.
 Under `decide: provisional-advisory` an always-ask item is not taken either: it stays `unavailable`, the skipper's
 `status` is `unavailable`, and the entry only gains the `Provisional (advisory):` line, with the recommendation a
-person can accept in one word. Under `decide: provisional`, and only there, the skipper takes an easy or guarded
-approval provisionally, as `Status: provisional · ratify by <date>` with a `Revert:` line. Read the verb's output
+person can accept in one word. Under `decide: provisional`, and only there, the skipper takes an approval
+provisionally {TAKES}, as `Status: provisional · ratify by <date>` with a `Revert:` line. Read the verb's output
 line by line: the verb's first line, `unavailable: …`, is the skipper's `status: unavailable`, and its **Decision:**
 says what a person must provide; `Status:` and `Revert:` the skipper writes where the entry shape puts them; the
 `Provisional (shadow):` or `Provisional (advisory):` line goes after `Reversibility:`; the verb's other stderr lines
@@ -72,8 +77,8 @@ DISPATCH_WORDS = (" (under `provisional-shadow`, `provisional-advisory` and `pro
 APPROVAL_EXCEPTION = ", except an approval under `decide: provisional` (*Provisional decisions*, above)"
 NEVER_SETS = " The run never sets `decide`: `--set decide=…` refuses inside an iteration."
 STOP_EXCEPTION = (
-    "Under `decide: provisional` the skipper takes a person's approval provisionally where the change is easy or "
-    "guarded to reverse (*Deciding*, below): that is not a block, so no bosun and no ⛔"
+    "Under `decide: provisional` the skipper takes a person's approval provisionally " + TAKES + " (*Deciding*, "
+    "below): that is not a block, so no bosun and no ⛔"
 )
 SETTINGS_WORDS = ('"take easy decisions provisionally" is `decide=provisional-shadow` first, then one rung at a '
                   "time")
@@ -88,7 +93,7 @@ line the item falls under. Under `decide: provisional-shadow` an always-ask item
 `unavailable`, your `status` is `unavailable`, and the entry only gains the `Provisional (shadow):` line saying what
 `provisional` would have done. Under `decide: provisional-advisory` an always-ask item is not taken either: it stays
 `unavailable`, your `status` is `unavailable`, and the entry only gains the `Provisional (advisory):` line. Under
-`decide: provisional`, and only there, you take an easy or guarded approval provisionally, and your `status` is
+`decide: provisional`, and only there, you take an approval provisionally {TAKES}, and your `status` is
 `decided`. Read the verb's output line by line: the verb's first line, `unavailable: …`, is your `status:
 unavailable`, and your **Decision:** says what a person must provide; `Status:` and `Revert:` you write where the
 entry shape puts them; the `Provisional (shadow):` or `Provisional (advisory):` line goes after `Reversibility:`;
@@ -101,8 +106,9 @@ MUST or a release never is (`--ask fact`, `must` or `release`). Every other ques
 every commit made under it carries the trailer `{TRAILER}`."""
 
 # The owner brief's two sentences.
-OWNER_ALWAYS = ("Under `decide: provisional` an easy or guarded item here may be taken provisionally and is listed "
-                "for ratification (`commands/cruise.md` says how).")
+OWNER_ALWAYS = ("Under `decide: provisional` an easy or guarded item here, unless it holds `flag_default=yes`, "
+                "`ci_workflow=yes` or `migrate_file=yes` or is a gate, a check or CI question, may be taken "
+                "provisionally and is listed for ratification (`commands/cruise.md` says how).")
 OWNER_RECORD = ("A provisional entry's `Status` reads `provisional · ratify by <date>` and carries a `Revert:` line "
                 "naming the commits to take back; the `Provisional (shadow)` and `Provisional (advisory)` lines say "
                 "what a stricter mode would have done, and block nothing.")

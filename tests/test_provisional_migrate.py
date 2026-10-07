@@ -87,6 +87,13 @@ class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
                       "will not say `done`", "`.specify/product-owner.md`"):
             self.assertIn(words, self.note)
 
+    def test_t022_the_catch_up_is_true_of_the_files_migrate_brings_and_of_stepping_back(self) -> None:
+        for words in ("`agents/drive-skipper.md`", "`commands/cruise-settings.md`",
+                      "an entry written under `provisional` still holds the run after a person steps back to "
+                      "`provisional-shadow` or further"):
+            self.assertIn(words, self.note)
+        self.assertNotIn("it can only happen under `provisional`", self.note)
+
     def test_e2_the_catch_up_stands_alone_and_marks_nothing_experimental(self) -> None:
         for reference in ("T0", "AC-S27", "D19", "D20", "S27", "S28", "above", "R13", "experimental"):
             self.assertNotIn(reference, self.note)

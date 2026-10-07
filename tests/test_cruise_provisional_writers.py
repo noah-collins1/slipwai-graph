@@ -135,8 +135,8 @@ class BriefsTest(FactoryTestCase):
         lines = DECISION_ENTRY.splitlines()
         self.assertTrue(lines[-2].startswith("- **Status:**") and lines[-1].startswith("- **Revert:**"))
         self.assertTrue(lines[-3].startswith("- **Written to:**") and lines[-4].startswith("- **Provisional ("))
-        self.assertIn("Under `decide: provisional` an easy or guarded item here may be taken provisionally and is "
-                      "listed for ratification (`commands/cruise.md` says how).", flat(brief))
+        self.assertIn("may be taken provisionally and is listed for ratification (`commands/cruise.md` says how).",
+                      flat(brief))
 
     def test_e4_the_approval_row_names_the_exception_in_the_table_and_the_page(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -191,8 +191,10 @@ class ModesAreSeparateTest(FactoryTestCase):
                       "Under `decide: provisional-advisory` an always-ask item is not taken either: it stays "
                       "`unavailable`, the skipper's `status` is `unavailable`, and the entry only gains the "
                       "`Provisional (advisory):` line",
-                      "Under `decide: provisional`, and only there, the skipper takes an easy or guarded approval "
-                      "provisionally, as `Status: provisional · ratify by <date>` with a `Revert:` line"):
+                      "Under `decide: provisional`, and only there, the skipper takes an approval provisionally "
+                      "where the change is easy or guarded to reverse and none of `flag_default=yes`, "
+                      "`ci_workflow=yes` or `migrate_file=yes` holds, and never for a gate, a check or CI "
+                      "question, as `Status: provisional · ratify by <date>` with a `Revert:` line"):
             self.assertIn(words, self.command)
 
     def test_t016_the_skipper_has_one_sentence_per_value(self) -> None:
@@ -201,8 +203,10 @@ class ModesAreSeparateTest(FactoryTestCase):
                       "Under `decide: provisional-advisory` an always-ask item is not taken either: it stays "
                       "`unavailable`, your `status` is `unavailable`, and the entry only gains the "
                       "`Provisional (advisory):` line",
-                      "Under `decide: provisional`, and only there, you take an easy or guarded approval "
-                      "provisionally, and your `status` is `decided`"):
+                      "Under `decide: provisional`, and only there, you take an approval provisionally where the "
+                      "change is easy or guarded to reverse and none of `flag_default=yes`, `ci_workflow=yes` or "
+                      "`migrate_file=yes` holds, and never for a gate, a check or CI question, and your `status` "
+                      "is `decided`"):
             self.assertIn(words, self.skipper)
 
     def test_t016_no_sentence_grants_taking_under_shadow_or_advisory(self) -> None:
@@ -248,3 +252,35 @@ class ModesAreSeparateTest(FactoryTestCase):
                       "person's approval; recommended: …` is returned verbatim in `unresolved`", self.skipper)
         self.assertIn("returns the verb's stderr `cruise: parked: …` line verbatim in `unresolved`, and a park on "
                       "that item ends the run on that line", self.command)
+
+
+TAKES = ("where the change is easy or guarded to reverse and none of `flag_default=yes`, `ci_workflow=yes` or "
+         "`migrate_file=yes` holds, and never for a gate, a check or CI question")
+
+
+class WhatProvisionalTakesIsSaidAsTheVerbSaysItTest(FactoryTestCase):
+    """T022: every one-sentence summary of what `provisional` takes matches the verb."""
+
+    def test_t022_the_command_names_reversibility_and_what_its_absence_means(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "takes", "standard", "python")
+            command = flat((repo / "commands/cruise.md").read_text(encoding="utf-8"))
+            brief = flat((repo / ".specify/product-owner.md").read_text(encoding="utf-8"))
+        self.assertIn("`--reversibility` the line `reversibility.py` printed, and without it the verb reads the item "
+                      "as hard, so nothing is taken", command)
+        self.assertIn(TAKES, command)
+        self.assertIn("Under `decide: provisional` an easy or guarded item here, unless it holds `flag_default=yes`, "
+                      "`ci_workflow=yes` or `migrate_file=yes` or is a gate, a check or CI question, may be taken "
+                      "provisionally", brief)
+
+    def test_t022_the_page_says_it_in_row_12_and_in_its_section(self) -> None:
+        raw = (ROOT / "docs/cruise.md").read_text(encoding="utf-8")
+        self.assertIn(TAKES, flat(next(line for line in raw.splitlines() if line.startswith("| 12 |"))))
+        section = flat(raw[raw.index("## Provisional decisions"):])
+        self.assertIn("an easy or guarded item that holds none of `flag_default=yes`, `ci_workflow=yes` or "
+                      "`migrate_file=yes` goes ahead", section)
+
+    def test_t022_the_fragments_first_paragraph_names_the_held_back_facts(self) -> None:
+        text = (ROOT / "changelog.d/provisional-decisions.md").read_text(encoding="utf-8")
+        first = flat(text.split("\n\n")[1])
+        self.assertIn(TAKES, first)
