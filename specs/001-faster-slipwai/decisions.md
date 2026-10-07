@@ -4208,3 +4208,15 @@
 - **Confidence:** high · **Would reverse if:** a person wants a rule proposed on overridden entries surfaced, which a note would do without a refusal.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D186 — S43's measured run ended with one error its own plan stage caused: does it stand as D180's green base run?
+- **Stage:** 6 plan · **Slice:** S43-test-declarations · **When:** 2026-10-07T07:33:42Z · **Iteration:** 27
+- **Scope:** S43-test-declarations
+- **Question:** D180 stops the slice if the start run cannot finish green on the base. The run at `063c187` ran 3192 tests in 3447 s (wall 3448 s) with one error: `test_hand_backs_record`'s `with_own_specs` case copies the worktree's real `specs/` tree, ignored canonical slot links included, and the slice's plan stage had just pointed those links at files not yet written. The same module passes in the main checkout (20 tests). Does the run stand?
+- **Options:** (a) it stands: the base is green, the error was the checkout's state mid-run, and the timings are the table's (recommended); (b) re-run the whole suite, an hour, for a figure the error did not move.
+- **Decision:** (a). The table names the error and its cause. That the module reads a checkout's ignored links, so a worktree mid-plan turns it red, goes to the completion audit; S43 leaves it alone (it is not the selector's to fix).
+- **Why:** D180's stop guards against ranking from a red base; the base is green, and a second hour of the full suite is what the owner's demo budget (D169) exists to avoid.
+- **Decided by:** host (standing decision D180)
+- **Confidence:** high · **Would reverse if:** the module fails at `063c187` with every slot link pointing at a file that exists.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing
