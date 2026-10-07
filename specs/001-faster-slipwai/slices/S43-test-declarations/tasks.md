@@ -20,7 +20,7 @@ commit, not merged into this branch).
 
 ## Phase 1 — the selector learns one rule (D187)
 
-- [ ] **T001 — R1 literal launcher argv; AC-S43-12 (readable half), AC-S43-14 (both halves).**
+- [x] **T001 — R1 literal launcher argv; AC-S43-12 (readable half), AC-S43-14 (both halves).**
   - **Manifest:** new `scripts/select_tests/argv.py`; `scripts/select_tests/generation.py` (312 lines; the hook only, stays
     under 350); new `tests/test_select_tests_argv.py`.
   - **RED:** against scratch trees, e1 `[str(ROOT / "slipwai"), "generate", "fixture", "--profile", "standard", "--backend",
@@ -38,7 +38,7 @@ commit, not merged into this branch).
   - **REFACTOR:** `argv.py` has one entry point; `generation.py` ≤ 350.
   - **Done when:** the module passes; D164 rules 1, 2 and 4 behave as before (`test_select_tests_generation` still passes).
   - **Run:** `make test TESTS="test_select_tests_argv test_select_tests_generation test_select_tests_declarations"`.
-- [ ] **T002 — R2 every unreadable form stays every axis and is held; AC-S43-12 (second half), D187 rule 5.**
+- [x] **T002 — R2 every unreadable form stays every axis and is held; AC-S43-12 (second half), D187 rule 5.**
   - **Manifest:** new `tests/test_select_tests_argv_forms.py` (split from `test_select_tests_argv.py` territory; own file).
   - **Test:** a planted copy of a fixture module per form, each selected on a one-Go-file change set and named by
     `declarations.held()`: computed `--backend`; `*SHAPES[name]`; `[...] + flags`; a list variable; `shlex.split(...)`;
@@ -54,7 +54,7 @@ commit, not merged into this branch).
   - **GREEN:** nothing in production changes; the case set is the deliverable.
   - **Done when:** every form selects the copy on the Go change and is held; the permissive-reader trial fails each.
   - **Run:** `make test TESTS="test_select_tests_argv_forms test_select_tests_argv"`.
-- [ ] **T003 [P] — R4 the audit covers what the run selected; AC-S43-13.**
+- [x] **T003 [P] — R4 the audit covers what the run selected; AC-S43-13.**
   - **Manifest:** `scripts/select-tests.py` (190); `tests/test_select_tests_real_audit.py` (185); new
     `tests/test_select_tests_audit_narrow.py`.
   - **Parallel with T001/T002:** the files are disjoint from theirs (it touches neither `generation.py`, `argv.py` nor
@@ -70,7 +70,7 @@ commit, not merged into this branch).
 
 ## Phase 2 — the slice's own `real_*` list
 
-- [ ] **T004 — R5 e1–e2 scaffold; AC-S43-2, AC-S43-3.**
+- [x] **T004 — R5 e1–e2 scaffold; AC-S43-2, AC-S43-3.**
   - **Manifest:** new `tests/test_select_tests_real_s43.py` (`DECLARED`, `HELPERS_S43`, both empty at first);
     `tests/test_select_tests_real_declared.py` (49 lines; unions the new lists beside the existing ones).
   - **RED:** AC-S43-2 `declarations.held()` on the real tree names none of the listed modules or helpers; AC-S43-3 for each
@@ -90,7 +90,7 @@ borrowed helpers to a declared file with a re-export, declare the group; (3) `he
 name. Find importers with `delivery/scripts/codegraph callers <name>` before moving. If a module a task declares sits near 350
 lines, any move that shrinks it comes first.
 
-- [ ] **T005 — group 1 codegraph/health** (≈ 277 s; AC-S43-1, -2, -3, -9, -11).
+- [x] **T005 — group 1 codegraph/health** (≈ 277 s; AC-S43-1, -2, -3, -9, -11).
   - **Manifest:** new `tests/gate_rules.py` (`gate_target_name`, `gate_prerequisites`, `gate_rule`, own `TEST_SELECTION`);
     `tests/test_verify_stamp_pinned.py` (148; removes the three defs, re-exports them); `tests/test_cruise_runner.py` (336;
     imports from `gate_rules`, declares, stays ≤ 350); `tests/test_cruise_index.py` (192); `tests/test_code_index_health.py`
@@ -102,7 +102,7 @@ lines, any move that shrinks it comes first.
   - **Done when:** `held()` names none of the nine; `gate_prerequisites` is the same object by both import paths; a Go path
     skips the six heavy modules.
   - **Run:** `make test TESTS="test_codegraph_memory test_health_memory test_health_memory_states test_codegraph_races test_health_narrowed test_codegraph_narrowed test_cruise_runner test_cruise_index test_code_index_health test_verify_stamp_pinned test_select_tests_real_s43 test_select_tests_real_declared"`.
-- [ ] **T006 — group 2 render** (≈ 160 s).
+- [x] **T006 — group 2 render** (≈ 160 s).
   - **Manifest:** `tests/render_fixture.py` (339; `"every"` narrowed to what `RenderCase.project` generates — typescript,
     event-modelling, none — and the one-element `["slipwai"]` list dropped from its own `reads`, `support`'s carrying it into
     the join); `tests/test_render_current.py`, `test_render_files_report.py`, `test_render_files.py`, `test_render_links.py`,
@@ -111,7 +111,7 @@ lines, any move that shrinks it comes first.
     moved the T005 way into a named new file the executor adds to this manifest before writing it.
   - **Done when:** `held()` clean; a Go path skips the render modules, a typescript or event-modelling path selects them.
   - **Run:** the nine `test_render_*` modules, `test_select_tests_real_s43`, `test_select_tests_real_declared`.
-- [ ] **T007 — group 3 `test_factory_gate_stamp`** (46.4 s).
+- [x] **T007 — group 3 `test_factory_gate_stamp`** (46.4 s).
   - **Manifest:** `tests/test_factory_gate_stamp.py` (297; `self.repo / ".git" / "slipwai"` -> `self.repo / ".git/slipwai"`,
     same path and no `/ "slipwai"` route; the `ROOT / name` copies named in `reads`); `tests/test_select_tests_real_s43.py`.
     If its join still reaches `stamp_fixture.git`, create `tests/git_helpers.py` here (own `TEST_SELECTION`; `stamp_fixture.git`
@@ -120,7 +120,7 @@ lines, any move that shrinks it comes first.
   - **Done when:** `held()` clean; the module skipped on a Go change.
   - **Run:** `make test TESTS="test_factory_gate_stamp test_select_tests_real_s43 test_select_tests_real_declared"` plus every
     module that imports a moved name (stamp, replay).
-- [ ] **T008 — group 4 mutation** (`test_mutation_scope_real_spring` 31.7 s and what shares the cut).
+- [x] **T008 — group 4 mutation** (`test_mutation_scope_real_spring` 31.7 s and what shares the cut).
   - **Manifest:** `tests/test_mutation_scope_real_spring.py` (69); `tests/test_mutation_borders.py` (226;
     `clean_environment` moves out, re-exported); new `tests/mutation_env.py` (own `TEST_SELECTION`); `tests/git_helpers.py`
     (create here if T007 did not), `tests/stamp_fixture.py`, `tests/test_replay.py` (the `git` moves, re-exported);
@@ -130,7 +130,7 @@ lines, any move that shrinks it comes first.
 
 ## Phase 4 — down the table
 
-- [ ] **T009 — the next declarable modules, one sub-task per group, ≥ 5 s first, stopping when the next is not declarable.**
+- [x] **T009 — the next declarable modules, one sub-task per group, ≥ 5 s first, stopping when the next is not declarable.**
   Same cycle as Phase 3. Candidates in the table's order after the groups above, skipping S07 / S26 claims (D188):
   `test_codegraph_bytes` (46.6 s; joins group 1), `test_refresh_owned` (37.0), `test_mutation_stamp_untouched` (34.6),
   `test_factory_gate_stamp_inputs` (29.3) and `_scan`, `test_refresh_strategy` (21.2), `test_uncommitted_subdirectory`
@@ -146,7 +146,7 @@ lines, any move that shrinks it comes first.
 
 ## Phase 5 — the records
 
-- [ ] **T010 — AC-S43-7 undeclared list, AC-S43-9 same test ids, AC-S43-10 note.**
+- [x] **T010 — AC-S43-7 undeclared list, AC-S43-9 same test ids, AC-S43-10 note.**
   - **Manifest:** new `specs/001-faster-slipwai/slices/S43-test-declarations/undeclared.md` only (records; no test).
   - **Steps:** (1) AC-S43-7: one row per `test_*` module `tree.effective` leaves None at the slice's tip, with the selector's
     own reason, from `declarations.scan` (quickstart step 5); the list equals the scan. (2) AC-S43-9 (quickstart step 4): list
@@ -177,5 +177,11 @@ No screen in this slice.
 - T002 under today's rules is mostly a guard (unreadable forms already select every axis); see its flag.
 - Line budget: `test_cruise_runner` 336, `test_code_index_health` 337, `render_fixture` 339, `stamp_fixture` 318 leave
   little room; T005/T006/T007/T008 each name the move that shrinks them first.
+
+## Implementation record
+
+- T001 `139f1e8` (+ `315a153`), T002 `8e6c5f7`, T002b `fe98a42` (concatenation, string commands and `python -m slipwai` held; `names_launcher` moved to `scripts/select_tests/launcher.py`), T003 `11186e5`, T004 `8ce6f9e`, T005 `885960b`, T006 `7bf69f5`, T007 `3ea65da` (+ `a9f9364`), T008 `34c9874`, T009 `68005f4`, T010 `80529eb`; rebased onto `adopt-method` `0000e5b` after S26 merged (D188), no conflict.
+- T009 stopped at `test_slice_scope_base`, `test_slice_scope_forge_nobase` and `test_benchmark_brackets` (their closures reach `test_adopt`'s launcher route); S26's modules were not declared (≈ 9 s).
+- Estimated Go-change selection at the tip (`undeclared.md`): 342 of 383 modules, ≈ 2734 s of the table before `test_matrix`/`test_images` narrow to go; AC-S43-6 is expected to miss 900 s (plan *Status*).
 
 ## Convergence
