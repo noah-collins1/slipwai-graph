@@ -752,7 +752,7 @@ defects and the actor's page notes; each task's RED is the demo's reproduction (
 - [x] *(`accepted` at `44a7c44`, iteration 25: 336 of 343 on a go-app line, 13.1% saved; the `SINCE` run clean; soundness held.)* **T046 — Demo 2 (host task)** over the changed steps: one timed pair on a go-app line, the `SINCE` run clean, `test_factory_repository` green; never beside a full gate.
 
 - [ ] **T047 — LOW · The go skip reason is true of every module it names (demo 2 note 1).** *reads no go configuration* is said of `test_go_mutation_file`, which reads `assets/languages/go/scripts/go-mutation.py`; it gains T045's ending, *… and none of the changed files*. **Files:** `scripts/select_tests/choose.py`, its test. For Phase 4.
-- [ ] **T048 — LOW · The quickstart's `SINCE=HEAD` pointer says *uncommitted* (demo 2 note 2),** and gives `SINCE=HEAD~1` for a committed change. **Files:** `quickstart.md`, `docs/maintaining.md` if it says the same. For Phase 4.
+- [x] *(Done, iteration 26.)* **T048 — LOW · The quickstart's `SINCE=HEAD` pointer says *uncommitted* (demo 2 note 2),** and gives `SINCE=HEAD~1` for a committed change. **Files:** `quickstart.md`, `docs/maintaining.md` if it says the same. For Phase 4.
 - [ ] **T049 — LOW · A narrowed run ends on one line naming every failed module (demo 2 note 3)** — it prints two batches, each with its own verdict. **Files:** `scripts/select-tests.py`, its test. For Phase 4.
 
 ### Adversary (iteration 26, `adversary-log.md` § S38) — thirteen findings, seven confirmed

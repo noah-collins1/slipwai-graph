@@ -13,8 +13,9 @@ git switch adopt-method && python3 -B scripts/select-tests.py --dry-run   # need
 ```
 
 Before the merge, the SINCE line, every skip with its reason and the summary are read from the tip of this branch as a
-base: `SINCE=HEAD python3 -B scripts/select-tests.py --dry-run` after a change (a skipped module reads, for a toolkit
-script, *reads no configuration and none of the changed files*; for a go change, *reads no go configuration*).
+base: `SINCE=HEAD python3 -B scripts/select-tests.py --dry-run` after an uncommitted change, `SINCE=HEAD~1` after a
+committed one (a skipped module reads, for a toolkit script, *reads no configuration and none of the changed files*;
+for a go change, *reads no go configuration and none of the changed files*).
 
 ## The demo (AC-S38-15, AC-S38-16 — D157)
 
