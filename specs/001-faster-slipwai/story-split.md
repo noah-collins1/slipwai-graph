@@ -138,6 +138,7 @@ that cannot delegate takes the earliest ready slice in split order and names the
 
 ## Parking Lot
 
+- **`make verify`'s stamp does not see an ignored projection directory with no files (S07's T016 note), S03's script.** The stamp records ignored files and links, never directories, so a hollow `.claude/skills/` that makes `check-agents` fail leaves the stamp's key unchanged; `verify-scoped` now forces the full gate for it, the stamp does not. A slice that touches `verify-stamp.py` owns it.
 - **Per-check verify stamps (D173), unowned.** Narrowing how many stamps `/cruise` reuses when a run writes under
   `specs/` between gates, and stamping only the factory's checks in an adopted repository (where D74 R7 says it never
   stamps), each need a slice of their own through `/story-splitting`, with a key and never-read places set out as

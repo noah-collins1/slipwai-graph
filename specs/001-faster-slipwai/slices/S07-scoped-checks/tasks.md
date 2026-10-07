@@ -574,5 +574,7 @@ a hold shown to have teeth.
 - [x] T029 [HIGH] The class T022 found: every recursive walk a scoped check makes (`check-benchmark`'s `records()`, `check-deploy-role` over `infra/service/` incl. `.terraform/`, `check-flags`' `sources()`, `check-imports`' and `check-migrations`' `listing()`, `check-styles`' `imported_styles()`) consults the verify stamp's exempt list; the walk test holds every one with no exceptions. — `5b97a73`; the two D45/D52 walks closed on the record's side by T030 `b652796`
 - [x] T030 [HIGH] D194: an ignored directory the stamp exempts, holding a file `check-imports` or `check-migrations` opens under one of their declared inputs, gives that check no recorded inputs — `b652796`
 - [x] T026 Mutation: N/A — no mutation tool is configured for the factory's own Python.
-- [ ] T027 Both full gates once on the final tip: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify`.
-- [ ] T028 Register row with `accepted-by: drive-hand`; benchmark closed; worktree and `slice/S07-scoped-checks` removed; S07's undeclared modules carried to S43's list when S43 merges (AC-S07-15).
+- [x] T027 Both full gates once on the final tip: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify`.
+- [x] T028 Register row with `accepted-by: drive-hand`; benchmark closed; worktree and `slice/S07-scoped-checks` removed; S07's undeclared modules carried to S43's list when S43 merges (AC-S07-15).
+
+T027: green at `57c34cc` (`make verify` 3620 s, the delivery gate with CI markers 3611 s, 3430 tests each); the first `make verify` at `4245d7f` was red on `test_mutation_borders` (T025's reworded line) — fixed by `57c34cc`. T028: the undeclared modules are carried when S43 merges.
