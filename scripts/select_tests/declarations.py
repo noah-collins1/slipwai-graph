@@ -188,7 +188,7 @@ def read_source(root: Path, path: Path, catalog: Mapping[str, Any]) -> Source:
 def generation_facts(root: Path, path: Path, tree: ast.Module) -> statics.Facts:
     """The calls, routes and reaches of one file; `tests/support.py`, which defines the seam they are bound to, is
     trusted with its own launcher and `ROOT`."""
-    return statics.facts(tree, statics.signature(root), statics.defines_seam(tree), names_launcher)
+    return statics.facts(tree, statics.signature(root), statics.defines_seam(tree), names_launcher, root)
 
 
 def join(parts: list[Declaration]) -> Declaration:

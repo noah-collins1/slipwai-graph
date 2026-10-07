@@ -6,7 +6,9 @@ and resolved per axis: a literal, or a loop over a literal sequence, to its valu
 the axis*, so that a doubt fits only a declaration that leaves the axis unnamed or names it whole. A route to a
 generated project the signature does not describe (`refuse(`, the launcher, `slipwai.cli`) is every option of every
 axis. A module that generates and reaches into the repository in-process (`ROOT`, `__file__`, `.load(`, `importlib`,
-`runpy`, `exec`, `sys.path`) is held to `reads` naming the target. The problem found voids the declaration.
+`runpy`, `exec`, `sys.path`) is held to `reads` naming the target; so is one that hands on a string literal naming an
+existing top-level path of the repository (`Path("AGENTS.md")`: the tests run at its root). The problem found voids
+the declaration.
 """
 from __future__ import annotations
 
@@ -168,7 +170,36 @@ def literal_after(node: ast.AST, parents: Mapping[int, ast.AST]) -> str | None:
     return "/".join(parts).strip("/") or None
 
 
-def facts(module: ast.Module, shape: Signature | None, trusted: bool, launcher: Callable[[ast.AST], bool]) -> Facts:
+def names_a_path(value: str, root: Path | None) -> bool:
+    """Whether a string literal names an existing top-level path of the repository, or a path under one: the tests run
+    at the root, so `Path("AGENTS.md")` and `["python3", "scripts/x.py"]` reach it with no `ROOT` (T053)."""
+    if root is None or not value or value.startswith("/") or any(c in value for c in "\n\0") or len(value) > 200:
+        return False
+    return not {*value.split("/")} & {"..", ".", ""} and (root / value).exists()
+
+
+def anchored_elsewhere(node: ast.AST, parents: Mapping[int, ast.AST]) -> bool:
+    """A literal that is not a path handed to something: the operand of a comparison, an index, a key, or what a
+    `base / "name"` is joined to a base other than the repository (`ROOT` reports its own chain)."""
+    parent = parents.get(id(node))
+    if isinstance(parent, ast.Compare | ast.Subscript) or (isinstance(parent, ast.Dict) and node in parent.keys):
+        return True
+    if isinstance(parent, ast.BinOp) and isinstance(parent.op, ast.Div) and parent.right is node:
+        return True
+    return in_root_chain(node, parents)
+
+
+def in_root_chain(node: ast.AST, parents: Mapping[int, ast.AST]) -> bool:
+    """Whether a node is a part of a `ROOT / "a" / "b"` chain, which `ROOT` reports with its literal."""
+    while isinstance(parent := parents.get(id(node)), ast.BinOp) and isinstance(parent.op, ast.Div):
+        node = parent
+    while isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+        node = node.left
+    return isinstance(node, ast.Name) and node.id == "ROOT"
+
+
+def facts(module: ast.Module, shape: Signature | None, trusted: bool, launcher: Callable[[ast.AST], bool],
+          root: Path | None = None) -> Facts:
     """Every call, route and reach in the file. The file that defines the seam is trusted with its own launcher and
     `ROOT`: it is what the calls are bound to."""
     parents = parents_of(module)
@@ -194,6 +225,9 @@ def facts(module: ast.Module, shape: Signature | None, trusted: bool, launcher: 
             continue
         if launcher(node):
             routes.append((line, "the launcher or `slipwai.cli`"))
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and names_a_path(node.value, root) \
+                and not anchored_elsewhere(node, parents):
+            reaches.append(Reach(line, "the path literal", node.value))
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
             parent = parents.get(id(node))
             if node.id == "ROOT" and not (isinstance(parent, ast.BinOp) and isinstance(parent.op, ast.Div)
