@@ -10,6 +10,7 @@ import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 from reversibility_fixture import EASY, facts, score
 
@@ -20,10 +21,10 @@ HARD = ("contract", "schema", "auth", "customer_visible", "export", "ci_workflow
 
 
 @contextmanager
-def project() -> Iterator[Path]:
+def project(**layout: Any) -> Iterator[Path]:
     from reversibility_fixture import scratch
     with tempfile.TemporaryDirectory() as directory:
-        yield scratch(directory, names=("reversibility.py",))
+        yield scratch(directory, names=("reversibility.py",), **layout)
 
 
 class VerbTest(unittest.TestCase):
@@ -104,6 +105,63 @@ class VerbTest(unittest.TestCase):
             result = score(repo, "--scope", SLICE, *facts(contract="yes"), "--raise", "guarded")
         self.assertEqual((result.returncode, result.stdout), (2, ""))
         self.assertIn("lower", result.stderr)
+
+
+class CommittedListTest(unittest.TestCase):
+    """R2 (AC-S26-8, -7): a path the entry writes that `migrate` propagates raises `migrate_file`."""
+    WRITTEN = "`scripts/check-decisions.py`"
+
+    def run_verb(self, written: str, **layout: Any) -> tuple[int, str, str]:
+        with project(**layout) as repo:
+            result = score(repo, "--scope", SLICE, "--written-to", written, *facts(**self.declared))
+        return result.returncode, result.stdout, result.stderr
+
+    declared: dict[str, str] = {}
+
+    def test_e1_a_generated_project_raises_from_the_list(self) -> None:
+        code, out, err = self.run_verb(self.WRITTEN, listed=("scripts/check-decisions.py", "init"))
+        self.assertEqual(code, 0, err)
+        self.assertIn("hard · rules 1 · ", out)
+        self.assertIn("migrate_file=yes", out)
+        self.assertIn("migrate_file=yes", err)
+
+    def test_e2_an_adopted_project_raises_from_its_delivery_list(self) -> None:
+        code, out, err = self.run_verb(self.WRITTEN, origin="adopted", delivery="delivery",
+                                       listed=("scripts/check-decisions.py",))
+        self.assertEqual(code, 0, err)
+        self.assertIn("hard · rules 1 · ", out)
+        self.assertIn("migrate_file=yes", out)
+        code, out, err = self.run_verb(self.WRITTEN, origin="adopted", delivery=".",
+                                       listed=("scripts/check-decisions.py",))
+        self.assertIn("migrate_file=yes", out)
+
+    def test_e3_a_path_off_the_list_leaves_the_declaration(self) -> None:
+        _, out, _ = self.run_verb("`specs/f/spec.md`", listed=("scripts/check-decisions.py",))
+        self.assertIn("easy · rules 1 · ", out)
+        self.assertIn("migrate_file=no", out)
+
+    def test_e4_no_list_writes_no_list_and_is_hard(self) -> None:
+        code, out, err = self.run_verb(self.WRITTEN)
+        self.assertEqual(code, 0, err)
+        self.assertIn("hard · rules 1 · ", out)
+        self.assertIn("migrate_file=no-list", out)
+        self.assertIn("migrate_file", err)
+
+    def test_e5_a_declared_yes_is_never_lowered(self) -> None:
+        self.declared = {"migrate_file": "yes"}
+        _, out, _ = self.run_verb("`specs/f/spec.md`", listed=("init",))
+        self.assertIn("migrate_file=yes", out)
+        self.assertIn("hard · rules 1 · ", out)
+
+
+class TierWordTest(unittest.TestCase):
+    def test_a_fact_value_with_a_tier_word_an_arrow_or_a_dot_is_usage(self) -> None:
+        for value in ("easy", "guarded", "hard", "a→b", "a->b", "a·b", "needs-hard"):
+            with self.subTest(value=value), project() as repo:
+                result = score(repo, "--scope", SLICE, *facts(rollback_complexity=value))
+                self.assertEqual((result.returncode, result.stdout), (2, ""), value)
+                self.assertEqual(len(result.stderr.strip().splitlines()), 1)
+                self.assertIn("rollback_complexity", result.stderr)
 
 
 if __name__ == "__main__":

@@ -11,9 +11,11 @@ gate's function passes it to `score()` instead. Nothing here prints or exits out
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 LABEL = "- **Reversibility:** "
 ARROW = " → "
@@ -101,9 +103,62 @@ def steps(tier: str, raise_to: str | None) -> list[str]:
     return list(TIERS[TIERS.index(tier):TIERS.index(raise_to) + 1])
 
 
+def project_root(script: Path, depth: int) -> Path:
+    """The project root as `check-decisions.py` finds it: the nearest parent holding `project.json`."""
+    for candidate in script.parents:
+        if (candidate / "project.json").is_file():
+            return candidate
+    return script.parents[depth]
+
+
+def written_paths(value: str) -> list[str]:
+    """The paths a `Written to` value names, read as `check-decisions.py`'s `paths_of`: backticked, else comma-separated."""
+    quoted = re.findall(r"`([^`]+)`", value)
+    if quoted:
+        return quoted
+    return [part.strip() for part in value.split(",") if part.strip()]
+
+
+def propagated(root: Path) -> set[str] | None:
+    """The paths `migrate` propagates, from the committed list, or None where the project has no list.
+
+    `<layout.delivery>/.written` where `project.json` says `origin` is `adopted` (`.written` at the root where the
+    delivery directory is `.`), else `.slipwai/propagated`; one project-relative path per line."""
+    try:
+        document = json.loads((root / "project.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        document = {}
+    document = document if isinstance(document, dict) else {}
+    if document.get("origin") == "adopted":
+        layout = document.get("layout")
+        delivery = layout.get("delivery", ".") if isinstance(layout, dict) else "."
+        home = root / str(delivery) / ".written"
+    else:
+        home = root / ".slipwai" / "propagated"
+    try:
+        lines = home.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    return {line.strip() for line in lines if line.strip()}
+
+
+def with_list(facts: dict[str, str], written: list[str] | None, listed: set[str] | None) -> dict[str, str]:
+    """`facts` with `migrate_file` as the committed list says: raised to yes by a listed path, never lowered; `no-list`
+    where paths are written and no list exists to check them against."""
+    if written is None or facts.get("migrate_file") != "no":
+        return facts
+    if listed is None:
+        return {**facts, "migrate_file": "no-list"}
+    return {**facts, "migrate_file": "yes"} if any(path in listed for path in written) else facts
+
+
 def score(facts: dict[str, str], scope: str, raise_to: str | None = None, version: int = CURRENT,
-          reader: Callable[[str], list[str] | None] = scope_tokens) -> tuple[str, list[str]]:
-    """The whole `Reversibility:` line and the rules that fired, for declared facts and the entry's `Scope:` value."""
+          reader: Callable[[str], list[str] | None] = scope_tokens, written: list[str] | None = None,
+          listed: set[str] | None = None) -> tuple[str, list[str]]:
+    """The whole `Reversibility:` line and the rules that fired, for declared facts and the entry's `Scope:` value.
+
+    `written` (the paths of `Written to`) with `listed` (the committed list) raise `migrate_file`; see `with_list`."""
+    facts = with_list(facts, written, listed)
     tier, fired = RULES[version](facts, dependants(scope, reader))
     written = " ".join(f"{key}={facts.get(key, 'missing')}" for key in FACTS)
     return f"{LABEL}{ARROW.join(steps(tier, raise_to))} · rules {version} · {written}", fired
@@ -128,6 +183,9 @@ def parse_arguments(arguments: list[str]) -> tuple[dict[str, str], dict[str, str
             raise ValueError(f"{key!r} is not a fact (the facts are {', '.join(FACTS)})")
         if key in facts:
             raise ValueError(f"{key!r} is given twice")
+        stray = [word for word in (*TIERS, "→", "->", "·") if word in value]
+        if stray:
+            raise ValueError(f"{key}={value!r} contains {stray[0]!r}; no fact value holds a tier word, an arrow or ·")
         facts[key] = value
     if "--scope" not in options:
         raise ValueError("--scope is required")
@@ -143,7 +201,10 @@ def main() -> int:
         return 0
     try:
         options, facts = parse_arguments(arguments)
-        line, fired = score(facts, options["--scope"], options.get("--raise"))
+        written = options.get("--written-to")
+        line, fired = score(facts, options["--scope"], options.get("--raise"),
+                            written=None if written is None else written_paths(written),
+                            listed=None if written is None else propagated(project_root(Path(__file__).resolve(), 1)))
     except ValueError as error:
         print(f"reversibility: {error}\n{USAGE}".replace("\n", " — ", 1), file=sys.stderr)
         return 2

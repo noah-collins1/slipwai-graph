@@ -18,14 +18,24 @@ EASY = {"contract": "no", "schema": "no", "auth": "no", "customer_visible": "no"
 
 
 def scratch(directory: str, log: str = "", origin: str | None = None, names: tuple[str, ...] = (
-        "check-decisions.py", "reversibility.py")) -> Path:
-    """A project with the scripts copied from `assets/toolkit/scripts/`; `origin` goes into `project.json` if given."""
+        "check-decisions.py", "reversibility.py"), delivery: str | None = None,
+        listed: tuple[str, ...] | None = None) -> Path:
+    """A project with the scripts copied from `assets/toolkit/scripts/`; `origin` goes into `project.json` if given.
+
+    `delivery` is `layout.delivery`; `listed` writes the committed list of migrate-propagated paths where the
+    layout puts it (`<delivery>/.written` for an adopted project, `.slipwai/propagated` otherwise)."""
     repo = Path(directory)
     (repo / "scripts").mkdir()
     for name in names:
         shutil.copy(SCRIPTS / name, repo / "scripts" / name)
-    document = {} if origin is None else {"origin": origin}
+    document: dict[str, object] = {} if origin is None else {"origin": origin}
+    if delivery is not None:
+        document["layout"] = {"delivery": delivery}
     (repo / "project.json").write_text(json.dumps(document) + "\n", encoding="utf-8")
+    if listed is not None:
+        home = repo / (".slipwai/propagated" if origin != "adopted" else f"{delivery or '.'}/.written")
+        home.parent.mkdir(parents=True, exist_ok=True)
+        home.write_text("".join(path + "\n" for path in listed), encoding="utf-8")
     (repo / "README.md").write_text("# scratch\n", encoding="utf-8")
     (repo / "specs/f").mkdir(parents=True)
     (repo / "specs/f/decisions.md").write_text("# Decisions\n\n" + log, encoding="utf-8")
