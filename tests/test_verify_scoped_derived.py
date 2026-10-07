@@ -9,7 +9,6 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import json
-import os
 import sys
 import unittest
 from pathlib import Path
@@ -112,13 +111,9 @@ class ManifestPathsTest(DerivedCase):
                 text = f'id: x\nprovides:\n  templates:\n    - file: "{declared}"\n'
                 self.assert_no_inputs(entry(self.project_with({PRESET: text})))
 
-    @unittest.skipIf(os.geteuid() == 0, "root reads a file whatever its mode")
     def test_e5_an_unreadable_preset_is_no_recorded_inputs(self) -> None:
         project = self.project(self.SHAPE)
-        (project / PRESET).parent.mkdir(parents=True)
-        (project / PRESET).write_text("id: x\n", encoding="utf-8")
-        (project / PRESET).chmod(0)
-        self.addCleanup((project / PRESET).chmod, 0o644)
+        (project / PRESET).mkdir(parents=True)  # a directory in the file's place: no uid can read it, root included
         self.assert_no_inputs(entry(project))
 
     def test_a_preset_declaring_a_file_inside_keeps_its_inputs(self) -> None:

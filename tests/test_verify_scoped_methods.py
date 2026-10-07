@@ -8,11 +8,9 @@ integrations and presets; `check-extensions` the extensions file, `AGENTS.md` an
 """
 from __future__ import annotations
 
-import os
 import shutil
 import subprocess
 import sys
-import unittest
 
 from scoped_fixture import LINE, ShapeCase
 from stamp_fixture import git
@@ -133,15 +131,14 @@ class MethodFilesTest(ShapeCase):
         self.assertIn("check-extensions", skipped, (ran, skipped))
         self.assertNotIn("check-extensions", ran)
 
-    @unittest.skipIf(os.geteuid() == 0, "root reads a file whatever its mode")
     def test_r5_e2_an_unreadable_declared_file_is_a_changed_path(self) -> None:
         """The baseline cannot be read against it either, so what runs is the full gate, which holds `check-agents`,
         and the line says which file: never a skip of a check that reads what nobody could read."""
         drive = self.repo / ".specify" / "drive.json"
-        drive.chmod(0)
-        self.addCleanup(drive.chmod, 0o644)
+        drive.unlink()
+        drive.mkdir()  # a directory in the file's place: no uid can read it, root included
         run = self.scoped(env=DRY)
-        self.assertIn(LINE + "no usable baseline (cannot read .specify/drive.json (Permission denied)) — every check "
+        self.assertIn(LINE + "no usable baseline (.specify/drive.json is neither a file nor a link) — every check "
                       "that reads a tool or a variable runs", self.scoped_lines(run))
         self.assertEqual(len(self.verify_calls()), 1)
         self.assertEqual(self.decided(run), ({}, {}))
