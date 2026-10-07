@@ -72,6 +72,48 @@ class ProvisionalTableTest(unittest.TestCase):
             self.assertEqual(STANDING, got[1])
 
 
+class RehearsalLinesTest(unittest.TestCase):
+    """R2 (AC-S27-10, verb half): the two rehearsal modes block as before and say what `provisional` would have done."""
+
+    def test_e1_shadow_over_a_guarded_item_blocks_and_says_it_would_have_been_provisional(self) -> None:
+        result = status("provisional-shadow", line=GUARDED_LINE)
+        self.assertEqual([UNAVAILABLE, "- **Provisional (shadow):** guarded · provisional · ratify by 2026-10-14 · "
+                          "Revert: commits carrying Decision: D12", STANDING], result.stdout.splitlines())
+        self.assertNotIn("parked", result.stderr)
+
+    def test_e2_shadow_over_the_d54_fixture_blocks_hard(self) -> None:
+        got = status("provisional-shadow", line=HARD_LINE).stdout.splitlines()
+        self.assertEqual([UNAVAILABLE, "- **Provisional (shadow):** hard · blocks (hard) · Revert: commits carrying "
+                          "Decision: D12", STANDING], got)
+
+    def test_e3_shadow_over_the_flag_fixture_names_the_fact_that_holds_it_back(self) -> None:
+        got = status("provisional-shadow", line=FLAG_LINE).stdout.splitlines()
+        self.assertEqual([UNAVAILABLE, "- **Provisional (shadow):** guarded · blocks (flag_default=yes) · Revert: "
+                          "commits carrying Decision: D12", STANDING], got)
+
+    def test_e4_advisory_over_a_guarded_item_also_parks_with_the_recommendation_in_one_word(self) -> None:
+        result = status("provisional-advisory", line=GUARDED_LINE)
+        self.assertEqual([UNAVAILABLE, "- **Provisional (advisory):** guarded · provisional · ratify by 2026-10-14 · "
+                          "Revert: commits carrying Decision: D12", STANDING], result.stdout.splitlines())
+        self.assertIn("cruise: parked: D12 needs a person's approval; recommended: provisional · ratify by "
+                      "2026-10-14 (guarded) — answer accept through /cruise-tell", result.stderr.splitlines())
+
+    def test_e5_advisory_over_the_d54_fixture_has_the_line_and_no_recommendation(self) -> None:
+        result = status("provisional-advisory", line=HARD_LINE)
+        self.assertEqual("- **Provisional (advisory):** hard · blocks (hard) · Revert: commits carrying Decision: D12",
+                         result.stdout.splitlines()[1])
+        self.assertNotIn("recommended", result.stderr)
+
+    def test_e6_no_other_value_and_no_other_kind_of_item_prints_a_rehearsal_line(self) -> None:
+        for decide in ("provisional", "recommended-first", "skipper-always"):
+            self.assertNotIn("Provisional (", status(decide, line=GUARDED_LINE).stdout, decide)
+        for decide in ("provisional-shadow", "provisional-advisory"):
+            for ask in ("no", "fact", "must", "release"):
+                result = status(decide, ask, line=GUARDED_LINE)
+                self.assertNotIn("Provisional (", result.stdout, (decide, ask))
+                self.assertNotIn("recommended", result.stderr, (decide, ask))
+
+
 class UsageTest(unittest.TestCase):
     def refused(self, option: str, *arguments: str) -> None:
         result = raw(*arguments)

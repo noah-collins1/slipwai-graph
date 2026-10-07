@@ -20,6 +20,7 @@ from typing import Any
 DECIDE = ("recommended-first", "skipper-always", "provisional-shadow", "provisional-advisory", "provisional")
 ASKS = ("no", "approval", "fact", "must", "release")
 HELD_FACTS = ("ci_workflow", "migrate_file", "flag_default")
+MODE_LINES = ("provisional-shadow", "provisional-advisory")
 UNAVAILABLE = "unavailable: "
 APPROVAL = "a person's approval"
 STANDING = "- **Status:** standing"
@@ -86,6 +87,15 @@ def held_fact(facts: dict[str, str]) -> str | None:
     return next((fact for fact in HELD_FACTS if facts.get(fact) == "yes"), None)
 
 
+def rehearsal(decide: str, tier: str, held: str | None, until: str, number: str) -> str:
+    """The `Provisional (shadow|advisory):` line: the final tier, what `provisional` would have done, the revert."""
+    would = f"provisional · ratify by {until}"
+    if tier == "hard" or held:
+        would = "blocks (hard)" if tier == "hard" else f"blocks ({held}=yes)"
+    label = "advisory" if decide == "provisional-advisory" else "shadow"
+    return f"- **Provisional ({label}):** {tier} · {would} · Revert: commits carrying Decision: {number}"
+
+
 def status_lines(decide: str, ask: str, when: str, number: str, line: str | None) -> tuple[list[str], list[str]]:
     """(stdout lines, stderr lines) of the verb for these inputs."""
     if ask == "no":
@@ -94,19 +104,24 @@ def status_lines(decide: str, ask: str, when: str, number: str, line: str | None
         return ([UNAVAILABLE + REASONS[ask], STANDING],
                 [f"provisional: unavailable - {REASONS[ask]}, whatever decide says"])
     tier, facts = final_tier(line)
-    held = held_fact(facts)
+    held, until = held_fact(facts), ratify_by(when)
     if tier == "hard":
         why = "hard: " + ("no Reversibility line, so hard" if line is None else "the final tier is hard")
     elif held is not None:
         why = f"{held}=yes: {HELD_WHY[held]} (FR-033)"
     elif decide == "provisional":
-        until = ratify_by(when)
         revert = f"- **Revert:** commits carrying Decision: {number}"
         return ([f"- **Status:** provisional · ratify by {until}", revert],
                 [f"provisional: {tier}, no held fact; provisional until ratified by {until}"])
     else:
-        return [UNAVAILABLE + APPROVAL, STANDING], [f"provisional: unavailable - decide is {decide}"]
-    return [UNAVAILABLE + APPROVAL, STANDING], [f"provisional: unavailable - {why}"]
+        why = f"decide is {decide}"
+    out, err = [UNAVAILABLE + APPROVAL], [f"provisional: unavailable - {why}"]
+    if decide in MODE_LINES:
+        out.append(rehearsal(decide, tier, held, until, number))
+        if decide == "provisional-advisory" and tier != "hard" and held is None:
+            err.append(f"cruise: parked: {number} needs a person's approval; recommended: provisional · ratify by "
+                       f"{until} ({tier}) — answer accept through /cruise-tell")
+    return [*out, STANDING], err
 
 
 def parse_status(arguments: list[str]) -> dict[str, str]:
