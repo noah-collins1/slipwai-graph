@@ -71,8 +71,9 @@ class PropagatedListTest(FactoryTestCase):
             self.assertIn(PROPAGATED, listed)
 
 
-LINE = "- **Reversibility:** <tier> · rules <n> · <facts> — from python3 scripts/reversibility.py"
-RULE_LINE = "- **Proposed rule:** <one sentence written to sit in the owner brief> (same shape as D<a>, D<b>)"
+LINE = "- **Reversibility:** <tier> · rules <n> · <facts, as python3 scripts/reversibility.py prints the line>"
+RULE_LINE = ("- **Proposed rule:** <optional: one owner-brief sentence, where three entries share a reason> "
+             "(same shape as D<a>, D<b>)")
 
 
 def flat(text: str) -> str:

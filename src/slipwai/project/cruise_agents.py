@@ -81,8 +81,8 @@ Your own `D<n>` goes in `change_summary` and never in `decisions`, whether your 
 paths> <fact>=<value>…` with the facts you declare for the decision, and put the line it prints after `Confidence`
 (`Reversibility:`). Where you judge the decision harder to reverse than the verb computed, escalate one tier at
 a time with `--raise guarded` or `--raise hard` and write each step on the line, `easy → guarded → hard`: you
-never skip a tier, and the step never lowers a computed tier. Never leave a question in a
-diff or a note instead of escalating it.
+never skip a tier, and the step never lowers a computed tier. Never leave a question in a diff or a note
+instead of escalating it.
 
 **Propose a rule when you have decided the same way three times.** The brief lists every entry heading of the
 feature, each `D<n>` with its heading, Stage and Scope. When three standing entries of the feature were

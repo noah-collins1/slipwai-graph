@@ -43,8 +43,8 @@ REVERSIBILITY_RULE = f"""\
 **Every entry says how hard it is to reverse.** This session runs `{SCORE_VERB}` for every entry it writes,
 host-decided or skipper-decided, with that entry's facts, `Scope:` and `Written to`, and writes the line the verb
 prints after `Confidence`. It also adds the feature's entry headings — each `D<n>` with its heading, Stage and
-Scope, out-of-scope entries included — to every skipper brief, so the skipper can count what it has decided alike. `Proposed rule:` is the skipper's alone, and
-only where the count is three."""
+Scope, out-of-scope entries included — to every skipper brief, so the skipper can count what it has decided
+alike. `Proposed rule:` is the skipper's alone, and only where the count is three."""
 DECISION_ENTRY = f"""## D<n> — <the question, in one line>
 - **Stage:** <stage> · **Slice:** <id> · **When:** <ISO instant> · **Iteration:** <n>
 - **Scope:** <slice ids, comma-separated> | global — a feature-level or doubtful decision is `global`
@@ -54,8 +54,8 @@ DECISION_ENTRY = f"""## D<n> — <the question, in one line>
 - **Why:** <in the actor's terms>
 - **Decided by:** host (stage recommendation) | host (standing decision D<m>) | {SKIPPER} (<model>) | {BOSUN} | human
 - **Confidence:** high | medium | low · **Would reverse if:** <the one condition>
-- **Reversibility:** <tier> · rules <n> · <facts> — from {SCORE_VERB}
-- **Proposed rule:** <one sentence written to sit in the owner brief> (same shape as D<a>, D<b>)
+- **Reversibility:** <tier> · rules <n> · <facts, as {SCORE_VERB} prints the line>
+- **Proposed rule:** <optional: one owner-brief sentence, where three entries share a reason> (same shape as D<a>, D<b>)
 - **Written to:** <the artifact paths the answer went into>
 - **Status:** standing | overridden by D<m> | overridden by human <date>"""
 ENTRY_RULES = f"{REVERSIBILITY_RULE}\n\n{ADR_RULE}"
