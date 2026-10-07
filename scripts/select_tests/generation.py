@@ -234,7 +234,7 @@ def facts(module: ast.Module, shape: Signature | None, trusted: bool, launcher: 
     read_argv: set[int] = set()  # launcher nodes inside an argv `argv.read` takes: a `Call`, not also a route
     for node in ast.walk(module):
         line = getattr(node, "lineno", 0)
-        if not trusted and (literal := argv.read(node, root)) is not None:
+        if not trusted and (literal := argv.read(node, root, parents.get(id(node)))) is not None:
             calls.append(Call(line, literal[0]))
             read_argv.update(id(part) for part in ast.walk(literal[1]))
         if isinstance(node, ast.Call):

@@ -15,6 +15,7 @@ from typing import Any, NamedTuple
 
 from . import generation as statics
 from . import loaded
+from .launcher import detector
 from .rules import claim, load_catalog, names
 
 sys.dont_write_bytecode = True
@@ -126,27 +127,10 @@ def imported_names(tree: ast.AST) -> frozenset[str] | None:
     return frozenset(found)
 
 
-def names_launcher(node: ast.AST) -> bool:
-    """A path to the launcher (`"./slipwai"`, `ROOT / "slipwai"`), or an import of `slipwai.cli`."""
-    if isinstance(node, ast.Constant):
-        parts = node.value.split("/") if isinstance(node.value, str) else []
-        return len(parts) > 1 and parts[-1] == LAUNCHER and parts[0] in (".", "..", "")
-    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
-        return isinstance(node.right, ast.Constant) and node.right.value == LAUNCHER
-    if isinstance(node, ast.List):  # `["slipwai", "generate", ...]`: the launcher found on `PATH`
-        return bool(node.elts) and isinstance(node.elts[0], ast.Constant) and node.elts[0].value == LAUNCHER
-    if isinstance(node, ast.Import):
-        return any(alias.name == COMMAND_MODULE or alias.name.startswith(COMMAND_MODULE + ".") for alias in node.names)
-    if isinstance(node, ast.ImportFrom):
-        module = node.module or ""
-        return node.level == 0 and (module == COMMAND_MODULE or module.startswith(COMMAND_MODULE + ".")
-                                    or (module == LAUNCHER and any(alias.name == "cli" for alias in node.names)))
-    return False
-
-
 def generation(tree: ast.AST) -> tuple[bool, bool]:
     """Whether the file calls `generate` or `refuse` (a function or a method), and runs the launcher or the command."""
     calls = launcher = False
+    names_launcher = detector(tree)
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
             function = node.func
@@ -195,7 +179,7 @@ def read_source(root: Path, path: Path, catalog: Mapping[str, Any]) -> Source:
 def generation_facts(root: Path, path: Path, tree: ast.Module) -> statics.Facts:
     """The calls, routes and reaches of one file; `tests/support.py`, which defines the seam they are bound to, is
     trusted with its own launcher and `ROOT`."""
-    return statics.facts(tree, statics.signature(root), statics.defines_seam(tree), names_launcher, root)
+    return statics.facts(tree, statics.signature(root), statics.defines_seam(tree), detector(tree), root)
 
 
 def join(parts: list[Declaration]) -> Declaration:

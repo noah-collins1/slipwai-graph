@@ -48,9 +48,18 @@ def launcher(node: ast.expr) -> ast.expr | None:
     return None
 
 
-def read(node: ast.AST, root: Path | None) -> tuple[Mapping[str, frozenset[str] | None], ast.expr] | None:
+def whole(parent: ast.AST | None) -> bool:
+    """Whether a list under `parent` is the whole argv as written: not joined to another list (`+`, `*`, `+=`) and not
+    bound to a name, where it may be extended later (D187 counts a list variable as unreadable)."""
+    return not isinstance(parent, (ast.BinOp, ast.Starred, ast.AugAssign, ast.Assign, ast.AnnAssign))
+
+
+def read(node: ast.AST, root: Path | None,
+         parent: ast.AST | None = None) -> tuple[Mapping[str, frozenset[str] | None], ast.expr] | None:
     """The axes a literal launcher argv generates, with the launcher node inside it; None where it is not read."""
     if not isinstance(node, ast.List) or len(node.elts) < 2 or any(isinstance(e, ast.Starred) for e in node.elts):
+        return None
+    if not whole(parent):
         return None
     chain = launcher(node.elts[0])
     if chain is None or literal(node.elts[1]) != SUBCOMMAND:

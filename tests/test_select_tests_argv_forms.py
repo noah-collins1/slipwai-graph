@@ -40,14 +40,6 @@ FORMS: dict[str, tuple[str, str]] = {
     "the_launcher_on_path": (f'["slipwai", "generate", "n", "--backend", "python", {NARROW}]', ""),
     "the_cli_module_imported": ('main(["generate", "n", "--backend", "python"])', "from slipwai.cli import main\n"),
     "refuse": ('self.refuse("d", "n", backend="python")', ""),
-}
-
-
-# forms D187 rule 3 names that today's rules do NOT hold (T002 findings): `argv.read` reads the literal list inside a
-# `+` (so it is a Call with its literal axes and the appended flags are unseen), a command given as a string is no
-# launcher route, and `python3 -m slipwai` is none either. Each is expected to
-# fail; when the selector holds one, the unexpected success says to move it up.
-HOLES: dict[str, tuple[str, str]] = {
     "python_dash_m_slipwai": (f'["python3", "-m", "slipwai", "generate", "n", "--backend", "python", {NARROW}]', ""),
     "a_concatenation": (f'[{L}, "generate", "n", "--backend", "python", {NARROW}] + flags', ""),
     "a_concatenation_onto_a_literal_argv": (f'flags + [{L}, "generate", "n", "--backend", "python", {NARROW}]', ""),
@@ -75,8 +67,6 @@ def case(expression: str, head: str) -> Callable[[ArgvForms], None]:
 
 for form, (expression, head) in FORMS.items():
     setattr(ArgvForms, f"test_{form}_is_every_axis_held_and_selected_on_a_go_change", case(expression, head))
-for form, (expression, head) in HOLES.items():
-    setattr(ArgvForms, f"test_known_hole_{form}_is_not_yet_held", unittest.expectedFailure(case(expression, head)))
 
 
 if __name__ == "__main__":
