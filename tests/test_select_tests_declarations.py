@@ -234,8 +234,8 @@ class TestAReadsOnlyDeclarationThatGenerates(DeclarationCase):
                 self.module(call, '{"configurations": {"backend": ["go"]}}')
                 self.commit("a generator that says what it generates")
                 held = self.held()
-                if call == "generate":  # a call the signature binds: `name` is no axis (T038)
-                    self.assertIn("computed backend", held[0])
+                if call in ("generate", "the launcher by path"):  # bound: `name` is no axis (T038); a literal
+                    self.assertIn("computed backend", held[0])  # `ROOT / "slipwai" generate` argv is one (D187)
                 else:  # a route the signature does not describe is every option of every axis
                     self.assertEqual([line.split(":")[0] for line in held], ["tests/test_a.py"], held)
                     self.assertIn("every option of every axis", held[0])
