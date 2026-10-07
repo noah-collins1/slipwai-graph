@@ -23,6 +23,7 @@ from .table import NO_INPUTS  # noqa: E402
 PRESET_FILE_ENTRY = re.compile(r"""^\s*(?:-\s+)?file:\s*["']?([^"'\s#]+)["']?\s*(?:#.*)?$""", re.MULTILINE)
 INTEGRATIONS = ".specify/integrations"
 PRESETS = ".specify/presets"
+REGISTERED = PRESETS + "/.registry"
 STATE = ".specify/integration.json"
 REGISTRY = Path(__file__).resolve().parent.parent / "agents" / "registry.json"
 MANIFEST = re.compile(r"^\.specify/integrations/[^/]+\.manifest\.json$")
@@ -101,7 +102,20 @@ def manifest_files(root: Path, scope: Any, base: str | None) -> set[str]:
     for path, text in texts(root, scope, base, PRESETS, PRESET):
         if not all(inside(declared) for declared in PRESET_FILE_ENTRY.findall(text)):
             raise Unreadable(f"{path} declares a file outside the project")
+    for text in (read(root / REGISTERED), at_base(scope, base, REGISTERED)):
+        if not all(inside(name) for name in registered(text)):
+            raise Unreadable(f"{REGISTERED} names a preset outside {PRESETS}/")
     return found
+
+
+def registered(text: str | None) -> list[object]:
+    """The preset names `.registry` lists: `check-speckit` reads `<name>/preset.yml` under the presets for each. One it
+    cannot parse lists none here: the file is a declared input, and `check-speckit` itself fails on it."""
+    try:
+        presets = json.loads(text).get("presets") if text is not None else None
+    except (ValueError, RecursionError, AttributeError):
+        return []
+    return list(presets) if isinstance(presets, dict) else []
 
 
 def installed(root: Path, scope: Any, base: str | None) -> set[str]:

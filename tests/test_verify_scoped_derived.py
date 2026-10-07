@@ -132,6 +132,16 @@ class ManifestPathsTest(DerivedCase):
         for name in ("check-agents", "check-extensions", "check-constitution"):
             self.assertIsNotNone(entry(project, name)["inputs"], name)
 
+    def test_a_preset_registry_naming_a_preset_outside_the_presets_is_no_recorded_inputs(self) -> None:
+        """`check-speckit` reads `<name>/preset.yml` and what it declares for each name `.registry` lists, so a name
+        that climbs out of `.specify/presets/` makes it read where no input of its says (D172 limit i)."""
+        registry = ".specify/presets/.registry"
+        for name in ("../../specs/p", "/etc", "~x"):
+            with self.subTest(name=name):
+                self.assert_no_inputs(entry(self.project_with({registry: json.dumps({"presets": {name: {}}})})))
+        kept = entry(self.project_with({registry: json.dumps({"presets": {"x": {"enabled": True}}})}))
+        self.assertEqual((kept["claims"], kept["always"]), (True, None))
+
     def test_the_preset_pattern_is_check_speckits(self) -> None:
         methods = importlib.import_module("verify_scoped.methods")
         path = ROOT / "assets" / "toolkit" / "scripts" / "check-speckit.py"
