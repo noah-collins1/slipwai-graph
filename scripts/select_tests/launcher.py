@@ -2,12 +2,14 @@
 
 Every form that starts `slipwai` is a route to every option of every axis unless `argv` reads it: a path to the
 launcher (`"./slipwai"`, `ROOT / "slipwai"`), the launcher on `PATH`, `python -m slipwai`, an import of `slipwai.cli`,
-and a command given as a string (`shlex.split("./slipwai generate ...")`, `run("./slipwai ...", shell=True)`, the
-constant parts of an f-string). A string that is a docstring or a bare expression statement is prose, not a command.
+a code string that imports `slipwai.cli` or runs the module with `runpy`, and a command given as a string
+(`shlex.split("./slipwai generate ...")`, `run("./slipwai ...", shell=True)`, the constant parts of an
+f-string). A string that is a docstring or a bare expression statement is prose, not a command.
 """
 from __future__ import annotations
 
 import ast
+import re
 import sys
 from collections.abc import Callable
 
@@ -30,9 +32,15 @@ def dash_m(words: list[str]) -> bool:
     return any(a == "-m" and is_module(b) for a, b in zip(words, words[1:], strict=False))
 
 
+# a code string handed to `python -c`: an import of the command module, or `runpy` running `slipwai` or a submodule
+CODE = re.compile(
+    r"\b(?:import\s+slipwai\.cli\b|from\s+slipwai\.cli\b|from\s+slipwai\s+import\b[^\n;]*\bcli\b"
+    r"|run_(?:module|path)\s*\(\s*[rbuf]*['\"]slipwai\b)")
+
+
 def string_names(value: str) -> bool:
     words = value.split()
-    return any(is_path(word) for word in words) or dash_m(words)
+    return any(is_path(word) for word in words) or dash_m(words) or CODE.search(value) is not None
 
 
 def detector(tree: ast.AST) -> Callable[[ast.AST], bool]:

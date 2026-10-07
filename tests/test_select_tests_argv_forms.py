@@ -63,6 +63,18 @@ FORMS: dict[str, tuple[str, str]] = {
     "a_helper_that_extends": (f"go({PY})", 'def go(a):\n    return a + ["--backend", "go"]\n'),
     "a_computed_element_after_the_flags": (f'[{L}, "generate", "--backend", "python", {NARROW}, extra]', ""),
     "an_f_string_after_the_flags": (f'[{L}, "generate", "--backend", "python", {NARROW}, f"--backend={{b}}"]', ""),
+    # after-converge A1: a project generated inside a `python -c` code string, which no node of the module imports
+    "a_code_string_importing_the_cli": (
+        '[sys.executable, "-c", "from slipwai.cli import main\\nmain(sys.argv[1:])", "generate", "p", '
+        '"--backend", "go"]', ""),
+    "a_code_string_importing_the_cli_plainly": (
+        '[sys.executable, "-c", "import slipwai.cli", "generate", "p", "--backend", "go"]', ""),
+    "a_code_string_running_the_module_with_runpy": (
+        '[sys.executable, "-c", "import runpy; runpy.run_module(\'slipwai\', run_name=\'__main__\')", '
+        '"generate", "p", "--backend", "go"]', ""),
+    "a_code_string_running_the_cli_module_with_runpy": (
+        '[sys.executable, "-c", \'import runpy\\nrunpy.run_module("slipwai.cli")\', "generate", "p", '
+        '"--backend", "go"]', ""),
     "python_dash_m_slipwai_as_a_tuple": (
         f'("python3", "-m", "slipwai", "generate", "n", "--backend", "python", {NARROW})', ""),
     "the_launcher_on_path_as_a_tuple": (f'("slipwai", "generate", "n", "--backend", "python", {NARROW})', ""),
