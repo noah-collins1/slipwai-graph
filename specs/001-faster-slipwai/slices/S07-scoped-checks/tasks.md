@@ -249,6 +249,12 @@ files include `.slipwai/propagated`; on a slice branch with a baseline, a change
 | `tests/test_ux_gates_default.py` | it imports `tests/test_design_extensions.py`, which declares nothing |
 | `tests/test_ux_gates_borders.py` | it imports `tests/parallel_gate.py`, which declares nothing |
 | `tests/test_verify_scoped_methods_run.py` | it imports `tests/parallel_gate.py`, which declares nothing |
+| `tests/test_verify_scoped_record.py` | it imports tests/parallel_gate.py, which declares nothing |
+| `tests/test_verify_scoped_table_held.py` | it imports tests/parallel_gate.py, which declares nothing |
+| `tests/test_verify_scoped_methods.py` | it imports tests/parallel_gate.py, which declares nothing |
+| `tests/test_verify_scoped_derived.py` | it imports tests/parallel_gate.py, which declares nothing |
+| `tests/test_verify_scoped_held.py` | it imports tests/parallel_gate.py, which declares nothing |
+| `tests/test_scoped_page.py` | it imports tests/test_add_service.py, which declares nothing |
 
 ## Phase 2: After acceptance (host tasks)
 
@@ -268,7 +274,7 @@ Both full gates on the final tip; the register row and benchmark close; the demo
 
 Phase 1 Implementation (T001–T009; order T007, T009, then T008, from D188); Phase 2 After acceptance (host).
 
-**Done:** T001 (`bf319cc`, `0af5588`), T002 (`d723281`), T003 (`6830517`), T004 (`a510c86`), T005 (`daef4d8`), T006 (`048e3c7`; the default lives in new `verify_scoped/since.py`, which reads git's `changed_files` for the tree and `changes.raw_differs` only for the previews, their stylesheets and the four every-preview files, so the audit hold stays true).
+**Done:** T001 (`bf319cc`, `0af5588`), T002 (`d723281`), T003 (`6830517`), T004 (`a510c86`), T005 (`daef4d8`), T007 (`8d43eca`), T009 (`9cc0e6d`; re-run `test_verify_scoped_table_held` and `test_verify_scoped_held` after the rebase onto S26), T008 (no commit: the selector voids every one of S07's modules — each imports an undeclared helper (`parallel_gate`, `stamp_fixture`, `scoped_fixture`, `test_scoped_targets`, `test_add_service`, which `test_select_tests_real_declared` leaves undeclared on purpose), so all nine are listed below with its reason), T006 (`048e3c7`; the default lives in new `verify_scoped/since.py`, which reads git's `changed_files` for the tree and `changes.raw_differs` only for the previews, their stylesheets and the four every-preview files, so the audit hold stays true).
 
 ## Differences from plan.md
 
