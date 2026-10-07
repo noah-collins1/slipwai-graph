@@ -136,9 +136,11 @@ def proposed(*cited: str) -> str:
 class ProposedRuleTest(unittest.TestCase):
     """R7 (AC-S26-15, D185): a `Proposed rule:` cites two entries of the log; a cited entry's `Status` is not read."""
 
-    def run_gate(self, *entries: str) -> tuple[int, str, str]:
+    def run_gate(self, first: str, *entries: str) -> tuple[int, str, str]:
+        """The gate over the entries, the first given a `Reversibility:` line: citations are held only beside one."""
+        first = first.replace("- **Written to:**", line() + "\n- **Written to:**", 1)
         with tempfile.TemporaryDirectory() as directory:
-            result = gate(scratch(directory, "\n".join(entries)))
+            result = gate(scratch(directory, "\n".join((first, *entries)), listed=("scripts/check-decisions.py",)))
         return result.returncode, result.stdout, result.stderr
 
     def refused(self, found: tuple[int, str, str], *words: str) -> None:

@@ -51,9 +51,11 @@ printed and counted as an entry; the gate does not.
 writes, once, a `## <id> · predates the adversary gate · <date>` row for every done slice without one, which the gate accepts
 and which says the slice was never attacked. A second baseline is refused.
 
-A log with a `- **Reversibility:** <tier> · rules <n> · <facts>` or a `- **Proposed rule:**` line is also held to
-`reversibility.py` beside this script, loaded for that log alone: one finding per fault naming the entry and the field
-or key; a log with neither line never loads it and gets the answer it always did.
+A log with a `- **Reversibility:** <tier> · rules <n> · <facts>` line is also held to `reversibility.py` beside this
+script, loaded for that log alone: one finding per fault naming the entry and the field or key, its `- **Proposed
+rule:**` citations among them. A log without the line never loads it and gets the answer it always did, with one
+`note:` where it has `Proposed rule:` lines, which are then not checked. A label written nearly right (another case, a
+space before the colon, underscores, another bullet) is never read, in any log, and is a `note:` naming entry and label.
 
 Every `specs/<feature>/hand-backs.md` and `specs/<feature>/slices/<id>/hand-backs.md` is held to the result-contract
 shape `docs/result-contract.md` writes down: an entry `## <UTC time> — drive-<name> — <stage>` holding one fenced
@@ -101,6 +103,8 @@ DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decisi
                         r"drive-bosun( \(.+\))?|human)$")
 STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
 LINE_LABEL = re.compile(r"^- \*\*(?:Reversibility|Proposed rule):\*\*", re.M)
+REVERSIBILITY_LABEL = re.compile(r"^- \*\*Reversibility:\*\*", re.M)
+NEAR_LABEL = re.compile(r"^\s*[-*+]\s*[*_]*\s*(?:reversibility|proposed\s*rule)\s*[*_]*\s*:[*_]*", re.I)
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 FIELD = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 PLACEHOLDER = re.compile(r"<[^>]*>")
@@ -523,14 +527,35 @@ def unfenced(text: str) -> str:
     return "".join(kept)
 
 
+def near_misses(text: str, relative: str) -> tuple[str, list[str]]:
+    """`text` with every line whose label is nearly `- **Reversibility:**` or `- **Proposed rule:**` emptied (line
+    endings kept), so it is never read whatever the rest of the log holds, and one note per such line."""
+    kept, notes, where = [], [], ""
+    for number, piece in enumerate(text.splitlines(keepends=True), start=1):
+        content = piece.splitlines()[0] if piece.splitlines() else ""
+        if content.startswith("## "):
+            heading = DECISION_HEADING.match(content)
+            where = f" D{heading.group(1)}" if heading else ""
+        near = NEAR_LABEL.match(content)
+        if near and not LINE_LABEL.match(content):
+            notes.append(f"check-decisions: note: {relative}:{number}:{where} has `{near.group(0).strip()}`, which is "
+                         "not the label `- **Reversibility:**` or `- **Proposed rule:**`; the line is not read")
+            piece = piece[len(content):]
+        kept.append(piece)
+    return "".join(kept), notes
+
+
 def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
-    """The findings and notes for the `Reversibility:` lines of one log; `reversibility.py` is loaded only for a log
-    that carries one of its labels, so any other log gets the answer it always did."""
-    text = unfenced(read(path))
-    if not LINE_LABEL.search(text):
-        return [], []
+    """The findings and notes for the `Reversibility:` and `Proposed rule:` lines of one log; `reversibility.py` is
+    loaded only for a log that carries a `Reversibility:` line, so any other log gets the answer it always did."""
+    text, notes = near_misses(unfenced(read(path)), path.relative_to(ROOT).as_posix())
+    if not REVERSIBILITY_LABEL.search(text):
+        if LINE_LABEL.search(text):
+            notes.append(f"check-decisions: note: {path.relative_to(ROOT).as_posix()} has `Proposed rule:` lines and "
+                         "no `Reversibility:` line; its citations are checked only in a log that carries one")
+        return [], notes
     if not Path(__file__).resolve().with_name("reversibility.py").is_file():
-        return [], ["check-decisions: note: reversibility.py is not beside this script; the `Reversibility:` "
+        return [], [*notes, "check-decisions: note: reversibility.py is not beside this script; the `Reversibility:` "
                     f"lines of {path.relative_to(ROOT).as_posix()} are not checked"]
     module = sibling("reversibility")
     items = [(line, int(heading.group(1)) if heading else None, fields, fields.twice)
@@ -540,8 +565,8 @@ def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
         listed, unread = module.propagated(ROOT), []
     except module.Unreadable as error:  # a `layout.delivery` naming no directory here: one line, never a traceback
         listed, unread = None, [str(error)]
-    findings, notes = module.check_log(path.relative_to(ROOT).as_posix(), items, scope_tokens, listed, verb, ROOT)
-    return unread + findings, notes
+    findings, said = module.check_log(path.relative_to(ROOT).as_posix(), items, scope_tokens, listed, verb, ROOT)
+    return unread + findings, notes + said
 
 
 def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int, int]:

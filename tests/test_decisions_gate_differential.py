@@ -30,6 +30,12 @@ def inside(text: str, separator: str, rest: str = "- **Status:** overridden by D
     return text.replace("- **Why:** because", f"- **Why:** before{separator}{rest}")
 
 
+def proposing(number: int, cited: str) -> str:
+    """An entry with a `Proposed rule:` line, which a log written before S26 could hold (B1, D65)."""
+    return entry(number).replace("- **Written to:**", f"- **Proposed rule:** ask first (same shape as {cited})\n"
+                                 "- **Written to:**")
+
+
 def logs() -> dict[str, bytes]:
     """Each log as the bytes of the whole file, title included where the case keeps one."""
     two = entry(1) + "\n" + entry(2)
@@ -49,6 +55,8 @@ def logs() -> dict[str, bytes]:
         "a field missing": TITLE + entry(1).replace("- **Why:** because\n", ""),
         "a heading in the wrong shape": TITLE + entry(1).replace("## D1 — ", "## D1 - ") + "\n" + entry(2),
         "empty file": "",
+        "a `Proposed rule:` line citing one entry, no `Reversibility:`": TITLE + entry(1) + "\n" + proposing(2, "D1"),
+        "a `Proposed rule:` line citing no entry, no `Reversibility:` line": TITLE + proposing(1, "D7, D9"),
     }
     for name, separator in (("U+2028", " "), ("form feed", "\x0c"), ("U+0085", "\u0085")):
         cases[f"{name} before a status label inside a field"] = TITLE + inside(entry(1), separator)

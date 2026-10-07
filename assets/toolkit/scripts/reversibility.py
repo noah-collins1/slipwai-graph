@@ -5,8 +5,8 @@ prints the whole `- **Reversibility:** ...` line a decision entry carries, and o
 that fired. The facts are a closed list; the tier is the highest any rule gives; a missing or unaccepted fact scores
 `hard`. `RULES` keeps every version of the table this file has shipped: a line names the version that scored it, and
 a shipped version is only ever added to, never edited (a new version is a decision taken at the hard tier).
-The gate (`check-decisions.py`) loads this file by path, only for a log that carries a `Reversibility:` or
-`Proposed rule:` line, and `check_log()` holds each line to the grammar and to the tier its named version derives.
+The gate (`check-decisions.py`) loads this file by path, only for a log that carries a `Reversibility:` line, and
+`check_log()` holds each line to the grammar and the tier its named version derives, and `Proposed rule:` citations.
 The scope is read by `scope_tokens`, a copy of the gate's own reading, so the verb works with nothing beside it; a
 caller that holds the gate's function passes it to `score()` instead. Nothing here prints or exits outside `main`.
 """
@@ -289,6 +289,8 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
         findings += line_findings(f"{relative}:{line}: D{number}", fields, twice, reader, listed, root)
         if number is not None and "Proposed rule" in fields:
             findings += rule_findings(f"{relative}:{line}: D{number}", number, fields["Proposed rule"], known)
+            findings += [f"{relative}:{line}: D{number} has more than one `Proposed rule:` line; an entry proposes "
+                         "one rule"] if "Proposed rule" in twice else []
     seen = False  # file order, as `scope_notes` reads it: the first entry with the line starts it
     for line, number, fields, _ in entries:
         if "Reversibility" in fields:
