@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 import tempfile
 from types import ModuleType
@@ -105,7 +106,7 @@ class BriefsTest(FactoryTestCase):
         self.assertIn('"take easy decisions provisionally" is `decide=provisional-shadow` first', settings)
         for words in ("python3 scripts/provisional.py status", "python3 scripts/provisional.py audit",
                       "python3 scripts/agents/cruise.py mode", "Decision: D<n>", "`told: accept`", "no bosun",
-                      "only the skipper takes an always-ask item provisionally", "`Decided by: human`",
+                      "Only the skipper takes an always-ask item provisionally", "`Decided by: human`",
                       "`overridden by D<m>`", "question about a gate, a check or CI is never provisional",
                       "`cruise: parked: ratify D<n>`", "`--set decide=…` refuses inside an iteration"):
             self.assertIn(words, command)
@@ -118,8 +119,8 @@ class BriefsTest(FactoryTestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = self.generate(directory, "skipper", "standard", "python")
             skipper = flat((repo / "agents/drive-skipper.md").read_text(encoding="utf-8"))
-        for words in ("python3 scripts/provisional.py status --decide <value> --ask approval", "scored its tier",
-                      "quoting in **Why** the owner-brief line the item falls under",
+        for words in ("python3 scripts/provisional.py status --decide <value> --ask approval", "Score its tier first",
+                      "quote in **Why** the owner-brief line the item falls under",
                       "A question about a gate, a check or CI is never provisional", "your `status` is `decided`",
                       "trailer `Decision: D<n>`", "decide as under `recommended-first`"):
             self.assertIn(words, skipper)
@@ -159,3 +160,67 @@ class BriefsTest(FactoryTestCase):
     def test_e6_the_command_writer_stays_within_its_cap(self) -> None:
         lines = (ROOT / "src/slipwai/project/cruise.py").read_text(encoding="utf-8").count("\n")
         self.assertLessEqual(lines, 350)
+
+
+MODES = ("provisional-shadow", "provisional-advisory", "provisional")
+
+
+def sentences(text: str) -> list[str]:
+    return re.split(r"(?<=[.:])\s+(?=[A-Z*])", flat(text))
+
+
+class ModesAreSeparateTest(FactoryTestCase):
+    """T016: each `decide` value has its own sentence, and shadow and advisory take nothing."""
+
+    command = ""
+    skipper = ""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        directory = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(directory.cleanup)
+        repo = cls().generate(directory.name, "modes", "standard", "python")
+        cls.command = flat((repo / "commands/cruise.md").read_text(encoding="utf-8"))
+        cls.skipper = flat((repo / "agents/drive-skipper.md").read_text(encoding="utf-8"))
+
+    def test_t016_the_command_has_one_sentence_per_value(self) -> None:
+        for words in ("Under `decide: provisional-shadow` an always-ask item is not taken: it stays `unavailable`, "
+                      "the skipper's `status` is `unavailable`, and the entry only gains the "
+                      "`Provisional (shadow):` line",
+                      "Under `decide: provisional-advisory` an always-ask item is not taken either: it stays "
+                      "`unavailable`, the skipper's `status` is `unavailable`, and the entry only gains the "
+                      "`Provisional (advisory):` line",
+                      "Under `decide: provisional`, and only there, the skipper takes an easy or guarded approval "
+                      "provisionally, as `Status: provisional · ratify by <date>` with a `Revert:` line"):
+            self.assertIn(words, self.command)
+
+    def test_t016_the_skipper_has_one_sentence_per_value(self) -> None:
+        for words in ("Under `decide: provisional-shadow` an always-ask item is not taken: it stays `unavailable`, "
+                      "your `status` is `unavailable`, and the entry only gains the `Provisional (shadow):` line",
+                      "Under `decide: provisional-advisory` an always-ask item is not taken either: it stays "
+                      "`unavailable`, your `status` is `unavailable`, and the entry only gains the "
+                      "`Provisional (advisory):` line",
+                      "Under `decide: provisional`, and only there, you take an easy or guarded approval "
+                      "provisionally, and your `status` is `decided`"):
+            self.assertIn(words, self.skipper)
+
+    def test_t016_no_sentence_grants_taking_under_shadow_or_advisory(self) -> None:
+        for text in (self.command, self.skipper):
+            for sentence in sentences(text):
+                if "provisional-shadow" in sentence or "provisional-advisory" in sentence:
+                    self.assertNotIn("Under `decide: provisional-shadow`, `provisional-advisory` or", sentence)
+                    self.assertNotRegex(sentence, r"\b(takes|take) an always-ask item provisionally")
+                    self.assertNotIn("`status` is `decided`", sentence)
+                    self.assertNotIn("`status` stays `decided`", sentence)
+
+    def test_t016_an_enforced_decision_is_not_a_block_only_under_provisional(self) -> None:
+        self.assertNotIn("An enforced provisional decision is not a block: your `status` is `decided`", self.skipper)
+        self.assertNotIn("no ⛔, the skipper's `status` stays `decided`", self.command)
+        self.assertIn("An enforced provisional decision, which only `decide: provisional` makes, is not a block: "
+                      "no bosun, no ⛔", self.command)
+
+    def test_t016_the_unavailable_paragraph_names_the_exception(self) -> None:
+        self.assertIn("it is never decided, whatever `decide` says, except an approval under `decide: provisional`",
+                      self.command)
+        self.assertNotIn("whatever `decide` says. It is still an entry", self.command)

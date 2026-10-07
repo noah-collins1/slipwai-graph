@@ -30,20 +30,25 @@ REVERT_LINE = ("- **Revert:** <on a provisional, ratified or reverted entry: com
 MODE_LINE = ("- **Provisional (shadow | advisory):** <optional: final tier> · <provisional · ratify by <date> | "
              "blocks (hard) | blocks (<fact>=yes)> · Revert: commits carrying Decision: D<n>")
 
-# The command's paragraph for the skipper protocol: who, how, and what an enforced one is not.
+# The command's paragraph for the skipper protocol: who, how, and what an enforced one is not. Each `decide` value has
+# its own sentence, and shadow and advisory take nothing: the rehearsal line is all they add.
 COMMAND_PARAGRAPH = f"""\
-**Provisional decisions.** Under `decide: provisional-shadow`, `provisional-advisory` or `provisional`, only the
-skipper takes an always-ask item provisionally, and only a person's approval: it scores the tier first with
-`{_SCORE}`, then runs `{PROVISIONAL_VERB}` with `--decide` the value in `.specify/cruise.json`, `--ask` the
-kind (`approval`, or `fact`, `must` or `release`), `--when` the entry's `When` and `--number D<n>`, writes the lines
-the verb prints where the entry shape puts them, and quotes the owner-brief line the item falls under. Every other
-question is decided as under `recommended-first`. A question about a gate, a check or CI is never provisional,
-whatever its declared facts; a credential, a third party's behaviour, a MUST or a release never is. An enforced
-provisional decision is not a block: no bosun, no ⛔ on the board, the skipper's `status` stays `decided`. Every
-commit made under it carries the trailer `{TRAILER}`, which this session puts in every implement brief. Under
-advisory the park line is the one the verb prints; a person's `told: accept` is written as a `Decided by: human`
-entry taking the recommendation at `Status: standing`, and the `unavailable` entry's `Status` becomes
-`overridden by D<m>`."""
+**Provisional decisions.** Only the skipper takes an always-ask item provisionally, only a person's approval, and
+only under one value of `decide`. It scores the tier first with `{_SCORE}`, then runs `{PROVISIONAL_VERB}` with
+`--decide` the value in `.specify/cruise.json`, `--ask` the kind (`approval`, or `fact`, `must` or `release`),
+`--when` the entry's `When` and `--number D<n>`, and quotes the owner-brief line the item falls under. Under
+`decide: provisional-shadow` an always-ask item is not taken: it stays `unavailable`, the skipper's `status` is
+`unavailable`, and the entry only gains the `Provisional (shadow):` line saying what `provisional` would have done.
+Under `decide: provisional-advisory` an always-ask item is not taken either: it stays `unavailable`, the skipper's
+`status` is `unavailable`, and the entry only gains the `Provisional (advisory):` line, with the recommendation a
+person can accept in one word. Under `decide: provisional`, and only there, the skipper takes an easy or guarded
+approval provisionally, as `Status: provisional · ratify by <date>` with a `Revert:` line.
+Every other question is decided as under `recommended-first`. A question about a gate, a check or CI is never
+provisional, whatever its declared facts; a credential, a third party's behaviour, a MUST or a release never is.
+An enforced provisional decision, which only `decide: provisional` makes, is not a block: no bosun, no ⛔. Every
+commit made under it carries the trailer `{TRAILER}`, which this session puts in every implement brief. A person's
+`told: accept` is written as a `Decided by: human` entry taking the recommendation at `Status: standing`, and the
+`unavailable` entry's `Status` becomes `overridden by D<m>`."""
 MODE_SENTENCE = (
     f"In an iteration, run `{MODE_VERB}` too (with `--feature <name>` where the run has one): append the entry it "
     f"prints, scored with `{_SCORE}` like every entry, and end on its `cruise: parked:` line where it prints one."
@@ -54,6 +59,8 @@ AUDIT_SENTENCE = (
     "`ratified <date>`, or reverts the commits carrying its trailer and writes `reverted <date>`, since the run "
     "does neither."
 )
+# Says what the "never decided" sentence of the command's *unavailable* paragraph excepts.
+APPROVAL_EXCEPTION = ", except an approval under `decide: provisional` (*Provisional decisions*, above)"
 NEVER_SETS = " The run never sets `decide`: `--set decide=…` refuses inside an iteration."
 STOP_EXCEPTION = (
     "Under `decide: provisional` the skipper takes a person's approval provisionally where the change is easy or "
@@ -65,15 +72,19 @@ SETTINGS_WORDS = ('"take easy decisions provisionally" is `decide=provisional-sh
 # The skipper's brief says the same from its side.
 SKIPPER_PARAGRAPH = f"""\
 **Take an always-ask item provisionally only where the brief says `decide` allows it.** The brief names the
-`decide` value. Under `provisional-shadow`, `provisional-advisory` or `provisional`, a person's approval that falls
-under a line of the owner brief's *Always ask a person* is yours alone to take provisionally, and only after you have
-scored its tier with `{_SCORE}`: then run `{PROVISIONAL_VERB} --decide <value> --ask approval --when <the entry's
-When> --number D<n> --reversibility '<the line it printed>'` and write the lines it prints, where the entry shape
-puts them — `Status:` and `Revert:`, or the mode line after `Reversibility:` — quoting in **Why** the owner-brief line
-the item falls under. A question about a gate, a check or CI is never provisional, whatever its declared facts; a
-credential, a third party's behaviour, a MUST or a release never is (`--ask fact`, `must` or `release`). Every other
-question you decide as under `recommended-first`. An enforced provisional decision is not a block: your `status` is
-`decided`, and every commit made under it carries the trailer `{TRAILER}`."""
+`decide` value, and only a person's approval that falls under a line of the owner brief's *Always ask a person* is
+in question. Score its tier first with `{_SCORE}`, then run `{PROVISIONAL_VERB} --decide <value> --ask approval
+--when <the entry's When> --number D<n> --reversibility '<the line it printed>'` and quote in **Why** the owner-brief
+line the item falls under. Under `decide: provisional-shadow` an always-ask item is not taken: it stays
+`unavailable`, your `status` is `unavailable`, and the entry only gains the `Provisional (shadow):` line saying what
+`provisional` would have done. Under `decide: provisional-advisory` an always-ask item is not taken either: it stays
+`unavailable`, your `status` is `unavailable`, and the entry only gains the `Provisional (advisory):` line. Under
+`decide: provisional`, and only there, you take an easy or guarded approval provisionally, and your `status` is
+`decided`: write the `Status:` and `Revert:` lines the verb prints where the entry shape puts them. A question about a
+gate, a check or CI is never provisional, whatever its declared facts; a credential, a third party's behaviour, a
+MUST or a release never is (`--ask fact`, `must` or `release`). Every other question you decide as under
+`recommended-first`. An enforced provisional decision, which only `decide: provisional` makes, is not a block, and
+every commit made under it carries the trailer `{TRAILER}`."""
 
 # The owner brief's two sentences.
 OWNER_ALWAYS = ("Under `decide: provisional` an easy or guarded item here may be taken provisionally and is listed "

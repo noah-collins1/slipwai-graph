@@ -134,13 +134,14 @@ asked, what shipped, every out-of-scope decision, and every decision a person ha
 ## Provisional decisions
 
 `decide` has five values, and only a person moves it, one rung at a time: `recommended-first`, `skipper-always`,
-`provisional-shadow`, `provisional-advisory`, `provisional`. Under the last three, only the skipper takes an item
-from the owner brief's *Always ask a person* provisionally, and only a person's approval: it scores the tier with
-`scripts/reversibility.py`, then asks `python3 scripts/provisional.py status` what to write. Under `provisional-shadow` and
-`provisional-advisory` the item still waits for a person, and the entry carries a `Provisional (shadow):` or
-`Provisional (advisory):` line saying what `provisional` would have done; advisory also names the recommendation, and
-`/cruise-tell accept` takes it. Under `provisional` an easy or guarded item goes ahead with `Status: provisional ·
-ratify by <date>` and a `Revert:` line, and every commit made under it carries the trailer `Decision: D<n>`. A gate, a
+`provisional-shadow`, `provisional-advisory`, `provisional`. Only the skipper takes an item from the owner brief's
+*Always ask a person* provisionally, and only a person's approval: it scores the tier with `scripts/reversibility.py`,
+then asks `python3 scripts/provisional.py status` what to write. Under `provisional-shadow` and `provisional-advisory`
+nothing is taken: the item stays `unavailable`, the skipper's `status` is `unavailable`, and the entry only gains a
+`Provisional (shadow):` or `Provisional (advisory):` line saying what `provisional` would have done; advisory also
+names the recommendation, and `/cruise-tell accept` takes it. Under `provisional`, and only there, an easy or guarded
+item goes ahead with `Status: provisional · ratify by <date>` and a `Revert:` line, and every commit made under it
+carries the trailer `Decision: D<n>`. A gate, a
 check, CI, a credential, a third party's behaviour, a constitution MUST and a release are never provisional. At
 the start of an iteration `python3 scripts/agents/cruise.py mode` records any change of `decide` as an entry, and the
 completion audit runs `python3 scripts/provisional.py audit`: while a provisional entry stands, the run ends
