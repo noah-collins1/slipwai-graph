@@ -131,12 +131,12 @@ R4–R7 write `check-decisions.py` and `reversibility.py`, so they run in order,
   `tests/reversibility_fixture.py`, `tests/test_reversibility_gate.py`, `tests/test_reversibility_versions.py`,
   `tests/test_decisions_gate_differential.py`.
 
-- [ ] T005 [US2] **R7 — a proposed rule cites two standing entries** (AC-S26-15 gate half). `reversibility.py`
+- [ ] T005 [US2] **R7 — a proposed rule cites two entries of the feature** (AC-S26-15 gate half, as amended by D185). `reversibility.py`
   `check_log()` reads a `- **Proposed rule:** … (same shape as D<a>, D<b>)` line: at least two distinct ids other than
-  its own entry's, each the heading of an entry in the same log whose `Status` is `standing`; one finding naming the
+  its own entry's, each the heading of an entry in the same log (its `Status` is not read — D185); one finding naming the
   entry and `Proposed rule` otherwise; an entry without the line never refused. RED→GREEN: e1 D3 citing D1, D2 standing:
   exit 0 · e2 citing D1 only: refused · e3 citing D1, D9 (absent): refused naming D9 · e4 citing D1, D2 with D2
-  `overridden by D3`: refused naming D2 · e5 citing D3 and D1 from D3: refused (its own id does not count) · e6 no entry
+  `overridden by D3`: **accepted** (D185, D65) · e5 citing D3 and D1 from D3: refused (its own id does not count) · e6 no entry
   has the line: nothing new. Run the toolkit module set.
   Files: `assets/toolkit/scripts/reversibility.py`, `tests/test_reversibility_gate.py`.
 
@@ -153,7 +153,7 @@ R4–R7 write `check-decisions.py` and `reversibility.py`, so they run in order,
 
 ## Phase 4: US3 and US4 — the writers, and a project made before
 
-- [ ] T007 [US3] **R3 — `generate` writes the list, `migrate` carries it** (AC-S26-8; D175). `src/slipwai/assets.py`:
+- [ ] T007 [US3] **R3 — `generate` writes the list, `migrate` carries it** (AC-S26-8, AC-S26-17; D175, D183). `src/slipwai/assets.py`:
   `PROPAGATED = ".slipwai/propagated"` beside `NOTES`; `src/slipwai/project/propagated.py` (new):
   `propagated_file(files)`; `src/slipwai/scaffold.py`: where no adoption is given, the list is added after
   `layout.relocate` and before the adoption cut, so `replay` regenerates it. RED→GREEN: e1 a generated project, both

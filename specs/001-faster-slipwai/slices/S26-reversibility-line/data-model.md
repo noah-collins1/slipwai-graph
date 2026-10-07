@@ -95,8 +95,8 @@ Format: `.written`'s own — one project-relative path per line. `migrate_file` 
 ```
 
 Optional, after `Reversibility:`. Every `D<n>` in the parenthesis counts; the gate refuses the line when fewer
-than two distinct ids other than the entry's own are cited, or when one is not an entry of the same
-`decisions.md` whose `Status` is `standing`. An entry without the line is never refused.
+than two distinct ids other than the entry's own are cited, or when one is no entry of the same `decisions.md`; a
+cited entry overridden since passes (D185, D65). An entry without the line is never refused.
 
 ## Gate findings and notes added
 
@@ -109,5 +109,5 @@ never loads `reversibility.py` and gets the earlier checker's answer byte for by
 | finding | a second `Reversibility:` line |
 | finding | the first tier differs from what the named rules version derives (the message names the rules that fired) |
 | finding | `migrate_file=no` while a `Written to` path is on the list, or where no list exists |
-| finding | a `Proposed rule:` citing fewer than two ids, or a non-standing / absent id |
+| finding | a `Proposed rule:` citing fewer than two ids, or an id that is no entry of the log (D185) |
 | note | an entry with no `Reversibility:` line after one that has it (names the entry and the verb; exit unchanged) |
