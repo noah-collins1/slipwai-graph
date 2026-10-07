@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from .cruise import CONFIG
 from .cruise_agents import DECISIONS, DEMO_LOG, HAND, OWNER_BRIEF, SCORE_VERB, SKIPPER
+from .cruise_provisional import OWNER_ALWAYS, OWNER_RECORD
 from .cruise_record import DECISION_ENTRY, DEMO_ENTRY, STOP_FILE
 
 PAGE = OWNER_BRIEF
@@ -69,6 +70,8 @@ wording, anything that reaches a real customer, a release with no flag holding i
 these as `unavailable` and the run parks with the exact question; `{STOP_FILE}` and `{CONFIG}` say how a run
 stops and what it may decide.]
 
+{OWNER_ALWAYS}
+
 ## What the record looks like
 
 Every decision a run takes is appended to `{DECISIONS}`, one entry in this shape, and the artifact the stage
@@ -87,7 +90,7 @@ evidence beside it:
 ```
 
 The `Reversibility:` line is what `{SCORE_VERB}` prints for the entry's facts, `Scope:` and `Written to`; the
-`Proposed rule:` line is optional.
+`Proposed rule:` line is optional. {OWNER_RECORD}
 
 `make check-decisions` holds both files to those shapes — and every finished slice to a row in
 `adversary-log.md` — and refuses an entry whose `Written to` or

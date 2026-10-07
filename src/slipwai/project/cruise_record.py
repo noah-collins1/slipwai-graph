@@ -10,6 +10,7 @@ in one small file and re-reads it, and the harnesses that can run a command afte
 from __future__ import annotations
 
 from .cruise_agents import BOSUN, BROWSER, HAND, SCORE_VERB, SKIPPER
+from .cruise_provisional import MODE_LINE, REVERT_LINE, STATUS_FORMS
 
 CHECKPOINT = "specs/cruise-checkpoint.md"
 STOP_FILE = ".specify/cruise.stop"
@@ -58,8 +59,10 @@ DECISION_ENTRY = f"""## D<n> — <the question, in one line>
 - **Confidence:** high | medium | low · **Would reverse if:** <the one condition>
 - **Reversibility:** <tier> · rules <n> · <facts, as {SCORE_VERB} prints the line>
 - **Proposed rule:** <optional: one owner-brief sentence, where three entries share a reason> (same shape as D<a>, D<b>)
+{MODE_LINE}
 - **Written to:** <the artifact paths the answer went into>
-- **Status:** standing | overridden by D<m> | overridden by human <date>"""
+- **Status:** standing | overridden by D<m> | overridden by human <date> | {STATUS_FORMS}
+{REVERT_LINE}"""
 ENTRY_RULES = f"{REVERSIBILITY_RULE}\n\n{ADR_RULE}"
 DEMO_ENTRY = f"""## <ISO instant> — <accepted | behaviour | implementation> · iteration <n> · {HAND} (<model>)
 - **Started with:** <the literal command or URL> · **Seeded:** <what, or none>

@@ -123,13 +123,29 @@ with no production target has no release rows. An adopted repository has three m
 | 9 | Converge appended tasks and the `/gaps` pass says stop | Already bounded by the ladder. Continue to the demo. | — |
 | 10 | The demo stop | Delegate to `drive-hand` with what the stop hands a person, plus the acceptance script. Take its verdict as the actor's. Acceptance is marked `accepted-by: drive-hand`. | `demo-log.md`, the benchmark `outcome=`, the register |
 | 11 | The ready set is empty | Not a stop. Run the completion audit. Only an audit with nothing left is `done`. | `specs/<feature>/cruise-report.md`, decision entries |
-| 12 | An input nobody has: a credential, an external system, a person's approval | Never decided. Record it as blocked with what is needed. Take the next ready slice. Park only when nothing can move. | a `parked` line in the log, ⛔ on the board |
+| 12 | An input nobody has: a credential, an external system, a person's approval | Never decided. Record it as blocked with what is needed. Take the next ready slice. Park only when nothing can move. Under `decide: provisional` the skipper takes a person's approval provisionally where the change is easy or guarded to reverse (see [Provisional decisions](#provisional-decisions)): that is not a block, so no bosun and no ⛔. | a `parked` line in the log, ⛔ on the board |
 
 **The completion audit** runs where `/drive` would say the split is exhausted. `/gaps` runs over the whole of
 `spec.md` against what shipped, one `drive-gaps` delegate per feature area. Each finding goes to the skipper:
 a criterion nothing built becomes a slice, appended to the split with `/story-splitting`; a finding the
 owner rules out of scope becomes a decision entry that says so. The report lists what the specification
 asked, what shipped, every out-of-scope decision, and every decision a person has not yet reviewed.
+
+## Provisional decisions
+
+`decide` has five values, and only a person moves it, one rung at a time: `recommended-first`, `skipper-always`,
+`provisional-shadow`, `provisional-advisory`, `provisional`. Under the last three, only the skipper takes an item
+from the owner brief's *Always ask a person* provisionally, and only a person's approval: it scores the tier with
+`scripts/reversibility.py`, then asks `python3 scripts/provisional.py status` what to write. Under `provisional-shadow` and
+`provisional-advisory` the item still waits for a person, and the entry carries a `Provisional (shadow):` or
+`Provisional (advisory):` line saying what `provisional` would have done; advisory also names the recommendation, and
+`/cruise-tell accept` takes it. Under `provisional` an easy or guarded item goes ahead with `Status: provisional ·
+ratify by <date>` and a `Revert:` line, and every commit made under it carries the trailer `Decision: D<n>`. A gate, a
+check, CI, a credential, a third party's behaviour, a constitution MUST and a release are never provisional. At
+the start of an iteration `python3 scripts/agents/cruise.py mode` records any change of `decide` as an entry, and the
+completion audit runs `python3 scripts/provisional.py audit`: while a provisional entry stands, the run ends
+`cruise: parked: ratify D<n>`. Ratify by editing `Status` to `ratified <date>`; revert the commits carrying the trailer
+and write `reverted <date>`.
 
 ## Where it keeps its answers
 

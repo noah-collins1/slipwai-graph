@@ -12,10 +12,12 @@ from types import ModuleType
 
 from support import FactoryTestCase
 from test_cruise_runner import cruise
+from test_drive_adoption import adopted, wrapped
 
 from slipwai.assets import ROOT, TOOLKIT_ROOT
 from slipwai.project.cruise import CONFIG, SETTINGS
 from slipwai.project.cruise_provisional import DECIDE_CONTROLS, DECIDE_VALUES
+from slipwai.project.cruise_record import DECISION_ENTRY
 
 FIVE = ("recommended-first", "skipper-always", "provisional-shadow", "provisional-advisory", "provisional")
 SENTENCE = ("Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see "
@@ -86,3 +88,74 @@ class DecideSettingTest(FactoryTestCase):
             self.assertEqual(refused.returncode, 1)
             self.assertIn(", ".join(FIVE) + ", not 'nope'", refused.stderr)
             self.assertEqual(json.loads((repo / CONFIG).read_text())["decide"], "recommended-first")
+
+
+def flat(text: str) -> str:
+    return " ".join(text.split())
+
+
+class BriefsTest(FactoryTestCase):
+    """R12: the command, the skipper's brief, the owner brief and the stop table say what provisional means."""
+
+    def test_e1_the_command_names_the_three_verbs_the_trailer_and_who_may(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "command", "standard", "python")
+            command = flat((repo / "commands/cruise.md").read_text(encoding="utf-8"))
+            settings = flat((repo / "commands/cruise-settings.md").read_text(encoding="utf-8"))
+        self.assertIn('"take easy decisions provisionally" is `decide=provisional-shadow` first', settings)
+        for words in ("python3 scripts/provisional.py status", "python3 scripts/provisional.py audit",
+                      "python3 scripts/agents/cruise.py mode", "Decision: D<n>", "`told: accept`", "no bosun",
+                      "only the skipper takes an always-ask item provisionally", "`Decided by: human`",
+                      "`overridden by D<m>`", "question about a gate, a check or CI is never provisional",
+                      "`cruise: parked: ratify D<n>`", "`--set decide=…` refuses inside an iteration"):
+            self.assertIn(words, command)
+        self.assertLess(command.index("python3 scripts/agents/cruise.py mode"), command.index("## The watch seat"))
+        audit = command.index("## When the ready set is empty")
+        self.assertLess(audit, command.index("provisional.py audit"))
+        self.assertLess(command.index("provisional.py audit"), command.index("## The iteration contract"))
+
+    def test_e2_the_skipper_names_the_verb_the_owner_line_the_gate_exception_and_decided(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "skipper", "standard", "python")
+            skipper = flat((repo / "agents/drive-skipper.md").read_text(encoding="utf-8"))
+        for words in ("python3 scripts/provisional.py status --decide <value> --ask approval", "scored its tier",
+                      "quoting in **Why** the owner-brief line the item falls under",
+                      "A question about a gate, a check or CI is never provisional", "your `status` is `decided`",
+                      "trailer `Decision: D<n>`", "decide as under `recommended-first`"):
+            self.assertIn(words, skipper)
+
+    def test_e3_the_owner_brief_shows_the_entry_lines_and_the_always_ask_sentence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "owner", "standard", "python")
+            brief = (repo / ".specify/product-owner.md").read_text(encoding="utf-8")
+        self.assertIn(DECISION_ENTRY, brief)
+        for words in ("provisional · ratify by", "- **Revert:**", "Provisional (shadow"):
+            self.assertIn(words, DECISION_ENTRY)
+        lines = DECISION_ENTRY.splitlines()
+        self.assertTrue(lines[-2].startswith("- **Status:**") and lines[-1].startswith("- **Revert:**"))
+        self.assertTrue(lines[-3].startswith("- **Written to:**") and lines[-4].startswith("- **Provisional ("))
+        self.assertIn("Under `decide: provisional` an easy or guarded item here may be taken provisionally and is "
+                      "listed for ratification (`commands/cruise.md` says how).", flat(brief))
+
+    def test_e4_the_approval_row_names_the_exception_in_the_table_and_the_page(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "stops", "standard", "python")
+            command = (repo / "commands/cruise.md").read_text(encoding="utf-8")
+        for text in (command, (ROOT / "docs/cruise.md").read_text(encoding="utf-8")):
+            line = next(line for line in text.splitlines() if "a person's approval |" in line and "genuinely" in line
+                        or line.startswith("| 12 |"))
+            self.assertIn("decide: provisional", line)
+            self.assertIn("no bosun and no ⛔", line)
+
+    def test_e5_an_adopted_repository_carries_the_same_text_with_the_delivery_path(self) -> None:
+        files = adopted([wrapped("shop", ".")])
+        command = flat(files["delivery/commands/cruise.md"])
+        for verb in ("python3 delivery/scripts/provisional.py status", "python3 delivery/scripts/provisional.py audit",
+                     "python3 delivery/scripts/agents/cruise.py mode"):
+            self.assertIn(verb, command)
+        self.assertIn("python3 delivery/scripts/provisional.py status --decide <value>",
+                      flat(files["delivery/agents/drive-skipper.md"]))
+
+    def test_e6_the_command_writer_stays_within_its_cap(self) -> None:
+        lines = (ROOT / "src/slipwai/project/cruise.py").read_text(encoding="utf-8").count("\n")
+        self.assertLessEqual(lines, 350)

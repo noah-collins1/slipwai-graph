@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from ..origin import Adoption
 from .cruise_agents import BOSUN, DEMO_LOG, HAND
+from .cruise_provisional import STOP_EXCEPTION
 
 LOG = "specs/cruise-log.jsonl"
 REPORT = "specs/<feature>/cruise-report.md"
@@ -59,7 +60,7 @@ def stop_table(event: bool, target: str, adoption: Adoption | None) -> str:
         ("An input that is genuinely unavailable — a credential, an external system, a person's approval",
          f"Never invented. Mark the slice blocked, take the next ready slice, and hand the blocker to `{BOSUN}` "
          "(*Blocked*, below): a stub behind the port, recorded as a stub. Park only at the catastrophic, or "
-         "when the bosun could not move it",
+         f"when the bosun could not move it. {STOP_EXCEPTION}",
          "a decision entry, the stub in `plan.md`, ⛔ on the board"),
     ]
     if target != "none":

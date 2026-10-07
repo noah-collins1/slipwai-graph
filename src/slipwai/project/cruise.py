@@ -15,6 +15,7 @@ import json
 from ..layout import AT_ROOT, Layout
 from ..origin import Adoption
 from ..services import App
+from . import cruise_provisional as provisional
 from .cruise_agents import DECISIONS, OWNER_BRIEF, SCOPE_VERB, SKIPPER
 from .cruise_hand import hand_section
 from .cruise_provisional import DECIDE_CONTROLS, DECIDE_VALUES
@@ -131,7 +132,7 @@ tree, the runner has already opened, checked and synced it for this iteration: a
 is one call — `scripts/codegraph callers <symbol>`, or `codegraph_explore` — and `python3 {SCRIPT} status`
 counts, per delegate, who asked it and who searched the source for a symbol first. Open a `skipper`, `hand` or `bosun`
 benchmark entry around each delegation the way every stage is bracketed, and
-pass `driver=cruise` to every `end` this iteration closes.
+pass `driver=cruise` to every `end` this iteration closes. {provisional.MODE_SENTENCE}
 
 **The argument is the kick-off.** What a person typed after `/cruise` — what this run is for, where the brief
 or the PRD is, which feature — reaches the first iteration of the run and no other: every later iteration
@@ -178,6 +179,8 @@ A delegate cannot see what its siblings are adding, so it numbers nothing they s
 back as the same `D3`, with requirement ranges that overlapped, were exactly the reconciliation by hand this
 protocol exists to end.
 
+{provisional.COMMAND_PARAGRAPH}
+
 The entry's shape, which `{layout.make} check-decisions` holds:
 
 ```markdown
@@ -205,7 +208,7 @@ concurrently, as the post-implementation pass is per seam — and put every find
 a criterion nothing built becomes a slice, appended to the split with `/story-splitting`, and the ladder is
 re-entered for it; a finding the owner rules out of scope is a decision entry saying so. Write
 `{REPORT}`: what the specification asked, what shipped, every out-of-scope decision, and every entry a person
-has not yet reviewed. {audit_sentence()}
+has not yet reviewed. {audit_sentence()} {provisional.AUDIT_SENTENCE}
 
 Only an audit with nothing left to build ends with `cruise: done`.
 
@@ -290,7 +293,7 @@ does the stop hook; one that ends `continue` or `parked` leaves it for the next.
 - **The record says who drove.** `driver=cruise` on every benchmark entry, `skipper`, `hand` and `bosun` as stages
   of their own, so a decision's cost and a demo's cost are numbers `{layout.make} benchmark` can read.
 - **Settings change only through `/cruise-settings`**, never inside an iteration, and `{CONFIG}` is
-  committed: a run's rules are a diff.
+  committed: a run's rules are a diff.{provisional.NEVER_SETS}
 """
 
 
@@ -332,7 +335,7 @@ message naming the change: it takes effect at the next iteration, and nothing al
 ## When the request is in words
 
 "Turn it on" is `enabled=true`; "stop after tonight" is `max_hours=<n>`; "ask me before every release" is
-`release=park`; "let the skipper decide everything" is `decide=skipper-always`; "drive on opus" is `model=opus`
+`release=park`; "let the skipper decide everything" is `decide=skipper-always`; {provisional.SETTINGS_WORDS}; "drive on opus" is `model=opus`
 (an identifier the harness's own model flag takes; `null` is its default); "back to the defaults" is
 every key at the value the table shows. Stopping a run that is going is not a setting: it is `python3 {SCRIPT}
 stop` — `touch {STOP_FILE}`, which ends the run after the iteration in flight; `--now` ends that iteration too
