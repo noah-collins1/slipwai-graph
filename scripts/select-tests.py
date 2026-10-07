@@ -52,29 +52,52 @@ def without_knobs(env: dict[str, str]) -> None:
                 del env[flags]
 
 
+FAILING = re.compile(r"^(?:FAIL|ERROR): (\S+) \((\S+?)\)")
+
+
+def failed_module(line: str) -> str | None:
+    """The module a unittest report line (`FAIL: test_it (module.Class.test_it)`) blames; a module that did not import
+    is `ERROR: module (unittest.loader._FailedTest.module)`, named by its first word."""
+    found = FAILING.match(line)
+    if found is None:
+        return None
+    return found.group(1) if found.group(2).startswith("unittest.loader.") else found.group(2).split(".")[0]
+
+
 def run_unittest(arguments: tuple[str, ...], pythonpath: str, backends: str | None = None, *,
-                 keep: bool = False) -> int:
+                 keep: bool = False) -> tuple[int, list[str]]:
     """`PYTHONPATH=<pythonpath> python3 -m unittest <arguments>`, with `FACTORY_BACKENDS` set to `backends` or unset
-    (kept as it is where `keep`: the person gave it). No timeout: the suite takes as long as it takes, and the person
-    running it can stop it."""
+    (kept as it is where `keep`: the person gave it). Returns its status and the modules that failed, each once, in
+    the order reported; its report is passed on as it is written. No timeout: the suite takes as long as it takes,
+    and the person running it can stop it."""
     env = dict(os.environ, PYTHONPATH=pythonpath)
     if backends is not None:
         env[BACKENDS] = backends
     elif not keep:
         env.pop(BACKENDS, None)
     without_knobs(env)
-    return subprocess.Popen((*UNITTEST, *arguments), cwd=ROOT, env=env).wait()
+    failed: list[str] = []
+    with subprocess.Popen((*UNITTEST, *arguments), cwd=ROOT, env=env, stderr=subprocess.PIPE, text=True,
+                          errors="replace") as process:
+        assert process.stderr is not None
+        for line in process.stderr:
+            sys.stderr.write(line)
+            sys.stderr.flush()
+            module = failed_module(line)
+            if module is not None and module not in failed:
+                failed.append(module)
+        return process.wait(), failed
 
 
 def run_full() -> int:
     """Today's full command: `PYTHONPATH=src python3 -m unittest discover -s tests -v`."""
-    return run_unittest(FULL_ARGUMENTS, "src", keep=True)
+    return run_unittest(FULL_ARGUMENTS, "src", keep=True)[0]
 
 
-def run_modules(modules: list[str], backends: str | None = None) -> int:
+def run_modules(modules: list[str], backends: str | None = None) -> tuple[int, list[str]]:
     """`PYTHONPATH=src:tests python3 -m unittest -v <modules>`, which CI already trusts."""
     if not modules:
-        return 0  # `unittest` with no names would discover from here: nothing selected is nothing run
+        return 0, []  # `unittest` with no names would discover from here: nothing selected is nothing run
     return run_unittest(("-v", *modules), "src:tests", backends)
 
 
@@ -154,10 +177,13 @@ def main(argv: list[str]) -> int:
     print(summary, flush=True)
     if given.dry_run:
         return 0
-    status = run_modules([module for module in running if module not in narrowed])
-    narrowed_status = run_modules(narrowed, ",".join(selection.backends))  # both run; either failing fails the run
+    status, failed = run_modules([module for module in running if module not in narrowed])
+    narrowed_status, narrowed_failed = run_modules(narrowed, ",".join(selection.backends))  # both run
     print(summary, flush=True)
-    return status or narrowed_status
+    if running:
+        print(report.result_line(len(running), sorted({*failed, *narrowed_failed}), status or narrowed_status),
+              flush=True)
+    return status or narrowed_status  # either batch failing fails the run
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ class TestARunNamesWhatItLeftOut(ReportCase):
                                      "skipped test_d: reads no go configuration",
                                      f"narrowed test_a: backend go only {LEFT_OUT}",
                                      f"narrowed test_matrix: backend go only {LEFT_OUT}", summary])
-        self.assertEqual(lines[-1], summary)
+        self.assertEqual(lines[-2:], [summary, "all 3 modules passed"])
         first_test = next(number for number, line in enumerate(lines) if "(test_" in line and "..." in line)
         self.assertGreater(first_test, 5, "the summary and every skip come before the first test")
         self.assertEqual(sum(1 for line in lines if line == summary), 2)
@@ -52,14 +52,34 @@ class TestARunNamesWhatItLeftOut(ReportCase):
         self.assertEqual([line.split(":")[0] for line in skipped], ["skipped test_b", "skipped test_d"])
         self.assertEqual(len({line.split(":")[0] for line in skipped}), len(skipped))
 
-    def test_the_summary_is_last_even_when_a_module_fails(self) -> None:
+    def test_a_narrowed_run_ends_on_one_line_naming_every_failed_module_of_both_batches(self) -> None:
+        failing = ("import unittest\n\n\nclass Case(unittest.TestCase):\n    def test_it(self):\n"
+                   "        self.fail('no')\n")
+        self.declare(test_a='{"configurations": {"backend": ["go"]}}', test_b="", test_c="")
+        self.write("tests/test_a.py", "TEST_SELECTION = {'configurations': {'backend': ['go']}}\n" + failing)
+        self.write("tests/test_c.py", failing)
+        self.slice_changing(GO)
+        done = self.selector_merged()
+        self.assertNotEqual(done.returncode, 0)
+        lines = done.stdout.splitlines()
+        self.assertEqual(lines[-1], "failed 2 of 3 modules: test_a, test_c", done.stdout)
+        self.assertEqual(sum(1 for line in lines if line.startswith(("failed ", "all "))), 1)
+
+    def test_a_module_that_cannot_be_imported_is_named_by_its_module(self) -> None:
+        self.declare(test_a='{"configurations": {"backend": ["go"]}}')
+        self.write("tests/test_a.py", "TEST_SELECTION = {'configurations': {'backend': ['go']}}\nimport nowhere\n")
+        self.slice_changing(GO)
+        done = self.selector_merged()
+        self.assertEqual(done.stdout.splitlines()[-1], "failed 1 of 1 modules: test_a", done.stdout)
+
+    def test_the_summary_comes_before_the_result_even_when_a_module_fails(self) -> None:
         self.declare(test_a='{"configurations": {"backend": ["go"]}}')
         self.write("tests/test_a.py", "TEST_SELECTION = {'configurations': {'backend': ['go']}}\nimport unittest\n\n\n"
                    "class Case(unittest.TestCase):\n    def test_it(self):\n        self.fail('no')\n")
         self.slice_changing(GO)
         done = self.selector_merged()
         self.assertNotEqual(done.returncode, 0)
-        self.assertTrue(done.stdout.splitlines()[-1].startswith("selected 1 of 1 modules against `main` at "))
+        self.assertTrue(done.stdout.splitlines()[-2].startswith("selected 1 of 1 modules against `main` at "))
 
     def test_nothing_selected_runs_nothing_and_says_so(self) -> None:
         self.declare(test_a='{"configurations": {"backend": ["python"]}}')
