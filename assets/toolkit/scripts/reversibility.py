@@ -13,6 +13,7 @@ caller that holds the gate's function passes it to `score()` instead. Nothing he
 from __future__ import annotations
 
 import json
+import posixpath
 import re
 import sys
 from collections.abc import Callable, Iterable, Mapping
@@ -123,6 +124,18 @@ def written_paths(value: str) -> list[str]:
     return [part.strip() for part in value.split(",") if part.strip()]
 
 
+def on_list(written: Iterable[str], listed: set[str]) -> bool:
+    """Whether any `Written to` path is on the committed list, read as a path: `./` and backslashes are resolved, and a
+    directory (with or without its trailing `/`) matches when a listed file is under it. The verb and the gate share it."""
+    def clean(path: str) -> str:
+        return posixpath.normpath(path.strip().replace("\\", "/"))
+    files = {clean(entry) for entry in listed}
+    for path in map(clean, filter(str.strip, written)):
+        if path in files or path == "." or any(entry.startswith(path + "/") for entry in files):
+            return True
+    return False
+
+
 def propagated(root: Path) -> set[str] | None:
     """The paths `migrate` propagates, from the committed list, or None where the project has no list.
 
@@ -154,7 +167,7 @@ def with_list(facts: dict[str, str], written: list[str] | None, listed: set[str]
         return facts
     if listed is None:
         return {**facts, "migrate_file": "no-list"}
-    return {**facts, "migrate_file": "yes"} if any(path in listed for path in written or []) else facts
+    return {**facts, "migrate_file": "yes"} if on_list(written or [], listed) else facts
 
 
 def score(facts: dict[str, str], scope: str, raise_to: str | None = None, version: int = CURRENT,
@@ -220,7 +233,7 @@ def line_findings(where: str, fields: Mapping[str, str], twice: set[str], reader
         if listed is None:
             found.append(f"{where} `Reversibility` says migrate_file=no, but this project has no committed list of "
                          "migrate-propagated files, so nothing says it is no")
-        elif any(path in listed for path in written_paths(fields.get("Written to", ""))):
+        elif on_list(written_paths(fields.get("Written to", "")), listed):
             found.append(f"{where} `Reversibility` says migrate_file=no, but a `Written to` path is on the "
                          "committed list")
     derived, fired = RULES[version](facts, dependants(fields.get("Scope", ""), reader))
