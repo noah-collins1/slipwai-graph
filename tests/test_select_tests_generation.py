@@ -116,6 +116,31 @@ class TestAReachIntoTheRepository(GenerationCase):
         self.assertIn("generates through the launcher", self.voided())
 
 
+class TestAReadsEntryHoldsWhereTheSelectorMatchesIt(GenerationCase):
+    """`reads` entries are matched by prefix, so only a bare-name `.load(` may be held by a longer entry (T054, B2)."""
+
+    HEAD = "from slipwai.assets import ROOT\n"
+
+    def test_a_suffix_of_an_entry_does_not_hold_a_root_path(self) -> None:
+        self.write("README.md", "read\n")
+        self.write("assets/README.md", "other\n")
+        self.module(GO_ONLY.replace("}}", '}, "reads": ["assets/README.md"]}'), '(ROOT / "README.md").read_text()',
+                    self.HEAD)
+        self.assertIn("reaches the repository in-process", self.voided())
+
+    def test_a_bare_name_load_is_held_by_the_entry_that_ends_in_it(self) -> None:
+        self.write("assets/README.md", "other\n")
+        self.module(GO_ONLY.replace("}}", '}, "reads": ["assets/README.md"]}'), 'self.load("README.md")', self.HEAD)
+        self.assertEqual(self.held(), [])
+
+    def test_a_load_of_a_path_is_not_held_by_a_suffix(self) -> None:
+        self.write("assets/docs/README.md", "other\n")
+        self.write("docs/README.md", "other\n")
+        self.module(GO_ONLY.replace("}}", '}, "reads": ["assets/docs/README.md"]}'),
+                    'self.load("docs/README.md")', self.HEAD)
+        self.assertIn("reaches the repository in-process", self.voided())
+
+
 class TestAPathLiteralIsAReach(GenerationCase):
     """The tests run at the repository's root, so a literal path reaches it without `ROOT` (S38 T053, B1)."""
 

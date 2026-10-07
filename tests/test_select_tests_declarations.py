@@ -93,6 +93,17 @@ class TestADeclarationThatCannotBeRead(DeclarationCase):
         "configurations other than every": '{"configurations": "go"}',
     }
 
+    def test_a_reads_entry_that_is_not_a_normalised_repository_path_is_unusable(self) -> None:
+        for entry in ("./README.md", "docs//guide.md", "docs/", "docs\\guide.md", ".", "docs/./guide.md"):
+            with self.subTest(entry):
+                self.declare(test_a=json.dumps({"reads": [entry]}))
+                self.write("README.md", "read\n")
+                self.write("docs/guide.md", "g\n")
+                self.commit("declarations")
+                problems = self.held()
+                self.assertEqual([line.split(":")[0] for line in problems], ["tests/test_a.py"], problems)
+                self.assertIn("not a path inside the repository", problems[0])
+
     def test_the_module_runs_and_the_held_check_names_it(self) -> None:
         for what, selection in self.BAD.items():
             with self.subTest(what):

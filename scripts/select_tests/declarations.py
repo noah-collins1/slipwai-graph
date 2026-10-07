@@ -61,8 +61,9 @@ def valid_options(catalog: Mapping[str, Any], axis: str) -> frozenset[str]:
 
 
 def reads_ok(root: Path, entry: object) -> str:
-    """Why a `reads` entry is unusable, or empty: a relative path inside the tree that exists."""
-    if not isinstance(entry, str) or not entry or entry.startswith("/") or ".." in entry.split("/"):
+    """Why a `reads` entry is unusable, or empty: a normalised relative path inside the tree that exists (no `.`, `..`,
+    empty part, trailing `/` or backslash: `choose.reads_match` matches by prefix and means what it says)."""
+    if not isinstance(entry, str) or "\\" in entry or {"", ".", ".."} & {*str(entry).split("/")}:
         return f"reads names {entry!r}, which is not a path inside the repository"
     return "" if (root / entry).exists() else f"reads names `{entry}`, which does not exist"
 

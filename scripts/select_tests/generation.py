@@ -247,9 +247,10 @@ def facts(module: ast.Module, shape: Signature | None, trusted: bool, launcher: 
     return Facts(tuple(calls), tuple(routes), tuple(reaches))
 
 
-def names(entry: str, reads: frozenset[str]) -> bool:
-    """Whether a `reads` entry names the literal path, as the path or the directory above it or a script by name."""
-    return any(entry == read or entry.startswith(read.rstrip("/") + "/") or read.endswith("/" + entry)
+def names(entry: str, reads: frozenset[str], by_name: bool = False) -> bool:
+    """Whether a `reads` entry names the literal path, as the path or the directory above it; a bare-name `.load(` is
+    also held by the entry that ends in the name, as the selector matches a path and not a suffix (T054)."""
+    return any(entry == read or entry.startswith(read + "/") or (by_name and read.endswith("/" + entry))
                for read in reads)
 
 
@@ -280,7 +281,8 @@ def problem(member: str, found: Facts, axes: Mapping[str, frozenset[str]], every
                 lacking = ", ".join(sorted(values - declared))
                 return f"{where} line {call.line} generates the {axis} {lacking}, which its declaration lacks"
     for reach in found.reaches:
-        if reach.literal is None or not names(reach.literal, reads):
+        if reach.literal is None or not names(reach.literal, reads,
+                                              reach.what == ".load(" and "/" not in reach.literal):
             said = f" `{reach.literal}`" if reach.literal else ""
             return (f"{where} line {reach.line} reaches the repository in-process ({reach.what}{said}) and `reads` "
                     "does not name it")
