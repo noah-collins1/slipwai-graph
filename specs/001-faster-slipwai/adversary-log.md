@@ -638,3 +638,17 @@ Findings: thirteen — three `HIGH`, three `MEDIUM`, seven `LOW`; no `CRITICAL`.
 | A7 | A | LOW | `MAKEFILES=x.mk` makes `verify-checks` fail with no rule for `test`. New | Declined: fails safe | declined |
 | A8 | A | LOW | A slice branch with no commits of its own is reported as *HEAD is not on a branch*. New | Confirmed; S38 T052 | fixed `792ed9a` |
 | A9 | A | LOW | Ignored files outside `assets/`, `src/`, `tests/` never make a run full (research R-6). New | Declined: no declared module reads such a directory; R-6 chose it | declined |
+
+## S26 · 3b8ee69 · 2026-10-07
+
+Slice `S26-reversibility-line` (cruise iteration 27), diff `063c187..3b8ee69^2` (merged into adopt-method at `3b8ee69`): every decision entry may carry `Reversibility:`, scored by the new verb `assets/toolkit/scripts/reversibility.py` from declared facts, `Scope:` and `Written to`; `check-decisions` holds the line and `Proposed rule:` citations; generated projects carry `.slipwai/propagated`.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | A new CLI, `scripts/reversibility.py` (facts as `key=value`, `--scope`, `--written-to`, `--raise`), run by the host and the skipper; `check-decisions` reads two new labels from every log |
+| driven adapter or the provider types behind one | widened | New readers of `.slipwai/propagated` and `<delivery>/.written`, and of each entry's `Scope:` and `Written to`; `generate` and `migrate` write and carry the list (`src/slipwai/project/propagated.py`) |
+| authorisation decision (who can reach one that already exists) | not present | The tier decides nothing yet: nothing acts on it until `S27` |
+| concurrency, idempotency, ordering, retention, or time | not present | The verb and the gate are functions of the text and the committed list; rules versions are frozen by digest, and nothing reads a clock |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: two triggers `widened`.
+
