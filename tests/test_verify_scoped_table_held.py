@@ -59,6 +59,15 @@ NOT_AN_INPUT = {
     "agents/registry.json": "`scripts/agents/registry.json` beside the script (its first segment is the root's own "
                             "`agents/`): a gate script, so the full gate already",
 }
+# The same, for one check only (the reason is the value): a literal the other checks' rows would still have to cover.
+NOT_AN_INPUT_FOR = {
+    ("check-decisions", ".slipwai"): "`reversibility.py` joins it to `propagated`, which the row names whole "
+                                     "(`.slipwai/propagated`); the directory is never read as a path of its own",
+    ("check-decisions", ".."): "`reversibility.py`'s `inside` refuses a path whose first segment is `..`; compared, "
+                               "never opened",
+    ("check-agents", ".slipwai/extensions.json"): "`agents/code_index.py`'s `adopted()`, which `cruise.py` imports "
+                                                  "and calls on `health`/`run` paths; `cruise.py --check` never does",
+}
 # The same, as a pattern: one literal for each of a family of paths.
 NOT_AN_INPUT_PATTERN = {
     r"skills/[\w-]+/SKILL\.md": "`check-constitution.py`'s `practice` pointers, tested for existence by "
@@ -121,8 +130,9 @@ def derived_readers(project: Path, data: dict[str, Any], recipes: dict[str, list
     return found
 
 
-def explained(read: str) -> bool:
-    return read in NOT_AN_INPUT or any(re.fullmatch(pattern, read) for pattern in NOT_AN_INPUT_PATTERN)
+def explained(read: str, name: str = "") -> bool:
+    return read in NOT_AN_INPUT or (name, read) in NOT_AN_INPUT_FOR \
+        or any(re.fullmatch(pattern, read) for pattern in NOT_AN_INPUT_PATTERN)
 
 
 def base_module(path: Path) -> str:
@@ -159,6 +169,8 @@ def modules_of(project: Path, entry: Path, skipped: set[str] | None = None,
                     [f"{base}{alias.name}" for alias in node.names]
             elif isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value.endswith(".py"):
                 named = [node.value]
+            elif isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value.isidentifier():
+                named = [f"{node.value}.py"]  # a sibling named without its suffix (`check-decisions`' `sibling()`)
             for name in named:
                 pending.extend(candidates(name, path.parent, scripts))
     return seen
@@ -186,6 +198,7 @@ class TableHeldTest(RecordCase):
         records = importlib.import_module("verify_scoped.record")  # the script's own reading of the make database
         findings = []
         fired: set[str] = set()
+        fired_for: set[tuple[str, str]] = set()
         for shape in self.SHAPES:
             project = self.project(shape)
             if record(project).returncode != 0:  # a shape whose record is refused (`integration`) has no table to hold
@@ -207,12 +220,15 @@ class TableHeldTest(RecordCase):
                         reads |= reads_of(module, project)
                 files = check["inputs"]["files"]
                 findings += [f"{shape}: {name} reads {read}, under none of {files}" for read in sorted(reads)
-                             if not covered(read, files) and not explained(read)]
+                             if not covered(read, files) and not explained(read, name)]
                 fired.update(read for read in reads if not covered(read, files))
+                fired_for.update((name, read) for read in reads if not covered(read, files))
         stale = sorted(set(NOT_AN_INPUT) - fired)
         findings += [f"{pattern} is explained, and no check reads it any more" for pattern in NOT_AN_INPUT_PATTERN
                      if not any(re.fullmatch(pattern, read) for read in fired)]
         findings += [f"{read} is explained, and no check reads it any more" for read in stale]
+        findings += [f"{name} is explained for {read}, and no longer reads it" for name, read in
+                     sorted(set(NOT_AN_INPUT_FOR) - fired_for)]
         return findings
 
     def test_e4_every_path_a_check_script_reads_lies_under_one_of_its_recorded_inputs(self) -> None:
