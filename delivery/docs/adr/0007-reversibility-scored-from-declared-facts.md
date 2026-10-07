@@ -27,7 +27,9 @@ from the entry's `Scope:` line. The line puts the tier first (or a one-tier-at-a
 version of the rules that scored it, then the facts. `check-decisions` re-derives the tier under the named rules
 version and refuses a disagreement, an unknown key (`size` and `urgency` among them, D176) and a second line; a known
 fact that is missing or carries an unrecognised value scores `hard`. Whether a file is one `migrate` propagates is
-looked up in a committed list (D175). Once commits exist, a later check (`S28`) may raise a tier by writing a
+looked up in a committed list (D175): an adopted
+repository's `delivery/.written`, a generated project's `.slipwai/propagated`, which names the method categories only
+(D183) — so CI workflows, which `migrate` also carries, are held by the declared `ci_workflow` fact and not by the list. Once commits exist, a later check (`S28`) may raise a tier by writing a
 superseding record; it never edits or lowers one.
 
 ## Consequences
