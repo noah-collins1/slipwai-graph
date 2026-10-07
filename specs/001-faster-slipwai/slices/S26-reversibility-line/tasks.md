@@ -56,7 +56,7 @@ Constraints that hold for every task's GREEN, stated once:
 
 ## Phase 1: Pin (before any change)
 
-- [ ] T001 [US2] **Pin — what already holds** (plan *Pin*; D65). Factory code needs no separate pin file: its tests
+- [x] T001 [US2] **Pin — what already holds** (plan *Pin*; D65). Factory code needs no separate pin file: its tests
   are the pin. Run and report, green and unchanged, before any edit: `make test TESTS="test_decisions_gate_differential
   test_decisions_scope_gate test_decisions_scope test_hand_backs_coverage test_cruise_scope_writers test_cruise_record
   test_cruise test_replay test_adopt test_benchmark_feature test_toolkit test_utf8_io test_changelog
@@ -70,7 +70,7 @@ Constraints that hold for every task's GREEN, stated once:
 R1 and R2 both write `reversibility.py` and the score test, so they run in order. T002 also writes the shared fixture
 (no separate setup task).
 
-- [ ] T002 [US1] **R1 — the verb scores declared facts** (AC-S26-1, -2, -3, -4, -5, -6, -7, -14 for the verb's half).
+- [x] T002 [US1] **R1 — the verb scores declared facts** (AC-S26-1, -2, -3, -4, -5, -6, -7, -14 for the verb's half).
   `assets/toolkit/scripts/reversibility.py`: `FACTS` (the closed list, order and accepted values of data-model.md),
   `RULES = {1: …}`, `score()`, `main()` — `--scope`, `--written-to`, `--raise`, `key=value`…; stdout the whole
   `- **Reversibility:** …` line, stderr one line naming the rules that fired, exit 2 with one stderr line and empty
@@ -89,7 +89,7 @@ R1 and R2 both write `reversibility.py` and the score test, so they run in order
   Files: `assets/toolkit/scripts/reversibility.py`, `tests/reversibility_fixture.py`,
   `tests/test_reversibility_score.py`, `changelog.d/reversibility-line.md`.
 
-- [ ] T003 [US1] **R2 — the committed list raises `migrate_file`; and R9 — S39's reader reads the verb's lines**
+- [x] T003 [US1] **R2 — the committed list raises `migrate_file`; and R9 — S39's reader reads the verb's lines**
   (AC-S26-8, -7, -13). `reversibility.py`: `propagated(root)` (`<delivery>/.written` where `project.json`'s `origin`
   is `adopted`, `.written` at the root where `layout.delivery` is `.`, else `.slipwai/propagated`), and the raise in
   `score()`. RED→GREEN for R2: e1 generated, `--written-to "\`scripts/check-decisions.py\`"`, list names it,
@@ -109,7 +109,7 @@ R1 and R2 both write `reversibility.py` and the score test, so they run in order
 
 R4–R7 write `check-decisions.py` and `reversibility.py`, so they run in order, after Phase 2.
 
-- [ ] T004 [US2] **R4 — the gate holds the line; with R6 — old lines under newer rules; and R5's e1 — old logs get the
+- [x] T004 [US2] **R4 — the gate holds the line; with R6 — old lines under newer rules; and R5's e1 — old logs get the
   earlier answer** (AC-S26-9, -10, -11, -14; FR-051 last sentence; D65). `reversibility.py`: `parse_line()`,
   `check_log()` (findings and notes for one parsed log, given the gate's own `scope_tokens` and `STATUS`; re-derives the
   first tier under the version the line names; R2's list check as a refusal); `check-decisions.py`: the module
@@ -153,7 +153,7 @@ R4–R7 write `check-decisions.py` and `reversibility.py`, so they run in order,
 
 ## Phase 4: US3 and US4 — the writers, and a project made before
 
-- [ ] T007 [US3] **R3 — `generate` writes the list, `migrate` carries it** (AC-S26-8, AC-S26-17; D175, D183). `src/slipwai/assets.py`:
+- [x] T007 [US3] **R3 — `generate` writes the list, `migrate` carries it** (AC-S26-8, AC-S26-17; D175, D183). `src/slipwai/assets.py`:
   `PROPAGATED = ".slipwai/propagated"` beside `NOTES`; `src/slipwai/project/propagated.py` (new):
   `propagated_file(files)`; `src/slipwai/scaffold.py`: where no adoption is given, the list is added after
   `layout.relocate` and before the adoption cut, so `replay` regenerates it. RED→GREEN: e1 a generated project, both
