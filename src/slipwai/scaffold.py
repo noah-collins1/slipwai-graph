@@ -11,7 +11,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from .assets import ADOPTION_ROOT, PRUNER
+from .assets import ADOPTION_ROOT, PROPAGATED, PRUNER
 from .catalog import CATALOG
 from .layout import AT_ROOT, Layout
 from .manifest import ABSENT
@@ -45,6 +45,7 @@ from .project.makefile import makefile
 from .project.metadata import metadata
 from .project.pin_commands import pin_command_files
 from .project.pins import GITATTRIBUTES, pin_files
+from .project.propagated import propagated_file
 from .project.readme import readme
 from .project.renovate import renovate_config
 from .project.repository import repository_files
@@ -172,7 +173,10 @@ def project_files(
     # The docs index last of all, over everything above, so it lists exactly the pages this project ships.
     files["docs/README.md"] = docs_index(files)
     files = layout.relocate(files, persons_words(apps, adoption))
-    return adopted_files(files, apps, layout, adoption) if adoption is not None else files
+    if adoption is not None:
+        return adopted_files(files, apps, layout, adoption)
+    files[PROPAGATED] = propagated_file(files)  # from the final paths, so `replay` regenerates it
+    return files
 
 
 def persons_words(apps: list[App], adoption: Adoption | None) -> tuple[str, ...]:
