@@ -167,6 +167,13 @@ class TestAPathLiteralIsAReach(GenerationCase):
         self.module(GO_ONLY, 'name = "no-such-file.md"\nlabel = "README.md is read"')
         self.assertEqual(self.held(), [])
 
+    def test_a_literal_naming_only_an_ignored_path_is_not_a_reach(self) -> None:
+        """`build/` is on disk wherever `make starters` ran and nowhere else: a declaration holds or not by what git
+        sees, the same in every checkout."""
+        self.write(".gitignore", "/build/\n")
+        self.write("build/out.txt", "made\n")
+        self.module(GO_ONLY, 'subprocess.run(["make", "build"], cwd=project)')
+        self.assertEqual(self.held(), [])
 
     def test_a_literal_that_is_compared_indexed_or_joined_to_another_base_is_not_a_path_handed_on(self) -> None:
         self.write("README.md", "read\n")

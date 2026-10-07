@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import ast
 import functools
+import subprocess
 import sys
 from collections.abc import Callable, Mapping
 from pathlib import Path
@@ -175,7 +176,29 @@ def names_a_path(value: str, root: Path | None) -> bool:
     at the root, so `Path("AGENTS.md")` and `["python3", "scripts/x.py"]` reach it with no `ROOT` (T053)."""
     if root is None or not value or value.startswith("/") or any(c in value for c in "\n\0") or len(value) > 200:
         return False
-    return not {*value.split("/")} & {"..", ".", ""} and (root / value).exists()
+    if {*value.split("/")} & {"..", ".", ""}:
+        return False
+    seen = paths_git_sees(root)
+    return value in seen if seen is not None else (root / value).exists()
+
+
+@functools.cache
+def paths_git_sees(root: Path) -> frozenset[str] | None:
+    """Every path git tracks or would add under `root`, with every directory above one; None where git cannot say. What
+    git ignores (`build/`, where `make starters` ran) is on disk in one checkout and not another, so it holds no
+    declaration and voids none."""
+    try:
+        done = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=root,
+                              capture_output=True, timeout=60, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if done.returncode != 0:
+        return None
+    seen: set[str] = set()
+    for path in done.stdout.decode("utf-8", "surrogateescape").split("\0"):
+        parts = path.split("/")
+        seen.update("/".join(parts[:end]) for end in range(1, len(parts) + 1) if path)
+    return frozenset(seen)
 
 
 def anchored_elsewhere(node: ast.AST, parents: Mapping[int, ast.AST]) -> bool:
