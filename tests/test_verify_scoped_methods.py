@@ -53,6 +53,10 @@ class FourRecordTest(RecordCase):
         added = loaded(project)["checks"]["check-licences"]
         self.assertEqual((added["inputs"], added["claims"], added["always"]), (None, False, NO_INPUTS))
 
+    def test_t009_e1_check_decisions_records_the_reversibility_list_among_its_files(self) -> None:
+        files = loaded(self.project("model-typescript-web"))["checks"]["check-decisions"]["inputs"]["files"]
+        self.assertIn(".slipwai/propagated", files)
+
 
 class MethodFilesTest(ShapeCase):
     shape = "model-typescript-web"
@@ -141,3 +145,10 @@ class MethodFilesTest(ShapeCase):
                       "that reads a tool or a variable runs", self.scoped_lines(run))
         self.assertEqual(len(self.verify_calls()), 1)
         self.assertEqual(self.decided(run), ({}, {}))
+
+    def test_t009_e2_the_reversibility_list_alone_runs_check_decisions_naming_it(self) -> None:
+        self.edit(".slipwai/propagated", "\n")
+        run = self.scoped(env=DRY)
+        ran, skipped = self.decided(run)
+        self.assertEqual(ran.get("check-decisions"), ".slipwai/propagated changed", (ran, skipped, run.stdout))
+        self.assertEqual(len(self.verify_calls()), 0)
