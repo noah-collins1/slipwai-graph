@@ -224,6 +224,19 @@ def line_findings(where: str, fields: Mapping[str, str], twice: set[str], reader
     return found
 
 
+def rule_findings(where: str, number: int, value: str, known: set[int]) -> list[str]:
+    """The findings for one entry's `Proposed rule:` value: two distinct cited ids other than its own, each an entry of
+    the log (its `Status` is not read, D185). The ids counted are those in the trailing parenthesis, `(same shape as
+    D<a>, D<b>)`, so a `D<n>` the sentence itself mentions is not a citation."""
+    trailing = re.search(r"\(([^()]*)\)\s*$", value)
+    cited = {int(n) for n in re.findall(r"\bD([0-9]+)\b", trailing.group(1) if trailing else "")}
+    found = [f"{where} `Proposed rule` cites D{n}, which is no entry of this log" for n in sorted(cited - known)]
+    if len(cited - {number}) < 2:
+        found.append(f"{where} `Proposed rule` cites fewer than two entries other than its own "
+                     "(`(same shape as D<a>, D<b>)`)")
+    return found
+
+
 def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
               reader: Callable[[str], list[str] | None], listed: set[str] | None) -> tuple[list[str], list[str]]:
     """(findings, notes) for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
@@ -232,9 +245,11 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
     findings: list[str] = []
     notes: list[str] = []
     entries = [item for item in items if item[1] is not None]
+    known = {number for _, number, _, _ in entries if number is not None}
     for line, number, fields, twice in entries:
         findings += line_findings(f"{relative}:{line}: D{number}", fields, twice, reader, listed)
-        # seam: `Proposed rule:` (cites two entries of the log) is checked here
+        if number is not None and "Proposed rule" in fields:
+            findings += rule_findings(f"{relative}:{line}: D{number}", number, fields["Proposed rule"], known)
     # seam: an entry without the line after one that has it is noted here
     return findings, notes
 

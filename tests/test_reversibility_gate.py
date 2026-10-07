@@ -99,5 +99,48 @@ class GateHoldsTheLineTest(unittest.TestCase):
         self.assertIn("reversibility.py is not beside this script", result.stdout)
 
 
+def proposed(*cited: str) -> str:
+    return "- **Proposed rule:** a sentence for the owner brief (same shape as " + ", ".join(cited) + ")"
+
+
+class ProposedRuleTest(unittest.TestCase):
+    """R7 (AC-S26-15, D185): a `Proposed rule:` cites two entries of the log; a cited entry's `Status` is not read."""
+
+    def run_gate(self, *entries: str) -> tuple[int, str, str]:
+        with tempfile.TemporaryDirectory() as directory:
+            result = gate(scratch(directory, "\n".join(entries)))
+        return result.returncode, result.stdout, result.stderr
+
+    def refused(self, found: tuple[int, str, str], *words: str) -> None:
+        code, out, err = found
+        self.assertEqual(1, code, out + err)
+        findings = [row for row in err.splitlines() if row.startswith("  ")]
+        self.assertEqual(1, len(findings), err)
+        for word in ("decisions.md:", "Proposed rule", *words):
+            self.assertIn(word, findings[0])
+
+    def test_e1_two_standing_entries_cited_pass(self) -> None:
+        code, out, err = self.run_gate(entry(1), entry(2), entry(3, proposed("D1", "D2")))
+        self.assertEqual((0, ""), (code, err), out)
+
+    def test_e2_one_entry_cited_is_refused(self) -> None:
+        self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D1"))), ": D3 ")
+
+    def test_e3_an_id_that_is_no_entry_is_refused_naming_it(self) -> None:
+        self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D1", "D9"))), ": D3 ", "D9")
+
+    def test_e4_a_cited_entry_overridden_since_passes(self) -> None:
+        overridden = entry(2).replace("**Status:** standing", "**Status:** overridden by D3")
+        code, out, err = self.run_gate(entry(1), overridden, entry(3, proposed("D1", "D2")))
+        self.assertEqual((0, ""), (code, err), out)
+
+    def test_e5_the_entrys_own_id_does_not_count(self) -> None:
+        self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D3", "D1"))), ": D3 ")
+
+    def test_e6_an_entry_without_the_line_is_never_refused(self) -> None:
+        code, out, err = self.run_gate(entry(1), entry(2, proposed("D1", "D3")), entry(3), entry(4))
+        self.assertEqual((0, ""), (code, err), out)
+
+
 if __name__ == "__main__":
     unittest.main()
