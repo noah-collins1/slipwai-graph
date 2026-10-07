@@ -78,7 +78,9 @@ Your own `D<n>` goes in `change_summary` and never in `decisions`, whether your 
 `unavailable`: `decisions` lists only the standing entries your work relied on.
 
 **Say how hard it is to reverse.** Run `{SCORE_VERB} --scope <the entry's Scope:> --written-to <its Written to
-paths> <fact>=<value>…` with the facts you declare for the decision, and put the line it prints after `Confidence`
+paths> <fact>=<value>…` with the facts you declare for the decision — for example `{SCORE_VERB} --scope 'S1, S2'
+--written-to 'a.md, b.md' contract=no`. Quote each value in single quotes, and never paste backticks inside double
+quotes: the shell runs them as a command and leaves the value empty. Put the line it prints after `Confidence`
 (`Reversibility:`). Where you judge the decision harder to reverse than the verb computed, escalate one tier at
 a time with `--raise guarded` or `--raise hard` and write each step on the line, `easy → guarded → hard`: you
 never skip a tier, and the step never lowers a computed tier. Never leave a question in a diff or a note

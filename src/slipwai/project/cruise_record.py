@@ -42,7 +42,9 @@ decided; the ADR is where the next slice looks for why, and `{REPORT}` lists eve
 REVERSIBILITY_RULE = f"""\
 **Every entry says how hard it is to reverse.** This session runs `{SCORE_VERB}` for every entry it writes,
 host-decided or skipper-decided, with that entry's facts, `Scope:` and `Written to`, and writes the line the verb
-prints after `Confidence`. It also adds the feature's entry headings — each `D<n>` with its heading, Stage and
+prints after `Confidence`. The flags are `--scope`, `--written-to` and, to escalate a tier, `--raise`; quote each
+value, as in `--scope 'S1, S2' --written-to 'a.md, b.md' contract=no`, and never paste backticks inside double
+quotes. It also adds the feature's entry headings — each `D<n>` with its heading, Stage and
 Scope, out-of-scope entries included — to every skipper brief, so the skipper can count what it has decided
 alike. `Proposed rule:` is the skipper's alone, and only where the count is three."""
 DECISION_ENTRY = f"""## D<n> — <the question, in one line>

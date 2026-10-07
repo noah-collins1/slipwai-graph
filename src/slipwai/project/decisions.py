@@ -28,7 +28,7 @@ standing entries in `{DECISIONS}`. Edit it at any time: the next decision reads 
 to stop for that. Leave a section as its placeholder and the skipper decides that ground from the
 specification, the constitution and the decisions already taken — and says so in the entry.
 
-This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` never rewrites it.
+This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` merges the factory's changes into it and never overwrites your own edits.
 
 ## Who the actor is
 

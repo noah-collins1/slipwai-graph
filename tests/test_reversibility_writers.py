@@ -108,6 +108,26 @@ class LineWritersTest(FactoryTestCase):
             self.assertIn("each `D<n>` with its heading, Stage and Scope", cruise)
             self.assertIn("to every skipper brief", cruise)
 
+    def test_the_brief_shows_the_flags_quoted_and_the_host_text_names_them(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "quoted", "standard", "python")
+            skipper = flat((repo / "agents/drive-skipper.md").read_text(encoding="utf-8"))
+            cruise = flat((repo / "commands/cruise.md").read_text(encoding="utf-8"))
+            self.assertIn("--scope 'S1, S2' --written-to 'a.md, b.md' contract=no", skipper)
+            self.assertIn("Quote each value in single quotes", skipper)
+            self.assertIn("never paste backticks inside double quotes", skipper)
+            for flag in ("--scope", "--written-to", "--raise"):
+                self.assertIn(flag, cruise)
+
+    def test_the_owner_brief_says_migrate_merges_and_keeps_the_projects_edits(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "owner", "standard", "python")
+            brief = flat((repo / ".specify/product-owner.md").read_text(encoding="utf-8"))
+            self.assertIn("`/cruise` reads it and never writes it", brief)
+            self.assertIn("`slipwai migrate` merges the factory's changes into it and never overwrites your own edits",
+                          brief)
+            self.assertNotIn("never rewrites it", brief)
+
     def test_e4_an_adopted_repository_carries_the_same_text_with_the_delivery_path(self) -> None:
         files = adopted([wrapped("shop", ".")])
         verb = "python3 delivery/scripts/reversibility.py"
