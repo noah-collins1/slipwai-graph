@@ -37,6 +37,14 @@ class TestOnlyASliceBranchSelects(FullCase):
         git(self.repo, "checkout", "-q", "--detach")
         self.assertFull("full: HEAD is not on a branch")
 
+    def test_a_slice_branch_with_no_commits_is_named_and_not_called_detached(self) -> None:
+        git(self.repo, "checkout", "-q", "--orphan", "slice/x")
+        self.assertFull("full: `slice/x` has no commits of its own — there is nothing beyond the base to compare")
+
+    def test_an_unborn_branch_that_is_not_a_slice_is_not_a_slice_branch(self) -> None:
+        git(self.repo, "checkout", "-q", "--orphan", "feature/x")
+        self.assertFull("full: not a slice branch (`feature/x`)")
+
     def test_every_module_runs_through_discover_as_today(self) -> None:
         self.branch("feature/x")
         self.selector()

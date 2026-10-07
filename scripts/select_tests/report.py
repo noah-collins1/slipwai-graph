@@ -48,3 +48,12 @@ def narrowed_line(module: str, backends: tuple[str, ...], left_out: tuple[str, .
 
 def summary_line(selected: int, total: int, against: str) -> str:
     return f"selected {selected} of {total} modules against {against}"
+
+
+def result_line(run: int, failed: list[str], status: int) -> str:
+    """The one line a selected run ends on: every module that failed, across both batches, or that all passed."""
+    if failed:
+        return f"failed {len(failed)} of {run} modules: {', '.join(failed)}"
+    if status:
+        return f"failed: unittest exited {status} and named no module"
+    return f"all {run} modules passed"
