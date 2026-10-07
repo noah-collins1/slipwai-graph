@@ -4351,3 +4351,15 @@
 - **Confidence:** high · **Would reverse if:** a person wants a check started by name to render everything regardless.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D193 — S43 missed its 900 s acceptance: it waits on a person, and S07 merges ahead of it
+- **Stage:** 10 demo · **Slice:** S43-test-declarations · **When:** 2026-10-07T15:13:34Z · **Iteration:** 27
+- **Scope:** S43-test-declarations, S07-scoped-checks
+- **Question:** S43's demo 1 measured a one-Go-file change at 2433 s against D169's 900 s (335 of 388 modules; 29% under the 3448 s full run), as its plan predicted; AC-S43-8 held (the faulted full run's three failing modules were all selected and failed). D182 makes the miss a `behaviour` demo and relaxing the target a person's word. What does the run do meanwhile?
+- **Options:** (a) S43 is marked ⛔ on a person — relax the target to what the slice measured, or name the further work (S07's 29 modules, 564 s; the `adopt`/`add-service`/`migrate` launcher routes and `parallel_gate`'s starred argv, which D187 keeps every axis; `test_matrix`) as later slices — and its implementation task is fixed meanwhile; S07, accepted, merges ahead of it, as S39 merged ahead of S38 (stop-table row 10) (recommended); (b) hold S07 behind S43 in split order until a person answers.
+- **Decision:** (a). The question for a person: *accept S43 at 2433 s (a 29% saving, every failing module still caught), or keep 900 s and say which of the remaining routes later slices should take*. A second full-suite run is not spent until they answer.
+- **Why:** D182 leaves the target to a person; nothing a person must decide blocks S07, whose merge order against S43 only orders two slices that share no file but `tests/` helpers S43 re-exports unchanged.
+- **Decided by:** host (standing decision D182)
+- **Confidence:** high · **Would reverse if:** a person relaxes the target, or names the further routes, before S07 merges.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing
