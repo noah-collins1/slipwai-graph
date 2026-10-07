@@ -96,8 +96,8 @@ class RecordTest(RecordCase):
         self.assertEqual(web["files"], sorted(web["files"]))
         self.assertIn("apps/web/", web["files"])
         self.assertEqual(web["tools"], ["make", "node", "npm", "python3"])
-        self.assertEqual(checks["check-agents"]["inputs"], None)
-        self.assertEqual(checks["check-agents"]["always"], "no recorded inputs")
+        self.assertIn(".specify/drive.json", checks["check-agents"]["inputs"]["files"])
+        self.assertIsNone(checks["check-agents"]["always"])
         by_id = {contract["id"]: contract for contract in data["contracts"]}
         self.assertEqual(by_id["openapi:service"], {"id": "openapi:service", "kind": "openapi", "owner": "service",
                                                     "paths": ["apps/service/"], "consumers": ["web"]})
@@ -143,10 +143,8 @@ class RecordTest(RecordCase):
             self.assertTrue(checks[name]["always"], name)
         self.assertTrue(checks["check-python"]["always"])
         self.assertFalse(checks["check-python"]["claims"])
-        for name in ("check-agents", "check-speckit", "check-extensions", "check-constitution"):
-            self.assertEqual((checks[name]["inputs"], checks[name]["claims"], checks[name]["always"]),
-                             (None, False, "no recorded inputs"), name)
-        for name in ("check-flags", "check-deploy-role", "check-model", "check-ux-gates"):
+        for name in ("check-flags", "check-deploy-role", "check-model", "check-ux-gates", "check-agents",
+                     "check-speckit", "check-extensions", "check-constitution"):
             self.assertTrue(checks[name]["claims"], name)
             self.assertIsNone(checks[name]["always"], name)
         self.assertEqual(checks["check-ux-gates"]["inputs"]["variables"],

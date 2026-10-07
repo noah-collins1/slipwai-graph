@@ -242,7 +242,7 @@ def expand_tool(row: Row, deployable: dict[str, Any]) -> list[str]:
 
 
 def check_entry(gate: str, row: Row | None, own: str | None, context: Context, targets: list[str]) -> dict[str, Any]:
-    if row is None:
+    if row is None or not (row.files or row.always):  # a row that names nothing and gives no reason is no inputs
         return {"gate": gate, "components": [], "inputs": None, "claims": False, "always": NO_INPUTS,
                 "targets": targets}
     files, tools, components = expand(row, own, context)

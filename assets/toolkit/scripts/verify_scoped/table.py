@@ -62,6 +62,14 @@ CHECKS: dict[str, Row] = {
     ),
     "check-flags": Row(("apps/", "packages/", "{dep}", "infra/service/flags.auto.tfvars"), ("git",)),  # SOURCE_TREES
     "check-deploy-role": Row(("infra/bootstrap/", "infra/service/")),
+    # The method-file checks. `record.py`/`methods.py` add what a manifest or an integration names at record time.
+    "check-agents": Row((".specify/integration.json", ".specify/models.json", ".specify/drive.json",
+                         ".specify/cruise.json", "skills/", "commands/", "agents/", "AGENTS.md")),
+    "check-speckit": Row((".specify/integrations/", ".specify/presets/", ".specify/memory/constitution.md")),
+    "check-extensions": Row((".slipwai/extensions.json", "AGENTS.md", "{web}")),  # a web app's existence is an input
+    "check-constitution": Row(("specs/", ".specify/memory/constitution.md",
+                               ".specify/memory/.constitution-template.json",
+                               ".specify/templates/constitution-template.md", ".specify/presets/")),
     "check-python": Row(claims=False, always=EVERY_CHECK_WAITS),
     "check-slice-scope": Row(
         (EVERYTHING,), ("git",),

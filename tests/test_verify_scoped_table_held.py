@@ -31,6 +31,28 @@ NOT_AN_INPUT = {
     "init": "a subcommand of a tool a check launches, not a path",
     ".claude/projects": "under the user's home (`Path.home()`), where the benchmark reads session transcripts",
     "agents": "a key of a benchmark.json stage, not a path",
+    # The four method-file checks (R-1, R-9): what their scripts name that `--check` never reads.
+    ".claude/settings.json": "a control path of `agents/cruise.py` (`CONTROL_PATHS`), read by `run` and its guard",
+    ".github/workflows": "a control path of `agents/cruise.py` (`CONTROL_PATHS`), read by `run` and its guard",
+    ".specify/cruise-inbox.jsonl": "`agents/cruise.py`'s run file, read and written by `run`/`watch`/`tell`",
+    ".specify/cruise-last-response.txt": "`agents/cruise.py`'s run file, written by `run`",
+    ".specify/cruise-run.log": "`agents/cruise.py`'s run file, written by `run`",
+    ".specify/cruise-stream.jsonl": "`agents/cruise.py`'s run file, written by `run`",
+    ".specify/cruise-told.jsonl": "`agents/cruise.py`'s run file, written by `tell`",
+    ".specify/cruise-watch.cursor": "`agents/cruise.py`'s run file, written by `watch`",
+    ".specify/cruise.pid": "`agents/cruise.py`'s run file; `--check` only runs `load()` of `.specify/cruise.json`",
+    ".specify/cruise.stop": "`agents/cruise.py`'s run file; `--check` only runs `load()` of `.specify/cruise.json`",
+    "docs/event-model/model.yaml": "read by `agents/benchmark.py` and `measures.py` (imported by `cruise.py`), whose "
+                                   "`check` is a gate of its own (`check-benchmark`), not of the four `--check`s",
+    ".specify/integration.json": "`extensions/guidance.installed_harnesses`, called by `write_project_mcp` on the "
+                                 "write paths of an extension's `init.py`; `extensions/project.py --check` never does",
+    "agents/registry.json": "`scripts/agents/registry.json` beside the script (its first segment is the root's own "
+                            "`agents/`): a gate script, so the full gate already",
+}
+# The same, as a pattern: one literal for each of a family of paths.
+NOT_AN_INPUT_PATTERN = {
+    r"skills/[\w-]+/SKILL\.md": "`check-constitution.py`'s `practice` pointers, tested for existence by "
+                                  "`present_practice` for `--requirements` only (a printed hint); `--check` opens none",
 }
 
 
@@ -45,6 +67,10 @@ def reads_of(path: Path, project: Path) -> set[str]:
             if first and first not in ROOT_OWN and (project / first).exists():
                 found.add(literal)
     return found
+
+
+def explained(read: str) -> bool:
+    return read in NOT_AN_INPUT or any(re.fullmatch(pattern, read) for pattern in NOT_AN_INPUT_PATTERN)
 
 
 def modules_of(project: Path, entry: Path) -> set[Path]:
@@ -115,9 +141,11 @@ class TableHeldTest(RecordCase):
                         reads |= reads_of(module, project)
                 files = check["inputs"]["files"]
                 findings += [f"{shape}: {name} reads {read}, under none of {files}" for read in sorted(reads)
-                             if not covered(read, files) and read not in NOT_AN_INPUT]
+                             if not covered(read, files) and not explained(read)]
                 fired.update(read for read in reads if not covered(read, files))
         stale = sorted(set(NOT_AN_INPUT) - fired)
+        findings += [f"{pattern} is explained, and no check reads it any more" for pattern in NOT_AN_INPUT_PATTERN
+                     if not any(re.fullmatch(pattern, read) for read in fired)]
         findings += [f"{read} is explained, and no check reads it any more" for read in stale]
         return findings
 
