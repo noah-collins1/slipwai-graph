@@ -1,0 +1,194 @@
+$ cat specs/demo/decisions.md
+# Decisions
+
+## D1 — Show the total on the summary?
+- **Stage:** 3 plan · **Slice:** S1 · **When:** 2026-10-07T09:01:00Z · **Iteration:** 1
+- **Scope:** S1
+- **Question:** Show the total on the summary?
+- **Options:** (a) yes (recommended); (b) no
+- **Decision:** (a)
+- **Why:** the actor reads it sooner.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** the actor asks otherwise.
+- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+- **Written to:** `Makefile`
+- **Status:** standing
+
+## D2 — Sort the list by date?
+- **Stage:** 3 plan · **Slice:** S1 · **When:** 2026-10-07T09:02:00Z · **Iteration:** 1
+- **Scope:** S1
+- **Question:** Sort the list by date?
+- **Options:** (a) yes (recommended); (b) no
+- **Decision:** (a)
+- **Why:** the actor reads it sooner.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** the actor asks otherwise.
+- **Written to:** `Makefile`
+- **Status:** standing
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` says migrate_file=no, but a `Written to` path is on the committed list
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# Written to: Makefile is on .slipwai/propagated, so the gate re-derived migrate_file=yes against D1's declared no (above). Rewriting both entries' Written to as README.md, which is not on the list.
+$ grep -n 'Written to' specs/demo/decisions.md
+13:- **Written to:** `README.md`
+25:- **Written to:** `README.md`
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+# variant: D1 says easy with ci_workflow=yes (AC-S26-9 contradiction)
+$ grep -n 'Reversibility' specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` starts at easy, but rules 1 derive hard from its facts (H6 ci_workflow=yes)
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: D1 easy → hard (skipped step)
+$ grep -n 'Reversibility' specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** easy → hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` has a step easy → hard that skips a tier
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: malformed tier
+$ grep -n 'Reversibility' specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** simple · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` names 'simple', which is not a tier (easy, guarded or hard)
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: unknown key
+$ grep -n 'Reversibility' specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial colour=blue
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` has the key `colour`, which is not a fact of rules 1 (the facts are contract, schema, auth, customer_visible, export, ci_workflow, migrate_file, behind_flag, flag_default, rollback_complexity)
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: size key (AC-S26-5)
+$ grep -n 'Reversibility' specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial size=large
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` has the key `size`, which is not a fact of rules 1 (the facts are contract, schema, auth, customer_visible, export, ci_workflow, migrate_file, behind_flag, flag_default, rollback_complexity)
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: second Reversibility line
+$ grep -n 'Reversibility' specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+13:- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 has more than one `Reversibility:` line; an entry says it once
+
+check-decisions: note: specs/demo/decisions.md:17: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: proper chain (should pass)
+$ grep -n 'Reversibility' specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** easy → guarded → hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+python3 scripts/check-decisions.py
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+# variant: tier hard when facts say easy (raised without chain)
+$ grep -n 'Reversibility' specs/demo/decisions.md; make check-decisions
+12:- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=trivial
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` starts at hard, but rules 1 derive easy from its facts (no rule fired)
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: D3 Proposed rule (same shape as D1, D2)
+$ grep -n 'Proposed rule' specs/demo/decisions.md; make check-decisions
+38:- **Proposed rule:** Show what the actor reads soonest first. (same shape as D1, D2)
+python3 scripts/check-decisions.py
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+check-decisions: 3 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+# variant: D3 Proposed rule (same shape as D1)
+$ grep -n 'Proposed rule' specs/demo/decisions.md; make check-decisions
+38:- **Proposed rule:** Show what the actor reads soonest first. (same shape as D1)
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:28: D3 `Proposed rule` cites fewer than two entries (`(same shape as D<a>, D<b>)`)
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: D3 Proposed rule (same shape as D1, D9)
+$ grep -n 'Proposed rule' specs/demo/decisions.md; make check-decisions
+38:- **Proposed rule:** Show what the actor reads soonest first. (same shape as D1, D9)
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:28: D3 `Proposed rule` cites D9, which is no entry of this log
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: D3 Proposed rule (same shape as D3, D1)
+$ grep -n 'Proposed rule' specs/demo/decisions.md; make check-decisions
+38:- **Proposed rule:** Show what the actor reads soonest first. (same shape as D3, D1)
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:28: D3 `Proposed rule` cites D3, not earlier than D3; a citation names entries written before it
+
+check-decisions: note: specs/demo/decisions.md:16: D2 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# variant: no Reversibility line anywhere (AC-S26-10)
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+

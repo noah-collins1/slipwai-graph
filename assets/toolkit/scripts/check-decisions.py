@@ -51,6 +51,10 @@ printed and counted as an entry; the gate does not.
 writes, once, a `## <id> · predates the adversary gate · <date>` row for every done slice without one, which the gate accepts
 and which says the slice was never attacked. A second baseline is refused.
 
+A log with a `- **Reversibility:** <tier> · rules <n> · <facts>` or a `- **Proposed rule:**` line is also held to
+`reversibility.py` beside this script, loaded for that log alone: one finding per fault naming the entry and the field
+or key; a log with neither line never loads it and gets the answer it always did.
+
 Every `specs/<feature>/hand-backs.md` and `specs/<feature>/slices/<id>/hand-backs.md` is held to the result-contract
 shape `docs/result-contract.md` writes down: an entry `## <UTC time> — drive-<name> — <stage>` holding one fenced
 `result-contract` block, or a `- **Missing:** <reason>` line, one finding per fault naming the file, the heading and
@@ -96,6 +100,8 @@ DEMO_HEADING = re.compile(r"^## (\S+) — (\w+) · iteration (\d+) · drive-hand
 DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decision D\d+\)|drive-skipper \(.+\)|"
                         r"drive-bosun( \(.+\))?|human)$")
 STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
+LINE_LABEL = re.compile(r"^- \*\*(?:Reversibility|Proposed rule):\*\*", re.M)
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 FIELD = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 PLACEHOLDER = re.compile(r"<[^>]*>")
 # A slice id as `done_slices()` reads it: the released head, then a slug after `-` or `.` that ends on a letter or digit.
@@ -480,16 +486,57 @@ def verb_options(arguments: list[str]) -> dict[str, str] | None:
     return options
 
 
-def hand_backs_module() -> Any:
-    """`hand_backs.py` beside this script, loaded by path with bytecode off (a `__pycache__` under scripts/ would
+def sibling(name: str) -> Any:
+    """`<name>.py` beside this script, loaded by path with bytecode off (a `__pycache__` under scripts/ would
     make every later scoped run the full gate)."""
     sys.dont_write_bytecode = True
-    spec = importlib.util.spec_from_file_location("hand_backs", Path(__file__).resolve().with_name("hand_backs.py"))
+    spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().with_name(f"{name}.py"))
     if spec is None or spec.loader is None:
-        raise ImportError("cannot load hand_backs.py")
+        raise ImportError(f"cannot load {name}.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def hand_backs_module() -> Any:
+    return sibling("hand_backs")
+
+
+def unfenced(text: str) -> str:
+    """`text` with every line inside a ``` or ~~~ fence emptied, line endings kept, so the lines that remain are the
+    ones a reader sees as the log and every line number stands. A fence closes on its own character, at least as long;
+    one left open runs to the end."""
+    kept, opened = [], ""
+    for piece in text.splitlines(keepends=True):
+        content = piece.splitlines()[0] if piece.splitlines() else ""
+        fence = FENCE.match(content)
+        if opened and fence and fence.group(1)[0] == opened[0] and len(fence.group(1)) >= len(opened) \
+                and not content.strip().strip(opened[0]):
+            opened, hidden = "", True
+        elif opened:
+            hidden = True
+        elif fence:
+            opened, hidden = fence.group(1), True
+        else:
+            hidden = False
+        kept.append(piece[len(content):] if hidden else piece)
+    return "".join(kept)
+
+
+def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
+    """The findings and notes for the `Reversibility:` lines of one log; `reversibility.py` is loaded only for a log
+    that carries one of its labels, so any other log gets the answer it always did."""
+    text = unfenced(read(path))
+    if not LINE_LABEL.search(text):
+        return [], []
+    if not Path(__file__).resolve().with_name("reversibility.py").is_file():
+        return [], ["check-decisions: note: reversibility.py is not beside this script; the `Reversibility:` "
+                    f"lines of {path.relative_to(ROOT).as_posix()} are not checked"]
+    module = sibling("reversibility")
+    items = [(line, int(heading.group(1)) if heading else None, fields, fields.twice)
+             for line, heading, fields in entries(text, DECISION_HEADING, legacy=True)]
+    verb = f"python3 {Path(module.__file__).resolve().relative_to(ROOT).as_posix()}"
+    return module.check_log(path.relative_to(ROOT).as_posix(), items, scope_tokens, module.propagated(ROOT), verb)
 
 
 def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int, int]:
@@ -527,6 +574,10 @@ def gate() -> int:
         for note in scope_notes(path):
             print(note)
         findings += check_decisions(path)
+        held_lines, line_notes = reversibility_findings(path)
+        findings += held_lines
+        for note in line_notes:
+            print(note)
     for path in logs:
         findings += check_demo_log(path)
     held, said, blocks, absent = check_hand_backs(records)

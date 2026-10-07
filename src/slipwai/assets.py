@@ -29,6 +29,9 @@ VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 # three of them need it — the module that writes the page, the `.gitignore` that keeps it out of the history,
 # and the command file that tells an agent where to look.
 NOTES = ".slipwai/catch-up.md"
+# The paths `migrate` carries into a generated project, one per line (`project/propagated.py`); what
+# `scripts/reversibility.py` reads where there is no `.written`.
+PROPAGATED = ".slipwai/propagated"
 # What slipwai last left at each path it writes and has not seen committed, by digest, so that the next answer
 # `/ground` records can write over its own regeneration and still refuse a person's edit (`uncommitted.py`).
 # It is this checkout's state, never a record, so it lives under `.delivery-tools/`, which every `.gitignore`

@@ -18,6 +18,8 @@ DECISIONS = "specs/<feature>/decisions.md"
 OWNER_BRIEF = ".specify/product-owner.md"
 # How a delegate reads the standing entries of one slice (D60); written once, used by both briefs and the command.
 SCOPE_VERB = "python3 scripts/check-decisions.py --scope <slice-id>"
+# The verb that scores an entry's reversibility (S26); the briefs show its flags where they use it.
+SCORE_VERB = "python3 scripts/reversibility.py"
 SCOPE_READ = (f"For a question that names a slice, read its standing entries through `{SCOPE_VERB}` (add\n"
               f"`--feature <name>` where `specs/` holds more than one `decisions.md`); read every standing\n"
               f"entry in `{DECISIONS}` where the brief names no slice.")
@@ -74,6 +76,24 @@ person must provide, and the session that delegated you appends it at `Status: s
 
 Your own `D<n>` goes in `change_summary` and never in `decisions`, whether your `status` is `decided` or
 `unavailable`: `decisions` lists only the standing entries your work relied on.
+
+**Say how hard it is to reverse.** Run `{SCORE_VERB} --scope <the entry's Scope:> --written-to <its Written to
+paths> <fact>=<value>…` with the facts you declare for the decision — for example `{SCORE_VERB} --scope 'S1, S2'
+--written-to 'a.md, b.md' contract=no`. Quote each value in single quotes, and never paste backticks inside double
+quotes: the shell runs them as a command and leaves the value empty. Put the line it prints after `Confidence`
+(`Reversibility:`). Where you judge the decision harder to reverse than the verb computed, escalate one tier at
+a time with `--raise guarded` or `--raise hard` and write each step on the line, `easy → guarded → hard`: you
+never skip a tier, and the step never lowers a computed tier. Never leave a question in a diff or a note
+instead of escalating it.
+
+**Propose a rule when you have decided the same way three times.** The brief lists every entry heading of the
+feature, each `D<n>` with its heading, Stage and Scope. When three standing entries of the feature were
+decided by the same reason — one sentence in the owner brief would have decided all three the same way — add
+`- **Proposed rule:** <one sentence written to sit in the owner brief> (same shape as D<a>, D<b>)` after
+`Reversibility:`, citing at least two earlier ids, and still decide the question in front of you. Open any listed
+entry to check its shape. Headings outside your scope are evidence for the count, never binding on the decision
+(`SCOPE_READ` still says what binds). The run never edits the owner brief: a person adopts the rule, and a later
+decision of the same shape cites the entry that proposed it instead of proposing it again.
 
 You write nothing. Return, in this order, the entry first, then any ADR, then the `result-contract` block last. The entry is the whole entry, in the shape `{DECISIONS}` shows, with its `Scope:` line (the slice ids whose
 later decisions must agree with it, or `global`), under the number the brief gave

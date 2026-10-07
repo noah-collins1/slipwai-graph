@@ -7,6 +7,7 @@ refused). The one stated exception is a log that is not UTF-8: a traceback then,
 """
 from __future__ import annotations
 
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -60,9 +61,12 @@ def logs() -> dict[str, bytes]:
     return found
 
 
-def gate_of(script: Path, log: bytes) -> subprocess.CompletedProcess[str]:
+def gate_of(script: Path, log: bytes, beside: bool = False) -> subprocess.CompletedProcess[str]:
+    """The gate over `log`; `beside` puts `reversibility.py` in the scratch project's scripts as a project holds it."""
     with tempfile.TemporaryDirectory() as directory:
         repo = scratch(directory, "", script=script)
+        if beside:
+            shutil.copy(SCRIPT.with_name("reversibility.py"), repo / "scripts/reversibility.py")
         (repo / "specs/f/decisions.md").write_bytes(log)
         return run(repo)
 
@@ -77,6 +81,16 @@ class GateHoldsTheReleasedCheckersAnswerTest(unittest.TestCase):
             released = released_checker(other)
             for name, log in logs().items():
                 before, after = gate_of(released, log), gate_of(SCRIPT, log)
+                self.assertEqual((before.returncode, before.stderr), (after.returncode, after.stderr), name)
+                self.assertEqual(without_notes(before.stdout), without_notes(after.stdout), name)
+
+    def test_s26_r5_e1_the_same_cases_beside_reversibility_py_get_the_released_checkers_answer(self) -> None:
+        """A guard over the loader (AC-S26-10): no case carries a `Reversibility:` or `Proposed rule:` line, so the
+        module present beside the gate changes nothing."""
+        with tempfile.TemporaryDirectory() as other:
+            released = released_checker(other)
+            for name, log in logs().items():
+                before, after = gate_of(released, log), gate_of(SCRIPT, log, beside=True)
                 self.assertEqual((before.returncode, before.stderr), (after.returncode, after.stderr), name)
                 self.assertEqual(without_notes(before.stdout), without_notes(after.stdout), name)
 

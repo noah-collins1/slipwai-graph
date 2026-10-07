@@ -12,7 +12,7 @@ says so in each entry. The entries themselves (`decisions.md`, `demo-log.md`) ta
 from __future__ import annotations
 
 from .cruise import CONFIG
-from .cruise_agents import DECISIONS, DEMO_LOG, HAND, OWNER_BRIEF, SKIPPER
+from .cruise_agents import DECISIONS, DEMO_LOG, HAND, OWNER_BRIEF, SCORE_VERB, SKIPPER
 from .cruise_record import DECISION_ENTRY, DEMO_ENTRY, STOP_FILE
 
 PAGE = OWNER_BRIEF
@@ -28,7 +28,7 @@ standing entries in `{DECISIONS}`. Edit it at any time: the next decision reads 
 to stop for that. Leave a section as its placeholder and the skipper decides that ground from the
 specification, the constitution and the decisions already taken — and says so in the entry.
 
-This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` never rewrites it.
+This file is human-owned. `/cruise` reads it and never writes it; `slipwai migrate` merges the factory's changes into it and never overwrites your own edits.
 
 ## Who the actor is
 
@@ -85,6 +85,9 @@ evidence beside it:
 ```markdown
 {DEMO_ENTRY}
 ```
+
+The `Reversibility:` line is what `{SCORE_VERB}` prints for the entry's facts, `Scope:` and `Written to`; the
+`Proposed rule:` line is optional.
 
 `make check-decisions` holds both files to those shapes — and every finished slice to a row in
 `adversary-log.md` — and refuses an entry whose `Written to` or
