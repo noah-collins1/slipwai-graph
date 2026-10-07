@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -26,14 +27,23 @@ BACKENDS = "FACTORY_BACKENDS"
 KNOBS = ("SINCE", "FULL")  # what picks the selection: the tests it starts never read it (a project they build would)
 
 
+# make writes a command-line assignment into `MAKEFLAGS` as it was given, a space in its value as `\ `, so a word is
+# a run of non-space characters and backslash-escaped ones; the assignment forms are make's own (`=`, `:=`, `::=`,
+# `:::=`, `+=`, `?=`, `!=`).
+FLAG_WORD = re.compile(r"(?:\\.|\S)+")
+KNOB_ASSIGNMENT = re.compile(r"(?:" + "|".join(KNOBS) + r")(?::{1,3}=|[+?!]?=)")
+
+
 def without_knobs(env: dict[str, str]) -> None:
     """Drop `SINCE` and `FULL` from `env` and from make's own copy: `MAKEFLAGS` and `MFLAGS` carry a command-line
-    `SINCE=<ref>` to every make a test starts, where a generated project's `make mutation` would read it as its own."""
+    `SINCE=<ref>` to every make a test starts, where a generated project's `make mutation` would read it as its own.
+    Every assignment form goes, whole, and no other word is split (T051). `tests/support.py` does the same for the
+    tests that start a generated project's commands, where the `Makefile` bypasses this selector."""
     for knob in KNOBS:
         env.pop(knob, None)
     for flags in ("MAKEFLAGS", "MFLAGS"):
         if flags in env:
-            words = [word for word in env[flags].split() if word.partition("=")[0] not in KNOBS]
+            words = [word for word in FLAG_WORD.findall(env[flags]) if not KNOB_ASSIGNMENT.match(word)]
             if "--" in words and words[-1] == "--":
                 words.pop()
             if words:

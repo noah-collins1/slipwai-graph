@@ -6,9 +6,11 @@ class and nothing that asserts anything itself.
 from __future__ import annotations
 
 import os
+import re
 import socket
 import subprocess
 import unittest
+from collections.abc import MutableMapping
 from pathlib import Path
 
 from slipwai.assets import ROOT
@@ -18,8 +20,32 @@ from slipwai.assets import ROOT
 # so the opt-out every command and every generated script honours is set once, here, for the whole run. A test of
 # the installing itself clears it for its own subprocess.
 os.environ["SLIPWAI_NO_INSTALL"] = "1"
+
 from slipwai.catalog import CATALOG
 from slipwai.scaffold import NO_MAINTENANCE
+
+
+def clear_selection_knobs(env: MutableMapping[str, str]) -> None:
+    """`SINCE` and `FULL` pick which factory tests run (`scripts/select-tests.py`); a generated project's `make
+    mutation` reads `SINCE` as its own. Where the Makefile bypasses the selector (`make test TESTS=… SINCE=…`) the
+    modules still get them from make's exports, so the suite's helper removes both, in every assignment form, from
+    the environment and from `MAKEFLAGS`/`MFLAGS`, before any command it starts can see them (S38 T051). The same
+    words as `without_knobs` in the selector."""
+    for knob in ("SINCE", "FULL"):
+        env.pop(knob, None)
+    for flags in ("MAKEFLAGS", "MFLAGS"):
+        if flags in env:
+            words = [w for w in re.findall(r"(?:\\.|\S)+", env[flags])
+                     if not re.match(r"(?:SINCE|FULL)(?::{1,3}=|[+?!]?=)", w)]
+            if "--" in words and words[-1] == "--":
+                words.pop()
+            if words:
+                env[flags] = " ".join(words)
+            else:
+                del env[flags]
+
+
+clear_selection_knobs(os.environ)  # the modules' own process: everything they start inherits it
 
 # Reads the launcher `generate` runs. It generates what its callers pass `generate`, so they declare that: a claim of
 # its own would widen every importer's configurations to all of them.
