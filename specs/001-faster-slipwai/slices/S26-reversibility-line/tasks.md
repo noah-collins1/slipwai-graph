@@ -315,3 +315,18 @@ Published contract
 reason the rules live in a module beside it); LOW, no change.
 
 **Tasks appended:** none that re-open the loop. O1 (MEDIUM) is for the host to assign to S07's table.
+
+### After-converge tasks (from `/home/noahc/math/.cruise27/gaps-after-S26.md`, the host's gaps pass)
+
+Each one starts with a failing test and closes the whole class, not only the instance. Two groups of tasks run in parallel. **A** is the toolkit chain (T010–T015), which owns `assets/toolkit/scripts/reversibility.py`, `check-decisions.py` and the `tests/test_reversibility_{score,gate,versions}.py` and fixture files. **B** is T016 and T017. T016 owns `src/slipwai/project/{cruise_agents,cruise_record,decisions}.py` and `tests/test_reversibility_writers.py`; T017 owns `tests/test_reversibility_migrate.py`. Inside each group the tasks are sequential, one commit each.
+
+- [ ] T010 **M1 MEDIUM — the facts belong to a rules version** (AC-S26-11, FR-051). The parser and rule U1 read the fact list of the version the line names, and `HARD_FACTS` belongs to its version too. A test adds a fact in a v2 (the fake is written in the test tree) and shows that every v1 line still passes, and that a v1 line carrying the new fact is refused as an unknown key.
+- [ ] T011 **M2 MEDIUM — `Written to` paths are normalised before the list is consulted** (AC-S26-8). The verb and the gate share one normaliser, which handles `./`, a directory (a match if any listed file is under it) and a backslash path. Tests cover each case in both the verb and the gate.
+- [ ] T012 **M3 MEDIUM — the verb writes UTF-8** (AC-S26-14). `main` sets stdout and stderr to UTF-8 at its start, as `check-slice-scope.py` does. A test runs the verb under `PYTHONIOENCODING=cp1252` with a `--raise` chain, and also with `ascii`.
+- [ ] T013 **M4 MEDIUM — fenced code blocks are not the line** (AC-S26-10, D65). When the gate finds the `Reversibility:` and `Proposed rule:` labels, it skips lines inside a fence, both for the decision to load the module and for the labels the module reads. Tests: an entry that quotes the line in a fence and has no real line passes, the same as the released checker. An entry with a fenced quote and one real line is not "more than one".
+- [ ] T014 **L1 LOW — text after the citation is allowed** (AC-S26-15). The gate refuses only fewer than two ids or an id that is no entry.
+- [ ] T015 **L2 LOW — cited ids are earlier entries** (AC-S26-15 "earlier"; D185 dropped only *standing*). A cited id that is not lower than the entry's own number is refused, naming it.
+- [ ] T016 **L3 LOW and D189 LOW — the briefs show quoted flags; the owner-brief template says what migrate does.** The skipper brief and the host's `REVERSIBILITY_RULE` show the verb with its flags quoted, e.g. `--scope 'S1, S2' --written-to 'a, b'`, and the host text names the flags. In `decisions.py`, the template sentence *`slipwai migrate` never rewrites it* changes to say that `migrate` merges the factory's changes and never overwrites the project's own edits. The fragment's catch-up is unchanged in substance.
+- [ ] T017 **AC-S26-16's test gap — a migrated project's own checks.** `test_reversibility_migrate` (or a new module) runs the checks of `make verify` that read the new files on a project migrated from `063c187`: at least `lint`, `check-structure` and `check-decisions`. It runs the full `make verify` if the starter allows it in a minute or two.
+
+L4 (the generated list leaves out CI workflows) is the host's sentence in ADR 0007, not a task here.
