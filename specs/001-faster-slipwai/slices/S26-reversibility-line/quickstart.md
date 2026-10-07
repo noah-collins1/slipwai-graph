@@ -15,16 +15,18 @@ worktree's checkout (`./slipwai`, not the one on PATH), in a scratch directory u
 4. **Size is not a fact** (AC-S26-5): add `size=large` → exit 2, one line naming `size`, nothing on stdout.
 5. **Escalate one step at a time** (AC-S26-14): step 2 with `--raise hard` → `easy → guarded → hard`.
 6. **The gate.** Append entries to `specs/demo/decisions.md` in `DECISION_ENTRY`'s shape: D1 with the line from
-   step 2, D2 with no line; `make check-decisions` → exit 0 and one `note:` naming D2 and the verb (AC-S26-10).
+   step 2, scored again with `--written-to` set to D1's `Written to` as the briefs do (a file on
+   `.slipwai/propagated`, such as `Makefile`, scored without it is rightly refused for `migrate_file=no`), D2 with no line; `make check-decisions` → exit 0 and one `note:` naming D2 and the verb (AC-S26-10).
    Edit D1's line to `easy` with `ci_workflow=yes` → one finding naming D1 and `ci_workflow` (AC-S26-9); to
    `easy → hard` → a skipped step.
 7. **A proposed rule** (AC-S26-15): D3 standing, with `- **Proposed rule:** … (same shape as D1, D2)` passes; with
    `(same shape as D1)` it is refused.
 8. **A project made before** (AC-S26-16): generate with the factory at `063c187` (`git archive 063c187`), write a log
    there, `slipwai migrate` with this checkout, then `make verify` → passes; `.slipwai/propagated` and
-   `scripts/reversibility.py` arrived; `.specify/product-owner.md` is as it was; `.slipwai/catch-up.md` names the
+   `scripts/reversibility.py` arrived; an owner brief the project never edited takes the new entry shape through `migrate`'s merge, and one it edited keeps
+   its edits (D189); `.slipwai/catch-up.md` names the
    line.
-9. **What S39 reads** (AC-S26-13): `make benchmark` on a log of verb-written lines shows decision health with a
-   tier count and an escalation share.
+9. **What S39 reads** (AC-S26-13): `make benchmark` on a log of verb-written lines shows decision health: the escalation share and the
+   median wait per tier (no per-tier count is printed).
 
 Clear `/home/noahc/math/.cruise27/s26-demo` afterwards.

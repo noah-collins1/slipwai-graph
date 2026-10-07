@@ -180,5 +180,26 @@ class TierWordTest(unittest.TestCase):
                 self.assertIn("schema", result.stderr)
 
 
+class HelpTest(unittest.TestCase):
+    """T019 (demo 1 note): `--help` is where a writer learns the closed list, so it names all of it."""
+
+    def test_help_lists_every_fact_with_its_accepted_values_and_every_rule_id(self) -> None:
+        from reversibility_fixture import SCRIPTS
+        from test_reversibility_gate import loaded
+        with project() as repo:
+            result = score(repo, "--help")
+        self.assertEqual((0, ""), (result.returncode, result.stderr))
+        self.assertIn("usage: reversibility.py --scope", result.stdout)
+        module = loaded(SCRIPTS / "reversibility.py")
+        for key, accepted in module.FACT_LISTS[module.CURRENT].items():
+            rows = [row for row in result.stdout.splitlines() if row.split() and row.split()[0] == key]
+            self.assertEqual(1, len(rows), (key, result.stdout))
+            self.assertEqual(list(accepted), rows[0].split()[1].split("|"), rows[0])
+        named = set(result.stdout.replace(",", " ").replace(":", " ").split())
+        for rule in (*(f"H{n}" for n in range(1, 8)), "R1", "R2", "F1", "F2", "D1", "D2", "U1"):
+            self.assertIn(rule, named, result.stdout)
+        self.assertIn("rules 1", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

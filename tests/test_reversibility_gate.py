@@ -118,8 +118,8 @@ class GateHoldsTheLineTest(unittest.TestCase):
         for value in ("S1", "S1, S2", "`S26-reversibility-line`", "global", "global, S1", "", " ", "S01-S03",
                       "oauth2", "S5-oauth2", "s1", "S1,", "S1 S2", "S05-x.S02-y", "S1.2", "ÿ1", "S١"):
             self.assertEqual(held.scope_tokens(value), verb.scope_tokens(value), value)
-        for value in ("`a`, `b`", "a, b", "", "`a` and b", "a,,b", " a ", "``"):
-            self.assertEqual(held.paths_of(value), verb.written_paths(value), value)
+        for value in ("`a`, `b`", "a, b", "", "`a` and b", "a,,b", " a ", "``"):  # the list reads more (T021)
+            self.assertLessEqual(set(held.paths_of(value)), set(verb.written_paths(value)), value)
 
     def test_a_log_with_a_line_and_no_sibling_module_is_noted_not_refused(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -136,9 +136,11 @@ def proposed(*cited: str) -> str:
 class ProposedRuleTest(unittest.TestCase):
     """R7 (AC-S26-15, D185): a `Proposed rule:` cites two entries of the log; a cited entry's `Status` is not read."""
 
-    def run_gate(self, *entries: str) -> tuple[int, str, str]:
+    def run_gate(self, first: str, *entries: str) -> tuple[int, str, str]:
+        """The gate over the entries, the first given a `Reversibility:` line: citations are held only beside one."""
+        first = first.replace("- **Written to:**", line() + "\n- **Written to:**", 1)
         with tempfile.TemporaryDirectory() as directory:
-            result = gate(scratch(directory, "\n".join(entries)))
+            result = gate(scratch(directory, "\n".join((first, *entries)), listed=("scripts/check-decisions.py",)))
         return result.returncode, result.stdout, result.stderr
 
     def refused(self, found: tuple[int, str, str], *words: str) -> None:

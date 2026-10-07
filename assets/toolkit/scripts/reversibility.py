@@ -1,17 +1,17 @@
 """How hard a decision would be to take back: the rules, and the verb that scores declared facts (S26, FR-051).
 
-`python3 scripts/reversibility.py --scope <value> [--written-to <value>] [--raise guarded|hard] <key>=<value>...`
-prints the whole `- **Reversibility:** ...` line a decision entry carries, and on stderr one line naming the rules
-that fired. The facts are a closed list; the tier is the highest any rule gives; a missing or unaccepted fact scores
-`hard`. `RULES` keeps every version of the table this file has shipped: a line names the version that scored it, and
-a shipped version is only ever added to, never edited (a new version is a decision taken at the hard tier).
-The gate (`check-decisions.py`) loads this file by path, only for a log that carries a `Reversibility:` or
-`Proposed rule:` line, and `check_log()` holds each line to the grammar and to the tier its named version derives.
+The verb prints the whole `- **Reversibility:** ...` line a decision entry carries, and on stderr the rules that
+fired; `--help` lists the closed list of facts, their values and the rules. A missing or unaccepted fact scores `hard`.
+`RULES` keeps every version of the table this file has shipped: a line names the version that scored it, and a shipped
+version is only ever added to, never edited (a new version is a decision taken at the hard tier).
+The gate (`check-decisions.py`) loads this file by path, only for a log that carries a `Reversibility:` line, and
+`check_log()` holds each line to the grammar and the tier its named version derives, and `Proposed rule:` citations.
 The scope is read by `scope_tokens`, a copy of the gate's own reading, so the verb works with nothing beside it; a
 caller that holds the gate's function passes it to `score()` instead. Nothing here prints or exits outside `main`.
 """
 from __future__ import annotations
 
+import fnmatch
 import json
 import posixpath
 import re
@@ -92,10 +92,22 @@ def rules_v1(facts: dict[str, str], bound: str) -> tuple[str, list[str]]:
     return tier, [name for name, _ in fired]
 
 
-# Every version this file has shipped. Never edit one; add the next, with its fact list below.
+# Every version this file has shipped. Never edit one; add the next, with its fact list and its `--help` rules below.
 RULES: dict[int, Callable[[dict[str, str], str], tuple[str, list[str]]]] = {1: rules_v1}
 FACT_LISTS: dict[int, dict[str, tuple[str, ...]]] = {1: FACTS}
 CURRENT = max(RULES)
+RULES_HELP = {1: (f"  hard: {', '.join(f'H{n} {key}=yes' for n, key in enumerate(HARD_FACTS, 1))}; R1 rollback_complexity="
+                  "days|needs-migration; D2 scope is global or unreadable; U1 a fact missing or not accepted\n  guarded: "
+                  "R2 rollback_complexity=hours; F1 behind_flag=no; F2 flag_default=yes; D1 scope names several slices")}
+
+
+def help_text() -> str:
+    """`--help`: the usage, each fact of the current rules with the values it accepts, and its rules by id."""
+    facts = "".join(f"\n  {key} {'|'.join(values)}" for key, values in FACT_LISTS[CURRENT].items())
+    return (f"{USAGE}\n\nThe facts of rules {CURRENT}, each <key>=<value>, with the values each accepts:{facts}\n"
+            "migrate_file=no is read against the committed list: yes where a --written-to path is on it, no-list where "
+            f"the project has none.\n\nThe rules of rules {CURRENT}; the tier is the highest that fires, else easy:\n"
+            f"{RULES_HELP[CURRENT]}")
 
 
 def steps(tier: str, raise_to: str | None) -> list[str]:
@@ -116,32 +128,44 @@ def project_root(script: Path, depth: int) -> Path:
 
 
 def written_paths(value: str) -> list[str]:
-    """The paths a `Written to` value names, as `check-decisions.py`'s `paths_of` reads them: backticked, else
-    comma-separated."""
-    quoted = re.findall(r"`([^`]+)`", value)
-    if quoted:
-        return quoted
-    return [part.strip() for part in value.split(",") if part.strip()]
+    """Every path a `Written to` value could name, for the list (which only raises): each backticked one and the bare
+    ones beside them, separated by `,`, `;` or ` and ` — every path `check-decisions.py`'s `paths_of` reads among them."""
+    rest = re.sub(r"`[^`]*`", ",", value)
+    parts = [*re.findall(r"`([^`]+)`", value), *value.split(","), *re.split(r"[,;]|\s+and\s+", rest)]
+    return list(dict.fromkeys(part.strip() for part in parts if part.strip()))
 
 
-def on_list(written: Iterable[str], listed: set[str]) -> bool:
-    """Whether any `Written to` path is on the committed list, read as a path: `./` and backslashes are resolved, and a
-    directory (with or without its trailing `/`) matches when a listed file is under it. The verb and the gate share it."""
-    def clean(path: str) -> str:
-        return posixpath.normpath(path.strip().replace("\\", "/"))
-    files = {clean(entry) for entry in listed}
-    for path in map(clean, filter(str.strip, written)):
-        if path in files or path == "." or any(entry.startswith(path + "/") for entry in files):
+def inside(path: str, root: Path | None) -> str | None:
+    """`path` as a project-relative posix path (`./`, `..` and backslashes resolved; an absolute path made relative to
+    `root`), or None where it lands outside the project — and, with no `root`, wherever it is absolute or climbs out."""
+    text = path.strip().replace("\\", "/")
+    if root is not None:
+        text = posixpath.relpath(posixpath.normpath(posixpath.join(root.as_posix(), text)), root.as_posix())
+    text = posixpath.normpath(text)
+    return None if posixpath.isabs(text) or text.split("/")[0] == ".." else text
+
+
+def on_list(written: Iterable[str], listed: set[str], root: Path | None = None) -> bool:
+    """Whether any `Written to` path is on the committed list, read as a path in the project (see `inside`), in any
+    case (the lookup only ever raises a tier); a written directory or glob matches a listed file under or matching it,
+    and a listed directory a written file under it. The verb and the gate share it."""
+    files = {entry.casefold() for entry in filter(None, (inside(entry, None) for entry in listed))}
+    for path in filter(None, (inside(path, root) for path in written if path.strip())):
+        path = path.casefold()
+        if path == "." or any(path == entry or fnmatch.fnmatchcase(entry, path) or entry.startswith(path + "/")
+                              or path.startswith(entry + "/") for entry in files):
             return True
     return False
 
 
-def propagated(root: Path) -> set[str] | None:
-    """The paths `migrate` propagates, from the committed list, or None where the project has no list.
+class Unreadable(Exception):
+    """A `layout.delivery` that names no directory in the project: said in one line, and read as no list."""
 
-    `<layout.delivery>/.written` where `project.json` says `origin` is `adopted` (`.written` at the root where the
-    delivery directory is `.`), else `.slipwai/propagated`; one project-relative path per line. A list that cannot be
-    read as UTF-8 text is no list: it fails closed, as a missing one does."""
+
+def propagated(root: Path) -> set[str] | None:
+    """The committed list of paths `migrate` propagates — `<layout.delivery>/.written` where `project.json` says
+    `adopted`, else `.slipwai/propagated` — one per line, `#` a comment; None (no list, failing closed) where it is
+    missing, not UTF-8 or names nothing. `Unreadable` where `layout.delivery` names no directory in the project."""
     try:
         document = json.loads((root / "project.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -150,33 +174,36 @@ def propagated(root: Path) -> set[str] | None:
     if document.get("origin") == "adopted":
         layout = document.get("layout")
         delivery = layout.get("delivery", ".") if isinstance(layout, dict) else "."
-        home = root / str(delivery) / ".written"
+        if not isinstance(delivery, str) or "\0" in delivery or inside(delivery, root) is None:
+            raise Unreadable(f"project.json `layout.delivery` is {delivery!r}, which names no directory in the "
+                             "project; the committed list is read as no list")
+        home = root / delivery / ".written"
     else:
         home = root / ".slipwai" / "propagated"
     try:
-        lines = home.read_text(encoding="utf-8").splitlines()
-    except (OSError, UnicodeDecodeError):
+        lines = home.read_text(encoding="utf-8").removeprefix("\ufeff").splitlines()
+    except (OSError, UnicodeDecodeError, ValueError):
         return None
-    return {line.strip() for line in lines if line.strip()}
+    return {line.strip() for line in lines if line.strip() and not line.strip().startswith("#")} or None
 
 
-def with_list(facts: dict[str, str], written: list[str] | None, listed: set[str] | None) -> dict[str, str]:
-    """`facts` with `migrate_file` as the committed list says: raised to yes by a listed path, never lowered; `no-list`
-    wherever the project has no list, since nothing then says what `migrate` propagates."""
+def with_list(facts: dict[str, str], written: list[str] | None, listed: set[str] | None,
+              root: Path | None = None) -> dict[str, str]:
+    """`facts` with `migrate_file` as the committed list says: raised to yes by a listed path, never lowered;
+    `no-list` where there is no list."""
     if facts.get("migrate_file") != "no":
         return facts
     if listed is None:
         return {**facts, "migrate_file": "no-list"}
-    return {**facts, "migrate_file": "yes"} if on_list(written or [], listed) else facts
+    return {**facts, "migrate_file": "yes"} if on_list(written or [], listed, root) else facts
 
 
 def score(facts: dict[str, str], scope: str, raise_to: str | None = None, version: int = CURRENT,
           reader: Callable[[str], list[str] | None] = scope_tokens, written: list[str] | None = None,
-          listed: set[str] | None = None) -> tuple[str, list[str]]:
-    """The whole `Reversibility:` line and the rules that fired, for declared facts and the entry's `Scope:` value.
-
-    `written` (the paths of `Written to`) with `listed` (the committed list) raise `migrate_file`; see `with_list`."""
-    facts = with_list(facts, written, listed)
+          listed: set[str] | None = None, root: Path | None = None) -> tuple[str, list[str]]:
+    """The whole `Reversibility:` line and the rules that fired, for declared facts and the entry's `Scope:` value;
+    `written` (the `Written to` paths), `listed` and `root` raise `migrate_file` (`with_list`)."""
+    facts = with_list(facts, written, listed, root)
     tier, fired = RULES[version](facts, dependants(scope, reader))
     written = " ".join(f"{key}={facts.get(key, 'missing')}" for key in FACT_LISTS[version])
     return f"{LABEL}{ARROW.join(steps(tier, raise_to))} · rules {version} · {written}", fired
@@ -218,7 +245,7 @@ def parse_line(value: str) -> tuple[list[str], int, dict[str, str]]:
 
 
 def line_findings(where: str, fields: Mapping[str, str], twice: set[str], reader: Callable[[str], list[str] | None],
-                  listed: set[str] | None) -> list[str]:
+                  listed: set[str] | None, root: Path | None = None) -> list[str]:
     """The findings for one entry's `Reversibility:` line (none where it has none); `where` is `<file>:<line>: D<n>`."""
     if "Reversibility" not in fields:
         return []
@@ -233,7 +260,7 @@ def line_findings(where: str, fields: Mapping[str, str], twice: set[str], reader
         if listed is None:
             found.append(f"{where} `Reversibility` says migrate_file=no, but this project has no committed list of "
                          "migrate-propagated files, so nothing says it is no")
-        elif on_list(written_paths(fields.get("Written to", "")), listed):
+        elif on_list(written_paths(fields.get("Written to", "")), listed, root):
             found.append(f"{where} `Reversibility` says migrate_file=no, but a `Written to` path is on the "
                          "committed list")
     derived, fired = RULES[version](facts, dependants(fields.get("Scope", ""), reader))
@@ -261,7 +288,7 @@ def rule_findings(where: str, number: int, value: str, known: set[int]) -> list[
 
 def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
               reader: Callable[[str], list[str] | None], listed: set[str] | None,
-              verb: str = "python3 scripts/reversibility.py") -> tuple[list[str], list[str]]:
+              verb: str = "python3 scripts/reversibility.py", root: Path | None = None) -> tuple[list[str], list[str]]:
     """(findings, notes) for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
     gate parsed them, `reader` the gate's own `scope_tokens`, `listed` the committed list, `verb` how this project
     runs this file. The second loop is the missing-line note."""
@@ -270,9 +297,11 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
     entries = [item for item in items if item[1] is not None]
     known = {number for _, number, _, _ in entries if number is not None}
     for line, number, fields, twice in entries:
-        findings += line_findings(f"{relative}:{line}: D{number}", fields, twice, reader, listed)
+        findings += line_findings(f"{relative}:{line}: D{number}", fields, twice, reader, listed, root)
         if number is not None and "Proposed rule" in fields:
             findings += rule_findings(f"{relative}:{line}: D{number}", number, fields["Proposed rule"], known)
+            findings += [f"{relative}:{line}: D{number} has more than one `Proposed rule:` line; an entry proposes "
+                         "one rule"] if "Proposed rule" in twice else []
     seen = False  # file order, as `scope_notes` reads it: the first entry with the line starts it
     for line, number, fields, _ in entries:
         if "Reversibility" in fields:
@@ -320,14 +349,18 @@ def main() -> int:
         stream.reconfigure(encoding="utf-8", errors="backslashreplace")  # the line carries `→` and `·`; a pipe may not
     arguments = sys.argv[1:]
     if arguments == ["--help"]:
-        print(USAGE)
+        print(help_text())
         return 0
     try:
         options, facts = parse_arguments(arguments)
-        written = options.get("--written-to")
+        written, root = options.get("--written-to"), project_root(Path(__file__).resolve(), 1)
+        try:
+            listed = propagated(root)
+        except Unreadable as error:
+            listed = None
+            print(f"reversibility: {error}", file=sys.stderr)
         line, fired = score(facts, options["--scope"], options.get("--raise"),
-                            written=None if written is None else written_paths(written),
-                            listed=propagated(project_root(Path(__file__).resolve(), 1)))
+                            written=None if written is None else written_paths(written), listed=listed, root=root)
     except ValueError as error:
         print(f"reversibility: {error}\n{USAGE}".replace("\n", " — ", 1), file=sys.stderr)
         return 2
