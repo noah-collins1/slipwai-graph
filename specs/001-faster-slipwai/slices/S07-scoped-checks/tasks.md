@@ -298,6 +298,24 @@ recorded inputs for the checks declaring it (or adds the target), as `reach.link
 **Files:** `assets/toolkit/scripts/verify_scoped/record.py` or `methods.py`, a new test module. Owner: S06's follow-up
 or the Parking Lot, by the host's word.
 
+### T014 — The published table of rows is S06's, and still says what S06 shipped (converge pass 2 · **HIGH**)
+
+Pass 1's class again: `test_verify_scoped_contracts.PrintedRecordTest.test_e2_each_row_of_the_published_table_is_the_row_the_script_holds`
+holds `specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md` § *The table* equal to `table.CHECKS`, row by
+row, and S07 changed six rows without running it. The suite is red on this branch (`AssertionError: check-ux-gates`; a
+probe running the same comparison over every row finds all six): `check-ux-gates` *variables* (the four branch
+variables), `check-decisions` *files* (`.slipwai/propagated`), and `check-agents`, `check-speckit`, `check-extensions`,
+`check-constitution` *files*, *claims* and *always* (the table still has them as one row, `no` / *no recorded inputs*).
+The record example further down that page (`"check-agents": { … "inputs": null … }`) says the same and is not pinned.
+**Which file is fixed is the host's call**, since neither is in S07's write scope: (a) S06's data-model table takes the
+six rows as `table.py` now has them (the four as four rows, `claims` `yes`, *always* `—`, files in `table.py`'s order,
+`{web}` as `<web>/`) and its example entry becomes another check's; or (b) `test_verify_scoped_contracts.py` reads the
+rows S07's data-model publishes over S06's (S07's table has a different column shape, so this is more than a path).
+**RED** — already seen: `make test TESTS="test_verify_scoped_contracts"` (1 F).
+**GREEN** — (a) or (b); every other case of the module still passes.
+**Files:** (a) `specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md`, or (b) `tests/test_verify_scoped_contracts.py`.
+**Run:** `make test TESTS="test_verify_scoped_contracts test_verify_scoped_record test_verify_scoped_methods"`.
+
 ### Undeclared modules (AC-S07-15; carried onto S43's AC-S43-7 list at the merge)
 
 | Module | The selector's reason |
@@ -402,3 +420,44 @@ test_verify_stamp_inputs -pinned test_design_extensions test_benchmark test_scop
 2 F + 1 E (T010, T011); after the fixes `test_ux_gates_default test_ux_gates_scale` 18 OK, TK + `test_verify_stamp_scan`
 32 OK, `test_verify_scoped_derived -methods -record -table_held -held` + TK 87 OK. A `make test SINCE=adopt-method` was
 started and stopped at once: the selector chose the full suite (`methods.py` is new), which this run may not take.
+
+### Pass 2 (cruise iteration 27, `drive-converge`, the last) — **not converged**: T014 (HIGH) is open
+
+Judged: `f5435c2..a2a60de` (the fixes `dd629c7`, `94b8d6d`, `e968e03` and everything pass 1 judged) against the same
+artefacts. No code changed here; the tree was not mutated.
+
+**Pass 1's tasks.** T010 closed by `dd629c7`, T011 by `94b8d6d`, T012 by `e968e03`: each Run line passes (batch A
+below, no skip). T013 (LOW) and the ignored-stylesheet LOW stand as pass 1 left them.
+**Pass 1's class, closed wholesale** (*S07 changed behaviour other modules pin, and no task ran them*): every module in
+`tests/` that names the four checks, *no recorded inputs*, `UX_GATES_SINCE`, `check-ux-gates`, `check-decisions`,
+`SCOPED_PAGE`, `verification.md` or *none of its inputs* (45 outside the scoped set), every `test_verify_scoped_*`,
+`test_ux_gates_*`, `test_scoped_*`, the toolkit set and `test_select_tests_real_declared` — 983 tests. One more member
+of the class: **(HIGH, T014)** `test_verify_scoped_contracts` holds S06's published table of rows equal to `table.py`,
+and six rows moved (`check-ux-gates` variables, `check-decisions` files, the four). Nothing else in the class fails.
+**Domain.** Re-read `check-extensions --check` beyond the audited extension (`uipro`, `codegraph`): it reads
+`.slipwai/extensions.json`, `AGENTS.md` and, through `ready()`, `project.json` (the full gate) and `{web}` directories;
+the MCP-file writes and `SLIPWAI_INTEGRATION` are on the non-`--check` path only. The four checks read no environment
+variable under `--check`. Nothing new.
+**Use case.** `check-ux-gates`' default reads `project.json`'s `ci.branch` (`trunk_problem`), which its row does not
+name: a change to `project.json` is the full gate (`choose.py`, *it is project.json*), so no skip follows. The verify
+stamp's key holds `HEAD`'s ref and every ref (`history_digest`), so a stamp written on a slice branch, where previews are
+now scoped by the base, is never reused on another branch or after the trunk moves. CI markers stand `verify-scoped`
+down as they do the default. Nothing new.
+**Adapter.** `8998c78`'s `surrogateescape` and `949f299`'s `.registry` guard re-read; held by their tests (batch B). The
+default's import of `verify_scoped` runs under `sys.dont_write_bytecode` (`test_assets_bytecode` green). Nothing new.
+**Published contract.** **(HIGH, T014)** above: the factory's published table of rows (S06's data-model, the page the
+contracts test reads as the contract) still lists the four as one *no recorded inputs* row; the record example on that
+page too (unpinned, same task). Generated `Makefile`/`rules.json`, page, `docs/verification.md`, fragment and `VERSION`
+as pass 1 found (`test_scoped_targets`, `test_scoped_page`, `test_changelog` green).
+
+**Tests run** (`make test TESTS=…`, four batches): A — `test_verify_scoped_always -methods -methods_run test_scoped_migrate
+test_verify_scoped_derived -held -held_more`: 72 OK. B — the 36 other `test_scoped_*`, `test_ux_gates_*`,
+`test_verify_scoped_*`: 469, 1 F (`test_verify_scoped_contracts` e2, T014). C1 — `test_adopt_next test_benchmark
+test_check_python test_code_index test_commands test_constitution test_cruise_guard -record -runner -scope_writers
+-stop_hook test_decisions_gate_differential test_decisions_scope -calls -gate test_describe_service
+test_design_extensions test_design_stage test_extensions test_flag_gate test_hand_backs_append -coverage -record`: 227
+OK. C2 — `test_hand_backs_shape test_migrate test_monorepos test_mutation_words test_parallel_gate_first -reads
+test_pruning test_register_ids test_result_contract_briefs -migrate -stops test_runner_between -controls -controls_park
+-nonregular -pages test_skill_capabilities test_spec_kit test_stage_models test_verify_stamp_inputs -pinned -scan
+test_toolkit test_utf8_io test_changelog test_assets_bytecode test_select_tests_real_declared`: 215 OK, 1 skipped
+(`test_changelog`: no release tag fetched in this worktree).
