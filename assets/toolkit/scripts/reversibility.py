@@ -313,6 +313,8 @@ def parse_arguments(arguments: list[str]) -> tuple[dict[str, str], dict[str, str
 
 
 def main() -> int:
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8", errors="backslashreplace")  # the line carries `→` and `·`; a pipe may not
     arguments = sys.argv[1:]
     if arguments == ["--help"]:
         print(USAGE)

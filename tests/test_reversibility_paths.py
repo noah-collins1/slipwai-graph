@@ -5,6 +5,8 @@ normaliser (`on_list`). The verb's output survives a console that cannot write i
 """
 from __future__ import annotations
 
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -50,6 +52,23 @@ class WrittenToPathsTest(unittest.TestCase):
             repo = scratch(directory, entry(1, LINE, written="`./README.md`"), listed=LISTED)
             result = gate(repo)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+
+class VerbStreamsTest(unittest.TestCase):
+    def test_e5_the_verb_writes_utf_8_whatever_the_console_encoding_is(self) -> None:
+        """M3: cp1252 is what a pipe gets on Windows; the arrow and the dot are not in it, and neither are in ascii."""
+        with tempfile.TemporaryDirectory() as directory:
+            repo = scratch(directory, names=("reversibility.py",), listed=LISTED)
+            for encoding in ("cp1252", "ascii"):
+                for extra in (("--raise", "hard"), ()):
+                    with self.subTest(encoding=encoding, extra=extra):
+                        result = subprocess.run(
+                            ["python3", "-B", "scripts/reversibility.py", "--scope", "S1", *extra, *facts()],
+                            cwd=repo, capture_output=True, env={**os.environ, "PYTHONIOENCODING": encoding})
+                        self.assertEqual(0, result.returncode, result.stderr.decode("utf-8", "replace"))
+                        text = result.stdout.decode("utf-8")
+                        self.assertIn(" · rules 1 · ", text)
+                        self.assertEqual(bool(extra), " → " in text)
 
 
 if __name__ == "__main__":
