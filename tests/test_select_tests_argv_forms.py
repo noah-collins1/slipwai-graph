@@ -12,12 +12,17 @@ import sys
 import unittest
 from collections.abc import Callable
 
-from test_select_tests_argv import GO, STAMPED, ArgvCase
+from test_select_tests_argv import GO, ArgvCase
 
 sys.dont_write_bytecode = True
 
 L = 'ROOT / "slipwai"'
 NARROW = '"--profile", "standard", "--frontend", "none"'
+PY = f'[{L}, "generate", "n", "--backend", "python", {NARROW}]'  # a literal argv a form below then changes
+# the stamp-style claim with the launcher read `support` hands every importer on the real tree (not first: a list that
+# starts with "slipwai" is the launcher on `PATH`)
+STAMPED = ('{"configurations": {"backend": ["python"], "profile": ["standard"], "frontend": ["none"]}, '
+           '"reads": ["README.md", "slipwai"]}')
 
 # name -> (the expression the planted module holds, the import head it needs)
 FORMS: dict[str, tuple[str, str]] = {
@@ -45,6 +50,22 @@ FORMS: dict[str, tuple[str, str]] = {
     "a_concatenation_onto_a_literal_argv": (f'flags + [{L}, "generate", "n", "--backend", "python", {NARROW}]', ""),
     "shlex_split": ('run(shlex.split("./slipwai generate n --backend python"))', "from subprocess import run\n"),
     "a_shell_string": ('run("./slipwai generate n --backend python", shell=True)', "from subprocess import run\n"),
+    # converge pass 1: a literal argv that is not the one a `subprocess` call is handed, then changed to generate go
+    "a_returned_list_extended": ('shape() + ["--backend", "go"]', f"def shape():\n    return {PY}\n"),
+    "a_list_in_a_dict_extended": ('SHAPES["p"] + ["--backend", "go"]', f'SHAPES = {{"p": {PY}}}\n'),
+    "a_list_in_a_tuple_extended": ('SHAPES[0] + ["--backend", "go"]', f"SHAPES = ({PY},)\n"),
+    "a_list_of_argvs_extended": (f'[a + ["--backend", "go"] for a in [{PY}]][0]', ""),
+    "a_walrus_bound_list_extended": (f'(cmd := {PY}) + ["--backend", "go"]', ""),
+    "a_conditional_extended": (f'({PY} if fast else {PY}) + ["--backend", "go"]', ""),
+    "a_lambda_result_extended": ('make() + ["--backend", "go"]', f"make = lambda: {PY}\n"),
+    "a_default_argument_extended": ("shape()", f'def shape(a={PY}):\n    return a + ["--backend", "go"]\n'),
+    "a_comprehension_element_extended": (f'[x for x in {PY}] + ["--backend", "go"]', ""),
+    "a_helper_that_extends": (f"go({PY})", 'def go(a):\n    return a + ["--backend", "go"]\n'),
+    "a_computed_element_after_the_flags": (f'[{L}, "generate", "--backend", "python", {NARROW}, extra]', ""),
+    "an_f_string_after_the_flags": (f'[{L}, "generate", "--backend", "python", {NARROW}, f"--backend={{b}}"]', ""),
+    "python_dash_m_slipwai_as_a_tuple": (
+        f'("python3", "-m", "slipwai", "generate", "n", "--backend", "python", {NARROW})', ""),
+    "the_launcher_on_path_as_a_tuple": (f'("slipwai", "generate", "n", "--backend", "python", {NARROW})', ""),
 }
 
 
@@ -52,7 +73,9 @@ class ArgvForms(ArgvCase):
     """One test per form (below): the planted copy is void, so it is held and selected on a Go change."""
 
     def planted(self, expression: str, head: str) -> None:
-        self.module(STAMPED, f"argv = lambda: {expression}", head)
+        self.write("slipwai", "#!/bin/sh\n")
+        self.write("README.md", "read\n")
+        self.module(STAMPED, f"argv = lambda: subprocess.run({expression})", head)
 
 
 def case(expression: str, head: str) -> Callable[[ArgvForms], None]:

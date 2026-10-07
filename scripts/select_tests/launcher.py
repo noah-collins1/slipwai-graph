@@ -44,7 +44,7 @@ def detector(tree: ast.AST) -> Callable[[ast.AST], bool]:
             return isinstance(node.value, str) and id(node) not in prose and string_names(node.value)
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
             return isinstance(node.right, ast.Constant) and node.right.value == LAUNCHER
-        if isinstance(node, ast.List):  # `["slipwai", "generate", ...]`, `["python3", "-m", "slipwai", ...]`
+        if isinstance(node, ast.List | ast.Tuple):  # `["slipwai", "generate", ...]`, `("python3", "-m", "slipwai")`
             values = [e.value if isinstance(e, ast.Constant) else None for e in node.elts]
             return values[:1] == [LAUNCHER] or any(
                 a == "-m" and isinstance(b, str) and is_module(b) for a, b in zip(values, values[1:], strict=False))

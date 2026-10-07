@@ -1,9 +1,10 @@
 """A literal `./slipwai generate` argv, read as the axes it generates (S43 T001, D187 rules 1-3).
 
 `read` answers one `ast.List`: the axes of the project the argv generates, or None where the list is not an argv this
-rule reads, and stays a route to every option of every axis. Only a fully literal argv is read: `ROOT / "slipwai"` (or
-`str(...)` of it), the literal `generate`, then string-literal flags and values, bar the project name and the value of
-`--output`, which select nothing. The CLI's own defaults are not the seam's, so an omitted axis flag is every option.
+rule reads, and stays a route to every option of every axis. Only a fully literal argv handed straight to `subprocess`
+is read: `ROOT / "slipwai"` (or `str(...)` of it), the literal `generate`, then string-literal flags and values, bar the
+project name (computed only right after `generate`) and the value of `--output`, which select nothing. The CLI's own
+defaults are not the seam's, so an omitted axis flag is every option.
 """
 from __future__ import annotations
 
@@ -48,10 +49,16 @@ def launcher(node: ast.expr) -> ast.expr | None:
     return None
 
 
-def whole(parent: ast.AST | None) -> bool:
-    """Whether a list under `parent` is the whole argv as written: not joined to another list (`+`, `*`, `+=`) and not
-    bound to a name, where it may be extended later (D187 counts a list variable as unreadable)."""
-    return not isinstance(parent, (ast.BinOp, ast.Starred, ast.AugAssign, ast.Assign, ast.AnnAssign))
+RUNNERS = frozenset({"run", "Popen", "call", "check_call", "check_output"})
+
+
+def whole(node: ast.List, parent: ast.AST | None) -> bool:
+    """Whether the list is the whole argv as written: the first argument of a `subprocess` call, and nothing else. A
+    list anywhere else (joined, bound to a name, returned, held in another container, handed to a helper) may be
+    changed before it runs, so it is not read (D187 rule 3)."""
+    return isinstance(parent, ast.Call) and bool(parent.args) and parent.args[0] is node \
+        and isinstance(parent.func, ast.Attribute) and parent.func.attr in RUNNERS \
+        and isinstance(parent.func.value, ast.Name) and parent.func.value.id == "subprocess"
 
 
 def read(node: ast.AST, root: Path | None,
@@ -59,7 +66,7 @@ def read(node: ast.AST, root: Path | None,
     """The axes a literal launcher argv generates, with the launcher node inside it; None where it is not read."""
     if not isinstance(node, ast.List) or len(node.elts) < 2 or any(isinstance(e, ast.Starred) for e in node.elts):
         return None
-    if not whole(parent):
+    if not whole(node, parent):
         return None
     chain = launcher(node.elts[0])
     if chain is None or literal(node.elts[1]) != SUBCOMMAND:
@@ -73,7 +80,9 @@ def read(node: ast.AST, root: Path | None,
     while index < len(rest):
         flag = literal(rest[index])
         if flag is None or not flag.startswith("--"):
-            positional += 1  # the project's name: any expression, selecting nothing
+            if flag is None and index != 0:
+                return None  # a computed name is read only right after `generate`: later, it may be a flag
+            positional += 1  # the project's name, selecting nothing
             index += 1
             continue
         if flag in seen:

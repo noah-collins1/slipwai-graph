@@ -39,7 +39,7 @@ class ArgvCase(GenerationCase):
         self.write("catalog.json", json.dumps({**CATALOG, "axes": axes}))
 
     def argv(self, selection: str, argv: str) -> None:
-        self.module(selection, f"argv = lambda: {argv}")  # never run: the selector reads it
+        self.module(selection, f"argv = lambda: subprocess.run({argv})")  # never run: the selector reads it
 
     def skipped_on(self, path: str) -> bool:
         self.slice_changing(path)
