@@ -71,7 +71,9 @@ NOT_AN_INPUT_FOR = {
 # The same, as a pattern: one literal for each of a family of paths.
 NOT_AN_INPUT_PATTERN = {
     r"skills/[\w-]+/SKILL\.md": "`check-constitution.py`'s `practice` pointers, tested for existence by "
-                                  "`present_practice` for `--requirements` only (a printed hint); `--check` opens none",
+                                  "`present_practice` inside `findings()` for a requirement already reported as "
+                                  "failing: a missing skill changes the failure text (`; see skills/…`) and never "
+                                  "the exit status (`test_verify_scoped_flips_practice`)",
 }
 # Modules a check loads only to find the slice's base and the paths changed since it, by check (`check-ux-gates`'s
 # default, research R-6): not walked for the check that loads them, since the stamp's cruise files, the model and the
