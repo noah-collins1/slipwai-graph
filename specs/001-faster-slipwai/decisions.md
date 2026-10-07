@@ -4327,3 +4327,27 @@
 - **Confidence:** high · **Would reverse if:** a person wants each slice's rows published on its own page.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
+
+## D191 — S43's renamed test id, and a leftover SELECTED_TEST_MODULES under make test TESTS=
+- **Stage:** 9 convergence · **Slice:** S43-test-declarations · **When:** 2026-10-07T09:12:05Z · **Iteration:** 27
+- **Scope:** S43-test-declarations
+- **Question:** AC-S43-9 says no test id is renamed away; S43 renamed one selector test whose name stated that `render_fixture` declares every configuration, which its own T006 made false (T012). And `make test TESTS=…` still lets a `SELECTED_TEST_MODULES` left in a person's environment narrow the audit; the fix (`env -u` in the recipe) is in the root `Makefile`, a control (T011).
+- **Options:** (a) accept the rename, recorded in `undeclared.md` beside the id count; the `Makefile` line is a patch a person applies, as S33's and S38's were, the slice merging without it (recommended); (b) keep the old, now false, name; hold the slice for the patch.
+- **Decision:** (a). The rename is the one exception to AC-S43-9, named; the patch is written under the slice's folder and goes to the completion audit for a person, the audit narrowing meanwhile only when the list names the audit module itself and is well-formed, as built.
+- **Why:** a test name that states a falsehood misleads the next reader; AC-S43-9 guards against tests lost, and none is. The leftover variable needs a person to export it by hand, and a narrowed audit still audits every module the run selects.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** any process this repository runs exports `SELECTED_TEST_MODULES` into a `TESTS=` run.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing
+
+## D192 — Does make check-ux-gates on a slice branch render every preview, or take the slice-branch default?
+- **Stage:** 9 convergence · **Slice:** S07-scoped-checks · **When:** 2026-10-07T09:31:07Z · **Iteration:** 27
+- **Scope:** S07-scoped-checks
+- **Question:** AC-S07-9 says `make check-<name>` always runs the check in full; AC-S07-11 and D170 say `check-ux-gates` on `slice/<id>` outside CI scopes its previews by default on every run, `make check-ux-gates` included (after-converge gaps finding 4; S07's research R-7 read the first as *never skipped by the scoped gate*).
+- **Options:** (a) AC-S07-9 means a named check is never skipped: `make check-ux-gates` runs, on a slice branch with the default scope, and `UX_GATES_SINCE=all` renders everything (recommended, R-7); (b) a named target always renders every preview, the default applying only inside `verify` and `verify-scoped`.
+- **Decision:** (a). AC-S07-9 is reworded: `make check-<name>` always runs the check — the scoped gate never skips it; `check-ux-gates`'s preview scope follows AC-S07-11 there as everywhere.
+- **Why:** D170 is the later and more specific decision and FR-022 sets the default for the check itself; one rule for every way the check is started is what a developer can predict, and `all` is the documented way back.
+- **Decided by:** host (standing decision D170)
+- **Confidence:** high · **Would reverse if:** a person wants a check started by name to render everything regardless.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

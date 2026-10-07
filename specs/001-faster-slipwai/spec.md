@@ -2741,7 +2741,8 @@ section and are moved to the Parking Lot (D173). No environment variable is read
   `registry.json` or a `*.manifest.json` is not one that always runs or claims nothing (D172 limit ii).
 - **AC-S07-9** — Given a changed ignored projection, then the run is the full gate with or without a baseline
   (AC-S06-9); on the trunk, under a CI marker, or on a branch that is not `slice/<id>`, `verify-scoped` is `make verify`;
-  `make check-<name>` always runs the check in full; on `main`, `make verify`'s findings are unchanged (SC-007).
+  `make check-<name>` always runs the check — the scoped gate never skips it, and `check-ux-gates`' preview scope
+  follows AC-S07-11 there too (D192); on `main`, `make verify`'s findings are unchanged (SC-007).
 - **AC-S07-10** — Given `verify-scoped record`, then the four print with input objects and `claims: true`, the record
   keeps `schema: 1` and gains no key (D172).
 - **AC-S07-11** — *D170, D171.* Given a `slice/<id>` branch outside CI with `UX_GATES_SINCE` unset or empty, then
