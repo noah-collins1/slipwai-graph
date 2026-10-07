@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import itertools
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from reversibility_fixture import EASY, ROOT, SCRIPTS, entry, facts, gate, score, scratch
+from test_decisions_scope_gate import released_checker
 
 sys.dont_write_bytecode = True
 
@@ -122,6 +124,41 @@ class OldLinesUnderNewerRulesTest(unittest.TestCase):
                 tier, _ = module.RULES[1](dict(zip(module.FACTS, values, strict=True)), bound)
                 digest.update(f"{values} {bound} {tier}\n".encode())
         self.assertEqual(VERSION_1_DIGEST, digest.hexdigest())
+
+
+NOTE = ("check-decisions: note: specs/f/decisions.md:{line}: D{number} has no `Reversibility:` line after an entry "
+        "that has one; score it with python3 scripts/reversibility.py")
+
+
+class MissingLineNoteTest(unittest.TestCase):
+    """R5 (AC-S26-10; D176): an entry with no line after one that has it is noted, as `scope_notes` does; exit 0."""
+
+    def gate(self, text: str, released: bool = False) -> subprocess.CompletedProcess[str]:
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as other:
+            repo = scratch(directory, text, listed=("scripts/check-decisions.py",))
+            if released:
+                shutil.copy(released_checker(other), repo / "scripts/check-decisions.py")
+            return gate(repo)
+
+    def test_e2_a_line_the_released_checker_passed_is_refused_now_the_one_log_shape_whose_answer_moves(self) -> None:
+        """A guard. `- **Reversibility:** whatever` was passed by the released checker and is refused now: the label
+        is new to this release, so D65's carve-out lets the gate refuse what only this release can produce."""
+        log = entry(1, "- **Reversibility:** whatever")
+        self.assertEqual(0, self.gate(log, released=True).returncode)
+        self.assertEqual(1, self.gate(log).returncode)
+
+    def test_e3_an_entry_without_the_line_after_one_with_it_is_noted_and_the_gate_passes(self) -> None:
+        text = entry(1, line("guarded", 1)) + "\n" + entry(2)
+        result = self.gate(text)
+        self.assertEqual((0, ""), (result.returncode, result.stderr))
+        notes = [row for row in result.stdout.splitlines() if "Reversibility" in row]
+        heading = ("# Decisions\n\n" + text).splitlines().index("## D2 \u2014 Question 2") + 1
+        self.assertEqual([NOTE.format(line=heading, number=2)], notes)
+
+    def test_e4_an_entry_without_the_line_before_the_first_that_has_it_gets_no_note(self) -> None:
+        result = self.gate(entry(1) + "\n" + entry(2, line("guarded", 1)))
+        self.assertEqual((0, ""), (result.returncode, result.stderr))
+        self.assertNotIn("has no `Reversibility:`", result.stdout)
 
 
 if __name__ == "__main__":

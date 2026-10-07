@@ -240,8 +240,8 @@ def rule_findings(where: str, number: int, value: str, known: set[int]) -> list[
 def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
               reader: Callable[[str], list[str] | None], listed: set[str] | None) -> tuple[list[str], list[str]]:
     """(findings, notes) for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
-    gate parsed them, `reader` the gate's own `scope_tokens`, `listed` the committed list. The seams for the
-    `Proposed rule:` check and the missing-line note are the two marked loops below."""
+    gate parsed them, `reader` the gate's own `scope_tokens`, `listed` the committed list. The second loop is the
+    missing-line note."""
     findings: list[str] = []
     notes: list[str] = []
     entries = [item for item in items if item[1] is not None]
@@ -250,7 +250,13 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
         findings += line_findings(f"{relative}:{line}: D{number}", fields, twice, reader, listed)
         if number is not None and "Proposed rule" in fields:
             findings += rule_findings(f"{relative}:{line}: D{number}", number, fields["Proposed rule"], known)
-    # seam: an entry without the line after one that has it is noted here
+    seen = False  # file order, as `scope_notes` reads it: the first entry with the line starts it
+    for line, number, fields, _ in entries:
+        if "Reversibility" in fields:
+            seen = True
+        elif seen:
+            notes.append(f"check-decisions: note: {relative}:{line}: D{number} has no `Reversibility:` line after an "
+                         "entry that has one; score it with python3 scripts/reversibility.py")
     return findings, notes
 
 
