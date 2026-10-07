@@ -31,8 +31,10 @@ class TestWhatARunReaches(DeclarationCase):
         ran, skipped = self.selected()
         # `test_h` names no backend, so it admits every one; `test_g` generates nothing and reads nothing
         self.assertEqual(ran, ["test_a", "test_b", "test_c", "test_h"])
-        self.assertEqual(skipped, [f"skipped {name}: reads no go configuration" for name in
-                                   ("test_d", "test_e", "test_f", "test_g")])
+        self.assertEqual(skipped, ["skipped test_d: reads no go configuration",
+                                   "skipped test_e: reads no go configuration",
+                                   "skipped test_f: reads no go configuration and none of the changed files",
+                                   "skipped test_g: reads no go configuration"])
 
     def test_a_module_that_reads_a_changed_file_runs(self) -> None:
         self.declare(test_a='{"reads": ["README.md"]}', test_b='{"reads": ["docs"]}', test_c="{}")

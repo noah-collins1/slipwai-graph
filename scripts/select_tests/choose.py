@@ -86,14 +86,15 @@ def reasons_for(module: str, tree: declarations.Tree, declaration: declarations.
     return found
 
 
-def skip_reason(reached: Reach) -> str:
-    """What a module that was not reached does not read: the configurations that changed, the files, or both."""
+def skip_reason(reached: Reach, reads_files: bool = False) -> str:
+    """What a module that was not reached does not read: the configurations that changed, the files, or both. A module
+    that reads files by path says so of them whenever a configuration is what changed (T047)."""
     changed = reached.every or bool(reached.configs)
     if not changed:
         return "reads none of the changed files"
     options = "" if reached.every else " " + ", ".join(dict.fromkeys(option for _, option in reached.configs))
     said = f"reads no{options} configuration"
-    return f"{said} and none of the changed files" if reached.plain or reached.every else said
+    return f"{said} and none of the changed files" if reached.plain or reached.every or reads_files else said
 
 
 class Selection(NamedTuple):
@@ -128,7 +129,8 @@ def select(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any]
             verdicts.append(Verdict(module, (Reason(UNDECLARED),), ""))
             continue
         found = reasons_for(module, tree, declaration, reached)
-        verdicts.append(Verdict(module, tuple(found), "" if found else skip_reason(reached)))
+        reads_files = bool(declaration.reads) or ("slipwai" in tree.imported[module] and bool(tree.reads))
+        verdicts.append(Verdict(module, tuple(found), "" if found else skip_reason(reached, reads_files)))
     named = sorted(option for axis, option in reached.narrowable if axis == "backend")
     left_out = sorted(rules.names(catalog, "backends") - set(named)) if named else []
     return Selection(verdicts, tuple(named), tuple(left_out))
