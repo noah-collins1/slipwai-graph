@@ -242,6 +242,62 @@ files include `.slipwai/propagated`; on a slice branch with a baseline, a change
 **Files:** `assets/toolkit/scripts/verify_scoped/table.py`, `tests/test_verify_scoped_methods.py`.
 **Run:** `make test TESTS="test_verify_scoped_methods test_verify_scoped_record test_verify_scoped_table_held"` and TK.
 
+### T010 — S06's `test_verify_scoped_always` still holds the four to *no recorded inputs* (converge pass 1 · **HIGH**)
+
+The slice changed what `test_verify_scoped_always.py` asserts and did not run it (it was not on any task's Run line):
+`NO_INPUTS = ("check-agents", "check-speckit", "check-extensions", "check-constitution")` expects each to run as *no
+recorded inputs* on a web-only change and with nothing changed. With T001 they are skipped. The factory suite is red.
+**RED** — already seen: `make test TESTS="test_verify_scoped_always"` fails `test_e1_a_web_only_change_…` (KeyError
+`check-agents`) and `test_e1_with_nothing_changed_…` (the four missing from `ran`).
+**GREEN** — the module's `NO_INPUTS` goes; the web-only case asserts the four are named skipped (`none of its inputs
+changed`), `check-extensions` included unless the web change chooses it through `{web}` (it does: `apps/web/src/App.tsx`
+is under `{web}`, so `check-extensions` runs naming that path — assert that), and the nothing-changed case asserts
+`set(ran) == set(ALWAYS)`. The module goes on *Undeclared modules* (AC-S07-15) unless it can be declared.
+**Files:** `tests/test_verify_scoped_always.py`; this file's *Undeclared modules* (the host).
+**Run:** `make test TESTS="test_verify_scoped_always test_verify_scoped_methods test_verify_scoped_methods_run"`.
+
+### T011 — Two of S07's scoped modules skip, which `test_scoped_migrate`'s sweep forbids (converge pass 1 · **HIGH**)
+
+`test_scoped_migrate.TheMigrateExampleCannotPassBySkippingTest.test_sweep_no_scoped_test_skips_on_a_condition_…` fails:
+`test_verify_scoped_methods.py` (R5 e2, `@unittest.skipIf(os.geteuid() == 0, …)`) and `test_verify_scoped_derived.py`
+(e5 unreadable preset, the same `skipIf`) each skip on a condition a CI clone always or never meets (a root container
+always meets it). The suite is red.
+**RED** — already seen: `make test TESTS="test_scoped_migrate"`.
+**GREEN** — make each case root-proof and drop the `skipIf`: an unreadable source that no uid can read, such as a
+directory in the file's place (`read()` raises `IsADirectoryError`, an `OSError`, as root too — e5 then holds
+`inputs: null`); for R5 e2 the same, with the asserted line taken from what the run then prints (whatever the words, the
+run must be the full gate or run `check-agents` naming `.specify/drive.json`, never skip it). Keep the AC-S07-7 claim.
+**Files:** `tests/test_verify_scoped_methods.py`, `tests/test_verify_scoped_derived.py`.
+**Run:** `make test TESTS="test_scoped_migrate test_verify_scoped_methods test_verify_scoped_derived"`.
+
+### T012 — The audit holds only the branches a starter with Claude takes (converge pass 1 · MEDIUM)
+
+`test_verify_scoped_held` (AC-S07-8) audits every starter shape with Claude installed and one manifest. No shape elects
+an extension, installs a harness with a hooks projection or a `copy` context, or has a preset, so the branches that read
+for those — `check-extensions`' per-extension `ready()`/`installed_block` (project.json, `{web}` directories,
+`AGENTS.md`), `check-agents`' `copy_context_blocks` and `hook_file` (`contextFile`, `hooks.projection.where`),
+`check-speckit`'s `preset_findings` (`.registry`, `preset.yml`, declared files) — are held by reading the code, not by the
+audit. Converge read each by hand and found them under declared inputs, except `.registry` names (fixed in `949f299`).
+**RED** — a shape added to the audit with `--extension ux-gates` on a web starter, `cursor` (hooks projection) and a
+`copy`-mode harness installed beside Claude, and one preset with `.registry`; with `.specify/presets/` dropped from the
+row the audit fails naming `.specify/presets/.registry` (teeth).
+**GREEN** — the audit passes over that shape; any path it raises widens a row or gets a reasoned exemption.
+**Files:** `tests/test_verify_scoped_held.py` (or a new `tests/test_verify_scoped_held_more.py` if it nears 350).
+**Run:** `make test TESTS="test_verify_scoped_held"` (and the new module).
+
+### T013 — A declared input that is a symbolic link reads where no input says (converge pass 1 · LOW)
+
+S06's link rule (`reach.py`) holds deployables only. A table input that is a link — `.specify/memory/constitution.md`
+-> `specs/constitution.md`, say — makes the check read its target; when the target is claimed by another check
+(`specs/` is), a change there skips the reader. `check-ux-gates.styles_of` also resolves a linked stylesheet to its
+target, so retargeting the link is not seen. Not S07's alone (every S06 row has it), so not fixed here; a target that
+nothing claims is already the full gate (`choose.unknown`).
+**RED** — in a generated project on `slice/S1` with a baseline, the constitution replaced by a link into `specs/`, the
+target edited: today `check-constitution` is skipped. **GREEN** — the record treats a declared file that is a link as no
+recorded inputs for the checks declaring it (or adds the target), as `reach.link_reach` does for deployables.
+**Files:** `assets/toolkit/scripts/verify_scoped/record.py` or `methods.py`, a new test module. Owner: S06's follow-up
+or the Parking Lot, by the host's word.
+
 ### Undeclared modules (AC-S07-15; carried onto S43's AC-S43-7 list at the merge)
 
 | Module | The selector's reason |
@@ -291,3 +347,56 @@ Phase 1 Implementation (T001–T009; order T007, T009, then T008, from D188); Ph
 No screen in this slice.
 
 ## Convergence
+
+### Pass 1 (cruise iteration 27, `drive-converge`) — **not converged**: T010 and T011 (HIGH) are open
+
+Judged: `f5435c2..HEAD` against AC-S07-1..15, D170–D173, D188, S06's D114–D117/D133/D140, ADR 0004, the constitution.
+Two fixes made here (RED first, each committed by path): `8998c78`, `949f299`.
+
+**Domain (the rules).** The four rows (`table.py:68-74`) were read against every path the four scripts read under
+`--check`: `agents/project.py` (`selected_integrations`, `sync_context`, `copy_skills`, `hook_file`, `unprojected`;
+`project_capabilities` is a report, never a failure), `models.py`/`drive.py`/`cruise.py --check`,
+`extensions/project.py` + `guidance.py` + each `init.py`'s `ready()` (`project.json` and `{web}`; `{web}` = kind `web`,
+which is every deployable with the `frontend` capability the factory writes), `check-speckit.py` and
+`check-constitution.py` (`--requirements`' `present_practice` is not the gate). All covered, but one: **(MEDIUM, fixed
+`949f299`)** `check-speckit` reads `<name>/preset.yml` and its declared files for every name `.specify/presets/.registry`
+lists, and a name climbing out (`../../specs/p`) made it read paths outside its inputs — a change there, claimed by
+`check-decisions`, skipped it (a false green, D172 limit i); `methods.py` now fails closed on such a name, both trees.
+`methods.installed` is wider than `selected_integrations` on odd shapes, never narrower. `.slipwai/propagated`'s only
+reader on S26's branch is `check-decisions` (via `reversibility.py`, membership only). Limit (ii)'s scan and
+`BASE_MODULES` exemption checked: `check-slice-scope` reads `registry.json` only in `harness_paths`, which the default does
+not call. **(LOW, T013)** a declared input that is a link reads its target: S06's class, not fixed here.
+**Use case.** `since.reason` asks the borders in data-model order (CI marker first, `since.py:59`; detached; unborn;
+trunk `:69`; not `slice/<id>`; no base; trunk untellable; `not_vouched`; not top; span failure; any exception) and each
+prints one line; `all` beats everything, an explicit ref keeps its meaning, blanks are unset. The default's changed set is
+`changed_files` ∪ raw-differs among previews/sheets/every-preview files ∪ the unpushed span: the scoped gate's own base,
+so the gate and the check cannot disagree on which previews a change reaches. Scoped selection uses changes since the
+base (not the baseline), so a moving base cannot leave a preview unrendered that a fresh run would render. Trunk/CI/merge
+root untouched (SC-007, constitution X): every border renders all. **(LOW, no task)** a stylesheet git ignores is invisible
+to the default as it was to a ref: D171 rule 6's sentence is the documented answer.
+**Adapter.** **(MEDIUM, fixed `8998c78`)** the slice's `-z` made git give a name that is not UTF-8 unquoted, and
+`check-ux-gates.git()` decoded strictly: `UX_GATES_SINCE=<ref>` crashed with `UnicodeDecodeError` on any branch carrying
+such a name (proved by a probe and by the new RED test; before the slice it did not crash). Now `surrogateescape`, as
+`check-slice-scope` decodes. The default path already decoded that way (held by the same test). `methods.texts` lists the
+base without `-z`; harmless, because every listed file lies under a declared directory, so a quoted name that fails the
+pattern is still a change that runs the check. Base reads go through `scope.git_show`/`ls-tree`; unreadable sources fail
+closed; paths are the top's and the default refuses a project that is not the top.
+**Published contract.** Record `schema: 1`, no new key, the four with `variables: []`, `claims: true` (ADR 0004 shape):
+held by `test_verify_scoped_record`/`-methods`. Generated `Makefile`/`rules.json` byte-identical (`test_scoped_targets`
+digests unchanged, AC-S07-13; constitution I). Printed lines match data-model.md. Page, `docs/verification.md`, docstring
+carry the default, `all`, `refs/heads/all` and D171's sentence (`test_scoped_page`). Fragment `changelog.d/scoped-checks.md`
+line 1 `MINOR`, standalone **Catch-up.**; `VERSION` untouched (constitution VIII; `test_changelog` green). **(HIGH,
+T010, T011)** the factory suite is red on this branch: S06's `test_verify_scoped_always` still expects the four as *no
+recorded inputs*, and `test_scoped_migrate`'s sweep rejects the `skipIf` in `test_verify_scoped_methods` and
+`test_verify_scoped_derived`. Neither is a false green; both stop the gate (constitution XIV: the same bar).
+**(MEDIUM, T012)** the audit behind AC-S07-8 covers only starter shapes with Claude. AC-S07-15: every module S07 adds or
+edits is on *Undeclared modules* with the selector's reason (the two edited here already were).
+
+**Tests run** (`make test TESTS=…`): the nine S07 modules — 109 OK; `test_scoped_targets test_toolkit test_utf8_io
+test_changelog test_assets_bytecode test_verify_stamp_scan test_ux_gates_scale test_verify_scoped_choose -borders -ignored
+-baseline -always test_gates test_verify_stamp_page test_docs_index` — 108, 1 F + 1 E (`-always`, T010); neighbours
+(`test_verify_scoped_always -compare -run -words -stamp -text -variables -base -changed test_parallel_gate_first -reads
+test_verify_stamp_inputs -pinned test_design_extensions test_benchmark test_scoped_adopted test_scoped_migrate`) — 173,
+2 F + 1 E (T010, T011); after the fixes `test_ux_gates_default test_ux_gates_scale` 18 OK, TK + `test_verify_stamp_scan`
+32 OK, `test_verify_scoped_derived -methods -record -table_held -held` + TK 87 OK. A `make test SINCE=adopt-method` was
+started and stopped at once: the selector chose the full suite (`methods.py` is new), which this run may not take.
