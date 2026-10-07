@@ -37,7 +37,7 @@ class TestARunNamesWhatItLeftOut(ReportCase):
         base = f"compared with `main` at {self.trunk_commit()} (the trunk)"
         summary = f"selected 3 of 5 modules against `main` at {self.trunk_commit()}"
         self.assertEqual(lines[:6], [base, "skipped test_b: reads no go configuration",
-                                     "skipped test_d: reads no go configuration",
+                                     "skipped test_d: reads no go configuration and none of the changed files",
                                      f"narrowed test_a: backend go only {LEFT_OUT}",
                                      f"narrowed test_matrix: backend go only {LEFT_OUT}", summary])
         self.assertEqual(lines[-1], summary)
@@ -79,7 +79,8 @@ class TestADryRun(ReportCase):
         self.assertEqual(self.ran(), [])
         base = f"compared with `main` at {self.trunk_commit()} (the trunk)"
         self.assertEqual(done.stdout.splitlines(), [
-            base, "skipped test_b: reads no go configuration", "skipped test_d: reads no go configuration",
+            base, "skipped test_b: reads no go configuration",
+            "skipped test_d: reads no go configuration and none of the changed files",
             f"narrowed test_a: backend go only {LEFT_OUT}", f"narrowed test_matrix: backend go only {LEFT_OUT}",
             f"selected 3 of 5 modules against `main` at {self.trunk_commit()}"])
 
