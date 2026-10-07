@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-from test_ux_gates_default import EVERY, STYLES, GatesCase, commit_all, git
+from test_ux_gates_default import EVERY, STYLES, GatesCase, commit_all, git, scoped_line
 from test_verify_scoped_held import WRAPPER, findings_of
 from test_verify_scoped_record import loaded
 
@@ -102,6 +102,37 @@ class BorderTest(BordersCase):
         said, previews, _ = self.gate(VERIFY_FORCE="1", MAKEFLAGS="n")
         self.assertEqual(previews, {"linked.html"}, said)
         self.assertIn("previews scoped to what changed since", said)
+
+
+class MakeTargetTest(BordersCase):
+    """T018 (D192, AC-S07-9): `make check-ux-gates`, the generated Makefile's target, scopes on a slice branch too."""
+
+    def make_target(self, **env: str) -> str:
+        installed = self.repo / "node_modules/.package-lock.json"  # newer than the manifests: no `npm ci` to run
+        installed.parent.mkdir(exist_ok=True)
+        installed.touch()
+        done = subprocess.run(["make", "--no-print-directory", "check-ux-gates"], cwd=self.repo, text=True,
+                              capture_output=True, env=self.environment(**env), timeout=300)
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        return done.stdout
+
+    def test_make_check_ux_gates_on_a_slice_branch_prints_the_default_scope_line(self) -> None:
+        self.branch()
+        short = git(self.repo, "rev-parse", "--short", "main").strip()
+        self.edit(f"{STYLES}/linked.css")
+        said = self.make_target()
+        self.assertIn(scoped_line("slice/S1", short), said.splitlines(), said)
+        self.assertEqual(sorted(self.opened()), ["linked.html"], said)
+
+    def test_make_check_ux_gates_on_the_trunk_renders_every_preview(self) -> None:
+        said = self.make_target()
+        self.assertNotIn("previews scoped", said)
+        self.assertEqual(self.opened(), EVERY, said)
+
+    def opened(self) -> set[str]:
+        calls = self.log.read_text(encoding="utf-8").splitlines() if self.log.exists() else []
+        return {line.split("apps/web/screens/", 1)[1].split(" --dark")[0] for line in calls
+                if "apps/web/screens/" in line and ".html" in line}
 
 
 class OpensTest(BordersCase):

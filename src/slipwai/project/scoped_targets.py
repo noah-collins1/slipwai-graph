@@ -79,7 +79,8 @@ queue's message. `make -j verify-scoped` runs the chosen checks at the same time
 Four method-file checks are scoped by what each declares it reads, and run with no recorded inputs where a manifest or
 integration file cannot be read. Where the UX gates are adopted, `check-ux-gates` renders only the previews a slice
 branch changed since its base, outside CI; every preview renders on the trunk, in CI, and wherever the base cannot be
-found, and one line says which. `UX_GATES_SINCE=all` renders every preview anywhere, and a ref named `all` is passed as
+found, and one line says which. `make check-<name>` always runs, and the scoped gate never skips it, so
+`make check-ux-gates` on a `slice/<id>` branch outside CI scopes previews by default. `UX_GATES_SINCE=all` renders every preview anywhere, and a ref named `all` is passed as
 `refs/heads/all`. To be safe, set `UX_GATES_SINCE=all` when a change the scope cannot follow, a script or asset a preview loads, a
 browser upgrade, could alter a preview.
 

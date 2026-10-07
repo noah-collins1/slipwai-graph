@@ -127,6 +127,20 @@ class TheStampedPageSaysWhatCheckUxGatesRendersTest(FactoryTestCase):
         self.assertIn("a ref named `all` is passed as `refs/heads/all`", self.page)
 
 
+class TheStampedPageSaysAMakeCheckTargetAlwaysRunsTest(FactoryTestCase):
+    """T018 (D192, AC-S07-9): the scoped gate never skips a `make check-<name>`, and `check-ux-gates` scopes there."""
+
+    def setUp(self) -> None:
+        self.page = page(Layout("."))
+
+    def test_make_check_name_always_runs_and_the_scoped_gate_never_skips_it(self) -> None:
+        self.assertIn("`make check-<name>` always runs, and the scoped gate never skips it", self.page)
+
+    def test_make_check_ux_gates_scopes_its_previews_on_a_slice_branch_outside_ci(self) -> None:
+        self.assertIn("so `make check-ux-gates` on a `slice/<id>` branch outside CI scopes previews by default",
+                      self.page)
+
+
 class AnUnstampedPageHasTheOneSentenceAndNothingOfAStampTest(FactoryTestCase):
     def check(self, text: str, command: str) -> None:
         self.assertIn(f"`{command} verify-scoped` is the full gate: {NO_RECORD}", text)
