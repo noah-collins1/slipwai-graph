@@ -20,6 +20,11 @@ from render_fixture import (
     write_model,
 )
 
+# Generates the default project through `self.generate` (TypeScript, event-modelling, no frontend).
+TEST_SELECTION = {
+    "configurations": {"backend": ["typescript"], "profile": ["event-modelling"], "frontend": ["none"]},
+}
+
 
 @unittest.skipIf(IS_WINDOWS, WINDOWS_SKIP)
 class OneSessionTest(RenderCase):

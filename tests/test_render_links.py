@@ -13,6 +13,9 @@ from pathlib import Path
 
 from render_fixture import IS_WINDOWS, MODEL_DIR, WINDOWS_SKIP, RenderCase, make_model_within
 
+# Generates nothing itself: the project comes from `RenderCase.project`, whose declaration the join carries.
+TEST_SELECTION: dict[str, object] = {}
+
 NAMES = [f"Do thing {i}" for i in range(1, 4)]
 
 

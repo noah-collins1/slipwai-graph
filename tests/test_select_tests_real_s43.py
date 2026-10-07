@@ -31,8 +31,10 @@ DECLARED: tuple[str, ...] = (  # the test modules this slice declares
     "test_codegraph_memory", "test_health_memory", "test_health_memory_states", "test_codegraph_races",
     "test_health_narrowed", "test_codegraph_narrowed", "test_cruise_runner", "test_cruise_index",
     "test_code_index_health",
+    "test_render_browser", "test_render_current", "test_render_failures", "test_render_files",
+    "test_render_files_report", "test_render_links", "test_render_once", "test_render_pinned",
 )
-HELPERS: tuple[str, ...] = ("gate_rules",)  # the helper files this slice declares
+HELPERS: tuple[str, ...] = ("gate_rules", "render_fixture")  # the helper files this slice declares
 
 
 def pairs(tree: declarations.Tree, names: Iterable[str]) -> set[tuple[str, str]]:

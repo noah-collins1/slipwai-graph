@@ -57,11 +57,12 @@ class TestTheHelpersSayWhatTheyRead(unittest.TestCase):
         # declaration of its own would widen every importer to every configuration
         self.assertEqual(self.helpers["support"], {**NOTHING, "reads": ["slipwai"]})
 
-    def test_the_render_fixture_runs_the_launcher_so_it_declares_every_configuration(self) -> None:
-        # it generates one project through `./slipwai`; the selector reads a launcher as every option of every axis
-        # (D164 rule 3), so a narrower claim would void the declaration
+    def test_the_render_fixture_names_the_one_project_it_generates_and_reads_the_launcher_through_support(self) -> None:
+        # it generates the default project through `./slipwai` with arguments the selector can read, so the claim is
+        # those three axes; `support` carries the launcher read, which the join keeps
         self.assertEqual(self.helpers["render_fixture"],
-                         {"generates": True, "every": True, "axes": {}, "reads": ["slipwai"]})
+                         {"generates": True, "every": False, "axes": {"backend": ["typescript"],
+                          "profile": ["event-modelling"], "frontend": ["none"]}, "reads": []})
 
     def test_the_stamp_fixture_stays_undeclared_because_it_loads_a_script_with_importlib(self) -> None:
         # it runs the launcher too, and `importlib` loads a generated project's script: a reach D164 rule 4 holds to

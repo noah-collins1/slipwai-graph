@@ -22,6 +22,11 @@ from render_fixture import (
 )
 from support import FactoryTestCase
 
+# Generates the default project through `self.generate` (TypeScript, event-modelling, no frontend).
+TEST_SELECTION = {
+    "configurations": {"backend": ["typescript"], "profile": ["event-modelling"], "frontend": ["none"]},
+}
+
 HASH = re.compile(r"em-source-sha256: ([0-9a-f]{64})")
 
 

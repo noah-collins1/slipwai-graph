@@ -25,6 +25,9 @@ from render_fixture import (
     render_env,
 )
 
+# Generates nothing itself: the project comes from `RenderCase.project`, whose declaration the join carries.
+TEST_SELECTION: dict[str, object] = {}
+
 ROOT_LINE = "render: running as root, and Chromium will not start without --no-sandbox."
 NAMES = [f"Do thing {i}" for i in range(1, 5)]
 

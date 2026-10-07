@@ -27,6 +27,9 @@ from render_fixture import (
     wrote,
 )
 
+# Generates nothing itself: the project comes from `RenderCase.project`, whose declaration the join carries.
+TEST_SELECTION: dict[str, object] = {}
+
 OPEN = "Open docs/event-model/model.html to browse it."
 FIRST = f"model: 16 slices, 25 of 25 diagrams drawn, 0 unchanged. {OPEN}"
 EDIT = f"model: 16 slices, 3 of 25 diagrams drawn, 22 unchanged. {OPEN}"

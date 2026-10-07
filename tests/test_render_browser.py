@@ -21,6 +21,9 @@ from render_fixture import (
     RenderCase,
 )
 
+# Generates nothing itself: the project comes from `RenderCase.project`, whose declaration the join carries.
+TEST_SELECTION: dict[str, object] = {}
+
 NAMES = [f"Do thing {i}" for i in range(1, 6)]
 
 NO_SANDBOX = (

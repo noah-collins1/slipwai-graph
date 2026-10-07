@@ -23,6 +23,9 @@ from render_fixture import (
     sha256_of,
 )
 
+# Generates nothing itself: the project comes from `RenderCase.project`, whose declaration the join carries.
+TEST_SELECTION: dict[str, object] = {}
+
 SOURCE_LINE = re.compile(r"<!-- em-source-sha256: [0-9a-f]{64} -->")
 RENDERER_LINE = re.compile(r"<!-- em-renderer-sha256: ([0-9a-f]{64}) -->")
 ZEROS = "0" * 64

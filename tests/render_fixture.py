@@ -21,11 +21,10 @@ from pathlib import Path
 
 from support import FactoryTestCase
 
-# `RenderCase.project` generates the default project (event-modelling, TypeScript, no frontend) through the launcher,
-# which the selector reads as every configuration (D164 rule 3).
+# `RenderCase.project` generates the default project (event-modelling, TypeScript, no frontend) through
+# `FactoryTestCase.generate`; `support`, imported above, declares the launcher it runs, and the join carries that read.
 TEST_SELECTION = {
-    "configurations": "every",
-    "reads": ["slipwai"],
+    "configurations": {"backend": ["typescript"], "profile": ["event-modelling"], "frontend": ["none"]},
 }
 
 LOG_VARIABLE = "STAND_IN_LOG"
