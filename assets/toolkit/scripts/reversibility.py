@@ -1,10 +1,9 @@
 """How hard a decision would be to take back: the rules, and the verb that scores declared facts (S26, FR-051).
 
-`python3 scripts/reversibility.py --scope <value> [--written-to <value>] [--raise guarded|hard] <key>=<value>...`
-prints the whole `- **Reversibility:** ...` line a decision entry carries, and on stderr one line naming the rules
-that fired. The facts are a closed list; the tier is the highest any rule gives; a missing or unaccepted fact scores
-`hard`. `RULES` keeps every version of the table this file has shipped: a line names the version that scored it, and
-a shipped version is only ever added to, never edited (a new version is a decision taken at the hard tier).
+The verb prints the whole `- **Reversibility:** ...` line a decision entry carries, and on stderr the rules that
+fired; `--help` lists the closed list of facts, their values and the rules. A missing or unaccepted fact scores `hard`.
+`RULES` keeps every version of the table this file has shipped: a line names the version that scored it, and a shipped
+version is only ever added to, never edited (a new version is a decision taken at the hard tier).
 The gate (`check-decisions.py`) loads this file by path, only for a log that carries a `Reversibility:` line, and
 `check_log()` holds each line to the grammar and the tier its named version derives, and `Proposed rule:` citations.
 The scope is read by `scope_tokens`, a copy of the gate's own reading, so the verb works with nothing beside it; a
@@ -93,10 +92,22 @@ def rules_v1(facts: dict[str, str], bound: str) -> tuple[str, list[str]]:
     return tier, [name for name, _ in fired]
 
 
-# Every version this file has shipped. Never edit one; add the next, with its fact list below.
+# Every version this file has shipped. Never edit one; add the next, with its fact list and its `--help` rules below.
 RULES: dict[int, Callable[[dict[str, str], str], tuple[str, list[str]]]] = {1: rules_v1}
 FACT_LISTS: dict[int, dict[str, tuple[str, ...]]] = {1: FACTS}
 CURRENT = max(RULES)
+RULES_HELP = {1: (f"  hard: {', '.join(f'H{n} {key}=yes' for n, key in enumerate(HARD_FACTS, 1))}; R1 rollback_complexity="
+                  "days|needs-migration; D2 scope is global or unreadable; U1 a fact missing or not accepted\n  guarded: "
+                  "R2 rollback_complexity=hours; F1 behind_flag=no; F2 flag_default=yes; D1 scope names several slices")}
+
+
+def help_text() -> str:
+    """`--help`: the usage, each fact of the current rules with the values it accepts, and its rules by id."""
+    facts = "".join(f"\n  {key} {'|'.join(values)}" for key, values in FACT_LISTS[CURRENT].items())
+    return (f"{USAGE}\n\nThe facts of rules {CURRENT}, each <key>=<value>, with the values each accepts:{facts}\n"
+            "migrate_file=no is read against the committed list: yes where a --written-to path is on it, no-list where "
+            f"the project has none.\n\nThe rules of rules {CURRENT}; the tier is the highest that fires, else easy:\n"
+            f"{RULES_HELP[CURRENT]}")
 
 
 def steps(tier: str, raise_to: str | None) -> list[str]:
@@ -338,7 +349,7 @@ def main() -> int:
         stream.reconfigure(encoding="utf-8", errors="backslashreplace")  # the line carries `→` and `·`; a pipe may not
     arguments = sys.argv[1:]
     if arguments == ["--help"]:
-        print(USAGE)
+        print(help_text())
         return 0
     try:
         options, facts = parse_arguments(arguments)
