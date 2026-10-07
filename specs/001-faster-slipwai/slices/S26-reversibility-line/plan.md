@@ -158,3 +158,17 @@ The host answered the four on `adopt-method` at `bfd3ff5`; the plan follows them
   amended; R7 e4 now accepts.
 - **Q4 — dependants to a tier: D184, as taken**, together with `behind_flag` `yes|no|no-code` and D174 rule 4 read
   beside D176 (research R-2a, R-2b). AC-S26-17.
+
+## Open question raised in implementation (for the host to number)
+
+**Q5 — AC-S26-16 says the project's owner brief "keeps the old entry shape until edited by hand"; the tree says
+otherwise.** T009's migration test showed `slipwai migrate` changing `.specify/product-owner.md` in a project that
+never edited it. Migrate replays the factory and makes a three-way merge (`src/slipwai/migrate.py`, `replay.py`), so
+an unedited brief takes the new entry shape. An edited one keeps its edits and merges the rest, as
+`tests/test_cruise_scope_writers.py` e68 holds. The premise came from the template's sentence "`slipwai migrate`
+never rewrites it" (`decisions.py`) and *gaps* G7. **Taken (not a guess; it is what the tree does, and S02's
+precedent in `changelog.d/runner-bookkeeping.md`)**: the catch-up note says `migrate` merges the new shape into the
+owner brief, a project's own edits are kept, and where the merge leaves the entry example without the line it is
+added by hand. `commands/cruise.md` is the authority. R10 e1 asserts that an edited brief keeps its edits.
+AC-S26-16's clause and the template's "never rewrites it" sentence are the host's to amend; the latter predates
+this slice and is outside it.
