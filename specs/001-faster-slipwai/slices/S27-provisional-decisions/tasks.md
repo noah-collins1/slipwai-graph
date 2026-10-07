@@ -56,7 +56,7 @@ Constraints that hold for every task's GREEN, stated once:
 
 ## Phase 1: Pin (before any change)
 
-- [ ] T001 [US8] **Pin — what already holds** (plan *Pin*; D65). Run and report, green and unchanged, before any edit:
+- [x] T001 [US8] **Pin — what already holds** (plan *Pin*; D65). Run and report, green and unchanged, before any edit:
   `make test SINCE=adopt-method TESTS="<every test_verify_scoped_* module> test_verify_stamp_scan test_toolkit
   test_utf8_io test_changelog test_assets_bytecode <every test_decisions_*, test_reversibility_* and test_cruise*
   module>"` (take the names from `ls tests/`; drop none silently). Note the line counts of `src/slipwai/project/cruise.py`
