@@ -12,6 +12,7 @@ caller that holds the gate's function passes it to `score()` instead. Nothing he
 """
 from __future__ import annotations
 
+import fnmatch
 import json
 import posixpath
 import re
@@ -116,12 +117,11 @@ def project_root(script: Path, depth: int) -> Path:
 
 
 def written_paths(value: str) -> list[str]:
-    """The paths a `Written to` value names, as `check-decisions.py`'s `paths_of` reads them: backticked, else
-    comma-separated."""
-    quoted = re.findall(r"`([^`]+)`", value)
-    if quoted:
-        return quoted
-    return [part.strip() for part in value.split(",") if part.strip()]
+    """Every path a `Written to` value could name, for the list (which only raises): each backticked one and the bare
+    ones beside them, separated by `,`, `;` or ` and ` — every path `check-decisions.py`'s `paths_of` reads among them."""
+    rest = re.sub(r"`[^`]*`", ",", value)
+    parts = [*re.findall(r"`([^`]+)`", value), *value.split(","), *re.split(r"[,;]|\s+and\s+", rest)]
+    return list(dict.fromkeys(part.strip() for part in parts if part.strip()))
 
 
 def inside(path: str, root: Path | None) -> str | None:
@@ -136,13 +136,13 @@ def inside(path: str, root: Path | None) -> str | None:
 
 def on_list(written: Iterable[str], listed: set[str], root: Path | None = None) -> bool:
     """Whether any `Written to` path is on the committed list, read as a path in the project (see `inside`), in any
-    case (the lookup only ever raises a tier); a written directory matches a listed file under it and a listed
-    directory a written file under it. The verb and the gate share it."""
+    case (the lookup only ever raises a tier); a written directory or glob matches a listed file under or matching it,
+    and a listed directory a written file under it. The verb and the gate share it."""
     files = {entry.casefold() for entry in filter(None, (inside(entry, None) for entry in listed))}
     for path in filter(None, (inside(path, root) for path in written if path.strip())):
         path = path.casefold()
-        if path == "." or any(path == entry or entry.startswith(path + "/") or path.startswith(entry + "/")
-                              for entry in files):
+        if path == "." or any(path == entry or fnmatch.fnmatchcase(entry, path) or entry.startswith(path + "/")
+                              or path.startswith(entry + "/") for entry in files):
             return True
     return False
 

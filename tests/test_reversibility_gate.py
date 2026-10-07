@@ -118,8 +118,8 @@ class GateHoldsTheLineTest(unittest.TestCase):
         for value in ("S1", "S1, S2", "`S26-reversibility-line`", "global", "global, S1", "", " ", "S01-S03",
                       "oauth2", "S5-oauth2", "s1", "S1,", "S1 S2", "S05-x.S02-y", "S1.2", "ÿ1", "S١"):
             self.assertEqual(held.scope_tokens(value), verb.scope_tokens(value), value)
-        for value in ("`a`, `b`", "a, b", "", "`a` and b", "a,,b", " a ", "``"):
-            self.assertEqual(held.paths_of(value), verb.written_paths(value), value)
+        for value in ("`a`, `b`", "a, b", "", "`a` and b", "a,,b", " a ", "``"):  # the list reads more (T021)
+            self.assertLessEqual(set(held.paths_of(value)), set(verb.written_paths(value)), value)
 
     def test_a_log_with_a_line_and_no_sibling_module_is_noted_not_refused(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
