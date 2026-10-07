@@ -162,6 +162,24 @@ def revert_findings(where: str, number: int, fields: Mapping[str, str], twice: s
     return found
 
 
+def reversibility_findings(where: str, fields: Mapping[str, str]) -> list[str]:
+    """What FR-033 asks of a provisional entry's `Reversibility:` line: it has one, it does not end at `hard`, and none
+    of the three facts is `yes` (one finding per fact). A line `reversibility.py` cannot read is its finding."""
+    if "Reversibility" not in fields:
+        return [f"{where} `Reversibility` is missing; a provisional entry is scored, and no score is hard"]
+    try:
+        tiers, _, facts = reversibility_module().parse_line(fields["Reversibility"])
+    except ValueError:
+        return []
+    except OSError:
+        return [f"{where} `Reversibility` cannot be held: reversibility.py is not beside this script"]
+    found = []
+    if tiers[-1] == "hard":
+        found.append(f"{where} `Reversibility` ends at hard; a hard decision is never provisional")
+    return found + [f"{where} `Reversibility` has {fact}=yes; {HELD_WHY[fact]} (FR-033)" for fact in HELD_FACTS
+                    if facts.get(fact) == "yes"]
+
+
 def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
               ) -> list[str]:
     """The findings for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
@@ -180,6 +198,8 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
         if sound and kind == "provisional" and "Revert" not in fields:
             findings.append(f"{where} `Revert` is missing; a provisional entry says `commits carrying Decision: "
                             f"D{number}`")
+        if sound and kind == "provisional":
+            findings += reversibility_findings(where, fields)
     return findings
 
 
