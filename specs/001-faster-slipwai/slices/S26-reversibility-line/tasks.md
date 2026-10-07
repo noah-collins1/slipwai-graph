@@ -131,7 +131,7 @@ R4–R7 write `check-decisions.py` and `reversibility.py`, so they run in order,
   `tests/reversibility_fixture.py`, `tests/test_reversibility_gate.py`, `tests/test_reversibility_versions.py`,
   `tests/test_decisions_gate_differential.py`.
 
-- [ ] T005 [US2] **R7 — a proposed rule cites two entries of the feature** (AC-S26-15 gate half, as amended by D185). `reversibility.py`
+- [x] T005 [US2] **R7 — a proposed rule cites two entries of the feature** (AC-S26-15 gate half, as amended by D185). `reversibility.py`
   `check_log()` reads a `- **Proposed rule:** … (same shape as D<a>, D<b>)` line: at least two distinct ids other than
   its own entry's, each the heading of an entry in the same log (its `Status` is not read — D185); one finding naming the
   entry and `Proposed rule` otherwise; an entry without the line never refused. RED→GREEN: e1 D3 citing D1, D2 standing:
@@ -140,7 +140,7 @@ R4–R7 write `check-decisions.py` and `reversibility.py`, so they run in order,
   has the line: nothing new. Run the toolkit module set.
   Files: `assets/toolkit/scripts/reversibility.py`, `tests/test_reversibility_gate.py`.
 
-- [ ] T006 [US2] **R5 (remainder) — a missing line is a note** (AC-S26-10; D176). `check_log()` and `gate()` print, for
+- [x] T006 [US2] **R5 (remainder) — a missing line is a note** (AC-S26-10; D176). `check_log()` and `gate()` print, for
   each entry without the line that comes after one with it, one `check-decisions: note: <file>:<line>: D<n> has no
   \`Reversibility:\` line after an entry that has one; score it with python3 scripts/reversibility.py`, exit unchanged;
   entries before the first line get none. RED→GREEN: e3 D1 with the line, D2 without: exit 0, one note naming D2 and the
@@ -165,7 +165,7 @@ R4–R7 write `check-decisions.py` and `reversibility.py`, so they run in order,
   Files: `src/slipwai/assets.py`, `src/slipwai/project/propagated.py`, `src/slipwai/scaffold.py`,
   `tests/test_reversibility_writers.py`.
 
-- [ ] T008 [US3] **R8 — the shape and the briefs write it** (AC-S26-12, -14, -15). `src/slipwai/project/cruise_record.py`:
+- [x] T008 [US3] **R8 — the shape and the briefs write it** (AC-S26-12, -14, -15). `src/slipwai/project/cruise_record.py`:
   `DECISION_ENTRY` gains `- **Reversibility:** <tier> · rules <n> · <facts> — from python3 scripts/reversibility.py`
   after `Confidence` and `- **Proposed rule:** …` as an optional line, and `REVERSIBILITY_RULE` (run the verb for every
   entry the session writes; add the feature's entry headings — each `D<n>` with its heading, Stage and Scope — to every
