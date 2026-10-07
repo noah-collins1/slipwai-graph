@@ -41,9 +41,9 @@ ROOT_OWN = ("project.json", "Makefile", "GNUmakefile", "makefile", "scripts", ".
 # A literal that names a path-looking thing a check does not read as an input of the project: the reason is the value.
 NOT_AN_INPUT = {
     ".": "the project's own directory, as a working directory",
-    "init": "a subcommand of a tool a check launches, not a path",
+    "init": "a subcommand of a tool a check launches, not a path", "..": "`reversibility.py`'s `inside`: compared",
+    ".slipwai": "`reversibility.py` joins it to `propagated`, which `check-decisions`' row names whole",
     ".claude/projects": "under the user's home (`Path.home()`), where the benchmark reads session transcripts",
-    "agents": "a key of a benchmark.json stage, not a path",
 }
 
 

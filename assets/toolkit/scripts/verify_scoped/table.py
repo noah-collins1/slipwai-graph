@@ -52,7 +52,10 @@ CHECKS: dict[str, Row] = {
     ),
     "check-model": Row(("docs/event-model/", "{dep}")),  # and every path the model names (`record.py` adds them)
     "check-drawio": Row(("docs/event-model/model.yaml", "docs/event-model/model.drawio"), ("node", "npm")),
-    "check-decisions": Row(("specs/", "docs/event-model/model.yaml")),
+    # `.slipwai/propagated` is the reversibility list `check-decisions` also reads. `scripts/reversibility.py`, which
+    # reads it, is a gate script, so a change to it is already the full gate; `<delivery>/.written` exists only in an
+    # adopted repository, whose scoped gate is always the full gate (D114), so it needs no entry here.
+    "check-decisions": Row(("specs/", "docs/event-model/model.yaml", ".slipwai/propagated")),
     "check-benchmark": Row(
         ("specs/", ".specify/", "docs/event-model/model.yaml", "AGENTS.md", "agents/", "commands/", "skills/"),
         ("git",),

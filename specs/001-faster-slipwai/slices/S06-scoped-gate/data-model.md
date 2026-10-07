@@ -65,7 +65,7 @@ not name has no recorded inputs.
 | `check-ux-gates` | `<web>/`, `.slipwai/extensions.json`, `AGENTS.md`, `package-lock.json`, `.github/workflows/verify.yml` | `git`, `node`, `npm` | `UX_GATES_REQUIRE`, `UX_GATES_SINCE`, `UX_GATES_SHARD`, `SLIPWAI_NO_INSTALL` | yes | — |
 | `check-model` | `docs/event-model/`, `<dep>/` | — | — | yes | — |
 | `check-drawio` | `docs/event-model/model.yaml`, `docs/event-model/model.drawio` | `node`, `npm` | — | yes | — |
-| `check-decisions` | `specs/`, `docs/event-model/model.yaml` | — | — | yes | — |
+| `check-decisions` | `specs/`, `docs/event-model/model.yaml`, `.slipwai/propagated` | — | — | yes | — |
 | `check-benchmark` | `specs/`, `.specify/`, `docs/event-model/model.yaml`, `AGENTS.md`, `agents/`, `commands/`, `skills/` | `git` | — | yes | — |
 | `check-flags` | `apps/`, `packages/`, `<dep>/`, `infra/service/flags.auto.tfvars` | `git` | — | yes | — |
 | `check-deploy-role` | `infra/bootstrap/`, `infra/service/` | — | — | yes | — |
