@@ -76,6 +76,12 @@ checks (`lint`, `typecheck`, `test`, or a unit's name) that run when either comp
 the factory never writes it; it is read as `project.json` stands at the branch's base. Declare one when two components
 agree on something no file of either shows and no contract path covers, such as two services that agree on a
 queue's message. `make -j verify-scoped` runs the chosen checks at the same time, as `make -j verify` does.
+Four method-file checks are scoped by what each declares it reads, and run with no recorded inputs where a manifest or
+integration file cannot be read. Where the UX gates are adopted, `check-ux-gates` renders only the previews a slice
+branch changed since its base, outside CI; every preview renders on the trunk, in CI, and wherever the base cannot be
+found, and one line says which. `UX_GATES_SINCE=all` renders every preview anywhere, and a ref named `all` is passed as
+`refs/heads/all`. To be safe, set `UX_GATES_SINCE=all` when a change the scope cannot follow, a script or asset a preview loads, a
+browser upgrade, could alter a preview.
 
 """
 

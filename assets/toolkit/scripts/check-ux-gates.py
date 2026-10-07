@@ -31,8 +31,13 @@ spread that, and none changes what passing means:
 - `UX_GATES_SINCE=<ref>` renders only the previews whose own file, or a local stylesheet they link or
   `@import`, changed since the merge base with `<ref>` (the working tree counts), and the directory gates
   only for an app with such a preview. Every preview again when this script, the extension, the lockfile
-  or `verify.yml` moved, or when Git cannot answer. A pull request sets it; `main` never does, because
-  `main` deploys and a browser upgrade arrives without a diff. The file gate over `src/` always runs.
+  or `verify.yml` moved, or when Git cannot answer. Unset or empty, the default depends on where it runs:
+  on a `slice/<id>` branch outside CI the base is the scoped gate's own (`verify_scoped/since.py`) and only
+  the previews that changed since it render; on the trunk, in CI, and wherever that base cannot be found,
+  every preview renders, and one line says why. `UX_GATES_SINCE=all` renders every preview anywhere; a ref
+  literally named `all` is passed as `refs/heads/all`. Set `UX_GATES_SINCE=all` when a change the scope
+  cannot follow — a script or asset a preview loads, a browser upgrade — could alter a preview. The file
+  gate over `src/` always runs.
 
 Standard library only, like every gate script here; the kit's scripts are run as subprocesses.
 """

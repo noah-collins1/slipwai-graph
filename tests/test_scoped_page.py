@@ -104,6 +104,29 @@ class TheStampedPageSaysWhatTheScopedGateDoesTest(FactoryTestCase):
         self.assertIn(said, self.page)
 
 
+class TheStampedPageSaysWhatCheckUxGatesRendersTest(FactoryTestCase):
+    """R10 (AC-S07-14, D171 item 6): the default, the override, and when to use it."""
+
+    def setUp(self) -> None:
+        self.page = page(Layout("."))
+
+    def test_it_names_the_override_and_when_to_set_it(self) -> None:
+        said = ("set `UX_GATES_SINCE=all` when a change the scope cannot follow, a script or asset a preview loads, "
+                "a browser upgrade, could alter a preview")
+        self.assertIn(said, self.page)
+
+    def test_it_says_where_previews_are_scoped_and_where_every_one_renders(self) -> None:
+        for said in (
+            "`check-ux-gates` renders only the previews a slice branch changed",
+            "every preview renders on the trunk, in CI, and wherever the base cannot be found",
+            "`UX_GATES_SINCE=all` renders every preview anywhere",
+        ):
+            self.assertIn(said, self.page)
+
+    def test_a_ref_named_all_is_passed_by_its_full_name(self) -> None:
+        self.assertIn("a ref named `all` is passed as `refs/heads/all`", self.page)
+
+
 class AnUnstampedPageHasTheOneSentenceAndNothingOfAStampTest(FactoryTestCase):
     def check(self, text: str, command: str) -> None:
         self.assertIn(f"`{command} verify-scoped` is the full gate: {NO_RECORD}", text)

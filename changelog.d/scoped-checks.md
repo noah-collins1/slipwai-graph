@@ -1,0 +1,5 @@
+MINOR
+
+**On a slice branch, `check-ux-gates` renders only the previews that changed, and the four method-file checks run only when what each declares it reads changed.** The scoped gate now scopes the method-file checks by what they declare, and where a manifest or integration file cannot be read they run with no recorded inputs, so they run rather than guess. `check-ux-gates` scopes from the slice's base on a `slice/<id>` branch outside CI; on the trunk, in CI, and wherever the base cannot be found it renders every preview, and one line says which. `UX_GATES_SINCE=all` renders every preview anywhere. Paths with renames or spaces in them, which the scope used to misread, are read correctly. Set `UX_GATES_SINCE=all` when a change the scope cannot follow, a script or asset a preview loads or a browser upgrade, could alter a preview.
+
+**Catch-up.** A slice branch now renders fewer previews than it did. Set `UX_GATES_SINCE=all` to render them all; a ref literally named `all` is passed as `refs/heads/all`. Nothing else is asked of you.
