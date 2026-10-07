@@ -3850,3 +3850,15 @@
 - **Confidence:** high · **Would reverse if:** S26 spells the tier line differently, which changes one row of that table.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
+
+## D169 — A follow-up slice that declares the heavy test modules, so S38's selector pays off
+- **Stage:** between slices (a person's `told:` message) · **Slice:** — · **When:** 2026-10-07T06:25:00Z · **Iteration:** 26
+- **Scope:** global
+- **Question:** S38's selector is correct and safe, but on demo 2 a change confined to one Go app still selected 336 of 343 modules (about 46 min): only 19 of 373 test modules declare `TEST_SELECTION`, and every undeclared module always runs. Does the split gain a slice that declares them?
+- **Options:** add a follow-up slice after S38 (the owner's word); leave the saving where S38 left it.
+- **Decision:** add `S43-test-declarations` (FR-048's payoff), after S38, to the split by `/story-splitting`. Scope: `TEST_SELECTION` declarations (configurations per axis, and `reads`) on the heavy undeclared modules — the matrix, per-backend, per-frontend, mutation, adopt and refusal suites first, ordered by measured runtime — and on the `tests/` helpers they import, so the join is declared. No change to the selector's rules unless a declaration cannot be expressed; a module whose reach cannot be stated stays undeclared and runs. Quality bar: declarations are checked, not trusted — the existing held/void checks stay green, and a planted-fault case per declared axis shows the faulted module is still selected. Acceptance: on a single-backend change (one Go app file, say) `make test` on the slice branch runs in under 15 minutes against the full suite's ~50, the reduction reported by the S39 benchmark; on a change to shared generation code it still runs everything. Demo budget: S38's recorded full-suite timings are the baseline; the demo runs the full suite at most once, not per case. Fan-out: it touches `tests/` only, so it may take a free seat beside other slices.
+- **Why:** the owner's priority 2 — fewer runs of the same check on the same content — is what S38 was for, and the saving it shows is small only because the suite does not yet say what it reads.
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person withdraws it.
+- **Written to:** `specs/001-faster-slipwai/decisions.md` (the split's row is the next iteration's first stage)
+- **Status:** standing
