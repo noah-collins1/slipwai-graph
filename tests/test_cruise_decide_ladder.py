@@ -264,5 +264,50 @@ class DecideModeTest(unittest.TestCase):
         self.assertTrue(result.stdout.startswith("## D2 — decide moved from provisional to recommended-first\n"))
 
 
+    def second_feature(self, project: Path, recorded: str | None, when: str = "2026-10-07T09:00:00Z") -> Path:
+        log = project / "specs/b/decisions.md"
+        log.parent.mkdir(parents=True)
+        if recorded is not None:
+            log.write_text(ENTRY.format(n=1, a="unrecorded", b=recorded).replace("2026-10-07T09:00:00Z", when),
+                           encoding="utf-8")
+        return log
+
+    def test_a_first_reading_two_rungs_up_with_no_mode_entry_anywhere_parks(self) -> None:
+        for decide, step in (("provisional-advisory", "provisional-shadow"), ("provisional", "provisional-shadow")):
+            project = mode_project(None, decide)
+            result = cruise(project, "mode")
+            self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
+            self.assertIn(f"skips {step}", result.stdout)
+
+    def test_a_first_reading_at_shadow_or_below_is_recorded_as_found(self) -> None:
+        for decide in ("recommended-first", "provisional-shadow"):
+            result = cruise(mode_project(None, decide), "mode")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(result.stdout.startswith(f"## D1 — decide moved from unrecorded to {decide}\n"))
+            self.assertIn("- **Decided by:** human", result.stdout)
+
+    def test_another_features_mode_entry_is_the_baseline_and_the_equal_line_names_its_log(self) -> None:
+        project = mode_project("provisional", "provisional")
+        self.second_feature(project, None)
+        result = cruise(project, "mode", "--feature", "b")
+        self.assertEqual((result.returncode, result.stdout),
+                         (0, "cruise: decide is provisional, as D1 in specs/f/decisions.md recorded\n"))
+
+    def test_another_features_mode_entry_makes_a_step_back_an_entry_from_that_mode(self) -> None:
+        project = mode_project("provisional", "recommended-first")
+        self.second_feature(project, None)
+        result = cruise(project, "mode", "--feature", "b")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.startswith("## D1 — decide moved from provisional to recommended-first\n"))
+
+    def test_the_latest_when_across_logs_wins_not_the_log_order(self) -> None:
+        project = mode_project("provisional-shadow", "provisional-advisory")
+        self.second_feature(project, "recommended-first", when="2026-10-06T09:00:00Z")
+        result = cruise(project, "mode", "--feature", "b")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.startswith(
+            "## D2 — decide moved from provisional-shadow to provisional-advisory\n"))
+
+
 if __name__ == "__main__":
     unittest.main()

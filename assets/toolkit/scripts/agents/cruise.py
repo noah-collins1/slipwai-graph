@@ -292,6 +292,7 @@ def climb(current: Any, assignment: str) -> None:
 
 
 MODE_HEADING = re.compile(r"^## D(\d+) — decide moved from (\S+) to (\S+)\s*$", re.MULTILINE)
+WHEN = re.compile(r"\*\*When:\*\* (\S+)")
 DECISION_HEADING = re.compile(r"^## D(\d+) — ", re.MULTILINE)
 MODE_ENTRY = """## D{number} — decide moved from {before} to {after}
 - **Stage:** iteration start · **Slice:** none · **When:** {when} · **Iteration:** {iteration}
@@ -343,13 +344,24 @@ def mode(arguments: list[str]) -> None:
         raise RuntimeError("usage: cruise.py mode [--feature <name>]")
     text = logs[0].read_text(encoding="utf-8") if logs and logs[0].is_file() else ""
     value = load()["decide"]
-    moves = MODE_HEADING.findall(text)
-    recorded = moves[-1][2] if moves else None
-    if moves and recorded == value:
-        print(f"cruise: decide is {value}, as D{moves[-1][0]} recorded")
+    # D202: the baseline is the latest mode entry in any feature's log (ties: later sorted path, then file order).
+    last = None
+    for log in sorted((ROOT / "specs").glob("*/decisions.md")):
+        content = log.read_text(encoding="utf-8")
+        starts = [m.start() for m in DECISION_HEADING.finditer(content)] + [len(content)]
+        for begin, end in zip(starts, starts[1:]):
+            block = content[begin:end]
+            heading, stamp = MODE_HEADING.match(block), WHEN.search(block)
+            if heading and (last is None or (stamp.group(1) if stamp else "") >= last[0]):
+                last = (stamp.group(1) if stamp else "", heading.group(1), heading.group(3), log)
+    recorded = last[2] if last else None
+    if last and recorded == value:
+        own = last[3] == logs[0]
+        print(f"cruise: decide is {value}, as D{last[1]}" + ("" if own else f" in {relative(last[3])}") + " recorded")
         return
-    if recorded in RUNGS and RUNGS[value] > RUNGS[recorded] + 1:
-        step = next(name for name, rung in RUNGS.items() if rung == RUNGS[recorded] + 1)
+    base = RUNGS.get(recorded or "", 0)  # no mode entry anywhere reads as the bottom rung
+    if RUNGS[value] > base + 1:
+        step = next(name for name, rung in RUNGS.items() if rung == base + 1)
         print(f"cruise: parked: decide={value} skips {step}; set it through /cruise-settings")
         raise SystemExit(PARKED_EXIT)
     relative_config = relative(CONFIG)
