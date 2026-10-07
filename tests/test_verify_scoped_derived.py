@@ -29,6 +29,7 @@ DRY: dict[str, str | None] = {"STANDIN_DRY": "1"}
 COMMON = ".specify/scripts/bash/common.sh"
 MANIFEST = ".specify/integrations/claude.manifest.json"
 PRESET = ".specify/presets/x/preset.yml"
+STATE = ".specify/integration.json"
 
 
 def manifest(*keys: str) -> str:
@@ -46,12 +47,19 @@ def commit_on_main(repo: Path, files: dict[str, str]) -> None:
     git(repo, "checkout", "-q", "-B", "slice/S1")
 
 
+def state(*installed: str, default: str | None = None) -> str:
+    chosen: dict[str, Any] = {"installed_integrations": list(installed)}
+    if default:
+        chosen["default_integration"] = default
+    return json.dumps(chosen)
+
+
 def entry(project: Path, name: str = "check-speckit") -> dict[str, Any]:
     found: dict[str, Any] = loaded(project)["checks"][name]
     return found
 
 
-class ManifestPathsTest(RecordCase):
+class DerivedCase(RecordCase):
     SHAPE = "standard-python"
 
     def project_with(self, files: dict[str, str]) -> Path:
@@ -62,6 +70,8 @@ class ManifestPathsTest(RecordCase):
     def assert_no_inputs(self, check: dict[str, Any]) -> None:
         self.assertEqual((check["inputs"], check["claims"], check["always"]), (None, False, NO_INPUTS), check)
 
+
+class ManifestPathsTest(DerivedCase):
     def test_e1_a_manifests_files_are_inputs_of_check_speckit(self) -> None:
         check = entry(self.project_with({MANIFEST: manifest(COMMON, ".specify/templates/")}))
         self.assertIn(COMMON, check["inputs"]["files"])
@@ -133,6 +143,64 @@ class ManifestPathsTest(RecordCase):
                          (speckit.PRESET_FILE_ENTRY.pattern, speckit.PRESET_FILE_ENTRY.flags))
 
 
+class IntegrationPathsTest(DerivedCase):
+    def files(self, installed: dict[str, str]) -> list[str]:
+        found: list[str] = entry(self.project_with(installed), "check-agents")["inputs"]["files"]
+        return found
+
+    def test_e1_an_installed_integrations_directories_and_context_file_are_inputs(self) -> None:
+        files = self.files({STATE: state("claude")})
+        for path in ("CLAUDE.md", ".claude/skills/", ".claude/commands/", ".claude/agents/"):
+            self.assertIn(path, files)
+        self.assertEqual(files, sorted(set(files)))
+
+    def test_e2_a_hooks_file_is_an_input(self) -> None:
+        self.assertIn(".cursor/hooks.json", self.files({STATE: state("cursor-agent")}))
+
+    def test_the_default_integration_is_read_where_none_is_listed(self) -> None:
+        files = self.files({STATE: json.dumps({"default_integration": "claude"})})
+        self.assertIn("CLAUDE.md", files)
+
+    def test_an_installed_list_wins_over_the_default(self) -> None:
+        files = self.files({STATE: state("cursor-agent", default="claude")})
+        self.assertIn(".cursor/hooks.json", files)
+        self.assertNotIn("CLAUDE.md", files)
+
+    def test_an_integration_only_the_base_installs_is_still_read(self) -> None:
+        project = self.project_with({STATE: state("claude")})
+        (project / STATE).unlink()
+        self.assertIn("CLAUDE.md", entry(project, "check-agents")["inputs"]["files"])
+
+    def test_a_row_naming_a_path_outside_in_the_base_alone_is_no_recorded_inputs(self) -> None:
+        project = self.project_with({STATE: state("hermes")})
+        (project / STATE).write_text(state("claude"), encoding="utf-8")
+        self.assert_no_inputs(entry(project, "check-agents"))
+
+    def test_an_unknown_key_adds_nothing(self) -> None:
+        plain = entry(self.project(self.SHAPE), "check-agents")["inputs"]["files"]
+        self.assertEqual(self.files({STATE: state("nonesuch")}), plain)
+
+    def test_e3_an_integration_file_that_does_not_parse_or_names_none_is_no_recorded_inputs(self) -> None:
+        for text in ("{", "[]", "{}", '{"installed_integrations": []}', '{"default_integration": 3}'):
+            with self.subTest(text=text):
+                self.assert_no_inputs(entry(self.project_with({STATE: text}), "check-agents"))
+
+    def test_e4_a_row_naming_a_path_outside_the_project_is_no_recorded_inputs(self) -> None:
+        self.assert_no_inputs(entry(self.project_with({STATE: state("claude", "hermes")}), "check-agents"))
+
+    def test_e4_an_unreadable_registry_is_no_recorded_inputs(self) -> None:
+        for text in ("{", "[]", '{"harnesses": 1}'):
+            with self.subTest(text=text):
+                project = self.project_with({STATE: state("claude")})
+                (project / "scripts" / "agents" / "registry.json").write_text(text, encoding="utf-8")
+                self.assert_no_inputs(entry(project, "check-agents"))
+
+    def test_the_other_checks_are_left_alone(self) -> None:
+        project = self.project_with({STATE: "{"})
+        for name in ("check-speckit", "check-extensions", "check-constitution"):
+            self.assertIsNotNone(entry(project, name)["inputs"], name)
+
+
 class ListedFileRunsTest(ShapeCase):
     shape = "standard-python"
 
@@ -143,6 +211,20 @@ class ListedFileRunsTest(ShapeCase):
         ran, skipped = self.decided(self.scoped(env=DRY))
         self.assertEqual(ran.get("check-speckit"), COMMON + " changed", (ran, skipped))
         self.assertIn("check-agents", skipped)
+
+    def runs_check_agents_naming(self, installed: str, path: str) -> None:
+        commit_on_main(self.repo, {STATE: state(installed), path: "# context\n"})
+        self.write_baseline()
+        self.edit(path, "\nan edit\n")
+        ran, skipped = self.decided(self.scoped(env=DRY))
+        self.assertEqual(ran.get("check-agents"), path + " changed", (ran, skipped))
+        self.assertIn("check-speckit", skipped)
+
+    def test_e1_a_changed_context_file_runs_check_agents_naming_it(self) -> None:
+        self.runs_check_agents_naming("claude", "CLAUDE.md")
+
+    def test_e2_a_changed_hooks_file_runs_check_agents_naming_it(self) -> None:
+        self.runs_check_agents_naming("cursor-agent", ".cursor/hooks.json")
 
 
 if __name__ == "__main__":

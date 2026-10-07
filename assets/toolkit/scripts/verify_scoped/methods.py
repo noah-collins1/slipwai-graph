@@ -1,5 +1,6 @@
-"""What the method-file checks read that a table row cannot name: a manifest's paths and a preset's files. Derived at
-record time and added to the checks' file inputs, as `record.with_named` does for `check-model`.
+"""What the method-file checks read that a table row cannot name: a manifest's paths, a preset's files and what an
+installed integration's `registry.json` row gives. Derived at record time and added to the checks' file inputs,
+as `record.with_named` does for `check-model`.
 
 A source that cannot be read, that does not parse, or that names a path outside the project (absolute, `~`, a `..`
 segment, a backslash, empty) leaves the check with no recorded inputs: it runs on every scoped run (D172 limit i). A
@@ -22,6 +23,8 @@ from .table import NO_INPUTS  # noqa: E402
 PRESET_FILE_ENTRY = re.compile(r"""^\s*(?:-\s+)?file:\s*["']?([^"'\s#]+)["']?\s*(?:#.*)?$""", re.MULTILINE)
 INTEGRATIONS = ".specify/integrations"
 PRESETS = ".specify/presets"
+STATE = ".specify/integration.json"
+REGISTRY = Path(__file__).resolve().parent.parent / "agents" / "registry.json"
 MANIFEST = re.compile(r"^\.specify/integrations/[^/]+\.manifest\.json$")
 PRESET = re.compile(r"^\.specify/presets/([^/]+)/preset\.yml$")
 
@@ -101,6 +104,58 @@ def manifest_files(root: Path, scope: Any, base: str | None) -> set[str]:
     return found
 
 
+def installed(root: Path, scope: Any, base: str | None) -> set[str]:
+    """The integrations `.specify/integration.json` selects in the working tree and at the base, as
+    `agents/project.py`'s `selected_integrations` reads it."""
+    sources = [read(root / STATE), at_base(scope, base, STATE)]
+    chosen: set[str] = set()
+    for text in (source for source in sources if source is not None):
+        state = parsed(text)
+        listed = state.get("installed_integrations")
+        default = state.get("default_integration")
+        if isinstance(listed, list) and any(isinstance(value, str) for value in listed):
+            chosen.update(value for value in listed if isinstance(value, str))
+        elif isinstance(default, str):
+            chosen.add(default)
+        else:
+            raise Unreadable(STATE + " names no integration")
+    return chosen
+
+
+def rows(registry: Path) -> dict[str, dict[str, Any]]:
+    try:
+        harnesses = json.loads(registry.read_text(encoding="utf-8")).get("harnesses")
+    except (OSError, UnicodeError, ValueError, RecursionError, AttributeError) as error:
+        raise Unreadable(str(error)) from error
+    if not isinstance(harnesses, list):
+        raise Unreadable("the registry has no harnesses")
+    return {row["key"]: row for row in harnesses if isinstance(row, dict) and isinstance(row.get("key"), str)}
+
+
+def integration_files(root: Path, scope: Any, base: str | None, registry: Path) -> set[str]:
+    """What each installed integration's registry row says the check reads: directories (ending in `/`) and files."""
+    chosen = installed(root, scope, base)
+    if not chosen:
+        return set()
+    table = rows(registry)
+    found: set[str] = set()
+    for key in sorted(chosen):
+        row = table.get(key)
+        if row is None:  # a key the registry does not know: `integration.json` itself is the input that fails
+            continue
+        agent = row.get("agentFile")
+        hooks = row.get("hooks")
+        projection = hooks.get("projection") if isinstance(hooks, dict) else None
+        directories = [row.get("skillsDir"), row.get("commandsDir"), agent.get("dir") if isinstance(agent, dict) else None]
+        files = [row.get("contextFile"), projection.get("where") if isinstance(projection, dict) else None]
+        for value in (*directories, *files):
+            if value is not None and not inside(value):
+                raise Unreadable(f"the registry row of {key} names {value}")
+        found.update(value.strip("/") + "/" for value in directories if value)
+        found.update(value for value in files if value)
+    return found
+
+
 def add(entry: dict[str, Any] | None, derive: Any) -> None:
     if entry is None or entry["inputs"] is None:
         return
@@ -112,6 +167,8 @@ def add(entry: dict[str, Any] | None, derive: Any) -> None:
     entry["inputs"]["files"] = sorted(set(entry["inputs"]["files"]) | more)
 
 
-def with_derived(checks: dict[str, Any], root: Path, scope: Any, base: str | None) -> None:
-    """Add what manifests and presets name to `check-speckit`."""
+def with_derived(checks: dict[str, Any], root: Path, scope: Any, base: str | None, registry: Path = REGISTRY) -> None:
+    """Add what manifests and presets name to `check-speckit`, and what the installed integrations' registry rows
+    name to `check-agents`."""
     add(checks.get("check-speckit"), lambda: manifest_files(root, scope, base))
+    add(checks.get("check-agents"), lambda: integration_files(root, scope, base, registry))
