@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from slipwai.assets import ROOT
 sys.dont_write_bytecode = True
 
 SCRATCH = Path("/tmp/s38impl")
+SELECTED = "SELECTED_TEST_MODULES"  # what a selected run hands down (D187 rule 4)
 LISTING = """
 import json, sys
 sys.dont_write_bytecode = True
@@ -109,6 +111,13 @@ def reads_only() -> dict[str, list[str]]:
     return found
 
 
+def to_audit(declared: dict[str, list[str]], environ: Mapping[str, str]) -> dict[str, list[str]]:
+    """The declared modules this run audits: those in `SELECTED_TEST_MODULES`, or every one where it is absent or
+    names no module (a broken handoff falls back to the full audit)."""
+    chosen = {name for name in environ.get(SELECTED, "").split(",") if name.strip()}
+    return {name: reads for name, reads in declared.items() if name in chosen} if chosen else declared
+
+
 class TestEveryReadsOnlyModuleOpensWhatItDeclares(unittest.TestCase):
     declared: dict[str, list[str]]
 
@@ -118,10 +127,10 @@ class TestEveryReadsOnlyModuleOpensWhatItDeclares(unittest.TestCase):
 
     def test_the_declared_set_is_the_one_the_loaders_test_holds(self) -> None:
         self.assertGreaterEqual(len(self.declared), 8)
-        self.assertIn("test_pit_globs", self.declared)
+        self.assertIn("test_pit_globs", self.declared)  # the listing is whole; the audit below narrows it
 
     def test_no_module_opens_a_path_outside_src_and_tests_that_nothing_accounts_for(self) -> None:
-        for module, reads in self.declared.items():
+        for module, reads in to_audit(self.declared, os.environ).items():
             with self.subTest(module):
                 found = audited(module, reads)
                 self.assertTrue(found["ok"] and found["ran"] > 0, f"{module} did not run clean under the hook: {found}")

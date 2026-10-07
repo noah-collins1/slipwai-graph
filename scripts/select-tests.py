@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 UNITTEST = ("python3", "-m", "unittest")
 FULL_ARGUMENTS = ("discover", "-s", "tests", "-v")
 BACKENDS = "FACTORY_BACKENDS"
+SELECTED = "SELECTED_TEST_MODULES"  # the modules a selected run starts, comma-separated: the audit narrows to them
 KNOBS = ("SINCE", "FULL")  # what picks the selection: the tests it starts never read it (a project they build would)
 
 
@@ -65,16 +66,20 @@ def failed_module(line: str) -> str | None:
 
 
 def run_unittest(arguments: tuple[str, ...], pythonpath: str, backends: str | None = None, *,
-                 keep: bool = False) -> tuple[int, list[str]]:
+                 keep: bool = False, selected: list[str] | None = None) -> tuple[int, list[str]]:
     """`PYTHONPATH=<pythonpath> python3 -m unittest <arguments>`, with `FACTORY_BACKENDS` set to `backends` or unset
     (kept as it is where `keep`: the person gave it). Returns its status and the modules that failed, each once, in
-    the order reported; its report is passed on as it is written. No timeout: the suite takes as long as it takes,
-    and the person running it can stop it."""
+    the order reported (`SELECTED_TEST_MODULES` is `selected` joined, and is removed wherever nothing was selected:
+    a value from outside must not narrow a full run's audit); its report is passed on as it is written. No timeout:
+    the suite takes as long as it takes, and the person running it can stop it."""
     env = dict(os.environ, PYTHONPATH=pythonpath)
     if backends is not None:
         env[BACKENDS] = backends
     elif not keep:
         env.pop(BACKENDS, None)
+    env.pop(SELECTED, None)
+    if selected is not None:
+        env[SELECTED] = ",".join(selected)
     without_knobs(env)
     failed: list[str] = []
     with subprocess.Popen((*UNITTEST, *arguments), cwd=ROOT, env=env, stderr=subprocess.PIPE, text=True,
@@ -94,11 +99,12 @@ def run_full() -> int:
     return run_unittest(FULL_ARGUMENTS, "src", keep=True)[0]
 
 
-def run_modules(modules: list[str], backends: str | None = None) -> tuple[int, list[str]]:
+def run_modules(modules: list[str], backends: str | None = None,
+                selected: list[str] | None = None) -> tuple[int, list[str]]:
     """`PYTHONPATH=src:tests python3 -m unittest -v <modules>`, which CI already trusts."""
     if not modules:
         return 0, []  # `unittest` with no names would discover from here: nothing selected is nothing run
-    return run_unittest(("-v", *modules), "src:tests", backends)
+    return run_unittest(("-v", *modules), "src:tests", backends, selected=selected)
 
 
 def plan(replay: str | None = None) -> tuple[base.ChangeSet, choose.Selection]:
@@ -177,8 +183,8 @@ def main(argv: list[str]) -> int:
     print(summary, flush=True)
     if given.dry_run:
         return 0
-    status, failed = run_modules([module for module in running if module not in narrowed])
-    narrowed_status, narrowed_failed = run_modules(narrowed, ",".join(selection.backends))  # both run
+    status, failed = run_modules([module for module in running if module not in narrowed], selected=running)
+    narrowed_status, narrowed_failed = run_modules(narrowed, ",".join(selection.backends), running)  # both run
     print(summary, flush=True)
     if running:
         print(report.result_line(len(running), sorted({*failed, *narrowed_failed}), status or narrowed_status),
