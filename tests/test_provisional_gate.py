@@ -101,5 +101,42 @@ class ProvisionalHoldsFr033Test(GateCase):
         self.refused(provisional(reversibility=rev_line("medium")), words=("D1", "`Reversibility`", "medium"))
 
 
+SHADOW = "- **Provisional (shadow):** "
+ADVISORY = "- **Provisional (advisory):** "
+OWN = "Revert: commits carrying Decision: D1"
+
+
+class RehearsalLinesTest(GateCase):
+    """R5 (AC-S27-10, gate half): a `Provisional (shadow|advisory):` line is held to its grammar, and never required."""
+
+    def test_r5_e1_the_verbs_line_on_a_standing_entry_passes(self) -> None:
+        self.passes(entry(1, mode=f"{SHADOW}guarded · provisional · ratify by 2026-10-14 · {OWN}"))
+        self.passes(entry(1, mode=f"{ADVISORY}easy · provisional · ratify by 2026-10-14 · {OWN}"))
+        self.passes(entry(1, mode=f"{SHADOW}guarded · blocks (flag_default=yes) · {OWN}"))
+
+    def test_r5_e2_blocks_hard_is_exactly_the_hard_tier(self) -> None:
+        self.passes(entry(1, mode=f"{SHADOW}hard · blocks (hard) · {OWN}"))
+        self.refused(entry(1, mode=f"{SHADOW}guarded · blocks (hard) · {OWN}"), words=("D1", "`Provisional (shadow)`"))
+        self.refused(entry(1, mode=f"{SHADOW}hard · provisional · ratify by 2026-10-14 · {OWN}"),
+                     words=("D1", "`Provisional (shadow)`"))
+
+    def test_r5_e3_a_bad_tier_date_fact_or_revert_is_refused_naming_the_line(self) -> None:
+        for bad in ("medium · provisional · ratify by 2026-10-14 · " + OWN,
+                    "guarded · provisional · ratify by 2026-02-30 · " + OWN,
+                    "guarded · blocks (export=yes) · " + OWN,
+                    "guarded · provisional · ratify by 2026-10-14 · Revert: commits carrying Decision: D2",
+                    "guarded · provisional · ratify by 2026-10-14"):
+            self.refused(entry(1, mode=f"{ADVISORY}{bad}"), words=("D1", "`Provisional (advisory)`"))
+
+    def test_r5_e4_a_second_line_of_either_label_is_refused(self) -> None:
+        line = f"guarded · provisional · ratify by 2026-10-14 · {OWN}"
+        self.refused(entry(1, mode=f"{SHADOW}{line}\n{ADVISORY}{line}"), words=("D1", "`Provisional (", "second"))
+        self.refused(entry(1, mode=f"{SHADOW}{line}\n{SHADOW}{line}"), words=("D1", "`Provisional (shadow)`", "second"))
+
+    def test_r5_e5_an_entry_without_one_is_never_refused(self) -> None:
+        self.passes(entry(1), entry(2, mode=f"{SHADOW}hard · blocks (hard) · Revert: commits carrying Decision: D2"),
+                    entry(3))
+
+
 if __name__ == "__main__":
     unittest.main()

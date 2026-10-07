@@ -42,6 +42,10 @@ USAGE = ("usage: provisional.py status --decide <" + "|".join(DECIDE) + "> --ask
 FORMS = ("provisional", "ratified", "reverted")
 STATUS_FORM = re.compile(r"provisional · ratify by ([0-9]{4}-[0-9]{2}-[0-9]{2})|(?:ratified|reverted) "
                          r"([0-9]{4}-[0-9]{2}-[0-9]{2})")
+MODE_LABELS = ("Provisional (shadow)", "Provisional (advisory)")
+REHEARSAL_FORM = re.compile(r"(easy|guarded|hard) · (provisional · ratify by ([0-9]{4}-[0-9]{2}-[0-9]{2})|"
+                            r"blocks \(hard\)|blocks \((?:ci_workflow|migrate_file|flag_default)=yes\)) · Revert: "
+                            r"commits carrying Decision: D([1-9][0-9]*)")
 REVERT_FORM = re.compile(r"commits carrying Decision: D([1-9][0-9]*)")
 
 
@@ -180,6 +184,31 @@ def reversibility_findings(where: str, fields: Mapping[str, str]) -> list[str]:
                     if facts.get(fact) == "yes"]
 
 
+def rehearsal_findings(where: str, number: int, fields: Mapping[str, str], twice: set[str]) -> list[str]:
+    """The findings for an entry's `Provisional (shadow|advisory):` lines: at most one of either label, each
+    `<tier> · <would-have> · Revert: commits carrying Decision: D<own>` with `blocks (hard)` exactly for `hard`."""
+    labels = [label for label in MODE_LABELS if label in fields]
+    found = []
+    if len(labels) > 1 or twice & set(MODE_LABELS):
+        found.append(f"{where} `{(labels or MODE_LABELS)[0]}` is a second rehearsal line; an entry has at most one")
+    for label in labels:
+        value = fields[label]
+        parts = REHEARSAL_FORM.fullmatch(value)
+        problem = ""
+        if parts is None:
+            problem = ("is not `<tier> · provisional · ratify by YYYY-MM-DD | blocks (hard) | blocks (<fact>=yes) · "
+                       f"Revert: commits carrying Decision: D{number}`")
+        elif parts.group(3) is not None and calendar(parts.group(3)) is None:
+            problem = f"has {parts.group(3)!r}, which is not a calendar date"
+        elif (parts.group(2) == "blocks (hard)") != (parts.group(1) == "hard"):
+            problem = "says `blocks (hard)` exactly when the tier is hard"
+        elif int(parts.group(4)) != number:
+            problem = f"has a Revert naming D{parts.group(4)}; it names this entry, D{number}"
+        if problem:
+            found.append(f"{where} `{label}` {problem}: {value!r}")
+    return found
+
+
 def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
               ) -> list[str]:
     """The findings for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
@@ -200,6 +229,7 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
                             f"D{number}`")
         if sound and kind == "provisional":
             findings += reversibility_findings(where, fields)
+        findings += rehearsal_findings(where, number, fields, twice)
     return findings
 
 
