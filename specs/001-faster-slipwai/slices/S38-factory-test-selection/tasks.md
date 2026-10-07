@@ -552,7 +552,7 @@ converged verdict while the patch waits for a person. A fix to the root `Makefil
 
 ### T025 — Register row and benchmark (host task)
 
-- [ ] The slice's row and `benchmark.json` closed; after-acceptance commits ride in this slice's own pull request.
+- [x] *(Iteration 26: register row; benchmark closed.)* The slice's row and `benchmark.json` closed; after-acceptance commits ride in this slice's own pull request.
 
 ---
 

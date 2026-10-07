@@ -1,10 +1,10 @@
 # Benchmark — 001-faster-slipwai
 
-Drawn 2026-10-06T23:16:18Z at `9f7dec5` from 18 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
+Drawn 2026-10-07T06:15:03Z at `c126f4a` from 19 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
 
 ## Slices
 
-17 slice(s) recorded, 64h55m+ in all.
+18 slice(s) recorded, 82h56m+ in all.
 
 | slice | delegate/cycle | wall | in | out | models | sessions | converge | +tasks | gaps | mutation | adversary | demo | verify✗ | rework | tasks | files | ±lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -25,6 +25,7 @@ Drawn 2026-10-06T23:16:18Z at `9f7dec5` from 18 record(s) under `specs/001-faste
 | S23-refusal-in-subdirectory | rule/rule, task/rule | 1h16m | 22.5M | 117.8k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 1 | 6 | 10/6 | — | 8 | accepted | 0 | 0 | 17 | 30 | +4009/-11 |
 | S24-ci-fetches-slice-base | rule/rule, task/rule | 1h17m | 43.5M | 174.7k | claude-fable-5-1, claude-sonnet-5-5 | 2 | 2 | 4 | 13/7 | — | 8 | accepted | 0 | 0 | 24 | 226 | +34959/-339 |
 | S33-factory-gate-stamp | rule/rule, task/rule | 4h30m | 39.7M | 120.9k | claude-opus-5-5, claude-sonnet-5-5 | 5 | 2 | 6 | 10/7 | — | 5 | accepted | 0 | 0 | 31 | 135 | +42301/-105 |
+| S38-factory-test-selection | rule/rule, story/rule | 18h00m | 237.8M | 352k | claude-opus-5-5, claude-sonnet-5-5 | 3 | 2 | 11 | 0/0 | — | 18 | accepted | 0 | 0 | 56 | 227 | +38148/-124 |
 | S39-benchmark-elapsed | story/rule, task/rule | 6h50m | 207.4M | 265.3k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 2 | 16 | 0/0 | — | 28 | accepted | 0 | 0 | 57 | 81 | +23082/-242 |
 
 delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes wall a floor because an unbracketed stage is missing; tokens are not prices.
@@ -392,6 +393,28 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | implement | 2026-10-05 08:04 | 4m16s | 2.1M | 12.5k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, driver=cruise |
 | hand | 2026-10-05 08:57 | 43m49s | 1M | 7.7k | claude-opus-5-5 | drive-hand | yes | outcome=accepted, driver=cruise |
 
+### S38-factory-test-selection — 18h00m
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| plan | 2026-10-06 04:44 | 3m13s | 1.8M | 4.5k | claude-opus-5-5 | drive-slice | yes | driver=cruise |
+| tasks | 2026-10-06 04:48 | 3m36s | 1.8M | 2.7k | claude-opus-5-5, claude-sonnet-5-5 | drive-slice, drive-tasks | yes | driver=cruise |
+| pin | 2026-10-06 04:51 | 2m15s | 977.2k | 2.6k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise |
+| implement | 2026-10-06 04:54 | 40m03s | 32.2M | 35.7k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise, verify_failures=0, delegate=story, cycle=rule, split=0 |
+| converge | 2026-10-06 05:34 | 14m06s | 9.8M | 3.2k | claude-opus-5-5 | drive-converge, drive-slice | yes | driver=cruise |
+| implement | 2026-10-06 05:48 | 7m17s | 6M | 9.7k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise, verify_failures=0, delegate=rule, cycle=rule, split=0 |
+| converge | 2026-10-06 05:56 | 7m36s | 4.7M | 1.9k | claude-opus-5-5 | drive-converge, drive-slice | yes | driver=cruise |
+| implement | 2026-10-06 06:03 | 8m04s | 5.3M | 10.1k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise, verify_failures=0, delegate=rule, cycle=rule, split=0 |
+| gaps | 2026-10-06 07:19 | 11m12s | 27.3M | 24.9k | claude-opus-5-5 | drive-adversary, drive-gaps, drive-skipper, drive-slice | yes | findings=5, driver=cruise |
+| implement | 2026-10-06 07:31 | 26m59s | 59.8M | 79.4k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-skipper, drive-slice, drive-tasks | yes | driver=cruise |
+| hand | 2026-10-06 10:46 | 8h51m | 50.1M | 87.1k | claude-opus-5-5, claude-sonnet-5-5 | drive-adversary, drive-hand, drive-implement | yes | outcome=implementation, driver=cruise |
+| implement | 2026-10-06 19:38 | 10m02s | 4.2M | 8.3k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | driver=cruise |
+| hand | 2026-10-06 23:16 | 3h23m | 4M | 14k | claude-opus-5-5 | drive-hand | yes | outcome=accepted, driver=cruise |
+| gate | 2026-10-07 02:40 | 56m20s | 1.6M | 4.7k | claude-opus-5-5 | — | no | driver=cruise |
+| adversary | 2026-10-07 03:39 | 22m00s | 16.9M | 32.9k | claude-opus-5-5 | drive-adversary | yes | findings=13, seams=2, driver=cruise |
+| implement | 2026-10-07 04:01 | 18m02s | 9.3M | 25.6k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | driver=cruise |
+| gate | 2026-10-07 04:19 | 1h55m | 2M | 4.9k | claude-opus-5-5 | — | no | driver=cruise |
+
 ### S39-benchmark-elapsed — 6h50m
 
 | stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
@@ -429,6 +452,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 - S23-refusal-in-subdirectory: implemented as rule/rule and task/rule — its wall compares with neither
 - S24-ci-fetches-slice-base: implemented as rule/rule and task/rule — its wall compares with neither
 - S33-factory-gate-stamp: implemented as rule/rule and task/rule — its wall compares with neither
+- S38-factory-test-selection: implemented as rule/rule and story/rule — its wall compares with neither
 - S39-benchmark-elapsed: implemented as story/rule and task/rule — its wall compares with neither
 - (feature) ground: cut off — a new `bosun` entry started while it was open; its wall is real, its signals were never reported
 - S00-run-path mutation: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
