@@ -35,6 +35,23 @@ class ProvisionalTableTest(unittest.TestCase):
         got = self.lines("provisional", line=EASY_LINE, when="2026-12-28T00:00Z")
         self.assertEqual(["- **Status:** provisional · ratify by 2027-01-04"], got[:1])
 
+    def test_e3b_an_instant_with_an_offset_is_converted_to_utc_before_the_seven_days(self) -> None:
+        for when, until in (("2026-10-07T23:30:00-05:00", "2026-10-15"), ("2026-10-08T03:00:00+09:00", "2026-10-14"),
+                            ("2026-10-07T23:30-05:00", "2026-10-15"), ("2026-10-07T23:30:00Z", "2026-10-14"),
+                            ("2026-10-07T23:30:00", "2026-10-14"), ("2026-10-07", "2026-10-14")):
+            with self.subTest(when=when):
+                self.assertEqual([f"- **Status:** provisional · ratify by {until}", REVERT],
+                                 self.lines("provisional", line=EASY_LINE, when=when))
+
+    def test_e3c_the_rehearsal_line_shares_the_converted_date(self) -> None:
+        got = self.lines("provisional-shadow", line=EASY_LINE, when="2026-10-07T23:30:00-05:00")
+        self.assertIn("provisional · ratify by 2026-10-15", got[1])
+
+    def test_e3d_an_unparseable_instant_is_exit_two(self) -> None:
+        for when in ("2026-10-07T25:00:00-05:00", "2026-10-07T23:30:00-25:00", "tomorrow", "2026-13-01T00:00:00-05:00"):
+            with self.subTest(when=when):
+                self.assertEqual(2, status("provisional", line=EASY_LINE, when=when).returncode)
+
     def test_e4_the_d54_fixture_is_unavailable(self) -> None:
         self.assertEqual([UNAVAILABLE, STANDING], self.lines("provisional", line=HARD_LINE))
 

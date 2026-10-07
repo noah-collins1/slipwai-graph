@@ -18,7 +18,7 @@ import importlib.util
 import re
 import sys
 from collections.abc import Iterable, Mapping
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +36,7 @@ HELD_WHY = {"ci_workflow": "provisional approval never edits a workflow", "flag_
 OPTIONS = ("--decide", "--ask", "--when", "--number", "--reversibility")
 REQUIRED = OPTIONS[:4]
 DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+OFFSET = re.compile(r"T.*[+-][0-9]{2}(?::?[0-9]{2})?")
 NUMBER = re.compile(r"D[1-9][0-9]*")
 USAGE = ("usage: provisional.py status --decide <" + "|".join(DECIDE) + "> --ask <" + "|".join(ASKS) +
          "> --when <ISO instant> --number D<n> [--reversibility '<line>']"
@@ -67,10 +68,16 @@ def calendar(text: str) -> date | None:
 
 
 def ratify_by(when: str) -> str:
-    """The date a provisional decision is ratified by: the `When` instant's calendar date plus seven days (D199)."""
+    """The date a provisional decision is ratified by: the `When` instant's UTC calendar date plus seven days (D199).
+    An instant with a UTC offset is converted to UTC first; `Z`, no offset and a date alone keep their own date."""
     day = calendar(when[:10])
     if day is None:
         raise Usage(f"--when {when!r} does not start with an ISO date (YYYY-MM-DD)")
+    if OFFSET.fullmatch(when[10:]):
+        try:
+            day = datetime.fromisoformat(when).astimezone(timezone.utc).date()
+        except ValueError as error:
+            raise Usage(f"--when {when!r} is not an ISO instant ({error})") from error
     return (day + timedelta(days=7)).isoformat()
 
 
