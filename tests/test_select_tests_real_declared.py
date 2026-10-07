@@ -15,6 +15,8 @@ import unittest
 from test_select_tests_real_backends import DECLARED as BACKEND_MODULES
 from test_select_tests_real_helpers import HELPERS
 from test_select_tests_real_loaders import READS as LOADER_MODULES
+from test_select_tests_real_s43 import DECLARED as S43_MODULES
+from test_select_tests_real_s43 import HELPERS as S43_HELPERS
 
 from slipwai.assets import ROOT
 
@@ -40,7 +42,8 @@ class TestTheDeclaredSetIsPinned(unittest.TestCase):
     def test_what_carries_a_declaration_is_what_the_real_tests_hold(self) -> None:
         done = subprocess.run(["python3", "-B", "-c", PROBE], cwd=ROOT, text=True, capture_output=True, timeout=180)
         self.assertEqual(done.returncode, 0, done.stderr)
-        held = {*BACKEND_MODULES, *LOADER_MODULES, *(name for name in HELPERS if name not in LEFT_UNDECLARED)}
+        held = {*BACKEND_MODULES, *LOADER_MODULES, *S43_MODULES, *S43_HELPERS,
+                *(name for name in HELPERS if name not in LEFT_UNDECLARED)}
         self.assertEqual(sorted(json.loads(done.stdout)), sorted(held),
                          "a new TEST_SELECTION needs a real_* test that reads the code behind it")
 
