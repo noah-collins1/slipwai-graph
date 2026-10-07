@@ -691,12 +691,12 @@ Findings: eight — two `HIGH`, three `MEDIUM`, three `LOW`; no `CRITICAL`. Both
 
 | # | Seam | Severity | Finding | Triage | State |
 |---|---|---|---|---|---|
-| A1 | A | HIGH | A declared input that is a symlink (or sits under one) makes a check read a file no row names — a constitution moved behind a link, a skills projection linked outside the project — so the check is skipped while `make verify` fails. New | Confirmed; S07 T021: an input that is, or passes through, a symlink gives its check no recorded inputs, for every row of the record (closes S07's T013, the Parking Lot line) | open |
-| A2 | A | HIGH | `check-agents` walks every file under `skills/`, `__pycache__/*.pyc` included, which the baseline's ignored digest exempts; a skill's own script run on the branch writes one and the scoped gate skips a check that then fails. New false green over an older exempt list | Confirmed; S07 T022: the projection never reads a path the stamp exempts (one shared list), and a test holds every recursive walk of a check to it | open |
-| B1 | B | MEDIUM | A stylesheet linked without quotes (`href=app.css`) is never followed, so its change renders nothing on a slice branch. Older regex, now reached by default | Confirmed; S07 T023 | open |
-| B2 | B | MEDIUM | An `@import` of a file name with a space is cut at the space. Older, now reached by default | Confirmed; S07 T023 | open |
-| A3 | A | MEDIUM | `check-agents` crashes with a bare `UnicodeDecodeError` on any non-UTF-8 file under `skills/`. Older | Confirmed; S07 T022: one line naming the file | open |
-| B3 | B | LOW | A percent-encoded `href` never matches its file. Older | Confirmed; S07 T023 | open |
-| B4 | B | LOW | Run directly from inside another repository, `since.py` reads that repository's branch and scopes a trunk run. New | Confirmed; S07 T024: every git question in `since.py` runs at the project root | open |
+| A1 | A | HIGH | A declared input that is a symlink (or sits under one) makes a check read a file no row names — a constitution moved behind a link, a skills projection linked outside the project — so the check is skipped while `make verify` fails. New | Confirmed; S07 T021: an input that is, or passes through, a symlink gives its check no recorded inputs, for every row of the record (closes S07's T013, the Parking Lot line) | fixed `342eefe` |
+| A2 | A | HIGH | `check-agents` walks every file under `skills/`, `__pycache__/*.pyc` included, which the baseline's ignored digest exempts; a skill's own script run on the branch writes one and the scoped gate skips a check that then fails. New false green over an older exempt list | Confirmed; S07 T022: the projection never reads a path the stamp exempts (one shared list), and a test holds every recursive walk of a check to it | fixed `40c673e` |
+| B1 | B | MEDIUM | A stylesheet linked without quotes (`href=app.css`) is never followed, so its change renders nothing on a slice branch. Older regex, now reached by default | Confirmed; S07 T023 | fixed `ac07338` |
+| B2 | B | MEDIUM | An `@import` of a file name with a space is cut at the space. Older, now reached by default | Confirmed; S07 T023 | fixed `ac07338` |
+| A3 | A | MEDIUM | `check-agents` crashes with a bare `UnicodeDecodeError` on any non-UTF-8 file under `skills/`. Older | Confirmed; S07 T022: one line naming the file | fixed `40c673e` |
+| B3 | B | LOW | A percent-encoded `href` never matches its file. Older | Confirmed; S07 T023 | fixed `ac07338` |
+| B4 | B | LOW | Run directly from inside another repository, `since.py` reads that repository's branch and scopes a trunk run. New | Confirmed; S07 T024: every git question in `since.py` runs at the project root | fixed `a3c88b3` |
 | B5 | B | LOW | An uncommitted `ci.branch` in `project.json` retargets a slice's own base | Declined: `check-slice-scope` refuses a `project.json` edit on a slice branch, and CI renders every preview whatever the branch says | declined |
 
