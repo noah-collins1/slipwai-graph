@@ -181,7 +181,10 @@ DEFAULTS: dict[str, Any] = {
 CONTROLS = {
     "enabled": "whether `/cruise` runs at all; `false` is a refusal that says so",
     "decide": "who answers a product question: the host where the stage recommends an answer or a standing "
-              "decision covers it and `drive-skipper` otherwise, or `drive-skipper` for every question",
+              "decision covers it and `drive-skipper` otherwise, or `drive-skipper` for every question. Change it to "
+              "`provisional-shadow` when always-ask questions are stalling slices and you want to see which ones "
+              "would have been taken provisionally before letting any be; move on to `provisional-advisory`, then "
+              "`provisional`, once the shadow lines read right.",
     "release": "the release-constraint stage: every slice continues or opens a flag seeded off, so every merge "
                "is dark; or park at the push and let a person say it is a release they want",
     "constitution": "an unratified constitution: the skipper drafts and ratifies it, marked pending human "

@@ -17,6 +17,7 @@ from ..origin import Adoption
 from ..services import App
 from .cruise_agents import DECISIONS, OWNER_BRIEF, SCOPE_VERB, SKIPPER
 from .cruise_hand import hand_section
+from .cruise_provisional import DECIDE_CONTROLS, DECIDE_VALUES
 from .cruise_record import CHECKPOINT, CHECKPOINT_ENTRY, CONFIG, DECISION_ENTRY, ENTRY_RULES, SCRIPT, STOP_FILE
 from .cruise_seat import watch_seat_body
 from .cruise_stops import LOG, REPORT, stop_table
@@ -37,9 +38,7 @@ UNREAD = ("no outer loop is reading this: a `/cruise` typed in a session starts 
 # settings command and `scripts/agents/cruise.py` are all written from.
 SETTINGS: tuple[tuple[str, tuple[str, ...] | str, object, str], ...] = (
     ("enabled", ("true", "false"), False, "whether `/cruise` runs at all; `false` is a refusal that says so"),
-    ("decide", ("recommended-first", "skipper-always"), "recommended-first",
-     "who answers a product question: the host where the stage recommends an answer or a standing decision "
-     "covers it and `drive-skipper` otherwise, or `drive-skipper` for every question"),
+    ("decide", DECIDE_VALUES, "recommended-first", DECIDE_CONTROLS),
     ("release", ("flagged", "park"), "flagged",
      "the release-constraint stage: every slice continues or opens a flag seeded off, so every merge is dark; "
      "or park at the push and let a person say it is a release they want"),

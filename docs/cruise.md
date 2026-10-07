@@ -303,7 +303,7 @@ effect at the next iteration. `make check-agents` holds the file's shape.
 | Setting | Values | Default | Controls |
 |---|---|---|---|
 | `enabled` | `true`, `false` | `false` | whether `/cruise` runs at all |
-| `decide` | `recommended-first`, `skipper-always` | `recommended-first` | who answers a product question: the host where the stage recommends an answer or a standing decision covers it, and `drive-skipper` otherwise; or `drive-skipper` for every question |
+| `decide` | `recommended-first`, `skipper-always`, `provisional-shadow`, `provisional-advisory`, `provisional` | `recommended-first` | who answers a product question: the host where the stage recommends an answer or a standing decision covers it, and `drive-skipper` otherwise; or `drive-skipper` for every question. Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right. |
 | `release` | `flagged`, `park` | `flagged` | the release-constraint stage: every slice behind a flag seeded off, so every merge is dark; or park at the push and let a person decide |
 | `constitution` | `ratify`, `park` | `ratify` | an unratified constitution: the skipper drafts and ratifies it, marked pending human review; or park |
 | `hand` | `browser`, `http`, `cli` | `browser` | the top of the hand's ladder for a demo; each falls through to the next where it cannot run |
