@@ -137,6 +137,22 @@ class ManifestPathsTest(DerivedCase):
         kept = entry(self.project_with({registry: json.dumps({"presets": {"x": {"enabled": True}}})}))
         self.assertEqual((kept["claims"], kept["always"]), (True, None))
 
+    def test_a_preset_registered_under_a_nested_name_is_vetted_like_any_other(self) -> None:
+        """`.registry` names `a/b`, so `check-speckit` reads `.specify/presets/a/b/preset.yml` and tests each file it
+        declares: one climbing out of the project leaves it no recorded inputs, in the working tree and at the base."""
+        registry = {".specify/presets/.registry": json.dumps({"presets": {"a/b": {}}})}
+        nested = ".specify/presets/a/b/preset.yml"
+        outside = 'id: b\nprovides:\n  templates:\n    - file: "../../../../specs/foo.md"\n'
+        inside = 'id: b\nprovides:\n  templates:\n    - file: "templates/a.md"\n'
+        self.assert_no_inputs(entry(self.project_with({**registry, nested: outside})))
+        working = self.project(self.SHAPE)
+        for path, text in {**registry, nested: outside}.items():
+            (working / path).parent.mkdir(parents=True, exist_ok=True)
+            (working / path).write_text(text, encoding="utf-8")
+        self.assert_no_inputs(entry(working))
+        kept = entry(self.project_with({**registry, nested: inside}))
+        self.assertEqual((kept["claims"], kept["always"]), (True, None))
+
     def test_the_preset_pattern_is_check_speckits(self) -> None:
         methods = importlib.import_module("verify_scoped.methods")
         path = ROOT / "assets" / "toolkit" / "scripts" / "check-speckit.py"

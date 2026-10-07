@@ -27,7 +27,8 @@ REGISTERED = PRESETS + "/.registry"
 STATE = ".specify/integration.json"
 REGISTRY = Path(__file__).resolve().parent.parent / "agents" / "registry.json"
 MANIFEST = re.compile(r"^\.specify/integrations/[^/]+\.manifest\.json$")
-PRESET = re.compile(r"^\.specify/presets/([^/]+)/preset\.yml$")
+# A name `.registry` lists may nest (`a/b`), and `check-speckit` reads `<name>/preset.yml` at whatever depth that is.
+PRESET = re.compile(r"^\.specify/presets/.+/preset\.yml$")
 
 
 class Unreadable(Exception):
