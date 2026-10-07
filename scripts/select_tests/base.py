@@ -161,6 +161,58 @@ def makefile_changes(root: Path, scoped: Scoped, base: Base) -> frozenset[str]:
     return frozenset(found)
 
 
+SELECTOR_FILES = (SCRIPTS + "/check-slice-scope.py", SCRIPTS + "/verify_scoped", "scripts/select-tests.py",
+                  "scripts/select_tests")  # every file the selector itself runs, a directory being all of it (T050)
+
+
+def selector_entries(root: Path, commit: str) -> dict[str, str] | None:
+    """The base's blobs under `SELECTOR_FILES` as `path -> "<mode> <blob id>"`, by git alone; `None` where git fails."""
+    status, out = git_out(root, "ls-tree", "-r", "-z", commit, "--", *SELECTOR_FILES)
+    if status:
+        return None
+    found = {}
+    for record in out.split("\0"):
+        meta, _, path = record.partition("\t")
+        if path and not is_cache(path):
+            mode, _, rest = meta.partition(" ")
+            found[path] = f"{mode} {rest.rpartition(' ')[2]}"
+    return found
+
+
+def selector_present(root: Path) -> set[str]:
+    """Every file now under `SELECTOR_FILES`, caches left out."""
+    found = set()
+    for name in SELECTOR_FILES:
+        path = root / name
+        if path.is_file() or path.is_symlink():
+            found.add(name)
+        for here, _, files in os.walk(path):
+            found.update(os.path.relpath(os.path.join(here, file), root).replace(os.sep, "/") for file in files)
+    return {path for path in found if not is_cache(path)}
+
+
+def selector_changes(root: Path, base: Base) -> list[str]:
+    """The files the selector runs whose bytes or mode differ from the base's, or that the base lacks or the tree has
+    lost, judged by git's own blob ids and never by the scripts under test (T050: a regression in `changes.changed`
+    must not hide itself). Sorted; raises row 11 where git cannot say."""
+    held = selector_entries(root, base.commit)
+    if held is None:
+        raise cannot_be_established("git could not read the selector's scripts at the base")
+    differing = set()
+    present = selector_present(root)
+    for path in set(held) | present:
+        entry = held.get(path)
+        if entry is None or path not in present:
+            differing.add(path)
+            continue
+        target = root / path
+        mode = "120000" if target.is_symlink() else ("100755" if os.access(target, os.X_OK) else "100644")
+        status, out = git_out(root, "hash-object", "--no-filters", "--", str(target))
+        if target.is_symlink() or status or f"{mode} {out.strip()}" != entry:
+            differing.add(path)
+    return sorted(differing)
+
+
 def change_set(root: Path, base: Base) -> ChangeSet:
     """D117 rule 2 as D125 counts it, from `changes.changed`, plus D153's unpushed range for the trunk (rows 10, 11)."""
     scoped = load_scoped(root)
@@ -170,7 +222,8 @@ def change_set(root: Path, base: Base) -> ChangeSet:
             span = scoped.changes.unpushed(scoped.scope, base.commit)
         if span.failure:
             raise Full(full_line(printable(span.failure, 600, quote=False)))
-        own = frozenset(scoped.changes.changed(scoped.scope, base.commit)) | makefile_changes(root, scoped, base)
+        own = (frozenset(scoped.changes.changed(scoped.scope, base.commit)) | makefile_changes(root, scoped, base)
+               | frozenset(selector_changes(root, base)))  # by bytes: scripts that differ cannot vouch for themselves
     except Full:
         raise
     except (Exception, SystemExit) as error:  # `CouldNotCompare` is git's own first line; the rest, the error's
