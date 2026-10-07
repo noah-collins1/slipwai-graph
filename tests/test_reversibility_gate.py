@@ -4,13 +4,24 @@ Each case writes a log into a scratch project that holds both scripts and runs t
 """
 from __future__ import annotations
 
+import importlib.util
 import sys
 import tempfile
 import unittest
+from pathlib import Path
+from typing import Any
 
-from reversibility_fixture import EASY, entry, gate, scratch
+from reversibility_fixture import EASY, SCRIPTS, entry, gate, scratch
 
 sys.dont_write_bytecode = True
+
+
+def loaded(path: Path) -> Any:
+    spec = importlib.util.spec_from_file_location(f"held_{path.stem.replace('-', '_')}", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def line(tiers: str = "easy", rules: str = "1", **changes: str) -> str:
@@ -91,6 +102,22 @@ class GateHoldsTheLineTest(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertIn("rules 1 derive hard", err)
 
+    def test_a_list_that_is_not_utf8_is_no_list_said_in_one_finding(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = scratch(directory, entry(1, line()), listed=())
+            (repo / ".slipwai/propagated").write_bytes(b"scripts/\xff\n")
+            result = gate(repo)
+        self.refused((result.returncode, result.stdout, result.stderr), "D1", "migrate_file", "no committed list")
+
+    def test_the_verb_reads_scope_and_written_to_as_the_gate_does(self) -> None:
+        """`reversibility.py` carries copies of the gate's readers so that it runs alone: they must give its answers."""
+        held, verb = (loaded(SCRIPTS / name) for name in ("check-decisions.py", "reversibility.py"))
+        for value in ("S1", "S1, S2", "`S26-reversibility-line`", "global", "global, S1", "", " ", "S01-S03",
+                      "oauth2", "S5-oauth2", "s1", "S1,", "S1 S2", "S05-x.S02-y", "S1.2", "ÿ1", "S١"):
+            self.assertEqual(held.scope_tokens(value), verb.scope_tokens(value), value)
+        for value in ("`a`, `b`", "a, b", "", "`a` and b", "a,,b", " a ", "``"):
+            self.assertEqual(held.paths_of(value), verb.written_paths(value), value)
+
     def test_a_log_with_a_line_and_no_sibling_module_is_noted_not_refused(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = scratch(directory, entry(1, line("whatever")), names=("check-decisions.py",))
@@ -136,6 +163,10 @@ class ProposedRuleTest(unittest.TestCase):
 
     def test_e5_the_entrys_own_id_does_not_count(self) -> None:
         self.refused(self.run_gate(entry(1), entry(2), entry(3, proposed("D3", "D1"))), ": D3 ")
+
+    def test_e5b_a_period_after_the_citation_still_reads_it(self) -> None:
+        code, out, err = self.run_gate(entry(1), entry(2), entry(3, proposed("D1", "D2") + "."))
+        self.assertEqual((0, ""), (code, err), out)
 
     def test_e6_an_entry_without_the_line_is_never_refused(self) -> None:
         code, out, err = self.run_gate(entry(1), entry(2, proposed("D1", "D3")), entry(3), entry(4))

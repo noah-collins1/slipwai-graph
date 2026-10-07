@@ -513,7 +513,8 @@ def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
     module = sibling("reversibility")
     items = [(line, int(heading.group(1)) if heading else None, fields, fields.twice)
              for line, heading, fields in entries(text, DECISION_HEADING, legacy=True)]
-    return module.check_log(path.relative_to(ROOT).as_posix(), items, scope_tokens, module.propagated(ROOT))
+    verb = f"python3 {Path(module.__file__).resolve().relative_to(ROOT).as_posix()}"
+    return module.check_log(path.relative_to(ROOT).as_posix(), items, scope_tokens, module.propagated(ROOT), verb)
 
 
 def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int, int]:

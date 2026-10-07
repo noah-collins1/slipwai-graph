@@ -171,6 +171,14 @@ class TierWordTest(unittest.TestCase):
                 self.assertEqual(len(result.stderr.strip().splitlines()), 1)
                 self.assertIn("rollback_complexity", result.stderr)
 
+    def test_a_fact_value_holding_whitespace_is_usage_since_the_gate_splits_the_facts_there(self) -> None:
+        for value in ("a b", "a\tb", "a\nb"):
+            with self.subTest(value=value), project() as repo:
+                result = score(repo, "--scope", SLICE, *facts(schema=value))
+                self.assertEqual((result.returncode, result.stdout), (2, ""), value)
+                self.assertEqual(len(result.stderr.strip().splitlines()), 1)
+                self.assertIn("schema", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

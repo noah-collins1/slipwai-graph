@@ -6,9 +6,9 @@ that fired. The facts are a closed list; the tier is the highest any rule gives;
 `hard`. `RULES` keeps every version of the table this file has shipped: a line names the version that scored it, and
 a shipped version is only ever added to, never edited (a new version is a decision taken at the hard tier).
 The gate (`check-decisions.py`) loads this file by path, only for a log that carries a `Reversibility:` or
-`Proposed rule:` line, and `check_log()` holds each line to the grammar and to the tier its named version derives. The scope is read by
-`scope_tokens`, a copy of the gate's own reading, so the verb works with nothing beside it; a caller that holds the
-gate's function passes it to `score()` instead. Nothing here prints or exits outside `main`.
+`Proposed rule:` line, and `check_log()` holds each line to the grammar and to the tier its named version derives.
+The scope is read by `scope_tokens`, a copy of the gate's own reading, so the verb works with nothing beside it; a
+caller that holds the gate's function passes it to `score()` instead. Nothing here prints or exits outside `main`.
 """
 from __future__ import annotations
 
@@ -113,7 +113,8 @@ def project_root(script: Path, depth: int) -> Path:
 
 
 def written_paths(value: str) -> list[str]:
-    """The paths a `Written to` value names, read as `check-decisions.py`'s `paths_of`: backticked, else comma-separated."""
+    """The paths a `Written to` value names, as `check-decisions.py`'s `paths_of` reads them: backticked, else
+    comma-separated."""
     quoted = re.findall(r"`([^`]+)`", value)
     if quoted:
         return quoted
@@ -124,7 +125,8 @@ def propagated(root: Path) -> set[str] | None:
     """The paths `migrate` propagates, from the committed list, or None where the project has no list.
 
     `<layout.delivery>/.written` where `project.json` says `origin` is `adopted` (`.written` at the root where the
-    delivery directory is `.`), else `.slipwai/propagated`; one project-relative path per line."""
+    delivery directory is `.`), else `.slipwai/propagated`; one project-relative path per line. A list that cannot be
+    read as UTF-8 text is no list: it fails closed, as a missing one does."""
     try:
         document = json.loads((root / "project.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -138,7 +140,7 @@ def propagated(root: Path) -> set[str] | None:
         home = root / ".slipwai" / "propagated"
     try:
         lines = home.read_text(encoding="utf-8").splitlines()
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         return None
     return {line.strip() for line in lines if line.strip()}
 
@@ -227,8 +229,8 @@ def line_findings(where: str, fields: Mapping[str, str], twice: set[str], reader
 def rule_findings(where: str, number: int, value: str, known: set[int]) -> list[str]:
     """The findings for one entry's `Proposed rule:` value: two distinct cited ids other than its own, each an entry of
     the log (its `Status` is not read, D185). The ids counted are those in the trailing parenthesis, `(same shape as
-    D<a>, D<b>)`, so a `D<n>` the sentence itself mentions is not a citation."""
-    trailing = re.search(r"\(([^()]*)\)\s*$", value)
+    D<a>, D<b>)`, a full stop after it allowed, so a `D<n>` the sentence itself mentions is not a citation."""
+    trailing = re.search(r"\(([^()]*)\)\s*\.?\s*$", value)
     cited = {int(n) for n in re.findall(r"\bD([0-9]+)\b", trailing.group(1) if trailing else "")}
     found = [f"{where} `Proposed rule` cites D{n}, which is no entry of this log" for n in sorted(cited - known)]
     if len(cited - {number}) < 2:
@@ -238,10 +240,11 @@ def rule_findings(where: str, number: int, value: str, known: set[int]) -> list[
 
 
 def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
-              reader: Callable[[str], list[str] | None], listed: set[str] | None) -> tuple[list[str], list[str]]:
+              reader: Callable[[str], list[str] | None], listed: set[str] | None,
+              verb: str = "python3 scripts/reversibility.py") -> tuple[list[str], list[str]]:
     """(findings, notes) for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
-    gate parsed them, `reader` the gate's own `scope_tokens`, `listed` the committed list. The second loop is the
-    missing-line note."""
+    gate parsed them, `reader` the gate's own `scope_tokens`, `listed` the committed list, `verb` how this project
+    runs this file. The second loop is the missing-line note."""
     findings: list[str] = []
     notes: list[str] = []
     entries = [item for item in items if item[1] is not None]
@@ -256,7 +259,7 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
             seen = True
         elif seen:
             notes.append(f"check-decisions: note: {relative}:{line}: D{number} has no `Reversibility:` line after an "
-                         "entry that has one; score it with python3 scripts/reversibility.py")
+                         f"entry that has one; score it with {verb}")
     return findings, notes
 
 
@@ -282,6 +285,8 @@ def parse_arguments(arguments: list[str]) -> tuple[dict[str, str], dict[str, str
         stray = [word for word in (*TIERS, "→", "->", "·") if word in value]
         if stray:
             raise ValueError(f"{key}={value!r} contains {stray[0]!r}; no fact value holds a tier word, an arrow or ·")
+        if any(character.isspace() for character in value):
+            raise ValueError(f"{key}={value!r} contains whitespace, where the line's facts are divided")
         facts[key] = value
     if "--scope" not in options:
         raise ValueError("--scope is required")

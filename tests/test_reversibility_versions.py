@@ -160,6 +160,28 @@ class MissingLineNoteTest(unittest.TestCase):
         self.assertEqual((0, ""), (result.returncode, result.stderr))
         self.assertNotIn("has no `Reversibility:`", result.stdout)
 
+    def test_e5_a_log_with_neither_label_never_loads_the_module(self) -> None:
+        """A fake `reversibility.py` that fails on load: a log with neither label passes as before, and one with the
+        label reaches it, so the guard is what kept it unloaded."""
+        for text, code in ((entry(1) + "\n" + entry(2), 0), (entry(1, line("guarded", 1)), 1)):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as directory:
+                repo = scratch(directory, text, listed=("scripts/check-decisions.py",))
+                (repo / "scripts/reversibility.py").write_text("raise SystemExit('loaded')\n", encoding="utf-8")
+                result = gate(repo)
+                self.assertEqual(code, result.returncode, result.stdout + result.stderr)
+                self.assertEqual(code == 1, "loaded" in result.stderr, result.stderr)
+
+    def test_e6_in_an_adopted_layout_the_note_names_the_verb_where_it_is(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = scratch(directory, entry(1, line("guarded", 1)) + "\n" + entry(2), origin="adopted",
+                           delivery="delivery", listed=())
+            (repo / "delivery").mkdir(exist_ok=True)
+            (repo / "scripts").rename(repo / "delivery/scripts")
+            result = subprocess.run(["python3", "-B", "delivery/scripts/check-decisions.py"], cwd=repo, text=True,
+                                    capture_output=True)
+        self.assertEqual((0, ""), (result.returncode, result.stderr))
+        self.assertIn("score it with python3 delivery/scripts/reversibility.py", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
