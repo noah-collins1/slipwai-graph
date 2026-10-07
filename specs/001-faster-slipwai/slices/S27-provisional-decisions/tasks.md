@@ -214,7 +214,7 @@ neither, so the two chains are disjoint (Phase 5).
 
 ## Phase 4: US8 — the scoped-gate record, the writers, and a project made before (sequential, after Phases 2 and 3)
 
-- [ ] T011 [US8] **The scoped-gate record** (plan *Structure Decision*; S26's `6cfe48b`). Run `make test
+- [x] T011 [US8] **The scoped-gate record** (plan *Structure Decision*; S26's `6cfe48b`). Run `make test
   TESTS="test_verify_scoped_table_held test_verify_scoped_record <every other test_verify_scoped_* module>
   test_verify_stamp_scan"` on the tree T002–T010 left. If the table scan flags a literal in `provisional.py` or in the
   new `cruise.py mode` verb (including the new `check-decisions.py` load of `provisional.py` by path, which the scan's
@@ -226,7 +226,7 @@ neither, so the two chains are disjoint (Phase 5).
   Files: `assets/toolkit/scripts/verify_scoped/table.py`, `tests/test_verify_scoped_table_held.py`,
   `tests/test_verify_scoped_record.py`.
 
-- [ ] T012 [US8] **R11 — five values, one default, one sentence, everywhere** (AC-S27-16; D196 part 1).
+- [x] T012 [US8] **R11 — five values, one default, one sentence, everywhere** (AC-S27-16; D196 part 1).
   `src/slipwai/project/cruise_provisional.py` (new): `DECIDE_VALUES`, `DECIDE_CONTROLS` (with the sentence *Change it
   to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have
   been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the
