@@ -284,3 +284,15 @@ class WhatProvisionalTakesIsSaidAsTheVerbSaysItTest(FactoryTestCase):
         text = (ROOT / "changelog.d/provisional-decisions.md").read_text(encoding="utf-8")
         first = flat(text.split("\n\n")[1])
         self.assertIn(TAKES, first)
+
+
+class ExitsOtherThanZeroOrThreeAreParksTest(FactoryTestCase):
+    """T020 (text half): the sentences for `mode` and `audit` say what an exit of 2 or 1 is."""
+
+    def test_t020_mode_and_audit_sentences_say_a_stray_exit_is_a_park_never_done(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.generate(directory, "exits", "standard", "python")
+            command = flat((repo / "commands/cruise.md").read_text(encoding="utf-8"))
+        for words in ("An exit of the verb other than 0 or 3 is a park: end on the verb's own line, never `done`",
+                      ):
+            self.assertEqual(command.count(words), 2, "once after `mode`, once after `audit`")

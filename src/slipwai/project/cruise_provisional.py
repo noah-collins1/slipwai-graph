@@ -16,6 +16,8 @@ DECIDE_CONTROLS = (
     "lines read right."
 )
 
+# What an exit of a verb other than 0 or 3 is: neither a pass nor the parked line, so the run stops and says why.
+STRAY_EXIT = " An exit of the verb other than 0 or 3 is a park: end on the verb's own line, never `done`."
 # The three verbs a run speaks to (S27); their output is the toolkit's, and the briefs name them where they use them.
 PROVISIONAL_VERB = "python3 scripts/provisional.py status"
 AUDIT_VERB = "python3 scripts/provisional.py audit"
@@ -61,13 +63,13 @@ commit made under it carries the trailer `{TRAILER}`, which this session puts in
 `unavailable` entry's `Status` becomes `overridden by D<m>`."""
 MODE_SENTENCE = (
     f"In an iteration, run `{MODE_VERB}` too (with `--feature <name>` where the run has one): append the entry it "
-    f"prints, scored with `{_SCORE}` like every entry, and end on its `cruise: parked:` line where it prints one."
+    f"prints, scored with `{_SCORE}` like every entry, and end on its `cruise: parked:` line where it prints one." + STRAY_EXIT
 )
 AUDIT_SENTENCE = (
     f"Before `cruise: done`, run `{AUDIT_VERB}` (with `--feature <name>` where the run has one) and end on the "
     "`cruise: parked: ratify D<n>` line where it prints one: a person ratifies by editing that entry's `Status` to "
     "`ratified <date>`, or reverts the commits carrying its trailer and writes `reverted <date>`, since the run "
-    "does neither."
+    "does neither." + STRAY_EXIT
 )
 # The dispatch sentence's addition: what the brief carries, and which items go to the delegate, under the provisional values.
 DISPATCH_WORDS = (" (under `provisional-shadow`, `provisional-advisory` and `provisional` alike the brief also names "

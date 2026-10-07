@@ -94,6 +94,11 @@ class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
             self.assertIn(words, self.note)
         self.assertNotIn("it can only happen under `provisional`", self.note)
 
+    def test_t019_the_catch_up_says_the_first_iteration_records_the_mode_it_finds(self) -> None:
+        for words in ("first iteration after upgrading appends one entry to each feature's log recording the "
+                      "`decide` mode it finds", "the runner prints it", "`python3 scripts/agents/cruise.py mode`"):
+            self.assertIn(words, self.note)
+
     def test_e2_the_catch_up_stands_alone_and_marks_nothing_experimental(self) -> None:
         for reference in ("T0", "AC-S27", "D19", "D20", "S27", "S28", "above", "R13", "experimental"):
             self.assertNotIn(reference, self.note)
