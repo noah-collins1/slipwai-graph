@@ -80,6 +80,23 @@ class CompletionAuditTest(unittest.TestCase):
         parked = audit(logs, "--feature", "alpha")
         self.assertEqual((3, "cruise: parked: ratify D1\n"), (parked.returncode, parked.stdout))
 
+    def test_r8_e5_a_feature_naming_no_directory_is_exit_two_naming_it(self) -> None:
+        """T020: `--feature nope` fails open as `no decisions.md`, exit 0; it refuses as `--scope … --feature` does."""
+        result = audit(entry(1, PROVISIONAL, revert="own", reversibility=EASY_LINE), "--feature", "nope")
+        self.assertEqual((2, ""), (result.returncode, result.stdout))
+        self.assertEqual(1, len(result.stderr.strip().splitlines()), result.stderr)
+        self.assertIn("specs/nope/", result.stderr)
+
+    def test_r8_e6_a_named_feature_with_a_directory_and_no_log_yet_stays_exit_zero(self) -> None:
+        result = audit(None, "--feature", "f")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("no decisions.md", result.stdout)
+
+    def test_r8_e7_the_refusal_comes_even_where_no_feature_has_a_log(self) -> None:
+        result = audit(None, "--feature", "nope")
+        self.assertEqual((2, ""), (result.returncode, result.stdout))
+        self.assertIn("specs/nope/", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

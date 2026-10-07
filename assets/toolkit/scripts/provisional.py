@@ -297,6 +297,8 @@ def audit_verb(arguments: list[str]) -> int:
     if arguments and (len(arguments) != 2 or arguments[0] != "--feature" or not arguments[1]):
         raise Usage("audit takes only --feature <name>, once")
     specs = project_root(Path(__file__).resolve()) / "specs"
+    if arguments and not (specs / arguments[1]).is_dir():
+        raise Usage(f"specs/{arguments[1]}/ is no directory; --feature names a feature under specs/")
     logs = sorted(specs.glob("*/decisions.md")) if specs.is_dir() else []
     if arguments:
         logs = [log for log in logs if log.parent.name == arguments[1]]
