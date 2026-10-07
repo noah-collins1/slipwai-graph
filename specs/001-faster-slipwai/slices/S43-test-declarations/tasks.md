@@ -185,3 +185,132 @@ No screen in this slice.
 - Estimated Go-change selection at the tip (`undeclared.md`): 342 of 383 modules, ≈ 2734 s of the table before `test_matrix`/`test_images` narrow to go; AC-S43-6 is expected to miss 900 s (plan *Status*).
 
 ## Convergence
+
+### Converge pass 1 (drive-converge, 2026-10-07) — verdict: converged, with two MEDIUM and three LOW owed
+
+Read against AC-S43-1…14 (the branch's `spec.md` carries the amended AC-S43-6/-11 and AC-S43-12…14), D164, D169,
+D179–D182, D187, D188, the plan, research, data-model, quickstart, runtime table, `undeclared.md`, and the
+constitution. One HIGH found and fixed in `98f1025`; nothing CRITICAL or HIGH is left open.
+
+**By level**
+
+- **Domain: the argv rule (`scripts/select_tests/argv.py`, `launcher.py`, the hook in `generation.py`).** The rule was
+  fail-open (the HIGH below), and is now fail-closed for every form tried. The tries: `--flag=value`, a repeated flag,
+  `--language`/`--framework`/`--service-name`, a second positional, `os.fspath(...)`, `shlex`, `shell=True`, f-string
+  commands, `sys.executable -m slipwai`, `sh -c`, and `env=`/`cwd=` (`ROOT` in `cwd` is a reach; the launcher
+  prepends `$root/src`, so `PYTHONPATH` cannot redirect it). Every one is held. D164 rules 1, 2 and 4 are unchanged:
+  `generation.py`'s `bind`, `resolve` and `problem` are byte-identical to `adopt-method`, and `declarations.py` only moved
+  `names_launcher` out. `launcher.py`'s string and `-m` detection gives the same verdict as the old `names_launcher`
+  on every node of the real `tests/`: 95 detections each, none different. So it adds no false route and loses no
+  real one. The real tree's 15 readable argvs are all the first argument of `subprocess.run(...)`, and the fix leaves
+  every one read.
+- **Use case: the audit narrowing (`scripts/select-tests.py:80-82`, `to_audit`).** On a selected run, both batches
+  are handed `running`. Every module selected for its own change, a closure helper's change or a `reads` match is
+  therefore audited. `test_select_tests_audit_narrow` plants all three cases. `run_full` removes an inherited
+  `SELECTED_TEST_MODULES`, so a full run, CI and the merge root audit everything. The one gap is the `TESTS=`/`SKIP=`
+  route (MEDIUM, T011).
+- **Adapter: the declarations.** `held()` on the tip is `[]` (`test_select_tests_real_s43`,
+  `test_select_tests_real_declared` and `test_select_tests_real_helpers` pass). The six reads-only modules this slice
+  declared all ran clean under the audit hook in 92 s: `test_factory_gate_stamp` and
+  `test_select_tests_{make,makefile,paths,go_app,declarations}`. The moved helpers (`gate_rules`, `stamp_names`,
+  `stamp_case`, `mutation_env`) are re-exported, and `test_select_tests_real_s43` asserts that each is the same object
+  by both paths. Some `reads` entries name generated-project or redundant paths, such as `"scripts"`, `"README.md"`
+  and `"src/slipwai"` (`src/` already runs everything, AC-S43-5). These over-claim, which only over-selects and never
+  skips. The `.git" / "slipwai"` → `.git/slipwai` rewrites and `["src/slipwai", "slipwai"]` keep the same paths, and
+  exist to avoid a false launcher route (LOW, T013).
+- **Screen:** none in this slice.
+- **Published contract.** `make check-structure` passes, and no file is over 350 lines. No `unittest.mock` line was
+  added. Nothing under `assets/`, `src/`, `catalog.json`, `VERSION` or `changelog.d/` changed, so there is no bump.
+  S07's and S26's modules are untouched (`git diff adopt-method --stat`). The AC-S43-9 test ids have one rename
+  (MEDIUM, T012). The AC-S43-6/-8 records make the host's demo possible (quickstart step 6). The expected miss is
+  stated in two places, in different but compatible units: the plan *Status* gives ≈ 2250 s, and `undeclared.md`
+  gives 2734 s with `test_matrix`/`test_images` counted whole and S07's 564 s on a line of its own.
+
+**Constitution**
+
+- **I (a scoped gate MUST be additive).** A false skip is a scoped gate removing a check without saying so. Before
+  `98f1025`, fourteen literal-argv shapes did exactly that. The rule now reads only the first argument of
+  `subprocess.<run|Popen|call|check_call|check_output>` (`argv.py` `whole`), and the merge root and CI still audit and
+  run everything (`select-tests.py` `run_unittest` pops the variable, and `run_full` hands none).
+- **I (VERSION and fragments).** No user-visible tree changed, so neither a bump nor a fragment is owed.
+- **V (RED before GREEN; tests in the same commit).** `98f1025` carries the 14 new forms and the fix together. All 14
+  were seen failing (`held()` returned `[]` for each, and the copy was skipped on a Go change) before `argv.py` and
+  `launcher.py` changed. T002's own guard nature is flagged in this file.
+- **V (behaviour, not structure).** Every selector test asserts what the selector selects and holds, through its own
+  process.
+- **X (deterministic).** `argv.catalog_flags` caches per process only, and reads the tree being selected.
+- **Repository rule (no mocking framework).** Satisfied.
+- **II, IV, VI, VII, VIII, IX:** nothing in the slice touches money, time, identity, a write path or an external
+  boundary.
+
+**Found and fixed**
+
+- [x] **HIGH — fixed in `98f1025`: the literal-argv reader and the launcher detector failed open (D187 rules 1 and 3).**
+  `argv.read` read any launcher list whose parent was not `+`, `*`, `+=`, `=` or `:`, so the deny-list missed every
+  other way a list can be changed before it runs. The fourteen forms below each read as `--backend python` while
+  generating go, so a copy declaring python was skipped on a Go change. Evidence: the new `FORMS` entries in
+  `tests/test_select_tests_argv_forms.py` failed with 14 failures before the fix and pass after it (45/45), together
+  with `test_select_tests_{argv,generation,declarations,real_s43,real_declared,real_helpers,real_backends}`.
+  - **A list that is changed before it runs:**
+    - returned from a function;
+    - held in a dict or a tuple;
+    - an element of a list of argvs;
+    - bound by `:=`;
+    - inside a conditional expression;
+    - a lambda's result;
+    - a default argument;
+    - a comprehension's iterable;
+    - handed to a helper that extends it.
+  - **A computed element after the flags.** A computed or f-string element after the flags was counted as "the
+    name", but at run time it can be `--backend=go`, which argparse's last-wins applies.
+  - **Tuples.** `("python3", "-m", "slipwai", …)` and `("slipwai", "generate", …)` were never routes. A bare
+    `"slipwai"` is only a path reach, and `support`'s `reads: ["slipwai"]` satisfies that in every importer.
+  - **The fix:**
+    - a list is read only as the first argument of a `subprocess` runner;
+    - a computed name is read only right after `generate`, where last-wins makes it harmless;
+    - `launcher.py` treats a tuple like a list.
+
+**Owed**
+
+- [ ] **T011 MEDIUM — `make test TESTS=…`/`SKIP=…` keeps an inherited `SELECTED_TEST_MODULES` (R4 e3, D187 rule 4).**
+  - **The problem:** those recipes run `python3 -m unittest` straight from the person's environment, so a value left
+    exported in a shell narrows a run that has no change set.
+  - **Evidence:** `SELECTED_TEST_MODULES=<six names> make test TESTS=test_select_tests_real_audit` audited 6 modules,
+    not every one `LISTING` names.
+  - **Same class:** `to_audit` treats a handoff that names modules but matches none (for example, separated by spaces
+    instead of commas) as "audit nothing", not as the broken handoff its docstring says falls back to the full audit.
+  - **The fix is one of:**
+    - the `test` recipe's `TESTS`/`SKIP` branch unsets the variable (`env -u SELECTED_TEST_MODULES`); or
+    - `select-tests.py` hands a marker beside the list, and `to_audit` honours the list only when the marker is
+      present.
+
+    In either case, a chosen name that is not a `tests/test_*.py` module falls back to the full audit. Add an
+    `audit_narrow` case for each.
+- [ ] **T012 MEDIUM — AC-S43-9's letter is not met; the host's word is needed.**
+  - **The facts:** `undeclared.md` records honestly that one base test id was renamed away:
+    `test_select_tests_real_helpers…test_the_render_fixture_runs_the_launcher_so_it_declares_every_configuration`
+    became `…names_the_one_project_it_generates_and_reads_the_launcher_through_support`. Its assertion changed
+    because T006 narrowed `render_fixture`, so no coverage was lost. Even so, the criterion says "none renamed away",
+    and quickstart step 4 says the two lists "are equal". Whether any test is newly skipped is deferred to the
+    AC-S43-8 full run.
+  - **What is needed:** either the host accepts the rename as a selector-test assertion change (and the quickstart
+    says "equal but for the one recorded rename"), or the old id is kept.
+- [ ] **T013 LOW — the launcher detector over-matches.**
+  - **The over-matches:** any `<expr> / "slipwai"`, and any list or tuple whose first element is `"slipwai"`, is a
+    route. That includes a `TEST_SELECTION` `reads` list and `self.repo / ".git" / "slipwai"`.
+  - **The cost:** fail-closed, so it only over-selects. But it forced the `.git/slipwai` rewrites in four files and the
+    order of `stamp_case`'s `["src/slipwai", "slipwai"]`, and it silently voids a planted declaration whose `reads`
+    starts with `"slipwai"` (seen in this pass).
+  - **The fix:** narrow the `Div` branch to `ROOT / "slipwai"`, and skip the `TEST_SELECTION` assignment's own value.
+- [ ] **T014 LOW — the records drift.**
+  - The *Implementation record* above cites the pre-rebase commits for T001–T007 (`139f1e8`, `315a153`, `8e6c5f7`,
+    `fe98a42`, `11186e5`, `8ce6f9e`, `885960b`, `7bf69f5`, `3ea65da`), which no branch contains. On this branch they
+    are T001 `a142fdd` (+ `0bd4d13`), T002 `bfefce8`, T002b `5eadc4e`, T003 `5cf11c4`, T004 `db2953b`, T005
+    `b38dd0e`, T006 `0dfdad0` and T007 `623903f`.
+  - `undeclared.md`'s AC-S43-9 counts (3319 ids at the tip, `_argv_forms` 22) predate `98f1025`, which adds 14 ids
+    (`_argv_forms` 36).
+- [ ] **T015 LOW — the in-process routes D164 rule 3 never named stay unrouted. This predates the slice.**
+  - **The routes:** `__import__("slipwai.cli")`, and imports of other command modules (`slipwai.cli_add`, the
+    generator's own functions).
+  - **The status:** none of them is on the real tree, and D187 did not ask for them. Record them for the next selector
+    slice; do not widen this one.
