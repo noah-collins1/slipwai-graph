@@ -4303,3 +4303,15 @@
 - **Confidence:** high · **Would reverse if:** a person says AC-S43-6 measures only the modules S43 may touch, or changes D129's merge order for this slice.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`, `specs/001-faster-slipwai/spec.md` (AC-S43-6's measured tree; AC-S07-15)
 - **Status:** standing
+
+## D189 — Does a project's owner brief keep the old entry shape, or does migrate merge the new one into it?
+- **Stage:** 9 convergence · **Slice:** S26-reversibility-line · **When:** 2026-10-07T08:08:04Z · **Iteration:** 27
+- **Scope:** S26-reversibility-line
+- **Question:** AC-S26-16 says a project's owner brief keeps the old entry shape until edited by hand, from the template's sentence that `slipwai migrate` never rewrites it. S26's migration test shows `migrate`'s three-way merge giving an unedited brief the new shape, and an edited brief keeping its edits (plan Q5).
+- **Options:** (a) the criterion and the catch-up note say what the tree does — the new shape merges in, a project's own edits are kept, and where the merge leaves the example without the line it is added by hand; the template's *never rewrites it* sentence is corrected to *never overwrites a project's edits* as a LOW task in S26's Phase 4 (recommended by the slice); (b) make `migrate` skip the brief.
+- **Decision:** (a).
+- **Why:** the catch-up note must tell a maintainer what will happen to their tree, and S02's fragment set the precedent; (b) would change `migrate` for a sentence's sake.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a merge is shown to drop a project's own edit to the brief.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
