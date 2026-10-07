@@ -83,6 +83,13 @@ NOT_AN_INPUT_FOR = {
                                      "(`.slipwai/propagated`); the directory is never read as a path of its own",
     ("check-decisions", ".."): "`reversibility.py`'s `inside` refuses a path whose first segment is `..`; compared, "
                                "never opened",
+    # `"provisional"` is a `decide` value in `agents/cruise.py`'s `CONTROLS`, which the scan takes for a sibling script
+    # named without its suffix and so walks `provisional.py` and the `reversibility.py` it loads; `cruise.py` never
+    # loads either (`--check` reads `.specify/cruise.json` alone), so the two literals are `check-decisions`' above.
+    ("check-agents", ".slipwai"): "reached only through `provisional.py`, which `cruise.py` names as a `decide` value "
+                                  "(a string, not a module it loads)",
+    ("check-agents", ".."): "reached only through `provisional.py` -> `reversibility.py`'s `inside`, which `cruise.py` "
+                            "names as a `decide` value (a string, not a module it loads)",
     ("check-agents", ".slipwai/extensions.json"): "`agents/code_index.py`'s `adopted()`, which `cruise.py` imports "
                                                   "and calls on `health`/`run` paths; `cruise.py --check` never does",
 }
