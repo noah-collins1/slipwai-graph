@@ -25,8 +25,8 @@ from test_decisions_scope_gate import released_checker
 sys.dont_write_bytecode = True
 
 
-def measures() -> Any:
-    spec = importlib.util.spec_from_file_location("measures_under_guard", SCRIPTS / "agents/measures.py")
+def measures(path: Path = SCRIPTS / "agents/measures.py") -> Any:
+    spec = importlib.util.spec_from_file_location(f"measures_under_guard_{path.parent.name}", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -60,10 +60,26 @@ class ReaderTest(unittest.TestCase):
         found = measures().decision_entries(entry(1, line))
         self.assertEqual((found[0]["tier"], found[0]["escalated"]), ("easy", False))
 
-    def test_e3_measures_is_unchanged_since_the_plan(self) -> None:
-        result = subprocess.run(["git", "diff", "063c187", "--", "assets/toolkit/scripts/agents/measures.py"],
-                                cwd=ROOT, text=True, capture_output=True)
-        self.assertEqual((result.returncode, result.stdout), (0, ""))
+    def test_e3_measures_reads_the_line_as_it_did_at_the_plan(self) -> None:
+        """`measures.py` may change (T023 skips fenced lines), but not its spelling of the line nor the tier and the
+        escalation it reads from every line shape the verb writes: the reader at `063c187` and now agree."""
+        text = subprocess.run(["git", "show", "063c187:assets/toolkit/scripts/agents/measures.py"], cwd=ROOT,
+                              text=True, capture_output=True, check=True, encoding="utf-8").stdout
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "planned").mkdir()
+            (Path(directory) / "planned/measures.py").write_text(text, encoding="utf-8")
+            before, now = measures(Path(directory) / "planned/measures.py"), measures()
+        self.assertEqual(before.SPELLING, now.SPELLING)
+        kinds = [(facts(**change), extra) for change in ({}, {"behind_flag": "no"}, {"contract": "yes"})
+                 for extra in ((), ("--raise", "guarded"), ("--raise", "hard")) if (change, extra) != (
+                     {"contract": "yes"}, ("--raise", "guarded"))]  # that one would lower a tier: usage, not a line
+        lines = [line for line in self.lines(kinds) if line]
+        lines += [line.replace(" → ", arrow) for arrow in ("->", " -> ") for line in lines]
+        log = "# Decisions\n\n" + "".join(entry(number, line) for number, line in enumerate(lines, 1))
+        read = [[(item["tier"], item["escalated"]) for item in reader.decision_entries(log)]
+                for reader in (before, now)]
+        self.assertEqual(read[0], read[1])
+        self.assertEqual(len(lines), len(read[1]))
 
 
 V2 = '''
