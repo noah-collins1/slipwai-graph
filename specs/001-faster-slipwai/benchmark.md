@@ -1,14 +1,14 @@
 # Benchmark — 001-faster-slipwai
 
-Drawn 2026-10-07T06:15:03Z at `c126f4a` from 19 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
+Drawn 2026-10-07T12:27:18Z at `961bd5f` from 22 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
 
 ## Slices
 
-18 slice(s) recorded, 82h56m+ in all.
+21 slice(s) recorded, 88h46m+ in all.
 
 | slice | delegate/cycle | wall | in | out | models | sessions | converge | +tasks | gaps | mutation | adversary | demo | verify✗ | rework | tasks | files | ±lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| (feature) | — | 1h35m | 34.5M | 125.2k | claude-fable-5-1, claude-opus-5-5, claude-sonnet-5-5 | 2 | 0 | 0 | 0/0 | — | 26 | — | 0 | 0 | — | — | — |
+| (feature) | — | 1h47m | 46.9M | 167.2k | claude-fable-5-1, claude-opus-5-5, claude-sonnet-5-5 | 3 | 0 | 0 | 0/0 | — | 26 | — | 0 | 0 | — | — | — |
 | S00-run-path | rule/rule | 1h44m+ | 20.1M (+1 unread) | 157k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 1 | 7/5 | — | 0 | accepted | 1 | 0 | 9 | 44 | +3151/-203 |
 | S01-gate-walks | story/rule, task/example, task/rule | 2h29m+ | 47.1M (+2 unread) | 165.7k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 9 | 22/13 | — | 7 | accepted | 1 | 0 | 33 | 45 | +6623/-59 |
 | S02-runner-bookkeeping | story/rule, task/example | 3h00m | 81M (+1 unread) | 205.3k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 5 | 69/0 | — | 18 | accepted | 0 | 0 | 28 | 79 | +11047/-78 |
@@ -16,6 +16,7 @@ Drawn 2026-10-07T06:15:03Z at `c126f4a` from 19 record(s) under `specs/001-faste
 | S04-parallel-gate | task/rule | 5h06m | 106.5M | 251.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 3 | 8 | 63/19 | — | 9 | accepted | 0 | 0 | 24 | 68 | +11069/-78 |
 | S05-xdist | story/rule, task/rule | 1h43m | 45.2M | 112.9k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 2 | 6 | 13/3 | — | 8 | accepted | 0 | 0 | 25 | 82 | +5806/-64 |
 | S06-scoped-gate | rule/rule, task/rule | 12h37m+ | 410.1M (+1 unread) | 523.9k | claude-opus-5-5, claude-sonnet-5-5 | 4 | 5 | 19 | 19/0 | — | 20 | accepted | 0 | 0 | 55 | 179 | +51773/-134 |
+| S07-scoped-checks | — | 17m28s | 96.5k | 478 | claude-opus-5-5 | 1 | 0 | 0 | 14/0 | — | 0 | — | 0 | 0 | — | — | — |
 | S08-scoped-mutation | story/rule | 8h43m | 338.7M | 399.2k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 2 | 8 | 19/7 | — | 16 | accepted | 0 | 0 | 44 | 249 | +27959/-455 |
 | S11-render-once | story/rule, task/rule | 2h49m | 41.4M (+1 unread) | 132.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 6 | 17/7 | n/a (no command recorded) | 13 | accepted | 0 | 0 | 24 | 48 | +6103/-164 |
 | S14-result-contract | story/rule | 2h11m | 216.9M | 266.8k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 2 | 12 | 0/7 | — | 14 | accepted | 0 | 0 | 41 | 309 | +34705/-485 |
@@ -24,15 +25,17 @@ Drawn 2026-10-07T06:15:03Z at `c126f4a` from 19 record(s) under `specs/001-faste
 | S22-slice-scope-base | rule/rule, task/rule | 1h41m | 32M | 200.2k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 2 | 7 | 21/11 | — | 11 | accepted | 0 | 0 | 29 | 29 | +5634/-42 |
 | S23-refusal-in-subdirectory | rule/rule, task/rule | 1h16m | 22.5M | 117.8k | claude-fable-5-1, claude-sonnet-5-5 | 1 | 1 | 6 | 10/6 | — | 8 | accepted | 0 | 0 | 17 | 30 | +4009/-11 |
 | S24-ci-fetches-slice-base | rule/rule, task/rule | 1h17m | 43.5M | 174.7k | claude-fable-5-1, claude-sonnet-5-5 | 2 | 2 | 4 | 13/7 | — | 8 | accepted | 0 | 0 | 24 | 226 | +34959/-339 |
+| S26-reversibility-line | drive-converge/?, drive-implement/rule, drive-tasks/? | 5h04m | 219.3M | 268.6k | claude-opus-5-5, claude-sonnet-5-5 | 1 | 1 | 0 | 16/8 | — | 21 | accepted | 1 | 0 | 26 | 55 | +6773/-22 |
 | S33-factory-gate-stamp | rule/rule, task/rule | 4h30m | 39.7M | 120.9k | claude-opus-5-5, claude-sonnet-5-5 | 5 | 2 | 6 | 10/7 | — | 5 | accepted | 0 | 0 | 31 | 135 | +42301/-105 |
 | S38-factory-test-selection | rule/rule, story/rule | 18h00m | 237.8M | 352k | claude-opus-5-5, claude-sonnet-5-5 | 3 | 2 | 11 | 0/0 | — | 18 | accepted | 0 | 0 | 56 | 227 | +38148/-124 |
 | S39-benchmark-elapsed | story/rule, task/rule | 6h50m | 207.4M | 265.3k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 2 | 16 | 0/0 | — | 28 | accepted | 0 | 0 | 57 | 81 | +23082/-242 |
+| S43-test-declarations | — | 17m27s | 10.7M | 14k | claude-opus-5-5 | 1 | 0 | 0 | 11/0 | — | 0 | — | 0 | 0 | — | — | — |
 
 delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes wall a floor because an unbracketed stage is missing; tokens are not prices.
 
 ## Stages
 
-### The feature, above the slice loop — 1h35m
+### The feature, above the slice loop — 1h47m
 
 | stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
 |---|---|---|---|---|---|---|---|---|
@@ -45,6 +48,8 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | skipper | 2026-10-06 04:26 | 12m05s | 4.9M | 15.8k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
 | gaps | 2026-10-06 06:22 | 10m03s | 3.5M | 8.9k | claude-opus-5-5 | drive-gaps | yes | findings=12, driver=cruise |
 | skipper | 2026-10-06 07:28 | 8m24s | 18.4M | 33.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-gaps, drive-implement, drive-skipper, drive-slice, drive-tasks | yes | driver=cruise |
+| skipper | 2026-10-07 06:28 | 6m09s | 4.2M | 25.3k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
+| skipper | 2026-10-07 07:43 | 4m56s | 8.2M | 16.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-skipper, drive-slice | yes | driver=cruise |
 
 ### S00-run-path — 1h44m+
 
@@ -206,6 +211,12 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | demo | 2026-10-05 21:56 | 10m12s | 4.4M | 13.6k | claude-opus-5-5 | drive-hand | yes | outcome=accepted, driver=cruise |
 | adversary | 2026-10-05 22:07 | 21m06s | 23.9M | 24.5k | claude-opus-5-5 | drive-adversary, drive-hand | yes | findings=20, seams=3, driver=cruise |
 | implement | 2026-10-05 22:34 | 1h20m | 41.7M | 66.7k | claude-opus-5-5, claude-sonnet-5-5 | drive-hand, drive-implement, drive-slice | yes | verify_failures=0, delegate=task, cycle=rule, split=3, driver=cruise |
+
+### S07-scoped-checks — 17m28s
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-07 06:16 | 17m28s | 96.5k | 478 | claude-opus-5-5 | — | no | gaps=14, driver=cruise |
 
 ### S08-scoped-mutation — 8h43m
 
@@ -370,6 +381,22 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | skipper | 2026-10-04 09:01 | 4m21s | 2M | 15.7k | claude-fable-5-1 | drive-skipper | yes | driver=cruise |
 | implement | 2026-10-04 09:06 | 8m16s | 4.9M | 12.1k | claude-fable-5-1, claude-sonnet-5-5 | drive-implement | yes | verify_failures=0, delegate=task, cycle=rule, split=0, driver=cruise |
 
+### S26-reversibility-line — 5h04m
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-07 06:16 | 17m27s | 10.7M | 14k | claude-opus-5-5 | drive-gaps | yes | gaps=16, driver=cruise |
+| plan | 2026-10-07 06:36 | 8m38s | 17.3M | 8.4k | claude-opus-5-5, claude-sonnet-5-5 | Explore, drive-slice, drive-tasks | yes | note=4 open questions, none blocking, driver=cruise |
+| tasks | 2026-10-07 06:44 | 1m53s | 1.8M | 16.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-slice, drive-tasks | yes | delegate=drive-tasks, driver=cruise |
+| implement | 2026-10-07 07:34 | 14m42s | 25.6M | 43.4k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-skipper, drive-slice | yes | delegate=drive-implement, cycle=rule, split=2, driver=cruise |
+| converge | 2026-10-07 07:48 | 10m20s | 23.8M | 20.1k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-implement, drive-slice, drive-tasks | yes | note=converged pass 1, findings=9, delegate=drive-converge, driver=cruise |
+| gaps | 2026-10-07 08:07 | 9m27s | 11M | 16.5k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-gaps, drive-implement, drive-slice | yes | gaps=8, driver=cruise |
+| implement | 2026-10-07 08:17 | 5m54s | 14.6M | 14.6k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-implement, drive-slice | yes | delegate=drive-implement, cycle=rule, split=2, note=after-converge T010-T017, driver=cruise |
+| demo | 2026-10-07 08:27 | 9m48s | 10.6M | 11.5k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-hand, drive-implement, drive-slice | yes | outcome=accepted, driver=cruise |
+| adversary | 2026-10-07 08:37 | 10m32s | 13.3M | 17.9k | claude-opus-5-5, claude-sonnet-5-5 | drive-adversary, drive-converge, drive-implement, drive-slice | yes | findings=12, seams=2, driver=cruise |
+| implement | 2026-10-07 08:47 | 20m04s | 24.4M | 29.7k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-implement, drive-slice | yes | verify_failures=0, delegate=drive-implement, cycle=rule, split=2, driver=cruise |
+| gate | 2026-10-07 09:11 | 3h15m | 66.1M | 75.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-gaps, drive-hand, drive-implement, drive-slice | yes | verify_failures=1, driver=cruise |
+
 ### S33-factory-gate-stamp — 4h30m
 
 | stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
@@ -435,6 +462,12 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | hand | 2026-10-06 11:21 | 9m50s | 2.4M | 4.3k | claude-opus-5-5 | drive-hand | yes | outcome=accepted, driver=cruise |
 | gate | 2026-10-06 19:37 | 3h38m | 15.8M | 33.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-hand, drive-implement | yes | driver=cruise |
 
+### S43-test-declarations — 17m27s
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-07 06:16 | 17m27s | 10.7M | 14k | claude-opus-5-5 | drive-gaps | yes | gaps=11, driver=cruise |
+
 ## Notes
 
 - S03-verify-stamp: converge ran 3 times, appending 15 task(s) — a slice too large, or fixes too narrow to close the class of what they found
@@ -451,6 +484,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 - S22-slice-scope-base: implemented as rule/rule and task/rule — its wall compares with neither
 - S23-refusal-in-subdirectory: implemented as rule/rule and task/rule — its wall compares with neither
 - S24-ci-fetches-slice-base: implemented as rule/rule and task/rule — its wall compares with neither
+- S26-reversibility-line: implemented as drive-converge/? and drive-implement/rule and drive-tasks/? — its wall compares with neither
 - S33-factory-gate-stamp: implemented as rule/rule and task/rule — its wall compares with neither
 - S38-factory-test-selection: implemented as rule/rule and story/rule — its wall compares with neither
 - S39-benchmark-elapsed: implemented as story/rule and task/rule — its wall compares with neither
