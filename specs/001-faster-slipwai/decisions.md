@@ -4363,3 +4363,15 @@
 - **Confidence:** high · **Would reverse if:** a person relaxes the target, or names the further routes, before S07 merges.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
+
+## D194 — check-imports and check-migrations read inside directories the scoped gate's baseline exempts
+- **Stage:** Phase 4 · **Slice:** S07-scoped-checks · **When:** 2026-10-07T16:06:46Z · **Iteration:** 27
+- **Scope:** S07-scoped-checks
+- **Question:** T029 closed four of six recursive walks that read past the verify stamp's exempt list. `check-imports` and `check-migrations` read every directory but four (D45), and every `target` but a recorded Java root's (D52), so a slice cannot switch the gate off by naming a directory; an ignored `dist/` or `coverage/` holding source under `apps/` or `packages/` is read by them and not compared by the scoped gate — a scoped skip while `make verify` fails.
+- **Options:** (a) the scoped gate gives those two checks no recorded inputs whenever a directory the stamp exempts exists under one of their declared inputs, so they run, D45 and D52 untouched (recommended); (b) prune the stamp's names from their walks, overriding D45 and D52; (c) accept the hole.
+- **Decision:** (a), on the record's side, beside T016's rule for an empty projection directory: one line naming the directory and why.
+- **Why:** owner priority 5 — a scope that could cache a false green is wrong — and D52's reason stands: the gate is never switched off by what a slice names a directory; (a) only runs a check more often, where (b) reads less.
+- **Decided by:** host (standing decision D52)
+- **Confidence:** high · **Would reverse if:** the rule makes those two checks run on nearly every scoped run of a common starter (a `dist/` every web build leaves), which the tests would show.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing

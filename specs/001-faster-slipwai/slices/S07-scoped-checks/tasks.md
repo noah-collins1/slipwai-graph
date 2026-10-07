@@ -571,6 +571,7 @@ a hold shown to have teeth.
 - [ ] T023 [MEDIUM] B1, B2, B3: `check-ux-gates` follows unquoted `href`s, `@import`s of names with spaces, and percent-encoded `href`s.
 - [ ] T024 [LOW] B4: every git question in `verify_scoped/since.py` runs at the project root.
 - [ ] T025 [LOW] The quickstart runs as written (the hand's notes: `generate` writes `<output>/<name>`; steps 2–3 name `./init --integration claude --extension ux-gates`, `npm install`, a green baseline on the slice branch, seeded previews and Playwright); the three lines the hand found hard to read (*the base of `main`*, *has no usable base* twice, *a check may have written one* on the person's own edit) are reworded.
+- [ ] T029 [HIGH] The class T022 found: every recursive walk a scoped check makes (`check-benchmark`'s `records()`, `check-deploy-role` over `infra/service/` incl. `.terraform/`, `check-flags`' `sources()`, `check-imports`' and `check-migrations`' `listing()`, `check-styles`' `imported_styles()`) consults the verify stamp's exempt list; the walk test holds every one with no exceptions.
 - [ ] T026 Mutation: N/A — no mutation tool is configured for the factory's own Python.
 - [ ] T027 Both full gates once on the final tip: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify`.
 - [ ] T028 Register row with `accepted-by: drive-hand`; benchmark closed; worktree and `slice/S07-scoped-checks` removed; S07's undeclared modules carried to S43's list when S43 merges (AC-S07-15).
