@@ -61,8 +61,9 @@ def valid_options(catalog: Mapping[str, Any], axis: str) -> frozenset[str]:
 
 
 def reads_ok(root: Path, entry: object) -> str:
-    """Why a `reads` entry is unusable, or empty: a relative path inside the tree that exists."""
-    if not isinstance(entry, str) or not entry or entry.startswith("/") or ".." in entry.split("/"):
+    """Why a `reads` entry is unusable, or empty: a normalised relative path inside the tree that exists (no `.`, `..`,
+    empty part, trailing `/` or backslash: `choose.reads_match` matches by prefix and means what it says)."""
+    if not isinstance(entry, str) or "\\" in entry or {"", ".", ".."} & {*str(entry).split("/")}:
         return f"reads names {entry!r}, which is not a path inside the repository"
     return "" if (root / entry).exists() else f"reads names `{entry}`, which does not exist"
 
@@ -97,15 +98,21 @@ def build(root: Path, value: object, catalog: Mapping[str, Any]) -> tuple[Declar
     return Declaration(True, False, axes, frozenset(reads)), ""
 
 
+def top(dotted: str) -> str:
+    """The module a dotted name reaches in this tree: `tests.support` is `support`, anything else its first part."""
+    parts = dotted.split(".")
+    return parts[1] if parts[0] == "tests" and len(parts) > 1 else parts[0]
+
+
 def imported_names(tree: ast.AST) -> frozenset[str] | None:
     """Every module name the file imports, by statement or by `import_module("name")`; None where a name is computed."""
     found: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
-            found.update(alias.name.split(".")[0] for alias in node.names)
+            found.update(top(alias.name) for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
             if node.module:
-                found.add(node.module.split(".")[0])
+                found.add(top(node.module))
             if node.level or node.module in (None, "tests"):
                 found.update(alias.name for alias in node.names)
         elif isinstance(node, ast.Call):
@@ -188,7 +195,7 @@ def read_source(root: Path, path: Path, catalog: Mapping[str, Any]) -> Source:
 def generation_facts(root: Path, path: Path, tree: ast.Module) -> statics.Facts:
     """The calls, routes and reaches of one file; `tests/support.py`, which defines the seam they are bound to, is
     trusted with its own launcher and `ROOT`."""
-    return statics.facts(tree, statics.signature(root), statics.defines_seam(tree), names_launcher)
+    return statics.facts(tree, statics.signature(root), statics.defines_seam(tree), names_launcher, root)
 
 
 def join(parts: list[Declaration]) -> Declaration:

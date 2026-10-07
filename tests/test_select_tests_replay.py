@@ -52,7 +52,7 @@ class TestAReplayedRange(ReplayCase):
         lines = self.replay(f"{start}..{one}")
         left_out = "(java-quarkus, java-spring, python, typescript unaffected)"
         self.assertEqual(lines[1:-1], ["skipped test_b: reads no go configuration",
-                                       "skipped test_d: reads no go configuration",
+                                       "skipped test_d: reads no go configuration and none of the changed files",
                                        f"narrowed test_a: backend go only {left_out}"])
         self.assertEqual(lines[-1], f"selected 2 of 4 modules against `{start}` at {self.short(start)}")
 

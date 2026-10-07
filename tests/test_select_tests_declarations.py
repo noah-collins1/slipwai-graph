@@ -31,8 +31,10 @@ class TestWhatARunReaches(DeclarationCase):
         ran, skipped = self.selected()
         # `test_h` names no backend, so it admits every one; `test_g` generates nothing and reads nothing
         self.assertEqual(ran, ["test_a", "test_b", "test_c", "test_h"])
-        self.assertEqual(skipped, [f"skipped {name}: reads no go configuration" for name in
-                                   ("test_d", "test_e", "test_f", "test_g")])
+        self.assertEqual(skipped, ["skipped test_d: reads no go configuration",
+                                   "skipped test_e: reads no go configuration",
+                                   "skipped test_f: reads no go configuration and none of the changed files",
+                                   "skipped test_g: reads no go configuration"])
 
     def test_a_module_that_reads_a_changed_file_runs(self) -> None:
         self.declare(test_a='{"reads": ["README.md"]}', test_b='{"reads": ["docs"]}', test_c="{}")
@@ -92,6 +94,17 @@ class TestADeclarationThatCannotBeRead(DeclarationCase):
         "an empty option list": '{"configurations": {"backend": []}}',
         "configurations other than every": '{"configurations": "go"}',
     }
+
+    def test_a_reads_entry_that_is_not_a_normalised_repository_path_is_unusable(self) -> None:
+        for entry in ("./README.md", "docs//guide.md", "docs/", "docs\\guide.md", ".", "docs/./guide.md"):
+            with self.subTest(entry):
+                self.declare(test_a=json.dumps({"reads": [entry]}))
+                self.write("README.md", "read\n")
+                self.write("docs/guide.md", "g\n")
+                self.commit("declarations")
+                problems = self.held()
+                self.assertEqual([line.split(":")[0] for line in problems], ["tests/test_a.py"], problems)
+                self.assertIn("not a path inside the repository", problems[0])
 
     def test_the_module_runs_and_the_held_check_names_it(self) -> None:
         for what, selection in self.BAD.items():

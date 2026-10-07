@@ -61,7 +61,7 @@ class TestAGoAppChangeNarrows(unittest.TestCase):
         for module in ("test_gitea_pages", "test_migration_script", "test_pit_globs", "test_release", "test_versions"):
             verdict = self.found["verdicts"][module]
             self.assertFalse(verdict["runs"], f"{module}: {verdict['reasons']}")
-            self.assertEqual(verdict["skip"], "reads no go configuration", module)
+            self.assertEqual(verdict["skip"], "reads no go configuration and none of the changed files", module)
 
     def test_every_module_importing_slipwai_that_admits_go_still_runs(self) -> None:  # AC-S38-16
         self.assertIn("test_matrix", self.found["go"])
@@ -74,15 +74,17 @@ class TestAGoAppChangeNarrows(unittest.TestCase):
 
 class TestTheWordsOfASkip(unittest.TestCase):
     """T045: a module skipped on a change that reaches every configuration reads no configuration *and* none of the
-    changed files, which is the whole of why it is skipped; one skipped on a go change reads no go configuration."""
+    changed files, which is the whole of why it is skipped; one skipped on a go change reads no go configuration and,
+    since it reads files of its own, none of the changed files either (T047)."""
 
     def test_a_toolkit_script_skips_the_modules_that_load_neither_it_nor_a_configuration(self) -> None:
         found = probe("assets/toolkit/scripts/verify-stamp.py")["verdicts"]["test_gitea_pages"]
         self.assertFalse(found["runs"])
         self.assertEqual(found["skip"], "reads no configuration and none of the changed files")
 
-    def test_a_go_app_change_is_still_said_by_the_configuration_alone(self) -> None:
-        self.assertEqual(probe(HEALTH)["verdicts"]["test_gitea_pages"]["skip"], "reads no go configuration")
+    def test_a_go_app_change_names_the_configuration_and_the_files(self) -> None:
+        found = probe(HEALTH)["verdicts"]["test_gitea_pages"]["skip"]
+        self.assertEqual(found, "reads no go configuration and none of the changed files")
 
 
 if __name__ == "__main__":

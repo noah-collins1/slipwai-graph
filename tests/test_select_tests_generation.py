@@ -116,6 +116,72 @@ class TestAReachIntoTheRepository(GenerationCase):
         self.assertIn("generates through the launcher", self.voided())
 
 
+class TestAReadsEntryHoldsWhereTheSelectorMatchesIt(GenerationCase):
+    """`reads` entries are matched by prefix, so only a bare-name `.load(` may be held by a longer entry (T054, B2)."""
+
+    HEAD = "from slipwai.assets import ROOT\n"
+
+    def test_a_suffix_of_an_entry_does_not_hold_a_root_path(self) -> None:
+        self.write("README.md", "read\n")
+        self.write("assets/README.md", "other\n")
+        self.module(GO_ONLY.replace("}}", '}, "reads": ["assets/README.md"]}'), '(ROOT / "README.md").read_text()',
+                    self.HEAD)
+        self.assertIn("reaches the repository in-process", self.voided())
+
+    def test_a_bare_name_load_is_held_by_the_entry_that_ends_in_it(self) -> None:
+        self.write("assets/README.md", "other\n")
+        self.module(GO_ONLY.replace("}}", '}, "reads": ["assets/README.md"]}'), 'self.load("README.md")', self.HEAD)
+        self.assertEqual(self.held(), [])
+
+    def test_a_load_of_a_path_is_not_held_by_a_suffix(self) -> None:
+        self.write("assets/docs/README.md", "other\n")
+        self.write("docs/README.md", "other\n")
+        self.module(GO_ONLY.replace("}}", '}, "reads": ["assets/docs/README.md"]}'),
+                    'self.load("docs/README.md")', self.HEAD)
+        self.assertIn("reaches the repository in-process", self.voided())
+
+
+class TestAPathLiteralIsAReach(GenerationCase):
+    """The tests run at the repository's root, so a literal path reaches it without `ROOT` (S38 T053, B1)."""
+
+    def test_a_literal_naming_an_existing_path_the_reads_lack_voids_the_declaration(self) -> None:
+        self.write("README.md", "read\n")
+        self.write("scripts/x.py", "x = 1\n")
+        for body in ('Path("README.md").read_text()', 'subprocess.run(["python3", "scripts/x.py"])',
+                     'open("scripts/x.py")'):
+            with self.subTest(body):
+                self.module(GO_ONLY, body)
+                self.assertIn("reaches the repository in-process", self.voided())
+
+    def test_the_same_literals_are_held_by_reads_naming_them_or_a_directory_above(self) -> None:
+        self.write("README.md", "read\n")
+        self.write("scripts/x.py", "x = 1\n")
+        body = 'Path("README.md").read_text()\nsubprocess.run(["python3", "scripts/x.py"])'
+        for reads in ('["README.md", "scripts"]', '["README.md", "scripts/x.py"]'):
+            with self.subTest(reads):
+                self.module(GO_ONLY.replace("}}", '}, "reads": ' + reads + "}"), body)
+                self.assertEqual(self.held(), [])
+
+    def test_a_literal_that_names_nothing_in_the_repository_is_not_a_reach(self) -> None:
+        self.write("README.md", "read\n")
+        self.module(GO_ONLY, 'name = "no-such-file.md"\nlabel = "README.md is read"')
+        self.assertEqual(self.held(), [])
+
+
+    def test_a_literal_that_is_compared_indexed_or_joined_to_another_base_is_not_a_path_handed_on(self) -> None:
+        self.write("README.md", "read\n")
+        self.write("tests/x.py", "x = 1\n")
+        for body in ('"tests" in parts', 'table["README.md"]', 'project / "README.md"', 'where = "."'):
+            with self.subTest(body):
+                self.module(GO_ONLY, body)
+                self.assertEqual(self.held(), [])
+
+    def test_a_literal_joined_onto_from_the_left_is_a_path_handed_on(self) -> None:
+        self.write("scripts/x.py", "x = 1\n")
+        self.module(GO_ONLY, 'Path("scripts") / "x.py"')
+        self.assertIn("reaches the repository in-process", self.voided())
+
+
 class TestWhatTheSelectorDoesWithAVoidedDeclaration(GenerationCase):
     PYTHON = "assets/languages/python/main.py"
 
