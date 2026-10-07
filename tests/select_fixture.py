@@ -17,13 +17,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE
+from stamp_names import CI_MARKERS, GIT_STATE, MAKE_STATE
 
 from slipwai.assets import ROOT
 
 sys.dont_write_bytecode = True
 
 SCRIPTS = "assets/toolkit/scripts/"
+# `setUp` copies `COPIED` out of the repository by a computed name, so the declaration names each of them.
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["Makefile", "scripts/select-tests.py", "scripts/select_tests",
+              "assets/toolkit/scripts/check-slice-scope.py", "assets/toolkit/scripts/verify-stamp.py",
+              "assets/toolkit/scripts/verify_scoped"],
+}
 # What the selector and the stamp load; a path that does not exist yet (the selector, before T002) is skipped.
 COPIED = ("Makefile", "scripts/select-tests.py", "scripts/select_tests", SCRIPTS + "check-slice-scope.py",
           SCRIPTS + "verify-stamp.py", SCRIPTS + "verify_scoped")

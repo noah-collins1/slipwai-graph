@@ -28,6 +28,14 @@ def plant(base: Path, java: bool = False) -> None:
     (base / "target/migrations/202610031200_drop.sql").write_text(DROP)
 
 
+# Generates Python and Quarkus projects through `FactoryTestCase.generate`'s literal arguments; the gates it runs are
+# the generated copies, so it names no repository path of its own.
+TEST_SELECTION: dict[str, object] = {
+    "configurations": {"backend": ["python", "java-quarkus"], "profile": ["event-modelling"], "frontend": ["none"]},
+    "reads": [],
+}
+
+
 class Project(FactoryTestCase):
     def record(self, repo: Path, change: object) -> None:
         manifest = json.loads((repo / "project.json").read_text())

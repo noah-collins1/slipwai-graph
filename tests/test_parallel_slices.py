@@ -14,10 +14,13 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from gate_rules import gate_prerequisites
 from support import NO_MAINTENANCE, FactoryTestCase, commit_all
-from test_verify_stamp_pinned import gate_prerequisites
 
 from slipwai.catalog import CATALOG
+
+TEST_SELECTION: dict[str, object] = {  # every profile the catalog lists, so none is named; it plants a Makefile
+    "configurations": {"backend": ["typescript"], "frontend": ["none"]}, "reads": ["Makefile"]}
 
 MODEL = """\
 schemaVersion: 1
@@ -254,10 +257,8 @@ class SliceScopeGateTest(FactoryTestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             # And the CI shape: a detached checkout with the head ref in the environment is the same branch.
             git(repo, "checkout", "-q", "--detach")
-            result = subprocess.run(
-                ["python3", "scripts/check-slice-scope.py"], cwd=repo, text=True, capture_output=True,
-                env={**os.environ, "GITHUB_HEAD_REF": "slice/S1"},
-            )
+            result = subprocess.run(["python3", "scripts/check-slice-scope.py"], cwd=repo, text=True,
+                                    capture_output=True, env={**os.environ, "GITHUB_HEAD_REF": "slice/S1"})
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("slice/S1 touches only", result.stdout)
 
@@ -343,8 +344,7 @@ class StampedMigrationsTest(FactoryTestCase):
             (migrations / "202609151031_orders_drop_state.sql").write_text(
                 "-- contract: 202609151030_orders_add_status\nALTER TABLE orders DROP COLUMN state;\n"
             )
-            result = subprocess.run(
-                ["python3", "scripts/check-migrations.py"], cwd=repo, text=True, capture_output=True,
-            )
+            result = subprocess.run(["python3", "scripts/check-migrations.py"], cwd=repo, text=True,
+                                    capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertLess("004_event_tags.js", expand.name)

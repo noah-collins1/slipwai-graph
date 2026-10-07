@@ -11,6 +11,12 @@ from select_fixture import SelectCase, git
 
 sys.dont_write_bytecode = True
 
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["Makefile", "scripts/select-tests.py", "scripts/select_tests", "assets/toolkit/scripts/check-styles.py",
+              "assets/toolkit/scripts/check-slice-scope.py", "assets/toolkit/scripts/verify-stamp.py",
+              "assets/toolkit/scripts/verify_scoped"],
+}
+
 ALL = ["test_a", "test_b", "test_c"]
 BROADENS = "its effect cannot be established"
 # Data-model *The path rules*, first row: every path that is full, with the rule that names it.

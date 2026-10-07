@@ -15,6 +15,8 @@ from slipwai.assets import ROOT
 
 sys.dont_write_bytecode = True
 
+TEST_SELECTION: dict[str, object] = {"reads": ["Makefile"]}
+
 PATCH = "specs/001-faster-slipwai/slices/S38-factory-test-selection/s38.patch"
 UNPATCHED = f"the root Makefile is not yet patched \u2014 apply {PATCH}"
 MAKEFILE = ROOT / "Makefile"

@@ -22,6 +22,12 @@ MIGRATIONS_LINE = (
     "check-migrations: every migration is additive, or a marked contraction of an earlier one; "
     "Go migrate images embed their .sql files"
 )
+# Generates Python projects with and without the React frontend through `FactoryTestCase.generate`'s literal arguments,
+# copies the two walking gates out of the toolkit by the names `GATES` lists, and names `project.json` of the projects.
+TEST_SELECTION: dict[str, object] = {
+    "configurations": {"backend": ["python"], "profile": ["event-modelling"], "frontend": ["none", "react-vite"]},
+    "reads": ["project.json", "assets/toolkit/scripts/check-imports.py", "assets/toolkit/scripts/check-migrations.py"],
+}
 PRUNED = (".venv", "node_modules", "__pycache__", ".git")
 GATES = {"scripts/check-imports.py": IMPORTS_LINE, "scripts/check-migrations.py": MIGRATIONS_LINE}
 

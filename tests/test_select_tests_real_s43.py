@@ -41,9 +41,13 @@ DECLARED: tuple[str, ...] = (  # the test modules this slice declares
     "test_factory_gate_stamp", "test_verify_stamp_key", "test_verify_stamp_working", "test_verify_stamp_reuse",
     "test_verify_stamp_stored", "test_verify_stamp_two_runs",
     "test_mutation_scope_real_spring",
+    "test_select_tests_make", "test_select_tests_paths", "test_select_tests_declarations", "test_select_tests_go_app",
+    "test_select_tests_makefile", "test_gate_walks_pom", "test_gate_walks", "test_drawio_canvas",
+    "test_design_extensions", "test_parallel_slices", "test_event_model",
 )
 # the helper files this slice declares
-HELPERS: tuple[str, ...] = ("gate_rules", "render_fixture", "stamp_names", "stamp_case", "mutation_env")
+HELPERS: tuple[str, ...] = ("gate_rules", "render_fixture", "stamp_names", "stamp_case", "mutation_env",
+           "select_fixture", "select_fixture_declare")
 
 
 def pairs(tree: declarations.Tree, names: Iterable[str]) -> set[tuple[str, str]]:

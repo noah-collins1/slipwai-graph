@@ -17,6 +17,11 @@ from pathlib import Path
 
 from support import FactoryTestCase
 
+# Generates TypeScript projects with the React frontend through `FactoryTestCase.generate`'s literal arguments.
+TEST_SELECTION: dict[str, object] = {
+    "configurations": {"backend": ["typescript"], "profile": ["event-modelling"], "frontend": ["react-vite"]},
+    "reads": [],
+}
 FAKE_SPECIFY = "#!/bin/sh\nexit 0\n"
 
 # What `uipro init --ai universal` writes, reduced to what the extension reads: the skill, its text naming

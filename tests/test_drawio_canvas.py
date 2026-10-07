@@ -12,9 +12,14 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from gate_rules import gate_prerequisites
 from support import FactoryTestCase
-from test_verify_stamp_pinned import gate_prerequisites
 
+# Generates Python and TypeScript projects through `FactoryTestCase.generate`'s literal arguments.
+TEST_SELECTION: dict[str, object] = {
+    "configurations": {"backend": ["python", "typescript"], "profile": ["event-modelling"], "frontend": ["none"]},
+    "reads": [],
+}
 MODEL_HEADER = "version: 1\nrender:\n  lanes:\n    ui: actor\n    data: none\n    events: stream\n"
 SLICES = (
     "slices:\n"

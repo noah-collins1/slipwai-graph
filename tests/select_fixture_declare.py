@@ -13,6 +13,8 @@ from select_fixture import STAND_IN, SelectCase
 
 sys.dont_write_bytecode = True
 
+TEST_SELECTION: dict[str, object] = {}
+
 GO = "assets/languages/go/main.go"
 HELD = ("from select_tests import declarations\n"
         "print(json.dumps(declarations.held(__import__('pathlib').Path('.').resolve())))\n")

@@ -15,6 +15,12 @@ from slipwai.assets import ROOT
 
 sys.dont_write_bytecode = True
 
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["Makefile", "scripts/select-tests.py", "scripts/select_tests", "tests",
+              "assets/toolkit/scripts/check-styles.py", "assets/toolkit/scripts/check-slice-scope.py",
+              "assets/toolkit/scripts/verify-stamp.py", "assets/toolkit/scripts/verify_scoped"],
+}
+
 
 class TestWhatARunReaches(DeclarationCase):
     def test_a_go_change_runs_the_go_declarers_the_every_declarers_and_the_undeclared(self) -> None:

@@ -17,6 +17,12 @@ from test_select_tests_makefile import MAKEFILE, UNPATCHED
 
 sys.dont_write_bytecode = True
 
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["Makefile", "scripts/select-tests.py", "scripts/select_tests", "assets/toolkit/scripts/check-styles.py",
+              "assets/toolkit/scripts/check-slice-scope.py", "assets/toolkit/scripts/verify-stamp.py",
+              "assets/toolkit/scripts/verify_scoped"],
+}
+
 PYTHON = '{"configurations": {"backend": ["python"]}}'
 GO_DECLARED = '{"configurations": {"backend": ["go"]}}'
 EVERY = ["test_a", "test_b", "test_c"]
@@ -34,7 +40,7 @@ class MakeCase(DeclarationCase):
         self.slice_changing(GO)
 
     def stamps(self) -> dict[str, tuple[bytes, int]]:
-        directory = self.repo / ".git" / "slipwai"
+        directory = self.repo / ".git/slipwai"
         files = directory.glob("*") if directory.is_dir() else ()
         return {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in files}
 
@@ -146,17 +152,17 @@ class TestMakeVerifyIsWhole(MakeCase):
         lines = self.ran()
         self.assertEqual([line for line in lines if not line.startswith("module\t")], CHECKS)
         self.assertEqual(sorted(line.split("\t")[1] for line in lines if line.startswith("module\t")), EVERY)
-        self.assertTrue(list((self.repo / ".git" / "slipwai").glob("*.json")), "no stamp was recorded")
+        self.assertTrue(list((self.repo / ".git/slipwai").glob("*.json")), "no stamp was recorded")
 
     def test_since_does_not_narrow_it(self) -> None:  # e2
         for since in ("main", "HEAD~0"):
             with self.subTest(since=since, how="in the environment"):
-                shutil.rmtree(self.repo / ".git" / "slipwai", ignore_errors=True)
+                shutil.rmtree(self.repo / ".git/slipwai", ignore_errors=True)
                 self.ok("verify", SINCE=since)
                 self.assertEqual(self.modules_run(), EVERY)
-                self.assertTrue(list((self.repo / ".git" / "slipwai").glob("*.json")))
+                self.assertTrue(list((self.repo / ".git/slipwai").glob("*.json")))
             with self.subTest(since=since, how="on the command line"):  # the stamp records no pass made that way
-                shutil.rmtree(self.repo / ".git" / "slipwai", ignore_errors=True)
+                shutil.rmtree(self.repo / ".git/slipwai", ignore_errors=True)
                 self.ok("verify", f"SINCE={since}")
                 self.assertEqual(self.modules_run(), EVERY)
 

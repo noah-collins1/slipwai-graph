@@ -17,6 +17,11 @@ from slipwai.assets import ROOT
 
 sys.dont_write_bytecode = True
 
+TEST_SELECTION: dict[str, object] = {
+    "reads": ["scripts/select_tests", "tests", "assets/languages/go/scripts/go-mutation.py",
+              "assets/toolkit/scripts/verify-stamp.py"],
+}
+
 HEALTH = "assets/languages/go/app/health/health.go"
 PROBE = """
 import json, sys

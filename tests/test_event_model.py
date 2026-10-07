@@ -13,6 +13,11 @@ from slipwai.backends import NODE_MAJOR
 from slipwai.project.ci_workflows import NODE_SETUP
 from slipwai.project.event_model import event_model_page_url, event_model_workflow
 
+# Generates TypeScript projects through `FactoryTestCase.generate`'s literal arguments.
+TEST_SELECTION: dict[str, object] = {
+    "configurations": {"backend": ["typescript"], "profile": ["event-modelling"], "frontend": ["none"]},
+    "reads": [],
+}
 SETUP_NODE = re.compile(r"actions/setup-node@(v\d+)\n\s+with:\n\s+node-version: '?(\d+)'?")
 
 
