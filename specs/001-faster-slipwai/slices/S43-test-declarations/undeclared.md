@@ -1,10 +1,10 @@
 # S43 — the modules left undeclared (AC-S43-7)
 
-Written from `declarations.scan` at the slice's tip (rebased onto `adopt-method` `0000e5b`, after S26 merged). 383 test modules; 50 carry an effective declaration; 333 are undeclared and always run, each with the selector's own reason (`Tree.effective`). Seconds are the AC-S43-1 table's at `063c187` (— for a module added since).
+Written from `declarations.scan` at the slice's tip (rebased onto `adopt-method` `814acdc`, after S26 merged, with S26's Phase 4). 387 test modules; 62 carry an effective declaration; 325 are undeclared and always run, each with the selector's own reason (`Tree.effective`). Seconds are the AC-S43-1 table's at `063c187` (— for a module added since).
 
-**What one Go app file selects now** (`assets/languages/go/app/.gremlins.yaml`, `choose.select` on this tree, a dry estimate, not AC-S43-6's measurement): 342 of 383 modules run, 7 of them narrowed to go; their seconds in the table sum to 2734 s (of 3448 s). Of that, S07's still-undeclared modules (`test_verify_scoped_*`, `test_ux_gates_*`): 564 s (D188 item 4). `test_matrix` and `test_images` count whole here; narrowed to go they cost a fraction.
+**What one Go app file selects now** (`assets/languages/go/app/.gremlins.yaml`, `choose.select` on this tree, a dry estimate, not AC-S43-6's measurement): 334 of 387 modules run, 7 of them narrowed to go; their seconds in the table sum to 2742 s (of 3448 s; modules added since the table count 0). Of that, S07's still-undeclared modules (`test_verify_scoped_*`, `test_ux_gates_*`): 564 s (D188 item 4). `test_matrix` and `test_images` count whole here; narrowed to go they cost a fraction.
 
-S26's modules (`test_decisions_*`, `test_hand_backs_record`, `test_result_contract_briefs`/`_stops`, `test_reversibility_*`) may be declared since the rebase (D188 item 2); they sum to about 9 s in the table plus S26's new modules, and are left for a later pass.
+S26's modules were declared after the rebase (after-converge A0, D188 item 2): `test_decisions_scope`, `_edges`, `_spelling`, `_calls`, `_gate`, `test_hand_backs_record`, `test_reversibility_gate`, `_versions`, `_labels`, `_list`, `_paths`, `_score`, `_written` and `test_measures_fenced_tier`, reads-only, each naming what the reads-only audit sees it open. Left undeclared, with the selector's reason in the table: `test_reversibility_migrate` (launcher route through `test_migrate`/`test_replay`), `test_reversibility_writers` (imports `test_replay`), `test_result_contract_briefs`/`_stops` and `test_agent_types`/`test_stage_models` (the closure reaches `test_adopt`). Two selector tests from the first pass, `test_select_tests_go_app` and `test_select_tests_declarations`, are now undeclared too (after-converge A3): each runs a child probe over the whole real tree, which depends on every declared module's `reads` targets existing and on git's tracked set, so neither can be a `reads` list; declared, a deleted path some declaration reads skipped the module while running it failed. `test_select_tests_real_s43` pins both undeclared and fails a reads-only declared module whose source scans the real tree.
 The last column is the first thing that keeps the module running on a Go change even if every helper it borrows were moved: `route` is a launcher, `refuse(` or `adopt`/`add-service`/`migrate` route (D164 rule 3, D187 rule 3), `unstatable` an in-process reach in a generating closure (D164 rule 4), `generates go`/`computed backend` a generation the Go change reaches, `sibling` a module S07 or S26 claimed.
 
 
@@ -78,6 +78,7 @@ The last column is the first thing that keeps the module running on a Go change 
 | `test_cruise_watch` | 8.4 | TEST_SELECTION is missing | unstatable __file__ test_cruise_watch.*:22 |
 | `test_layout` | 8.2 | TEST_SELECTION is missing | route test_replay.replay:31 |
 | `test_select_tests_real_audit` | 8.1 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
+| `test_select_tests_declarations` | 8.0 | TEST_SELECTION is missing | scans the whole real tree in a child probe, so its reads cannot be stated (A3) |
 | `test_parallel_gate_reads` | 7.9 | TEST_SELECTION is missing | route test_parallel_gate_reads.*:134 |
 | `test_verify_scoped_changed` | 7.8 | TEST_SELECTION is missing | sibling |
 | `test_axes` | 7.7 | TEST_SELECTION is missing | route test_axes.*:130 |
@@ -111,6 +112,7 @@ The last column is the first thing that keeps the module running on a Go change 
 | `test_flag_gate` | 5.1 | TEST_SELECTION is missing | computed backend test_flag_gate.*:69 |
 | `test_parallel_gate_sync_ways` | 5.1 | TEST_SELECTION is missing | route parallel_gate.shape:162 |
 | `test_verify_scoped_always` | 5.1 | TEST_SELECTION is missing | sibling |
+| `test_select_tests_go_app` | 5.0 | TEST_SELECTION is missing | scans the whole real tree in a child probe, so its reads cannot be stated (A3) |
 | `test_aws_target` | 4.9 | TEST_SELECTION is missing | route test_aws_target.*:317 |
 | `test_mutation_words_script` | 4.9 | TEST_SELECTION is missing | unstatable importlib test_mutation_borders.loaded:53 |
 | `test_scoped_targets` | 4.8 | TEST_SELECTION is missing | route test_scoped_targets.*:74 |
@@ -178,7 +180,6 @@ The last column is the first thing that keeps the module running on a Go change 
 | `test_select_tests_generation` | 2.2 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_stage_models` | 2.2 | TEST_SELECTION is missing | route test_adopt.slipwai:40 |
 | `test_toolkit` | 2.2 | TEST_SELECTION is missing | route test_add_service.add_service:21 |
-| `test_decisions_scope_spelling` | 2.1 | TEST_SELECTION is missing | sibling |
 | `test_describe_service` | 2.1 | TEST_SELECTION is missing | route test_describe_service.*:23 |
 | `test_gate_walks_counts` | 2.1 | TEST_SELECTION is missing | generates go test_gate_walks_counts.*:105 |
 | `test_mutation_scope_spring` | 2.1 | TEST_SELECTION is missing | unstatable importlib test_mutation_borders.loaded:53 |
@@ -252,10 +253,8 @@ The last column is the first thing that keeps the module running on a Go change 
 | `test_drive_evidence` | 1.2 | TEST_SELECTION is missing | generates go test_drive_evidence.*:22 |
 | `test_azure_stack` | 1.1 | TEST_SELECTION is missing | computed backend test_azure_stack.*:28 |
 | `test_decisions_gate_differential` | 1.1 | TEST_SELECTION is missing | sibling |
-| `test_decisions_scope_calls` | 1.1 | TEST_SELECTION is missing | sibling |
 | `test_go_mutation_threshold` | 1.1 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_hand_backs_missing` | 1.1 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
-| `test_hand_backs_record` | 1.1 | TEST_SELECTION is missing | sibling |
 | `test_mutation_migrate` | 1.1 | TEST_SELECTION is missing | route test_mutation_migrate.*:51 |
 | `test_select_tests_replay` | 1.1 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_select_tests_subpackages` | 1.1 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
@@ -299,12 +298,9 @@ The last column is the first thing that keeps the module running on a Go change 
 | `test_benchmark_overview` | 0.3 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_benchmark_waiting_park` | 0.3 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_check_python` | 0.3 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
-| `test_decisions_scope` | 0.3 | TEST_SELECTION is missing | sibling |
-| `test_decisions_scope_gate` | 0.3 | TEST_SELECTION is missing | sibling |
 | `test_drive_adoption` | 0.3 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_go_migrate_embed` | 0.3 | TEST_SELECTION is missing | generates go test_go_migrate_embed.*:19 |
 | `test_benchmark_elapsed_done_mark` | 0.2 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
-| `test_decisions_scope_edges` | 0.2 | TEST_SELECTION is missing | sibling |
 | `test_initial_release` | 0.2 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_maintenance_skills` | 0.2 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_parallel_gate_converge` | 0.2 | TEST_SELECTION is missing | route parallel_gate.shape:162 |
@@ -317,7 +313,6 @@ The last column is the first thing that keeps the module running on a Go change 
 | `test_ci_caches` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_ci_image` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_convergence` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
-| `test_factory_gate_stamp_scan` | 0.0 | TEST_SELECTION is missing | route test_factory_gate_stamp_scan.*:17 |
 | `test_go_mutation_yaml` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_launcher` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_mutation_flush` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
@@ -325,35 +320,34 @@ The last column is the first thing that keeps the module running on a Go change 
 | `test_platform` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_programme` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_reserved_names` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
-| `test_reversibility_gate` | — | TEST_SELECTION is missing | — |
-| `test_reversibility_migrate` | — | TEST_SELECTION is missing | — |
-| `test_reversibility_paths` | — | TEST_SELECTION is missing | — |
-| `test_reversibility_score` | — | TEST_SELECTION is missing | — |
-| `test_reversibility_versions` | — | TEST_SELECTION is missing | — |
-| `test_reversibility_writers` | — | TEST_SELECTION is missing | — |
 | `test_runner_pages` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_scoped_order` | 0.0 | TEST_SELECTION is missing | route test_scoped_targets.build:74 |
-| `test_select_tests_argv` | — | TEST_SELECTION is missing | — |
-| `test_select_tests_argv_forms` | — | TEST_SELECTION is missing | — |
-| `test_select_tests_audit_narrow` | — | TEST_SELECTION is missing | — |
 | `test_select_tests_docs` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_select_tests_real_backends` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_select_tests_real_helpers` | 0.0 | TEST_SELECTION is missing | route test_select_tests_real_helpers.*:58 |
 | `test_select_tests_real_mutation` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
-| `test_select_tests_real_s43` | — | TEST_SELECTION is missing | — |
 | `test_strategy` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
 | `test_survey` | 0.0 | TEST_SELECTION is missing | nothing on a go change: declarable by the D179 (b) pattern, not reached this slice |
+| `test_factory_gate_stamp_scan` | — | TEST_SELECTION is missing | route test_factory_gate_stamp_scan.*:17 |
+| `test_reversibility_migrate` | — | TEST_SELECTION is missing | route test_migrate / test_replay (launcher) |
+| `test_reversibility_writers` | — | TEST_SELECTION is missing | imports test_replay (launcher route) |
+| `test_select_tests_argv` | — | TEST_SELECTION is missing | — |
+| `test_select_tests_argv_forms` | — | TEST_SELECTION is missing | — |
+| `test_select_tests_audit_narrow` | — | TEST_SELECTION is missing | — |
+| `test_select_tests_real_s43` | — | TEST_SELECTION is missing | — |
 
 ## AC-S43-9 — the same test ids
 
-`unittest.defaultTestLoader.discover('tests')` walked without running, on `git archive adopt-method` (`0000e5b`, the
-rebased base) and on the slice's tip: 3271 ids at the base, 3333 at the tip, no import failure in either. The base's
-ids are all at the tip but one: `test_select_tests_real_helpers…test_the_render_fixture_runs_the_launcher_so_it_declares_every_configuration`
+`unittest.defaultTestLoader.discover('tests')` walked without running, on `git archive adopt-method` (`814acdc`, the
+rebased base) and on `git archive HEAD` of the slice's tip (`6a8616f`): 3296 ids at the base, 3384 at the tip, no import
+failure in either. The base's ids are all at the tip but one: `test_select_tests_real_helpers…test_the_render_fixture_runs_the_launcher_so_it_declares_every_configuration`
 is now `…test_the_render_fixture_names_the_one_project_it_generates_and_reads_the_launcher_through_support` — a
 selector test about `render_fixture`'s declaration, which T006 narrowed from `"every"`, so its old name would be false.
-The 63 added ids are the slice's selector tests (`test_select_tests_argv` 9, `_argv_forms` 36, `_audit_narrow` 11,
-`_real_s43` 6, `_real_helpers` 1). Whether any test is newly skipped is not visible without running; the host's full
-run on the faulted tree (AC-S43-8) is where it shows.
+The host accepted this one rename (D191, drafted). The 89 added ids are the slice's selector tests
+(`test_select_tests_argv` 13, `_argv_forms` 53, `_audit_narrow` 11, `_real_s43` 11, `_real_helpers` 1: the renamed id);
+3296 − 1 + 89 = 3384. The tip count moves while the argv tests grow: it was recounted at the end of the A3 and A0 work and
+is that run's. Whether any test is newly skipped is not visible without running; the host's full run on the faulted tree
+(AC-S43-8) is where it shows.
 
 ## AC-S43-10 — CI's (module, backend) pairs
 
