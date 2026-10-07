@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import subprocess
 import sys
 from collections.abc import Iterable
 from pathlib import Path
@@ -54,6 +55,25 @@ def every(why: str) -> Scope:
     return Scope(None, EVERY + why)
 
 
+def asked(root: Path, *arguments: str) -> bytes:
+    """What a `-q` question of git answers at the project root, as `verify-stamp.py`'s `git_or_nothing` reads it (git
+    saying no without a reason is nothing), but never asked of the directory the script was run from."""
+    done = subprocess.run(["git", *arguments], cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    if done.returncode == 1 and not done.stderr:
+        return b""
+    if done.returncode != 0:
+        raise RuntimeError("git " + " ".join(arguments) + ": " + done.stderr.decode("utf-8", "replace").strip())
+    return done.stdout
+
+
+def not_vouched(stamp: Any, top: str) -> str | None:
+    """`verify-stamp.py`'s `not_vouched`, asked of the top the project root's git names, not the current directory's."""
+    try:
+        return stamp.index_problem(top)  # type: ignore[no-any-return]
+    except stamp.CannotTell as error:
+        return str(error)
+
+
 def reason(stamp: Any, scope: Any, root: Path, ref: str, has_commit: bool) -> str | None:
     """Why every preview renders, from the first border that holds; None where none does."""
     for marker in stamp.CI_MARKERS:
@@ -75,10 +95,10 @@ def reason(stamp: Any, scope: Any, root: Path, ref: str, has_commit: bool) -> st
     problem = stamp.trunk_problem()[1]
     if problem is not None:
         return f"the trunk cannot be told — {problem}"
-    unvouched = stamp.not_vouched()  # an index git does not look at: a change to it would never be seen
+    top = os.path.realpath(str(scope.git_must("rev-parse", "--show-toplevel")).removesuffix("\n"))
+    unvouched = not_vouched(stamp, top)  # an index git does not look at: a change to it would never be seen
     if unvouched is not None:
         return unvouched
-    top = os.path.realpath(str(scope.git_must("rev-parse", "--show-toplevel")).removesuffix("\n"))
     if top != os.path.realpath(root):
         return "the project is not the repository's top, and the changed paths are the top's"
     return None
@@ -103,8 +123,8 @@ def changed_among(scope: Any, base: str, among: Iterable[str] | None) -> set[str
 def ask(root: Path, among: Iterable[str] | None) -> Scope:
     stamp = load("verify-stamp.py")
     scope = stamp.trunk_module()
-    ref = stamp.git_or_nothing("symbolic-ref", "-q", "HEAD").removesuffix(b"\n").decode("utf-8", "surrogateescape")
-    has_commit = bool(stamp.git_or_nothing("rev-parse", "-q", "--verify", "HEAD"))
+    ref = asked(root, "symbolic-ref", "-q", "HEAD").removesuffix(b"\n").decode("utf-8", "surrogateescape")
+    has_commit = bool(asked(root, "rev-parse", "-q", "--verify", "HEAD"))
     why = reason(stamp, scope, Path(root), ref, has_commit)
     if why is not None:
         return every(why)
