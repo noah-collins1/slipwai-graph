@@ -39,6 +39,20 @@ class ImportCase(DeclarationCase):
         return found
 
 
+class TestAnImportThroughThePackage(ImportCase):
+    """`from tests.support import X` and `import tests.support` import `support` (S38 T056, B4)."""
+
+    def test_a_helper_imported_through_tests_runs_its_importers(self) -> None:
+        self.write("tests/helper.py", "TEST_SELECTION = {}\nVALUE = 1\n")
+        for statement in ("from tests.helper import VALUE", "import tests.helper", "from tests import helper"):
+            with self.subTest(statement):
+                self.write("tests/test_a.py", f"TEST_SELECTION = {{}}\n{statement}\n" + STAND_IN.format(name="test_a"))
+                self.declare(test_b=PYTHON)
+                self.slice_changing()
+                self.assertEqual(self.reasons("tests/helper.py")["test_a"], ["imports `tests/helper.py`"])
+                self.assertEqual(self.reasons("tests/helper.py")["test_b"], "reads none of the changed files")
+
+
 class TestAnEditedModule(ImportCase):
     def test_runs_and_every_other_declared_module_is_skipped(self) -> None:
         self.declare(test_a=GO, test_b=PYTHON, test_c="")
