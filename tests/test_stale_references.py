@@ -25,6 +25,16 @@ from support import FactoryTestCase, backends_under_test
 
 from slipwai.catalog import CATALOG, axis_default
 
+# Every project is generated through `./slipwai generate`; every backend is read from `backends_under_test()`.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["go", "java-quarkus", "java-spring", "python", "typescript"],
+        "frontend": ["none", "react-vite"],
+        "profile": ["event-modelling", "standard"],
+        "command": ["generate"],
+    },
+}
+
 # Extensions a quoted token has to carry to be read as a path. `.js` is left out because a TypeScript
 # import specifier names the compiled sibling of a `.ts` file that does exist, and `.md` because the
 # skeleton deliberately cites pages of the *factory* that made the project (`docs/adr/…` in `events.ts`),

@@ -1,0 +1,4 @@
+$ python3 -B scripts/select-tests.py --dry-run --replay 37cdf3f^1..37cdf3f
+full: `src/slipwai/project/agents.py` changed — the generator: its effect cannot be established
+selected 341 of 341 modules against `37cdf3f^1` at 737b2fc
+[exit 0]

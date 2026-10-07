@@ -1,0 +1,4 @@
+$ python3 -B scripts/select-tests.py --dry-run --replay 3138416^1..3138416
+full: `src/slipwai/project/makefile.py` changed — the generator: its effect cannot be established
+selected 341 of 341 modules against `3138416^1` at c97eb82
+[exit 0]

@@ -217,11 +217,13 @@ class FactoryRepositoryTest(FactoryTestCase):
         # `verify` asks the stamp first and reaches the four gates through `verify-checks` (S33).
         verify = next(line for line in makefile.splitlines() if line.startswith("verify:"))
         checks = next(line for line in makefile.splitlines() if line.startswith("verify-checks:"))
-        recipe = makefile.split(verify, 1)[1].split("\n.PHONY", 1)[0]
-        self.assertIn("verify-checks", recipe, "`make verify` no longer reaches verify-checks")
+        self.assertIn("verify-checks", makefile.split(verify, 1)[1].split("\n.PHONY", 1)[0], "no verify-checks")
+        # `verify-checks` has three gates as prerequisites and makes `test` in its recipe with `FULL=1` (S38).
+        checks_recipe = makefile.split(checks, 1)[1].split("\n\n", 1)[0]
         for gate in ("lint", "typecheck", "check-structure", "test"):
-            self.assertIn(gate, checks, f"`make verify` no longer runs {gate}")
+            self.assertTrue(gate == "test" or gate in checks, f"`make verify` no longer runs {gate}")
             self.assertRegex(makefile, rf"(?m)^{gate}:.*##", f"{gate} is not a documented target")
+        self.assertRegex(checks_recipe, r"(?m)^\t.*\btest FULL=1", "`verify-checks` no longer runs every test module")
         # CI runs the same four targets, as parallel slices of `make test` — every suite named once across
         # the jobs, and the ones that generate whole projects kept out of `checks`.
         workflow = (ROOT / ".github/workflows/verify.yml").read_text()

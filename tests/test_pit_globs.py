@@ -15,6 +15,8 @@ from slipwai.assets import ROOT
 
 sys.dont_write_bytecode = True
 SCRIPT = ROOT / "assets/toolkit/scripts/mutation-scope.py"
+# `pit_matches` loads no sibling script; only `main` and the Spring scope do.
+TEST_SELECTION = {"reads": ["assets/toolkit/scripts/mutation-scope.py"]}
 
 
 def loaded() -> Any:

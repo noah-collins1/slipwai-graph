@@ -1,0 +1,29 @@
+# The throwaway slice branch (scratch clone /tmp/s38/c of the worktree at be5b646, removed after the demo)
+
+## slice/S38-demo2-go — clean change at fe5e71b (demo 1's case (a), same line)
+fe5e71b demo 2 (a): one comment line in go app health
+
+diff --git a/assets/languages/go/app/health/health.go b/assets/languages/go/app/health/health.go
+index fe2e4ef..9020a1b 100644
+--- a/assets/languages/go/app/health/health.go
++++ b/assets/languages/go/app/health/health.go
+@@ -4,4 +4,5 @@ type Status struct {
+ 	Status string `json:"status"`
+ }
+ 
++// Check reports that the service is up.
+ func Check() Status { return Status{Status: "ok"} }
+
+## the same branch — fault at 2130852 (demo 1's fault (a): health reports okay, not ok)
+2130852 demo 2 fault (a): health reports okay
+
+diff --git a/assets/languages/go/app/health/health.go b/assets/languages/go/app/health/health.go
+index 9020a1b..b79e817 100644
+--- a/assets/languages/go/app/health/health.go
++++ b/assets/languages/go/app/health/health.go
+@@ -5,4 +5,4 @@ type Status struct {
+ }
+ 
+ // Check reports that the service is up.
+-func Check() Status { return Status{Status: "ok"} }
++func Check() Status { return Status{Status: "okay"} }

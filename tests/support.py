@@ -21,6 +21,10 @@ os.environ["SLIPWAI_NO_INSTALL"] = "1"
 from slipwai.catalog import CATALOG
 from slipwai.scaffold import NO_MAINTENANCE
 
+# Reads the launcher `generate` runs. It generates what its callers pass `generate`, so they declare that: a claim of
+# its own would widen every importer's configurations to all of them.
+TEST_SELECTION = {"reads": ["slipwai"]}
+
 
 def backends_under_test() -> list[str]:
     """The backends this run covers: all of them, or the slice `FACTORY_BACKENDS` names, comma-separated.

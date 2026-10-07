@@ -1,0 +1,26 @@
+# Summary of a run's log: its header, the selector's lines, every FAIL/ERROR block with its traceback, and the tail. The full log (~0.8 MB) was in scratch and is not committed.
+# machine: noahc-server · commit: 308f3d3 on slice/S38-demo-go · start: 2026-10-06T11:45:29Z
+# load at start: 1.48 1.21 1.24 · /tmp free: 8.5G
+$ time make test FULL=1
+PYTHONPATH=src python3 -B scripts/select-tests.py
+full: FULL=1 given
+
+## Failures (module of each: test_factory_repository )
+FAIL: test_the_factorys_own_gate_runs_the_same_checks_ci_does (test_factory_repository.FactoryRepositoryTest.test_the_factorys_own_gate_runs_the_same_checks_ci_does)
+`make verify` locally and CI run the same targets, which is the rule the factory generates.
+Traceback (most recent call last):
+  File "/tmp/s38/c-a/tests/test_factory_repository.py", line 223, in test_the_factorys_own_gate_runs_the_same_checks_ci_does
+    self.assertIn(gate, checks, f"`make verify` no longer runs {gate}")
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'test' not found in 'verify-checks: lint typecheck check-structure' : `make verify` no longer runs test
+
+
+## Tail
+Ran 2829 tests in 3314.166s
+FAILED (failures=1, skipped=8)
+make: *** [Makefile:35: test] Error 1
+real	55m14.914s
+user	66m15.342s
+sys	10m58.074s
+# exit: 2 · end: 2026-10-06T12:40:44Z · elapsed: 3314.9 s
+# load at end: 1.45 1.19 1.39

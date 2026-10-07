@@ -1,0 +1,3 @@
+$ SINCE=adopt-method python3 -B scripts/select-tests.py --dry-run
+full: `Makefile` changed — the root Makefile: its effect cannot be established
+[exit 0]

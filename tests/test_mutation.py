@@ -28,6 +28,11 @@ from slipwai.project.mutation import (
 )
 from slipwai.services import App
 
+# The two Go gate scripts it loads, and the shipped `.gremlins.yaml` it reads back; no project is generated.
+TEST_SELECTION = {"reads": ["assets/languages/go/scripts/go-coverage.py",
+                            "assets/languages/go/scripts/go-mutation.py",
+                            "assets/languages/go/app/.gremlins.yaml"]}
+
 
 def script(relative: str) -> Any:
     """One of the Go gate scripts, imported from its asset so its functions can be held to their docstrings."""

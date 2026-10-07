@@ -1,0 +1,47 @@
+# Summary of a run's log: its header, the selector's lines, every FAIL/ERROR block with its traceback, and the tail. The full log (~0.8 MB) was in scratch and is not committed.
+# machine: noahc-server · commit: 195cae8 on slice/S38-demo-go-fault · start: 2026-10-06T17:55:41Z
+# load at start: 0.67 0.94 1.03 · /tmp free: 8.3G
+$ time make test FULL=1
+PYTHONPATH=src python3 -B scripts/select-tests.py
+full: FULL=1 given
+
+## Failures (module of each: test_add_service test_factory_repository test_matrix )
+ERROR: test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate (test_add_service.AddServiceTest.test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate)
+A Go project generated with no frontend gets one; a TypeScript project with one gets a second,
+Traceback (most recent call last):
+  File "/tmp/s38/f-a/tests/test_add_service.py", line 138, in test_a_project_gains_a_first_and_a_second_browser_app_and_passes_its_gate
+    subprocess.run(["make", "verify"], cwd=repo, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['make', 'verify']' returned non-zero exit status 2.
+
+ERROR: test_every_distinct_variant_passes_its_native_repository_gate (test_matrix.MatrixTest.test_every_distinct_variant_passes_its_native_repository_gate)
+Traceback (most recent call last):
+  File "/tmp/s38/f-a/tests/test_matrix.py", line 52, in test_every_distinct_variant_passes_its_native_repository_gate
+    subprocess.run(["make", "verify"], cwd=repo, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['make', 'verify']' returned non-zero exit status 2.
+
+FAIL: test_the_factorys_own_gate_runs_the_same_checks_ci_does (test_factory_repository.FactoryRepositoryTest.test_the_factorys_own_gate_runs_the_same_checks_ci_does)
+`make verify` locally and CI run the same targets, which is the rule the factory generates.
+Traceback (most recent call last):
+  File "/tmp/s38/f-a/tests/test_factory_repository.py", line 223, in test_the_factorys_own_gate_runs_the_same_checks_ci_does
+    self.assertIn(gate, checks, f"`make verify` no longer runs {gate}")
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'test' not found in 'verify-checks: lint typecheck check-structure' : `make verify` no longer runs test
+
+
+## Tail
+Ran 2829 tests in 2910.078s
+FAILED (failures=1, errors=2, skipped=8)
+make: *** [Makefile:35: test] Error 1
+real	48m31.020s
+user	45m38.978s
+sys	9m41.818s
+# exit: 2 · end: 2026-10-06T18:44:12Z · elapsed: 2911.0 s
+# load at end: 1.22 1.05 1.19

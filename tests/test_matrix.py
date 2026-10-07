@@ -17,6 +17,16 @@ from support import FactoryTestCase, backends_under_test
 
 from slipwai.catalog import CATALOG, axis_default
 
+# Every project is generated through `./slipwai generate`; every backend is read from `backends_under_test()`.
+TEST_SELECTION = {
+    "configurations": {
+        "backend": ["go", "java-quarkus", "java-spring", "python", "typescript"],
+        "frontend": ["none", "react-vite"],
+        "profile": ["event-modelling", "standard"],
+        "command": ["generate"],
+    },
+}
+
 
 class MatrixTest(FactoryTestCase):
     def test_every_distinct_variant_passes_its_native_repository_gate(self) -> None:

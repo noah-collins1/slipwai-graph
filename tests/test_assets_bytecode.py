@@ -24,6 +24,8 @@ from pathlib import Path
 from slipwai.assets import BACKING_SERVICE_ROOT
 
 ASSETS = BACKING_SERVICE_ROOT.parent
+# It lists every cache under `assets/` and reads every module of this directory as text; the rest is stdlib.
+TEST_SELECTION = {"reads": ["assets", "tests"]}
 REPO = ASSETS.parent
 TESTS = Path(__file__).resolve().parent
 LOADER = re.compile(r"spec_from_file_location\(|run_path\(|SourceFileLoader\(")

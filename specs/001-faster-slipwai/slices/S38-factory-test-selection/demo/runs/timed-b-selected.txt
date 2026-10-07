@@ -1,0 +1,46 @@
+# Summary of a run's log: its header, the selector's lines, every FAIL/ERROR block with its traceback, and the tail. The full log (~0.8 MB) was in scratch and is not committed.
+# machine: noahc-server · commit: 8b464e8 on slice/S38-demo-toolkit · start: 2026-10-06T12:40:55Z
+# load at start: 1.22 1.15 1.37 · /tmp free: 8.5G
+$ time make test SINCE=52ecbd3
+PYTHONPATH=src python3 -B scripts/select-tests.py
+compared with `52ecbd3` at 52ecbd3, named by SINCE — taken as passing on the word of whoever named it
+skipped test_gitea_pages: reads no configuration
+skipped test_go_mutation_file: reads no configuration
+skipped test_migration_script: reads no configuration
+skipped test_mutation: reads no configuration
+skipped test_release: reads no configuration
+skipped test_versions: reads no configuration
+selected 335 of 341 modules against `52ecbd3` at 52ecbd3
+selected 335 of 341 modules against `52ecbd3` at 52ecbd3
+
+## Failures (module of each: test_factory_repository test_matrix )
+FAIL: test_the_factorys_own_gate_runs_the_same_checks_ci_does (test_factory_repository.FactoryRepositoryTest.test_the_factorys_own_gate_runs_the_same_checks_ci_does)
+`make verify` locally and CI run the same targets, which is the rule the factory generates.
+Traceback (most recent call last):
+  File "/tmp/s38/c-b/tests/test_factory_repository.py", line 223, in test_the_factorys_own_gate_runs_the_same_checks_ci_does
+    self.assertIn(gate, checks, f"`make verify` no longer runs {gate}")
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'test' not found in 'verify-checks: lint typecheck check-structure' : `make verify` no longer runs test
+
+FAIL: test_a_go_service_importing_a_workspace_module_is_mutation_tested (test_matrix.MatrixTest.test_a_go_service_importing_a_workspace_module_is_mutation_tested)
+`make mutation` on the layout `docs/architecture.md` prescribes for shared Go code.
+Traceback (most recent call last):
+  File "/tmp/s38/c-b/tests/test_matrix.py", line 151, in test_a_go_service_importing_a_workspace_module_is_mutation_tested
+    self.assertEqual(strong.returncode, 0, strong.stdout)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : make[1]: Entering directory '/tmp/tmpnb7sll1n/mutation-go'
+mutation: SINCE `52ecbd3` names no commit
+make[1]: *** [Makefile:194: mutation] Error 2
+make[1]: Leaving directory '/tmp/tmpnb7sll1n/mutation-go'
+
+
+
+## Tail
+Ran 2760 tests in 3252.191s
+FAILED (failures=2, skipped=8)
+make: *** [Makefile:35: test] Error 1
+real	54m14.739s
+user	60m13.330s
+sys	9m22.578s
+# exit: 2 · end: 2026-10-06T13:35:09Z · elapsed: 3254.7 s
+# load at end: 1.39 1.11 1.19

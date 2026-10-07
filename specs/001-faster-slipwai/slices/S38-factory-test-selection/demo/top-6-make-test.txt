@@ -1,0 +1,5 @@
+$ make test SKIP=test_matrix   (stopped after its header and first tests: the header is the evidence)
+echo 'selection off: SKIP given'; PYTHONPATH=src:tests python3 -m unittest -v test_add_commands test_add_service test_adopted_manifest test_adopt_facts test_adopt_next test_adopt test_agent_context test_agent_types test_assets_bytecode test_auth0_identity test_aws_flags test_aws_forge test_aws_init test_aws_promotion test_aws_stack test_aws_target test_aws_workflows test_axes test_azure_stack test
+selection off: SKIP given
+…
+[stopped by its process group after about three minutes (the first kill missed; a second, by group id, stopped it)]

@@ -15,6 +15,7 @@ from pathlib import Path
 from slipwai.assets import ROOT
 
 SCRIPT = ROOT / "scripts/tag-release.py"
+TEST_SELECTION = {"reads": ["scripts/tag-release.py", "scripts/gitea-askpass", ".github/workflows/release.yml"]}
 # Released prose only, as the file carries: the entry for the version being cut is the fragments below.
 CHANGELOG = "# Changelog\n\n## 1.2.2 — PATCH\n\nBefore it.\n\n## 1.2.1 — PATCH\n\nAnd before that.\n"
 # PATCH over 1.2.2, which is what makes 1.2.3 the release these fragments justify cutting.

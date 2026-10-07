@@ -1,0 +1,4 @@
+$ python3 -B scripts/select-tests.py --dry-run --replay 1e8f880..e82bb06
+full: `Makefile` changed — the root Makefile: its effect cannot be established
+selected 341 of 341 modules against `1e8f880` at 1e8f880
+[exit 0]

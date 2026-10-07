@@ -16,8 +16,28 @@ make check-structure
 make test          # the suite alone
 make test TESTS="test_matrix test_add_service"   # a slice, by module
 make test SKIP="test_matrix"                     # everything but
+make test FULL=1                                 # every module, on a slice branch too
+python3 -B scripts/select-tests.py --dry-run     # what a slice branch's `make test` would run, and why
 FACTORY_BACKENDS=java-quarkus make test TESTS=test_matrix   # the matrix for one backend
 ```
+
+On a `slice/<id>` branch `make test` calls `scripts/select-tests.py`, which runs the modules the change can reach and
+names every one it skips and why; its first line says which base the change was measured against. Anywhere the
+effect of a change cannot be established it runs every module and says in one line why: on any other branch, under
+CI, for a change to `catalog.json`, `src/`, the `Makefile` or the selector itself, for a file git ignores. `SINCE`
+names the base: it defaults to the trunk (`ci.branch` in `project.json`), and you set it, as `SINCE=<ref> make
+test`, when your branch was cut from a branch other than the trunk and that branch's tip passed the full suite — the
+run then takes that ref as passing on your word. In this repository that is `SINCE=adopt-method` until it merges
+into `main`; a run that forgets it pays the full suite, never a narrower one. `FULL=1` runs every module whatever the
+branch. `TESTS`, `SKIP` and `FACTORY_BACKENDS` turn selection off: the run is exactly what they ask for.
+`make verify` always runs every module, whatever `SINCE` says. `--dry-run` prints the selection and runs nothing;
+`--replay BASE..TIP`, with it, describes the change set of a range of commits instead of the working tree. A module
+tells the selector what it reads by a literal `TEST_SELECTION = {"configurations": {"backend": ["go"]}, "reads":
+["path"]}` at module level (`"configurations"` is an axis-to-options map or `"every"`; `"reads"` lists the files it
+reads by path); a module without one always runs, and `tests/test_select_tests_declarations.py` holds each
+declaration to the catalog and the tree. On a slice branch `make test` prints the base line, each skip and its reason,
+and `selected N of M modules against <base>`, then runs only the selected modules and prints the summary again at the
+end; `python3 -B scripts/select-tests.py --dry-run` prints the same lines and runs nothing.
 
 CI runs those same targets as parallel jobs on the self-hosted runner, all starting at once: `checks` (lint,
 typecheck, structure, every fast suite), `matrix (<backend>)` — one job per backend, each generating that

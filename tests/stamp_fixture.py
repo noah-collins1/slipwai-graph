@@ -27,6 +27,10 @@ from types import ModuleType
 from slipwai.assets import ROOT
 from slipwai.project.gate import FAILED
 
+# Undeclared: `template()` generates its one project through the `./slipwai` launcher (every configuration to the
+# selector) and `importlib` loads a generated project's script, which the scan reads as a reach into the repository
+# (D164 rules 3 and 4). A module that imports it always runs.
+
 sys.dont_write_bytecode = True
 
 CI_MARKERS = ("CI", "GITHUB_ACTIONS", "GITLAB_CI")

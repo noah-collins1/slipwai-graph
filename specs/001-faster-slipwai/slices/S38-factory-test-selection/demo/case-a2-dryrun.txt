@@ -1,0 +1,16 @@
+compared with `52ecbd3` at 52ecbd3, named by SINCE — taken as passing on the word of whoever named it
+skipped test_gitea_pages: reads no go configuration
+skipped test_go_mutation_file: reads no go configuration
+skipped test_migration_script: reads no go configuration
+skipped test_mutation: reads no go configuration
+skipped test_pit_globs: reads no go configuration
+skipped test_release: reads no go configuration
+skipped test_versions: reads no go configuration
+narrowed test_images: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_line_widths: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_matrix: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_no_mocking_frameworks: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_postgres: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_readiness: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+narrowed test_stale_references: backend go only (java-quarkus, java-spring, python, typescript unaffected)
+selected 334 of 341 modules against `52ecbd3` at 52ecbd3

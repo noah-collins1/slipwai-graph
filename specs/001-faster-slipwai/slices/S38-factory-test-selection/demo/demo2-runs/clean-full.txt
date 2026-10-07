@@ -1,0 +1,20 @@
+# Summary of a run's log: its header, the selector's lines, every FAIL/ERROR block with its traceback, the go test lines that failed inside a generated project, and the tail. The full log (0.9 MB, 9014 lines) was in /tmp/s38 and is removed with the scratch clone.
+# machine: noahc-server (12 cores) · no CI variable set · one run on the machine at a time
+$ time make test FULL=1   # fe5e71b on slice/S38-demo2-go, 2026-10-07T00:05:56Z
+PYTHONPATH=src python3 -B scripts/select-tests.py
+full: FULL=1 given
+
+## Failures (module of each: none)
+## test_matrix's go mutation example (defect 2)
+test_a_go_service_importing_a_workspace_module_is_mutation_tested (test_matrix.MatrixTest.test_a_go_service_importing_a_workspace_module_is_mutation_tested)
+`make mutation` on the layout `docs/architecture.md` prescribes for shared Go code. ... created: /tmp/tmp_g5qfnh8/mutation-go
+ok
+
+## Tail
+full: FULL=1 given
+Ran 2838 tests in 3319.207s
+OK (skipped=8)
+real	55m19.956s
+user	66m10.725s
+sys	10m53.586s
+exit=0

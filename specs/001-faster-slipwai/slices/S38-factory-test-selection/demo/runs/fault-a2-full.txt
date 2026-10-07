@@ -1,0 +1,248 @@
+# Summary of a run's log: its header, the selector's lines, every FAIL/ERROR block with its traceback, and the tail. The full log (~0.8 MB) was in scratch and is not committed.
+# machine: noahc-server · commit: 1ad28f9 on slice/S38-demo-go-module-fault · start: 2026-10-06T16:20:28Z
+# load at start: 1.11 1.08 1.18 · /tmp free: 8.4G
+$ time make test FULL=1
+PYTHONPATH=src python3 -B scripts/select-tests.py
+full: FULL=1 given
+
+## Failures (module of each: test_factory_repository test_language_skeletons test_matrix test_monorepos test_mutation_stamp_untouched )
+ERROR: test_every_distinct_variant_passes_its_native_repository_gate (test_matrix.MatrixTest.test_every_distinct_variant_passes_its_native_repository_gate)
+Traceback (most recent call last):
+  File "/tmp/s38/f-a2/tests/test_matrix.py", line 52, in test_every_distinct_variant_passes_its_native_repository_gate
+    subprocess.run(["make", "verify"], cwd=repo, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['make', 'verify']' returned non-zero exit status 2.
+
+FAIL: test_the_factorys_own_gate_runs_the_same_checks_ci_does (test_factory_repository.FactoryRepositoryTest.test_the_factorys_own_gate_runs_the_same_checks_ci_does)
+`make verify` locally and CI run the same targets, which is the rule the factory generates.
+Traceback (most recent call last):
+  File "/tmp/s38/f-a2/tests/test_factory_repository.py", line 223, in test_the_factorys_own_gate_runs_the_same_checks_ci_does
+    self.assertIn(gate, checks, f"`make verify` no longer runs {gate}")
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'test' not found in 'verify-checks: lint typecheck check-structure' : `make verify` no longer runs test
+
+FAIL: test_every_committed_go_module_pins_the_gate_s_third_analyser (test_language_skeletons.LanguageSkeletonsTest.test_every_committed_go_module_pins_the_gate_s_third_analyser)
+staticcheck is a `tool` dependency of every variant, not a binary somebody installs.
+Traceback (most recent call last):
+  File "/tmp/s38/f-a2/tests/test_language_skeletons.py", line 221, in test_every_committed_go_module_pins_the_gate_s_third_analyser
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "tool honnef.co/go/tools/cmd/staticcheck", text, module.relative_to(LANGUAGE_ROOT)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'tool honnef.co/go/tools/cmd/staticcheck' not found in "// The base module: the go configuration with no event store and no SQL driver.\nmodule example.com/delivery-starter\n\ngo 1.26.0\n\n// The gate's third analyser, beside `gofmt` and `go vet`. A `tool` directive rather than an in
+
+FAIL: test_a_go_service_importing_a_workspace_module_is_mutation_tested (test_matrix.MatrixTest.test_a_go_service_importing_a_workspace_module_is_mutation_tested)
+`make mutation` on the layout `docs/architecture.md` prescribes for shared Go code.
+Traceback (most recent call last):
+  File "/tmp/s38/f-a2/tests/test_matrix.py", line 151, in test_a_go_service_importing_a_workspace_module_is_mutation_tested
+    self.assertEqual(strong.returncode, 0, strong.stdout)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : make[1]: Entering directory '/tmp/tmp383ue08b/mutation-go'
+mutation: the sweep runs — this is the trunk (`main`)
+python3 scripts/go-mutation.py apps/service 
+mutation: staged packages/greeting for example.com/mutation-go/greeting
+Starting...
+Gathering coverage... done in 1.655343355s
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/checkpointstorememory/store.go:51:14
+ NOT COVERED INCREMENT_DECREMENT at adapters/driven/eventstorememory/store.go:194:31
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:214:19
+ NOT COVERED INCREMENT_DECREMENT at adapters/driven/eventstorememory/store.go:220:10
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:236:27
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:236:27
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:239:31
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:252:25
+ NOT COVERED INVERT_NEGATIVES at adapters/driven/eventstorememory/store.go:255:43
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorememory/store.go:255:43
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:277:13
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:282:27
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:282:27
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:282:60
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:282:60
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:130:58
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:301:74
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:301:74
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:318:9
+ NOT COVERED ARITHMETIC_BASE at adapters/driven/eventstorememory/store.go:309:71
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:342:28
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:321:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:82:27
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:349:17
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:342:28
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:162:21
+ NOT COVERED INCREMENT_DECREMENT at adapters/driven/eventstorememory/store.go:353:11
+ NOT COVERED CONDITIONALS_BOUNDARY at adapters/driven/eventstorememory/store.go:191:40
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driven/eventstorememory/store.go:191:40
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/app.go:145:13
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/app.go:78:11
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/app.go:164:9
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/app.go:146:47
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/app.go:231:11
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/app.go:195:39
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/app.go:234:13
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/security.go:72:13
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/security.go:69:13
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/security.go:76:87
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/security.go:76:16
+ NOT COVERED CONDITIONALS_NEGATION at adapters/driving/http/security.go:93:68
+ NOT COVERED ARITHMETIC_BASE at application/ports/events/events.go:32:18
+ NOT COVERED INVERT_NEGATIVES at application/ports/events/events.go:32:18
+ NOT COVERED CONDITIONALS_NEGATION at application/ports/events/events.go:207:17
+ NOT COVERED ARITHMETIC_BASE at application/ports/events/events.go:166:59
+ NOT COVERED CONDITIONALS_BOUNDARY at application/ports/events/events.go:210:18
+ NOT COVERED CONDITIONALS_NEGATION at application/ports/events/events.go:207:38
+ NOT COVERED CONDITIONALS_NEGATION at application/ports/events/events.go:210:18
+ NOT COVERED INVERT_NEGATIVES at application/ports/events/events.go:395:27
+ NOT COVERED CONDITIONALS_NEGATION at application/ports/events/events.go:392:17
+ NOT COVERED ARITHMETIC_BASE at application/ports/events/events.go:395:27
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:44:9
+ NOT COVERED ARITHMETIC_BASE at checkpointstorecontract/contract.go:34:19
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:65:74
+ NOT COVERED ARITHMETIC_BASE at checkpointstorecontract/contract.go:58:54
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:88:69
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:76:69
+ NOT COVERED ARITHMETIC_BASE at checkpointstorecontract/contract.go:112:27
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:100:69
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:120:61
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:117:75
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:133:10
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:129:69
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:147:25
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:136:18
+ NOT COVERED ARITHMETIC_BASE at checkpointstorecontract/contract.go:170:48
+ NOT COVERED ARITHMETIC_BASE at checkpointstorecontract/contract.go:168:78
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:185:25
+ NOT COVERED ARITHMETIC_BASE at checkpointstorecontract/contract.go:183:80
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:213:71
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:198:67
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:237:69
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:233:67
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:254:80
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:246:9
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:280:38
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:268:9
+ NOT COVERED CONDITIONALS_NEGATION at checkpointstorecontract/contract.go:292:38
+ NOT COVERED CONDITIONALS_NEGATION at config/config.go:86:9
+ NOT COVERED CONDITIONALS_NEGATION at config/config.go:69:45
+ NOT COVERED CONDITIONALS_NEGATION at config/config.go:86:24
+ NOT COVERED CONDITIONALS_BOUNDARY at config/config.go:86:24
+ NOT COVERED CONDITIONALS_BOUNDARY at config/config.go:86:36
+ NOT COVERED CONDITIONALS_NEGATION at config/config.go:86:36
+ NOT COVERED CONDITIONALS_NEGATION at config/config.go:91:26
+ NOT COVERED CONDITIONALS_NEGATION at config/config.go:119:52
+ NOT COVERED CONDITIONALS_NEGATION at config/config.go:99:37
+ NOT COVERED ARITHMETIC_BASE at config/config.go:135:29
+ NOT COVERED CONDITIONALS_NEGATION at config/config.go:132:21
+ NOT COVERED CONDITIONALS_NEGATION at health/health.go:11:11
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:80:106
+ NOT COVERED CONDITIONALS_NEGATION at observability/tracing.go:75:24
+ NOT COVERED CONDITIONALS_NEGATION at observability/tracing.go:100:30
+ NOT COVERED CONDITIONALS_NEGATION at observability/tracing.go:81:10
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:148:28
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:142:81
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:147:85
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:148:22
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:147:58
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:147:79
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:147:32
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:147:52
+ NOT COVERED ARITHMETIC_BASE at observability/tracing.go:147:26
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:76:11
+ NOT COVERED ARITHMETIC_BASE at projections/projections.go:57:25
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:83:17
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:140:10
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:113:9
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:171:43
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:165:9
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:200:10
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:176:9
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:205:31
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:205:10
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:210:51
+ NOT COVERED ARITHMETIC_BASE at projections/projections.go:215:28
+ NOT COVERED INVERT_NEGATIVES at projections/projections.go:215:28
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:218:10
+ NOT COVERED ARITHMETIC_BASE at projections/projections.go:216:61
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:223:17
+ NOT COVERED CONDITIONALS_BOUNDARY at projections/projections.go:223:17
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:255:17
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:229:10
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:260:23
+ NOT COVERED CONDITIONALS_NEGATION at projections/projections.go:260:9
+ NOT COVERED CONDITIONALS_NEGATION at projections/ticker.go:77:16
+ NOT COVERED CONDITIONALS_NEGATION at projections/ticker.go:88:73
+ NOT COVERED CONDITIONALS_NEGATION at projections/ticker.go:92:19
+ NOT COVERED CONDITIONALS_NEGATION at projections/ticker.go:105:13
+ NOT COVERED CONDITIONALS_NEGATION at projections/ticker.go:116:13
+ NOT COVERED CONDITIONALS_BOUNDARY at projections/ticker.go:123:13
+ NOT COVERED CONDITIONALS_NEGATION at projections/ticker.go:126:77
+ NOT COVERED CONDITIONALS_NEGATION at projections/ticker.go:123:13
+ NOT COVERED CONDITIONALS_NEGATION at projections/ticker.go:126:98
+ NOT COVERED CONDITIONALS_BOUNDARY at projections/ticker.go:126:98
+ NOT COVERED ARITHMETIC_BASE at projections/ticker.go:127:36
+
+Mutation testing completed in 38 milliseconds 628 microseconds
+Killed: 0, Lived: 0, Not covered: 136
+Timed out: 0, Not viable: 0, Skipped: 0
+Test efficacy: 0.00%
+Mutator coverage: 0.00%
+ERROR: below efficacy-threshold
+exit status 10
+mutation: report written to apps/service/gremlins.json
+make[2]: *** [Makefile:197: mutation-full] Error 1
+make[1]: *** [Makefile:194: mutation] Error 2
+make[1]: Leaving directory '/tmp/tmp383ue08b/mutation-go'
+
+
+FAIL: test_scaffolds_complete_matrix_as_independent_monorepos (test_monorepos.MonorepoTest.test_scaffolds_complete_matrix_as_independent_monorepos)
+Traceback (most recent call last):
+  File "/tmp/s38/f-a2/tests/test_monorepos.py", line 155, in test_scaffolds_complete_matrix_as_independent_monorepos
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "tool honnef.co/go/tools/cmd/staticcheck",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (repo / "apps/service/go.mod").read_text(),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'tool honnef.co/go/tools/cmd/staticcheck' not found in "// The base module: the go configuration with no event store and no SQL driver.\nmodule example.com/product-standard-go/service\n\ngo 1.26.0\n\n// The gate's third analyser, beside `gofmt` and `go vet`. A `tool` directive rather
+
+FAIL: test_e8_the_go_starter (test_mutation_stamp_untouched.StampUntouchedTest.test_e8_the_go_starter)
+Traceback (most recent call last):
+  File "/tmp/s38/f-a2/tests/test_mutation_stamp_untouched.py", line 69, in test_e8_the_go_starter
+    self.untouched_by(repo)
+    ~~~~~~~~~~~~~~~~~^^^^^^
+  File "/tmp/s38/f-a2/tests/test_mutation_stamp_untouched.py", line 50, in untouched_by
+    self.assertEqual(done.returncode, 0, done.stdout[-3000:])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : python3 scripts/go-mutation.py apps/service 
+Starting...
+Gathering coverage... done in 184.64822ms
+ NOT COVERED CONDITIONALS_NEGATION at health/health.go:9:16
+
+Mutation testing completed in 289 microseconds
+Killed: 0, Lived: 0, Not covered: 1
+Timed out: 0, Not viable: 0, Skipped: 0
+Test efficacy: 0.00%
+Mutator coverage: 0.00%
+ERROR: below efficacy-threshold
+exit status 10
+mutation: report written to apps/service/gremlins.json
+make: *** [Makefile:152: mutation-full] Error 1
+
+
+
+## Tail
+make: *** [Makefile:152: mutation-full] Error 1
+Ran 2829 tests in 2883.113s
+FAILED (failures=5, errors=1, skipped=8)
+make: *** [Makefile:35: test] Error 1
+real	48m4.074s
+user	40m16.817s
+sys	8m18.265s
+# exit: 2 · end: 2026-10-06T17:08:32Z · elapsed: 2884.1 s
+# load at end: 1.35 1.14 1.15

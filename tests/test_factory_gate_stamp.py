@@ -23,7 +23,9 @@ from slipwai.assets import ROOT
 sys.dont_write_bytecode = True
 
 SCRIPTS = "assets/toolkit/scripts/"
-COPIED = ("Makefile", SCRIPTS + "verify-stamp.py", SCRIPTS + "check-slice-scope.py")
+# What `make test` loads once the selector is patched in (S38): the selector and the toolkit's `verify_scoped`.
+COPIED = ("Makefile", SCRIPTS + "verify-stamp.py", SCRIPTS + "check-slice-scope.py", "scripts/select-tests.py",
+          "scripts/select_tests", SCRIPTS + "verify_scoped")
 # Variables that make the root gate run its checks straight and touch no stamp: a run that skipped or narrowed them is
 # not the gate. `gate()` strips each from the child, so only an example that sets one holds it.
 BYPASS = ("TESTS", "SKIP", "FACTORY_BACKENDS")
@@ -54,7 +56,10 @@ class GateCase(unittest.TestCase):
         self.repo.mkdir()
         for name in COPIED:
             (self.repo / name).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(ROOT / name, self.repo / name)
+            if (ROOT / name).is_dir():
+                shutil.copytree(ROOT / name, self.repo / name, ignore=shutil.ignore_patterns("__pycache__"))
+            else:
+                shutil.copy(ROOT / name, self.repo / name)
         written = (("scripts/verify", VERIFY), ("scripts/check-structure.py", STRUCTURE), ("tests/test_x.py", SUITE),
                    ("src/mod.py", "X = 1\n"), (".gitignore", "__pycache__/\n"),
                    ("project.json", '{"ci": {"branch": "main"}}\n'))
@@ -277,8 +282,11 @@ class TestNothingElseMoves(GateCase):
         self.assertEqual(self.dry("typecheck"),
                          ["python3 -m compileall -q src scripts tests", "./scripts/verify --typecheck-only"])
         self.assertEqual(self.dry("check-structure"), ["python3 scripts/check-structure.py"])
-        self.assertEqual(self.dry("test"), ["PYTHONPATH=src python3 -m unittest discover -s tests -v"])
-        self.assertEqual(self.dry("test", TESTS="test_x"), ["PYTHONPATH=src:tests python3 -m unittest -v test_x"])
+        # The patched recipe (S38) runs the selector, and says so when TESTS names the modules; today's recipe does not.
+        self.assertIn(self.dry("test")[-1], ("PYTHONPATH=src python3 -m unittest discover -s tests -v",
+                                             "PYTHONPATH=src python3 -B scripts/select-tests.py"))
+        self.assertEqual(self.dry("test", TESTS="test_x")[-1].split("; ")[-1],
+                         "PYTHONPATH=src:tests python3 -m unittest -v test_x")
         workflow = (ROOT / ".github/workflows/verify.yml").read_text(encoding="utf-8")
         self.assertNotIn("verify-stamp", workflow)
         for step in ("make lint", "make typecheck", "make check-structure"):
