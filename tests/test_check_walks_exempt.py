@@ -4,7 +4,7 @@
 (`.terraform/`, `__pycache__/`, `node_modules/` …) changes nothing it compares. A check that walked into one answered
 from a file the scoped gate cannot see: `tofu init` downloads a module into `infra/service/.terraform/modules/`, and
 `check-deploy-role` read its IAM, failed under `make verify`, and was skipped by `make verify-scoped`. The walk hold of
-every check is `test_agents_projection_exempt.WalksHeldTest`; this module holds the reproduction and the verdicts.
+every check is `test_verify_scoped_projection_exempt.WalksHeldTest`; this module holds the reproduction and verdicts.
 """
 from __future__ import annotations
 
