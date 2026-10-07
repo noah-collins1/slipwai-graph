@@ -103,9 +103,12 @@ BASE_MODULES = {
                            "stamp leaves out of its key (S07 T022); nothing the stamp names is read by the check",
     },
     "check-benchmark": {
-        "verify-stamp.py": "reached as `check-agents` reaches it, through `agents/models.py` naming `project.py`; "
-                           "nothing the stamp names is read by the check",
+        "verify-stamp.py": "loaded by `agents/benchmark.py` for `exempt_entry` (S07 T029), and reached as "
+                           "`check-agents` reaches it; nothing the stamp names is read by the check",
     },
+    **{name: {"verify-stamp.py": "loaded for `exempt_entry`, so the check walks nothing the stamp leaves out of its "
+                                 "key (S07 T029); nothing the stamp names is read by the check"}
+       for name in ("check-styles", "check-flags", "check-deploy-role")},
     "check-ux-gates": {
         "verify-stamp.py": "loaded for `trunk_module()` and the questions the scoped gate's borders ask: CI markers, "
                            "`HEAD`, the index and the trunk; nothing it names is read by the check that loads it",
@@ -300,7 +303,7 @@ class BaseModulesTest(RecordCase):
 
     def walk(self, name: str, exempt: dict[str, str] | None) -> tuple[set[str], set[str]]:
         """What a check's walk reached, as `BASE_MODULES` names a file, and the base modules it met and did not walk."""
-        project = self.project("model-typescript-web")
+        project = self.project("model-typescript-web-cloud")  # a shape with every check that loads a base module
         recipes = {key: lines for key, (_, lines) in database(project).items()}
         reached: set[str] = set()
         skipped: set[str] = set()

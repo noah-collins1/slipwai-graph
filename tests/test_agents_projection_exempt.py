@@ -133,23 +133,19 @@ MATCHER = "exempt_entry"
 SHAPES = ("standard-python", "model-typescript-web-cloud", "model-go-azure", "standard-spring-web")
 # A walk in a module the check loads that the check's own recipe line never reaches, with the line that stops short.
 OFF_THE_CHECK_PATH = {
-    "check-agents: agents/benchmark.py records()": "`cruise.py --check` returns after `load()`; only `run` and the "
-                                                   "benchmark's own verbs read the records",
     "check-agents: agents/cruise.py controls_signature()": "taken around an iteration of `cruise.py run`, never by "
                                                            "`--check`",
     "check-agents: agents/cruise.py fingerprint()": "the progress fingerprint of `cruise.py run`, never taken by "
                                                     "`--check`",
 }
-# Walks found by this test and not closed by T022, whose manifest is the projection: each reads past the stamp's list
-# with a list of its own, or none, and is handed back to be closed by its own task. An entry that stops firing fails.
+# Walks found by this test that T029 did not close, because closing them is a product decision: each is handed back
+# with the decision it would override. An entry that stops firing fails.
+D52 = ("D45 closes the pruned names at four and D52 reads every `target` but a recorded Java root's, so a slice cannot "
+       "hide its own source by naming a directory; pruning the stamp's names (`dist/`, `coverage/`, `target/` …) is "
+       "that switch, and asking git whether a path is ignored is D52's rejected option (d)")
 HANDED_BACK = {
-    "check-benchmark: agents/benchmark.py records()": "`rglob` of `specs/` for every benchmark record, any directory",
-    "check-deploy-role: check-deploy-role.py main()": "`rglob('*.tf')` of `infra/service/`, `.terraform/` included",
-    "check-flags: check-flags.py sources()": "its own `SKIPPED_DIRECTORIES`, without `__pycache__/` or `.terraform/`",
-    "check-imports: check-imports.py listing()": "its own `PRUNED`, without `dist/`, `coverage/` or `.build/`",
-    "check-migrations: check-migrations.py listing()": "its own `PRUNED`, without `dist/`, `coverage/` or `.build/`",
-    "check-styles: check-styles.py imported_styles()": "`rglob` of a web app's `src/`, `node_modules/` and `dist/` "
-                                                       "included",
+    "check-imports: check-imports.py listing()": D52,
+    "check-migrations: check-migrations.py listing()": D52,
 }
 
 

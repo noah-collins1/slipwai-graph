@@ -58,11 +58,13 @@ declares the key.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import subprocess
 import sys
 from pathlib import Path
+from types import ModuleType
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,6 +74,34 @@ DECLARATION_NAME = DECLARATION.relative_to(ROOT).as_posix()
 SOURCE_TREES = ("apps", "packages")
 SOURCE_SUFFIXES = {".go", ".java", ".py", ".ts", ".tsx"}
 SKIPPED_DIRECTORIES = {"node_modules", ".build", "dist", "build", "target", ".venv", "coverage"}
+
+# The verify stamp leaves an ignored path out of its key where its closed `EXEMPT` list names it (`.terraform/`,
+# `__pycache__/`, `node_modules/` …), so a change there is no change to `make verify-scoped`, which may then skip
+# this check: what it walks goes through that list, the stamp's own, loaded from beside this script, never a copy.
+STAMP_SCRIPT = Path(__file__).resolve().with_name("verify-stamp.py")
+_STAMP: dict[str, ModuleType | None] = {}
+
+
+def stamp() -> ModuleType | None:
+    """`verify-stamp.py` beside this script, for `exempt_entry`: loaded once, with bytecode off. None where there is
+    none: then no stamp keys this tree, no scoped run compares it, and this check reads what it always read."""
+    if "stamp" not in _STAMP:
+        spec = importlib.util.spec_from_file_location("verify_stamp", STAMP_SCRIPT)
+        if spec is None or spec.loader is None or not STAMP_SCRIPT.is_file():
+            _STAMP["stamp"] = None
+        else:
+            sys.dont_write_bytecode = True
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            _STAMP["stamp"] = module
+    return _STAMP["stamp"]
+
+
+def exempt(path: Path) -> bool:
+    """Whether the stamp's exempt list leaves this path out of its key, and so out of what this check reads."""
+    found = stamp()
+    return found is not None and path.is_relative_to(ROOT) and \
+        found.exempt_entry(path.relative_to(ROOT).as_posix()) is not None
 # The reader and its own tests, by file name: they exercise the transform with an example key, so counting
 # them as reads would make every generated project fail rule 2 before anybody had declared anything.
 MACHINERY = {"flags", "flags.test", "test_flags", "flags_test", "Flags", "FlagsTest"}
@@ -198,6 +228,7 @@ def sources() -> list[Path]:
                 path.is_file()
                 and path.suffix in SOURCE_SUFFIXES
                 and not SKIPPED_DIRECTORIES & set(path.parts)
+                and not exempt(path)
                 and path.stem not in MACHINERY
             ):
                 found.append(path)

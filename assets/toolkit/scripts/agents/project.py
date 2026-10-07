@@ -131,11 +131,12 @@ def selected_integrations(arguments: list[str]) -> list[str]:
 
 
 @cache
-def stamp() -> ModuleType:
-    """`verify-stamp.py`, for `exempt_entry` and the list it reads. Loaded on first use, without its bytecode."""
+def stamp() -> ModuleType | None:
+    """`verify-stamp.py`, for `exempt_entry` and the list it reads. Loaded on first use, without its bytecode. None
+    where there is none: then no stamp keys this tree, and the projection reads what it always read."""
     spec = importlib.util.spec_from_file_location("verify_stamp", STAMP_SCRIPT)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"{STAMP_SCRIPT} cannot be loaded, so what the projection may read is unknown")
+    if spec is None or spec.loader is None or not STAMP_SCRIPT.is_file():
+        return None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -148,7 +149,8 @@ def shown(path: Path) -> str:
 
 def exempt(path: Path) -> bool:
     """Whether the verify stamp's exempt list leaves this path out of its key, and so out of the projection."""
-    return path.is_relative_to(ROOT) and stamp().exempt_entry(shown(path)) is not None
+    found = stamp()
+    return found is not None and path.is_relative_to(ROOT) and found.exempt_entry(shown(path)) is not None
 
 
 def canonical(directory: str, pattern: str | None = None) -> list[Path]:

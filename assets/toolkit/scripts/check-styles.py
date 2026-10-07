@@ -12,10 +12,12 @@ is not judged.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import sys
 from pathlib import Path
+from types import ModuleType
 
 
 def project_root(script: Path, depth: int) -> Path:
@@ -27,6 +29,34 @@ def project_root(script: Path, depth: int) -> Path:
 
 
 ROOT = project_root(Path(__file__).resolve(), 1)
+
+# The verify stamp leaves an ignored path out of its key where its closed `EXEMPT` list names it (`.terraform/`,
+# `__pycache__/`, `node_modules/` …), so a change there is no change to `make verify-scoped`, which may then skip
+# this check: what it walks goes through that list, the stamp's own, loaded from beside this script, never a copy.
+STAMP_SCRIPT = Path(__file__).resolve().with_name("verify-stamp.py")
+_STAMP: dict[str, ModuleType | None] = {}
+
+
+def stamp() -> ModuleType | None:
+    """`verify-stamp.py` beside this script, for `exempt_entry`: loaded once, with bytecode off. None where there is
+    none: then no stamp keys this tree, no scoped run compares it, and this check reads what it always read."""
+    if "stamp" not in _STAMP:
+        spec = importlib.util.spec_from_file_location("verify_stamp", STAMP_SCRIPT)
+        if spec is None or spec.loader is None or not STAMP_SCRIPT.is_file():
+            _STAMP["stamp"] = None
+        else:
+            sys.dont_write_bytecode = True
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            _STAMP["stamp"] = module
+    return _STAMP["stamp"]
+
+
+def exempt(path: Path) -> bool:
+    """Whether the stamp's exempt list leaves this path out of its key, and so out of what this check reads."""
+    found = stamp()
+    return found is not None and path.is_relative_to(ROOT) and \
+        found.exempt_entry(path.relative_to(ROOT).as_posix()) is not None
 COMMENTS = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
 TS_CSS_IMPORT = re.compile(
     r"\b(?:import|export)\s+(?:[^\"']*?\s+from\s+)?[\"']([^\"']+?\.css)(?:\?[^\"']*)?[\"']"
@@ -79,7 +109,7 @@ def imported_styles(app: Path) -> set[Path]:
     if not source.is_dir():
         return found
     for path in sorted(source.rglob("*")):
-        if path.suffix not in {".ts", ".tsx"} or not path.is_file():
+        if path.suffix not in {".ts", ".tsx"} or not path.is_file() or exempt(path):
             continue
         text = COMMENTS.sub("", path.read_text(errors="ignore", encoding="utf-8"))
         for specifier in TS_CSS_IMPORT.findall(text):

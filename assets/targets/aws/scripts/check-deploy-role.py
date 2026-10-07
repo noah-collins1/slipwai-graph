@@ -23,10 +23,12 @@ failure, never a pass, and the message says where the row goes.
 """
 from __future__ import annotations
 
+import importlib.util
 import re
 import sys
 from fnmatch import fnmatchcase
 from pathlib import Path
+from types import ModuleType
 
 
 def project_root(script: Path, depth: int) -> Path:
@@ -39,6 +41,34 @@ def project_root(script: Path, depth: int) -> Path:
 ROOT = project_root(Path(__file__).resolve(), 1)
 BOOTSTRAP = ROOT / "infra/bootstrap"
 SERVICE = ROOT / "infra/service"
+
+# The verify stamp leaves an ignored path out of its key where its closed `EXEMPT` list names it (`.terraform/`,
+# `__pycache__/`, `node_modules/` …), so a change there is no change to `make verify-scoped`, which may then skip
+# this check: what it walks goes through that list, the stamp's own, loaded from beside this script, never a copy.
+STAMP_SCRIPT = Path(__file__).resolve().with_name("verify-stamp.py")
+_STAMP: dict[str, ModuleType | None] = {}
+
+
+def stamp() -> ModuleType | None:
+    """`verify-stamp.py` beside this script, for `exempt_entry`: loaded once, with bytecode off. None where there is
+    none: then no stamp keys this tree, no scoped run compares it, and this check reads what it always read."""
+    if "stamp" not in _STAMP:
+        spec = importlib.util.spec_from_file_location("verify_stamp", STAMP_SCRIPT)
+        if spec is None or spec.loader is None or not STAMP_SCRIPT.is_file():
+            _STAMP["stamp"] = None
+        else:
+            sys.dont_write_bytecode = True
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            _STAMP["stamp"] = module
+    return _STAMP["stamp"]
+
+
+def exempt(path: Path) -> bool:
+    """Whether the stamp's exempt list leaves this path out of its key, and so out of what this check reads."""
+    found = stamp()
+    return found is not None and path.is_relative_to(ROOT) and \
+        found.exempt_entry(path.relative_to(ROOT).as_posix()) is not None
 
 # What tofu calls to create and to delete each IAM resource type, and the kind of IAM resource ARN the call
 # is authorised against. The kind is the segment after the account in the ARN: `arn:aws:iam::<account>:<kind>/…`.
@@ -137,7 +167,7 @@ def main() -> int:
         return 0
     grants = deploy_grants("\n".join(uncommented(path.read_text(encoding="utf-8")) for path in sorted(BOOTSTRAP.glob("*.tf"))))
     problems, checked = [], 0
-    for path in sorted(SERVICE.rglob("*.tf")):
+    for path in sorted(path for path in SERVICE.rglob("*.tf") if not exempt(path)):
         relative = path.relative_to(ROOT).as_posix()
         for match in RESOURCE.finditer(uncommented(path.read_text(encoding="utf-8"))):
             kind_actions = TYPES.get(match.group(1))

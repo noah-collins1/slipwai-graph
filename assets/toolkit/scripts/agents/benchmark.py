@@ -38,6 +38,7 @@ import sys
 from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 
@@ -54,6 +55,34 @@ REGISTRY = Path(__file__).with_name("registry.json")
 MODELS = Path(__file__).with_name("models.py")
 INTEGRATION = ROOT / ".specify/integration.json"
 RECORD = "benchmark.json"
+
+# The verify stamp leaves an ignored path out of its key where its closed `EXEMPT` list names it (`.terraform/`,
+# `__pycache__/`, `node_modules/` …), so a change there is no change to `make verify-scoped`, which may then skip
+# this check: what it walks goes through that list, the stamp's own, loaded from beside this script, never a copy.
+STAMP_SCRIPT = Path(__file__).resolve().parents[1] / "verify-stamp.py"
+_STAMP: dict[str, ModuleType | None] = {}
+
+
+def stamp() -> ModuleType | None:
+    """`verify-stamp.py` beside this script, for `exempt_entry`: loaded once, with bytecode off. None where there is
+    none: then no stamp keys this tree, no scoped run compares it, and this check reads what it always read."""
+    if "stamp" not in _STAMP:
+        spec = importlib.util.spec_from_file_location("verify_stamp", STAMP_SCRIPT)
+        if spec is None or spec.loader is None or not STAMP_SCRIPT.is_file():
+            _STAMP["stamp"] = None
+        else:
+            sys.dont_write_bytecode = True
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            _STAMP["stamp"] = module
+    return _STAMP["stamp"]
+
+
+def exempt(path: Path) -> bool:
+    """Whether the stamp's exempt list leaves this path out of its key, and so out of what this check reads."""
+    found = stamp()
+    return found is not None and path.is_relative_to(ROOT) and \
+        found.exempt_entry(path.relative_to(ROOT).as_posix()) is not None
 OVERVIEW = "benchmark.md"
 # The ladder, in order, plus the stages an adopted repository adds; a stage outside it is accepted and sorted last.
 LADDER = (
@@ -976,7 +1005,8 @@ def summarise(record: dict[str, Any], last_lines: dict[int, int] | None = None,
 
 def records() -> list[tuple[Path, dict[str, Any]]]:
     specs = ROOT / "specs"
-    return [(path, json.loads(path.read_text(encoding="utf-8"))) for path in sorted(specs.rglob(RECORD))] if specs.is_dir() else []
+    return [(path, json.loads(path.read_text(encoding="utf-8"))) for path in sorted(specs.rglob(RECORD))
+            if not exempt(path)] if specs.is_dir() else []
 
 
 COLUMNS = ("slice", "delegate/cycle", "stage time", "in", "out", "models", "sessions", "converge", "+tasks", "gaps", "mutation",
