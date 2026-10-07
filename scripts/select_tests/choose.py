@@ -11,6 +11,7 @@ from collections.abc import Mapping
 from typing import Any, NamedTuple
 
 from . import declarations, rules
+from .report import Full, full_line, printable
 
 UNDECLARED = "undeclared"
 
@@ -119,6 +120,9 @@ def select(tree: declarations.Tree, paths: list[str], catalog: Mapping[str, Any]
     """Every test module, in name order, with whether it runs and why; and the backends it narrows to. `caches` are
     files a module's `reads` can match and nothing else: no claim, no configuration, no full run (T026)."""
     claims = {path: claim for path in paths if (claim := rules.claim(path, catalog)) is not None}
+    for path in paths:  # what no row claims cannot be selected on: say so as the full run says it, never crash (S43)
+        if path not in claims:
+            raise Full(full_line(f"`{printable(path)}` — {rules.UNCLAIMED}"))
     reached = reach(paths, claims)
     if caches:
         reached = reached._replace(paths=(*reached.paths, *caches))

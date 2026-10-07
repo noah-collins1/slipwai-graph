@@ -181,7 +181,10 @@ class TestS26ModulesAreReadsOnlyAndSkippedOnAGoChange(unittest.TestCase):
         for name in S26_MODULES:
             reads = self.tree.sources[name].declaration.reads  # type: ignore[union-attr]
             with self.subTest(module=name):
-                path = next(entry for entry in reads if (ROOT / entry).exists())
+                # a file, as a change set names one: a read that is a directory is entered to its first file
+                path = next(str(found.relative_to(ROOT)) for entry in sorted(reads) if (ROOT / entry).exists()
+                            for found in ([ROOT / entry] if (ROOT / entry).is_file()
+                                          else sorted(p for p in (ROOT / entry).rglob("*") if p.is_file())[:1]))
                 chosen = choose.select(self.tree, [path], self.catalog)
                 self.assertIn(name, {v.module for v in chosen.verdicts if v.runs})
 
