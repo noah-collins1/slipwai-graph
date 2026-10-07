@@ -19,7 +19,7 @@ from typing import Any, NamedTuple
 
 sys.dont_write_bytecode = True
 
-from . import methods, reach, rules  # noqa: E402
+from . import links, methods, reach, rules  # noqa: E402
 from .table import CHECKS, GATE_UNITS, NO_INPUTS, UNITS, Row  # noqa: E402
 
 SCHEMA = 1
@@ -563,6 +563,7 @@ def build(make: str, makefile: str, scope: Any, data: Database | None = None, ba
     models = models_of(root, scope, base) if len(services) > 1 or "check-model" in checks else []
     with_named(checks, root, models)
     methods.with_derived(checks, root, scope, base)
+    links.with_links(checks, root, scope, base, deployables)  # an input read through a link: no recorded inputs
     obligations = obligations_of(declared(root, scope, base), deployables, checks)
     built = {"schema": SCHEMA, "deployables": deployables, "checks": checks,
              "contracts": contracts_of(deployables, context, models), "obligations": obligations}
