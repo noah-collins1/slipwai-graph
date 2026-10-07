@@ -22,7 +22,8 @@ LABEL = "- **Reversibility:** "
 ARROW = " → "
 TIERS = ("easy", "guarded", "hard")
 YES_NO = ("yes", "no")
-# The closed list, in the order the line writes it, each with the values it accepts.
+# Version 1's closed list, in the order the line writes it, each with the values it accepts. `FACT_LISTS` keeps each
+# rules version's own list: a version that adds a fact adds a list, and a line is read against the list it names.
 FACTS: dict[str, tuple[str, ...]] = {
     "contract": YES_NO, "schema": YES_NO, "auth": YES_NO, "customer_visible": YES_NO, "export": YES_NO,
     "ci_workflow": YES_NO, "migrate_file": YES_NO, "behind_flag": ("yes", "no", "no-code"),
@@ -90,8 +91,9 @@ def rules_v1(facts: dict[str, str], bound: str) -> tuple[str, list[str]]:
     return tier, [name for name, _ in fired]
 
 
-# Every version this file has shipped. Never edit one; add the next.
+# Every version this file has shipped. Never edit one; add the next, with its fact list below.
 RULES: dict[int, Callable[[dict[str, str], str], tuple[str, list[str]]]] = {1: rules_v1}
+FACT_LISTS: dict[int, dict[str, tuple[str, ...]]] = {1: FACTS}
 CURRENT = max(RULES)
 
 
@@ -163,7 +165,7 @@ def score(facts: dict[str, str], scope: str, raise_to: str | None = None, versio
     `written` (the paths of `Written to`) with `listed` (the committed list) raise `migrate_file`; see `with_list`."""
     facts = with_list(facts, written, listed)
     tier, fired = RULES[version](facts, dependants(scope, reader))
-    written = " ".join(f"{key}={facts.get(key, 'missing')}" for key in FACTS)
+    written = " ".join(f"{key}={facts.get(key, 'missing')}" for key in FACT_LISTS[version])
     return f"{LABEL}{ARROW.join(steps(tier, raise_to))} · rules {version} · {written}", fired
 
 
@@ -184,7 +186,8 @@ def parse_line(value: str) -> tuple[list[str], int, dict[str, str]]:
     named = re.fullmatch(r"rules ([0-9]+)", parts[1].strip())
     if named is None:
         raise ValueError(f"names {parts[1].strip()!r}, not `rules <n>`")
-    if int(named.group(1)) not in RULES:
+    version = int(named.group(1))
+    if version not in RULES:
         raise ValueError(f"names rules {named.group(1)}, which this gate does not know "
                          f"(it knows {', '.join(map(str, RULES))})")
     facts: dict[str, str] = {}
@@ -192,12 +195,13 @@ def parse_line(value: str) -> tuple[list[str], int, dict[str, str]]:
         key, separator, given = token.partition("=")
         if not separator or not key or not given:
             raise ValueError(f"has {token!r}, which is not key=value")
-        if key not in FACTS:
-            raise ValueError(f"has the key `{key}`, which is not a fact (the facts are {', '.join(FACTS)})")
+        if key not in FACT_LISTS[version]:
+            raise ValueError(f"has the key `{key}`, which is not a fact of rules {version} "
+                             f"(the facts are {', '.join(FACT_LISTS[version])})")
         if key in facts:
             raise ValueError(f"has the key `{key}` twice")
         facts[key] = given
-    return tiers, int(named.group(1)), facts
+    return tiers, version, facts
 
 
 def line_findings(where: str, fields: Mapping[str, str], twice: set[str], reader: Callable[[str], list[str] | None],
@@ -278,8 +282,8 @@ def parse_arguments(arguments: list[str]) -> tuple[dict[str, str], dict[str, str
         key, separator, value = argument.partition("=")
         if not separator or not key or not value:
             raise ValueError(f"{argument!r} is not key=value")
-        if key not in FACTS:
-            raise ValueError(f"{key!r} is not a fact (the facts are {', '.join(FACTS)})")
+        if key not in FACT_LISTS[CURRENT]:
+            raise ValueError(f"{key!r} is not a fact (the facts are {', '.join(FACT_LISTS[CURRENT])})")
         if key in facts:
             raise ValueError(f"{key!r} is given twice")
         stray = [word for word in (*TIERS, "→", "->", "·") if word in value]

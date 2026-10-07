@@ -67,6 +67,9 @@ class ReaderTest(unittest.TestCase):
 
 
 V2 = '''
+FACT_LISTS = {1: FACTS, 2: FACTS}
+
+
 def rules_v2(facts, bound):
     tier, fired = rules_v1(facts, bound)
     if facts.get("behind_flag") == "no":
@@ -76,6 +79,22 @@ def rules_v2(facts, bound):
 
 RULES = {1: rules_v1, 2: rules_v2}
 '''
+MARKER = "RULES: dict[int, Callable[[dict[str, str], str], tuple[str, list[str]]]] = {1: rules_v1}\n"
+LISTS = "FACT_LISTS: dict[int, dict[str, tuple[str, ...]]] = {1: FACTS}\n"
+V2_FACTS = '''
+FACT_LISTS = {1: FACTS, 2: {**FACTS, "pii": YES_NO}}
+
+
+def rules_v2(facts, bound):
+    tier, fired = rules_v1({k: v for k, v in facts.items() if k != "pii"}, bound)
+    if facts.get("pii", "missing") != "no":
+        return "hard", [*fired, f"X2 pii={facts.get('pii', 'missing')}"]
+    return tier, fired
+
+
+RULES = {1: rules_v1, 2: rules_v2}
+'''
+
 VERSION_1_DIGEST = "e42e1582aeaf61cae82bccd83b7effef7b650c8228d31b4e28846ad061b27f84"
 
 
@@ -93,14 +112,14 @@ def line(tier: str, rules: int) -> str:
 
 
 class OldLinesUnderNewerRulesTest(unittest.TestCase):
-    def gate(self, text: str, fake: bool) -> subprocess.CompletedProcess[str]:
+    def gate(self, text: str, fake: bool, v2: str = V2) -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory() as directory:
             repo = scratch(directory, text, listed=("scripts/check-decisions.py",))
             if fake:
                 source = (SCRIPTS / "reversibility.py").read_text(encoding="utf-8")
-                marker = "RULES: dict[int, Callable[[dict[str, str], str], tuple[str, list[str]]]] = {1: rules_v1}\n"
-                assert marker in source
-                (repo / "scripts/reversibility.py").write_text(source.replace(marker, V2), encoding="utf-8")
+                assert MARKER in source and LISTS in source
+                (repo / "scripts/reversibility.py").write_text(
+                    source.replace(LISTS, "").replace(MARKER, v2), encoding="utf-8")
             return gate(repo)
 
     def test_e1_a_version_1_line_passes_beside_a_version_2_and_a_version_2_line_is_held_to_it(self) -> None:
@@ -114,6 +133,21 @@ class OldLinesUnderNewerRulesTest(unittest.TestCase):
         self.assertIn("rules 2 derive hard", refused.stderr)
         self.assertIn("behind_flag=no", refused.stderr)
         self.assertIn("rules 2", self.gate(new, fake=False).stderr)  # the shipped gate does not know version 2
+
+    def test_e3_a_fact_added_in_version_2_belongs_to_version_2_alone(self) -> None:
+        """M1: each version has its own fact list; the parser and rule U1 read the list of the version a line names."""
+        base = " ".join(f"{key}={value}" for key, value in EASY.items())
+        old = f"- **Reversibility:** easy · rules 1 · {base}"
+        new = f"- **Reversibility:** easy · rules 2 · {base} pii=no"
+        bare = f"- **Reversibility:** easy · rules 2 · {base}"
+        for text, code in ((old, 0), (new, 0), (f"{old} pii=no", 1), (bare, 1)):
+            with self.subTest(text=text):
+                result = self.gate(entry(1, text), True, V2_FACTS)
+                self.assertEqual(code, result.returncode, result.stdout + result.stderr)
+        refused = self.gate(entry(1, f"{old} pii=no"), True, V2_FACTS).stderr
+        self.assertIn("pii", refused)
+        self.assertIn("not a fact", refused)
+        self.assertIn("pii=missing", self.gate(entry(1, bare), True, V2_FACTS).stderr)
 
     def test_e2_version_1_is_frozen_as_a_digest_of_its_tier_over_every_fact_vector(self) -> None:
         """A guard: it passes when written. A shipped version is only ever added to, never edited."""
