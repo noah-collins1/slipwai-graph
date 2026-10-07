@@ -4570,3 +4570,15 @@
 - **Confidence:** high · **Would reverse if:** a harness the runner drives cannot set `CRUISE_ITERATION`, when the refusal needs another signal.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D202 — Against which mode does an iteration judge a skip when its feature's log has no mode entry?
+- **Stage:** 9 convergence · **Slice:** S27-provisional-decisions · **When:** 2026-10-07T23:29:09Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** D196 part 4 records a log with no mode entry "as found, with no order check". Mode entries are kept per feature, so in every new feature, and in every project before its first iteration, a hand edit straight to `provisional` is taken without the park AC-S27-12 promises; converge pass 1 saw a second feature's `mode` print `decide moved from unrecorded to provisional` and exit 0 (plan.md, Q1).
+- **Options:** (a) keep D196 part 4 as written; (b) read a log with no mode entry as the bottom rung, since only those values existed before this release; (c) take the last mode entry across every feature's log, falling back to (b) where none has one (recommended by the stage).
+- **Decision:** (c). Overrides D196 part 4's "with no order check"; the rest of D196 stands. AC-S27-12 reads "the last mode entry in any feature's log"; the first entry recorded with no earlier one still says `Decided by: human` and its Why claims no change.
+- **Why:** the ladder exists so a person sees shadow lines before anything is taken provisionally; a hole in every new feature would let the run skip the rungs the person never climbed, while a project that already reached `provisional` in one feature need not climb again in the next.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person wants each feature to roll the mode out on its own, when the per-feature reading of (b) is the one to take.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

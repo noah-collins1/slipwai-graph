@@ -2927,14 +2927,15 @@ Ratifying and reverting by verb, the listings and the dated refusal stay with `S
 - **AC-S27-9** — *D200.* Given a provisional entry with no `Reversibility:` line, a last tier of `hard`, or facts
   carrying `ci_workflow=yes`, `migrate_file=yes` or `flag_default=yes`, then the gate refuses it.
 - **AC-S27-10** — *D196.* Given `decide: provisional-shadow` and an always-ask item, then it blocks as today and its
-  entry carries one `- **Provisional (shadow):** <tier> · <the Status it would have had, or blocks (hard)> · Revert:
+  entry carries one `- **Provisional (shadow):** <tier> · <the Status it would have had, or blocks (hard) or blocks (<fact>=yes)> · Revert:
   commits carrying Decision: D<n>` line; given `provisional-advisory`, then the line reads `Provisional (advisory):`
   and, for an `easy` or `guarded` item, the park question names it as the recommendation a person can accept in one
   word; the gate refuses a malformed or second such line and never refuses an entry for lacking one.
 - **AC-S27-11** — *D196.* Given `decide: recommended-first`, when `cruise.py --set decide=provisional` or
   `provisional-advisory` runs, then it is refused in one line naming `provisional-shadow` as the next mode, and the
   file is unchanged; any step back is accepted.
-- **AC-S27-12** — *D196.* Given a `decide` value different from the last mode entry in the feature's log, when an
+- **AC-S27-12** — *D196, D202.* Given a `decide` value different from the last mode entry in any feature's log (none
+  read as the bottom rung), when an
   iteration starts, then the command has the host append `decide moved from <a> to <b>` with `Decided by: human`,
   `Scope: global`, citing the commit that changed `cruise.json` (or `uncommitted at <instant>`); given a forward
   skip of more than one rung, then the iteration ends `cruise: parked: decide=<v> skips <next>; set it through
