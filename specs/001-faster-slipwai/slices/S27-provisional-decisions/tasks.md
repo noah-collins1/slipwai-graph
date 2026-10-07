@@ -69,7 +69,7 @@ Constraints that hold for every task's GREEN, stated once:
 R1–R8 (less R6's separate task) write `provisional.py`, `check-decisions.py` and the shared fixture, so they run in
 order.
 
-- [ ] T002 [US8] **R1 — the verb's table** (AC-S27-1, -2, -3, -4, -5, -6; D195, D199, D201; P1).
+- [x] T002 [US8] **R1 — the verb's table** (AC-S27-1, -2, -3, -4, -5, -6; D195, D199, D201; P1).
   `assets/toolkit/scripts/provisional.py` (new): `DECIDE` (the five values in order), `ASKS`, `HELD_FACTS`,
   `ratify_by()`, `status_lines()`, `main()` with `status` (`--decide --ask --when --number [--reversibility]`);
   loads `reversibility.py` beside it by path, bytecode off, only in `main`, for `parse_line`. Exit 2 and one stderr line
@@ -93,7 +93,7 @@ order.
   Files: `assets/toolkit/scripts/provisional.py`, `tests/provisional_fixture.py`, `tests/test_provisional_status.py`,
   `changelog.d/provisional-decisions.md`.
 
-- [ ] T003 [US8] **R2 — the rehearsal lines** (AC-S27-10 verb half; D196, D198; P2). `provisional.py` `status_lines()`
+- [x] T003 [US8] **R2 — the rehearsal lines** (AC-S27-10 verb half; D196, D198; P2). `provisional.py` `status_lines()`
   prints, under `provisional-shadow` and `provisional-advisory` for an `approval` item, `- **Provisional (shadow):**
   <final tier> · <would-have> · Revert: commits carrying Decision: D<n>` (`(advisory)` for advisory), `<would-have>`
   `provisional · ratify by <date>`, `blocks (hard)`, or `blocks (<fact>=yes)`; under advisory, for an item that would
@@ -107,7 +107,7 @@ order.
   line, and no park recommendation · e6 `provisional`, `recommended-first`: no mode line. Run the toolkit module set.
   Files: `assets/toolkit/scripts/provisional.py`, `tests/provisional_fixture.py`, `tests/test_provisional_status.py`.
 
-- [ ] T004 [US8] **R3 — the gate holds the new `Status` forms and `Revert:`; with R6 — old logs get the earlier
+- [x] T004 [US8] **R3 — the gate holds the new `Status` forms and `Revert:`; with R6 — old logs get the earlier
   answer** (AC-S27-8, AC-S27-7; D197, D198, D65; P4). `provisional.py`: `check_log()` (given the gate's parsed entries)
   for the `Status` forms and the `Revert:` line; `check-decisions.py`: the `STATUS` finding skips a status whose first
   word is `provisional`, `ratified` or `reverted` (left to the module), `provisional_findings(path)` beside
@@ -128,7 +128,7 @@ order.
   Files: `assets/toolkit/scripts/provisional.py`, `assets/toolkit/scripts/check-decisions.py`,
   `tests/provisional_fixture.py`, `tests/test_provisional_gate.py`, `tests/test_decisions_gate_differential.py`.
 
-- [ ] T005 [US8] **R4 — a provisional entry holds FR-033** (AC-S27-9; D195, D200). `provisional.py` `check_log()`
+- [x] T005 [US8] **R4 — a provisional entry holds FR-033** (AC-S27-9; D195, D200). `provisional.py` `check_log()`
   refuses, one finding naming the entry and the field, a provisional entry with no `Reversibility:` line, whose last
   step is `hard`, or whose facts carry `ci_workflow=yes`, `migrate_file=yes` or `flag_default=yes` (one finding per
   fact); an unparseable line is S26's finding, not repeated; `ratified` and `reverted` entries are not held to it.
@@ -138,7 +138,7 @@ order.
   accepted. Run the toolkit module set.
   Files: `assets/toolkit/scripts/provisional.py`, `tests/test_provisional_gate.py`.
 
-- [ ] T006 [US8] **R5 — the gate holds the rehearsal lines** (AC-S27-10 gate half; D196). `check_log()` accepts a
+- [x] T006 [US8] **R5 — the gate holds the rehearsal lines** (AC-S27-10 gate half; D196). `check_log()` accepts a
   `- **Provisional (shadow):**` / `(advisory):` line exactly as `<tier> · <would-have> · Revert: commits carrying
   Decision: D<own>`, `<would-have>` `provisional · ratify by <date>`, `blocks (hard)` or `blocks (<fact>=yes)` for one
   of the three facts, `blocks (hard)` exactly when the tier is `hard`; a second such line (either label) is refused;
@@ -148,7 +148,7 @@ order.
   an advisory line on one entry: refused · e5 a log whose entries have none: nothing new. Run the toolkit module set.
   Files: `assets/toolkit/scripts/provisional.py`, `tests/test_provisional_gate.py`.
 
-- [ ] T007 [US8] **R7 — `--scope` reads the new statuses** (AC-S27-15 second half; D197 rule 3).
+- [x] T007 [US8] **R7 — `--scope` reads the new statuses** (AC-S27-15 second half; D197 rule 3).
   `check-decisions.py` `scope_verb`: a `provisional …` or `ratified …` entry in scope is printed as binding,
   verbatim; the summary gains `; provisional and binding: D<n>, …` only where one is printed; a `reverted …` entry is
   left out and listed with the overridden ones as `D<n> (reverted <date>)`. RED→GREEN: e1 D1 provisional, D2
@@ -158,7 +158,7 @@ order.
   module set.
   Files: `assets/toolkit/scripts/check-decisions.py`, `tests/test_provisional_scope_audit.py`.
 
-- [ ] T008 [US8] **R8 — the completion audit's refusal** (AC-S27-14; D197; P6). `provisional.py` gains `unratified()`
+- [x] T008 [US8] **R8 — the completion audit's refusal** (AC-S27-14; D197; P6). `provisional.py` gains `unratified()`
   and `audit [--feature <name>]`: where any entry's first `Status` starts with `provisional`, print `cruise: parked:
   ratify D<n>` naming the lowest-numbered one, exit 3; otherwise `provisional: no unratified provisional decision in
   specs/<f>/decisions.md` (or `no decisions.md`), exit 0; `--feature` required only where `specs/` holds several
@@ -173,7 +173,7 @@ Chain B writes only `assets/toolkit/scripts/agents/cruise.py`, `tests/test_cruis
 refusal-text lines of `tests/test_cruise_runner.py` / `tests/test_cruise_sweep.py`; Phase 2 writes
 neither, so the two chains are disjoint (Phase 5).
 
-- [ ] T009 [US8] [P] **R9 — the ladder and the iteration guard in `--set`** (AC-S27-11, -13; D196 part 3, D201).
+- [x] T009 [US8] [P] **R9 — the ladder and the iteration guard in `--set`** (AC-S27-11, -13; D196 part 3, D201).
   `agents/cruise.py`: `CHOICES["decide"]` and `DEFAULTS` hold the five values in order, `RUNGS` (`recommended-first`,
   `skipper-always` 0; `provisional-shadow` 1; `provisional-advisory` 2; `provisional` 3), the refusal in `--set`
   before the file is written (a step up of more than one rung: `` `decide` moves one mode at a time: set `<next>`
@@ -194,7 +194,7 @@ neither, so the two chains are disjoint (Phase 5).
   Files: `assets/toolkit/scripts/agents/cruise.py`, `tests/test_cruise_decide_ladder.py`, `tests/test_cruise_runner.py`,
   `tests/test_cruise_sweep.py`.
 
-- [ ] T010 [US8] [P] **R10 — the mode entry and the skipping hand edit** (AC-S27-12; D196 part 4; P3).
+- [x] T010 [US8] [P] **R10 — the mode entry and the skipping hand edit** (AC-S27-12; D196 part 4; P3).
   `agents/cruise.py` gains the verb `mode [--feature <name>]` (writes nothing): compares `decide` with the last
   `## D<n> — decide moved from <a> to <b>` heading of the feature's log; equal: `cruise: decide is <v>, as D<n>
   recorded`, exit 0; no mode entry: the entry to append with `<a>` `unrecorded`; a step R9 would write: the entry
