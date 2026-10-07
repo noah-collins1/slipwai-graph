@@ -4315,3 +4315,15 @@
 - **Confidence:** high · **Would reverse if:** a merge is shown to drop a project's own edit to the brief.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D190 — S06's published table of what each check reads, now that S07 changes six of its rows
+- **Stage:** 9 convergence · **Slice:** S07-scoped-checks · **When:** 2026-10-07T08:58:03Z · **Iteration:** 27
+- **Scope:** S07-scoped-checks
+- **Question:** `tests/test_verify_scoped_contracts.py` holds S06's published table (`specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md`, the record's contract under ADR 0004) row by row against `table.py`. S07 changes six rows (`check-ux-gates`, `check-decisions`, and the four method-file checks), and the page's record example still shows `check-agents` with no inputs (S07's T014, Q1).
+- **Options:** (a) amend S06's table and example in S07's branch to say what `table.py` now holds, the test unchanged (recommended by the slice); (b) point the test at S07's own table.
+- **Decision:** (a). The published page says what the script holds; S07 writes it on its branch, in the same commit that closes T014.
+- **Why:** ADR 0004 makes that page the record's contract, and a contract that disagrees with the script it describes is what the test exists to catch; keeping one page keeps one source.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person wants each slice's rows published on its own page.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing
