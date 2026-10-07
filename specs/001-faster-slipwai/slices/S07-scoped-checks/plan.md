@@ -127,7 +127,16 @@ in a rule above with its RED test.
 
 ## Open questions
 
-None open. Three readings the artefacts settle, recorded in [research.md](research.md) so a later stage can disagree:
+**Q1 (open, for the host; blocks convergence — T014, HIGH).** `tests/test_verify_scoped_contracts.py` e2 holds the
+published table in `specs/001-faster-slipwai/slices/S06-scoped-gate/data-model.md` equal to `table.CHECKS` row by row.
+S07 changed six rows (`check-ux-gates` variables; `check-decisions` files, from T009; the four method-file checks'
+files, claims and always), so the test fails, and the page's record example still shows `check-agents` with
+`inputs: null`. Writing S06's records is outside this slice's scope. Options: (a) amend S06's data-model table and
+example to match `table.py` (about six lines; the test unchanged), or (b) make the test read S07's rows over S06's (more
+than a path change: S07's table has other columns). Recommended: (a) — the page is the record's published contract
+(ADR 0004), so it should say what the script holds, and a dated note there can say S07 amended it.
+
+Three readings the artefacts settle, recorded in [research.md](research.md) so a later stage can disagree:
 R-4 (the projection directories AC-S07-4 names are declared although git ignores them), R-7 (`make check-ux-gates` on a
 slice branch takes the default, by D170 (a)), R-6 (the literal-path scan stops at the modules `check-ux-gates` loads to
 find the base, and an audit run holds what it opens instead).
