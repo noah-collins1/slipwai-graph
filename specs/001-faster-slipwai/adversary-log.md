@@ -671,3 +671,16 @@ Findings: twelve — one `HIGH`, three `MEDIUM` (one found by both seams), seven
 | B7 | B | LOW | A `layout.delivery` holding a NUL byte crashes the gate with a traceback. New, contrived | Confirmed; S26 T020 | fixed `b8f5b90` |
 | B8 | B | LOW | A log starting with a byte-order mark counts 0 entries, so its lines go unchecked. Older | Declined: D65 settled the counting before S26 | declined |
 
+## S07 · d5e3351 · 2026-10-07
+
+Slice `S07-scoped-checks` (cruise iteration 27), merged into adopt-method at `d5e3351` ahead of S43 (D193): `check-agents`, `check-speckit`, `check-extensions` and `check-constitution` get rows in S06's verification-dependency record, with the paths manifests, presets and installed integrations name derived at run time (`verify_scoped/methods.py`); `check-ux-gates` scopes previews by default on `slice/<id>` outside CI (`verify_scoped/since.py`), `UX_GATES_SINCE=all` renders every preview; an ignored projection directory with no files forces the full gate.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | `make verify-scoped` now skips four more checks; `make check-ux-gates` and `make verify` on a slice branch take a default preview scope; a new value of `UX_GATES_SINCE` |
+| driven adapter or the provider types behind one | widened | New readers of Spec Kit manifests, `preset.yml`, `.specify/integration.json` with `registry.json`, the projection directories, and git's base and changed names (`-z --no-renames`) |
+| authorisation decision (who can reach one that already exists) | not present | Nothing decides who may do what |
+| concurrency, idempotency, ordering, retention, or time | not present | The record and the default are functions of the two trees and the base; nothing reads a clock or keeps state between runs beyond S06's baseline, unchanged |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: two triggers `widened`.
+
