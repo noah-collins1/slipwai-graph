@@ -17,6 +17,9 @@ from pathlib import Path
 from typing import Any
 
 import gate_rules
+import stamp_case
+import stamp_fixture
+import stamp_names
 import test_verify_stamp_pinned
 from test_select_tests_real_backends import DECLARED as BACKEND_MODULES
 
@@ -33,8 +36,11 @@ DECLARED: tuple[str, ...] = (  # the test modules this slice declares
     "test_code_index_health",
     "test_render_browser", "test_render_current", "test_render_failures", "test_render_files",
     "test_render_files_report", "test_render_links", "test_render_once", "test_render_pinned",
+    "test_factory_gate_stamp", "test_verify_stamp_key", "test_verify_stamp_working", "test_verify_stamp_reuse",
+    "test_verify_stamp_stored", "test_verify_stamp_two_runs",
 )
-HELPERS: tuple[str, ...] = ("gate_rules", "render_fixture")  # the helper files this slice declares
+# the helper files this slice declares
+HELPERS: tuple[str, ...] = ("gate_rules", "render_fixture", "stamp_names", "stamp_case")
 
 
 def pairs(tree: declarations.Tree, names: Iterable[str]) -> set[tuple[str, str]]:
@@ -132,6 +138,20 @@ class TestAMovedHelperIsOneObjectByBothPaths(unittest.TestCase):
         for name in ("gate_target_name", "gate_prerequisites", "gate_rule"):
             with self.subTest(name=name):
                 self.assertIs(getattr(gate_rules, name), getattr(test_verify_stamp_pinned, name))
+
+    def test_the_stamp_names_and_cases_are_the_same_objects_from_stamp_fixture_and_from_their_new_homes(self) -> None:
+        for name in ("CI_MARKERS", "MAKE_STATE", "GIT_STATE", "CLOSING", "REUSE_PREFIX", "BRANCH", "SERVICE",
+                     "PYVENV_CFG", "INSTANT", "git", "commit_all", "exclude", "probe_path", "write_stand_ins",
+                     "write_spaced_make", "checks_started"):
+            with self.subTest(name=name):
+                self.assertIs(getattr(stamp_names, name), getattr(stamp_fixture, name))
+        for name in ("template",):
+            with self.subTest(name=name):
+                self.assertIs(getattr(stamp_case, name), getattr(stamp_fixture, name))
+        # the one case the fixture adds to: it keeps `plant_stamp`, which loads the project's script with importlib
+        self.assertTrue(issubclass(stamp_fixture.StampTestCase, stamp_case.StampTestCase))
+        self.assertFalse(hasattr(stamp_case.StampTestCase, "plant_stamp"))
+        self.assertTrue(hasattr(stamp_fixture.StampTestCase, "plant_stamp"))
 
 
 if __name__ == "__main__":

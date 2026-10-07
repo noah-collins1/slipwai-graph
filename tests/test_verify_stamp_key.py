@@ -6,7 +6,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from stamp_fixture import StampTestCase, commit_all, git
+from stamp_case import StampTestCase
+from stamp_names import commit_all, git
+
+# Generates nothing itself: the project comes from `stamp_case.StampTestCase`, whose declaration the join carries.
+# "Makefile" and "scripts" are the generated project's, edited in the copy; named because the selector reads each
+# string as the root path of the same name.
+TEST_SELECTION: dict[str, object] = {"reads": ["Makefile", "scripts"]}
 
 
 class HistoryTest(StampTestCase):

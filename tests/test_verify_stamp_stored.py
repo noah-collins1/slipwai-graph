@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import re
 
-from stamp_fixture import StampTestCase
+from stamp_case import StampTestCase
+
+# Generates nothing itself: the project comes from `stamp_case.StampTestCase`, whose declaration the join carries.
+TEST_SELECTION: dict[str, object] = {}
 
 # What a tool may print as its first line: (what the stand-in prints, the words that must be in no stored file).
 # Backslashes are doubled once, for the stand-in's `printf %b`.
@@ -23,7 +26,7 @@ STORED = re.compile(r"^(?:[0-9][0-9.]*(?: [0-9][0-9.]*)* )?\[answer [0-9a-f]{16}
 
 class WhatIsStoredTest(StampTestCase):
     def stored_text(self) -> str:
-        directory = self.repo / ".git" / "slipwai"
+        directory = self.repo / ".git/slipwai"
         return "\n".join(path.read_text(encoding="utf-8") for path in sorted(directory.iterdir()))
 
     def test_no_file_under_the_stamps_directory_holds_a_word_a_tool_printed_beyond_its_version(self) -> None:

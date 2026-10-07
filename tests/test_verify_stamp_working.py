@@ -10,7 +10,12 @@ import subprocess
 from collections.abc import Callable
 from pathlib import Path
 
-from stamp_fixture import CLOSING, StampTestCase, commit_all, git
+from stamp_case import StampTestCase
+from stamp_names import CLOSING, commit_all, git
+
+# Generates nothing itself: the project comes from `stamp_case.StampTestCase`, whose declaration the join carries.
+# "README.md" is the generated project's tracked file; named because the selector reads the string as the root file.
+TEST_SELECTION: dict[str, object] = {"reads": ["README.md"]}
 
 TRACKED = "README.md"
 

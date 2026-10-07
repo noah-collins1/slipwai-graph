@@ -16,11 +16,22 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE
+from stamp_names import CI_MARKERS, GIT_STATE, MAKE_STATE
 
 from slipwai.assets import ROOT
 
 sys.dont_write_bytecode = True
+
+# Generates nothing: it copies the root gate's own files into a throwaway repository and runs it there. Everything it
+# reads of this repository is named: the copies in `COPIED`, the scripts directory it asserts holds no second copy,
+# and the workflow it reads for the stamp's step.
+TEST_SELECTION: dict[str, object] = {
+    "reads": [
+        "Makefile", "assets/toolkit/scripts/verify-stamp.py", "assets/toolkit/scripts/check-slice-scope.py",
+        "assets/toolkit/scripts/verify_scoped", "scripts/select-tests.py", "scripts/select_tests", "scripts",
+        ".github/workflows/verify.yml",
+    ],
+}
 
 SCRIPTS = "assets/toolkit/scripts/"
 # What `make test` loads once the selector is patched in (S38): the selector and the toolkit's `verify_scoped`.
@@ -95,7 +106,7 @@ class GateCase(unittest.TestCase):
 
     def stamps(self) -> dict[str, tuple[bytes, int]]:
         """Every file the stamp keeps under the git directory: bytes and mtime, so an untouched stamp reads as one."""
-        directory = self.repo / ".git" / "slipwai"
+        directory = self.repo / ".git/slipwai"
         files = directory.glob("*") if directory.is_dir() else ()
         return {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in files}
 
@@ -138,10 +149,10 @@ class TestPassedTreeIsNotJudgedAgain(GateCase):
                 self.assertNotEqual(done.returncode, 0)
                 self.assertIn("did not pass", done.stdout + done.stderr)
                 self.ran()
-                self.assertFalse(list((self.repo / ".git" / "slipwai").glob("*.json")))
+                self.assertFalse(list((self.repo / ".git/slipwai").glob("*.json")))
                 self.assertEqual(self.gate().returncode, 0)
                 self.assertEqual(self.ran(), FULL)
-                shutil.rmtree(self.repo / ".git" / "slipwai")
+                shutil.rmtree(self.repo / ".git/slipwai")
 
 
     def test_an_interpreter_cache_under_assets_puts_the_next_run_in_full(self) -> None:  # D119, AC-S33-13
@@ -166,7 +177,7 @@ class TestAlwaysRunsInFull(GateCase):
     def test_a_ci_marker_reads_writes_and_removes_no_stamp(self) -> None:  # e2
         for marker in CI_MARKERS:
             with self.subTest(marker):
-                shutil.rmtree(self.repo / ".git" / "slipwai", ignore_errors=True)
+                shutil.rmtree(self.repo / ".git/slipwai", ignore_errors=True)
                 self.assertEqual(self.gate(**{marker: "1"}).returncode, 0)
                 self.assertEqual((self.ran(), self.stamps()), (FULL, {}))
                 self.passes()
@@ -182,7 +193,7 @@ class TestAlwaysRunsInFull(GateCase):
         git(self.repo, "checkout", "-q", "main")
         self.assertEqual(self.gate().returncode, 0)
         self.assertEqual((self.ran(), self.stamps()), (FULL, before))
-        shutil.rmtree(self.repo / ".git" / "slipwai")
+        shutil.rmtree(self.repo / ".git/slipwai")
         self.assertEqual(self.gate().returncode, 0)
         self.assertEqual((self.ran(), self.stamps()), (FULL, {}))
 
@@ -205,7 +216,7 @@ class TestASliceOfTheSuiteIsNotTheGate(GateCase):
     def test_a_slice_writes_no_stamp_and_the_next_plain_run_is_full(self) -> None:  # e2
         for argument in ("TESTS=test_x", "SKIP=test_nothing"):
             with self.subTest(argument):
-                shutil.rmtree(self.repo / ".git" / "slipwai", ignore_errors=True)
+                shutil.rmtree(self.repo / ".git/slipwai", ignore_errors=True)
                 self.assertEqual(self.gate(argument).returncode, 0)
                 self.assertEqual((self.ran(), self.stamps()), (list(self.NARROW), {}))
                 self.passes()

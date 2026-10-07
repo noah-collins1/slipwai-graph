@@ -15,7 +15,10 @@ import subprocess
 import threading
 from pathlib import Path
 
-from stamp_fixture import StampTestCase
+from stamp_case import StampTestCase
+
+# Generates nothing itself: the project comes from `stamp_case.StampTestCase`, whose declaration the join carries.
+TEST_SELECTION: dict[str, object] = {}
 
 HELD = "held (stand-in)"
 NOT_RECORDED = "not recorded"
@@ -61,7 +64,7 @@ class TwoRunsTest(StampTestCase):
         (self.repo / "README.md").write_text("an edit that fails lint\n", encoding="utf-8")
 
     def notes(self) -> list[Path]:
-        return sorted((self.repo / ".git" / "slipwai").glob("*.pending"))
+        return sorted((self.repo / ".git/slipwai").glob("*.pending"))
 
     def test_run_b_failing_on_an_edited_tree_leaves_no_stamp_when_run_a_finishes(self) -> None:
         """B1: A passes on the tree it began with; the tree is edited, B starts on it and fails; A's `record`

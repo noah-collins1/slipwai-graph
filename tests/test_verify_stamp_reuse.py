@@ -8,7 +8,12 @@ from __future__ import annotations
 import json
 import re
 
-from stamp_fixture import CLOSING, INSTANT, StampTestCase
+from stamp_case import StampTestCase
+from stamp_names import CLOSING, INSTANT
+
+# Generates nothing itself: the project comes from `stamp_case.StampTestCase`, whose declaration the join carries.
+# "scripts" is a key part of the generated project; named because the selector reads the string as the root directory.
+TEST_SELECTION: dict[str, object] = {"reads": ["scripts"]}
 
 FIELDS = ("key", "tree", "scripts", "tools", "passed", "result")
 
