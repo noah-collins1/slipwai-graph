@@ -18,8 +18,7 @@ sys.dont_write_bytecode = True
 
 DECLARED = ("test_matrix", "test_images", "test_postgres", "test_readiness", "test_line_widths",
             "test_no_mocking_frameworks", "test_stale_references")
-UNDECLARED = ("test_monorepos", "test_flag_gate", "test_factory_repository", "test_factory_gate_stamp",
-              "test_factory_gate_stamp_inputs")
+UNDECLARED = ("test_monorepos", "test_flag_gate", "test_factory_repository", "test_factory_gate_stamp_inputs")
 PATHS = {"go": "assets/languages/go/scripts/go-mutation.py",
          "frontend": "assets/frontends/react-vite/app-route-client/Home.tsx",
          "standard": "assets/profiles/standard/docs/speckit-preset.md", "docs": "docs/maintaining.md"}
@@ -77,8 +76,8 @@ class TestTheBackendReadersSayWhatTheyGenerate(unittest.TestCase):
     def test_the_modules_that_read_the_repository_or_load_undeclared_tests_stay_undeclared(self) -> None:
         # monorepos imports `test_verify_stamp_pinned` and reads its own sources; flag_gate is at the 350-line budget
         # and opens `assets/languages`; factory_repository reads `src`, `assets`, the workflows and the Makefile;
-        # the two gate-stamp modules copy scripts of `assets/toolkit` that load others by path, and import the
-        # undeclared `test_factory_gate_stamp_scan`
+        # factory_gate_stamp_inputs copies scripts of `assets/toolkit` that load others by path, and imports the
+        # undeclared `test_factory_gate_stamp_scan` (`test_factory_gate_stamp` is declared reads-only by S43 T007)
         for name in UNDECLARED:
             self.assertIsNone(self.found["own"][name], name)
 
