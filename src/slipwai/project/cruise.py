@@ -166,7 +166,7 @@ Under `decide: recommended-first`, decide here when the stage itself recommends 
 release-constraint stage says *recommend the answer with its reason rather than asking an open question*),
 when a standing entry already covers the question, or when the specification or the constitution answers it
 outright. Anything else is an **open question**: delegate it to one fresh `{SKIPPER}` delegate with the
-question, the stage, the options and the recommendation in its brief — the spec, the constitution, the owner
+question, the stage, the options and the recommendation in its brief{provisional.DISPATCH_WORDS} — the spec, the constitution, the owner
 brief and the log are the standing part of its own brief — and **the number its entry will carry**. `D<n>` is
 allocated here, before dispatch: the next after the last entry in `{DECISIONS}`, one per delegate in dispatch
 order where several go out at once. The delegate returns the whole entry under that number and writes

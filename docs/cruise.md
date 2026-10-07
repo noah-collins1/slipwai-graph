@@ -139,7 +139,10 @@ asked, what shipped, every out-of-scope decision, and every decision a person ha
 then asks `python3 scripts/provisional.py status` what to write. Under `provisional-shadow` and `provisional-advisory`
 nothing is taken: the item stays `unavailable`, the skipper's `status` is `unavailable`, and the entry only gains a
 `Provisional (shadow):` or `Provisional (advisory):` line saying what `provisional` would have done; advisory also
-names the recommendation, and `/cruise-tell accept` takes it. Under `provisional`, and only there, an easy or guarded
+names the recommendation, and `/cruise-tell accept` takes it: the skipper returns the verb's `cruise: parked: …` line
+verbatim in `unresolved`, and a park on that item ends the run on it. Under all three provisional values every
+always-ask item goes to the skipper, even where the stage recommends an answer, and the host names `decide` in its
+brief. Under `provisional`, and only there, an easy or guarded
 item goes ahead with `Status: provisional · ratify by <date>` and a `Revert:` line, and every commit made under it
 carries the trailer `Decision: D<n>`. A gate, a
 check, CI, a credential, a third party's behaviour, a constitution MUST and a release are never provisional. At

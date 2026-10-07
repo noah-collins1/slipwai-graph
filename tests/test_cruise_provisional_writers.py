@@ -224,3 +224,27 @@ class ModesAreSeparateTest(FactoryTestCase):
         self.assertIn("it is never decided, whatever `decide` says, except an approval under `decide: provisional`",
                       self.command)
         self.assertNotIn("whatever `decide` says. It is still an entry", self.command)
+
+    def test_t017_the_dispatch_sentence_names_decide_and_sends_every_always_ask_item(self) -> None:
+        self.assertIn("under `provisional-shadow`, `provisional-advisory` and `provisional` alike the brief also "
+                      "names the `decide` value in `.specify/cruise.json`, and every always-ask item goes to the "
+                      "delegate even where the stage recommends an answer", self.command)
+
+    def test_t017_the_verbs_unavailable_line_is_the_status_unavailable(self) -> None:
+        self.assertIn("the verb's first line, `unavailable: …`, is your `status: unavailable`, and your "
+                      "**Decision:** says what a person must provide", self.skipper)
+        self.assertIn("the verb's first line, `unavailable: …`, is the skipper's `status: unavailable`, and its "
+                      "**Decision:** says what a person must provide", self.command)
+
+    def test_t017_every_line_the_verb_prints_says_where_it_goes(self) -> None:
+        for text, who in ((self.command, "the skipper writes"), (self.skipper, "you write")):
+            for words in (f"`Status:` and `Revert:` {who} where the entry shape puts them",
+                          "the `Provisional (shadow):` or `Provisional (advisory):` line goes after `Reversibility:`",
+                          "the verb's other stderr lines only say why, and go nowhere in the entry"):
+                self.assertIn(words, text)
+
+    def test_t017_the_advisory_park_line_is_carried_verbatim_and_the_run_ends_on_it(self) -> None:
+        self.assertIn("Under `decide: provisional-advisory` the verb's stderr line `cruise: parked: D<n> needs a "
+                      "person's approval; recommended: …` is returned verbatim in `unresolved`", self.skipper)
+        self.assertIn("returns the verb's stderr `cruise: parked: …` line verbatim in `unresolved`, and a park on "
+                      "that item ends the run on that line", self.command)

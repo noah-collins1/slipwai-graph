@@ -42,7 +42,12 @@ only under one value of `decide`. It scores the tier first with `{_SCORE}`, then
 Under `decide: provisional-advisory` an always-ask item is not taken either: it stays `unavailable`, the skipper's
 `status` is `unavailable`, and the entry only gains the `Provisional (advisory):` line, with the recommendation a
 person can accept in one word. Under `decide: provisional`, and only there, the skipper takes an easy or guarded
-approval provisionally, as `Status: provisional · ratify by <date>` with a `Revert:` line.
+approval provisionally, as `Status: provisional · ratify by <date>` with a `Revert:` line. Read the verb's output
+line by line: the verb's first line, `unavailable: …`, is the skipper's `status: unavailable`, and its **Decision:**
+says what a person must provide; `Status:` and `Revert:` the skipper writes where the entry shape puts them; the
+`Provisional (shadow):` or `Provisional (advisory):` line goes after `Reversibility:`; the verb's other stderr lines
+only say why, and go nowhere in the entry. Under advisory the skipper also returns the verb's stderr
+`cruise: parked: …` line verbatim in `unresolved`, and a park on that item ends the run on that line.
 Every other question is decided as under `recommended-first`. A question about a gate, a check or CI is never
 provisional, whatever its declared facts; a credential, a third party's behaviour, a MUST or a release never is.
 An enforced provisional decision, which only `decide: provisional` makes, is not a block: no bosun, no ⛔. Every
@@ -59,6 +64,10 @@ AUDIT_SENTENCE = (
     "`ratified <date>`, or reverts the commits carrying its trailer and writes `reverted <date>`, since the run "
     "does neither."
 )
+# The dispatch sentence's addition: what the brief carries, and which items go to the delegate, under the provisional values.
+DISPATCH_WORDS = (" (under `provisional-shadow`, `provisional-advisory` and `provisional` alike the brief also names "
+                  "the `decide` value in `.specify/cruise.json`, and every always-ask item goes to the delegate even "
+                  "where the stage recommends an answer)")
 # Says what the "never decided" sentence of the command's *unavailable* paragraph excepts.
 APPROVAL_EXCEPTION = ", except an approval under `decide: provisional` (*Provisional decisions*, above)"
 NEVER_SETS = " The run never sets `decide`: `--set decide=…` refuses inside an iteration."
@@ -80,7 +89,12 @@ line the item falls under. Under `decide: provisional-shadow` an always-ask item
 `provisional` would have done. Under `decide: provisional-advisory` an always-ask item is not taken either: it stays
 `unavailable`, your `status` is `unavailable`, and the entry only gains the `Provisional (advisory):` line. Under
 `decide: provisional`, and only there, you take an easy or guarded approval provisionally, and your `status` is
-`decided`: write the `Status:` and `Revert:` lines the verb prints where the entry shape puts them. A question about a
+`decided`. Read the verb's output line by line: the verb's first line, `unavailable: …`, is your `status:
+unavailable`, and your **Decision:** says what a person must provide; `Status:` and `Revert:` you write where the
+entry shape puts them; the `Provisional (shadow):` or `Provisional (advisory):` line goes after `Reversibility:`;
+the verb's other stderr lines only say why, and go nowhere in the entry. Under `decide: provisional-advisory` the
+verb's stderr line `cruise: parked: D<n> needs a person's approval; recommended: …` is returned verbatim in
+`unresolved`. A question about a
 gate, a check or CI is never provisional, whatever its declared facts; a credential, a third party's behaviour, a
 MUST or a release never is (`--ask fact`, `must` or `release`). Every other question you decide as under
 `recommended-first`. An enforced provisional decision, which only `decide: provisional` makes, is not a block, and
