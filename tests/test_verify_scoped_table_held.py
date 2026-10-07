@@ -12,8 +12,10 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 from test_scoped_targets import SHAPES as SHAPE_TABLE
+from test_scoped_targets import database
 from test_verify_scoped_record import GATES, RecordCase, covered, loaded, record
 
 from slipwai.assets import ROOT
@@ -23,6 +25,14 @@ sys.path.insert(0, str(ROOT / "assets" / "toolkit" / "scripts"))
 
 PATH_LIKE = re.compile(r"^[\w./-]+$")
 SCRIPT = re.compile(r"scripts/[\w./-]+\.py")
+# What `verify_scoped/methods.py` derives inputs from, as a file name a script names whole (`"registry.json"`).
+DERIVED = re.compile(r"^[\w./*-]*(?:registry\.json|\.manifest\.json)$")
+# A claiming check outside the four whose closure names one of them, and does not read what it derives from it.
+DERIVED_NOT_READ = {
+    "check-benchmark": "`agents/benchmark.py` names `registry.json` for `cursor()`, the transcript cursor of its "
+                       "`start` and `end`; `check` never calls it, and the file is under `scripts/`, the full gate",
+}
+FOUR = ("check-agents", "check-speckit", "check-extensions", "check-constitution")
 # Read by a check and handled outside the table: a changed one runs the full gate (R5), or it is the gate's own.
 ROOT_OWN = ("project.json", "Makefile", "GNUmakefile", "makefile", "scripts", ".git")
 # A literal that names a path-looking thing a check does not read as an input of the project: the reason is the value.
@@ -66,6 +76,34 @@ def reads_of(path: Path, project: Path) -> set[str]:
             first = literal.split("/")[0]
             if first and first not in ROOT_OWN and (project / first).exists():
                 found.add(literal)
+    return found
+
+
+def entries_of(lines: list[str]) -> list[str]:
+    """The check scripts a recipe's lines run: every one, as `check-agents`' chained line runs three."""
+    return [found for line in lines for found in re.findall(SCRIPT, line)]
+
+
+def closure_literals(project: Path, name: str, recipes: dict[str, list[str]]) -> set[str]:
+    """Every string a check's scripts, and what they import or name, hold."""
+    found: set[str] = set()
+    for entry in entries_of(recipes.get(name, [])):
+        for module in modules_of(project, project / entry):
+            found.update(node.value for node in ast.walk(ast.parse(module.read_text(encoding="utf-8")))
+                         if isinstance(node, ast.Constant) and isinstance(node.value, str))
+    return found
+
+
+def derived_readers(project: Path, data: dict[str, Any], recipes: dict[str, list[str]]) -> list[str]:
+    """The claiming checks outside the four whose scripts name a manifest or the registry (D172 limit ii): what those
+    name is derived into the four's inputs only, so a fifth that reads them would be skipped when they change."""
+    found = []
+    for name, check in sorted(data["checks"].items()):
+        if name in FOUR or name.split("-")[0] in GATES or check["inputs"] is None or not check["claims"] \
+                or check["always"] or name in DERIVED_NOT_READ:
+            continue
+        found += [f"{name} reads {literal}" for literal in sorted(closure_literals(project, name, recipes))
+                  if DERIVED.match(literal)]
     return found
 
 
@@ -134,7 +172,7 @@ class TableHeldTest(RecordCase):
             for name, check in data["checks"].items():
                 if check["inputs"] is None or name.split("-")[0] in GATES:
                     continue
-                entries = [found for line in recipes.get(name, []) for found in re.findall(SCRIPT, line)]
+                entries = entries_of(recipes.get(name, []))
                 reads: set[str] = set()
                 for entry in entries:
                     for module in modules_of(project, project / entry):
@@ -151,3 +189,19 @@ class TableHeldTest(RecordCase):
 
     def test_e4_every_path_a_check_script_reads_lies_under_one_of_its_recorded_inputs(self) -> None:
         self.assertEqual(self.findings(), [])
+
+    def test_e4_no_claiming_check_outside_the_four_reads_the_registry_or_a_manifest(self) -> None:
+        findings = []
+        named: set[str] = set()
+        for shape in self.SHAPES:
+            project = self.project(shape)
+            if record(project).returncode != 0:
+                continue
+            data = loaded(project)
+            recipes = {name: lines for name, (_, lines) in database(project).items()}
+            findings += [f"{shape}: {line}" for line in derived_readers(project, data, recipes)]
+            named.update(name for name in DERIVED_NOT_READ if name in recipes
+                         and any(DERIVED.match(literal) for literal in closure_literals(project, name, recipes)))
+        findings += [f"{name} is allowed to name a derived file, and no longer does"
+                     for name in sorted(set(DERIVED_NOT_READ) - named)]
+        self.assertEqual(findings, [])
