@@ -473,3 +473,59 @@ test is unchanged. `make test TESTS="test_verify_scoped_contracts test_verify_sc
 21 tests, OK. No CRITICAL or HIGH finding is open. T013 (LOW, symlinked inputs, every S06 row) goes to the Parking Lot.
 The host writes that entry. The LOW on ignored stylesheets is documented by D171 rule 6's sentence. The slice is
 converged. Still to do: the host's after-converge gaps pass and the demo.
+
+### After-converge tasks (the host's gaps pass over S07, `/home/noahc/math/.cruise27/gaps-after-S07.md`)
+
+The branch was rebased onto `adopt-method` at `814acdc` (S26 merged, with its Phase 4) without conflict. Each task
+below starts from a failing test and closes its whole class. No new converge pass unless a fix is larger than its
+finding.
+
+- **T015 — S07 against S26 (finding 3, MEDIUM).** This is T009's after-rebase step. Run `test_verify_scoped_table_held`
+  and `test_verify_scoped_held` against S26's `check-decisions.py` and `scripts/reversibility.py`. If the scan finds an
+  undeclared literal that `check-decisions` reads, widen its row. Any literal it does not read gets an exemption scoped
+  to `check-decisions`, with the reason. **Files:** `assets/toolkit/scripts/verify_scoped/table.py`,
+  `tests/test_verify_scoped_table_held.py`, `tests/test_verify_scoped_methods.py`.
+- **T016 — Whether an ignored projection directory exists reaches the scoped gate (finding 1, MEDIUM, false green).**
+  `check-agents` (`agents/project.py` `unprojected`) and `check-speckit` (`unprojected_directory`) decide what they hold
+  by whether a git-ignored projection directory exists. The stamp's ignored digest records files and links, not
+  directories, so `mkdir .claude/skills` after a baseline flips `check-agents` to failing while `verify-scoped` skips it.
+  - **RED:** `probe_projdir.py`'s steps as a test.
+  - **GREEN, on the scoped-gate side:** a projection directory of an installed integration, or one of `registry.json`'s
+    in-repo `skillsDir`/`commandsDir` that `check-speckit` reads, that exists with no file under it forces the full gate,
+    with one line naming it. A green baseline cannot be taken with such a directory present, because the check then
+    fails.
+  - Changing the stamp key in `verify-stamp.py` instead would be S03's script. It is not done here; if the scoped-gate
+    side cannot close it, say so here.
+  - **Files:** `assets/toolkit/scripts/verify_scoped/` (`methods.py`, `choose.py` or `verify-scoped.py`), a new test
+    module.
+- **T017 — AC-S07-8 flips each declared input (finding 2, MEDIUM, and the AC-S07-2 flips the gaps pass found
+  untested).**
+  - For every declared file of the four rows, make a change that flips the check's verdict, and show both that the
+    verdict flips and that `choose` selects exactly the checks declaring that path, naming it. The untested ones are
+    `models.json`, `cruise.json`, `integration.json`, `skills/`, `commands/`, `agents/`, `.specify/integrations/`,
+    `constitution.md`, the two constitution-template files and `.slipwai/extensions.json`.
+  - Replace the false *`--check` opens none* exemption for `check-constitution`'s `present_practice` read of
+    `skills/*/SKILL.md` with the truth: either a test showing that only the failure text changes and never the exit
+    status, or `skills/` declared on the row.
+  - **Files:** new test module(s), `tests/test_verify_scoped_table_held.py`, `table.py` only if declared.
+- **T018 — `make check-<name>` and the preview scope (D192, rewording AC-S07-9).** `make check-<name>` always runs, and
+  the scoped gate never skips it. On a slice branch, `check-ux-gates`' preview scope follows AC-S07-11 there too.
+  - The generated page and `docs/verification.md` say so.
+  - A test runs `make check-ux-gates` on `slice/<id>` and sees the default-scope line.
+  - **Files:** `src/slipwai/project/scoped_targets.py`, `docs/verification.md`, `tests/test_scoped_page.py`,
+    `tests/test_ux_gates_default.py` or `tests/test_ux_gates_borders.py`.
+- **T019 — Three LOW findings.**
+  - **Finding 5:** `methods.py` vets the `preset.yml` of every name `.registry` lists, nested names included (test with
+    the `nested/` probe).
+  - **Finding 6:** each `NOT_AN_INPUT` exemption is scoped to the check it was written for.
+  - **Finding 7:** the fragment's catch-up says which runs now scope: a local `make verify` or `make check-ux-gates` on
+    `slice/<id>`, while the trunk and CI are unchanged. It also says that a CI with none of the
+    `CI`/`GITHUB_ACTIONS`/`GITLAB_CI` markers that checks out a `slice/<id>` branch now scopes previews, and that an empty
+    `UX_GATES_SINCE=` now gets the default. The pages add a reinstalled ux-gates kit as a reason for `all`.
+  - **Files:** `methods.py`, `tests/test_verify_scoped_derived.py`, `tests/test_verify_scoped_table_held.py`,
+    `changelog.d/scoped-checks.md`, `scoped_targets.py`, `docs/verification.md`, `tests/test_scoped_page.py`.
+- **T020 — Criteria with no test.**
+  - AC-S07-5: a web deployable's directory added runs `check-extensions`.
+  - AC-S07-11: one run with `UX_GATES_SINCE=refs/heads/all` scopes to the ref named `all`.
+  - **Files:** `tests/test_verify_scoped_methods.py` and `tests/test_ux_gates_default.py`, or new modules.
+
