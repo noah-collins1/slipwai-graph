@@ -113,7 +113,7 @@ class CruiseRunnerTest(FactoryTestCase):
             self.assertIn("model = null", cruise(repo, "--set", "model=null").stdout)
             table["model"] = None
             for arguments, reason in (
-                (("decide=nope",), "`decide` must be one of recommended-first, skipper-always, not 'nope'"),
+                (("decide=nope",), "skipper-always, provisional-shadow, provisional-advisory, provisional, not 'nope'"),
                 (("stuck_after=zero",), "`stuck_after` takes a whole number, not 'zero'"),
                 (("stuck_after=0",), "`stuck_after` must be a whole number of at least 1, not 0"),
                 (("poll_minutes=null",), "`poll_minutes` must be a whole number of at least 1, not None"),

@@ -52,7 +52,7 @@ touch "specs/broken-$n"
 echo "cruise: continue\"""")
             broken = cruise(repo, "run", env=env)
             self.assertEqual(broken.returncode, 0, broken.stderr)
-            self.assertIn("`decide` must be one of recommended-first, skipper-always, not 'nobody'", broken.stdout)
+            self.assertIn("provisional-shadow, provisional-advisory, provisional, not 'nobody'", broken.stdout)
             self.assertIn("keeping the settings the last iteration ran under", broken.stdout)
             self.assertNotIn("Traceback", broken.stderr)
             self.assertIn("cruise: budget spent — 2 iteration(s)", broken.stdout)

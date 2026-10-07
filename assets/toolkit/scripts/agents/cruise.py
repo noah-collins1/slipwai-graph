@@ -11,7 +11,7 @@ with `start`, and the session that typed it runs no stage of the ladder.
 
     python3 scripts/agents/cruise.py                       # every setting and what it controls
     python3 scripts/agents/cruise.py --check               # well-formed; `make check-agents` runs this
-    python3 scripts/agents/cruise.py --set enabled=true    # change settings, checked, any time
+    python3 scripts/agents/cruise.py --set enabled=true    # change settings, checked, any time (`decide` one rung up at a time)
     python3 scripts/agents/cruise.py run [--feature F] [--no-park] [--sandbox] [kick-off…]   # the loop; `make cruise`
     python3 scripts/agents/cruise.py start [--feature F] [--no-park] [--sandbox] [kick-off…] # the loop, detached
     python3 scripts/agents/cruise.py watch [--minutes M] [--quiet S]  # the watch seat: the feed since the last watch
@@ -156,12 +156,16 @@ GUARD_REASON = ("cruise: `{path}` is a gate or a control of this run, and an ite
 # factory writes the same list into `.specify/cruise.json` and `commands/cruise-settings.md`.
 CHOICES: dict[str, tuple[str, ...]] = {
     "enabled": ("true", "false"),
-    "decide": ("recommended-first", "skipper-always"),
+    "decide": ("recommended-first", "skipper-always", "provisional-shadow", "provisional-advisory", "provisional"),
     "release": ("flagged", "park"),
     "constitution": ("ratify", "park"),
     "hand": ("browser", "http", "cli"),
     "unblock": ("bosun", "park"),
 }
+# How far up `decide` has gone: `--set` writes a step up of one rung at most (any step down, and the move between the
+# two rung-0 values, is written), so provisional approval is reached through the shadow and the advisory.
+RUNGS = {"recommended-first": 0, "skipper-always": 0, "provisional-shadow": 1, "provisional-advisory": 2,
+         "provisional": 3}
 # Whole numbers: the least value allowed, and whether `null` is one of the answers.
 NUMBERS: dict[str, tuple[int, bool]] = {
     "stuck_after": (1, False), "max_iterations": (1, True), "max_hours": (1, True), "poll_minutes": (1, False),
@@ -266,6 +270,20 @@ def assign(table: dict[str, Any], assignment: str) -> str:
             raise RuntimeError(f"`{key}` takes a whole number{' or null' if NUMBERS[key][1] else ''}, "
                                f"not {value!r}") from None
     return f"{key} = {json.dumps(table[key])}"
+
+
+def climb(table: dict[str, Any], assignment: str) -> None:
+    """Refuse a `decide` change an iteration makes, or a step up of more than one rung; `check` judges the rest."""
+    key, _, value = assignment.partition("=")
+    if key != "decide":
+        return
+    if os.environ.get(ITERATION_VARIABLE):
+        raise RuntimeError("`decide` changes only through /cruise-settings, a person's command; an iteration never "
+                           "sets it (D62)")
+    current = table.get("decide")
+    if value in RUNGS and current in RUNGS and RUNGS[value] > RUNGS[current] + 1:
+        step = next(name for name, rung in RUNGS.items() if rung == RUNGS[current] + 1)
+        raise RuntimeError(f"`decide` moves one mode at a time: set `{step}` first")
 
 
 def describe(table: dict[str, Any]) -> str:
@@ -1814,7 +1832,10 @@ def main() -> None:
         assignments = arguments[arguments.index("--set") + 1:]
         if not assignments:
             raise RuntimeError(f"--set takes key=value with a key from {', '.join(DEFAULTS)}")
-        changed = [assign(table, assignment) for assignment in assignments]
+        changed = []
+        for assignment in assignments:
+            climb(table, assignment)
+            changed.append(assign(table, assignment))
         findings = check(table)
         if findings:
             raise RuntimeError("not written — the change would leave the file malformed:\n  - " + "\n  - ".join(findings))
