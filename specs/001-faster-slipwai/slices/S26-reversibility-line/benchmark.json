@@ -1,0 +1,81 @@
+{
+  "_comment": "What each stage of /drive cost this slice and how well it did, one entry per stage run, appended by scripts/agents/benchmark.py at the stage's start and end. Tokens come from the harness's own transcript or are null with the reason; signals are what the stage reported. `make benchmark` reads every record. docs/agent-harnesses.md says what the numbers can and cannot be compared with.",
+  "feature": "001-faster-slipwai",
+  "slice": "S26-reversibility-line",
+  "from": "a0c83a67fb1729b9416b1ef64c2d6ad2257ab0eb",
+  "stages": [
+    {
+      "stage": "gaps",
+      "started": "2026-10-07T06:16:59Z",
+      "planned": "gaps: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 0,
+          "done": 55
+        },
+        "end": {
+          "open": 0,
+          "done": 55
+        }
+      },
+      "ended": "2026-10-07T06:34:26Z",
+      "seconds": 1047,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a.jsonl": 600671
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a.jsonl": 1562952,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a125a25ba16fdb705.jsonl": 317466,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a2a9d52548fd0e0be.jsonl": 230320,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a30236c8d83860806.jsonl": 235711,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a30293dd8a7b8f961.jsonl": 233169,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a45755694d6b19909.jsonl": 254269,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a474eafcfd3706fb0.jsonl": 220834,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a4b90b0feb6fb5c72.jsonl": 454597,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a4bdb74d247783a07.jsonl": 270909,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a52ac66835d14d325.jsonl": 208997,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a56287970cee2b14f.jsonl": 215945,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-a6775c4c9196c45cd.jsonl": 760083,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-aa93087491dbc81ee.jsonl": 296587,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/ffdc5fab-9135-4a22-8337-b8ce94f7a86a/subagents/agent-af24ed70df6d18ba8.jsonl": 544208
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "ffdc5fab-9135-4a22-8337-b8ce94f7a86a",
+        "read": "message.usage on each assistant line, once per requestId; 149 request(s) left to a bracket open at the same time",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 20,
+            "output": 7842,
+            "cache_read": 1132642,
+            "cache_creation": 27828
+          }
+        },
+        "subagents": {
+          "claude-opus-5-5": {
+            "input": 228,
+            "output": 6185,
+            "cache_read": 9206844,
+            "cache_creation": 335697
+          }
+        },
+        "agents": [
+          "drive-gaps"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5"
+      ],
+      "agents": [
+        "drive-gaps"
+      ],
+      "delegated": true,
+      "signals": {
+        "gaps": 16,
+        "driver": "cruise"
+      }
+    }
+  ]
+}

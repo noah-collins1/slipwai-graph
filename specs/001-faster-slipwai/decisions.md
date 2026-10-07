@@ -3862,3 +3862,313 @@
 - **Confidence:** high · **Would reverse if:** a person withdraws it.
 - **Written to:** `specs/001-faster-slipwai/decisions.md` (the split's row is the next iteration's first stage)
 - **Status:** standing
+
+## D170 — Does check-ux-gates' slice-branch default apply to every run there, or only when verify-scoped selects it?
+- **Stage:** 5 slice gaps · **Slice:** S07-scoped-checks · **When:** 2026-10-07T06:29:41Z · **Iteration:** 27
+- **Scope:** S07-scoped-checks
+- **Question:** FR-022 defaults `UX_GATES_SINCE` to the merge-base on `slice/<id>`. Inside `make verify` on a slice branch that renders fewer previews, so the verify stamp and S06's baseline (D116 rule 4) would vouch for a run that did not render every preview (gaps report G11). Does the default hold on every run on a slice branch, or only when `verify-scoped` selects the check?
+- **Options:** (a) every run on a slice branch outside CI, as FR-022 reads (recommended by the gaps stage); (b) only through `verify-scoped`.
+- **Decision:** (a), as FR-022 says outright. On the trunk, any other branch, a detached `HEAD`, under any CI marker, or where the base cannot be found, every preview renders and the check says why in one line. SC-007 is read on the trunk: `make verify` there, the merge root and CI render every preview, unchanged. The browser and Playwright's cache remain inputs no key holds, as the check's own docstring says, which is why the trunk never scopes. A stamp or baseline written on a slice branch records that the ux-gates run was scoped, so a later full gate on that branch does not read it as every preview rendered.
+- **Why:** A slice's first gate has no baseline and widens to `make verify`; without the default it renders every preview (about 24 minutes at 225 previews) on a branch where one file changed. The merge root and CI still render everything (owner priority 1), so nothing reaches the trunk less checked.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person reads FR-022's default as belonging to the scoped gate alone, or the stamp cannot tell a scoped ux-gates run from a full one.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D171 — Once `check-ux-gates` scopes by default on a slice branch, how does a developer ask for every preview there?
+- **Stage:** 5 slice gaps · **Slice:** `S07-scoped-checks` · **When:** 2026-10-07T06:28:28Z · **Iteration:** 27
+- **Scope:** S07-scoped-checks
+- **Question:** FR-022 and D170 make `check-ux-gates` scope its previews from S06's base on any run on a `slice/<id>` branch outside CI. Today an empty `UX_GATES_SINCE` counts as unset, so once the default exists there is no way to get every preview on a slice branch (gaps G9, Q2). What does a developer set to get them all?
+- **Options:** (a) a reserved value, `UX_GATES_SINCE=all`. The gaps stage recommends this one: a documented setting with a default and one sentence on when to change it, as the owner brief's *Taste* asks. (b) Set-but-empty means everything, unset means the default. (c) `VERIFY_FORCE=1` also forces every preview.
+- **Decision:** (a), as the gaps stage recommended.
+  1. **The value.** After `check-ux-gates.py` strips the value as it does today, the exact lowercase word `all` means every preview is in scope. The script prints one line saying so, for example `check-ux-gates: UX_GATES_SINCE=all — every preview in scope`.
+  2. **Precedence.** `all`, like any explicit ref, beats the slice-branch default. On the trunk, under a CI marker, or where the base cannot be found, the script already renders everything, so `all` changes nothing there.
+  3. **Empty still means unset.** An empty or whitespace-only value is unset, as it is today, so the slice-branch default applies. No meaning hangs on the difference between empty and unset.
+  4. **The word is reserved.** A git ref that happens to be named `all` is passed by its full name (`refs/heads/all`, `refs/tags/all`) or by its commit. The docs say this in one clause.
+  5. **`VERIFY_FORCE` keeps its one meaning:** do not reuse a stamp. It says nothing about which previews are in scope.
+  6. **Where it is documented.** The script's docstring, the generated scoped page and `docs/verification.md` name the default and one sentence on when to override it: *set `UX_GATES_SINCE=all` when a change the scope cannot follow (a script or asset a preview loads, a browser upgrade) could alter a preview.* The changelog fragment's catch-up note names it as the way to get every preview on a slice branch.
+  7. **Level.** The setting already exists and this adds a value to it, so the fragment claims MINOR. `VERSION` already carries `1.6.0.dev0`, so nothing is raised.
+- **Why:** The developer has to trust that a green slice branch rendered what they think it rendered.
+  - **For (a):** the brief's *Taste* asks for a documented default and one sentence on when to change it, and a gate that says in one line what it checked. A named value does both: the run log shows the word, so a person can see an all-previews run happened.
+  - **The stamp key decides between (a) and (c).** `UX_GATES_SINCE` is already a named variable in the verify stamp's key (`verify-stamp.py:117`) and in the scoped gate's baseline (`verify_scoped/table.py:51`). So under (a), an all-previews run and a default run have different keys. A green from a scoped run never vouches for a run that asked for everything, which is the false-green worry in G11 and D116 rule 4 (priority 5).
+  - **Against (c):** `VERIFY_FORCE` is not in that key. Reusing it would join two separate controls, make every "re-run, don't trust the stamp" pay about 24 minutes of rendering at 225 previews, and still leave the key unable to tell the two runs apart.
+  - **Against (b):** it puts the meaning in the gap between empty and unset, which make, shells and CI templates all blur. The generated ux-gates CI job sets `UX_GATES_SINCE: ${{ github.event.pull_request.base.sha }}`, which is empty on a push. The developer cannot see the difference in a log, and it breaks the "a person can act on one line" rule.
+  - **Nothing standing is crossed.** The merge root and CI still render every preview (priority 1, D74, D117 rule 1, D170), and no check is removed anywhere.
+  - **Not an ADR.** This adds one documented value to an existing setting. No schema, store, stream or published contract moves, and dropping it later would be a deprecation note, not a migration.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** a generated or adopted project is shown passing a ref literally named `all` as `UX_GATES_SINCE`. The reserved word would then move to one no git ref can be, and the documented sentence would change with it.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S07-11: *the Q2 value* becomes UX_GATES_SINCE=all, with rules 1–4; AC-S07-14: the override sentence and the catch-up note name it)
+- **Status:** standing
+
+## D172 — How `check-constitution`'s "any spec exists" input is declared, and whether the four method-file checks claim the paths they read
+- **Stage:** 5 slice gaps · **Slice:** S07-scoped-checks · **When:** 2026-10-07T06:28:39Z · **Iteration:** 27
+- **Scope:** S07-scoped-checks
+- **Question:** `check-constitution` fails as soon as the first `specs/*/spec.md` exists while `.specify/memory/constitution.md` is still the template (`workflow_started()`). So "does any spec exist" is one of its inputs, and the record has no glob to say that with. How is it declared? And should the four checks (`check-agents`, `check-speckit`, `check-extensions`, `check-constitution`) *claim* the paths they read? Claiming makes a changed path known, so it runs only its readers instead of the full gate. That is safe only if every check that reads the path declares it (G8).
+- **Options:** (a) declare the directory `specs/` as a file input of `check-constitution`. **Recommended by the gaps stage.** It is safe, costs under a second and leaves the record's published shape alone. (b) Add a new glob form to the record. This changes ADR 0004's shape and raises the fragment to MINOR. (c) Declare `specs/` only while the constitution is still the template, which means the record has to read the constitution's state.
+- **Decision:** (a), as the stage recommended. On G8, the four claim their inputs, with two limits.
+  1. **`specs/` is declared.** `check-constitution`'s row in `table.py` lists, as directories and files: `specs/`, `.specify/memory/constitution.md`, `.specify/memory/.constitution-template.json`, `.specify/templates/constitution-template.md` and `.specify/presets/`, with `variables: []`. The rule is unconditional and does not depend on whether the constitution is ratified. AC-S07-6 holds this: a branch that adds the first `specs/<f>/spec.md` over the template constitution runs the check and it fails. AC-S07-10 reads: *no key is added, `schema: 1` stays*.
+  2. **The four claim, like every other row** (`claims: true`, the table's default). That includes the paths the record works out at run time from `.specify/integration.json` with `registry.json`, and from the Spec Kit manifests and `preset.yml` files, in both the working tree and the base. This follows `with_named`'s precedent for `check-model`.
+     - **Limit (i): unreadable means no claim.** A manifest, `preset.yml` or integration file that does not parse, or that names a path outside the project (absolute, or through `..`), gives that check `inputs: null`. The existing fallback then sets `claims: false`, so the check runs and its paths make nothing known. A changed path nothing else claims is still the full gate.
+     - **Limit (ii): a test proves every reader is declared.** A factory test checks every gate script in the table. Any script that reads `registry.json` or a `*.manifest.json` must be one of the four, always run, or have `claims: false`. Today that is only `check-slice-scope`, which always runs and claims nothing. A new data-driven reader of these files then fails the factory's tests before it ships, instead of a slice skipping it.
+     - Ignored harness projections stay out of the committed-file inputs. AC-S06-9's digest of ignored files still covers them.
+- **Why:** The developer wants the gate to skip only what could not have failed.
+  - **(a) is the conservative reading and costs almost nothing.** `specs/` is already a declared and claimed input of `check-decisions` and `check-benchmark`. A slice branch that changes its own records already runs those two, so adding `check-constitution` costs under a second and changes no check's verdict.
+  - **(b) is not worth it.** It changes a published contract and raises the release level to save nothing measurable. The taste section asks for no new mechanism where an existing one will do.
+  - **(c) adds a risk for no saving.** The record would need a second test for "still the template", next to the check's own (`is_template`, which compares against the core template and every preset's). If the two ever disagreed, the record would skip a check that fails. That is the false green owner priority 5 and the brief's "the one thing that would make it pointless" rule out. The saving would be nil anyway, because `specs/` changes already select other checks.
+  - **Claiming serves priority 2.** Without a claim, an edit to `CLAUDE.md`, a hooks file or `.cursor/rules/…` stays the full gate on every scoped run.
+  - **Claiming is safe here, not just hoped to be.** D140 sends any project-added check to the full gate, because it changes the `Makefile` text. So the only checks a claim can wrongly skip are the factory's own, a finite set. Limit (ii) is a finite test over that set. Limit (i) fails closed wherever the record cannot work out the paths.
+  - **Nothing at the merge root or in CI changes.** `make verify` there runs all four in full (priority 1; D117 rule 7; FR-023's "always on `main` and in CI"). Nothing on *Always ask a person* is touched, so no person is needed.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high on (a) over (b) and (c). Medium on the claim, because limit (ii) finds data-driven readers by scanning for the two file names, not by running them. · **Would reverse if:** any factory gate script outside the four turns out to read a path the four claim, through a source limit (ii)'s scan does not name, without declaring it. The four's rows then go to `claims: false`, which brings back the full gate for the paths only they claim, until the scan covers that source.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S07's criteria: AC-S07-6, AC-S07-10, and a criterion for claim limits (i) and (ii))
+- **Status:** standing
+
+## D173 — Do the per-check verify stamps that S03 handed to S07 stay with it?
+- **Stage:** 5 slice gaps (`/gaps`, gaps report G12) · **Slice:** `S07-scoped-checks` · **When:** 2026-10-07T06:28:45Z · **Iteration:** 27
+- **Scope:** `S07-scoped-checks`
+- **Question:** `spec.md` (the S03 section, *narrowing that is `S07`'s per-check stamps*) and the split's note from D73/D74 (*stamping only the factory's own checks there is a per-check stamp, `S07`'s to weigh*) give per-check verify stamps to S07. D110 and D111 then rewrote S07 to cover only the four method-file checks declaring their inputs in `S06`'s record, plus `check-ux-gates`'s `UX_GATES_SINCE` default. That rewrite left the out-of-scope column empty and never mentioned the stamps. Do the stamps stay with S07?
+- **Options:** (a) **recommended by the gaps stage.** This entry moves them to the Parking Lot and S07 stays declarations only. (b) S07 carries them.
+- **Decision:** (a). S07 builds no per-check stamp: no stored per-check pass, and no stamp in an adopted repository that covers only the factory's own checks. Both uses the earlier text gave S07 move to the Parking Lot as one unowned item:
+  1. narrowing how many stamps `/cruise` reuses when a run writes under `specs/` between gates;
+  2. stamping only the factory's checks in an adopted repository, where D74 R7 still says it never stamps.
+
+  Each needs its own slice, through `/story-splitting`, with its key and its never-read places set out as D73–D76 did for the whole-gate stamp. S07's out-of-scope column gets *Per-check verify stamps (→ Parking Lot, D173)*. The sentence in `spec.md` and the note in `story-split.md` are re-pointed to this entry. The merge tree is not given these stamps: the only stamp question it owns is sharing a stamp between worktrees (D76), and this entry leaves that alone.
+- **Why:** For the developer on a slice branch, S07 already delivers the saving the stamps were for. A check whose declared inputs did not change is skipped, and the reason is named. That decision is made fresh against the slice's base, so it remembers no earlier green and cannot hand back a stale one.
+
+  A per-check stamp does remember an earlier pass. It would need its own key per check: tool versions, script hash, and history, ignored files and environment variables, all of which D73 found the tree alone does not cover. Owner priority 5 says plainly that a stamp that could cache a false green is wrong. The constitution adds that a cache must be justified against a named requirement. No FR names per-check stamps; FR-023 as revised and D110 name declarations only.
+
+  Carrying them would roughly double a slice the owner rewrote to be small (priority 4). In the adopted case it would also quietly reverse D74 R7. That reversal belongs in its own decision, not in a slice about declarations.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** S07's demo or benchmark shows the scoped gate still re-running checks whose inputs did not change on a `/cruise` slice branch, so that declarations alone leave the time per slice at what the stamps were meant to save, and the owner names that time as a requirement.
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (S07 row's out-of-scope column; the D73/D74 note on what later slices carry; a Parking Lot item); `specs/001-faster-slipwai/spec.md` (the S03 sentence on narrowing stamp reuse, re-pointed from S07 to the Parking Lot)
+- **Status:** standing
+
+## D174 — Where do the reversibility classifier's facts come from, when a decision is usually written before any commit exists?
+
+- **Stage:** slice gaps (pre-planning) · **Slice:** S26-reversibility-line · **When:** 2026-10-07T06:29:23Z · **Iteration:** 27
+- **Scope:** S26-reversibility-line
+- **Question:** FR-029 says the `Reversibility:` line is "scored from the tree": commits, dependants, flag, and whether a schema, contract, CI workflow or migrate-propagated file is touched. FR-051 says a fail-closed classifier scores it over factual booleans and enums only. Most decisions are written before their commits exist. D54 never had any commits, and it recorded only `story-split.md` and `spec.md`. So where do the facts come from? (gaps-S26 Q1, read with G1 and G2.)
+- **Options:**
+  - (a) The decider declares every fact on the entry, and the gate re-derives the tier from those facts. **(Recommended by the gaps stage, with (c) to follow through S28's revert range.)**
+  - (b) A script reads the facts from a commit range.
+  - (c) Both: the facts are declared when the entry is written, then checked against the tree where the tree can show them.
+- **Decision:** (a) now, with (c) later, as the stage recommended. Five rules make it concrete.
+  1. **The facts describe what accepting the decision would change**, not what has been recorded so far. Whoever writes the entry declares every FR-051 fact as a boolean or an enum:
+     - contract
+     - schema
+     - permission or authentication
+     - customer-visible effect
+     - data export
+     - CI workflow
+     - migrate-propagated file
+     - behind a flag
+     - flag default changed (kept separate from "behind a flag", for S27)
+     - `rollback_complexity`
+
+     The writer is the host for a stage-recommendation entry, and the skipper for its own returned entry. Both run one shipped scoring verb to turn the facts into a tier.
+  2. **Dependants are not declared.** They are read from the entry's own `Scope:` line, because that is the only part of the tree that can show them when the entry is written (G2). How a scope maps to a tier is left to planning, within FR-051.
+  3. **What goes on the line.** The tier comes first, or the escalation chain `easy → guarded → hard`, so `measures.py`'s D168 reader still works without change. Then the version of the rules that scored it, then the facts. Exact key names belong to planning, and any spelling change goes only into `SPELLING`.
+  4. **The gate re-derives the tier.** It runs the declared facts through the rules version the line names. It refuses a line whose tier disagrees with that result, a missing or unrecognised fact, an unknown key, or a second line. A missing or unrecognised fact scores `hard` (FR-051). A `size` or `urgency` key is refused as malformed rather than scored.
+  5. **Later checks only add.** Once commits exist (S28's revert range), the verification in (c) compares the commits with the declared facts. It may only raise the tier, and it does so by writing a superseding record (FR-050). It never edits the line already written, and it never lowers a tier.
+
+  This reads FR-029's "scored from the tree" as "scored from facts about the tree that the decision would change". The spec gets one sentence saying so, next to AC-S26-6 and AC-S26-7.
+- **Why:**
+  - **(b) alone cannot score D54.** D54 had no commits, so (b) would leave it unscored. Under fail-closed that means every such entry reads `hard`, and User Story 8's whole point disappears. That point is to stop paying the decision-wait tax on easily reversed items.
+  - **(c) done in full now needs S28.** It needs a commit range that only S28 provides, so it would pull S28's work into S26 and break D62's three-slice cut.
+  - **(a) is what the developer can trust today.** The tier is a deterministic function of written facts (owner priority 5). The gate can show it is consistent in one line (*Taste*). And the D54 fixture scores `hard` from its own declared CI-workflow and migrate facts, as US8's Independent Test requires.
+  - **The real risk of (a) is a decider who under-declares.** Three things keep that risk bounded:
+    - fail-closed defaults for anything missing or unrecognised
+    - the rule that a later check may only raise a tier
+    - FR-057's misclassification flag, which S39 already measures
+  - **(a) stays inside the standing decisions:**
+    - It refuses nothing in a log without a `Reversibility:` line, and it never re-checks an old line under newer rules, because each line names its own rules version (D65).
+    - It does not set `decide` (D62).
+    - It keeps D168's spelling.
+  - **No constitution rule is crossed.** It removes no check: the gate gains a refusal on a new line only.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** the owner says that "scored from the tree" in FR-029 means only facts read mechanically from commits, even if pre-commit entries then score `hard`. In that case the line would be written when the commits land, and (b) would stand, with the cost to User Story 8 that implies.
+- **Written to:** `specs/001-faster-slipwai/spec.md`, `delivery/docs/adr/0007-reversibility-scored-from-declared-facts.md`
+- **Status:** standing
+
+## D175 — In a generated project, how is "touches a migrate-propagated file" established for the `Reversibility:` score?
+
+- **Stage:** 5 slice gaps
+- **Slice:** `S26-reversibility-line`
+- **When:** 2026-10-07T06:28:55Z
+- **Iteration:** 27
+- **Scope:** `S26-reversibility-line`
+- **Question:** FR-029 counts touching a migrate-propagated file as one of the facts behind the score, and FR-051 classes that fact as `hard`. An adopted repository commits that list in `delivery/.written`. A generated project has no committed list: `.delivery-tools/written.json` is ignored, checkout-local state (`src/slipwai/assets.py:32-39`). Where does a generated project get the answer?
+- **Options:**
+  - (a) A list shipped with the factory's toolkit. **This was the stage's recommendation.**
+  - (b) Treat it as unknown, so every such decision scores `hard`.
+  - (c) Read the local `.delivery-tools/written.json`.
+- **Decision:** Take (a), with three conditions:
+  1. **Committed with the project.** `slipwai generate` writes the list into the generated project, and `slipwai migrate` rewrites it in the same merge that carries the files it names. That keeps it on the project's own history, the same on every machine and in CI, and matching the generator version `project.json` records.
+  2. **Same contents as an adopted repository's list.** It names only the factory-owned method material, which is what `delivery/.written` names in an adopted repository: the toolkit scripts, `.specify/` files, agents, skills, commands and their `Makefile` wiring. It does not name the starter application code the project grows into its own. It uses `.written`'s format, one path per line, so one reader serves both layouts. The plan picks its path, and that path must not be one `survey` or `resurvey` reads as a sign of an earlier adoption.
+  3. **Fails closed.** In a project generated before this list existed and not yet migrated, the fact is unknown and scores `hard`, as FR-051 says for a missing field. `migrate` writes the list and leaves a catch-up note that names it.
+
+  (c) is not available: an ignored file cannot be a scoring input. (b) is only the fallback for a missing list, never the rule.
+
+  This holds whichever way D174 goes. If the decider declares the fact, the gate checks the declared answer against the committed list for every path the entry names. If the fact is read from commits, the same list is the lookup. Either way the answer comes from one committed list, never from checkout state.
+- **Why:** The developer in a generated project needs a tier they can trust, and the same entry has to score the same on their laptop, a teammate's laptop and CI. (c) breaks that, because an ignored file differs per checkout. That makes it a cache that can give a false answer, which owner priority 5 rules out. (b) would score every decision that touches toolkit material `hard`, so under FR-030 nothing in a generated project could ever be provisional. That is the factory's convenience winning over the generated project's loop, the reverse of priority 3. Limiting the list to method material makes the fact mean the same in both layouts: "this change is in a file the factory will merge over on the next `migrate`." Without that limit, nearly every product decision in a generated project would score `hard` because it touches the starter code. A missing list still scores `hard`, so the classifier never guesses (FR-051). The new file reaches existing projects only through `migrate` with a catch-up note, so it keeps the constitution's MUST about overwriting nothing except through a command the maintainer ran. No "always ask a person" item applies: nothing that the merge root or CI checks changes, and no generated file is deleted or renamed. The change is a MINOR (a new generated file), which is within scope.
+- **Decided by:** drive-skipper (Opus 5.5, `claude-opus-5-5`)
+- **Confidence:** medium-high · **Would reverse if:** the plan finds that the method files a generated project receives cannot be listed at generate time exactly as `migrate` later merges them. An example would be files that depend on extensions elected after generation and are not recorded in the committed `.slipwai/extensions.json`. In that case (b) becomes the rule until they can be listed.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D176 — A new entry with no `Reversibility:` line after an entry that has one: does `check-decisions` refuse it or note it, and is an unknown key on the line refused or scored `hard`?
+- **Stage:** slice gaps · **Slice:** S26-reversibility-line · **When:** 2026-10-07T06:29:58Z · **Iteration:** 27
+- **Scope:** S26-reversibility-line
+- **Question:** The gaps report's Q3 asks what the gate does with an entry that has no `Reversibility:` line when an earlier entry in the same log has one. FR-029 says every entry MUST carry the line. D65 lets the gate refuse what only this release can produce, and no older log has this mix. The report's G3 asks a second question. FR-051 says *a missing or unrecognised field MUST classify as `hard`* and also says *size of change and urgency MUST NOT change the classification*. Read literally, the first rule means a line carrying `size: large` would score `hard`, while the same line without that key might score `easy`. That breaks the second rule.
+- **Options:** (a) refuse the entry with no line *(the gaps stage recommended this: D65 permits it, FR-029 says MUST, and otherwise S27 quietly reads the entry as `hard`)*; (b) print a `note:` and pass, as `Scope:` does (`scope_notes`). For G3: (i) score an unknown key `hard`; (ii) refuse the line as malformed, naming the key.
+- **Decision:** (b) for Q3 and (ii) for G3. This departs from the stage's recommendation on Q3.
+  1. **No line after an entry that has one.** `check-decisions` prints one `note:` naming the entry and the scoring verb that writes the line, then exits 0. It works the way `scope_notes` does: file order, the first entry that has the line starts it, and entries before that point get no note. The run never adds the refusal. Turning absence into a refusal is a new refusal in a gate CI runs, so it goes to the Parking Lot as a question for a person, next to D60's `Scope:` question. If a person approves both, they become one refusal.
+  2. **What a reader does with a missing line.** It stays as it is. A missing line means no tier was declared. S27 treats that as `hard`, because FR-051 makes a missing fact fail closed. `measures.decision_health` leaves the entry out of its counts (D168). The criteria say both, so the difference is stated rather than left to be guessed.
+  3. **Unknown key on the line.** The classifier accepts a closed list of fact keys. `size` and `urgency` are never on that list. A key that is not on the list makes the line malformed. The scoring verb refuses it with one line naming the key and gives no tier. The gate refuses an entry carrying such a line with one line naming the entry and the key. This falls only on a line this release introduces, so it is not D54's case. It is in the same class as D60's refusals of a malformed `Scope:` value.
+  4. **How FR-051's *unrecognised field* is read.** It means a known fact whose value is not one the fact accepts (`schema: maybe`, `rollback_complexity: weeks`). A known fact that is missing counts the same way. Both classify as `hard`. An unknown *key* is a malformed line, not a fact. This is the one reading under which both of FR-051's MUSTs hold: size and urgency can never move a tier, because a line carrying them never gets one.
+- **Why:**
+  - **Precedent for this exact case.** D60 faced the same combination for `Scope:`. It chose a note and recorded that making absence a failing finding is *a new refusal in a gate CI runs, so it is a person's to approve*. The owner brief agrees: *Always ask a person — anything that changes what the merge root or CI checks.* D65 lets the run refuse a malformed or repeated line, because only the new release can produce one. It does not cover refusing an entry for something it lacks. Option (a) would therefore contradict D60, and nothing a person has said overrides D60.
+  - **Real projects can produce the refused entry.** A generated project's owner brief keeps showing the old entry shape, because `migrate` never rewrites it (G7). A maintainer who writes a `human` decision from that brief, after the skipper has written one with the line, would see CI go red over a line nobody told them about. That is the developer who must not find the gate turned untrustworthy.
+  - **Little is at risk.** Without the line, S27 reads the entry as `hard`. Under `decide: provisional`, a `hard` decision blocks for a person. So an entry missing the line can only wait longer; it can never be taken provisionally. The note means this no longer goes unseen. The stage's case for refusing was that S27 would otherwise decide quietly, and the note answers that without a new refusal.
+  - **Unknown keys.** Scoring an unknown key `hard` would let the presence of a `size:` key change a tier, which FR-051 forbids. Ignoring the key would fail open. Refusing the line produces no tier at all, which is the fail-closed choice. The failure is one line a person can act on (owner brief, *Taste*), and only new content can trigger it (D65).
+  - **Constitution.** The gate's checks only grow and the full gate runs as before, so principle I holds, and no MUST is touched. Logs with no `Reversibility:` line keep getting exactly the earlier checker's answer (D65, AC-S02-57, `tests/test_decisions_gate_differential.py`).
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** a person approves turning absence into a refusal, either for this line or for both this line and `Scope:`. The note then becomes a refusal, but only for entries after the first one that carries the line.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S26's criteria; the gaps report's proposed AC-S26-5, AC-S26-9 and AC-S26-10 are reworded to match, and the session numbers them); `specs/001-faster-slipwai/story-split.md` (Parking Lot: absence of Reversibility: as a refusal is a person's question, beside D60's)
+- **Status:** standing
+
+## D177 — What does "tier" mean in FR-056's "escalate one tier at a time, never skipping a tier"?
+- **Stage:** slice gaps (pre-planning) · **Slice:** S26-reversibility-line · **When:** 2026-10-07T06:29:04Z · **Iteration:** 27
+- **Scope:** S26-reversibility-line
+- **Question:** The `drive-gaps` pass over S26 (G6, Q4) found that FR-056 never defines "tier". It could mean the reversibility tiers S26 writes on the `Reversibility:` line. It could also mean the line of authority: host, then skipper, then a person. The answer decides what the skipper's brief says and what the gate refuses under AC-S26-14.
+- **Options:** (a) the reversibility tiers easy → guarded → hard. An escalation moves one tier per step and writes every step on the line, so `easy → guarded → hard` is allowed and `easy → hard` is a skipped tier the gate refuses. The full chain still matches the `escalation` pattern in `SPELLING` in `measures.py`. (recommended) · (b) the line of authority, host → skipper → person.
+- **Decision:** (a), the stage's recommendation. In FR-056, "tier" means the reversibility tier.
+  - The skipper raises a decision's tier by one step at a time and writes each step on the `Reversibility:` line. It never lowers the tier it was computed at.
+  - A line that jumps a tier (`easy → hard`) is refused by `check-decisions` as malformed, with one line naming the entry and the field.
+  - The line's first tier stays the tier the decision was first classified at. That is the one `measures.py` reads as the entry's tier, so FR-057's "share of easy and guarded decisions escalated to hard" counts `easy → guarded → hard` once, against `easy`. An escalation that stops at `guarded` is not counted as escalated to hard, which matches FR-057's wording.
+  - FR-056's ban on putting a question in a diff or a note instead of escalating stays as written. It is checked in the skipper's brief text, not by the gate.
+  - `SPELLING` stays as D168 left it.
+- **Why:**
+  - **Matches what is already built.** FR-056 and FR-057 came in together in the owner's commit a462166, and D132 (`Decided by: human`) put FR-056 with S26, the slice that writes the tier line. FR-057, already built in S39 under D168, measures escalation as a move between reversibility tiers. Reading the same word another way in the next requirement would leave the benchmark measuring something the skipper is not told to do.
+  - **A developer can read and check it.** A written step is something `decision_health` and the gate can test. A hand-off between parties leaves no field on the entry, so a rule against skipping one could not be checked.
+  - **(b) is largely covered elsewhere.** The skipper cannot skip itself on the authority line. What reaches a person is already decided by the owner brief's *Always ask a person* list and by the skipper's `unavailable:` answer.
+  - **Scope is settled.** D132 assigns FR-056 to S26 despite the brief's out-of-scope line about decision tiers, as D159 reasoned.
+  - **No conflicts.** This contradicts no standing entry and no constitution MUST.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the owner says FR-056's "tier" meant the line of authority, i.e. that the skipper must never let a decision bypass itself to reach a person.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (AC-S26-14: one step at a time, each step written, easy → hard refused)
+- **Status:** standing
+
+## D178 — FR-056: what is "same shape", who counts it, and where does the proposed rule go?
+- **Stage:** slice gaps (pre-planning) · **Slice:** S26-reversibility-line · **When:** 2026-10-07T06:29:13Z · **Iteration:** 27
+- **Scope:** S26-reversibility-line
+- **Question:** Gaps report Q5 (G6). FR-056 says that after three decisions with the same shape in one feature, the skipper proposes a rule for the owner brief in a decision entry. Three things are open:
+  - "Same shape" is not defined.
+  - The skipper reads only its own scope's entries plus the global ones (`SCOPE_READ`, `src/slipwai/project/cruise_agents.py:21-23`). Three similar decisions in different slices are therefore invisible to it.
+  - The owner brief is human-owned, so the run cannot write a proposed rule there.
+- **Options:**
+  - (a) The skipper judges. It is given the feature's full list of entry headings, cites the earlier ids, and proposes the rule in its decision entry only. **(recommended by the gaps stage)**
+  - (b) A script groups entries by stage and fact vector. This is too coarse, because most entries would share one vector.
+- **Decision:** (a), made concrete.
+  1. **What "same shape" means.** Three standing entries in one feature have the same shape when one sentence added to the owner brief would have decided all three, the same way they were in fact decided. The test is the *deciding reason*: the same brief line, standing entry or principle cited as what settled each question. It is not the stage, the slice or the fact vector.
+     - Entries with a status other than `standing` (overridden ones, for example) do not count.
+     - Entries decided by a person, by the host or by a skipper all count. A rule a person applied three times is still a rule.
+  2. **Who counts.** The skipper judges; no script counts.
+     - The dispatching session adds the feature's full list of entry headings to every skipper brief: each `D<n>` with its heading line, Stage and Scope, out-of-scope entries included. The skipper may open any listed entry to check its shape.
+     - Out-of-scope entries are evidence for the count only. They never bind the decision. `SCOPE_READ` still governs what binds, so D60's scoping is unchanged.
+  3. **Where the rule goes.** In the skipper's own entry, as one extra optional line:
+     `- **Proposed rule:** <one sentence written to sit in the owner brief> (same shape as D<a>, D<b>)`
+     - The line cites at least two earlier standing ids from the same feature. The gate refuses a `Proposed rule:` line that cites fewer than two ids, or an id that is not a standing entry of the feature. It never refuses an entry for lacking the line.
+     - The skipper still decides the question in front of it. A question returned open stalls the slice, and the skipper brief forbids that. "Instead of continuing to decide case by case" means the skipper stops letting the pattern stay implicit. It does not mean it stops deciding.
+     - The run never writes the owner brief. A person adopts the rule by editing `.specify/product-owner.md`; after that, the brief decides later cases directly.
+     - Until a person adopts it, a later decision of the same shape cites the entry that proposed the rule and does not propose it again.
+     - How the line is shown to a person beyond the log (the status command, the run's final report) is left to planning. This decision requires only that the line can be found by its label.
+  4. **The brief text** (S26's share of FR-056 under D132). `cruise_body`'s skipper text gains points 1 to 3, and the dispatch text in `cruise.md` gains the headings list. Both reach this repository through `migrate`.
+- **Why:**
+  - The person who cruises a feature with nobody at the wheel gets something from FR-056 only if a repeated judgement turns into a sentence they can accept once. That depends on *why* the questions were decided alike, not on which stage raised them. A fact vector or a stage would group unrelated questions, which is the stage's own objection to (b). A rule proposed from that grouping would be noise the person learns to ignore.
+  - Giving the skipper headings rather than whole out-of-scope entries lets it see a pattern that crosses slices without letting a slice's decision be bound by another slice's local choice. D60's reason for scoping stands.
+  - Putting the rule in the entry, behind a label the gate checks, respects the brief's "This file is human-owned. `/cruise` reads it and never writes it". It keeps the proposal in git where a person reads decisions. It needs no new dependency and no new file (owner taste).
+  - This contradicts no standing entry. D132 places FR-056's brief text on S26. D159 already holds that D132 is later and more specific than the brief's out-of-scope line about decision tiers. No constitution MUST is touched.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium. The placement and the counting are clear. Whether a deciding-reason test is applied consistently from one skipper to the next can only be shown by use.
+- **Would reverse if:** a person reviewing the first proposed rules finds them mostly false matches or missed patterns. That would argue for a mechanical pre-filter over the cited deciding reasons, feeding the skipper's judgement, not replacing it.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S26's acceptance criteria for FR-056)
+- **Status:** standing
+
+## D179 — S43's scope: are declarations enough, or may the slice also restructure `tests/` or change a selector rule, so a one-Go-file change runs in under 15 minutes?
+- **Stage:** slice gaps (pre-planning) · **Slice:** S43-test-declarations · **When:** 2026-10-07T06:29:19Z · **Iteration:** 27
+- **Scope:** S43-test-declarations
+- **Question:** Q1 of the gaps report. D169 asks for `TEST_SELECTION` declarations, and its acceptance is under 15 minutes on a one-Go-file change. Under today's rules, the selector would still pick about 296 of 373 modules on a Go change, even with every module declared as narrowly as its source allows. Three things cause this:
+  - **The join covers whole files.** A test that borrows the `git` helper from `test_replay` inherits all of `test_replay`'s routes and unstated reaches. About 96 modules are pulled in only through `test_replay`, `test_adopt`, `test_migrate` and `test_add_service`.
+  - **Launcher calls count as every axis** (D164 rule 3).
+  - **Most `CATALOG["backends"]` loops ignore `FACTORY_BACKENDS`.**
+
+  What does the slice cover?
+- **Options:**
+  - (a) Declarations only, accepting about 296 modules still selected and a missed acceptance.
+  - (b) Declarations, plus two changes inside `tests/`: move the shared helpers that generate nothing (`git`, `newer_factory`) and the launcher wrappers out of test modules into declared helper files, and switch the `CATALOG["backends"]` loops to `backends_under_test()`. *(The gaps stage recommended this one.)*
+  - (c) Also change a selector rule, so that a literal launcher argv resolves per axis.
+- **Decision:** (b), the stage's recommendation, with four conditions. (c) is not taken now.
+  1. **Restructuring keeps behaviour unchanged.** Moving helpers changes where a function lives, not what any test does. A full run on the slice's last commit has the same test ids as the full run on its base: none lost, none renamed out of existence, none newly skipped. Extracted helper files declare their own `TEST_SELECTION` and are added to the `real_*` lists (AC-S43-2). A helper whose reach cannot be stated stays undeclared, its importers run, and the committed list of undeclared modules names it with the selector's reason (AC-S43-7).
+  2. **Switching a loop to `backends_under_test()` must not shrink what CI checks.** Without `FACTORY_BACKENDS` the function returns every catalog backend, so the laptop's full run and the `checks` job lose nothing. A switched module that CI runs inside the `matrix` jobs (one per backend, `FACTORY_BACKENDS: ${{ matrix.backend }}`) must run in every one of those jobs, so the jobs together still cover every backend. The slice shows that the set of (module, backend) pairs CI runs is the same before and after, for each switched module. A module that cannot be shown this way keeps its `CATALOG["backends"]` loop. Narrowing what CI checks is on the brief's *Always ask a person* list, and this slice may not do it.
+  3. **Selector rules stay as they are, D164 rule 3 included.** Option (b) removes the reason the gaps stage gave for (c). Once the shared helpers sit in declared helper files, borrowing `git` or `newer_factory` no longer pulls in `test_replay`, so the join problem can be fixed with a declaration after all. That is exactly the condition under which D169 allows no rule change. A launcher-driven module (migrate, replay, adopt, add-service) that still routes through `./slipwai` keeps running on every asset change.
+  4. **If the measured run still misses 900 s after (b), (c) becomes its own question.** The demo's elapsed time (AC-S43-6) goes in the log with the per-module table. The miss is raised as a new decision, which states the measured remainder, how much of it the launcher-driven modules account for, and what resolving a literal argv per axis would claim about the launcher. It does not fold silently into this slice's implementation. Whether a missed target fails acceptance is the stage's Q4 and is outside this entry.
+- **Why:**
+  - **(a) fails the owner's own acceptance by design.** The owner added this slice because the selector already worked but saved almost nothing (D169). Declarations that leave 296 of 373 modules selected repeat demo 2's result, and the run would park at acceptance without the saving it was added for. That does not serve the owner's priority 2.
+  - **(b) stays within D169's scope and the brief.** It touches only `tests/`, and the owner's slice row already says the helpers must be declared "so the join is declared". Moving helpers into their own files is how a whole-file join gets declared. It also frees room in the 11 files sitting at the 350-line budget, and the brief asks for files split along their structure rather than grown.
+  - **(c) is the riskiest of the three.** It weakens a check D164 put in place after a reproduced false skip. The brief puts deterministic before fast (priority 5), and the one outcome that would make this work pointless is a faster loop that lets through what today's gate catches. A rule that reads intent from argv is the kind of cleverness priority 2 ranks below scoping, so it should come only after the cheaper fix has been measured.
+  - **The two conditions keep the brief's red lines.** Condition 2 means CI checks the same (module, backend) pairs as before. Condition 1 means the full run checks the same tests as before. So nothing changes what the merge root or CI checks, and the decision needs no person.
+  - `scripts/select_tests/` and `tests/` are not in the wheel, so none of this reaches a user.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium. The scope is high-confidence. Whether (b) alone reaches 900 s has not been measured, and condition 4 covers that case.
+- **Would reverse if:** the per-module timing run (AC-S43-1) shows that the modules (b) can narrow add up to less than the gap between the full suite and 900 s. (b) could not then meet acceptance, and the launcher rule would have to be decided first, as its own decision.
+- **Written to:** `specs/001-faster-slipwai/spec.md`, `specs/001-faster-slipwai/story-split.md`
+- **Status:** standing
+
+## D180 — How are S43's per-module runtime ranking and its demo baseline got, now that S38 recorded only whole-suite totals?
+- **Stage:** 5 slice gaps · **Slice:** S43-test-declarations · **When:** 2026-10-07T06:29:45Z · **Iteration:** 27
+- **Scope:** S43-test-declarations
+- **Question:** D169 orders the declarations by measured runtime. It names S38's recorded full-suite timings as the demo's baseline, and lets the demo run the full suite at most once. But S38 recorded only totals: full 3320.0 s and selected 2886.7 s at `fe5e71b`, in `specs/001-faster-slipwai/slices/S38-factory-test-selection/demo/demo2-timings.md`. There are no per-module times, and the suite has grown from 343 to 373 modules since. Where do the ranking and the baseline come from?
+- **Options:** (a) one full run with per-test durations at the slice's start (`PYTHONPATH=src python3 -m unittest discover -s tests --durations 0`, about 55 min), committed as a per-module runtime table that is also the demo's baseline; the demo then runs only the selected cases. **The gaps stage recommended this one.** · (b) allow two full runs, one at the start and one in the demo · (c) no measurement; rank by a static proxy (calls to `generate(`/`refuse(`/`make`/`adopt` per module).
+- **Decision:** (a), with one addition.
+  1. **The measurement.** The slice's first stage, before any declaration is written, makes one full run with `--durations 0` on the slice's base commit. It runs on the reference machine (noahc-server, 12 cores, no CI variable, nothing else on the machine) under Python 3.14.
+  2. **The table.** The per-module sums go into the slice's records as a runtime table. The table names the commit, the machine, the module count and the run's total wall-clock time.
+  3. **Ranking and baseline.** That table is the only source of the declaration order. Its total is the full-suite baseline that the under-900 s acceptance figure is compared against.
+  4. **What it replaces.** S38's totals in `demo2-timings.md` are reported beside it for context only, not as the baseline. Neither S38's totals nor the static proxy may stand in for the ranking.
+  5. **The demo's clean case.** The demo times the selected run on the clean single-Go-file change. It does not run the clean full suite again.
+  6. **The addition.** The demo may still spend the one full run D169 allows, and only on the faulted tree. This keeps D157's check at the level of results: every module that fails in the full run on the faulted tree must also fail in the selected run.
+  7. **The run budget.** The slice therefore makes at most two full runs: the start measurement and, if the soundness case needs it, the demo's faulted run. Neither one is repeated per case.
+  8. **If the measurement fails.** If the start run cannot finish green on the base commit, the slice stops and reports that. It does not fall back to the proxy.
+- **Why:**
+  - **The ranking needs a real measurement.** D169 asked for "ordered by measured runtime" because the payoff of S38's selector depends on declaring the modules that actually cost the time first. The proxy only guesses at that. The gaps report says the proxy disagrees with the docs about the costliest module (`test_matrix`), and it cannot weigh one `generate` call against another.
+  - **The start run is the one that makes the ranking possible.** Nothing else can rank the modules on today's 373-module tree. A second clean full run in the demo would add an hour and no new information, so (b) spends a run D169 meant to save. That follows the owner's priority 2: fewer runs of the same check on the same content.
+  - **The faulted run stays.** The one thing that would make the faster loop pointless is letting through what today's gate catches (owner brief; constitution, "a scoped or memoised gate MUST be additive"). D157 established that S38 proved soundness by comparing results, not module names. Keeping the faulted full run keeps that same check for S43, within the "at most once" D169 already allows.
+  - **This overrides one clause of D169** ("S38's recorded full-suite timings are the baseline"). The clause assumed timings that do not exist, and the figures it pointed at are from a smaller, older suite. D169's purpose was to keep the demo cheap, and this decision keeps that purpose. Everything else in D169 stands.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the `--durations` run cannot attribute time to modules. For example, if the time is mostly in shared setup outside the per-test durations, so the per-module sums account for well under the run's wall-clock total. Then the ranking would need a per-module timed run instead, and the order of this decision would change.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S43's acceptance criteria: the start-of-slice runtime table as AC-S43-1 and the baseline for AC-S43-6; the demo's single full run on the faulted tree for AC-S43-8). The session numbers anything it adds.
+- **Status:** standing
+
+## D181 — Does S43 narrow the audit of reads-only modules?
+- **Stage:** 5 slice gaps · **Slice:** S43-test-declarations · **When:** 2026-10-07T06:29:41Z · **Iteration:** 27
+- **Scope:** S43-test-declarations
+- **Question:** `tests/test_select_tests_real_audit.py` re-runs every declared reads-only module under an audit hook on every run, and is itself undeclared, so declaring a reads-only module saves no time (gaps report Q3). Should the audit run only over the modules a change reaches?
+- **Options:** (a) leave the audit as it is (recommended by the gaps stage); (b) narrow it to the reads-only modules a change reaches.
+- **Decision:** (a). The audit is how a reads-only declaration is checked rather than trusted, which D169's quality bar asks for, and narrowing it is a change to S38's selector tests that D169 does not license. Reads-only modules are cheap, so S43 spends its declarations on the generating modules where the time is.
+- **Why:** D169: declarations are checked, not trusted, and the selector's rules do not change unless a declaration cannot be expressed. Here one can.
+- **Decided by:** host (standing decision D169)
+- **Confidence:** high · **Would reverse if:** S43's measured run shows the audit itself among the modules that keep a one-Go-file change above 15 minutes.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D182 — What happens to S43 if the 15-minute target is missed?
+- **Stage:** 5 slice gaps · **Slice:** S43-test-declarations · **When:** 2026-10-07T06:29:41Z · **Iteration:** 27
+- **Scope:** S43-test-declarations
+- **Question:** D169 states under 15 minutes on a one-Go-file change as acceptance. S38's precedent (D157) reported timings without a threshold. If the slice's measured run misses it, is that a reported finding or a failed acceptance (gaps report Q4)?
+- **Options:** (a) a failed acceptance: the slice is not accepted, and whether to relax the target is a person's question (recommended by the gaps stage); (b) report it as a finding, as D157 did.
+- **Decision:** (a). The 15 minutes is the owner's acceptance in D169, not a figure to report. A demo that misses it is `behaviour` and re-enters the ladder; a run that cannot meet it after S43's restructuring is put to a person as the question of relaxing it, never relaxed by the run.
+- **Why:** D169 names the number as acceptance; D157 was a decision for S38, where no threshold was given.
+- **Decided by:** host (standing decision D169)
+- **Confidence:** high · **Would reverse if:** a person relaxes or withdraws the target.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

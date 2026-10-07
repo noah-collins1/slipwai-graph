@@ -1467,7 +1467,8 @@ second no project and no holder (D75); nothing said what a failing or interrupte
 whether a stamp ages, or where it is kept (D76); two entries differed on which full runs say a line (D77). A
 generated project starts on `main`, where the second run is a full run by design: the saving is on the branch a
 slice is built on. A run that writes under `specs/` between two gates — a decision, a benchmark record — moves the
-key honestly, so `/cruise` reuses fewer stamps than a developer does; narrowing that is `S07`'s per-check stamps.
+key honestly, so `/cruise` reuses fewer stamps than a developer does; narrowing that was `S07`'s per-check stamps, now
+in the Parking Lot (D173).
 
 *Where a stamp may be used* below means: a generated project (no wrapped application, and its layout not moved
 under `delivery/`: D78), on a branch that is not the
@@ -2693,3 +2694,160 @@ row; *stage time* is what today's `wall` column sums; *elapsed* is accepted minu
   what changed and that nothing must be redone; the new derivation lives in a module of its own beside `benchmark.py`
   under `assets/toolkit/scripts/agents/`. In this repository, attribution across concurrent slices stays by delegate type
   until a person runs `migrate`.
+
+### S07-scoped-checks
+
+**Gaps reviewed** 2026-10-07, cruise iteration 27, `drive-gaps` (read only) with `drive-skipper` for D171, D172 and
+D173 and the host's own D170: FR-022, FR-023 as revised, SC-009, S07's split and graph rows against D110 and D111, S06's
+record (`assets/toolkit/scripts/verify_scoped/`, ADR 0004) and its criteria, the owner brief's priorities 1, 2 and 5;
+against the four method-file checks, the four scripts `check-agents` runs, `check-ux-gates.py`, `table.py`, `record.py`,
+`scoped_targets.py` and `tests/test_verify_scoped_record.py`. Found and written back: the four have no row in S06's
+table, so each runs on every scoped run today; the table's literal-path scan cannot see what `check-speckit` and
+`check-agents` read through manifests, `.specify/integration.json` and `registry.json`, so those paths are worked out
+at run time from both trees (D172); `check-extensions` reads whether a web deployable's directory exists, and
+`check-constitution` whether any `specs/*/spec.md` exists, which only a directory input can say (D172: `specs/`); a row
+with no file inputs is treated as unchanged when FR-023 says it runs; *unreadable* had no definition; the `check-ux-gates`
+default had no base, no rule for the trunk, a detached `HEAD` or CI, no precedence and no way back to every preview
+(D170, D171); `changed_since` detects renames and splits on whitespace; per-check stamps were handed to S07 by S03's
+section and are moved to the Parking Lot (D173). No environment variable is read by the four under `--check`.
+
+- **AC-S07-1** — *SC-009.* Given a slice branch with a baseline and one changed file under a service's `src/`, when
+  `make verify-scoped` runs, then `check-agents`, `check-speckit`, `check-extensions`, `check-constitution` and
+  `check-ux-gates` are each named as skipped because none of their inputs changed; with the file under a web app's
+  `src/` instead, `check-ux-gates` runs and renders only the previews that file reaches.
+- **AC-S07-2** — Given each input the four declare — `check-agents`: `.specify/integration.json`, `models.json`,
+  `drive.json`, `cruise.json`, `skills/`, `commands/`, `agents/`, `AGENTS.md` and the paths of AC-S07-4;
+  `check-speckit`: `.specify/integrations/`, `.specify/presets/`, `.specify/memory/constitution.md` and the paths of
+  AC-S07-3; `check-extensions`: `.slipwai/extensions.json`, `AGENTS.md` and AC-S07-5; `check-constitution`: `specs/`,
+  `.specify/memory/constitution.md`, `.specify/memory/.constitution-template.json`,
+  `.specify/templates/constitution-template.md`, `.specify/presets/` — when that input alone changes, then exactly the
+  checks declaring it run, each naming that path as its reason.
+- **AC-S07-3** — Given a path only a Spec Kit manifest or a preset's `preset.yml` lists, in the working tree or at the
+  base, when it changes, then `check-speckit` runs; given a manifest or `preset.yml` that does not parse, or names a
+  path outside the project (absolute or through `..`), then `check-speckit` runs with *no recorded inputs* and claims
+  nothing (D172 limit i).
+- **AC-S07-4** — Given each installed integration, when its context file, hooks file, skills, commands or agents
+  directory (from `registry.json`) changes, then `check-agents` runs; an integration file that does not parse gives
+  `check-agents` no recorded inputs and no claim.
+- **AC-S07-5** — Given a web deployable's directory added or removed without a `project.json` change, then
+  `check-extensions` runs.
+- **AC-S07-6** — Given the template constitution and a branch adding the first `specs/<f>/spec.md`, then
+  `check-constitution` runs and fails, as `make verify` does (D172).
+- **AC-S07-7** — Given a declared file that exists but cannot be read, or a table row with no file inputs, then the
+  check runs and says why.
+- **AC-S07-8** — Given every starter shape, a behavioural test flips each declared input and shows a check's result
+  can change only through what it declares; the literal-path scan covers all four of `check-agents`' scripts; each of
+  the four records `variables: []`; and a factory test fails when any gate script outside the four that reads
+  `registry.json` or a `*.manifest.json` is not one that always runs or claims nothing (D172 limit ii).
+- **AC-S07-9** — Given a changed ignored projection, then the run is the full gate with or without a baseline
+  (AC-S06-9); on the trunk, under a CI marker, or on a branch that is not `slice/<id>`, `verify-scoped` is `make verify`;
+  `make check-<name>` always runs the check in full; on `main`, `make verify`'s findings are unchanged (SC-007).
+- **AC-S07-10** — Given `verify-scoped record`, then the four print with input objects and `claims: true`, the record
+  keeps `schema: 1` and gains no key (D172).
+- **AC-S07-11** — *D170, D171.* Given a `slice/<id>` branch outside CI with `UX_GATES_SINCE` unset or empty, then
+  `check-ux-gates` scopes from S06's base, the unpushed span of the local trunk included, and names that base in one
+  line; on the trunk, any other branch, a detached `HEAD`, under a CI marker or where the base cannot be found, it
+  renders every preview and says why; an explicit `UX_GATES_SINCE` beats the default; `UX_GATES_SINCE=all` renders every
+  preview and says so in one line; a ref named `all` is passed by its full name. A stamp or baseline written by a
+  default-scoped run records the base it used, never the word `all`, so it cannot vouch for an all-previews run.
+- **AC-S07-12** — Given a renamed stylesheet, or a preview path containing a space, then the affected preview is
+  re-rendered (`--no-renames`, NUL-separated names).
+- **AC-S07-13** — Given the slice, then the generated `Makefile` and `rules.json` are byte-identical before and after
+  it; the default lives in `check-ux-gates.py`.
+- **AC-S07-14** — Given the scoped page and `docs/verification.md`, then they describe the four checks' scoping and the
+  default, with one sentence on when to set `UX_GATES_SINCE=all`; the fragment claims MINOR (a new value of a setting,
+  D171), `VERSION` stays where it is, and its catch-up note says a slice branch now renders fewer previews and how to
+  get them all.
+
+### S26-reversibility-line
+
+**Gaps reviewed** 2026-10-07, cruise iteration 27, `drive-gaps` (read only) with `drive-skipper` for D174 to D178: User
+Story 8, FR-029, FR-051, FR-056 and FR-057, S26's split and graph rows against S27's and S28's, D54, D60, D62, D65,
+D132, D159 and D168; against `check-decisions.py`, `DECISION_ENTRY` in `src/slipwai/project/cruise_record.py`, the
+skipper's brief (`cruise_agents.py`), the cruise command, `measures.py`'s decision-health reader and the differential
+test. Found and written back: nothing writes, reads or checks the line today except S39's reader, and an unknown label
+passes silently; most decisions are written before any commit, so the facts describe what accepting the decision would
+change and are declared by its writer, the gate re-deriving the tier (D174, ADR 0007 at Proposed); a generated project
+has no committed list of what `migrate` propagates (D175: one is generated and migrated); FR-051's *unrecognised field*
+and its size-and-urgency rule conflict when read literally (D176); a missing line is a note, never a refusal, which is a
+person's question beside D60's (D176); *tier* in FR-056 is the reversibility tier (D177) and *same shape* is the same
+deciding reason (D178); `check-decisions.py` is at 699 lines, so the line's rules live in a module beside it.
+
+- **AC-S26-1** — Given the facts {contract, schema, permission or authentication, customer-visible, data export, CI
+  workflow, migrate-propagated file: all `no`; behind a flag: `yes`; rollback: `trivial`} and a slice-local scope, when
+  scored, then the line reads `easy`.
+- **AC-S26-2** — Given each `hard` fact set to `yes` on its own, then the tier is `hard`, one test per rule.
+- **AC-S26-3** — Given `rollback_complexity` `days` or `needs-migration`, then `hard`; given `hours`, then `guarded`.
+- **AC-S26-4** — Given a known fact missing, or carrying a value the fact does not accept, then `hard`, the fact named
+  on the line (D176 rule 4).
+- **AC-S26-5** — Given two fact sets that differ only by a `size` or `urgency` key, then neither gets a tier: the
+  scoring verb and the gate refuse the line as malformed, naming the key (D176 rule 3).
+- **AC-S26-6** — Given the D54 fixture (a CI workflow line propagated by `migrate`, no commits), when scored from the
+  facts it declares, then `hard`.
+- **AC-S26-7** — Given an entry with no commits, then it is scored from declared facts about what the decision would
+  change; its *Written to* paths never lower the tier; dependants are read from its `Scope:` line (D174).
+- **AC-S26-8** — Given a migrate-propagated fact, then it is checked against `delivery/.written` in an adopted
+  repository and against the committed list `generate` writes and `migrate` rewrites in a generated project; a project
+  without the list scores the fact `hard` until `migrate` writes it (D175).
+- **AC-S26-9** — Given a well-formed line, then `check-decisions` accepts it; given a malformed tier, an unknown key, a
+  second `Reversibility:` line, a skipped escalation step (`easy → hard`), or a tier that disagrees with its facts under
+  the rules version the line names, then it refuses with one line naming the entry and the field.
+- **AC-S26-10** — *D65, D176.* Given a log with no `Reversibility:` line anywhere, then the gate's exit code and
+  findings equal the earlier checker's (the differential test extended); given an entry without the line after one that
+  has it, then the gate prints one `note:` naming the entry and the scoring verb, and exits 0.
+- **AC-S26-11** — Given old lines scored under rules v1 and the rules now at v2, then the gate passes them unchanged.
+- **AC-S26-12** — Given `DECISION_ENTRY`, then the cruise command, the owner-brief template and the skipper's brief all
+  show the line, and both the host and the skipper are told to run the one shipped scoring verb.
+- **AC-S26-13** — Given lines the classifier writes, escalation chains included, then `measures.decision_health` reads
+  their tiers and escalations unchanged; a spelling changes only in `SPELLING`.
+- **AC-S26-14** — *D177.* Given the skipper's brief, then it escalates one reversibility tier at a time, writes each
+  step on the line, never lowers a computed tier, and never leaves a question in a diff or a note instead of escalating.
+- **AC-S26-15** — *D178.* Given three standing entries in one feature decided by the same reason, then the skipper's
+  entry carries a `Proposed rule:` line citing at least two earlier standing ids of the feature, and never edits the
+  owner brief; the gate refuses such a line citing fewer than two ids or an id that is not a standing entry of the
+  feature, and never refuses an entry for lacking it; every skipper brief carries the feature's list of entry headings.
+- **AC-S26-16** — Given a project generated by the previous release, when `migrate` runs and then `make verify`, then it
+  passes; the fragment claims MINOR and its catch-up note names the new line, the committed list, the note for a
+  missing line, and that the project's owner brief keeps the old entry shape until edited by hand.
+
+### S43-test-declarations
+
+**Gaps reviewed** 2026-10-07, cruise iteration 27, `drive-gaps` (read only) with `drive-skipper` for D179 and D180 and
+the host's own D181 and D182: D169 (the owner's), FR-048, SC-016, S43's split and graph rows, S38's records, its
+adversary entries and D156–D158, D164, D165; against `scripts/select_tests/` (`declarations.py`, `generation.py`,
+`choose.py`, `rules.py`), `tests/support.py`, the 19 declaring modules, `test_select_tests_real_declared.py`,
+`test_select_tests_real_audit.py`, `check-structure.py`'s budget and the CI workflow's matrix jobs. Found and written
+back: S38 recorded only whole-suite totals, so the ranking needs one measured run at the slice's start (D180); under
+today's rules declaring every module as narrowly as its source allows still selects about 296 of 373 on a Go change,
+because the join is per imported test file and about 96 modules inherit `test_replay`'s, `test_adopt`'s,
+`test_migrate`'s or `test_add_service`'s launcher routes through a helper they borrow, so shared helpers move into
+declared helper files and `CATALOG["backends"]` loops switch to `backends_under_test()` with CI's coverage unchanged,
+and the selector's rules stay (D179); the audit of reads-only modules stays (D181); 15 minutes is acceptance (D182);
+shared generation code already selects every module; eleven test files sit at the 350-line budget. No bump: nothing
+under `tests/` or `scripts/select_tests/` is in the wheel.
+
+- **AC-S43-1** — *D180.* Given the slice's base commit, before any declaration is written, when one full run with
+  per-test durations is made on the reference machine (12 cores, no CI variable, nothing else running), then a
+  per-module runtime table naming the commit, the machine, the module count and the run's wall-clock total is committed
+  to the slice's records, and the declaration order follows it; a run that cannot finish green stops the slice.
+- **AC-S43-2** — Given each module or helper newly carrying `TEST_SELECTION`, when `declarations.held()` runs on the
+  real tree, then it names none of them, and each appears in a `real_*` list.
+- **AC-S43-3** — Given each (axis, option) any declaration names, when one real path that pair claims is the change
+  set, then every module whose source generates that option, or whose reads match the path, is selected — the
+  expectation derived from `generation.facts`, not typed.
+- **AC-S43-4** — Given a copy of a declared module whose declaration omits an option its source generates, then the
+  selector does not skip it: the declaration is void and the module runs.
+- **AC-S43-5** — Given a change under `src/`, `catalog.json` or `assets/backing-services/prune.py`, then every module
+  runs.
+- **AC-S43-6** — *D169, D182.* Given one Go app file changed on the slice branch, when `make test` runs inside an S39
+  `gate` bracket, then it finishes in under 900 s on the reference machine, reported against AC-S43-1's total; a miss is
+  a `behaviour` demo, and relaxing the target is a person's word.
+- **AC-S43-7** — Given a module left undeclared, then a committed list names it with the selector's own reason.
+- **AC-S43-8** — *D180.* Given the demo's planted Go fault, then the one full run of the demo is made on the faulted
+  tree, and every module that fails there also fails in the selected run.
+- **AC-S43-9** — *D179 condition 1.* Given the slice's last commit and its base, then a full run's test ids are the
+  same set: none lost, none renamed away, none newly skipped.
+- **AC-S43-10** — *D179 condition 2.* Given each module switched to `backends_under_test()`, then the set of (module,
+  backend) pairs CI's jobs run is the same before and after; a module that cannot be shown so keeps its loop.
+- **AC-S43-11** — Given `make check-structure`, then it passes, no test file over 350 lines; the selector's rules,
+  `rules.py` and the audit module are unchanged (D179 condition 3, D181).
