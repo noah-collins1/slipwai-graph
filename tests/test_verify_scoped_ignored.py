@@ -23,7 +23,8 @@ sys.path.insert(0, str(ROOT / "assets" / "toolkit" / "scripts"))
 
 DRY: dict[str, str | None] = {"STANDIN_DRY": "1"}
 DIFFERS = FULL + "a file git ignores differs from the baseline"
-HINT = LINE + "a check may have written one; `git status --ignored` shows it, and the next run records"
+HINT = LINE + ("you may have edited one, or a check written one; `git status --ignored` shows it, and the next run "
+               "records")
 NO_BASELINE = LINE + "no usable baseline (it cannot be read) — every check that reads a tool or a variable runs"
 # Each part of the key and what the selection compares it by: the changed paths (`check-slice-scope.changed_files`),
 # the gate's own files (D117 rule 4, `choose.unknown`), the base and the branch (the borders), or the baseline.

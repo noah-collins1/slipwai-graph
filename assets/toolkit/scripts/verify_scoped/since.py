@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import subprocess
 import sys
 from collections.abc import Iterable
 from pathlib import Path
@@ -27,8 +28,8 @@ sys.dont_write_bytecode = True
 SCRIPTS = Path(__file__).resolve().parent.parent
 LINE = "check-ux-gates: "
 EVERY = LINE + "every preview in scope — "
-SCOPED = (LINE + "{branch} — previews scoped to what changed since {short} (the base of `{trunk}`){note}; "
-          "UX_GATES_SINCE=all renders every preview")
+SCOPED = (LINE + "{branch} — previews scoped to what changed since {short} (the commit on `{trunk}` this branch is "
+          "built on){note}; UX_GATES_SINCE=all renders every preview")
 
 
 class Scope(NamedTuple):
@@ -50,8 +51,33 @@ def load(filename: str) -> Any:
     return module
 
 
+def no_base(branch: str, said: str) -> str:
+    """Why a slice branch has no base, said once: `check-slice-scope`'s own line names the branch already."""
+    words = said.removeprefix("check-slice-scope: ")
+    return f"no usable base: {words}" if words else f"{branch} has no usable base"
+
+
 def every(why: str) -> Scope:
     return Scope(None, EVERY + why)
+
+
+def asked(root: Path, *arguments: str) -> bytes:
+    """What a `-q` question of git answers at the project root, as `verify-stamp.py`'s `git_or_nothing` reads it (git
+    saying no without a reason is nothing), but never asked of the directory the script was run from."""
+    done = subprocess.run(["git", *arguments], cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    if done.returncode == 1 and not done.stderr:
+        return b""
+    if done.returncode != 0:
+        raise RuntimeError("git " + " ".join(arguments) + ": " + done.stderr.decode("utf-8", "replace").strip())
+    return done.stdout
+
+
+def not_vouched(stamp: Any, top: str) -> str | None:
+    """`verify-stamp.py`'s `not_vouched`, asked of the top the project root's git names, not the current directory's."""
+    try:
+        return stamp.index_problem(top)  # type: ignore[no-any-return]
+    except stamp.CannotTell as error:
+        return str(error)
 
 
 def reason(stamp: Any, scope: Any, root: Path, ref: str, has_commit: bool) -> str | None:
@@ -70,15 +96,14 @@ def reason(stamp: Any, scope: Any, root: Path, ref: str, has_commit: bool) -> st
     if not scope.SLICE_BRANCH.match(branch):
         return f"`{printable(branch)}` is not a slice/<id> branch"
     if scope.merge_base().commit is None:
-        words = scope.check(branch)[3].removeprefix("check-slice-scope: ")
-        return f"{branch} has no usable base — {words}"
+        return no_base(branch, scope.check(branch)[3])
     problem = stamp.trunk_problem()[1]
     if problem is not None:
         return f"the trunk cannot be told — {problem}"
-    unvouched = stamp.not_vouched()  # an index git does not look at: a change to it would never be seen
+    top = os.path.realpath(str(scope.git_must("rev-parse", "--show-toplevel")).removesuffix("\n"))
+    unvouched = not_vouched(stamp, top)  # an index git does not look at: a change to it would never be seen
     if unvouched is not None:
         return unvouched
-    top = os.path.realpath(str(scope.git_must("rev-parse", "--show-toplevel")).removesuffix("\n"))
     if top != os.path.realpath(root):
         return "the project is not the repository's top, and the changed paths are the top's"
     return None
@@ -103,8 +128,8 @@ def changed_among(scope: Any, base: str, among: Iterable[str] | None) -> set[str
 def ask(root: Path, among: Iterable[str] | None) -> Scope:
     stamp = load("verify-stamp.py")
     scope = stamp.trunk_module()
-    ref = stamp.git_or_nothing("symbolic-ref", "-q", "HEAD").removesuffix(b"\n").decode("utf-8", "surrogateescape")
-    has_commit = bool(stamp.git_or_nothing("rev-parse", "-q", "--verify", "HEAD"))
+    ref = asked(root, "symbolic-ref", "-q", "HEAD").removesuffix(b"\n").decode("utf-8", "surrogateescape")
+    has_commit = bool(asked(root, "rev-parse", "-q", "--verify", "HEAD"))
     why = reason(stamp, scope, Path(root), ref, has_commit)
     if why is not None:
         return every(why)
