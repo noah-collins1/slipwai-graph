@@ -4375,3 +4375,198 @@
 - **Confidence:** high · **Would reverse if:** the rule makes those two checks run on nearly every scoped run of a common starter (a `dist/` every web build leaves), which the tests would show.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
+
+## D195 — FR-033 says provisional approval never "flips a flag", but S27's first example and User Story 8's Independent Test use a flag-default change as the guarded case that goes ahead provisionally. Which one holds?
+- **Stage:** 5 slice gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-07T21:17:49Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** Gaps G1 (CRITICAL). There are three texts in play:
+  - FR-033 (spec.md:423) says provisional approval MUST never "flip a flag".
+  - S27's row in `story-split.md`, in its first example, calls "a guarded always-ask item (a flag's default)" the case that goes ahead provisionally.
+  - User Story 8's Independent Test (spec.md:217–218) does the same with "a fixture decision that changes a flag default (guarded)".
+
+  In S26's shipped verb, `flag_default=yes` is what makes such a decision `guarded` (rule F2, `assets/toolkit/scripts/reversibility.py:80-81`). D174 rule 1 kept that fact apart from `behind_flag` "for S27". Under `release: flagged`, moving a default from off to on is a release, and a release nobody asked for is on the catastrophic list (`src/slipwai/project/cruise_stops.py:70-73`). Which text does S27 build to?
+- **Options:**
+  - (a) "Flip a flag" means changing a flag's state in a running environment, so changing a default in code may be provisional.
+  - (b) **(recommended by the stage)** Read FR-033 literally. An item whose declared facts include `flag_default=yes` is never provisional. The guarded fixture becomes one guarded by `rollback_complexity=hours` or by a two-slice `Scope:`, and the example and the Independent Test are reworded.
+  - (c) A default change may be provisional only when it moves toward `off`.
+- **Decision:** (b), as the stage recommended. FR-033 is a MUST and the example is not, so the example changes.
+
+  **The rule S27 builds:**
+  1. Under `decide: provisional`, an always-ask item whose `Reversibility:` facts include `flag_default=yes` is never provisional. This holds whatever its tier, and in either direction. The skipper returns `unavailable: a person's approval` for it, exactly as for a `hard` item.
+  2. The tier is still written as the verb scores it, `guarded` by F2. FR-033 limits what provisional may *take*. It does not change how the item is scored, so S26's rules and D174 stay as they are, and F2 keeps the fact visible.
+  3. Provisional approval never answers anything on `cruise_stops`' catastrophic list, whatever the tier. A release nobody asked for stays a park with the exact question.
+
+  **Text changes, for the session to write:**
+  - **User Story 8's Independent Test (spec.md:217–219)** becomes: *With `decide: provisional`, a fixture decision guarded only by `rollback_complexity=hours` (one slice in its `Scope:`, behind a flag, no flag default changed) proceeds as provisional with a revert range; the same fixture with `flag_default=yes` and `rollback_complexity=trivial` (guarded by F2) still blocks as `unavailable: a person's approval`, because provisional approval never flips a flag (FR-033); the D54 fixture (one workflow line propagated by `migrate`) still blocks; a run with an unratified provisional decision past its date ends `parked: ratify D<n>`, not `done`.*
+  - **S27's row in `story-split.md`, first example:** "a guarded always-ask item (a flag's default)" becomes "a guarded always-ask item (`rollback_complexity=hours`, one slice in its `Scope:`, no flag default changed)".
+  - **S27's acceptance criteria gain one example, for the session to number:** *Given `decide: provisional` and an always-ask item scored `guarded` only by `F2 flag_default=yes`, when the skipper decides, then it is `unavailable: a person's approval` and the slice blocks as today.*
+  - **FR-033's own wording is unchanged.** The session may add one sentence beside it: *"Flip a flag" includes changing a flag's default in code; an item declaring `flag_default=yes` is never taken provisionally.*
+
+  **Scoring checked with the shipped verb:**
+  - The new guarded fixture scores `guarded · rules 1 · … behind_flag=yes flag_default=no rollback_complexity=hours`, by R2 alone.
+  - The blocking flag fixture scores `guarded · rules 1 · … behind_flag=yes flag_default=yes rollback_complexity=trivial`, by F2 alone.
+
+  Both were run through `assets/toolkit/scripts/reversibility.py --scope S27-provisional-decisions`.
+- **Why:**
+  - **For the maintainer under `release: flagged`, a flag's default is the release switch.** Changing it in code is how a feature reaches every environment that deploys the merge, so it is a flip.
+  - **(a) is a loophole.** It lets the run release by editing a default. That breaks D7's "the run never flips one" and the cruise rule *Flags stay off*.
+  - **(c) still changes what users get without a person deciding.** Moving a default to `off` switches off a feature they already have, and FR-033 makes no exception for direction.
+  - **The owner's own framing of User Story 8 rules it out.** It promises provisional approval comes "without widening what anyone may do to the merge root, CI, flags or stored data". The flag example contradicted the owner's own priority line, so the example was the error.
+  - **Taking (b) costs the slice nothing.** R2 and D1 already give `guarded` fixtures that touch no flag, so User Story 8's value stays fully demonstrable. S26's rules stay exactly as they are, and D174's reason for keeping `flag_default` separate is served.
+  - **No conflicts.** This contradicts no standing entry (D7, D54, D62, D82, D132, D174–D178) and no constitution MUST. It only narrows what provisional may take.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial
+- **Confidence:** high · **Would reverse if:** the owner says FR-033's "flip a flag" meant only a runtime toggle in a deployed environment, and that a default change in code under `release: flagged` may be taken provisionally.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (User Story 8's Independent Test reworded as above; S27's new criterion, numbered by the session; the optional sentence beside FR-033); `specs/001-faster-slipwai/story-split.md` (S27's row, first example)
+- **Status:** standing
+
+## D196 — Where does provisional approval's rollout mode live, and what does each mode do under cruise?
+- **Stage:** 5 slice gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-07T21:17:49Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** Gaps G5 and G6. FR-053 says provisional approval (FR-030) rolls out through recorded modes, in this order: shadow (computed and logged, nothing changes), advisory (shown beside the human decision), then enforced. The mode is kept in the run's settings, and each move between modes is a decision entry. Four things are open:
+  1. Where does the mode live?
+  2. What does each mode do under cruise?
+  3. Is "in that order" enforced?
+  4. How does the move between modes become an entry?
+- **Options:**
+  - Part 1, where the mode lives:
+    - (a) The mode is the `decide` value itself: `provisional-shadow`, `provisional-advisory` and `provisional` (enforced). There is no new key, and the default stays `recommended-first`. **(recommended)**
+    - (b) A new key, where a missing key reads as the default.
+    - (c) A new key that `migrate` writes.
+  - Part 2, what each mode does:
+    - The stage's shadow / advisory / enforced behaviours. **(recommended)**
+  - Part 3, the order:
+    - (i) `--set` refuses a skip forward, and stepping back is always allowed. **(recommended)**
+    - (ii) The order is documented only.
+  - Part 4, the move between modes:
+    - The first iteration that reads a mode different from the last mode entry appends an entry with `Decided by: human`, citing the commit. **(recommended)**
+- **Decision:** I take the stage's recommendation on all four parts and close the edges it left open.
+  1. **Where the mode lives: (a).** `decide` takes five values:
+     - `recommended-first` (the default, unchanged)
+     - `skipper-always`
+     - `provisional-shadow`
+     - `provisional-advisory`
+     - `provisional` (enforced)
+
+     **What the three provisional values do outside always-ask items.** For every question that is not an always-ask item, they act exactly as `recommended-first` does. They change only what happens to an always-ask item, so `skipper-always` cannot be combined with any of them.
+
+     **Documented default.** `CONTROLS["decide"]` and the `cruise-settings` table row both say the default is `recommended-first`. They also carry this one sentence: *"Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right."*
+
+     **Options (b) and (c).** (b) is not taken. (c) is not available, because it contradicts `seeded.py` and the constitution's rule that the factory overwrites nothing except through a command the maintainer ran.
+  2. **What each mode does.** Items that are not always-ask are untouched in every mode. An always-ask item with no `Reversibility:` line scores `hard` (D176).
+     - **Shadow.**
+       - Every always-ask item blocks exactly as it does today, ending in `unavailable: a person's approval`.
+       - Its entry also carries one line: `- **Provisional (shadow):** <tier> · <the Status it would have had: provisional · ratify by <date>, or blocks (hard)> · Revert: <the artifacts and slice whose commits would carry it>`.
+       - The line is written for `hard` items too, so the log holds both kinds of outcome for FR-057's measures.
+       - No commits exist yet, so the line names what the revert would cover, not a commit range. S28 owns the range.
+     - **Advisory.**
+       - Everything in shadow happens, and the line's label reads `Provisional (advisory):`.
+       - For an `easy` or `guarded` item, the park question names that line as the recommendation, so a person can answer with one word through `/cruise-tell`.
+       - A `hard` item's park question offers no one-word answer.
+     - **Enforced (`provisional`).**
+       - An `easy` or `guarded` always-ask item becomes `Status: provisional · ratify by <date>` with `Revert: <range>`, and the slice continues (FR-030).
+       - A `hard` item is `unavailable: a person's approval`, as it is today.
+       - FR-033 holds in every mode. Nothing may widen what the merge root or CI checks, flip a flag, or take a `hard` item.
+
+     `check-decisions` accepts the `Provisional (shadow|advisory):` line and refuses a malformed or repeated one, as D65 allows for lines only this release can produce. It never refuses an entry that lacks the line.
+  3. **The order: (i), enforced.**
+     - **The ladder.** Off (`recommended-first` or `skipper-always`) → `provisional-shadow` → `provisional-advisory` → `provisional`.
+     - **Refusing a skip.** `cruise.py --set decide=<v>` refuses any forward step of more than one rung from the file's current value. It refuses in one line that names the next mode (for example: *"`decide` moves one mode at a time: set `provisional-shadow` first"*) and writes nothing.
+     - **Stepping back.** Any step back is allowed, to any lower rung. Moving between the two off values is unrestricted. Going forward again after a step back starts again from the rung you are on.
+     - **A hand edit that skips.** Such an edit bypasses `--set`. If the iteration finds that the mode has skipped forward past the last mode entry in the log, it does not run under the new mode. It ends with `cruise: parked: decide=<v> skips <next>; set it through /cruise-settings`.
+     - **What `check()` still holds.** `check()` holds the shape of the file only. A valid value is never a finding there, so the file can always be loaded.
+  4. **The move between modes is an entry.**
+     - **When it is written.** At the start of an iteration, the host compares `decide` with the last mode entry in the decisions log of the feature it is working on. If they differ, the host appends `## D<n> — decide moved from <a> to <b>` with `Decided by: human` and `Scope: global`. The entry cites the commit that last changed `.specify/cruise.json`. If the change is not committed yet, it says `uncommitted at <instant>` instead. Either way the iteration then runs under the new mode.
+     - **A log with no mode entry.** The first iteration records the current mode as it finds it, with no order check, because the earlier mode is unknown.
+     - **What the run never does.** It never sets `decide` (D62). It only records what a person set.
+- **Why:**
+  - **No existing project breaks.** The developer who generated or adopted a project gets a setting that exists the moment they upgrade. A new key would break every one of their projects: `check()` reports a missing key, `load()` raises, and `.specify/cruise.json` is seeded once and never rewritten by `migrate`. The fix for that would be a file `migrate` must not touch, or a key whose absence means something, which is a second rule to learn. Adding values to an enum they already set leaves every existing file valid and its meaning unchanged.
+  - **It matches FR-030 and S30.** FR-030 already spells the enforced mode as `decide: provisional`, and S30 uses the same shape (`route_by_difficulty: off | log | rule | model`).
+  - **Order is enforced because FR-053 says MUST.** A documented order that `--set` would let you skip is a wish, not a rollout. The refusal is one line the person can act on (*Taste*), and it lives in the settings command, not in a gate the merge root or CI runs. That keeps it clear of the brief's *Always ask a person* list.
+  - **Parking on a skipping hand edit.** `cruise-settings` promises the run never quietly runs an iteration under different rules than the ones the person set. Parking on the skip keeps that promise without the run editing a control it may not edit.
+  - **Shadow and advisory do what FR-053 asks.** Shadow changes nothing a person sees in outcomes and leaves a line that can be compared later. Advisory turns that line into a one-word answer, which is where the decision-wait tax is actually paid. Only enforced moves the slice on, and it never takes a `hard` item (FR-033).
+  - **Mode entries keep the log honest about who decided.** The person's settings commit is the decision, and the entry is its record. That is the same attribution D62 and D132 use for a person's message written down by the host.
+  - **Constraints checked.** This contradicts no standing entry: it is consistent with D62, D132, D174, D176 and D177. It crosses no constitution MUST, because nothing is overwritten and no check is removed. It is a MINOR: new values of an existing setting, off by default.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** the owner wants provisional approval combined with `skipper-always`. Then the mode needs a key of its own, and the cost of (b) has to be paid, with absence read as off.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S27's criteria for FR-030 and FR-053). The values and the one-sentence guidance land in `assets/toolkit/scripts/agents/cruise.py` (CHOICES, CONTROLS) and the cruise-settings command at S27's plan stage. Also `delivery/docs/adr/0008-provisional-mode-is-a-decide-value.md` (Proposed).
+- **Status:** standing
+
+## D197 — With S27 shipped and S28 not yet, how does a run end while a provisional decision is unratified, and how does a person write a ratification?
+- **Stage:** 5 slice gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-07T21:17:49Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions, S28-ratify-revert
+- **Question:** This covers gaps G10 and G17.
+  - **G10.** S28 brings three things: the `ratify D<n>` and `revert D<n>` verbs, the listing in `cruise-report.md` and `cruise-status`, and the completion audit's refusal of `done` while an entry is unratified past its date. S28 comes after S27. Every green push to `main` publishes a snapshot, so S27 can reach users before S28 exists. With S27 alone, a run can end `cruise: done` while a provisional entry is still unratified. Nothing lists that entry, and its ratify-by date has no effect.
+  - **G17.** `assets/toolkit/scripts/agents/measures.py:769-772` (decision health) counts an entry as reviewed only when the first word of its `Status` is `ratified` or `reverted`. S28's example says a ratified entry's status becomes `standing`, which decision health would never count as reviewed. Under S27, what does a person write to ratify?
+- **Options:**
+  - **G10:** (a) **recommended by the stage.** S27's completion audit refuses `done` while any provisional entry is unratified, whatever its date, and the run ends `cruise: parked: ratify D<n>`. A person ratifies by editing the entry's `Status`, the same way overriding works today. S28 later narrows the refusal to "past its date" and adds the verbs and listings. (b) S27 ships only the shadow and advisory modes, and S28 unlocks enforced. (c) Accept the window.
+  - **G17:** (i) **recommended by the stage.** `Status: ratified <date>`. (ii) `Status: standing`.
+- **Decision:** For G10, (a), the stage's recommendation. For G17, (i), the stage's recommendation. Five rules make it concrete:
+  1. **The refusal in S27.** S27's completion audit refuses `done` while any entry in a `decisions.md` has a `Status` starting with `provisional`, whatever its ratify-by date. When the ready set is empty, the run ends `cruise: parked: ratify D<n>`, naming the lowest-numbered unratified entry. While other slices are ready, the run keeps working them. A provisional entry never stops a slice; it only stops the claim `done`. The refusal can only bite in enforced mode (FR-053), because shadow and advisory never write a `provisional` status.
+  2. **How a person resolves an entry under S27.** They edit the `Status` line by hand, as the command already says they do to override:
+     - to keep the decision: `Status: ratified <YYYY-MM-DD>`;
+     - to take it back: they revert the `Revert:` range themselves and write `Status: reverted <YYYY-MM-DD>`.
+
+     `overridden by human <date>` still works as it does today. All three resolve the entry for the audit.
+  3. **The decision log gate.** `check-decisions` (the copy under `assets/toolkit/scripts/`; this repository's adopted copy under `delivery/scripts/` changes only through a person's `migrate`, D9 — host's correction, D198) accepts exactly three new forms, each with an ISO date: `provisional · ratify by <date>`, `ratified <date>` and `reverted <date>`. It refuses a malformed form the way it refuses a malformed `Scope:` (D65: only this release can produce one). For `--scope` reads, `provisional` and `ratified` entries count as standing, so later decisions must agree with them. `reverted` counts like `overridden`.
+  4. **What S28 changes.** S28 narrows the refusal to "unratified past its date". It adds the verbs, which write exactly the spellings in rule 2, and the listings. S28's example "then its status is `standing`" becomes "then its status is `ratified <date>`". The measures spelling table at `measures.py:769-772` stays as it is, so decision health counts every ratification as a review.
+  5. **Labels.** Until S28 lands, S27's report line and changelog fragment say that a provisional entry must be ratified by hand before the run can say `done`.
+- **Why:**
+  - **Who is affected.** The owner who turns on `decide: provisional` before S28 ships is the person affected. Under (c), their run says `done` while a decision they never saw is still in force with nothing to show it. That is a false green, which priority 5 of the owner brief rules out, and it defeats User Story 8's own promise that unratified work parks instead of finishing.
+  - **Why not (b).** (b) keeps that owner safe, but S27 would then give them nothing to use. Shadow and advisory change nothing, so the slice would ship a setting that cannot do its job until S28 does. Priority 4 cuts slices so that each one can be shown to an actor on its own (D62).
+  - **Why (a) holds without S28.** (a) is stricter than the final rule (any unratified entry rather than one past its date), so it errs toward stopping. The way to clear it is a one-line edit the command already teaches. Once S28 lands, the refusal only narrows.
+  - **No new widening.** `decide: provisional` stays off by default, and the run never turns it on (D62). Anyone who never opts in meets none of this. The refusal belongs to the run's completion audit, not to CI, so it does not change what the merge root or CI checks. The gate accepts new `Status` forms that FR-030 and FR-031 already require, and refuses only those forms when malformed. That is D65's class, not a new refusal of something older logs lack (D176).
+  - **G17.** `standing` would erase the difference between "the skipper decided and nobody looked" and "a person looked and agreed". That difference is what decision health measures and what FR-031's batch review exists to produce. With `ratified <date>`, the person's review is counted, dated and auditable. `measures.py` already reads that spelling, so nothing in shipped code changes to match it.
+  - **Constitution.** No MUST is touched. The full gate runs as before (principle I). Incomplete work stays dark behind a setting that is off by default, which is the "deployment and release are separate decisions" rule.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** S28 is scheduled to merge in the same release as S27, with no green push to `main` between them. The window would then never reach a user, and S27 could skip the interim refusal.
+- **Written to:** `specs/001-faster-slipwai/spec.md`: S27's criteria gain the interim refusal, the three hand-written Status forms and the gate's acceptance of them, and S28's ratify example reads ratified <date>. The session numbers the added criteria. Also `specs/001-faster-slipwai/story-split.md`: S28 row 51's example "then its status is standing" becomes "then its status is ratified <date>".
+- **Status:** standing
+
+## D198 — How does a provisional entry name its revert before any commit exists?
+- **Stage:** 5 slice gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-07T21:32:00Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions, S28-ratify-revert
+- **Question:** Gaps G3: FR-030 asks for `Revert: <range>`, but most decisions are written before their commits (D174; D54 had none), and a hash range goes stale when a slice branch is rebased.
+- **Options:** (a) every commit made under the decision carries a `Decision: D<n>` trailer and the entry reads `Revert: commits carrying Decision: D<n>`, written before any commit and surviving a rebase (recommended by the stage); (b) `Revert: pending`, filled in later by a superseding record; (c) the host edits a hash range in at the slice's end, editing an append-only log.
+- **Decision:** (a). The shadow and advisory lines of D196 name the revert the same way. S28 resolves the trailer with `git log --grep`. Host's correction recorded here: D197's rule 3 named this repository's adopted `check-decisions` copy, which an iteration may not edit; it changes only through a person's `migrate` (D9).
+- **Why:** a person reading the entry can find every commit to take back with one command, whenever the entry was written and however the branch was rebased; nothing is rewritten in an append-only log.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a merge strategy a project uses drops commit trailers (a squash merge that rewrites the message), which S28's revert would then have to read from the merge commit.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D199 — Who picks a provisional entry's ratify-by date?
+- **Stage:** 5 slice gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-07T21:32:00Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions, S28-ratify-revert
+- **Question:** Gaps G4: nothing says who chooses `ratify by <date>` or how far ahead it is.
+- **Options:** (a) a fixed horizon written into the command text — the entry's `When:` date plus seven days, UTC — computed by the shipped verb (recommended by the stage); (b) a new `cruise.json` key (the problem D196 avoided); (c) the skipper chooses.
+- **Decision:** (a). Under S27 the date informs the person and the report; the interim refusal of D197 holds whatever the date.
+- **Why:** a deterministic date a person can predict, with no new setting to learn and nothing for a delegate to invent.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** the owner wants a different horizon, which S28 can make a documented default.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D200 — How is FR-033 held, and what does "widen" mean?
+- **Stage:** 5 slice gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-07T21:32:00Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** Gaps G9: D54 only added refusals and still had to block, so "widen what the merge root or CI checks" cannot mean only loosening; S26's facts are declared, and v1 has no fact for a gate script (`ci_workflow` covers workflow files only).
+- **Options:** (a) read FR-033 as any change to what the merge root or CI checks — the owner brief's first always-ask item — and hold it three ways: the `hard` tier blocks; `check-decisions` refuses a provisional entry whose last tier is `hard`, which has no `Reversibility:` line, or whose facts carry `ci_workflow=yes`, `migrate_file=yes` or `flag_default=yes` (D195); and the runner's `controls_changed` park stays in force (recommended by the stage); (b) a `gate` fact in a rules v2, which FR-051 makes a hard-tier decision for a person.
+- **Decision:** (a). The skipper's brief also says plainly that a question about a gate, a check or CI is never provisional, whatever its declared facts.
+- **Why:** a provisional answer can never be how the gate a developer trusts changes, which is the one outcome the owner brief says would make this work pointless.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person adds a gate fact to the reversibility rules (FR-051's way), when the brief's sentence becomes that fact's rule.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D201 — Who may take an always-ask item provisionally, and may the run change `decide`?
+- **Stage:** 5 slice gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-07T21:32:00Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** Gaps G7, G8, G11, G12, G15, G16: the always-ask list is free text no code reads; under `recommended-first` the host may decide any recommended question; nothing stops `cruise.py --set` inside an iteration (D62 is prose); provisional must not reach facts, MUSTs or releases; whether a provisional entry binds later decisions and dispatches a bosun is unstated.
+- **Options:** (a) only the skipper takes an always-ask item provisionally, scoring the tier first and running one shipped verb that prints the Status and `Revert:` lines from the `decide` value, the final tier and the always-ask flag, the entry quoting the owner-brief line it falls under; every other question is decided as under `recommended-first`; provisional covers only a person's approval, never a missing fact, a credential, a third party's behaviour, a MUST or a release; `--set decide=…` is refused while `CRUISE_ITERATION` is set; an enforced provisional decision dispatches no bosun and marks nothing ⛔; `--scope` prints a provisional entry as binding, marked `provisional` (recommended by the stage); (b) leave each to the command's prose.
+- **Decision:** (a).
+- **Why:** each part turns a promise a person would otherwise have to trust into something a test can show, and keeps the run from widening its own authority.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a harness the runner drives cannot set `CRUISE_ITERATION`, when the refusal needs another signal.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

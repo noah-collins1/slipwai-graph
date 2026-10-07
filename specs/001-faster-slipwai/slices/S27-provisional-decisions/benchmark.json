@@ -1,0 +1,72 @@
+{
+  "_comment": "What each stage of /drive cost this slice and how well it did, one entry per stage run, appended by scripts/agents/benchmark.py at the stage's start and end. Tokens come from the harness's own transcript or are null with the reason; signals are what the stage reported. `make benchmark` reads every record. docs/agent-harnesses.md says what the numbers can and cannot be compared with.",
+  "feature": "001-faster-slipwai",
+  "slice": "S27-provisional-decisions",
+  "from": "2719d09a3c84902428974290700da51a7b69a956",
+  "stages": [
+    {
+      "stage": "skipper",
+      "started": "2026-10-07T21:17:49Z",
+      "planned": "skipper: skipper → host model — `skipper` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 0,
+          "done": 55
+        },
+        "end": {
+          "open": 0,
+          "done": 55
+        }
+      },
+      "ended": "2026-10-07T21:19:52Z",
+      "seconds": 123,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae.jsonl": 769482,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-ac66fef7f306a3cc1.jsonl": 555171
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae.jsonl": 875303,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-a2eb1ce7091869f6b.jsonl": 309848,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-a50665fb04a474384.jsonl": 245189,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-a779be48b5d00f158.jsonl": 284474,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae/subagents/agent-ac66fef7f306a3cc1.jsonl": 555171
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "e4a7cdd5-f0fc-4288-aed3-c5f47d8962ae",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 4,
+            "output": 4518,
+            "cache_read": 236880,
+            "cache_creation": 9326
+          }
+        },
+        "subagents": {
+          "claude-opus-5-5": {
+            "input": 44,
+            "output": 1151,
+            "cache_read": 753952,
+            "cache_creation": 146300
+          }
+        },
+        "agents": [
+          "drive-skipper"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5"
+      ],
+      "agents": [
+        "drive-skipper"
+      ],
+      "delegated": true,
+      "signals": {
+        "driver": "cruise"
+      }
+    }
+  ]
+}

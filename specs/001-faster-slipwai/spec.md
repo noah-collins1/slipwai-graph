@@ -214,9 +214,12 @@ author's own experience: decision throughput, not tier design, was the problem t
 **Why this priority**: It removes the decision-wait tax the run has already paid once (S24 on D54), without
 widening what anyone may do to the merge root, CI, flags or stored data.
 
-**Independent Test**: With `decide: provisional`, a fixture decision that changes a flag default (guarded)
-proceeds as provisional with a revert range; the D54 fixture (one workflow line propagated by `migrate`) still
-blocks; a run with an unratified provisional decision past its date ends `parked: ratify D<n>`, not `done`.
+**Independent Test**: With `decide: provisional`, a fixture decision guarded only by `rollback_complexity=hours`
+(one slice in its `Scope:`, behind a flag, no flag default changed) proceeds as provisional with a revert range; the
+same fixture with `flag_default=yes` and `rollback_complexity=trivial` (guarded by F2) still blocks as `unavailable: a
+person's approval`, because provisional approval never flips a flag (FR-033, D195); the D54 fixture (one workflow line
+propagated by `migrate`) still blocks; a run with an unratified provisional decision past its date ends `parked:
+ratify D<n>`, not `done`.
 
 **Acceptance Scenarios**:
 
@@ -421,7 +424,8 @@ escalated; the resulting revision passes acceptance.
 - **FR-032**: The slice register and the result contract MUST carry the decision ids a slice depended on, so a
   revert names the slices that must re-enter the ladder.
 - **FR-033**: Provisional approval MUST never widen what the merge root or CI checks, flip a flag, or take a
-  `hard` decision.
+  `hard` decision. "Flip a flag" includes changing a flag's default in code: an item declaring `flag_default=yes` is
+  never taken provisionally (D195).
 
 - **FR-034**: `models.json` MUST accept `route_by_difficulty: off | log | rule | model`; `model` MUST route each
   spec node through a classifier whose backend is pluggable: a JEV-style joint-embedding predictive model where
@@ -2879,3 +2883,74 @@ under `tests/` or `scripts/select_tests/` is in the wheel.
 - **AC-S43-14** — *D187 rule 5.* Given a copy whose literal `--backend python` its declaration omits, then it is void
   and runs; given one real `assets/languages/python/` path, then every importer of a literal-python fixture is
   selected, the expectation derived from `generation.facts`.
+
+### S27-provisional-decisions
+
+**Gaps reviewed** 2026-10-07, cruise iteration 28, `drive-gaps` (read only) with `drive-skipper` for D195, D196 and
+D197 and the host's own D198 to D201: User Story 8, FR-029 to FR-033, FR-051, FR-053, FR-056, SC-011, S27's and S28's
+split and graph rows, S26's criteria and D54, D62, D132, D174 to D178; against `reversibility.py`, `check-decisions.py`,
+`DECISION_ENTRY`, the toolkit's `cruise.py` settings (`CHOICES`, `CONTROLS`, `check()`, `assign()`), `seeded.py`,
+`cruise_stops.py`, the skipper's brief, `measures.py`'s decision-health reader and `docs/cruise.md`. Found and written
+back: FR-033 contradicted the row's flag-default example, and the MUST wins (D195); a new settings key would break every
+seeded `cruise.json`, so FR-053's modes are values of `decide` and move one rung at a time (D196, ADR 0008 at
+Proposed); with S28 not yet shipped, any unratified provisional entry parks the completion audit and a person ratifies
+by editing `Status` (D197); the revert is named by a commit trailer, never a hash range (D198); the ratify-by date is
+the entry's date plus seven days (D199); FR-033 is held by the tier, the gate and the runner's control park (D200);
+only the skipper takes provisional, through one verb, and the run never sets `decide` (D201). Two touched files are at
+their budget (`src/slipwai/project/cruise.py` 341, `tests/test_cruise.py` 350): new text and tests go in new modules.
+Ratifying and reverting by verb, the listings and the dated refusal stay with `S28-ratify-revert`.
+
+- **AC-S27-1** — *D195, D199, D198.* Given `decide: provisional` and an always-ask item whose declared facts score
+  `guarded` by `rollback_complexity=hours` alone (one slice in its `Scope:`, behind a flag, `flag_default=no`), when
+  the skipper decides, then the entry reads `Status: provisional · ratify by <its When date + 7 days, UTC>` with
+  `Revert: commits carrying Decision: D<n>`, the slice continues, and the same holds for an `easy` item.
+- **AC-S27-2** — Given `decide: provisional` and the D54 fixture (`ci_workflow=yes migrate_file=yes
+  behind_flag=no-code`), then the entry is `unavailable: a person's approval`.
+- **AC-S27-3** — Given `decide: recommended-first`, `skipper-always`, `provisional-shadow` or `provisional-advisory`
+  and an always-ask item of any tier, then it is `unavailable: a person's approval`, as today.
+- **AC-S27-4** — *D195.* Given `decide: provisional` and an always-ask item scored `guarded` only by F2
+  (`flag_default=yes`, `rollback_complexity=trivial`), then it is `unavailable: a person's approval`.
+- **AC-S27-5** — *D201.* Given the decide value, the final tier, the always-ask flag and the entry's `When`, when the
+  one shipped verb runs, then it prints the `Status:` line and, where provisional, the `Revert:` line — provisional
+  only for `provisional` with `easy` or `guarded`, no `flag_default=yes`, `ci_workflow=yes` or `migrate_file=yes`;
+  `unavailable: a person's approval` otherwise — and the skipper's brief and the cruise command name that verb.
+- **AC-S27-6** — *D201.* Given `decide: provisional` and a question that is not an always-ask item, then it is decided
+  exactly as under `recommended-first`; given a credential, a third party's behaviour, an option that breaks a
+  constitution MUST or a release, then the entry is `unavailable` whatever `decide` says.
+- **AC-S27-7** — *D65.* Given a log with no provisional, ratified, reverted or `Provisional (shadow|advisory):` line,
+  then `check-decisions`' findings and exit code equal the earlier checker's (the differential test extended).
+- **AC-S27-8** — *D197, D198.* Given `Status: provisional · ratify by YYYY-MM-DD` with exactly one `Revert: commits
+  carrying Decision: D<n>` naming the entry's own number, or `Status: ratified YYYY-MM-DD` or `reverted YYYY-MM-DD`,
+  then the gate accepts it; given a malformed date, a provisional entry without `Revert:` or with two, a `Revert:`
+  naming another entry, or a `Revert:` on an entry that is not provisional, ratified or reverted, then it refuses
+  with one line naming the entry and the field.
+- **AC-S27-9** — *D200.* Given a provisional entry with no `Reversibility:` line, a last tier of `hard`, or facts
+  carrying `ci_workflow=yes`, `migrate_file=yes` or `flag_default=yes`, then the gate refuses it.
+- **AC-S27-10** — *D196.* Given `decide: provisional-shadow` and an always-ask item, then it blocks as today and its
+  entry carries one `- **Provisional (shadow):** <tier> · <the Status it would have had, or blocks (hard)> · Revert:
+  commits carrying Decision: D<n>` line; given `provisional-advisory`, then the line reads `Provisional (advisory):`
+  and, for an `easy` or `guarded` item, the park question names it as the recommendation a person can accept in one
+  word; the gate refuses a malformed or second such line and never refuses an entry for lacking one.
+- **AC-S27-11** — *D196.* Given `decide: recommended-first`, when `cruise.py --set decide=provisional` or
+  `provisional-advisory` runs, then it is refused in one line naming `provisional-shadow` as the next mode, and the
+  file is unchanged; any step back is accepted.
+- **AC-S27-12** — *D196.* Given a `decide` value different from the last mode entry in the feature's log, when an
+  iteration starts, then the command has the host append `decide moved from <a> to <b>` with `Decided by: human`,
+  `Scope: global`, citing the commit that changed `cruise.json` (or `uncommitted at <instant>`); given a forward
+  skip of more than one rung, then the iteration ends `cruise: parked: decide=<v> skips <next>; set it through
+  /cruise-settings`.
+- **AC-S27-13** — *D201.* Given `CRUISE_ITERATION` in the environment, when `cruise.py --set decide=<any>` runs, then
+  it is refused, naming `/cruise-settings` as a person's command, and the file is unchanged.
+- **AC-S27-14** — *D197.* Given an entry whose `Status` starts with `provisional` in a feature's log and an empty
+  ready set, then the completion audit refuses `done` and the run ends `cruise: parked: ratify D<n>`, naming the
+  lowest-numbered one; given `ratified <date>`, `reverted <date>` or `overridden by human <date>`, then it no longer
+  holds the run.
+- **AC-S27-15** — *D201.* Given an enforced provisional decision, then no bosun is dispatched and the slice is not
+  marked ⛔; given `check-decisions.py --scope` over a provisional or ratified entry, then it is printed as binding,
+  provisional ones marked `provisional`, and a reverted entry is left out like an overridden one.
+- **AC-S27-16** — Given the server-side `SETTINGS`, the toolkit's `CHOICES`, the `cruise-settings` command and
+  `docs/cruise.md`, then every one lists the same five `decide` values, the default `recommended-first`, and one
+  sentence on when to move to `provisional-shadow`.
+- **AC-S27-17** — Given a project generated by the previous release, when `migrate` runs and then `make verify`, then
+  it passes with its `cruise.json` unchanged; the fragment claims MINOR and its catch-up note names the new values,
+  that they are off by default, and that a provisional entry is ratified by hand until `S28` ships.
