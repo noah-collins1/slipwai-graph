@@ -342,12 +342,12 @@ S07's table; and L4, a sentence in ADR 0007, which is the host's.
 
 ## Phase 4 (after acceptance, on adopt-method)
 
-- [ ] T018 [LOW] The quickstart follows the tree: step 6 scores with `--written-to` as the briefs do; step 8 says an unedited owner brief takes the new shape (D189); step 9 promises what `make benchmark` prints (demo 1 notes).
-- [ ] T019 [LOW] `reversibility.py --help` lists the facts, their accepted values and the rule ids (demo 1 note).
-- [ ] T020 [HIGH] A1, A3, A4, B7: the committed-list lookup resolves every `Written to` path against the project root (absolute and `..` inside it are relative; outside it, never on the list), folds case, strips a byte-order mark, reads an empty or comment-only list as no list, lets a listed directory cover the files under it, and turns any unreadable `layout.delivery` into one line, never a traceback; one test per spelling, in the verb and in the gate.
-- [ ] T021 [MEDIUM] A2: every path a `Written to` value names is looked up — backticked and bare, separated by `,`, `;` or `and` — and a glob matching a listed path counts.
-- [ ] T022 [MEDIUM] B1, B4, B5: `Proposed rule:` citations are held only in a log carrying a `Reversibility:` line, a `note:` otherwise (D65); a near-miss label is a `note:` naming the entry; a second `Proposed rule:` line in an entry is refused; the differential test gains a `Proposed rule:` case with no `Reversibility:` line.
-- [ ] T023 [MEDIUM] B2: `measures.py` skips fenced lines exactly as the gate does, so decision health reads only the line the gate checked.
-- [ ] T024 Mutation: N/A — no mutation tool is configured for the factory's own Python (the eleventh slice so).
+- [x] T018 [LOW] The quickstart follows the tree: step 6 scores with `--written-to` as the briefs do; step 8 says an unedited owner brief takes the new shape (D189); step 9 promises what `make benchmark` prints (demo 1 notes). — `01a3d2a`
+- [x] T019 [LOW] `reversibility.py --help` lists the facts, their accepted values and the rule ids (demo 1 note). — `345af3d`
+- [x] T020 [HIGH] A1, A3, A4, B7: the committed-list lookup resolves every `Written to` path against the project root (absolute and `..` inside it are relative; outside it, never on the list), folds case, strips a byte-order mark, reads an empty or comment-only list as no list, lets a listed directory cover the files under it, and turns any unreadable `layout.delivery` into one line, never a traceback; one test per spelling, in the verb and in the gate. — `b8f5b90`
+- [x] T021 [MEDIUM] A2: every path a `Written to` value names is looked up — backticked and bare, separated by `,`, `;` or `and` — and a glob matching a listed path counts. — `45e81db`
+- [x] T022 [MEDIUM] B1, B4, B5: `Proposed rule:` citations are held only in a log carrying a `Reversibility:` line, a `note:` otherwise (D65); a near-miss label is a `note:` naming the entry; a second `Proposed rule:` line in an entry is refused; the differential test gains a `Proposed rule:` case with no `Reversibility:` line. — `61775d6`
+- [x] T023 [MEDIUM] B2: `measures.py` skips fenced lines exactly as the gate does, so decision health reads only the line the gate checked. — `8a73dad`
+- [x] T024 Mutation: N/A — no mutation tool is configured for the factory's own Python (the eleventh slice so).
 - [ ] T025 Both full gates once on the final tip: `make verify`, then `CI=true GITHUB_ACTIONS=true make -f delivery/Makefile verify`.
 - [ ] T026 Register row with `accepted-by: drive-hand`; benchmark closed; worktree and `slice/S26-reversibility-line` removed.

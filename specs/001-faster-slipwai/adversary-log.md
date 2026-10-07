@@ -659,15 +659,15 @@ Findings: twelve — one `HIGH`, three `MEDIUM` (one found by both seams), seven
 
 | # | Seam | Severity | Finding | Triage | State |
 |---|---|---|---|---|---|
-| A1 | A, B | HIGH | An absolute or `..` `Written to` path to a listed file is never found on the committed list, so `migrate_file=no` scores `easy` and the gate passes it. New | Confirmed; S26 T020 | open |
-| A2 | A, B | MEDIUM | Bare paths beside a backticked one, and `;`, `and` or a glob as separators, are never looked up on the list: a listed file written that way scores `easy`. New use of an older reader | Confirmed; S26 T021 | open |
-| B1 | B | MEDIUM | A log with a `Proposed rule:` line and no `Reversibility:` line, written by hand before this release, turns red after `migrate` (D65). New | Confirmed; S26 T022: citations are held only in a log carrying a `Reversibility:` line, a note otherwise | open |
-| B2 | B | MEDIUM | `measures.py` counts a fenced `Reversibility:` line the gate skipped, so an unchecked tier reaches decision health. New (S39's reader against S26's gate) | Confirmed; S26 T023 | open |
-| A3 | A | LOW | A listed path spelled in another case is not found on a case-insensitive filesystem. New | Confirmed; S26 T020 (the lookup only ever raises, so it folds case) | open |
-| A4 | A | LOW | A damaged list fails open: an empty or comment-only list names nothing, a byte-order mark drops the first entry, a listed directory does not cover files under it. New | Confirmed; S26 T020 | open |
+| A1 | A, B | HIGH | An absolute or `..` `Written to` path to a listed file is never found on the committed list, so `migrate_file=no` scores `easy` and the gate passes it. New | Confirmed; S26 T020 | fixed `b8f5b90` |
+| A2 | A, B | MEDIUM | Bare paths beside a backticked one, and `;`, `and` or a glob as separators, are never looked up on the list: a listed file written that way scores `easy`. New use of an older reader | Confirmed; S26 T021 | fixed `45e81db` |
+| B1 | B | MEDIUM | A log with a `Proposed rule:` line and no `Reversibility:` line, written by hand before this release, turns red after `migrate` (D65). New | Confirmed; S26 T022: citations are held only in a log carrying a `Reversibility:` line, a note otherwise | fixed `61775d6` |
+| B2 | B | MEDIUM | `measures.py` counts a fenced `Reversibility:` line the gate skipped, so an unchecked tier reaches decision health. New (S39's reader against S26's gate) | Confirmed; S26 T023 | fixed `8a73dad` |
+| A3 | A | LOW | A listed path spelled in another case is not found on a case-insensitive filesystem. New | Confirmed; S26 T020 (the lookup only ever raises, so it folds case) | fixed `b8f5b90` |
+| A4 | A | LOW | A damaged list fails open: an empty or comment-only list names nothing, a byte-order mark drops the first entry, a listed directory does not cover files under it. New | Confirmed; S26 T020 | fixed `b8f5b90` |
 | A5 | A | LOW | `.slipwai/propagated` leaves out CI workflows, `AGENTS.md`, `.claude/settings.json` and `project.json`, which `migrate` also carries | Declined: D183 chose the method categories; `ci_workflow` covers workflows (ADR 0007) | declined |
-| B4 | B | LOW | A near-miss label (`Reversibility :`, other case, `__…__`, `*` bullet) is checked or ignored depending on the rest of the file, silently. New | Confirmed; S26 T022: a near-miss label is a note naming the entry | open |
-| B5 | B | LOW | A second `Proposed rule:` line in an entry is never read. New | Confirmed; S26 T022 | open |
-| B7 | B | LOW | A `layout.delivery` holding a NUL byte crashes the gate with a traceback. New, contrived | Confirmed; S26 T020 | open |
+| B4 | B | LOW | A near-miss label (`Reversibility :`, other case, `__…__`, `*` bullet) is checked or ignored depending on the rest of the file, silently. New | Confirmed; S26 T022: a near-miss label is a note naming the entry | fixed `61775d6` |
+| B5 | B | LOW | A second `Proposed rule:` line in an entry is never read. New | Confirmed; S26 T022 | fixed `61775d6` |
+| B7 | B | LOW | A `layout.delivery` holding a NUL byte crashes the gate with a traceback. New, contrived | Confirmed; S26 T020 | fixed `b8f5b90` |
 | B8 | B | LOW | A log starting with a byte-order mark counts 0 entries, so its lines go unchecked. Older | Declined: D65 settled the counting before S26 | declined |
 
