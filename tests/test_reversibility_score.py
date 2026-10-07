@@ -21,10 +21,11 @@ HARD = ("contract", "schema", "auth", "customer_visible", "export", "ci_workflow
 
 
 @contextmanager
-def project(**layout: Any) -> Iterator[Path]:
+def project(listed: tuple[str, ...] | None = ("init",), **layout: Any) -> Iterator[Path]:
+    """A scratch project with a committed list (naming `init`) unless `listed=None`."""
     from reversibility_fixture import scratch
     with tempfile.TemporaryDirectory() as directory:
-        yield scratch(directory, names=("reversibility.py",), **layout)
+        yield scratch(directory, names=("reversibility.py",), listed=listed, **layout)
 
 
 class VerbTest(unittest.TestCase):
@@ -141,11 +142,18 @@ class CommittedListTest(unittest.TestCase):
         self.assertIn("migrate_file=no", out)
 
     def test_e4_no_list_writes_no_list_and_is_hard(self) -> None:
-        code, out, err = self.run_verb(self.WRITTEN)
+        code, out, err = self.run_verb(self.WRITTEN, listed=None)
         self.assertEqual(code, 0, err)
         self.assertIn("hard · rules 1 · ", out)
         self.assertIn("migrate_file=no-list", out)
         self.assertIn("migrate_file", err)
+
+    def test_e4b_no_list_and_no_written_to_is_still_no_list_and_hard(self) -> None:
+        with project(listed=None) as repo:
+            result = score(repo, "--scope", SLICE, *facts())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("hard · rules 1 · ", result.stdout)
+        self.assertIn("migrate_file=no-list", result.stdout)
 
     def test_e5_a_declared_yes_is_never_lowered(self) -> None:
         self.declared = {"migrate_file": "yes"}

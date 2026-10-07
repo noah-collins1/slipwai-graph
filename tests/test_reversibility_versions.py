@@ -29,7 +29,7 @@ class ReaderTest(unittest.TestCase):
     def lines(self, kinds: Sequence[tuple[list[str], tuple[str, ...]]]) -> list[str]:
         out = []
         with tempfile.TemporaryDirectory() as directory:
-            repo = scratch(directory, names=("reversibility.py",))
+            repo = scratch(directory, names=("reversibility.py",), listed=("init",))
             for arguments, extra in kinds:
                 result = score(repo, "--scope", "S1", *arguments, *extra)
                 self.assertEqual(result.returncode, 0, result.stderr)

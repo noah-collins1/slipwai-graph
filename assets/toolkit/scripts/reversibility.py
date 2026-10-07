@@ -144,12 +144,12 @@ def propagated(root: Path) -> set[str] | None:
 
 def with_list(facts: dict[str, str], written: list[str] | None, listed: set[str] | None) -> dict[str, str]:
     """`facts` with `migrate_file` as the committed list says: raised to yes by a listed path, never lowered; `no-list`
-    where paths are written and no list exists to check them against."""
-    if written is None or facts.get("migrate_file") != "no":
+    wherever the project has no list, since nothing then says what `migrate` propagates."""
+    if facts.get("migrate_file") != "no":
         return facts
     if listed is None:
         return {**facts, "migrate_file": "no-list"}
-    return {**facts, "migrate_file": "yes"} if any(path in listed for path in written) else facts
+    return {**facts, "migrate_file": "yes"} if any(path in listed for path in written or []) else facts
 
 
 def score(facts: dict[str, str], scope: str, raise_to: str | None = None, version: int = CURRENT,
@@ -204,7 +204,7 @@ def main() -> int:
         written = options.get("--written-to")
         line, fired = score(facts, options["--scope"], options.get("--raise"),
                             written=None if written is None else written_paths(written),
-                            listed=None if written is None else propagated(project_root(Path(__file__).resolve(), 1)))
+                            listed=propagated(project_root(Path(__file__).resolve(), 1)))
     except ValueError as error:
         print(f"reversibility: {error}\n{USAGE}".replace("\n", " — ", 1), file=sys.stderr)
         return 2
