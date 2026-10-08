@@ -302,7 +302,22 @@ def say(line: str) -> int:
     return 2
 
 
+def within(service: str, file: str) -> str | None:
+    """A `--file` as a path within the service: as given where it is relative and stays inside, relative to the service
+    where it is absolute and inside it, None where it leaves the service (`..` first, or an absolute path elsewhere)."""
+    if os.path.isabs(file):
+        try:
+            return Path(file).resolve().relative_to(Path(service).resolve()).as_posix()
+        except ValueError:
+            return None
+    return None if file == ".." or file.startswith("../") else file
+
+
 def check_refusal(job: Job) -> int | None:
+    for file in job.files:
+        if within(job.service, file) is None:
+            return say(f"`{file}` is not a path within {job.service}; give it relative to the service, without `..`")
+    job.files = [within(job.service, file) or file for file in job.files]
     for file in job.files:
         refusal = refused(job.service, file)
         if refusal:
@@ -315,6 +330,10 @@ def check_table(job: Job) -> int | None:
         job.config = targets(job.service)
     except Unreadable as error:
         return say(f"{job.service}/pyproject.toml: {error}")
+    for entry in job.config.get("also_copy", []):
+        if isinstance(entry, str) and within(job.service, os.path.normpath(entry)) is None:
+            return say(f'{job.service}/pyproject.toml also_copy holds "{entry}", which leaves {job.service}/mutants/; '
+                       "keep it to paths within the service")
     return None
 
 

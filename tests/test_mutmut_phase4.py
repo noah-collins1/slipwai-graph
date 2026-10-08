@@ -342,5 +342,42 @@ class ExcludedFilesTest(PhaseCase):
             "mutation: not mutated apps/service/README.md \u2014 outside mutmut's configured targets"])
 
 
+class PathsLeavingTheServiceTest(PhaseCase):
+    """T042 (A7): a `--file` or an `also_copy` entry that names something outside the service is refused or made relative."""
+
+    def test_a7_an_absolute_path_inside_the_service_is_taken_as_the_file_relative_to_it(self) -> None:
+        done = self.run_wrapper("apps/service", "--file", str(self.service / "src/pkg/a.py"),
+                                meta={"src/pkg/a.py": {KEY: None}}, results={"src/pkg/a.py": {KEY: 1}})
+        self.assertEqual(done.returncode, 0)
+        self.assertEqual(lines_of(done)[0], "mutation: scoped to 1 given file(s): src/pkg/a.py \u2014 1 mutant(s)")
+
+    def test_a7_a_path_that_is_not_within_the_service_exits_2_before_anything_starts(self) -> None:
+        for given in (str(self.root / "elsewhere/a.py"), "../x.py", "src/../../x.py", str(self.tree / "apps/other/a.py")):
+            with self.subTest(file=given):
+                done = self.run_wrapper("apps/service", "--file", given)
+                self.assertEqual(done.returncode, 2)
+                self.assertEqual(lines_of(done), [f"mutation: `{os.path.normpath(given)}` is not a path within "
+                                                  "apps/service; give it relative to the service, without `..`"])
+                self.assertEqual(self.calls(), [])
+
+    def test_a7_an_also_copy_entry_that_leaves_mutants_exits_2_naming_it(self) -> None:
+        for entry in ("../x", "/etc/passwd", "a/../../x", ".."):
+            with self.subTest(entry=entry):
+                (self.service / "pyproject.toml").write_text(narrowed(extra=f'also_copy = ["data", "{entry}"]\n'),
+                                                             encoding="utf-8")
+                done = self.run_wrapper("apps/service")
+                self.assertEqual(done.returncode, 2)
+                self.assertEqual(lines_of(done), [f'mutation: apps/service/pyproject.toml also_copy holds "{entry}", '
+                                                  "which leaves apps/service/mutants/; keep it to paths within the "
+                                                  "service"])
+                self.assertEqual(self.calls(), [])
+
+    def test_a7_hold_also_copy_entries_within_the_service_are_not_refused(self) -> None:
+        (self.service / "pyproject.toml").write_text(narrowed(extra='also_copy = ["data", "a/b.json", "./c"]\n'),
+                                                     encoding="utf-8")
+        done = self.run_wrapper("apps/service", meta={"src/pkg/a.py": {KEY: None}}, results={"src/pkg/a.py": {KEY: 1}})
+        self.assertEqual(done.returncode, 0, lines_of(done))
+
+
 if __name__ == "__main__":
     unittest.main()
