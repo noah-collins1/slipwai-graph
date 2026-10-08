@@ -1,0 +1,20 @@
+$ make verify-scoped   # second run, to record a baseline
+verify-scoped: no usable baseline (none yet on this branch) — every check that reads a tool or a variable runs
+verify-scoped: the full gate runs, as `make verify` — every check was chosen
+verify: all gates passed
+$ make verify-scoped   # third run
+verify: the full gate did not run; this tree already passed it at 2026-10-08T09:05:18Z (key 67fe0bb88400); VERIFY_FORCE=1 runs it anyway
+$ make mutation   # health.ts committed on slice/S1
+mutation: scoped to 1 changed file(s) since `main` at 7287334: apps/service/src/health.ts
+mutation: scope apps/service — src/health.ts
+mutation: scoped to 1 given file(s): src/health.ts
+mutation: Stryker exited 0 (its exit status is printed, never the verdict; the report is)
+mutation: 3 mutants: 3 killed, 0 ignored, 0 not covered (reported, never failed); passed — report apps/service/reports/mutation/mutation.json
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed
+$ make verify-scoped   # after the mutation run
+verify: the full gate did not run; this tree already passed it at 2026-10-08T09:05:18Z (key 67fe0bb88400); VERIFY_FORCE=1 runs it anyway
+wall=0.46 s
+$ make verify   # stamp reuse after the mutation run
+verify: the full gate did not run; this tree already passed it at 2026-10-08T09:05:18Z (key 67fe0bb88400); VERIFY_FORCE=1 runs it anyway
+wall=0.43 s
+$ git status --short

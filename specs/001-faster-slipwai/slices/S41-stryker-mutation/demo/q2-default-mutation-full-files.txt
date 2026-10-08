@@ -1,0 +1,9 @@
+src/adapters/driven/checkpoint-store-memory.ts {'Killed': 26, 'Survived': 2}
+src/adapters/driven/event-store-memory.ts {'Killed': 87, 'Survived': 7}
+src/adapters/driving/http/app.ts {'NoCoverage': 4, 'Killed': 138, 'Survived': 29}
+src/application/ports/events.ts {'NoCoverage': 1, 'Killed': 54, 'Survived': 12}
+src/config.ts {'Killed': 13, 'Survived': 6}
+src/health.ts {'Killed': 3}
+src/projections-plugin.ts {'NoCoverage': 4, 'Survived': 8, 'Killed': 13}
+src/projections.ts {'NoCoverage': 1, 'Killed': 53, 'Survived': 7, 'Timeout': 1}
+src/tracing.ts {'NoCoverage': 3, 'Survived': 19, 'Killed': 28}

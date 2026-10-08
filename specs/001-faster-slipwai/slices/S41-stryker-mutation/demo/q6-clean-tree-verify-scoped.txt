@@ -1,0 +1,113 @@
+$ git log --oneline main..
+1fdbc17 demo: health.ts comment
+$ make mutation
+mutation: scoped to 1 changed file(s) since `main` at 7287334: apps/service/src/health.ts
+mutation: scope apps/service — src/health.ts
+mutation: scoped to 1 given file(s): src/health.ts
+mutation: Stryker exited 0 (its exit status is printed, never the verdict; the report is)
+mutation: 3 mutants: 3 killed, 0 ignored, 0 not covered (reported, never failed); passed — report apps/service/reports/mutation/mutation.json
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed
+exit=0
+$ git status --short --ignored | grep -v node_modules
+!! apps/service/reports/
+$ make verify-scoped
+verify-scoped: no usable baseline (none yet on this branch) — every check that reads a tool or a variable runs
+verify-scoped: the full gate runs, as `make verify` — every check was chosen
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/cruise29/s41-demo/demo/packages/api-client/src/schema.ts [11ms]
+npm --workspace apps/service run lint
+
+> demo-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 34 files in 18ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> demo-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> demo-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> demo-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (82 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (82 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at 7287334)
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+npm --workspace apps/service test
+
+> demo-service@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/cruise29/s41-demo/demo/apps/service
+
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  04:04:56
+   Duration  804ms (transform 425ms, setup 0ms, import 1.23s, tests 543ms, environment 1ms)
+
+npm --workspace apps/web test
+
+> demo-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/cruise29/s41-demo/demo/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  04:04:58
+   Duration  935ms (transform 98ms, setup 283ms, import 109ms, tests 265ms, environment 1.51s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 307ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+verify: this pass was not recorded — a file git ignores changed while the checks ran — a check may have written one; `git status --ignored` shows it, and the next run records
+wall=9.04 s
+exit=0
+$ git status --short

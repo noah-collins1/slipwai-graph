@@ -1,0 +1,11 @@
+$ git status --short
+ M apps/web/src/App.tsx
+$ make mutation   # only apps/web/src/App.tsx changed
+mutation: no mutant to run — no production file changed
+mutation: not mutated apps/web/src/App.tsx — browser app, not mutated by this target
+mutation: skip apps/service — no changed production file
+mutation: 0 scoped, 0 swept, 1 skipped, 0 refused; passed
+wall=0.18 s
+exit=0
+$ git status --short
+ M apps/web/src/App.tsx
