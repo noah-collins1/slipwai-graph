@@ -72,8 +72,9 @@ PYTHON_MUTATION_NOTE = f"""\
 # `max_stack_depth` in the table, silence mutants nobody looked at, and the wrapper fails the run that holds them.
 #
 # `make mutation-full` runs every Python service, each from a fresh `mutants/`, and a failed service does not stop the
-# next: the run fails at the end, naming each failed one. A failing Go or TypeScript service listed earlier in a mixed
-# project still stops the sweep before Python runs.
+# next: the run fails at the end, naming each failed one. In a mixed project make stops at the first line that fails:
+# another service's failing line stops the sweep before the one Python line starts, a failing Python line stops it before
+# any line listed after, and a Java Quarkus service's setup line always stops it.
 #
 # The default Python starter's `make mutation-full` reports survivors the day it is generated, because its own starter
 # tests leave them; a slice that edits one of those files meets that file's survivors in its scoped `make mutation`. The

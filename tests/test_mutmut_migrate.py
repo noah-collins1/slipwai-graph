@@ -52,8 +52,10 @@ CATCH_UP_WORDS = (
     *FAILED_SETTINGS, "No `project.json` key changes")
 # T033 (D223 item 4, D224 item 1, D225 item 1): what the sweep does with several services, said in each place
 SWEEP_SHAPE = ("`make mutation-full` runs every Python service, each from a fresh `mutants/`, and a failed service "
-               "does not stop the next: the run fails at the end, naming each failed one. A failing Go or TypeScript "
-               "service listed earlier in a mixed project still stops the sweep before Python runs.")
+               "does not stop the next: the run fails at the end, naming each failed one. "
+               "In a mixed project make stops at the first line that fails: another service's failing line stops "
+               "the sweep before the one Python line starts, a failing Python line stops it before any line listed "
+               "after, and a Java Quarkus service's setup line always stops it.")
 ADD_SERVICE_WORDS = (
     "run `slipwai migrate` and commit before `slipwai add-service`", "Python or TypeScript service",
     "an older factory last wrote", "`scripts/mutation-scope.py`", "`scripts/verify-stamp.py`",
@@ -147,6 +149,11 @@ class SweepWordsTest(unittest.TestCase):
         for place, text in place_texts().items():
             with self.subTest(place=place):
                 self.assertIn(SWEEP_SHAPE, text)
+
+    def test_t034_no_place_lists_the_backends_that_stop_the_sweep(self) -> None:
+        for place, text in place_texts().items():
+            with self.subTest(place=place):
+                self.assertNotIn("Go or TypeScript service listed earlier", text)
 
     def test_t033_hold_the_default_starter_reports_its_own_survivors_and_the_minimal_one_is_green(self) -> None:
         """HOLD (teeth: reword the note's or the fragment's sentence)."""
