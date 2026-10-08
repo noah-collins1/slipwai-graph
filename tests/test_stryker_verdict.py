@@ -191,6 +191,12 @@ class VerdictTest(VerdictCase):
         self.assertEqual(self.execs()[-1]["argv"], ["exec", "--no", "--", "stryker", "run"])
         self.assertIn(f'mutation: Survived {SERVICE}/src/b.ts:3:5 StringLiteral → "" (report {REPORT})', lines)
 
+    def test_e5_a_dot_slash_file_is_judged_against_the_report_keyed_without_it(self) -> None:
+        """T024: `matched` accepts `./src/x.ts`; the report is keyed `src/x.ts`, so a survivor there must still fail."""
+        code, lines = self.run_wrapper({"report": report(src__x_ts=[mutant("Survived", 4, 2)])}, "--file", "./src/x.ts")
+        self.assertEqual(code, 1, lines)
+        self.assertIn(f'mutation: Survived {SERVICE}/src/x.ts:4:2 StringLiteral → "" (report {REPORT})', lines)
+
     def test_e6_every_run_starts_from_a_clean_slate_and_leaves_no_sandbox(self) -> None:
         """Teeth: skip the delete and the no-report example below passes wrongly."""
         old = self.tree / SERVICE / "reports/mutation"

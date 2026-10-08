@@ -88,6 +88,13 @@ class SweepsTypeScriptTest(TypeScriptCase):
         self.assertEqual(swept, ["apps/service"], lines)
         self.assertIn(f"mutation: sweep apps/service — `{MANIFEST_PATH}` changed", lines)
 
+    def test_e3_the_root_lock_deleted_on_the_branch_sweeps_every_typescript_service(self) -> None:
+        """T024: a side that is gone is a version change (`stryker_versions_moved`), not an unreadable-nothing."""
+        (self.repo / "package-lock.json").unlink()
+        swept, _, lines = self.swept(*TWO)
+        self.assertEqual(sorted(swept), ["apps/second", "apps/service"], lines)
+        self.assertIn("mutation: sweep apps/service — `package-lock.json` changed", lines)
+
     def test_e3_hold_nothing_that_is_not_a_stryker_version_sweeps(self) -> None:
         """HOLD (teeth: compare the raw text of the manifest and see the first three sweep)."""
         self.write("apps/service/src/health.ts", "export const a = 1;\n")

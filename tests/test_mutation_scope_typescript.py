@@ -145,6 +145,18 @@ class ScopeTest(TypeScriptCase):
         self.assertEqual(recording.scoped, [])
         self.assertEqual(lines[-1], "mutation: 0 scoped, 0 swept, 1 skipped, 0 refused; passed")
 
+    def test_e4_a_changed_test_beside_a_changed_browser_file_is_not_only_tests_changed(self) -> None:
+        """T024: the browser file is a source file that changed, so the closing words are not the tests-only ones."""
+        project = json.loads((self.repo / "project.json").read_text(encoding="utf-8"))
+        project["deployables"]["web"] = {"kind": "web", "path": "apps/web", "language": "typescript"}
+        self.on_main("project.json", text=json.dumps(project))
+        self.write("apps/service/src/health.test.ts", "export const t = 1;\n")
+        self.write("apps/web/src/App.tsx", "export const App = 1;\n")
+        status, lines, recording = self.run_planned("typescript:apps/service")
+        self.assertEqual((status, recording.scoped), (0, []), lines)
+        self.assertEqual(lines[0], "mutation: no mutant to run — no production file changed")
+        self.assertIn("mutation: not mutated apps/web/src/App.tsx — browser app, not mutated by this target", lines)
+
     def test_e4_hold_a_path_under_no_deployable_is_whatever_it_was(self) -> None:
         self.write("docs/notes.md", "x\n")
         status, lines, _ = self.run_planned("typescript:apps/service")
