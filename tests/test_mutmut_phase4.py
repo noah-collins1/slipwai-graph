@@ -429,5 +429,19 @@ class LockEntryTest(unittest.TestCase):
         self.assertEqual(found, {"mutmut": ["3.8.0"]})
 
 
+class CatchUpConflictsTest(unittest.TestCase):
+    """T044 (B5): the Catch-up names every file a `migrate` of a project with an added Python service can conflict in."""
+
+    def test_b5_the_catch_up_names_all_five_files_and_the_side_to_take_in_the_makefile(self) -> None:
+        text = FRAGMENT.read_text(encoding="utf-8")
+        (paragraph,) = [block for block in text.split("\n\n") if block.startswith("**Catch-up.**")]
+        squashed = " ".join(paragraph.split())
+        for name in ("Makefile", "apps/<service>/pyproject.toml", "apps/<service>/uv.lock", "commands/mutation.md",
+                     "scripts/verify_scoped/rules.json"):
+            with self.subTest(file=name):
+                self.assertIn(f"`{name}`", squashed)
+        self.assertIn("take the factory's side of the `mutation-full` hunk in `Makefile`", squashed)
+
+
 if __name__ == "__main__":
     unittest.main()
