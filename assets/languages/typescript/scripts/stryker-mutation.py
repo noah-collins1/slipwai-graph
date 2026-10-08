@@ -248,6 +248,99 @@ def stryker_present(root: Path, service: Path) -> bool:
         here = here.parent
 
 
+def project_root(service: Path) -> Path:
+    """The directory the project's npm workspace is rooted at, found from the service rather than assumed to be the
+    current directory: the nearest ancestor whose `package.json` declares `workspaces`, else the nearest ancestor above
+    the service that holds a `package-lock.json`, else the current directory."""
+    here = service.resolve()
+    for ancestor in (here, *here.parents):
+        try:
+            if '"workspaces"' in (ancestor / "package.json").read_text(encoding="utf-8"):
+                return ancestor
+        except OSError:
+            continue
+    for ancestor in here.parents:
+        if (ancestor / "package-lock.json").is_file():
+            return ancestor
+    return Path.cwd()
+
+
+def locks(root: Path) -> Path:
+    """Where this script's locks live: under the project, in a directory git ignores and `check-imports` does not read,
+    so that every shell on the checkout finds them (not `TMPDIR`, which differs between shells) and `npm ci` does not
+    remove them (as it would under `node_modules`)."""
+    return root / SANDBOX
+
+
+def alive(pid: int) -> bool:
+    """Whether a process of this id exists. Where it cannot be asked (Windows has no signal 0: `os.kill` would end the
+    process), it is taken to exist, and the lock's age decides instead."""
+    if sys.platform == "win32":
+        return True
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True
+    return True
+
+
+def holder_of(lock: Path) -> int | None:
+    """The pid a lock records, or None where it is unreadable."""
+    try:
+        return int(lock.read_text(encoding="utf-8").split()[0])
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def broken(lock: Path) -> bool:
+    """Whether the lock's holder is gone: its pid is not a live process, or on Windows the lock is older than `LOCK_STALE`."""
+    holder = holder_of(lock)
+    if sys.platform == "win32":
+        try:
+            return time.time() - lock.stat().st_mtime > LOCK_STALE
+        except OSError:
+            return True
+    return holder is not None and not alive(holder)
+
+
+@contextlib.contextmanager
+def file_lock(lock: Path, what: str) -> Iterator[bool]:
+    """Exclusive use of `what`, kept as `lock`: a file naming its holder's pid, created whole and hard-linked into place
+    (so it is never seen empty), and broken where that pid is no process. Yields False where it was not got within
+    `LOCK_WAIT` seconds. The lock and its holder are named in the line that says this run is waiting and in the one that
+    says it gave up."""
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    mine = lock.with_name(f"{lock.name}.{os.getpid()}")
+    mine.write_text(f"{os.getpid()}\n", encoding="utf-8")
+    deadline, told = time.time() + LOCK_WAIT, False
+    try:
+        while True:
+            try:
+                os.link(mine, lock)
+                break
+            except FileExistsError:
+                if broken(lock):
+                    lock.unlink(missing_ok=True)
+                    continue
+                if time.time() > deadline:
+                    say(f"mutation: another run of {what} (pid {holder_of(lock)}, {lock}) did not finish; "
+                        "if no such process is running, remove the lock, then run this again")
+                    yield False
+                    return
+                if not told:
+                    say(f"mutation: another run of {what} is running (pid {holder_of(lock)}, {lock}); waiting for it")
+                    told = True
+                time.sleep(0.2)
+        try:
+            yield True
+        finally:
+            lock.unlink(missing_ok=True)
+    finally:
+        mine.unlink(missing_ok=True)
+
+
 LOCK_STALE = 1800  # seconds after which a lock left by a killed run is broken
 LOCK_WAIT = 900
 
@@ -607,7 +700,14 @@ def verdict(service: str, given: list[str], report: str, files: dict[str, dict],
 
 
 def run(job: Job) -> int:
-    """Stryker over the given files (or the config's whole list), judged by the report it wrote."""
+    """Stryker over the given files (or the config's whole list), judged by the report it wrote, alone in its service:
+    a second run waits, so neither removes the report the other is about to read (T038)."""
+    name = hashlib.sha1(str(Path(job.service).resolve()).encode()).hexdigest()[:16]
+    with file_lock(locks(project_root(Path(job.service))) / f"run-{name}.lock", f"the mutation of {job.service}") as held:
+        return judge(job) if held else 2
+
+
+def judge(job: Job) -> int:
     service, given = job.service, job.given
     directory = Path(service)
     clean(directory)

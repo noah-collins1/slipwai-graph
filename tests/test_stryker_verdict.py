@@ -56,6 +56,9 @@ if args[:1] == ["exec"]:
            or (cwd / "reports/stryker-incremental.json").exists())
     if plan.get("expect_clean") and old:
         Path(os.environ["FAKE_LOG"] + ".dirty").write_text("dirty", encoding="utf-8")
+    if "--mutate" in args and plan.get("scoped_sleep"):
+        time.sleep(plan["scoped_sleep"])
+        sys.exit(1)
     if "report" in plan:
         (cwd / "reports/mutation").mkdir(parents=True, exist_ok=True)
         (cwd / "reports/mutation/mutation.json").write_text(
