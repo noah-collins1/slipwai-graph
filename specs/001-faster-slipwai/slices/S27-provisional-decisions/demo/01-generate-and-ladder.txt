@@ -1,0 +1,42 @@
+$ ./slipwai generate demo27 --output /tmp/s27-demo --no-init --no-install --skip-checks
+created: /tmp/s27-demo/demo27
+[exit 0]
+
+$ git log --oneline | head -3
+32be7ea Scaffold demo27
+[exit 0]
+
+$ python3 scripts/agents/cruise.py
+enabled: false — whether `/cruise` runs at all; `false` is a refusal that says so
+decide: "recommended-first" — who answers a product question: the host where the stage recommends an answer or a standing decision covers it and `drive-skipper` otherwise, or `drive-skipper` for every question. Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right.
+release: "flagged" — the release-constraint stage: every slice continues or opens a flag seeded off, so every merge is dark; or park at the push and let a person say it is a release they want
+constitution: "ratify" — an unratified constitution: the skipper drafts and ratifies it, marked pending human review; or park
+hand: "browser" — the top of the hand's ladder for a demo; each falls through to the next where it cannot run
+unblock: "bosun" — what a block becomes: work for `drive-bosun` first — a stub, a narrower reading, a repair — parking only at the catastrophic or when it fails; or a park at once
+stuck_after: 3 — iterations with no artifact change before the loop parks
+max_iterations: null — a budget on iterations; null is unbounded
+max_hours: null — a budget on wall time; null is unbounded
+poll_minutes: 10 — how often a parked loop looks for a reason to resume
+model: null — the model the iteration itself runs on — the driver, and every stage `.specify/models.json` maps to `host`; null is the harness's default, which nobody at the wheel chooses
+[exit 0]
+
+$ python3 scripts/agents/cruise.py --set decide=provisional
+cruise: `decide` changes only through /cruise-settings, a person's command; an iteration never sets it (D62)
+[exit 1]
+
+$ git diff --quiet .specify/cruise.json
+[exit 0]
+
+# NOTE: the shell this demo ran in inherited CRUISE_ITERATION=28 CRUISE_RUNNER=1 from the cruise run; the refusal above is AC-S27-13 firing. A person has neither; from here every command runs under env -u CRUISE_ITERATION -u CRUISE_RUNNER.
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=provisional
+cruise: `decide` moves one mode at a time: set `provisional-shadow` first
+[exit 1]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=provisional-advisory
+cruise: `decide` moves one mode at a time: set `provisional-shadow` first
+[exit 1]
+
+$ git diff --quiet .specify/cruise.json
+[exit 0]
+

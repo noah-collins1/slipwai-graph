@@ -1,0 +1,325 @@
+# mutation of D4: [- **Written to:** `README.md`] [- **Written to:** `.github/workflows/verify.yml`] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Written to` names `.github/workflows/verify.yml`, a workflow, a control of the run or a configuration file a generated gate reads; a provisional decision never edits one (D204)
+
+[exit 1]
+
+# mutation of D4: [- **Written to:** `README.md`] [- **Written to:** `.specify/cruise.json`] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` says migrate_file=no, but a `Written to` path is on the committed list
+
+[exit 1]
+
+# mutation of D4: [- **Written to:** `README.md`] [- **Written to:** `biome.jsonc`] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Written to` names `biome.jsonc`, a workflow, a control of the run or a configuration file a generated gate reads; a provisional decision never edits one (D204)
+
+[exit 1]
+
+# mutation of D4: [- **Written to:** `README.md`] [- **Written to:** `Makefile`] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` says migrate_file=no, but a `Written to` path is on the committed list
+  specs/demo/decisions.md:42: D4 `Written to` names `Makefile`, a workflow, a control of the run or a configuration file a generated gate reads; a provisional decision never edits one (D204)
+
+[exit 1]
+
+# mutation of D4: [- **Written to:** `README.md`] [- **Written to:** `README.md`, `.github/workflows/verify.yml`] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Written to` names `.github/workflows/verify.yml`, a workflow, a control of the run or a configuration file a generated gate reads; a provisional decision never edits one (D204)
+
+[exit 1]
+
+# mutation of D4: [- **Written to:** `README.md`] [- **Written to:** `.github/workflows/verify.yml`] [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** ratified 2026-10-08] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Written to` names `.github/workflows/verify.yml`, a workflow, a control of the run or a configuration file a generated gate reads; a provisional decision never edits one (D204)
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** ratified 2026-10-08] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=yes rollback_complexity=hours] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` has flag_default=yes; provisional approval never flips a flag (FR-033)
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** ratified 2026-10-08] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` starts at guarded, but rules 1 derive hard from its facts (H6 ci_workflow=yes; R2 rollback_complexity=hours)
+  specs/demo/decisions.md:42: D4 `Reversibility` has ci_workflow=yes; provisional approval never edits a workflow (FR-033)
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** ratified 2026-10-08] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=yes flag_default=no rollback_complexity=hours] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` starts at guarded, but rules 1 derive hard from its facts (H7 migrate_file=yes; R2 rollback_complexity=hours)
+  specs/demo/decisions.md:42: D4 `Reversibility` has migrate_file=yes; provisional approval never edits a migrate-propagated file (FR-033)
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** ratified 2026-10-08] [guarded · rules 1] [hard · rules 1] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` starts at hard, but rules 1 derive guarded from its facts (R2 rollback_complexity=hours)
+  specs/demo/decisions.md:42: D4 `Reversibility` ends at hard; a hard decision is never provisional
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** ratified 2026-10-08] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+] [] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` is missing; a provisional entry is scored, and no score is hard
+
+check-decisions: note: specs/demo/decisions.md:42: D4 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** reverted 2026-10-08] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=yes rollback_complexity=hours] 
+$ python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** provisional · ratify by 2026-10-15] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Status` ratifies by 2026-10-15; it is the `When` date plus seven days, UTC: 2026-10-14 (D199)
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** provisional · ratify by 2026-10-13] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Status` ratifies by 2026-10-13; it is the `When` date plus seven days, UTC: 2026-10-14 (D199)
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** provisional · ratify by 2026-02-30] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Status` is 'provisional · ratify by 2026-02-30'; it is `provisional · ratify by YYYY-MM-DD`, `ratified YYYY-MM-DD` or `reverted YYYY-MM-DD`, a calendar date
+
+[exit 1]
+
+# mutation of D4: [- **Revert:** commits carrying Decision: D4
+] [] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Revert` is missing; a provisional entry says `commits carrying Decision: D4`
+
+[exit 1]
+
+# mutation of D4: [- **Revert:** commits carrying Decision: D4] [- **Revert:** commits carrying Decision: D4
+- **Revert:** commits carrying Decision: D4] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Revert` is on more than one line; an entry says it once
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14] [- **Status:** standing] 
+$ python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+# mutation of D4: [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+] [] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` is missing; a provisional entry is scored, and no score is hard
+
+check-decisions: note: specs/demo/decisions.md:42: D4 has no `Reversibility:` line after an entry that has one; score it with python3 scripts/reversibility.py
+[exit 1]
+
+# mutation of D4: [guarded · rules 1] [hard · rules 1] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` starts at hard, but rules 1 derive guarded from its facts (R2 rollback_complexity=hours)
+  specs/demo/decisions.md:42: D4 `Reversibility` ends at hard; a hard decision is never provisional
+
+[exit 1]
+
+# mutation of D4: [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` starts at guarded, but rules 1 derive hard from its facts (H6 ci_workflow=yes; R2 rollback_complexity=hours)
+  specs/demo/decisions.md:42: D4 `Reversibility` has ci_workflow=yes; provisional approval never edits a workflow (FR-033)
+
+[exit 1]
+
+# mutation of D4: [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=yes flag_default=no rollback_complexity=hours] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` starts at guarded, but rules 1 derive hard from its facts (H7 migrate_file=yes; R2 rollback_complexity=hours)
+  specs/demo/decisions.md:42: D4 `Reversibility` has migrate_file=yes; provisional approval never edits a migrate-propagated file (FR-033)
+
+[exit 1]
+
+# mutation of D4: [- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D4] [- **Status:** standing] 
+$ python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+# mutation of D4: [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+- **Provisional (shadow):** guarded · provisional · ratify by 2026-10-14 · Revert: commits carrying Decision: D4] [- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D4] [- **Status:** standing] 
+$ python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+# mutation of D4: [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+- **Provisional (shadow):** guarded · provisional · ratify by 2026-10-14 · Revert: commits carrying Decision: D4
+- **Provisional (shadow):** guarded · provisional · ratify by 2026-10-14 · Revert: commits carrying Decision: D4] [- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D4] [- **Status:** standing] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Provisional (shadow)` is a second rehearsal line; an entry has at most one
+
+[exit 1]
+
+# mutation of D4: [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+- **Provisional (shadow):** provisional · ratify by 2026-10-14] [- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D4] [- **Status:** standing] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Provisional (shadow)` is not `<tier> · provisional · ratify by YYYY-MM-DD | blocks (hard) | blocks (<fact>=yes) · Revert: commits carrying Decision: D4`: 'provisional · ratify by 2026-10-14'
+
+[exit 1]
+
+# mutation of D4: [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours] [- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+- **Provisional (advisory):** hard · blocks (hard) · Revert: commits carrying Decision: D3] [- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D4] [- **Status:** standing] 
+$ python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Provisional (advisory)` has a Revert naming D3; it names this entry, D4: 'hard · blocks (hard) · Revert: commits carrying Decision: D3'
+
+[exit 1]
+
+$ git status --short
+[exit 0]
+
+# --- the Revert-on-standing case again, printing D4 as it stands, then a fresh entry ---
+$ tail -4 specs/demo/decisions.md
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+- **Written to:** `README.md`
+- **Status:** standing
+- **Revert:** commits carrying Decision: D4
+[exit 0]
+
+$ python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ tail -2 specs/demo/decisions.md; python3 scripts/check-decisions.py
+- **Status:** overridden by human 2026-10-08
+- **Revert:** commits carrying Decision: D4
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ sed -n '/^## D1/,/^## D2/p' specs/demo/decisions.md; python3 scripts/check-decisions.py
+## D1 — decide moved from unrecorded to provisional-shadow
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:24:10Z · **Iteration:** unknown
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** provisional-shadow, recorded as found in `.specify/cruise.json` (commit 8f73b05); no feature's log had an earlier mode entry, so what it was before is unknown
+- **Why:** no feature's log had an earlier mode entry, so the run records the mode as found and claims no change (D196, D202)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+- **Revert:** commits carrying Decision: D1
+
+## D2 — decide moved from provisional-shadow to provisional-advisory
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Revert` is on an entry whose `Status` is 'standing'; only a provisional, ratified or reverted entry carries one
+
+[exit 1]
+
+$ git status --short
+[exit 0]
+
+# --- narrowing: why D1 is refused and D4 is not ---
+$ python3 scripts/check-decisions.py  # (a) D4 standing+Revert, D5 after it
+check-decisions: 5 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ grep -n 'Reversibility\|Status\|Revert' specs/demo/decisions.md | tail -3; python3 scripts/check-decisions.py  # (b) D4 hard, standing+Revert
+51:- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=days
+53:- **Status:** standing
+54:- **Revert:** commits carrying Decision: D4
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ python3 scripts/check-decisions.py  # (c) D4 decided by human, standing+Revert
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ git status --short
+[exit 0]
+
+# --- control paths of the run in Written to ---
+$ python3 scripts/check-decisions.py  # Written to .specify/cruise.json, migrate_file=no
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` says migrate_file=no, but a `Written to` path is on the committed list
+
+[exit 1]
+
+$ python3 scripts/check-decisions.py  # Written to .specify/models.json, migrate_file=no
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` says migrate_file=no, but a `Written to` path is on the committed list
+
+[exit 1]
+
+$ python3 scripts/check-decisions.py  # Written to .specify/drive.json, migrate_file=no
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` says migrate_file=no, but a `Written to` path is on the committed list
+
+[exit 1]
+
+$ python3 scripts/check-decisions.py  # Written to scripts/agents/cruise.py, migrate_file=no
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` says migrate_file=no, but a `Written to` path is on the committed list
+  specs/demo/decisions.md:42: D4 `Written to` names `scripts/agents/cruise.py`, a workflow, a control of the run or a configuration file a generated gate reads; a provisional decision never edits one (D204)
+
+[exit 1]
+
+$ git status --short
+[exit 0]
+

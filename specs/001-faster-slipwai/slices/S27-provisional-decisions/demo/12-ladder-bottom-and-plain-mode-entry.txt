@@ -1,0 +1,39 @@
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=skipper-always
+decide = "skipper-always"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=provisional-shadow
+decide = "provisional-shadow"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=skipper-always
+decide = "skipper-always"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=provisional-shadow && git commit -qam shadow
+decide = "provisional-shadow"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+[exit 0]
+
+$ mkdir -p specs/demo && { echo '# Decisions'; echo; env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo; } > specs/demo/decisions.md && git add specs && git commit -qm D1
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=recommended-first && git commit -qam back
+decide = "recommended-first"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo | head -3
+## D2 — decide moved from provisional-shadow to recommended-first
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:26:56Z · **Iteration:** unknown
+- **Scope:** global
+[exit 0]
+

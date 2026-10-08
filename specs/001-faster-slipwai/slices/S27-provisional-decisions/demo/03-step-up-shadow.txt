@@ -1,0 +1,113 @@
+$ env -u CRUISE_ITERATION CRUISE_RUNNER=1 python3 scripts/agents/cruise.py --set decide=provisional-shadow; git diff --stat
+decide = "provisional-shadow"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+ .specify/cruise.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+[exit 0]
+
+$ git checkout -- .specify/cruise.json
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=provisional-shadow
+decide = "provisional-shadow"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+[exit 0]
+
+$ git diff .specify/cruise.json
+diff --git a/.specify/cruise.json b/.specify/cruise.json
+index 4d88211..81b432a 100644
+--- a/.specify/cruise.json
++++ b/.specify/cruise.json
+@@ -1,7 +1,7 @@
+ {
+   "_comment": "How /cruise runs /drive with nobody at the wheel. Change it with /cruise-settings (python3 scripts/agents/cruise.py --set key=value), checked; `make check-agents` holds the shape. commands/cruise.md says what each value means. `enabled: false` is the default: a project has to ask for this.",
+   "enabled": false,
+-  "decide": "recommended-first",
++  "decide": "provisional-shadow",
+   "release": "flagged",
+   "constitution": "ratify",
+   "hand": "browser",
+[exit 0]
+
+$ git commit -qam 'decide: provisional-shadow' && git log --oneline -1
+8f73b05 decide: provisional-shadow
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo
+cruise: no specs/demo/ directory to name a feature
+[exit 2]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/reversibility.py --scope global contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial
+reversibility: D2 scope is global or unreadable
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial
+[exit 0]
+
+# NOTE: the page's order fails — specs/demo/ does not exist yet at this step. Creating the directory (the page creates decisions.md only later in step 3) and rerunning.
+
+$ mkdir -p specs/demo
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo
+## D1 — decide moved from unrecorded to provisional-shadow
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:23:57Z · **Iteration:** unknown
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** provisional-shadow, recorded as found in `.specify/cruise.json` (commit 8f73b05); no feature's log had an earlier mode entry, so what it was before is unknown
+- **Why:** no feature's log had an earlier mode entry, so the run records the mode as found and claims no change (D196, D202)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+[exit 0]
+
+$ cat specs/demo/decisions.md
+# Decisions
+
+## D1 — decide moved from unrecorded to provisional-shadow
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:24:10Z · **Iteration:** unknown
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** provisional-shadow, recorded as found in `.specify/cruise.json` (commit 8f73b05); no feature's log had an earlier mode entry, so what it was before is unknown
+- **Why:** no feature's log had an earlier mode entry, so the run records the mode as found and claims no change (D196, D202)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+[exit 0]
+
+$ git add specs/demo && git commit -qm 'D1: decide mode entry' && git log --oneline -1
+8aa3d0d D1: decide mode entry
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:3: D1 `Reversibility` says migrate_file=no, but a `Written to` path is on the committed list
+
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo
+cruise: decide is provisional-shadow, as D1 recorded
+[exit 0]
+
+# NOTE: the page's scoring (migrate_file=no) fails the gate, because .specify/cruise.json is on the committed migrate list. Rescoring with migrate_file=yes.
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/reversibility.py --scope global contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+reversibility: H7 migrate_file=yes; D2 scope is global or unreadable
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: 1 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ git commit -qam 'D1: rescored' && git log --oneline -1
+7b16398 D1: rescored
+[exit 0]
+

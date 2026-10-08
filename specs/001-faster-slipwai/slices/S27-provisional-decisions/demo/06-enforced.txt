@@ -1,0 +1,192 @@
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=provisional-advisory
+decide = "provisional-advisory"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo
+## D2 — decide moved from provisional-shadow to provisional-advisory
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:24:31Z · **Iteration:** unknown
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** provisional-advisory, as a person set it in `.specify/cruise.json` (uncommitted at 2026-10-08T02:24:31Z)
+- **Why:** a person raised the setting up the ladder through /cruise-settings; the run records the move and never sets it (D62)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: 2 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ git commit -qam 'decide: provisional-advisory; D2 mode entry' && git log --oneline -1
+293be59 decide: provisional-advisory; D2 mode entry
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo
+cruise: decide is provisional-advisory, as D2 recorded
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py --set decide=provisional
+decide = "provisional"
+.specify/cruise.json written; it takes effect at the next iteration /cruise runs. Commit it: the choice is versioned with the project.
+[exit 0]
+
+$ git commit -qam 'decide: provisional' && git log --oneline -1
+5bab969 decide: provisional
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo
+## D3 — decide moved from provisional-advisory to provisional
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:24:31Z · **Iteration:** unknown
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** provisional, as a person set it in `.specify/cruise.json` (commit 5bab969)
+- **Why:** a person raised the setting up the ladder through /cruise-settings; the run records the move and never sets it (D62)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+[exit 0]
+
+$ make check-decisions && git commit -qam 'D3 mode entry' && git log --oneline -1
+python3 scripts/check-decisions.py
+check-decisions: 3 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+edf9281 D3 mode entry
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo
+cruise: decide is provisional, as D3 recorded
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: guarded, no held fact; provisional until ratified by 2026-10-14
+- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D2
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=yes rollback_complexity=trivial
+reversibility: F2 flag_default=yes
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=yes rollback_complexity=trivial
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=yes rollback_complexity=trivial'
+provisional: unavailable - flag_default=yes: provisional approval never flips a flag (FR-033)
+unavailable: a person's approval
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional-shadow --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=yes rollback_complexity=trivial'
+provisional: unavailable - flag_default=yes: provisional approval never flips a flag (FR-033)
+unavailable: a person's approval
+- **Provisional (shadow):** guarded · blocks (flag_default=yes) · Revert: commits carrying Decision: D2
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+reversibility: H6 ci_workflow=yes; H7 migrate_file=yes
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial'
+provisional: unavailable - hard: the final tier is hard
+unavailable: a person's approval
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional-shadow --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=yes migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial'
+provisional: unavailable - hard: the final tier is hard
+unavailable: a person's approval
+- **Provisional (shadow):** hard · blocks (hard) · Revert: commits carrying Decision: D2
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial
+reversibility: no rule fired
+- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial'
+provisional: easy, no held fact; provisional until ratified by 2026-10-14
+- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D2
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional-shadow --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** easy · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial'
+provisional: unavailable - decide is provisional-shadow
+unavailable: a person's approval
+- **Provisional (shadow):** easy · provisional · ratify by 2026-10-14 · Revert: commits carrying Decision: D2
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=days
+reversibility: R1 rollback_complexity=days
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=days
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=days'
+provisional: unavailable - hard: the final tier is hard
+unavailable: a person's approval
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional-shadow --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=days'
+provisional: unavailable - hard: the final tier is hard
+unavailable: a person's approval
+- **Provisional (shadow):** hard · blocks (hard) · Revert: commits carrying Decision: D2
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2 --ask fact --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: --ask needs one value, once - usage: provisional.py status --decide <recommended-first|skipper-always|provisional-shadow|provisional-advisory|provisional> --ask <no|approval|fact|must|release> --when <ISO instant> --number D<n> [--reversibility '<line>'] | audit [--feature <name>]
+[exit 2]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2 --ask must --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: --ask needs one value, once - usage: provisional.py status --decide <recommended-first|skipper-always|provisional-shadow|provisional-advisory|provisional> --ask <no|approval|fact|must|release> --when <ISO instant> --number D<n> [--reversibility '<line>'] | audit [--feature <name>]
+[exit 2]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2 --ask release --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: --ask needs one value, once - usage: provisional.py status --decide <recommended-first|skipper-always|provisional-shadow|provisional-advisory|provisional> --ask <no|approval|fact|must|release> --when <ISO instant> --number D<n> [--reversibility '<line>'] | audit [--feature <name>]
+[exit 2]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-10-07T21:00:00Z --number D2
+provisional: unavailable - hard: no Reversibility line, so hard
+unavailable: a person's approval
+- **Status:** standing
+[exit 0]
+
+# NOTE: the three runs above passed --ask twice by my error; rerun with one --ask each.
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask fact --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: unavailable - a fact nobody here has, whatever decide says
+unavailable: a fact nobody here has
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask must --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: unavailable - an option that breaks a constitution MUST, whatever decide says
+unavailable: an option that breaks a constitution MUST
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask release --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: unavailable - a release nobody asked for, whatever decide says
+unavailable: a release nobody asked for
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask no --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: nothing asked of a person
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional --ask approval --when 2026-12-28T23:30:00+05:00 --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: guarded, no held fact; provisional until ratified by 2027-01-04
+- **Status:** provisional · ratify by 2027-01-04
+- **Revert:** commits carrying Decision: D2
+[exit 0]
+
