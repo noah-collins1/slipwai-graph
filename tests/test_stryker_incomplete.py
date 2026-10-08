@@ -82,9 +82,9 @@ class IncompleteTest(VerdictCase):
         self.assertEqual((code, lines[-1].split(";")[0]),
                          (0, "mutation: 1 mutants: 1 killed, 0 ignored, 0 not covered (reported, never failed)"), lines)
 
-    def test_e7_t041_with_ignore_static_a_static_survivor_ran_only_its_covering_tests_and_is_a_survivor(self) -> None:
     def test_e7_t041_with_ignore_static_a_static_survivor_ran_only_its_covering_tests(self) -> None:
-        whole of what it ran, and the suite's 86 is not the count to hold it to."""
+        """A9: `ignoreStatic` runs a static mutant under the tests that cover it (here one), so one test completed is
+        the whole of what it ran, and the suite's 86 is not the count to hold it to."""
         config = self.tree / SERVICE / "stryker.config.json"
         config.write_text(json.dumps({**json.loads(config.read_text(encoding="utf-8")), "ignoreStatic": True}),
                           encoding="utf-8")
