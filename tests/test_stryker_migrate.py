@@ -8,7 +8,10 @@ raised to a newer version, as `test_scoped_migrate` does.
 """
 from __future__ import annotations
 
+import importlib
 import json
+import os
+import re
 import shutil
 import subprocess
 import sys
@@ -16,6 +19,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE
 from stamp_fixture import git as repo_git
 from support import FactoryTestCase, commit_all
 from test_migrate import migrate
@@ -160,3 +164,46 @@ class MigrateTest(FactoryTestCase):
             self.assertEqual(sorted(str(p.relative_to(repo)) for p in repo.rglob("*stryker*") if ".git" not in p.parts),
                              ["apps/second/stryker.config.json", "apps/service/stryker.config.json",
                               "scripts/stryker-mutation.py"])
+
+
+
+
+    def test_e5_following_the_catch_up_on_an_add_service_project_ends_consistent(self) -> None:
+        """T030: the paragraph names each conflict, the devDependencies and their version; its steps end in a
+        `Makefile` the factory wrote, a `rules.json` that matches it and a lock `npm ci` accepts; the edit it warns of
+        does what it says. No command rewrites `rules.json` (ADR 0005), so the paragraph names none."""
+        rules = importlib.import_module("verify_scoped.rules")
+        text = FRAGMENT.read_text(encoding="utf-8")
+        catch_up = squashed(next(block for block in text.split("\n\n") if block.startswith("**Catch-up.**")))
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.old_project(directory, "typescript", ("second",))
+            result = self.migrated(directory, repo)
+            reported = set(re.findall(r"^  (\S+)$", result.stdout + result.stderr, re.M))
+            self.assertEqual(reported, {"Makefile", "apps/second/package.json", "package-lock.json",
+                                        "scripts/verify_scoped/rules.json"})
+            for name in ("Makefile", "package-lock.json", "scripts/verify_scoped/rules.json",
+                         "apps/<service>/package.json"):
+                self.assertIn(f"`{name}`", catch_up)
+            for package in ("@stryker-mutator/core", "@stryker-mutator/vitest-runner"):
+                self.assertIn(f"`{package}`", catch_up)
+            self.assertIn("`10.0.0`", catch_up)
+            for name in reported:  # "take the factory's side of all four", as the paragraph says
+                repo_git(repo, "checkout", "--theirs", "--", name)
+                repo_git(repo, "add", name)
+            makefile, record = str(repo / "Makefile"), str(repo / "scripts/verify_scoped/rules.json")
+            self.assertIsNone(rules.text_problem(makefile, record, {}))
+            manifest = json.loads((repo / "apps/second/package.json").read_text(encoding="utf-8"))
+            self.assertEqual({k: v for k, v in manifest["devDependencies"].items() if k.startswith("@stryker")},
+                             {"@stryker-mutator/core": "10.0.0", "@stryker-mutator/vitest-runner": "10.0.0"})
+            if shutil.which("npm") is not None:
+                env = {k: v for k, v in os.environ.items() if k not in CI_MARKERS + MAKE_STATE + GIT_STATE}
+                for command in (["npm", "install", "--package-lock-only", "--offline", "--ignore-scripts"],
+                                ["npm", "ci", "--dry-run", "--offline", "--ignore-scripts"]):
+                    done = subprocess.run(command, cwd=repo, env=env, text=True, capture_output=True, check=False,
+                                          timeout=180)
+                    self.assertEqual(done.returncode, 0, " ".join(command) + "\n" + done.stdout + done.stderr)
+            # The edit the paragraph warns of: a line of one's own leaves `rules.json` describing another file.
+            (repo / "Makefile").write_text((repo / "Makefile").read_text(encoding="utf-8") + "\nmine:\n\t@true\n",
+                                           encoding="utf-8")
+            self.assertIn("scoped gate", rules.text_problem(makefile, record, {}) or "")
+        self.assertIn("run the full gate", catch_up)
