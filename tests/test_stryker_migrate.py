@@ -9,7 +9,6 @@ raised to a newer version, as `test_scoped_migrate` does.
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -110,7 +109,7 @@ class MigrateTest(FactoryTestCase):
             for package in ("core", "vitest-runner"):
                 self.assertEqual(manifest["devDependencies"][f"@stryker-mutator/{package}"], "10.0.0")
             self.assertTrue((repo / "apps/service" / CONFIG).is_file())
-            self.assertTrue(os.access(repo / "/".join(WRAPPER), os.X_OK))
+            self.assertTrue(Path(repo / "/".join(WRAPPER)).stat().st_mode & 0o100)
             ignored = (repo / ".gitignore").read_text(encoding="utf-8").splitlines()
             self.assertIn(".stryker-tmp/", ignored)
             self.assertIn("apps/*/reports/mutation/", ignored)

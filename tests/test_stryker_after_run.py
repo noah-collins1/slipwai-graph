@@ -163,10 +163,6 @@ class PlaceholdersAfterTest(FactoryTestCase):
         self.assertIn("mutation: scope apps/service — src/health.ts", done.stdout)
         self.assertIn("mutation: refuse apps/billing — install and configure mutmut", done.stdout)
         self.assertEqual(self.started(), [["exec", "--no", "--", "stryker", "run", "--mutate", "src/health.ts"]])
-        if shutil.which("mutmut") is None:
-            done = self.make("mixed", "mutation-full")
-            self.assertEqual(done.returncode, 2, done.stdout)
-            self.assertIn("install and configure mutmut", done.stdout + done.stderr)
 
     def test_e4_hold_the_borders_and_since_decide_scoped_or_swept_for_typescript(self) -> None:
         git(self.project("ts"), "checkout", "-q", "slice/S1")

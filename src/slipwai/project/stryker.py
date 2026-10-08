@@ -23,7 +23,8 @@ FULL_COMMAND = f"python3 {SCRIPT_PATH} {APP}"
 CONFIG_NAME = "stryker.config.json"
 # The report the JSON reporter writes under the service: the one place the wrapper reads a verdict from.
 REPORT = "reports/mutation/mutation.json"
-POSTGRES_ADAPTER = "!src/adapters/driven/event-store-postgres/**"
+# The adapters only `tests/integration/` reaches, named by the feature that brings that suite (D213): its store's directory.
+INTEGRATION_ADAPTERS = "!src/adapters/driven/event-store-{feature}/**"
 
 VITEST_COMMENT = (
     "related is off so that a file holding no mutant reports zero mutants and exits 0, where Stryker's related mode "
@@ -47,9 +48,11 @@ TSCONFIG_COMMENT = (
 )
 
 
-def mutate_list(postgres: bool) -> list[str]:
-    """The `mutate` patterns of a service: the Postgres adapter is excluded only where Postgres is the store."""
-    return ["src/**/*.ts", "!src/main.ts", "!src/openapi.ts", *([POSTGRES_ADAPTER] if postgres else [])]
+def mutate_list(integration: str | None) -> list[str]:
+    """The `mutate` patterns of a service: the store adapters are excluded only where the store's feature brings a suite
+    the Docker-free gate cannot run (`Selection.integration_feature`) — the trait, never the store's name."""
+    adapters = [INTEGRATION_ADAPTERS.format(feature=integration)] if integration else []
+    return ["src/**/*.ts", "!src/main.ts", "!src/openapi.ts", *adapters]
 
 
 def pretty(value: object, column: int = 0, indent: int = 0) -> str:
@@ -76,7 +79,7 @@ def stryker_config(selection: Selection) -> str:
         "testRunner": "vitest",
         "vitest": {"configFile": "vitest.config.ts", "related": False},
         "vitest_comment": VITEST_COMMENT,
-        "mutate": mutate_list(selection.has("postgres")),
+        "mutate": mutate_list(selection.integration_feature),
         "mutate_comment": MUTATE_COMMENT,
         "reporters": ["clear-text", "json", "html"],
         "incremental": False,

@@ -112,7 +112,7 @@ class StrykerGeneratedTest(FactoryTestCase):
             script = self.project(name) / SCRIPT_PATH
             with self.subTest(project=name):
                 self.assertTrue(script.is_file())
-                self.assertTrue(os.access(script, os.X_OK))
+                self.assertTrue(Path(script).stat().st_mode & 0o100)
                 text = script.read_text(encoding="utf-8")
                 self.assertNotIn("apps/service", text)
                 self.assertNotIn("apps/web", text)
@@ -131,7 +131,7 @@ class StrykerGeneratedTest(FactoryTestCase):
             from slipwai.layout import Layout
             write_project(repo, "wrapped", "event-modelling", "none",
                           default_apps("typescript", "none", Selection({"http": "fastify"})), layout=Layout("delivery"))
-            self.assertTrue(os.access(repo / "delivery" / SCRIPT_PATH, os.X_OK))
+            self.assertTrue(Path(repo / "delivery" / SCRIPT_PATH).stat().st_mode & 0o100)
             self.assertFalse((repo / SCRIPT_PATH).exists())
 
     def test_e4_mutation_full_is_the_wrapper_per_service_and_the_gates_are_untouched(self) -> None:
