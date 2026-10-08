@@ -144,6 +144,18 @@ def refused(service: str, file: str) -> str | None:
             "`make mutation-full`")
 
 
+def directory_refused(service: str) -> str | None:
+    """The words refusing a service whose absolute path holds pattern syntax, or None. Stryker builds every `--mutate`
+    and config pattern from the absolute path (`config/file-matcher.js`), so such a checkout matches none of its own
+    files and the report is `files: {}` over files it never tried (D212)."""
+    absolute = (Path.cwd() / service).resolve().as_posix()
+    found = next((text for text, in_path, _ in SYNTAX if in_path and text in absolute), None)
+    if found is None:
+        return None
+    return (f"{service} is at {absolute}, whose path holds `{found}`; Stryker reads it as pattern syntax, so no file "
+            "would match. Run from a checkout whose path holds none")
+
+
 def stryker_in(text: str, key: str) -> dict[str, str]:
     """The `@stryker-mutator/*` versions in a manifest's dependency tables or a lock's `packages`, or `Unreadable`."""
     try:
@@ -271,6 +283,55 @@ def judged(files: dict[str, dict], given: list[str]) -> list[tuple[str, dict]]:
             for one in (files[name].get("mutants") or []) if isinstance(one, dict)]
 
 
+# What starts a statement after a newline, so a file written without semicolons is still cut where it ends.
+STATEMENT = re.compile(r"\s*(?:export|import|const|let|var|function|class|interface|type|declare|enum|async|abstract|"
+                       r"namespace)\s")
+# The statements that plant nothing: type declarations and imports (by how they begin), and re-exports (whole).
+DECLARED = re.compile(r"(?:export\s+)?(?:declare\s+)?(?:interface|type)\s+[A-Za-z_$]|import\s+(?:type\s+)?[\w{*\"']|"
+                      r"export\s+type\b")
+REEXPORT = re.compile(r"export\s*(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*(?:from\s+['\"][^'\"]*['\"])?")
+
+
+def statements(text: str) -> list[str]:
+    """The top-level statements of a TypeScript file, comments dropped and strings kept whole: cut at a `;` outside any
+    bracket, or at a newline outside any bracket that a statement-starting keyword follows."""
+    found, buf, depth, quote, i = [], [], 0, None, 0
+    while i < len(text):
+        char = text[i]
+        if quote:
+            buf.append(text[i:i + 2] if char == "\\" else char)
+            i += 2 if char == "\\" else 1
+            quote = None if char == quote else quote
+            continue
+        if text.startswith("//", i):
+            i = text.find("\n", i) if "\n" in text[i:] else len(text)
+            continue
+        if text.startswith("/*", i):
+            i = text.find("*/", i + 2) + 2 if "*/" in text[i + 2:] else len(text)
+            buf.append(" ")
+            continue
+        depth += (char in "{([") - (char in "})]")
+        quote = char if char in "'\"`" else None
+        if (char == ";" and depth <= 0) or (char == "\n" and depth <= 0 and STATEMENT.match(text, i + 1)):
+            found.append("".join(buf).strip())
+            buf = []
+        else:
+            buf.append(char)
+        i += 1
+    return [*found, "".join(buf).strip()]
+
+
+def holds_code(path: Path) -> bool:
+    """Whether the file could hold a mutant: any top-level statement that is not a type declaration, an import or a
+    re-export. A file this cannot read counts as holding code, so the answer fails closed."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, ValueError):
+        return True
+    return any(statement and not (DECLARED.match(statement) or REEXPORT.fullmatch(statement))
+               for statement in statements(text))
+
+
 def failure_line(service: str, name: str, one: dict, report: str) -> str:
     start = (one.get("location") or {}).get("start") or {}
     replacement = " ".join(str(one.get("replacement", "")).split())
@@ -288,19 +349,43 @@ def last_line(counts: Counter, failed: bool, report: str) -> str:
     return f"{text}; {'failed' if failed else 'passed'} — report {report}"
 
 
+def unseen(service: str, given: list[str], report: str, files: dict[str, dict]) -> list[str]:
+    """What a scoped report fails to show of the files it was given (T026): a file it names that was not given, and a
+    given file with no mutant in it that is not a file, or holds code Stryker could have planted a mutant in."""
+    wanted = [name[2:] if name.startswith("./") else name for name in given]
+    lines = [f"mutation: the report names {service}/{name}, which was not given; a scoped run is judged on the files "
+             f"it was given, so that is not a pass (report {report})" for name in sorted(files) if name not in wanted]
+    for name in wanted:
+        entry = files.get(name)
+        if isinstance(entry, dict) and entry.get("mutants"):
+            continue
+        path = Path(service) / name
+        if not path.is_file():
+            lines.append(f"mutation: {service}/{name} is not a file; that is not a pass (report {report})")
+        elif holds_code(path):
+            lines.append(f"mutation: Stryker found no mutant in {service}/{name}, which holds code it could mutate; "
+                         f"that is not a pass (report {report})")
+    return lines
+
+
 def verdict(service: str, given: list[str], report: str, files: dict[str, dict]) -> int:
     mutants = judged(files, given)
+    problems = unseen(service, given, report, files) if given else []
+    for line in problems:
+        say(line)
     if not mutants:
-        if given:
+        if given and not problems:
             say(f"mutation: no mutant to run — {', '.join(given)}: Stryker found no mutant in them (types or comments only)")
             return 0
+        if given:
+            return 1
         say(f"mutation: Stryker found nothing to mutate in {service}; a pass on nothing is not a pass")
         return 1
     failing = [(name, one) for name, one in mutants if one.get("status") not in PASS + COUNTED]
     for name, one in failing:
         say(failure_line(service, name, one, report))
-    say(last_line(Counter(str(one.get("status")) for _, one in mutants), bool(failing), report))
-    return 1 if failing else 0
+    say(last_line(Counter(str(one.get("status")) for _, one in mutants), bool(failing or problems), report))
+    return 1 if failing or problems else 0
 
 
 def run(job: Job) -> int:
@@ -324,7 +409,12 @@ def run(job: Job) -> int:
 
 
 def refusal(job: Job) -> int | None:
-    """A path `--mutate` would misread refuses the whole invocation: never a narrower or wider scope."""
+    """A path `--mutate` would misread refuses the whole invocation: never a narrower or wider scope. So does a
+    service directory whose own path Stryker would misread, whatever is given."""
+    where = directory_refused(job.service)
+    if where is not None:
+        say(f"mutation: {where}")
+        return 2
     for file in job.given:
         words = refused(job.service, file)
         if words is not None:

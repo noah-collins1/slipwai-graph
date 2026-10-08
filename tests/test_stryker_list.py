@@ -282,6 +282,29 @@ class RefusalTest(Case):
                 self.assertEqual(len(done.stdout.splitlines()), 1, done.stdout)
         self.assertNpmNeverCalled()
 
+    def test_e5_a_checkout_whose_directory_holds_pattern_syntax_is_refused_whole_and_names_the_directory(self) -> None:
+        """T026 (D212): Stryker builds every pattern from the absolute path, so such a checkout matches none of its own
+        files and reports `files: {}`. One example per shape; the same table as a file's name."""
+        for name, found in (("w[1]", "["), ("w{a,b}", ","), ("w+(x)", "+("), ("w@(x)", "@("), ("w?x", "?"),
+                            ("w!x", "!"), ("w*x", "*"), ("w\\x", "\\")):
+            with self.subTest(directory=name):
+                self.tree = self.root / name
+                project(self.tree)
+                absolute = (self.tree.resolve() / "apps/service").as_posix()
+                for files in ((), ("--file", "src/health.ts")):
+                    done = self.run_wrapper("apps/service", *files)
+                    self.assertEqual((done.returncode, done.stdout.splitlines()), (2, [
+                        f"mutation: apps/service is at {absolute}, whose path holds `{found}`; Stryker reads it as "
+                        "pattern syntax, so no file would match. Run from a checkout whose path holds none"]))
+                self.assertNpmNeverCalled()
+
+    def test_e5_hold_a_directory_with_literal_parentheses_a_plus_and_an_at_sign_reaches_the_run(self) -> None:
+        self.tree = self.root / "w(x)+y@z"
+        project(self.tree)
+        done = self.run_wrapper("apps/service", "--file", "src/health.ts")
+        self.assertNotIn("pattern syntax", done.stdout)
+        self.assertTrue(self.log.exists(), "the run was not reached")
+
     def test_e4_hold_a_space_a_dollar_a_unicode_letter_and_a_hash_reach_the_run(self) -> None:
         """HOLD (teeth: refuse every non-alphanumeric character and see it fail)."""
         project(self.tree)

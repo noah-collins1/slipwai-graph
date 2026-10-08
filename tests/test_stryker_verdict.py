@@ -170,22 +170,21 @@ class VerdictTest(VerdictCase):
                                             f"at {REPORT}; that is not a pass")
 
     def test_e4_zero_mutants_is_no_mutant_to_run_when_scoped_and_a_failure_when_swept(self) -> None:
-        reports: tuple[dict[str, Any], ...] = ({"files": {}}, report(src__other_ts=[mutant("Killed")]))
-        for the_report in reports:
-            with self.subTest(report=the_report):
-                code, lines = self.run_wrapper({"report": the_report}, "--file", "src/a.ts")
-                self.assertEqual(code, 0, lines)
-                self.assertEqual(lines[-1], "mutation: no mutant to run — src/a.ts: Stryker found no mutant in them "
-                                            "(types or comments only)")
+        """T026: the zero is `files: {}` over a given file the wrapper's own reader says holds nothing to plant."""
+        (self.tree / SERVICE / "src/a.ts").write_text("export interface A { b: string }\n", encoding="utf-8")
+        code, lines = self.run_wrapper({"report": {"files": {}}}, "--file", "src/a.ts")
+        self.assertEqual(code, 0, lines)
+        self.assertEqual(lines[-1], "mutation: no mutant to run — src/a.ts: Stryker found no mutant in them "
+                                    "(types or comments only)")
         code, lines = self.run_wrapper({"report": {"files": {}}})
         self.assertEqual(code, 1)
         self.assertEqual(lines[-1], f"mutation: Stryker found nothing to mutate in {SERVICE}; a pass on nothing is not "
                                     "a pass")
 
     def test_e5_scoped_means_scoped_and_a_sweep_judges_every_file(self) -> None:
-        both = report(src__a_ts=[mutant("Killed")], src__b_ts=[mutant("Survived")])
-        code, lines = self.run_wrapper({"report": both}, "--file", "src/a.ts")
+        code, lines = self.run_wrapper({"report": report(src__a_ts=[mutant("Killed")])}, "--file", "src/a.ts")
         self.assertEqual(code, 0, lines)
+        both = report(src__a_ts=[mutant("Killed")], src__b_ts=[mutant("Survived")])
         code, lines = self.run_wrapper({"report": both})
         self.assertEqual(code, 1)
         self.assertEqual(self.execs()[-1]["argv"], ["exec", "--no", "--", "stryker", "run"])
