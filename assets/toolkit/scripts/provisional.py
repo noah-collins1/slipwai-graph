@@ -36,7 +36,6 @@ HELD_WHY = {"ci_workflow": "provisional approval never edits a workflow", "flag_
 OPTIONS = ("--decide", "--ask", "--when", "--number", "--reversibility")
 REQUIRED = OPTIONS[:4]
 DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
-OFFSET = re.compile(r"T.*[+-][0-9]{2}(?::?[0-9]{2})?")
 NUMBER = re.compile(r"D[1-9][0-9]*")
 USAGE = ("usage: provisional.py status --decide <" + "|".join(DECIDE) + "> --ask <" + "|".join(ASKS) +
          "> --when <ISO instant> --number D<n> [--reversibility '<line>']"
@@ -78,18 +77,49 @@ def calendar(text: str) -> date | None:
     return None
 
 
+def utc_day(when: str) -> date | None:
+    """The UTC calendar date of an ISO date or instant: a `T` or a space between date and time, `Z` or an offset
+    (`+05:30`, `+0530`, `+05`) after it, none read as UTC. None where `when` is not one."""
+    if len(when) <= 10:
+        return calendar(when)
+    if calendar(when[:10]) is None:
+        return None
+    tail = when[10:].strip() if when[10] == " " else when[10:]
+    tail = re.sub(r"Z$", "+00:00", tail, flags=re.I)
+    tail = re.sub(r"([+-][0-9]{2})([0-9]{2})$", r"\1:\2", tail)
+    tail = re.sub(r"([+-][0-9]{2})$", r"\1:00", tail)
+    try:
+        instant = datetime.fromisoformat(when[:10] + (" " if tail[:1] not in ("T", "t") else "") + tail)
+    except ValueError:
+        return None
+    return (instant.astimezone(timezone.utc) if instant.tzinfo else instant).date()
+
+
 def ratify_by(when: str) -> str:
     """The date a provisional decision is ratified by: the `When` instant's UTC calendar date plus seven days (D199).
-    An instant with a UTC offset is converted to UTC first; `Z`, no offset and a date alone keep their own date."""
-    day = calendar(when[:10])
+    An instant with an offset is converted to UTC first; `Z`, no offset and a date alone keep their own date."""
+    day = utc_day(when)
     if day is None:
-        raise Usage(f"--when {when!r} does not start with an ISO date (YYYY-MM-DD)")
-    if OFFSET.fullmatch(when[10:]):
-        try:
-            day = datetime.fromisoformat(when).astimezone(timezone.utc).date()
-        except ValueError as error:
-            raise Usage(f"--when {when!r} is not an ISO instant ({error})") from error
+        raise Usage(f"--when {when!r} is not an ISO date or instant (YYYY-MM-DD, then optionally T or a space, a time "
+                    "and Z or an offset)")
     return (day + timedelta(days=7)).isoformat()
+
+
+def status_date(status: str) -> str:
+    """The ratify-by date of a well-formed `provisional · ratify by YYYY-MM-DD`."""
+    return status.rsplit(" ", 1)[-1]
+
+
+def date_findings(where: str, fields: Mapping[str, str], until: str) -> list[str]:
+    """The finding for a provisional entry whose ratify-by date is not its `When` date plus seven days, UTC (D205)."""
+    found = re.search(r"\*\*When:\*\* (.+?)\s*(?: · |$)", fields.get("Stage", ""))
+    day = utc_day(found.group(1)) if found else None
+    if day is None:
+        return [f"{where} `Status` cannot be checked: the `Stage` line has no `When` that is an ISO date or instant"]
+    expected = (day + timedelta(days=7)).isoformat()
+    if until == expected:
+        return []
+    return [f"{where} `Status` ratifies by {until}; it is the `When` date plus seven days, UTC: {expected} (D199)"]
 
 
 def written_to(value: str) -> list[str]:
@@ -274,9 +304,9 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
             findings.append(f"{where} `Revert` is missing; a provisional entry says `commits carrying Decision: "
                             f"D{number}`")
         if sound and kind in ("provisional", "ratified"):
-            findings += written_findings(where, fields)
+            findings += written_findings(where, fields) + reversibility_findings(where, fields)
         if sound and kind == "provisional":
-            findings += reversibility_findings(where, fields)
+            findings += date_findings(where, fields, status_date(fields["Status"]))
         findings += rehearsal_findings(where, number, fields, twice)
     return findings
 

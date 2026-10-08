@@ -92,10 +92,10 @@ class ProvisionalHoldsFr033Test(GateCase):
         self.assertEqual([True, True, True], [any(word in row for row in found) for word in (
             "ends at hard", "ci_workflow=yes", "migrate_file=yes")])
 
-    def test_r4_e5_a_ratified_or_reverted_entry_is_not_held_to_it(self) -> None:
-        for status in ("ratified 2026-10-09", "reverted 2026-10-09"):
-            self.passes(entry(1, status, reversibility=rev_line("hard", ci_workflow="yes")))
-            self.passes(entry(1, status))
+    def test_r4_e5_a_reverted_entry_is_not_held_to_it(self) -> None:
+        """D205 (T030): a ratified entry is held, as a provisional one is; only a reverted entry is not."""
+        self.passes(entry(1, "reverted 2026-10-09", reversibility=rev_line("hard", ci_workflow="yes")))
+        self.passes(entry(1, "reverted 2026-10-09"))
 
     def test_r4_e6_an_unparseable_line_is_the_s26_finding_and_not_repeated(self) -> None:
         self.refused(provisional(reversibility=rev_line("medium")), words=("D1", "`Reversibility`", "medium"))

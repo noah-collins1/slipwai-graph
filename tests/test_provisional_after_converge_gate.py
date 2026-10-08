@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from provisional_fixture import EASY_LINE, NAMES, entry, run
+from provisional_fixture import EASY_LINE, HARD_LINE, NAMES, entry, run, status
 from reversibility_fixture import SCRIPTS, scratch
 
 from slipwai.assets import ROOT
@@ -175,3 +175,57 @@ class ReversibilityIsReadAsS26ReadsItTest(GateCase):
     def test_t028_e3_a_real_line_beside_a_fenced_one_is_the_real_one(self) -> None:
         hard = EASY_LINE.replace("easy", "hard", 1)
         self.passes(provisional(reversibility=f"{EASY_LINE}\n```\n{hard}\n```"))
+
+
+def at(text: str, when: str) -> str:
+    return text.replace("**When:** 2026-10-07T21:17:49Z", f"**When:** {when}")
+
+
+def by(date: str) -> str:
+    return f"provisional · ratify by {date}"
+
+
+class RatifiedAndTheRatifyByDateTest(GateCase):
+    """T030 (D205, AC-S27-20): a ratified entry is held to FR-033; the ratify-by date is `When` plus seven days, UTC."""
+
+    def test_t030_e1_a_ratified_entry_with_hard_facts_is_refused_as_a_provisional_one_is(self) -> None:
+        found = self.findings(entry(1, "ratified 2026-10-09", reversibility=HARD_LINE))
+        self.assertEqual(3, len(found), found)
+        self.assertTrue(all("D1" in row and "`Reversibility`" in row for row in found), found)
+
+    def test_t030_e2_a_ratified_entry_without_a_reversibility_line_is_refused_naming_it(self) -> None:
+        self.refused(entry(1, "ratified 2026-10-09"), "D1", "`Reversibility`", "missing")
+
+    def test_t030_e3_a_reverted_entry_is_not_held_to_it(self) -> None:
+        self.passes(entry(1, "reverted 2026-10-09", reversibility=HARD_LINE))
+        self.passes(entry(1, "reverted 2026-10-09"))
+
+    def test_t030_e4_a_ratify_by_date_other_than_when_plus_seven_is_refused_naming_status(self) -> None:
+        for date in ("2026-10-15", "2026-10-13", "2099-12-31"):
+            self.refused(provisional(status_line=by(date)), "D1", "`Status`", "2026-10-14", date)
+
+    def test_t030_e5_the_date_is_counted_in_utc(self) -> None:
+        late = at(provisional(status_line=by("2026-10-15")), "2026-10-07T23:30:00-05:00")
+        self.passes(late)
+        self.refused(at(provisional(), "2026-10-07T23:30:00-05:00"), "D1", "`Status`", "2026-10-15")
+        self.passes(at(provisional(status_line=by("2026-10-14")), "2026-10-07"))
+
+    def test_t030_e6_a_when_that_cannot_be_read_is_refused_naming_status(self) -> None:
+        self.refused(at(provisional(), "tomorrow"), "D1", "`Status`", "`When`")
+
+    def test_t032_e1_a_when_with_a_space_separator_or_any_offset_form_is_read(self) -> None:
+        for when in ("2026-10-07 23:30:00-05:00", "2026-10-07T23:30:00-0500", "2026-10-07T23:30-05",
+                     "2026-10-08T04:30:00+00:00", "2026-10-08 04:30:00Z"):
+            self.passes(at(provisional(status_line=by("2026-10-15")), when))
+            self.refused(at(provisional(status_line=by("2026-10-14")), when), "D1", "`Status`", "2026-10-15")
+
+    def test_t032_e2_the_verb_reads_the_same_whens_and_refuses_what_it_cannot_read(self) -> None:
+        for when, until in (("2026-10-07 23:30:00-05:00", "2026-10-15"), ("2026-10-07T23:30:00-0500", "2026-10-15"),
+                            ("2026-10-07 21:17:49", "2026-10-14"), ("2026-10-07", "2026-10-14")):
+            result = status("provisional", line=EASY_LINE, when=when)
+            self.assertEqual((0, f"- **Status:** provisional · ratify by {until}"),
+                             (result.returncode, result.stdout.splitlines()[0]), (when, result.stderr))
+        for when in ("2026-10-07T25:00:00Z", "2026-10-07 soon", "2026-10-07T21:00:00+99:99"):
+            result = status("provisional", line=EASY_LINE, when=when)
+            self.assertEqual(2, result.returncode, (when, result.stdout))
+            self.assertIn("--when", result.stderr)
