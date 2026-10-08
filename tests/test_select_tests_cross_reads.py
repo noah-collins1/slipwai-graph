@@ -35,6 +35,7 @@ SERVES = {
     "project/languages/go.py": {("backend", "go")},
     "project/languages/python.py": {("backend", "python")},
     "project/languages/typescript.py": {("backend", "typescript")},
+    "project/stryker.py": {("backend", "typescript")},
     "project/languages/java_quarkus.py": {("backend", "java-quarkus")},
     "project/languages/java_spring.py": {("backend", "java-spring")},
     "project/frontend.py": {("frontend", "react-vite")},

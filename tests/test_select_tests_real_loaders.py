@@ -28,6 +28,8 @@ READS = {
     "test_migration_script": ["scripts/test-migration.py"],
     "test_mutation": [GO + "app/.gremlins.yaml", GO + "scripts/go-coverage.py", GO + "scripts/go-mutation.py"],
     "test_pit_globs": [SCRIPTS + "mutation-scope.py"],
+    "test_stryker_list": ["assets/languages/typescript/scripts/stryker-mutation.py"],
+    "test_stryker_verdict": ["assets/languages/typescript/scripts/stryker-mutation.py"],
     "test_release": [".github/workflows/release.yml", "scripts/gitea-askpass", "scripts/tag-release.py"],
     "test_versions": ["scripts/publish-wheel.py", "scripts/snapshot-version.py", "src/slipwai/versions.py"],
 }

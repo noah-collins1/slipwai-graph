@@ -6,6 +6,7 @@ example of this module is decided before Stryker would start.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import shutil
@@ -16,8 +17,6 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
-
-from test_mutation_borders import loaded
 
 from slipwai.assets import LANGUAGE_ROOT
 
@@ -31,6 +30,16 @@ echo "npm $*" >> "$FAKE_LOG"
 exit 99
 """
 PACKAGES = ("@stryker-mutator/core", "@stryker-mutator/vitest-runner")
+
+
+def loaded(script: Path) -> Any:
+    """The wrapper as a module, loaded by path with bytecode off (written here, not imported from a module that
+    generates projects, so this module's `TEST_SELECTION` is the whole of what it reads)."""
+    spec = importlib.util.spec_from_file_location("stryker_mutation_under_test", script)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def project(directory: Path, service: str = "apps/service", patterns: list[Any] | None = None) -> Path:
