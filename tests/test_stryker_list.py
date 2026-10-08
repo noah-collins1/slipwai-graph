@@ -172,7 +172,7 @@ class MainTest(Case):
 
     def test_e4_a_matched_file_reaches_the_run_and_the_unmatched_one_is_named_first(self) -> None:
         project(self.tree)
-        for name in ("package.json", "node_modules/.package-lock.json", *(
+        for name in ("package.json", "node_modules/.package-lock.json", "node_modules/.bin/stryker", *(
                 f"node_modules/@stryker-mutator/{package}/package.json" for package in ("core", "vitest-runner"))):
             (self.tree / name).parent.mkdir(parents=True, exist_ok=True)
             (self.tree / name).write_text("{}", encoding="utf-8")  # installed, so the run is reached
@@ -197,7 +197,7 @@ class MainTest(Case):
         so the whole-list run must start, not refuse. Only a missing config stops it (Stryker would mutate its
         defaults)."""
         project(self.tree, patterns=["src/**/*.{ts,tsx}"])
-        for name in ("package.json", "node_modules/.package-lock.json", *(
+        for name in ("package.json", "node_modules/.package-lock.json", "node_modules/.bin/stryker", *(
                 f"node_modules/@stryker-mutator/{package}/package.json" for package in ("core", "vitest-runner"))):
             (self.tree / name).parent.mkdir(parents=True, exist_ok=True)
             (self.tree / name).write_text("{}", encoding="utf-8")

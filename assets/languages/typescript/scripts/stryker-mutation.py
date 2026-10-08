@@ -17,12 +17,18 @@ this reader by guessing.
 """
 from __future__ import annotations
 
+import contextlib
+import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import time
 from collections import Counter
+from collections.abc import Iterator
 from pathlib import Path
 
 CONFIG = "stryker.config.json"
@@ -62,8 +68,10 @@ class Unreadable(ValueError):
 
 
 def say(text: str) -> None:
-    """A line of this script's own, flushed: Stryker writes to the same pipe from another process."""
-    print(text, flush=True)
+    """A line of this script's own, flushed: Stryker writes to the same pipe from another process. A character the
+    stdout's encoding has no code for (cp1252 has no arrow) prints as `?`, never as a traceback."""
+    encoding = sys.stdout.encoding or "utf-8"
+    print(text.encode(encoding, "replace").decode(encoding), flush=True)
 
 
 def segments(pattern: object) -> tuple[bool, list[str]]:
@@ -223,13 +231,70 @@ def stale(root: Path, service: Path) -> bool:
 
 
 def stryker_present(root: Path, service: Path) -> bool:
-    """Whether both Stryker packages are installed, looked for from the service up to the project root."""
+    """Whether both Stryker packages and the `stryker` binary `npm exec` starts are installed, looked for from the
+    service up to the project root."""
     here, top, found = service.resolve(), root.resolve(), set()
     while True:
         found |= {name for name in PACKAGES if (here / "node_modules" / "@stryker-mutator" / name / "package.json").is_file()}
+        found |= {"bin" for name in ("stryker", "stryker.cmd") if (here / "node_modules" / ".bin" / name).exists()}
         if here == top or here.parent == here:
-            return found == set(PACKAGES)
+            return found == {*PACKAGES, "bin"}
         here = here.parent
+
+
+LOCK_STALE = 1800  # seconds after which a lock left by a killed run is broken
+LOCK_WAIT = 900
+
+
+@contextlib.contextmanager
+def install_lock(root: Path) -> Iterator[bool]:
+    """One `npm ci` at a time on one project's `node_modules` (the wrapper's own installs; the Makefile's install target is
+    not under it): an exclusively created file in the temp directory, keyed by the project root, so the tree gains
+    nothing. Yields False where the lock was not got within `LOCK_WAIT` seconds."""
+    lock = Path(tempfile.gettempdir()) / f"stryker-install-{hashlib.sha1(str(root.resolve()).encode()).hexdigest()[:16]}.lock"
+    deadline, told = time.time() + LOCK_WAIT, False
+    while True:
+        try:
+            os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            break
+        except FileExistsError:
+            try:
+                if time.time() - lock.stat().st_mtime > LOCK_STALE:
+                    lock.unlink(missing_ok=True)
+                    continue
+            except OSError:
+                continue
+            if time.time() > deadline:
+                yield False
+                return
+            if not told:
+                say("mutation: another install of this project is running; waiting for it")
+                told = True
+            time.sleep(0.2)
+    try:
+        yield True
+    finally:
+        lock.unlink(missing_ok=True)
+
+
+def install(root: Path, service: Path) -> int | None:
+    """`npm ci` at the root under the lock, where the marker still says it is due once the lock is held (another run may
+    have installed meanwhile); exit 2 with one line where it fails, None otherwise."""
+    with install_lock(root) as held:
+        if not held:
+            say("mutation: another install of this project did not finish; fix it, then run this again")
+            return 2
+        if not stale(root, service):
+            return None
+        say("mutation: installing from the committed lock (npm ci)")
+        done = subprocess.run(["npm", "ci"], cwd=root)
+        if done.returncode != 0:
+            say(f"mutation: npm ci failed (exit {done.returncode}); fix the install, then run this again")
+            return 2
+        marker = root / "node_modules" / ".package-lock.json"
+        marker.parent.mkdir(exist_ok=True)
+        marker.touch()
+    return None
 
 
 def installed(job: Job) -> int | None:
@@ -242,14 +307,9 @@ def installed(job: Job) -> int | None:
         say(f"mutation: npm is not on PATH; install Node{' ' + node if node else ''} to run Stryker")
         return 2
     if stale(root, Path(service)):
-        say("mutation: installing from the committed lock (npm ci)")
-        done = subprocess.run(["npm", "ci"], cwd=root)
-        if done.returncode != 0:
-            say(f"mutation: npm ci failed (exit {done.returncode}); fix the install, then run this again")
-            return 2
-        marker = root / "node_modules" / ".package-lock.json"
-        marker.parent.mkdir(exist_ok=True)
-        marker.touch()
+        failed = install(root, Path(service))
+        if failed is not None:
+            return failed
     if not stryker_present(root, Path(service)):
         say(f"mutation: Stryker is not installed in this project: add @stryker-mutator/core and @stryker-mutator/vitest-runner "
             f"{PINNED} to {service}/package.json's devDependencies and run npm install")
@@ -427,6 +487,9 @@ def run(job: Job) -> int:
     service, given = job.service, job.given
     directory = Path(service)
     clean(directory)
+    if (directory / REPORT).exists():
+        say(f"mutation: the previous report {service}/{REPORT} could not be removed; remove it, then run this again")
+        return 2
     command = ["npm", "exec", "--no", "--", "stryker", "run"]
     if given:
         say(f"mutation: scoped to {len(given)} given file(s): {', '.join(given)}")

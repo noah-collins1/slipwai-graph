@@ -26,7 +26,7 @@ TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutatio
 SERVICE = "apps/service"
 REPORT = f"{SERVICE}/reports/mutation/mutation.json"
 FAKE_NPM = f"""#!{sys.executable}
-import json, os, shutil, sys
+import json, os, shutil, sys, time
 from pathlib import Path
 args = sys.argv[1:]
 plan = json.loads(Path(os.environ["FAKE_PLAN"]).read_text(encoding="utf-8")) if os.environ.get("FAKE_PLAN") else {{}}
@@ -38,6 +38,12 @@ if args[:1] == ["ci"]:
         sys.exit(plan["ci_exit"])
     root = cwd / "node_modules"
     root.mkdir(exist_ok=True)
+    if plan.get("ci_sleep"):
+        time.sleep(plan["ci_sleep"])
+        with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as log:
+            log.write(json.dumps({{"argv": ["ci-done"], "cwd": os.getcwd()}}) + "\\n")
+    (root / ".bin").mkdir(exist_ok=True)
+    (root / ".bin" / "stryker").write_text("", encoding="utf-8")
     (root / ".package-lock.json").write_text("{{}}", encoding="utf-8")
     for name in plan.get("installs", ["core", "vitest-runner"]):
         (root / "@stryker-mutator" / name).mkdir(parents=True, exist_ok=True)
@@ -93,8 +99,9 @@ class VerdictCase(unittest.TestCase):
         for name in names:
             (modules / "@stryker-mutator" / name).mkdir(parents=True, exist_ok=True)
             (modules / "@stryker-mutator" / name / "package.json").write_text("{}", encoding="utf-8")
+        (modules / ".bin").mkdir(exist_ok=True)
+        (modules / ".bin" / "stryker").write_text("", encoding="utf-8")
         marker = modules / ".package-lock.json"
-        marker.parent.mkdir(exist_ok=True)
         marker.write_text("{}", encoding="utf-8")
         later = time.time() + 100
         os.utime(marker, (later, later))

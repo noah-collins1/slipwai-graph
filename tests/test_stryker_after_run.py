@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -55,6 +56,8 @@ class AfterARunTest(ShapeCase):
         for package in ("core", "vitest-runner"):  # installed, and the marker newer than every manifest
             (self.repo / "node_modules/@stryker-mutator" / package).mkdir(parents=True, exist_ok=True)
             (self.repo / "node_modules/@stryker-mutator" / package / "package.json").write_text("{}", encoding="utf-8")
+        (self.repo / "node_modules/.bin").mkdir(exist_ok=True)
+        (self.repo / "node_modules/.bin/stryker").write_text("", encoding="utf-8")
         marker = self.repo / "node_modules/.package-lock.json"
         marker.write_text("{}", encoding="utf-8")
         os.utime(marker, (time.time() + 500, time.time() + 500))
@@ -182,3 +185,23 @@ class PlaceholdersAfterTest(FactoryTestCase):
             with self.subTest(border=how[-1]):
                 done = self.make("ts", "mutation")
                 self.assertEqual((done.returncode, self.started()), (0, swept), done.stdout)
+
+    def test_e5_a_sandbox_left_behind_adds_no_entry_to_what_check_imports_reads(self) -> None:
+        """T031 L5: `.stryker-tmp` is pruned beside `node_modules`: a left sandbox is neither read nor a violation."""
+        project = self.project("ts")
+
+        def gate() -> tuple[int, int]:
+            done = subprocess.run([sys.executable, "-B", "scripts/check-imports.py"], cwd=project, text=True,
+                                  capture_output=True, timeout=120)
+            read = re.search(r"\((\d+) directory entries read\)", done.stdout)
+            return done.returncode, int(read[1]) if read else -1
+
+        before = gate()
+        self.assertEqual(before[0], 0, before)
+        domain = project / "apps/service/.stryker-tmp/sandbox-x/src/domain"
+        domain.mkdir(parents=True)
+        (domain / "bad.ts").write_text("import Fastify from 'fastify';\nexport const app = Fastify;\n",
+                                       encoding="utf-8")
+        # the sandbox directory is one more entry in its parent's listing, as `node_modules` is; nothing in it is read
+        self.assertEqual(gate(), (0, before[1] + 1))
+
