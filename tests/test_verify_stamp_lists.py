@@ -22,6 +22,7 @@ EXEMPT_PATHS = {
     ".codegraph/gate-memory.json": "the code-index check's memo of itself, rewritten by every pass",
     "__pycache__": "a directory name walked past by the architecture scans, never read",
     ".venv": "a directory name walked past by the architecture scans, never read",
+    ".stryker-tmp": "a directory name walked past by the architecture scans, never read",
     ".codegraph/": "a presence check on the directory, whose index is the listed input",
     ".codegraph": "a presence check on the directory, whose index is the listed input",
 }
