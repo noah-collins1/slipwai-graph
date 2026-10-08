@@ -28,6 +28,7 @@ from __future__ import annotations
 from ..catalog import CATALOG
 from ..services import App, services_of, web_apps
 from ..targets import managed
+from .stryker import SCRIPT_PATH
 
 # Where shared code lives. `project.json` records it as `layout.packages` (`readme.metadata`), the root
 # manifest globs it as a workspace, and `scripts/deploy.py` reads it back from the manifest rather than
@@ -108,6 +109,13 @@ def npm_workspace_targets(apps: list[App], target: str) -> str:
     """
     if not node_workspace(apps):
         return ""
+    # A project with a TypeScript service carries the Stryker wrapper, whose own install takes a lock beside the
+    # project's `.stryker-tmp`; this target takes the same lock (and runs the same `npm ci`), so a `make -j` that reaches
+    # both never runs two installs in one `node_modules` (T040). It is this target's recipe, not a prerequisite of
+    # `mutation` or `mutation-full`, whose recipe the scope script holds to the text the factory writes. A project with a
+    # browser app and no Node service has no wrapper, and runs `npm ci` itself.
+    install = f"python3 {SCRIPT_PATH} --install npm ci" if any(
+        service.language == "typescript" for service in services_of(apps)) else "npm ci"
     return f"""
 # The one place `npm ci` is spelled for the gate. A file target rather than a guard repeated inside every
 # recipe: Make runs it at most once per invocation however many targets below need it, and not at all when
@@ -115,7 +123,7 @@ def npm_workspace_targets(apps: list[App], target: str) -> str:
 # `make verify` installs nothing. Touched afterwards because a filesystem with one-second timestamps can
 # otherwise date the marker to the same second as the lockfile and install a second time on the next run.
 {NODE_DEPS}: package.json package-lock.json
-\tnpm ci
+\t{install}
 \t@touch {NODE_DEPS}
 
 .PHONY: build-packages

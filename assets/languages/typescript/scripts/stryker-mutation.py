@@ -25,7 +25,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import time
 from collections import Counter
 from collections.abc import Iterator
@@ -257,6 +256,24 @@ def parse(arguments: list[str]) -> tuple[str, list[str]] | None:
     return service, files
 
 
+def service_relative(service: Path, file: str) -> str:
+    """A `--file` as the path within the service that it names. The scope script hands over service-relative paths, and a
+    person running this by hand may type one relative to the project root or the current directory, or an absolute one;
+    all read as the file they name (A10). A path that names nothing under the service stays as it was, so the list check
+    says it is outside Stryker's targets."""
+    where = service.resolve()
+    if not os.path.isabs(file) and (service / file).exists():
+        return file
+    if os.path.isabs(file):
+        with contextlib.suppress(ValueError):
+            return Path(file).resolve().relative_to(where).as_posix()
+        return file
+    for base in (Path.cwd(), project_root(service)):
+        with contextlib.suppress(ValueError):
+            return (base / file).resolve().relative_to(where).as_posix()
+    return file
+
+
 def stale(root: Path, service: Path) -> bool:
     """Whether `npm ci` has to run: the install marker is missing or older than a manifest or lock that feeds it.
 
@@ -348,7 +365,7 @@ def file_lock(lock: Path, what: str) -> Iterator[bool]:
     says it gave up."""
     lock.parent.mkdir(parents=True, exist_ok=True)
     mine = lock.with_name(f"{lock.name}.{os.getpid()}")
-    mine.write_text(f"{os.getpid()}\n", encoding="utf-8")
+    mine.write_text(f"{os.getpid()}\n", encoding="utf-8", newline="\n")
     deadline, told = time.time() + LOCK_WAIT, False
     try:
         while True:
@@ -376,51 +393,21 @@ def file_lock(lock: Path, what: str) -> Iterator[bool]:
         mine.unlink(missing_ok=True)
 
 
-LOCK_STALE = 1800  # seconds after which a lock left by a killed run is broken
-LOCK_WAIT = 900
+LOCK_STALE = 1800  # seconds after which a lock is broken where its holder's pid cannot be asked (Windows)
+LOCK_WAIT = 900  # seconds a run waits for a lock whose holder is alive
 
 
-@contextlib.contextmanager
-def install_lock(root: Path) -> Iterator[bool]:
-    """One `npm ci` at a time on one project's `node_modules` (the wrapper's own installs; the Makefile's install target is
-    not under it): an exclusively created file in the temp directory, keyed by the project root, so the tree gains
-    nothing. Yields False where the lock was not got within `LOCK_WAIT` seconds."""
-    lock = Path(tempfile.gettempdir()) / f"stryker-install-{hashlib.sha1(str(root.resolve()).encode()).hexdigest()[:16]}.lock"
-    deadline, told = time.time() + LOCK_WAIT, False
-    while True:
-        try:
-            os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
-            break
-        except FileExistsError:
-            try:
-                if time.time() - lock.stat().st_mtime > LOCK_STALE:
-                    lock.unlink(missing_ok=True)
-                    continue
-            except OSError:
-                continue
-            if time.time() > deadline:
-                yield False
-                return
-            if not told:
-                say("mutation: another install of this project is running; waiting for it")
-                told = True
-            time.sleep(0.2)
-    try:
-        yield True
-    finally:
-        lock.unlink(missing_ok=True)
-
-
-def install(root: Path, service: Path) -> int | None:
-    """`npm ci` at the root under the lock, where the marker still says it is due once the lock is held (another run may
-    have installed meanwhile); exit 2 with one line where it fails, None otherwise."""
-    with install_lock(root) as held:
+def install(root: Path, service: Path, quiet: bool = False) -> int | None:
+    """`npm ci` at the root under the project's install lock, where the marker still says it is due once the lock is held
+    (another run, or the Makefile's install target, may have installed meanwhile); exit 2 with one line where it fails,
+    None otherwise. `quiet` is the Makefile's call, which says nothing of its own."""
+    with file_lock(locks(root) / "install.lock", "the install of this project") as held:
         if not held:
-            say("mutation: another install of this project did not finish; fix it, then run this again")
             return 2
         if not stale(root, service):
             return None
-        say("mutation: installing from the committed lock (npm ci)")
+        if not quiet:
+            say("mutation: installing from the committed lock (npm ci)")
         done = subprocess.run(["npm", "ci"], cwd=root)
         if done.returncode != 0:
             say(f"mutation: npm ci failed (exit {done.returncode}); fix the install, then run this again")
@@ -434,7 +421,8 @@ def install(root: Path, service: Path) -> int | None:
 def installed(job: Job) -> int | None:
     """Exit 2 with one line where Stryker cannot be started, None where it can. Installs from the committed lock and
     never fetches: `npm ci` takes exactly the lock, and `npm exec --no` refuses to download what is not installed."""
-    service, root = job.service, Path.cwd()
+    service = job.service
+    root = project_root(Path(service))
     if shutil.which("npm") is None:
         wanted = root / ".nvmrc"
         node = wanted.read_text(encoding="utf-8").strip() if wanted.is_file() else ""
@@ -864,11 +852,17 @@ CHECKS = (refusal, listed, installed, run)
 
 
 def main(arguments: list[str]) -> int:
+    if arguments[:1] == ["--install"]:
+        # The Makefile's install target: the same lock, the same `npm ci`, run only where the marker says it is due.
+        if arguments != ["--install", "npm", "ci"]:
+            say("mutation: usage: stryker-mutation.py --install npm ci")
+            return 2
+        return install(Path.cwd(), Path.cwd(), quiet=True) or 0
     parsed = parse(arguments)
     if parsed is None:
         say("mutation: usage: stryker-mutation.py <service> [--file <path within the service> ...]")
         return 2
-    job = Job(*parsed)
+    job = Job(parsed[0], [service_relative(Path(parsed[0]), file) for file in parsed[1]])
     for check in CHECKS:
         status = check(job)
         if status is not None:
