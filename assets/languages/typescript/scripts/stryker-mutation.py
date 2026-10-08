@@ -466,14 +466,21 @@ def incremental_files(service: Path) -> list[Path]:
     return found
 
 
-def clean(service: Path) -> None:
+def clean(service: Path) -> list[tuple[str, Path]]:
     """Every run starts from nothing: an earlier report must not be able to pass a run that wrote none, an earlier
     sandbox is not this run's, and an earlier run's incremental file is no result of this one (T036; `--force` is the
-    other half, `run` passes it)."""
+    other half, `run` passes it). What the delete could not remove is returned, as (what it is, where): a run never
+    goes on over it."""
     shutil.rmtree(service / "reports" / "mutation", ignore_errors=True)
     shutil.rmtree(service / SANDBOX, ignore_errors=True)
     for left in incremental_files(service):
-        left.unlink(missing_ok=True)
+        try:
+            left.unlink(missing_ok=True)
+        except OSError:
+            pass
+    remains = [("report", service / REPORT), ("sandbox", service / SANDBOX),
+               *(("incremental file", left) for left in incremental_files(service))]
+    return [(what, path) for what, path in remains if path.exists() or path.is_symlink()]
 
 
 def read_report(path: Path) -> dict[str, dict] | None:
@@ -804,9 +811,9 @@ def run(job: Job) -> int:
 def judge(job: Job) -> int:
     service, given = job.service, job.given
     directory = Path(service)
-    clean(directory)
-    if (directory / REPORT).exists():
-        say(f"mutation: the previous report {service}/{REPORT} could not be removed; remove it, then run this again")
+    for what, path in clean(directory):
+        say(f"mutation: the previous {what} {service}/{os.path.relpath(path, directory)} could not be removed; remove "
+            "it, then run this again")
         return 2
     # `--force` runs every mutant even where `incremental` is on and an incremental file exists: a green never rests on
     # the results of an earlier run (T036, D212 item 7).

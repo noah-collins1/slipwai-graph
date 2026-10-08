@@ -366,8 +366,12 @@ def keys_of(service: str, file: str) -> list[str] | None:
 
 def clean(job: Job) -> int | None:
     """Every run starts from nothing: mutmut keeps results between runs and lets them stand, and the directory is the
-    report of the run that wrote it, not of the one before."""
-    shutil.rmtree(Path(job.service) / "mutants", ignore_errors=True)
+    report of the run that wrote it, not of the one before. What the delete could not remove is not read: mutmut's
+    `copy_src_dir` skips every target that already exists, so a stale copy would stand as this run's."""
+    left = Path(job.service) / "mutants"
+    shutil.rmtree(left, ignore_errors=True)
+    if left.exists() or left.is_symlink():
+        return say(f"{job.service}/mutants/ could not be removed; delete it, then run this again")
     return None
 
 

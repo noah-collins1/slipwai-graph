@@ -234,6 +234,23 @@ class OneRunAtATimeTest(Case):
             self.assertEqual(out.strip().splitlines(), [PASSED.replace("apps/service", path)])
 
 
+class CleanSlateTest(Case):
+    def test_e8_a_mutants_directory_the_delete_could_not_remove_is_exit_2_and_generation_never_starts(self) -> None:
+        if os.geteuid() == 0:
+            self.skipTest("root can remove what a read-only directory holds")
+        stale = self.service / "mutants" / "sub"
+        stale.mkdir(parents=True)
+        (stale / "old.py.meta").write_text('{"exit_code_by_key": {"x": 0}}', encoding="utf-8")
+        stale.chmod(0o555)
+        self.addCleanup(stale.chmod, 0o755)
+        done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py")
+        self.assertEqual(done.returncode, 2, lines_of(done))
+        self.assertEqual(lines_of(done)[-1], "mutation: apps/service/mutants/ could not be removed; delete it, then "
+                                             "run this again")
+        self.assertEqual([call["argv"][0] for call in self.calls()], ["sync", "run"], "setup only, no generation")
+        self.assertTrue((stale / "old.py.meta").exists(), "the stale report is left for its owner, never read")
+
+
 class NothingIsFetchedTest(Case):
     def test_e7_hold_uv_is_only_asked_to_sync_locked_or_to_run_without_syncing(self) -> None:
         """HOLD (teeth: drop `--no-sync` from one call and see it fail)."""
