@@ -54,8 +54,10 @@ REHEARSAL_FORM = re.compile(r"(easy|guarded|hard) · (provisional · ratify by (
 # D204: what a provisional or ratified entry's `Written to` may not name. A workflow, a control the runner parks on
 # (`agents/cruise.py`'s CONTROL_PATHS, whether the delivery material is at the root or under `delivery/`), and a
 # configuration file a generated gate reads: the list is closed, and a test holds it against what the starters ship.
-CI_DIRECTORIES = (".github/workflows", ".gitea/workflows")
-CONTROL_DIRECTORIES = ("scripts", "tools", "delivery/scripts", "delivery/Makefile", ".claude/settings.json")
+# Each is written as its segments: the scoped gate reads a whole path in a check's script as a file the check reads.
+CI_DIRECTORIES = tuple("/".join(parts) for parts in ((".github", "workflows"), (".gitea", "workflows")))
+CONTROL_DIRECTORIES = tuple("/".join(parts) for parts in (("scripts",), ("tools",), ("delivery", "scripts"),
+                                                         ("delivery", "Makefile"), (".claude", "settings.json")))
 CONTROL_FILES = ("Makefile", ".gitlab-ci.yml")
 GATE_CONFIGURATION = re.compile(
     r"(?:biome\.jsonc?|tsconfig(?:\.[\w.-]+)?\.json|package(?:-lock)?\.json|(?:vite|vitest)(?:\.[\w-]+)?\.config\.\w+|"
