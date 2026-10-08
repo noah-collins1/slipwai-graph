@@ -167,20 +167,35 @@ class FragmentTest(unittest.TestCase):
         self.assertEqual(len(paragraphs), 1)
         catch_up = " ".join(paragraphs[0].split())
         for sentence in ("`make mutation` on a `slice/<id>` branch", "`make mutation-full`", "`SINCE`", "CI", "trunk",
-                         "TypeScript, Python and `java-quarkus`", "stub"):
+                         "`java-quarkus` still has no mutation tool wired", "stub"):
             self.assertIn(sentence, catch_up)
         self.assertTrue(re.match(r"^\*\*[^*]+[.!?]\*\*", text.split("\n\n")[1]), "a bold lead sentence")
 
-    def test_d149_the_fragment_says_python_is_refused_until_a_later_release_wires_mutmut(self) -> None:
+    def test_d149_the_fragment_names_java_quarkus_alone_as_the_stub_and_not_python_or_typescript(self) -> None:
         text = FRAGMENT.read_text(encoding="utf-8")
         catch_up = " ".join(next(block for block in text.split("\n\n") if block.startswith("**Catch-up.**")).split())
         for where, words in (("body", " ".join(text.split())), ("catch-up", catch_up)):
             with self.subTest(where=where):
-                self.assertIn("until a later slipwai release wires mutmut", words)
+                stub = "`java-quarkus` has no mutation tool wired" if where == "body" else "`java-quarkus` still has no"
+                self.assertIn(stub, words)
                 self.assertNotIn("S42", words)
-                self.assertIn("whether or not mutmut is installed", words)
-                self.assertIn("`make mutation-full` runs mutmut today where it is installed", words)
+                self.assertNotIn("Python", words)
+                self.assertNotIn("TypeScript", words)
+                self.assertNotIn("mutmut", words)
         self.assertNotIn("until you wire a tool", text)
+
+    def test_e6_no_fragment_of_the_release_says_python_or_typescript_has_no_mutation_tool(self) -> None:
+        """Every fragment is one entry of one release (`make release` assembles them): once a language is wired, no
+        fragment says it is not. Teeth: put the old clause back into any one of them."""
+        stale = (r"(Python|TypeScript)[^.]*\bno (mutation )?tool\b", r"until a later slipwai release wires",
+                 r"Python service (stays |is )?refused")
+        fragments = sorted((ROOT / "changelog.d").glob("*.md"))
+        self.assertGreater(len(fragments), 10)
+        for fragment in fragments:
+            words = " ".join(fragment.read_text(encoding="utf-8").split())
+            for pattern in stale:
+                with self.subTest(fragment=fragment.name, pattern=pattern):
+                    self.assertIsNone(re.search(pattern, words), "a fragment that says a wired language is not")
 
 
 if __name__ == "__main__":
