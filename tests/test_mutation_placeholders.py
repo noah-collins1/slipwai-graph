@@ -90,6 +90,8 @@ class PlaceholderTest(ScopeCase):
         module = loaded(self.repo / "scripts/mutation-scope.py")
         self.assertEqual(set(module.PLACEHOLDERS), set(FILES))
         for backend in FILES:
+            if backend == "typescript":  # wired by S41: its recipe is the wrapper, not an echo (T007 drops the row)
+                continue
             recipe = service_commands(backend, "apps/service")["mutation"]
             said = ECHO.findall(recipe)
             self.assertEqual(module.PLACEHOLDERS[backend], said[0], backend)
@@ -163,14 +165,15 @@ class PlaceholderTest(ScopeCase):
                     found, _, inside = module.classify(f"apps/service/{name}", "M", [(backend, "apps/service")])
                     self.assertEqual((found, inside), (kind, name))
 
-    def test_e6_hold_the_sweep_of_a_typescript_project_is_still_its_setup_message(self) -> None:
-        """HOLD (teeth: change a placeholder string in `native_commands`): `make mutation-full`, run for real."""
+    def test_e6_hold_the_sweep_of_a_quarkus_project_is_still_its_setup_message(self) -> None:
+        """HOLD (teeth: change a placeholder string in `native_commands`): `make mutation-full`, run for real.
+        Quarkus is the placeholder's example since Stryker is wired for TypeScript (S41)."""
         with tempfile.TemporaryDirectory(prefix="placeholder-", dir="/tmp") as directory:
-            repo = self.generate(directory, "placeholder", "standard", "typescript", "none", http="none")
+            repo = self.generate(directory, "placeholder", "standard", "java-quarkus", "none", http="none")
             done = subprocess.run(["make", "mutation-full"], cwd=repo, env=clean_environment(), text=True,
                                   capture_output=True, timeout=120)
             self.assertEqual(done.returncode, 2, done.stdout + done.stderr)
-            self.assertIn(PLACEHOLDER_MESSAGES["typescript"], done.stdout)
+            self.assertIn(PLACEHOLDER_MESSAGES["java-quarkus"], done.stdout)
 
 
 PLACEHOLDER_MESSAGES = {

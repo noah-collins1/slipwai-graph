@@ -275,6 +275,8 @@ def factory_recipe(services: list[tuple[str, str]]) -> list[str]:
     for backend, path in services:
         if backend == "go":
             line = f"python3 scripts/go-mutation.py {path} $(if $(SINCE),--since $(SINCE))"
+        elif backend == "typescript":
+            line = f"python3 scripts/stryker-mutation.py {path}"
         elif backend == "java-spring":
             line = f"cd {path} && " + " ".join(PIT)
         elif backend == "python":

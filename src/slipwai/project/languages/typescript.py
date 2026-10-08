@@ -14,6 +14,7 @@ from ..flag_route import wire_entry
 from ..flags import flag_reader
 from ..openapi import published_document
 from ..shared_packages import WORKSPACE
+from ..stryker import CONFIG_NAME, stryker_config, stryker_files
 
 
 def service_files(event: bool, selection: Selection, target: str = "none") -> dict[str, str]:
@@ -24,6 +25,7 @@ def service_files(event: bool, selection: Selection, target: str = "none") -> di
         # The two the selection decides the contents of, so they are written rather than copied.
         "tsconfig.json": typescript_config(selection),
         "vitest.config.ts": vitest_config(selection),
+        CONFIG_NAME: stryker_config(selection),
     })
     files.update(backing_service_service_files(selection, "typescript"))
     # The flag reader, only where there is somewhere to deploy: a flag is what makes a merge and a release
@@ -327,6 +329,7 @@ def repository_files(
         **dict(sorted(lock["packages"].items())),
     }
     files["package.json"] = workspace_manifest(project_name, workspaces, workspace_scripts(services))
+    files.update(stryker_files(services))
     files["package-lock.json"] = json.dumps(lock, indent=2) + "\n"
     verify_lines = "".join(f"npm --workspace {service.path} run verify\n" for service in services)
     files[verify] = f"""#!/bin/sh
