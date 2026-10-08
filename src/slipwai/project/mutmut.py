@@ -52,8 +52,8 @@ PYTHON_MUTATION_NOTE = f"""\
 #
 # An equivalent mutant is a bare `# pragma: no mutate` comment on its line, named in the commit that adds it; the
 # survivors of the starter's own tests are weak tests to strengthen, not noise to suppress. Only that bare comment excuses
-# a mutant: `# pragma: no mutate block`, `start` and `end`, `do_not_mutate_patterns` and `mutate_only_covered_lines` in
-# the table silence mutants nobody looked at, and the wrapper fails the run that holds them.
+# a mutant: `# pragma: no mutate block`, `start` and `end`, and `do_not_mutate_patterns`, `mutate_only_covered_lines` and
+# `max_stack_depth` in the table, silence mutants nobody looked at, and the wrapper fails the run that holds them.
 #
 # The default Python starter's `make mutation-full` reports survivors the day it is generated, because its own starter
 # tests leave them; a slice that edits one of those files meets that file's survivors in its scoped `make mutation`. The

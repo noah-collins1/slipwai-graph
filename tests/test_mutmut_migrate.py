@@ -37,12 +37,17 @@ TABLE = {
     "pytest_add_cli_args_test_selection": ["tests", "--ignore=tests/integration"],
     "pytest_add_cli_args": ["-p", "no:xdist"],
 }
+# What the wrapper fails in a table, and the three pragma words it fails; every place that says what fails names all six
+FAILED_SETTINGS = ("`do_not_mutate_patterns`", "`mutate_only_covered_lines`", "`max_stack_depth`")
+FAILED_PRAGMAS = ("`# pragma: no mutate block`, `start` and `end`",)
+SAYS_WHAT_FAILS = ("changelog.d/mutmut-mutation.md", "src/slipwai/project/mutmut.py",
+                   "assets/toolkit/skills/mutation-testing/SKILL.md")
 CATCH_UP_WORDS = (
     "`uv.lock`", "`apps/<service>/pyproject.toml`", "`git checkout --theirs -- <file>`",
     "`uv lock --project apps/<service>`",
     "`mutants/`", "`.mutmut-cache`", "`make mutation` exits 2", "`uv sync --locked`", "`make mutation-full`",
     "survivors", "WSL", "`java-quarkus`", "recorded stub", "wired by hand", "`# pragma: no mutate`",
-    "`do_not_mutate_patterns`", "No `project.json` key changes")
+    *FAILED_SETTINGS, "No `project.json` key changes")
 LOCK_LINE = "does not agree with"
 UV_UNREACHABLE = ("error sending request", "dns error", "failed to fetch", "connection", "network", "offline")
 
@@ -92,6 +97,20 @@ class FragmentTest(unittest.TestCase):
             self.assertIn(words, note)
         self.assertNotIn("follow-on", note)
         self.assertNotIn("S42", note)
+        self.assertNotIn("Pragma forms other than", note, "a pragma with a reason or a colon is not flagged")
+        for words in FAILED_PRAGMAS:
+            self.assertIn(words, note)
+
+    def test_e1_both_paragraphs_the_note_and_the_skill_name_the_same_settings_and_pragma_words(self) -> None:
+        """The list is written once and checked in each place that says what fails."""
+        first = squashed(FRAGMENT.read_text(encoding="utf-8").split("\n\n")[1])
+        places = {"first paragraph": first, "catch-up": catch_up()}
+        for path in SAYS_WHAT_FAILS[1:]:
+            places[path] = squashed(re.sub(r"^# ?", "", (ROOT / path).read_text(encoding="utf-8"), flags=re.M))
+        for place, text in places.items():
+            for words in FAILED_SETTINGS + FAILED_PRAGMAS:
+                with self.subTest(place=place, words=words):
+                    self.assertIn(words, text)
 
     def test_e1_the_body_says_what_is_true_now_that_the_wrapper_runs_mutmut(self) -> None:
         body = squashed(FRAGMENT.read_text(encoding="utf-8").split("\n\n")[1])

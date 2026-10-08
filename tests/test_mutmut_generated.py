@@ -51,8 +51,8 @@ SKILL = ROOT / "assets/toolkit/skills/mutation-testing/SKILL.md"
 NOTE_FACTS = ("mutmut 3.8.0", "`scripts/mutmut-mutation.py`", "`apps/orders/pyproject.toml`", "`apps/orders/mutants/`",
               "`.meta`", "decides the verdict itself", "never from mutmut's exit status", "`uv sync --locked`",
               "bare `# pragma: no mutate`", "named in the commit",
-              "`# pragma: no mutate block`, `start` and `end`, `do_not_mutate_patterns` and "
-              "`mutate_only_covered_lines`", "fails the run",
+              "`# pragma: no mutate block`, `start` and `end`, and `do_not_mutate_patterns`, "
+              "`mutate_only_covered_lines` and `max_stack_depth`", "fails the run",
               "default Python starter's `make mutation-full` reports survivors the day it is generated",
               "its own starter tests leave them", "minimal starter", "is green", "`tests/integration`", "`-p no:xdist`",
               "scopes itself on a `slice/<id>` branch", "`make mutation SINCE=<the commit before the merge>`")

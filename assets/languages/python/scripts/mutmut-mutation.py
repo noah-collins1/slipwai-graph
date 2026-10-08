@@ -73,6 +73,7 @@ STATUS: dict[Any, tuple[str, str, str]] = {
 # `# pragma: no mutate block|start|end` silences the mutants of the lines it covers, and a silenced mutant is never
 # generated, so no status records it. Only the bare form is the per-mutant comment D212 excuses.
 SILENCING_WORDS = ("block", "start", "end")
+MUTMUT_STACK_DEPTH = -1  # `max_stack_depth`'s default: any other value hides survivors a test reaches as "no tests"
 EXITED = "(its exit status and the output above are mutmut's, never the verdict; the .meta files are)"
 # What `fnmatch` reads as syntax: the characters that make a path a pattern over mutant names, not a name.
 OPENERS = "*?["
@@ -491,6 +492,9 @@ def silenced(job: Job) -> list[str]:
     if job.config.get("mutate_only_covered_lines"):
         found.append(f"{job.service}/pyproject.toml sets mutate_only_covered_lines, which leaves out the mutants of "
                      "every line coverage excludes without anyone looking at them")
+    if job.config.get("max_stack_depth", MUTMUT_STACK_DEPTH) != MUTMUT_STACK_DEPTH:
+        found.append(f"{job.service}/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches "
+                     "through deeper calls into mutants no test reaches without anyone looking at them")
     for file in job.judged:
         found.extend(silenced_by_file(job.service, file))
     return found

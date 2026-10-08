@@ -160,6 +160,36 @@ class OnlyCoveredLinesTest(SilencedCase):
         self.assertEqual(self.scoped().returncode, 0)
 
 
+class StackDepthTest(SilencedCase):
+    LINE = ("mutation: apps/service/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches "
+            "through deeper calls into mutants no test reaches without anyone looking at them")
+
+    def test_e4_a_table_setting_it_fails_in_plan_with_one_line_naming_it(self) -> None:
+        for setting in ("max_stack_depth = 1\n", "max_stack_depth = 0\n", "max_stack_depth = 5\n"):
+            for keys in ({KEY: None}, {}):
+                with self.subTest(setting=setting, keys=keys):
+                    self.source(BODY, setting)
+                    done = self.scoped(keys)
+                    self.assertEqual(done.returncode, 1)
+                    self.assertEqual([line for line in lines_of(done) if "max_stack_depth" in line], [self.LINE])
+                    self.assertEqual(self.started_mutmut(), [])
+
+    def test_e4_a_sweep_fails_too_and_so_does_a_file_outside_the_targets(self) -> None:
+        self.source(BODY, "max_stack_depth = 1\n")
+        done = self.run_wrapper("apps/service", meta={"src/pkg/a.py": {KEY: None}})
+        self.assertEqual((done.returncode, self.started_mutmut()), (1, []))
+        self.assertIn(self.LINE, lines_of(done))
+        done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", meta={})
+        self.assertEqual(done.returncode, 1)
+
+    def test_e4_hold_mutmuts_default_and_an_absent_key_are_not_flagged(self) -> None:
+        """HOLD (teeth: flag the key's presence and see it fail)."""
+        for setting in ("max_stack_depth = -1\n", ""):
+            with self.subTest(setting=setting):
+                self.source(BODY, setting)
+                self.assertEqual(self.scoped().returncode, 0)
+
+
 if __name__ == "__main__":
     import unittest
 
