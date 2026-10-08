@@ -25,13 +25,20 @@ from collections import Counter
 from pathlib import Path
 
 CONFIG = "stryker.config.json"
-# Characters a segment may not hold: each is minimatch syntax this reader does not evaluate.
-SYNTAX = "?[]{}()+@\\!"
+# What minimatch 10 (the version Stryker 10 reads) or `--mutate`'s own reading treats as syntax inside a path, in one
+# table: (text, in a path that is handed to `--mutate`, in a `mutate` pattern this reader evaluates). A path holding a
+# `path` entry is refused, never mutated under a different scope (D215 d); a pattern holding a `pattern` entry is
+# `Unreadable`. `,` splits `--mutate`'s list and `*` is the one wildcard this reader evaluates, so each is one-sided;
+# `(`, `)`, `]`, `}`, `+` and `@` alone are literal text to minimatch, so a path may hold them, while a pattern with
+# one is left to the caller (the sweep) rather than guessed at.
+SYNTAX = (
+    (",", True, False), ("*", True, False), ("?", True, True), ("{", True, True), ("[", True, True),
+    ("!", True, True), ("\\", True, True), ("+(", True, True), ("@(", True, True),
+    ("]", False, True), ("}", False, True), ("(", False, True), (")", False, True), ("+", False, True),
+    ("@", False, True),
+)
+# A trailing `:<line>` or `:<start>-<end>` that `--mutate` reads as a line range, in a path or a pattern alike.
 RANGE = re.compile(r":\d+(-\d+)?$")
-# What `--mutate` reads as pattern syntax or a line range (comma-separated, `:<line>` after the name); a path holding one
-# would be mutated as something else, or not at all, so it is refused rather than passed.
-MISREAD = ",*?{[!"
-TRAILING_LINE = re.compile(r":\d+$")
 STRYKER = "@stryker-mutator/"
 REPORT = "reports/mutation/mutation.json"
 SANDBOX = ".stryker-tmp"
@@ -69,7 +76,7 @@ def segments(pattern: object) -> tuple[bool, list[str]]:
         raise Unreadable(f"the pattern `{pattern}` is empty, absolute, a comment or ends in `/`")
     parts = body.split("/")
     for part in parts:
-        bad = next((char for char in SYNTAX if char in part), None)
+        bad = next((text for text, _, in_pattern in SYNTAX if in_pattern and text in part), None)
         if bad is not None:
             raise Unreadable(f"the pattern `{pattern}` uses `{bad}`, which this reader does not evaluate")
         if part in ("", ".", "..") or ("**" in part and part != "**"):
@@ -129,7 +136,8 @@ def targets(service: Path) -> list[str]:
 
 def refused(service: str, file: str) -> str | None:
     """The words refusing a path within the service that Stryker's `--mutate` would misread, or None (D215 d)."""
-    found = next((char for char in MISREAD if char in file), None) or (TRAILING_LINE.search(file) or [None])[0]
+    found = next((text for text, in_path, _ in SYNTAX if in_path and text in file), None) \
+        or (RANGE.search(file) or [None])[0]
     if found is None:
         return None
     return (f"`{service}/{file}` holds `{found}`, which Stryker's --mutate reads as pattern syntax; rename it, or run "

@@ -222,6 +222,27 @@ class RefusalTest(Case):
             with self.subTest(file=file):
                 self.assertIsNone(self.module.refused("apps/service", file))
 
+    def test_e1b_every_other_shape_minimatch_reads_as_syntax_is_refused_and_the_literals_are_not(self) -> None:
+        """T022 (D215 d's why): one example per further entry of the table; minimatch 10 reads each of these as syntax
+        inside a path (`+(`, `@(`, the `\\` escape, a trailing line range), and reads `(`, `)`, `]`, `+`, `@` alone as
+        text."""
+        for file, found in (("src/a+(b).ts", "+("), ("src/a@(b).ts", "@("), ("src/a\\b.ts", "\\"),
+                            ("src/a.ts:12-14", ":12-14")):
+            with self.subTest(file=file):
+                self.assertEqual(self.module.refused("apps/service", file), self.words(file, found))
+        for file in ("src/a(b).ts", "src/a)b.ts", "src/a]b.ts", "src/a+b.ts", "src/a@b.ts", "src/a-b.ts"):
+            with self.subTest(file=file):
+                self.assertIsNone(self.module.refused("apps/service", file))
+
+    def test_e1c_each_new_shape_refuses_the_whole_run_with_the_one_line_and_starts_nothing(self) -> None:
+        project(self.tree)
+        for file, found in (("src/a+(b).ts", "+("), ("src/a@(b).ts", "@("), ("src/a\\b.ts", "\\")):
+            with self.subTest(file=file):
+                done = self.run_wrapper("apps/service", "--file", file)
+                self.assertEqual((done.returncode, done.stdout.splitlines()),
+                                 (2, ["mutation: " + self.words(file, found)]))
+        self.assertNpmNeverCalled()
+
     def test_e2_one_refused_file_refuses_the_whole_run_before_npm_the_config_or_anything_is_touched(self) -> None:
         project(self.tree)
         old = self.tree / "apps/service/reports/mutation/mutation.json"

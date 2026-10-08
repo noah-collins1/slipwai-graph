@@ -195,7 +195,7 @@ class RefusalTest(TypeScriptCase):
 
     def test_e2_every_misread_shape_is_refused(self) -> None:
         for file, char in (("a,b.ts", ","), ("a*.ts", "*"), ("a?.ts", "?"), ("{a}.ts", "{"), ("[a].ts", "["),
-                           ("!a.ts", "!")):
+                           ("!a.ts", "!"), ("a+(b).ts", "+("), ("a@(b).ts", "@("), ("a\\b.ts", "\\")):
             with self.subTest(file=file):
                 self.write(f"apps/service/src/{file}", "export const a = 1;\n")
                 status, lines, recording = self.run_planned("typescript:apps/service")
