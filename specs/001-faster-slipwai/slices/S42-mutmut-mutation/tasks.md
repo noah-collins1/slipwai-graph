@@ -815,7 +815,7 @@ wrapper's change not sweeping, no `drop_report` for Python, no `do_not_mutate_pa
 `/tmp/s42/converge/`). They are not hand mutations. No `.codegraph/`: callers and blast radius come from `grep -rn`.
 
 ### T017 — [US2] HIGH · Every spelling of mutmut 3.8.0's silencing pragma fails the run, and the check runs before any *no mutant to run* exit (D212 items 1, 4, 6; D219's reason, *Applied, not decided* 2; AC-S42-5, -6)
-- [ ] **The rule the published words promise doesn't hold.** The fragment, the Makefile note (`src/slipwai/project/mutmut.py`)
+- [x] **The rule the published words promise doesn't hold.** The fragment, the Makefile note (`src/slipwai/project/mutmut.py`) *(Done: dcbfc1a — the reader is `_parse_pragma_token`'s rule over `tokenize` comments, checked against the 3.8.0 install spelling by spelling; checked over the given files mutmut mutated (a file outside the targets silences nothing); `mutate_only_covered_lines` fails beside `do_not_mutate_patterns`.)*
   and the skill all say `# pragma: no mutate block`, `start`/`end` and `do_not_mutate_patterns` "fail the run". Two holes let a
   silenced mutant through to a green run:
   1. *The reader is not mutmut's.* mutmut 3.8.0's `_parse_pragma_token` (`mutmut/mutation/pragma_handling.py:98–110`) treats a
@@ -855,7 +855,7 @@ wrapper's change not sweeping, no `drop_report` for Python, no `do_not_mutate_pa
   if they move).
 
 ### T018 — [US2] HIGH · Every fragment of the release says what the release ships: S08's stops saying Python (and TypeScript) has no tool (AGENTS.md *Write the entry in the same commit*; Constitution I's catch-up note; *Handed back* 2's class)
-- [ ] **RED evidence (reproduced):** `changelog.d/scoped-mutation.md:3` says *"TypeScript, Python and `java-quarkus` have no
+- [x] **RED evidence (reproduced):** `changelog.d/scoped-mutation.md:3` says *"TypeScript, Python and `java-quarkus` have no *(Done: 8cf9761 — only S08's fragment held the clause; a hold reads every `changelog.d/*.md`.)*
   mutation tool wired, so for them `make mutation` refuses a changed service … A Python service stays refused until a later
   slipwai release wires mutmut, whether or not mutmut is installed, and `make mutation-full` runs mutmut today where it is
   installed."* Its **Catch-up** (`:5`) says the same twice. `tests/test_mutation_words.py:167–182` pins those words
@@ -875,7 +875,7 @@ wrapper's change not sweeping, no `drop_report` for Python, no `do_not_mutate_pa
   `tests/test_mutation_migrate.py` (only if its Catch-up pin at `:75` reads the narrowed clause).
 
 ### T019 — [US2] MEDIUM · `targets()` accepts no `source_paths` entry that `matched()` cannot place as mutmut does: a mutated file is never named outside the configured targets (R2, data-model *targets*/*matched*; AC-S42-2, -8)
-- [ ] **RED evidence (reproduced, the wrapper loaded with bytecode off):** `check_paths` (`mutmut-mutation.py:115–123`)
+- [x] **RED evidence (reproduced, the wrapper loaded with bytecode off):** `check_paths` (`mutmut-mutation.py:115–123`) *(Done: 68d4e02 — one canonical `source_root`; data-model's *targets* paragraph updated by the host.)*
   accepts `["./src"]`, `["src/./pkg"]`, `["."]` and a file entry `["src/app.py"]`. For each of them, `matched` (`:150–158`)
   returns `False` for both `src/pkg/a.py` and `src/app.py`. mutmut reads each entry as `Path(entry)`
   (`mutmut/configuration.py:144`) and walks it, a file entry included (`mutmut/utils/file_utils.py:26–34`), so it does mutate
@@ -894,7 +894,7 @@ wrapper's change not sweeping, no `drop_report` for Python, no `do_not_mutate_pa
   `tests/test_mutation_scope_python.py`.
 
 ### T020 — [US2] LOW · A `mutants/` the delete could not remove fails the run with exit 2, never a verdict over it (D212 item 7)
-- [ ] `clean` (`mutmut-mutation.py:351–355`) calls `shutil.rmtree(..., ignore_errors=True)` and goes on. If any entry survives (a
+- [x] `clean` (`mutmut-mutation.py:351–355`) calls `shutil.rmtree(..., ignore_errors=True)` and goes on. If any entry survives (a *(Done: c9b640d — both wrappers' clean-slate steps refuse with exit 2 where something survived; `drop_report` in `mutation-scope.py` still warns and goes on (outside the manifest; left for pass 2 to judge).)*
   read-only directory, a file held open on a mounted volume), mutmut's `copy_src_dir` skips every target that already exists
   (`mutmut/utils/file_utils.py:55–56`), so a stale copy, or a stale `.meta` with its old exit codes, can be read as this run's.
   *Evidence by reading; not run against real mutmut.* **RED:** a `mutants/sub/` made read-only (`chmod 0o555`, restored in
@@ -906,7 +906,7 @@ wrapper's change not sweeping, no `drop_report` for Python, no `do_not_mutate_pa
   `tests/test_stryker_verdict.py` only if the same shape is found there.
 
 ### T021 — [US2] LOW · The words in files a project carries say what the code does now (Constitution I; the *words* level)
-- [ ] **RED evidence (reproduced):** the wrapper's module docstring still says *"This is the skeleton past the configuration:
+- [x] **RED evidence (reproduced):** the wrapper's module docstring still says *"This is the skeleton past the configuration: *(Done: 40d8610 — the `(T00n)` parentheticals in the wrapper's comments are left, as in S41's wrapper.)*
   it refuses to run, which can only fail, never pass."* (`assets/languages/python/scripts/mutmut-mutation.py:14`). That is
   T002's transient, and every generated Python project now carries it. `check-imports.py`'s `deployables` docstring
   (`assets/toolkit/scripts/check-imports.py:150–152`) still lists *"the six nobody reads … `.stryker-tmp` and the `target`"* and

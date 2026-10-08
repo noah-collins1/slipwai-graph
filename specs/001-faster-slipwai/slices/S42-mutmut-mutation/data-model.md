@@ -21,8 +21,9 @@ pytest_add_cli_args = ["-p", "no:xdist"]
 
 Read with `tomllib` (`Unreadable("no tomllib: Python 3.11 or newer reads [tool.mutmut]")` where it is absent). The
 table must exist (`Unreadable("no [tool.mutmut] table")`). `source_paths` (or, only where it is empty, the deprecated
-`paths_to_mutate`) must be a non-empty list of relative POSIX strings with no `..`, no leading `/`, no `*`, `?`, `[` —
-else `Unreadable` naming the value. `only_mutate` and `do_not_mutate` are lists of strings (else `Unreadable`).
+`paths_to_mutate`) must be a non-empty list of directories in one canonical form (T019): relative POSIX segments joined by
+single `/`, a trailing `/` allowed, no `.` or `..` segment, no leading `/`, no backslash, no `*`, `?`, `[` — so `./src`,
+`src/./pkg`, `.`, `src//pkg` and a file entry such as `src/app.py` are `Unreadable` naming the value, and the service sweeps. `only_mutate` and `do_not_mutate` are lists of strings (else `Unreadable`).
 
 ## `matched(config, file) -> bool`
 
