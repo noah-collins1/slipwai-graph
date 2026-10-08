@@ -421,6 +421,21 @@ def unlisted(changes: dict[str, str], services: list[tuple[str, str]], tool: Any
     return found
 
 
+def stryker_versions_moved(tool: Any, commit: str, path: str, field: str) -> bool:
+    """Whether the `@stryker-mutator/*` versions of a manifest (`field` `manifest_text`) or a lock (`lock_text`) differ from
+    the base's, as the wrapper reads them (D215 b); a side that cannot be parsed does. A file the base does not have
+    belongs to a service that is new, whose every file is in the scope already."""
+    then = tool.git("show", f"{commit}:./{path}")
+    if then is None:
+        return False
+    now = read(path)
+    wrapper = load("stryker-mutation.py")
+    try:
+        return bool(now is None or wrapper.versions(**{field: then}) != wrapper.versions(**{field: now}))
+    except wrapper.Unreadable:
+        return True
+
+
 def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool: Any, commit: str,
                  makefile: str) -> tuple[list[str], dict[str, list[str]]]:
     """The changed files no scope can be trusted across, in the order of data-model's table: those that sweep the whole
@@ -428,6 +443,10 @@ def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool:
     pom whose `pitest-maven` block differs)."""
     here = os.path.relpath(os.path.abspath(__file__))
     backend_script = os.path.join(os.path.dirname(here), "go-mutation.py")
+    wrapper_script = os.path.join(os.path.dirname(here), "stryker-mutation.py")
+    lock = "package-lock.json"
+    lock_moved = lock in changes and any(backend == "typescript" for backend, _ in services) and stryker_versions_moved(
+        tool, commit, lock, "lock_text")
     rule = os.path.relpath(os.path.abspath(makefile))  # project-relative, whatever form `--makefile` takes (make's own)
     whole: list[str] = []
     per: dict[str, list[str]] = {}
@@ -439,7 +458,11 @@ def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool:
         for backend, root in services:
             wired = (backend == "go" and path in (backend_script, f"{root}/.gremlins.yaml")) or (
                 backend == "java-spring" and (path == f"{root}/pom.xml" and pom_changed(tool, commit, path)
-                                              or other_jvm(path, root)))
+                                              or other_jvm(path, root))) or (
+                backend == "typescript" and (path in (wrapper_script, f"{root}/stryker.config.json")
+                                             or (path == lock and lock_moved)
+                                             or (path == f"{root}/package.json"
+                                                 and stryker_versions_moved(tool, commit, path, "manifest_text"))))
             if wired:
                 per.setdefault(root, []).append(path)
     for path, root in unlisted(changes, services, tool):
