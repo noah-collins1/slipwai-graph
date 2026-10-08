@@ -47,7 +47,8 @@ def squashed(text: str) -> str:
     return " ".join(text.split())
 
 
-def made_by_the_factory_as_it_was(directory: str, name: str, frontend: str, added: tuple[str, ...] = ()) -> Path:
+def made_by_the_factory_as_it_was(directory: str, name: str, frontend: str, added: tuple[str, ...] = (),
+                                  backend: str = "typescript") -> Path:
     """A project the factory as it stood before this slice generated: `git archive` of that commit, its own
     `slipwai generate` (and `add-service` for each name in `added`), so every file is the one it wrote then."""
     old = Path(directory) / "factory-before"
@@ -55,7 +56,7 @@ def made_by_the_factory_as_it_was(directory: str, name: str, frontend: str, adde
     archive = subprocess.run(["git", "archive", BEFORE or "HEAD"], cwd=ROOT, capture_output=True, check=True,
                              timeout=120).stdout
     subprocess.run(["tar", "-x", "-C", str(old)], input=archive, check=True, timeout=120)
-    arguments = [str(old / "slipwai"), "generate", name, "--profile", "event-modelling", "--backend", "typescript",
+    arguments = [str(old / "slipwai"), "generate", name, "--profile", "event-modelling", "--backend", backend,
                  "--frontend", frontend, "--output", directory, "--skip-checks"]
     subprocess.run(arguments, check=True, capture_output=True, timeout=300)
     repo = Path(directory) / name
@@ -112,8 +113,9 @@ class AProjectMadeBeforeGainsTheScopedGateTest(FactoryTestCase):
         if missing is not None:
             raise unittest.SkipTest(missing[1])
 
-    def migrated(self, directory: str, frontend: str, added: tuple[str, ...], units: tuple[str, ...]) -> Path:
-        repo = made_by_the_factory_as_it_was(directory, "product", frontend, added)
+    def migrated(self, directory: str, frontend: str, added: tuple[str, ...], units: tuple[str, ...],
+                 backend: str = "typescript") -> Path:
+        repo = made_by_the_factory_as_it_was(directory, "product", frontend, added, backend)
         before = targets_of(repo)
         self.assertNotIn("\nverify-scoped:", before)
         self.assertFalse((repo / "scripts/verify_scoped").exists(), "the factory as it was had no such scripts")
@@ -147,8 +149,11 @@ class AProjectMadeBeforeGainsTheScopedGateTest(FactoryTestCase):
             self.migrated(directory, "react-vite", (), ("lint-service", "typecheck-web", "test-web"))
 
     def test_the_same_for_two_python_services(self) -> None:
+        # Two Python services, as the name says. A TypeScript project with a service added by hand now conflicts on the
+        # `mutation` recipe under `migrate` (S41 rewrote the line `add-service` appends beside); `test_stryker_migrate`
+        # holds that conflict and the fragment's words for it.
         with tempfile.TemporaryDirectory() as directory:
-            self.migrated(directory, "none", ("billing",), ("lint-service", "lint-billing", "test-billing"))
+            self.migrated(directory, "none", ("billing",), ("lint-service", "lint-billing", "test-billing"), "python")
 
 
 class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
