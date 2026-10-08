@@ -492,6 +492,13 @@ def typescript_kind(path: str) -> str:
     return "production" if path.startswith("src/") and scripted and not named.endswith(".d.ts") else "other"
 
 
+def sourced(backend: str | None, inside: str) -> bool:
+    """Whether a path `typescript_kind` calls a test is a script under `src/` that Stryker's list may still take (B3)."""
+    named = inside.rsplit("/", 1)[-1]
+    return (backend == "typescript" and inside.startswith("src/") and not named.endswith(".d.ts")
+            and named.endswith((".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts")))
+
+
 def python_kind(path: str) -> str:
     if path.startswith("tests/"):
         return "test"
@@ -881,6 +888,7 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     deleted: list[str] = []
     tests: list[str] = []
     production: dict[str, list[str]] = {}
+    named_tests: dict[str, list[tuple[str, str]]] = {}
     apps = browser_apps()
     for path in sorted(set(changes) - handled):
         if any(path.startswith(app + "/") for app in apps):
@@ -892,9 +900,20 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         elif kind == "deleted":
             deleted.append(path)
         elif kind == "test":
-            tests.append(path)
+            owner = next((backend for backend, found in services if found == root), None)
+            if sourced(owner, inside):  # B3: production if the service's own list takes it, asked below
+                named_tests.setdefault(root, []).append((path, inside))
+            else:
+                tests.append(path)
         elif kind == "production" and root not in causes:
             production.setdefault(root, []).append(inside)
+    for root, candidates in named_tests.items():
+        ask = getattr(runner, "plan", None)
+        asked = ask("typescript", root, [inside for _, inside in candidates]) if ask else None
+        if asked is not None and root not in causes and (asked.keep or asked.refusal or asked.unreadable):
+            production.setdefault(root, []).extend(inside for _, inside in candidates)
+        else:
+            tests.extend(path for path, _ in candidates)
     plans: dict[str, Plan] = {}
     for backend, root in services:  # a runner with no plan takes every file, and says what it left out when it runs
         if root in production:
