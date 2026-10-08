@@ -207,6 +207,12 @@ change if the host reads it otherwise, and none blocks the slice.
    that line until `slipwai migrate` brings a newer wrapper. Renovate will propose such a raise; a grouping or hold rule
    is `renovate.py`'s, not this slice's.
 
+5. **D219 → `mutate_only_covered_lines`** (converge pass 1's question). mutmut 3.8.0 with `mutate_only_covered_lines = true`
+   generates no mutant for a line coverage excludes (`# pragma: no cover`, `exclude_lines`), covered or not — a setting that
+   silences mutants nobody looked at, D219's class. The wrapper fails a run whose table sets it, beside
+   `do_not_mutate_patterns` (T017). The alternatives the pass named: allow it (a table change already sweeps), or exit 2 at
+   setup.
+
 ## Handed back (not blocking)
 
 Recorded for the host; neither changes a criterion this slice implements or a decision it relies on, and either
