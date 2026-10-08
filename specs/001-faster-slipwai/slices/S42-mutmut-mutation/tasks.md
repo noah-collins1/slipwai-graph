@@ -927,7 +927,7 @@ mutated — AC-S42-4, -13) and finding 4 (MEDIUM: `add-service --backend python`
 recorded in `plan.md` *Blocked on* and handed back; no task is cut for them until the answer. The rest:
 
 ### T024 — [US2] MEDIUM · The quickstart says what the starter does: `billing` carries the first service's answers and fails the same way, the scoped `settings.py` run fails on its two survivors, and step 6 records a passing `make verify` before it claims reuse (AC-S42-13; gaps 2)
-- [ ] **RED evidence (gaps, real run):** `add-service billing --backend python` takes the first service's answers (FastAPI,
+- [x] **RED evidence (gaps, real run):** `add-service billing --backend python` takes the first service's answers (FastAPI, *(Done: 36f2471 — the green scoped example is `src/demo/__init__.py`; step 2 awaits Q1.)*
   Postgres) and its `mutmut-mutation.py apps/billing` ends `992 mutants: … 114 survived; failed`; the scoped run on `settings.py`
   fails on `demo.settings.x_load_settings__mutmut_3` and `_6`; nothing in the steps runs `make verify` before step 6. **GREEN (the
   class):** every expectation line of `quickstart.md` read against what that step prints on the default starter; the scoped example
@@ -935,7 +935,7 @@ recorded in `plan.md` *Blocked on* and handed back; no task is cut for them unti
   `specs/001-faster-slipwai/slices/S42-mutmut-mutation/quickstart.md`.
 
 ### T025 — [US2] MEDIUM · The Catch-up gives the conflict steps for every service whose manifest or lock the project changed, not only one `add-service` wrote (AC-S42-12; gaps 3)
-- [ ] **RED evidence (gaps, real migrate):** a project made before, with `iniconfig==2.1.0` added to the dev group and relocked,
+- [x] **RED evidence (gaps, real migrate):** a project made before, with `iniconfig==2.1.0` added to the dev group and relocked, *(Done: e580bbb — `uv add --dev` relocked conflicts on both files; the Catch-up's steps run end to end in the test; no Q2 sentence.)*
   stops `migrate` with `UU apps/service/pyproject.toml` and `UU apps/service/uv.lock`; the Catch-up says the factory's `uv.lock`
   arrives in that case. **RED:** a `tests/test_mutmut_migrate.py` example of that project (relocked dependency of its own) asserts
   the two conflicts, and the Catch-up pin requires the steps for it. **GREEN (the class):** the Catch-up's conflict paragraph covers
@@ -944,7 +944,7 @@ recorded in `plan.md` *Blocked on* and handed back; no task is cut for them unti
   **Files:** `changelog.d/mutmut-mutation.md` (Catch-up), `tests/test_mutmut_migrate.py`.
 
 ### T026 — [US2] MEDIUM · A `uv sync --locked` that fails says what uv said, and names a lock disagreement only where it is one (AC-S42-10, D212 item 5; gaps 5)
-- [ ] **RED evidence (gaps, real run):** offline with an empty cache, on a fresh project whose `uv lock --check` passes, the wrapper
+- [x] **RED evidence (gaps, real run):** offline with an empty cache, on a fresh project whose `uv lock --check` passes, the wrapper *(Done: 33eb09a — a mismatch is told by uv's `--locked` wording; any other failure prints uv's last non-hint stderr line, checked against real offline and mismatch runs.)*
   printed `apps/service/uv.lock does not agree with apps/service/pyproject.toml; run uv lock --project apps/service, then this
   again`, exit 2; `uv()` captures and drops uv's output (`mutmut-mutation.py:332`). **RED:** fake `uv sync` exiting 1 with an
   offline/network message on stderr → exit 2, one line carrying uv's last stderr line; with the lock-mismatch message uv 0.12
@@ -954,18 +954,18 @@ recorded in `plan.md` *Blocked on* and handed back; no task is cut for them unti
   `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md` (the row).
 
 ### T027 — [US2] LOW · `data-model.md` fixes every line the wrapper prints (gaps 6)
-- [ ] The lines not fixed: `another mutmut run of <svc> holds …`, `mutmut could not generate mutants for <svc> (exit n)`,
+- [x] The lines not fixed: `another mutmut run of <svc> holds …`, `mutmut could not generate mutants for <svc> (exit n)`, *(Done: fba5516 — the test reads `data-model.md` under `specs/` (see T030).)*
   `<svc>/mutants/ could not be removed …`, `<svc>/<file>: mutmut left no readable .meta …`, the no-`tomllib` setup line. **GREEN
   (the class):** every `say(` in the wrapper has its row, and a test reads each data-model row's fixed text from the wrapper's
   source (or the rows are copied from the code verbatim, checked by a test). **Files:**
   `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md`, `tests/test_mutmut_generated.py` (one words hold, if added).
 
 ### T028 — [US2] LOW · `docs/requirements.md` says the host `python3` must be 3.11+ for a Python service's mutation run (AC-S42-7; gaps 7)
-- [ ] The row says "Python 3 and `uv`"; on 3.10 a changed service sweeps and the wrapper exits 2 at the table. **GREEN:** the row
+- [x] The row says "Python 3 and `uv`"; on 3.10 a changed service sweeps and the wrapper exits 2 at the table. **GREEN:** the row *(Done: b75a5cf.)*
   names 3.11+ and why (`tomllib`), and says what 3.10 does. **Files:** `docs/requirements.md` and its pinning tests (`grep -rln`).
 
 ### T029 — [US2] LOW · Each backend's Makefile note is its own block, and no generated note line runs past 120 columns after the paths are substituted (gaps 8)
-- [ ] In a Go + Python project the mutmut note starts on the line after the Go note's last, with no blank comment line, and two
+- [x] In a Go + Python project the mutmut note starts on the line after the Go note's last, with no blank comment line, and two *(Done: fa9a9a5 — every backend's long note lines refilled after substitution, notes joined by one `#` line; twelve shapes' digests moved.)*
   lines pass 120 columns once `__APP__` is `apps/service` and `apps/billing`. **GREEN (the class):** `mutation_notes` separates every
   note from the next, and every backend's note is wrapped so that its substituted lines stay within 120 columns for two services —
   checked by a test over every note and a two-service project of each backend that names files. **Files:**
@@ -978,7 +978,7 @@ recorded in `plan.md` *Blocked on* and handed back; no task is cut for them unti
 here; converge pass 2 stopped at the loop's bound and left the two below, neither of which re-opens it)
 
 ### T022 — [US2] MEDIUM · A `[tool.mutmut]` table that sets `max_stack_depth` fails the run in `plan`, beside `do_not_mutate_patterns` and `mutate_only_covered_lines` (D212 items 1–2, 6; D219's reason as *Applied, not decided* 2 and 5 apply it; converge pass 2)
-- [ ] **RED evidence (reproduced against real mutmut 3.8.0, scratch `/tmp/s42/converge2/probe`).** mutmut records a function
+- [x] **RED evidence (reproduced against real mutmut 3.8.0, scratch `/tmp/s42/converge2/probe`).** mutmut records a function *(Done: 129756f, with T023 — `max_stack_depth` other than `-1` fails in `plan`; every other `Config` key judged unable to pass a survivor under a clean slate.)*
   as reached by a test only when the call is fewer than `max_stack_depth` user frames deep (`mutmut/stats.py:155–169`,
   `record_trampoline_hit`), and a mutant of a function no test is recorded reaching gets exit `33`, *no tests*. A
   `src/calc.py` with `helper(x)` called by `api(x)`, and a weak test `assert api(1) is not None`: without the key, both of
@@ -1010,7 +1010,7 @@ here; converge pass 2 stopped at the loop's bound and left the two below, neithe
   (the row, :83) and `plan.md` (*Applied, not decided*, as item 5's sibling; host).
 
 ### T023 — [US2] LOW · The fragment's Catch-up names every setting the wrapper fails, and stops saying that any pragma other than the bare one fails (Constitution I's catch-up note; T017's rides-along, left half-done)
-- [ ] **RED evidence (read):** T017's rides-along said that the fragment, the note and the skill name
+- [x] **RED evidence (read):** T017's rides-along said that the fragment, the note and the skill name *(Done: 129756f — the fragment's two paragraphs, the note, the skill and data-model name the same three settings and three pragma words, checked by a test.)*
   `mutate_only_covered_lines` beside `do_not_mutate_patterns`. The fragment's first paragraph (`changelog.d/mutmut-mutation.md:3`),
   the note (`src/slipwai/project/mutmut.py:55–56`) and the skill (`SKILL.md:95`) do. The **Catch-up** (`:5`) still says only
   *"Pragma forms other than the bare `# pragma: no mutate`, and `do_not_mutate_patterns` in `[tool.mutmut]`, fail the run."*
@@ -1024,6 +1024,12 @@ here; converge pass 2 stopped at the loop's bound and left the two below, neithe
   fail and the same three pragma words (`block`, `start`, `end`). Fix them in one commit with T022, so the list is written
   once and checked in each place.
 - **Files:** `changelog.d/mutmut-mutation.md` (Catch-up only), `tests/test_mutmut_migrate.py` (the pin only).
+
+### T030 — [US2] LOW · No factory test reads a slice's record under `specs/` (T027's words hold; found at host triage)
+- [ ] T027's hold reads `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md`, so archiving or moving the slice
+  record fails the factory suite rather than the slice. **GREEN (the class):** the wrapper's fixed lines are held where the
+  factory keeps its own contracts (the test's own table, or a page under `docs/`), and `grep -rn "specs/" tests` finds no test that
+  reads a slice record. **Files:** `tests/test_scoped_targets.py` or the test holding T027's check, and whatever it moves the table to.
 
 ---
 

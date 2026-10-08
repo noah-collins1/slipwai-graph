@@ -3,6 +3,9 @@
 **Branch**: `slice/S42-mutmut-mutation` | **Date**: 2026-10-08 | **Spec**: `specs/001-faster-slipwai/spec.md`,
 `### S42-mutmut-mutation` (AC-S42-1..13), FR-008 as D137 amends it
 
+**Status**: **blocked** on *Blocked on* Q1 and Q2 below (cruise iteration 30) — converged at pass 2 (`5a9840e`), the
+after-converge gaps fixed except the two findings those questions decide; the demo (T016) waits on Q1.
+
 **Input**: the slice's criteria; D137, D138, D139, D149, D150 (S08's, cited); D212, D216 (this slice's), D214 (S42 is
 planned on S41's merged tip, `b9f16ef`); D215 (d), D218, D219, D222 (S41's, whose *reasons* this plan applies to mutmut —
 *Applied, not decided* below); research.md R1–R9; ADR 0010 (Proposed). Precedent: S41-stryker-mutation's plan, wrapper
