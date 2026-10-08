@@ -191,8 +191,8 @@ class NoMutantToRunTest(Case):
         done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", "--file", "scripts/x.py",
                                 meta={"src/pkg/a.py": {"pkg.x_f__mutmut_1": None}})
         lines = lines_of(done)
-        self.assertEqual(lines[0], "mutation: not mutated apps/service/scripts/x.py — outside mutmut's "
-                                   "configured targets")
+        self.assertEqual(lines[0], "mutation: not mutated apps/service/scripts/x.py — excluded by "
+                                   "[tool.mutmut] source_paths (not under src)")
         self.assertEqual(lines[1], "mutation: scoped to 1 given file(s): src/pkg/a.py — 1 mutant(s)")
         call = self.the_mutmut_call()
         self.assertEqual(call["argv"][-2:], ["--", "pkg.x_f__mutmut_1"])

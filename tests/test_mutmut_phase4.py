@@ -264,5 +264,83 @@ class ShadowedPackageTest(PhaseCase):
             self.assertIn(needle, module.VERSION_CODE)
 
 
+class ExcludedFilesTest(PhaseCase):
+    """T040 (A5 · D227 item 4): every file `[tool.mutmut]` leaves out is named, with its reason, and counted."""
+
+    def table(self, extra: str, root: str = "src") -> None:
+        (self.service / "pyproject.toml").write_text(
+            narrowed(extra=extra).replace('source_paths = ["src"]', f'source_paths = ["{root}"]'), encoding="utf-8")
+
+    def tree_of(self, *names: str) -> None:
+        for name in names:
+            (self.service / name).parent.mkdir(parents=True, exist_ok=True)
+            (self.service / name).write_text("x = 1\n", encoding="utf-8")
+
+    def sweep(self) -> subprocess.CompletedProcess[str]:
+        return self.run_wrapper("apps/service", meta={"src/pkg/a.py": {KEY: None}}, results={"src/pkg/a.py": {KEY: 1}})
+
+    def test_a5_each_dropped_file_is_named_with_its_reason_and_the_last_line_counts_them(self) -> None:
+        self.table('do_not_mutate = ["src/pkg/skip*", "*/gen.py"]\nonly_mutate = ["src/pkg/*.py"]\n')
+        self.tree_of("src/pkg/a.py", "src/pkg/skip_me.py", "src/pkg/gen.py", "src/other/b.py",
+                     "src/pkg/__pycache__/c.py", "tests/test_a.py", "src/pkg/notes.txt")
+        done = self.sweep()
+        self.assertEqual(done.returncode, 0, lines_of(done))
+        lines = lines_of(done)
+        self.assertEqual([line for line in lines if "not mutated" in line], [
+            "mutation: not mutated apps/service/src/other/b.py \u2014 excluded by [tool.mutmut] only_mutate (no "
+            "pattern matches)",
+            'mutation: not mutated apps/service/src/pkg/gen.py \u2014 excluded by [tool.mutmut] do_not_mutate '
+            '"*/gen.py"',
+            'mutation: not mutated apps/service/src/pkg/skip_me.py \u2014 excluded by [tool.mutmut] do_not_mutate '
+            '"src/pkg/skip*"'])
+        self.assertLess(lines.index(next(line for line in lines if "gen.py" in line)),
+                        lines.index(next(line for line in lines if line.startswith("mutation: mutmut exited"))))
+        self.assertEqual(lines[-1], "mutation: 1 mutants: 1 killed, 0 no tests (reported, never failed); passed \u2014 "
+                                    "report apps/service/mutants/, 3 file(s) excluded by [tool.mutmut]")
+
+    def test_a5_a_file_outside_the_source_roots_is_named_with_the_roots(self) -> None:
+        self.table("", root="src/pkg")
+        self.tree_of("src/pkg/a.py", "src/other/b.py")
+        done = self.sweep()
+        self.assertIn("mutation: not mutated apps/service/src/other/b.py \u2014 excluded by [tool.mutmut] source_paths "
+                      "(not under src/pkg)", lines_of(done))
+
+    def test_a5_nothing_excluded_adds_nothing_and_changes_no_line(self) -> None:
+        self.table("")
+        self.tree_of("src/pkg/a.py")
+        done = self.sweep()
+        self.assertEqual(lines_of(done)[-1], "mutation: 1 mutants: 1 killed, 0 no tests (reported, never failed); "
+                                             "passed \u2014 report apps/service/mutants/")
+        self.assertFalse([line for line in lines_of(done) if "not mutated" in line])
+
+    def test_a5_exclusions_do_not_change_the_status_and_a_sweep_of_only_excluded_files_still_fails(self) -> None:
+        self.table('do_not_mutate = ["src/pkg/*"]\n')
+        self.tree_of("src/pkg/a.py")
+        done = self.run_wrapper("apps/service", meta={})
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(lines_of(done)[-1], "mutation: mutmut found nothing to mutate in apps/service; a pass on "
+                                             "nothing is not a pass, 1 file(s) excluded by [tool.mutmut]")
+
+    def test_a5_the_note_and_the_fragment_say_it(self) -> None:
+        sentence = ("A `.py` file under `src/` that the table leaves out (`do_not_mutate`, `only_mutate`, "
+                    "`source_paths`) is named on a line of its own with the reason, and the sweep's last line counts "
+                    "them")
+        note = " ".join(line.removeprefix("# ").removeprefix("#") for line in PYTHON_MUTATION_NOTE.splitlines())
+        self.assertIn(sentence, " ".join(note.split()))
+        self.assertIn(sentence, " ".join(FRAGMENT.read_text(encoding="utf-8").split()))
+
+    def test_a5_a_scoped_run_gives_the_reason_for_a_file_it_was_handed(self) -> None:
+        self.table('do_not_mutate = ["src/pkg/skip*"]\n')
+        done = self.run_wrapper("apps/service", "--file", "src/pkg/skip_me.py", "--file", "scripts/x.py", "--file",
+                                "README.md")
+        self.assertEqual(done.returncode, 0)
+        self.assertEqual(lines_of(done)[:3], [
+            'mutation: not mutated apps/service/src/pkg/skip_me.py \u2014 excluded by [tool.mutmut] do_not_mutate '
+            '"src/pkg/skip*"',
+            "mutation: not mutated apps/service/scripts/x.py \u2014 excluded by [tool.mutmut] source_paths (not "
+            "under src)",
+            "mutation: not mutated apps/service/README.md \u2014 outside mutmut's configured targets"])
+
+
 if __name__ == "__main__":
     unittest.main()

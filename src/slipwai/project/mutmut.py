@@ -80,6 +80,10 @@ PYTHON_MUTATION_NOTE = f"""\
 # tests leave them; a slice that edits one of those files meets that file's survivors in its scoped `make mutation`. The
 # minimal starter (no HTTP framework, the memory store) is green.
 #
+# A `.py` file under `src/` that the table leaves out (`do_not_mutate`, `only_mutate`, `source_paths`) is named on a line of
+# its own with the reason, and the sweep's last line counts them: a file the table drops is reviewed in the table, and
+# never silently.
+#
 # The wrapper does not read pytest's own configuration (`addopts` in `[tool.pytest.ini_options]`, `pytest.ini`, `tox.ini`,
 # `setup.cfg`, `conftest.py` hooks): a `--deselect`, `-k` or `-m` there, or a collection hook, narrows `make test` and
 # `make mutation` alike, and those mutants show as `no tests`. It does hold the table's test selection to the generated

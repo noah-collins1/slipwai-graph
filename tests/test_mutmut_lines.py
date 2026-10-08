@@ -37,6 +37,8 @@ mutation: <service>/pyproject.toml: no [tool.mutmut] table
 mutation: <PYTEST_* variable> is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut]
     pytest_add_cli_args is where this service adds pytest options
 mutation: not mutated <service>/<file> — outside mutmut's configured targets
+mutation: not mutated <service>/<file> — excluded by [tool.mutmut] source_paths (not under <roots>) | only_mutate (no
+    pattern matches) | do_not_mutate "<pattern>"
 mutation: nothing under <service> that was given is a file mutmut would mutate; no mutant to run
 mutation: no mutant to run — <files>: mutmut found no function to mutate in it | them
 mutation: scoped to <n> given file(s): <files> — <m> mutant(s)
@@ -53,9 +55,10 @@ mutation: <service>/pyproject.toml sets mutate_only_covered_lines, which leaves 
 mutation: <service>/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches through deeper calls
     into mutants no test reaches without anyone looking at them
 mutation: <status> <service> <mutant name> (mutmut show <mutant name> in <service>; report <service>/mutants/)
-mutation: mutmut found nothing to mutate in <service>; a pass on nothing is not a pass
+mutation: mutmut found nothing to mutate in <service>; a pass on nothing is not a pass[, <n> file(s) excluded by
+    [tool.mutmut]]
 mutation: <n> mutants: <k> killed, <u> no tests (reported, never failed)[, <s> survived, …]; passed | failed — report
-    <service>/mutants/
+    <service>/mutants/[, <n> file(s) excluded by [tool.mutmut]]
 mutation: another mutmut run of <service> holds <service>/.venv/mutmut-run.lock; wait for it, then run this again
 mutation: mutmut could not generate mutants for <service> (exit <n>)[: <its last stderr line>]
 mutation: <service>/mutants/ could not be removed; delete it, then run this again

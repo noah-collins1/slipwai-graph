@@ -195,16 +195,26 @@ def targets(service: str | Path) -> dict[str, Any]:
     return config
 
 
-def matched(config: dict[str, Any], file: str) -> bool:
-    """Whether mutmut 3.8.0 would mutate this file (a path within the service): a `.py` under `source_paths` that
-    `should_mutate` takes, `fnmatch` applied to the path exactly as its `configuration.py` applies it."""
+def exclusion(config: dict[str, Any], file: str) -> str | None:
+    """Why mutmut 3.8.0 would not mutate this `.py` file (a path within the service), in the words a line names it by:
+    `should_mutate`'s three ways of saying no, `fnmatch` applied to the path exactly as its `configuration.py` applies
+    it, in its order. None where it would mutate the file, and for a path that is no `.py` file."""
     from fnmatch import fnmatch
 
+    if not file.endswith(".py"):
+        return None
     roots = [source_root(root) for root in config["source_paths"]]
-    if not file.endswith(".py") or not any(root and file.startswith(root + "/") for root in roots):
-        return False
-    included = not config["only_mutate"] or any(fnmatch(file, pattern) for pattern in config["only_mutate"])
-    return included and not any(fnmatch(file, pattern) for pattern in config["do_not_mutate"])
+    if not any(root and file.startswith(root + "/") for root in roots):
+        return f"source_paths (not under {', '.join(str(root) for root in roots)})"
+    if config["only_mutate"] and not any(fnmatch(file, pattern) for pattern in config["only_mutate"]):
+        return "only_mutate (no pattern matches)"
+    return next((f'do_not_mutate "{pattern}"' for pattern in config["do_not_mutate"] if fnmatch(file, pattern)), None)
+
+
+def matched(config: dict[str, Any], file: str) -> bool:
+    """Whether mutmut 3.8.0 would mutate this file (a path within the service): a `.py` under `source_paths` that
+    `should_mutate` takes."""
+    return file.endswith(".py") and exclusion(config, file) is None
 
 
 def refused(service: str, file: str) -> str | None:
@@ -278,6 +288,7 @@ class Job:
         self.config: dict[str, Any] = {}
         self.judged: list[str] = []  # the files whose `.meta` is the verdict: the given ones, or every one in a sweep
         self.names: list[str] = []  # the mutant names a scoped run hands mutmut: every key of the given files
+        self.excluded = 0  # the `.py` files under `src/` that `[tool.mutmut]` leaves out, said in a sweep's last line
 
 
 def note(line: str) -> None:
@@ -456,14 +467,25 @@ def generate(job: Job) -> int | None:
 def sweep(job: Job) -> int | None:
     """A sweep judges every file mutmut wrote a `.meta` for, and reads the silencing of every one of them first. With
     no mutant in any of them there is nothing to run, and a pass on nothing is not a pass."""
+    for file in sorted(path.relative_to(job.service).as_posix() for path in (Path(job.service) / "src").rglob("*.py")
+                       if "__pycache__" not in path.parts):
+        reason = exclusion(job.config, file)
+        if reason:
+            job.excluded += 1
+            note(f"not mutated {job.service}/{file} \u2014 excluded by [tool.mutmut] {reason}")
     root = Path(job.service) / "mutants"
     written = (path.relative_to(root).as_posix()[: -len(".meta")] for path in root.rglob("*.meta"))
     job.judged = sorted(file for file in written if matched(job.config, file))
     failed = refuse_silenced(job)
     if not any(keys_of(job.service, file) for file in job.judged):
-        note(f"mutmut found nothing to mutate in {job.service}; a pass on nothing is not a pass")
+        note(f"mutmut found nothing to mutate in {job.service}; a pass on nothing is not a pass{excluded_tail(job)}")
         return 1
     return 1 if failed else None
+
+
+def excluded_tail(job: Job) -> str:
+    """What a sweep's last line adds when the table left files out."""
+    return f", {job.excluded} file(s) excluded by [tool.mutmut]" if job.excluded else ""
 
 
 def plan(job: Job) -> int | None:
@@ -476,7 +498,9 @@ def plan(job: Job) -> int | None:
     for file in job.files:
         keys = keys_of(job.service, file) if matched(job.config, file) else None
         if keys is None:
-            note(f"not mutated {job.service}/{file} \u2014 outside mutmut's configured targets")
+            reason = exclusion(job.config, file)
+            note(f"not mutated {job.service}/{file} \u2014 "
+                 + (f"excluded by [tool.mutmut] {reason}" if reason else "outside mutmut's configured targets"))
         else:
             keyed[file] = keys
     job.judged = list(keyed)
@@ -607,7 +631,8 @@ def judge(job: Job) -> int | None:
     parts = [f"{counts['killed']} killed", f"{counts['no tests']} no tests (reported, never failed)"]
     parts += [f"{counts[name]} {name}" for name in dict.fromkeys(order[2:] + sorted(set(counts) - set(order)))
               if counts[name]]
-    note(f"{total} mutants: {', '.join(parts)}; {'failed' if failed else 'passed'} \u2014 report {job.service}/mutants/")
+    note(f"{total} mutants: {', '.join(parts)}; {'failed' if failed else 'passed'} \u2014 report {job.service}/mutants/"
+         f"{excluded_tail(job)}")
     return 1 if failed else 0
 
 
