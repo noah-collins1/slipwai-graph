@@ -213,6 +213,42 @@ change if the host reads it otherwise, and none blocks the slice.
    `do_not_mutate_patterns` (T017). The alternatives the pass named: allow it (a table change already sweeps), or exit 2 at
    setup.
 
+6. **D219 → `max_stack_depth`** (converge pass 2, T022). A table that sets it turns survivors a test reaches through
+   deeper calls into *no tests* (`33`, counted, never failed) — reproduced against 3.8.0. The same reading as item 5: the
+   wrapper fails a run whose table sets it. Alternative named: allow it (but the sweep reads the same `33`s and is green).
+
+## Blocked on (product questions from the after-converge gaps review — the slice stops here until they are answered)
+
+The slice converged at pass 2 (`tasks.md`, *Convergence*); the after-converge gaps review then found one HIGH and one
+MEDIUM that each turn on a decision this slice may not take. The demo (AC-S42-13) cannot be recorded as the quickstart
+writes it until **Q1** is answered.
+
+**Q1 — What does `make mutation-full` do when an earlier service fails?** (gaps finding 1, HIGH; AC-S42-4, -13.) The
+recipe is one line per service and make stops at the first failing line. The default Python starter is red the day it is
+generated (R9), so on the two-service demo `apps/service` fails and `apps/billing` is never mutated; `make mutation` on the
+trunk delegates to the same recipe. Go and TypeScript recipes have the same shape today; their default starters are not
+always red.
+- (a) Every service runs and the run fails at the end — a recipe change for every backend, mirrored in `factory_recipe`.
+  Conflicts with AC-S42-11 (*`mutation-full` unchanged for every other backend*) unless that criterion is amended.
+- (b) Keep make's stop-on-error; the note, the quickstart and the demo say `make -k mutation-full`, and the scope script
+  passes `-k` when it delegates the sweep (a change to S08's `full()` for every backend).
+- (c) Python only: the Python services share one recipe line, `python3 scripts/mutmut-mutation.py apps/service apps/billing`,
+  the wrapper running each in turn and failing at the end — AC-S42-4's "one line per service" then reads as output lines,
+  and Go or TypeScript failing first still stops it.
+- **Recommended: (c)** — it meets AC-S42-4 for Python inside this slice without touching another backend's recipe
+  (AC-S42-11), and leaves (a) for every backend as its own MINOR slice. The gaps reviewer recommended (b) now and (a) later;
+  (b) changes S08's sweep for every backend inside S42.
+
+**Q2 — What does `add-service --backend python` do in a project an older factory last wrote?** (gaps finding 4, MEDIUM;
+AC-S42-2, -9, -12.) It writes the wrapper, the recipe line and the ignore line but not the newer `mutation-scope.py` or
+`verify-stamp.py` (it writes only files that differ between the two renders), so every scoped run sweeps ("`mutation-full`'s
+recipe is not the one the factory wrote") and the stamp cannot reuse after a run. TypeScript (S41) has the same exposure.
+- (a) The Catch-up says to run `slipwai migrate` before adding a Python service.
+- (b) `add-service` refuses or warns when `project.json`'s `generator` is older than the running factory — a factory-wide
+  follow-on slice.
+- (c) `add-service` also refreshes the toolkit scripts.
+- **Recommended: (a) in this slice** (one Catch-up sentence, with T025), **and (b) as a follow-on** across backends.
+
 ## Handed back (not blocking)
 
 Recorded for the host; neither changes a criterion this slice implements or a decision it relies on, and either
