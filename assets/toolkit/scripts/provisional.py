@@ -50,6 +50,17 @@ MODE_LABELS = ("Provisional (shadow)", "Provisional (advisory)")
 REHEARSAL_FORM = re.compile(r"(easy|guarded|hard) · (provisional · ratify by ([0-9]{4}-[0-9]{2}-[0-9]{2})|"
                             r"blocks \(hard\)|blocks \((?:ci_workflow|migrate_file|flag_default)=yes\)) · Revert: "
                             r"commits carrying Decision: D([1-9][0-9]*)")
+# D204: what a provisional or ratified entry's `Written to` may not name. A workflow, a control the runner parks on
+# (`agents/cruise.py`'s CONTROL_PATHS, whether the delivery material is at the root or under `delivery/`), and a
+# configuration file a generated gate reads: the list is closed, and a test holds it against what the starters ship.
+CI_DIRECTORIES = (".github/workflows", ".gitea/workflows")
+CONTROL_DIRECTORIES = ("scripts", "tools", "delivery/scripts", "delivery/Makefile", ".claude/settings.json")
+CONTROL_FILES = ("Makefile", ".gitlab-ci.yml")
+GATE_CONFIGURATION = re.compile(
+    r"(?:biome\.jsonc?|tsconfig(?:\.[\w.-]+)?\.json|package(?:-lock)?\.json|(?:vite|vitest)(?:\.[\w-]+)?\.config\.\w+|"
+    r"pyproject\.toml|uv\.lock|\.python-version|\.nvmrc|go\.(?:mod|sum|work)|\.gremlins\.ya?ml|\.golangci\.ya?ml|"
+    r"pom\.xml|checkstyle\.xml|pmd-ruleset\.xml|spotbugs-exclude\.xml|maven-wrapper\.properties|\.editorconfig|"
+    r"ruff\.toml|mypy\.ini|pytest\.ini|setup\.cfg|tox\.ini|\.importlinter|eslint\.config\.\w+|\.eslintrc(?:\.\w+)?)")
 REVERT_FORM = re.compile(r"commits carrying Decision: D([1-9][0-9]*)")
 
 
@@ -79,6 +90,31 @@ def ratify_by(when: str) -> str:
         except ValueError as error:
             raise Usage(f"--when {when!r} is not an ISO instant ({error})") from error
     return (day + timedelta(days=7)).isoformat()
+
+
+def written_to(value: str) -> list[str]:
+    """The paths a `Written to` line names: backticked, or comma-separated bare, each as a relative posix path."""
+    names = re.findall(r"`([^`]+)`", value) or value.split(",")
+    return [name.strip().replace("\\", "/").removeprefix("./").rstrip("/") for name in names if name.strip()]
+
+
+def protected(path: str) -> bool:
+    """Whether `path` is a workflow, a control, a configuration file of a generated gate, or a directory holding one."""
+    if path in ("", ".") or path.split("/")[-1] == "Makefile" or path in CONTROL_FILES:
+        return True
+    if any(path == name or path.startswith(name + "/") or name.startswith(path + "/")
+           for name in CI_DIRECTORIES + CONTROL_DIRECTORIES):
+        return True
+    return GATE_CONFIGURATION.fullmatch(path.rsplit("/", 1)[-1]) is not None
+
+
+def written_findings(where: str, fields: Mapping[str, str]) -> list[str]:
+    """One finding naming the protected paths of an entry's `Written to`, whatever its declared facts say (D204)."""
+    named = [path for path in written_to(fields.get("Written to", "")) if protected(path)]
+    if not named:
+        return []
+    return [f"{where} `Written to` names {', '.join(f'`{path}`' for path in named)}, a workflow, a control of the "
+            "run or a configuration file a generated gate reads; a provisional decision never edits one (D204)"]
 
 
 def reversibility_module() -> Any:
@@ -237,6 +273,8 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
         if sound and kind == "provisional" and "Revert" not in fields:
             findings.append(f"{where} `Revert` is missing; a provisional entry says `commits carrying Decision: "
                             f"D{number}`")
+        if sound and kind in ("provisional", "ratified"):
+            findings += written_findings(where, fields)
         if sound and kind == "provisional":
             findings += reversibility_findings(where, fields)
         findings += rehearsal_findings(where, number, fields, twice)
