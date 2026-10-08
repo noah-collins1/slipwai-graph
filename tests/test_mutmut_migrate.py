@@ -43,7 +43,8 @@ FAILED_PRAGMAS = ("`# pragma: no mutate block`, `start` and `end`",)
 SAYS_WHAT_FAILS = ("changelog.d/mutmut-mutation.md", "src/slipwai/project/mutmut.py",
                    "assets/toolkit/skills/mutation-testing/SKILL.md")
 CATCH_UP_WORDS = (
-    "`uv.lock`", "`apps/<service>/pyproject.toml`", "`git checkout --theirs -- <file>`",
+    "`uv.lock`", "`apps/<service>/pyproject.toml`", "a dependency of your own", "`slipwai add-service`",
+    "Every Python service whose `pyproject.toml` or `uv.lock` you changed", "`git checkout --theirs -- <file>`",
     "`uv lock --project apps/<service>`",
     "`mutants/`", "`.mutmut-cache`", "`make mutation` exits 2", "`uv sync --locked`", "`make mutation-full`",
     "survivors", "WSL", "`java-quarkus`", "recorded stub", "wired by hand", "`# pragma: no mutate`",
@@ -205,6 +206,40 @@ class MigrateTest(FactoryTestCase):
             if relocked.returncode != 0 and any(word in relocked.stderr.lower() for word in UV_UNREACHABLE):
                 return  # `uv lock` resolves against an index: without the network the step is the person's, not ours
             self.assertEqual(relocked.returncode, 0, relocked.stdout + relocked.stderr)
+            checked = subprocess.run(["uv", "lock", "--check", "--project", "apps/service"], cwd=repo,
+                                     env=clean_environment(), text=True, capture_output=True, timeout=300)
+            self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
+
+    def test_e3_a_dependency_of_the_projects_own_with_the_lock_redone_is_listed_as_a_conflict_the_catch_up_settles(
+            self) -> None:
+        """A service whose manifest and lock the project changed (no `add-service`) conflicts like an added one."""
+        if shutil.which("uv") is None:
+            self.skipTest("uv is not on PATH: the project's own relocked dependency cannot be made")
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.old_project(directory)
+            manifest = repo / "apps/service/pyproject.toml"
+            relocked = subprocess.run(["uv", "add", "--dev", "--project", "apps/service", "iniconfig==2.1.0"], cwd=repo,
+                                      env=clean_environment(), text=True, capture_output=True, timeout=600)
+            if relocked.returncode != 0 and any(word in relocked.stderr.lower() for word in UV_UNREACHABLE):
+                self.skipTest("uv lock resolves against an index and there is no network")
+            self.assertEqual(relocked.returncode, 0, relocked.stdout + relocked.stderr)
+            commit_all(repo, "the product's own dependency, relocked")
+            result = self.migrated(directory, repo)
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            reported = set(re.findall(r"^  (\S+)$", result.stdout + result.stderr, re.M))
+            self.assertLessEqual({"apps/service/pyproject.toml", "apps/service/uv.lock"}, reported,
+                                 result.stdout + result.stderr)
+            # the Catch-up's steps settle it: the factory's side of each file, the own line back, the lock redone
+            for name in ("pyproject.toml", "uv.lock"):
+                subprocess.run(["git", "checkout", "--theirs", "--", f"apps/service/{name}"], cwd=repo, check=True,
+                               capture_output=True, timeout=60)
+            text = manifest.read_text(encoding="utf-8")
+            self.assertIn(PIN, text)
+            manifest.write_text(text.replace('  "ruff==0.16.3",\n', '  "ruff==0.16.3",\n  "iniconfig==2.1.0",\n', 1),
+                                encoding="utf-8")
+            done = subprocess.run(["uv", "lock", "--project", "apps/service"], cwd=repo, env=clean_environment(),
+                                  text=True, capture_output=True, timeout=600)
+            self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
             checked = subprocess.run(["uv", "lock", "--check", "--project", "apps/service"], cwd=repo,
                                      env=clean_environment(), text=True, capture_output=True, timeout=300)
             self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
