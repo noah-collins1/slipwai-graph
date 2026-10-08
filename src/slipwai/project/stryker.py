@@ -120,6 +120,12 @@ TYPESCRIPT_MUTATION_NOTE = f"""\
 #
 # An equivalent mutant is a `// Stryker disable next-line <mutator>: <reason>` comment on the line above it, named in the
 # commit that adds it; the survivors of the starter's own tests are weak tests to strengthen, not noise to suppress.
+# Only a `// Stryker disable next-line <mutator>: <reason>` comment excuses a mutant: `excludedMutations` in the config
+# and block or file-wide disable comments do not, and the wrapper fails a mutant they ignore.
+#
+# The default TypeScript starter's `make mutation-full` fails the day it is generated, because its own starter tests leave
+# survivors; a slice that edits one of those files meets that file's survivors in its scoped `make mutation`. The minimal
+# starter is green. A fix is planned: a follow-on slice makes the starter's tests kill them.
 #
 # Two settings in the config look odd and are not. `related` is off in `vitest`, so that a file holding no mutant
 # reports zero mutants and the wrapper says so, where Stryker's related mode exits 1 with no report. And `tsconfigFile`

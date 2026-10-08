@@ -237,6 +237,21 @@ class WordsTest(unittest.TestCase):
             self.assertEqual(hashlib.sha256(mutation_notes([service("orders", backend)]).encode()).hexdigest(), digest,
                              backend)
 
+    def test_e1_note_and_fragment_say_the_default_starter_is_red_and_what_alone_excuses_a_mutant(self) -> None:
+        """D217 item 1 and D219: held in the note a project reads and in the entry its maintainer reads."""
+        note = flat(mutation_notes([service("orders", "typescript")]))
+        fragment = " ".join((ROOT / "changelog.d/stryker-mutation.md").read_text(encoding="utf-8").split())
+        for text in (note, fragment):
+            for sentence in ("default TypeScript starter's `make mutation-full` fails the day it is generated",
+                             "its own starter tests leave survivors",
+                             "a slice that edits one of those files meets that file's survivors in its scoped "
+                             "`make mutation`",
+                             "minimal starter is green",
+                             "fix is planned",
+                             "Only a `// Stryker disable next-line <mutator>: <reason>` comment excuses a mutant",
+                             "`excludedMutations` in the config and block or file-wide disable comments do not"):
+                self.assertIn(sentence, text)
+
     def test_e2_the_command_text_names_the_wrapper_and_the_report_and_only_the_stubs_are_unwired(self) -> None:
         for backends in (["typescript"], ["go", "typescript"]):
             text = flat(mutation_command(backends))
