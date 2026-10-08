@@ -912,6 +912,8 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     elif tests and not shared and not browser and not deleted:  # tests the only source files that changed (T022)
         say(f"no mutant to run — only tests changed: {', '.join(shown(name) for name in tests)}; "
             "`make mutation-full` is the run that measures them")
+    elif browser:  # a browser app's file is production code, only not a service's: the lines below name it (T034)
+        say("no mutant to run — no service production file changed")
     else:
         say("no mutant to run — no production file changed")
     for path in shared:
