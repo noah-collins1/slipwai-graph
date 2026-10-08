@@ -755,7 +755,7 @@ killed. The survivors and two reproductions are the tasks below.
 ### After-converge gaps (T016, cruise iteration 29) — one HIGH, five MEDIUM, five LOW
 
 ### T026 — [US2] HIGH · A scoped run never passes on a report that does not show the files it was given (D212, AC-S41-1, -3, -4)
-- [ ] **Close the class:** two ways a scoped run reads *no mutant to run*, exit 0, over files Stryker never tried.
+- [x] **Close the class:** two ways a scoped run reads *no mutant to run*, exit 0, over files Stryker never tried. *(Done: 00c8383.)*
   (1) Stryker builds every `--mutate` and config pattern from the absolute path (`@stryker-mutator/core` 10.0.0,
   `config/file-matcher.js:13,24`), so a checkout whose directory name holds minimatch syntax (`/tmp/w[1]/`,
   `/tmp/w{a,b}/`, `/tmp/w+(x)/`) matches none of its own files and the report is `files: {}`. (2) A report whose
@@ -768,7 +768,7 @@ killed. The survivors and two reproductions are the tasks below.
   `tests/test_stryker_list.py`.
 
 ### T027 — [US2] MEDIUM · Every place D217 names carries its sentences (D217 item 1, AC-S41-13)
-- [ ] The generated Makefile note (`src/slipwai/project/stryker.py:121-122`) and `changelog.d/stryker-mutation.md` both
+- [x] The generated Makefile note (`src/slipwai/project/stryker.py:121-122`) and `changelog.d/stryker-mutation.md` both *(Done: a635a10.)*
   say: the default TypeScript starter's `make mutation-full` fails the day it is generated, because its own starter tests
   leave survivors; a slice that edits one of those files meets that file's survivors in its scoped `make mutation`; the
   minimal starter is green; a fix is planned (the follow-on slice). `tests/test_stryker_generated.py`'s note example
@@ -776,7 +776,7 @@ killed. The survivors and two reproductions are the tasks below.
 - **Files:** `src/slipwai/project/stryker.py`, `changelog.d/stryker-mutation.md`, `tests/test_stryker_generated.py`.
 
 ### T028 — [US2] MEDIUM · Only a per-mutant `next-line` comment excuses a mutant (D219, D212 items 1 and 6)
-- [ ] `PASS = ("Killed", "Ignored")` passes every `Ignored`, including those Stryker 10 marks for
+- [x] `PASS = ("Killed", "Ignored")` passes every `Ignored`, including those Stryker 10 marks for *(Done: a462f93 (and the note/fragment sentence in a635a10; R10).)*
   `mutator.excludedMutations` (`statusReason` "Ignored because of excluded mutation") and block or file-wide
   `// Stryker disable` comments. GREEN: an `Ignored` mutant passes only where the source line above it is a
   `// Stryker disable next-line <mutator>: <reason>` comment naming that mutant's mutator with a non-empty reason (read
@@ -788,7 +788,7 @@ killed. The survivors and two reproductions are the tasks below.
   each saying so).
 
 ### T029 — [US2] MEDIUM · Every reachable lock agrees with its manifest by npm's own rule (AC-S41-11)
-- [ ] `test_stryker_generated.py:170-181` checks only the two `@stryker-mutator` entries. GREEN: one example per
+- [x] `test_stryker_generated.py:170-181` checks only the two `@stryker-mutator` entries. GREEN: one example per *(Done: a99feb2.)*
   committed TypeScript lock a `generate` can reach runs `npm ci --dry-run --offline --ignore-scripts` (skipped, with its
   reason, where `npm` is not on `PATH`) and asserts exit 0; the two react-vite `*-users-keycloak` locks no `generate`
   can reach with `--http none` are named in a comment as unreachable (older than S41). The host runs `make check-locks`
@@ -796,7 +796,7 @@ killed. The survivors and two reproductions are the tasks below.
 - **Files:** a new `tests/test_stryker_locks.py` (declare it for test selection as the other S41 modules do).
 
 ### T030 — [US2] MEDIUM · A project that follows the catch-up ends consistent (AC-S41-12)
-- [ ] The fragment's **Catch-up** omits `apps/<second>/package.json`'s conflict after `add-service`
+- [x] The fragment's **Catch-up** omits `apps/<second>/package.json`'s conflict after `add-service` *(Done: 42dd911 — no command regenerates `rules.json` in a project (ADR 0005), so the Catch-up says re-added Makefile edits put the scoped gate on the full gate and own targets go in a file `make verify` does not read (D220).)*
   (`test_stryker_migrate.py:155-157` shows it), says to re-add one's own Makefile edits without saying how to bring
   `rules.json` back in step, and names the two devDependencies only in the paragraph `migrate` does not copy. GREEN: the
   Catch-up stands alone — names each file that conflicts, the two devDependencies with their version, and the command
@@ -805,7 +805,7 @@ killed. The survivors and two reproductions are the tasks below.
 - **Files:** `changelog.d/stryker-mutation.md`, `tests/test_stryker_migrate.py`.
 
 ### T031 — [US2] LOW · The wrapper's setup and output edges (D212 items 5 and 7)
-- [ ] Sweep, one example each: (L1) a missing `node_modules/.bin/stryker` is exit 2 with the setup line, never 1;
+- [x] Sweep, one example each: (L1) a missing `node_modules/.bin/stryker` is exit 2 with the setup line, never 1; *(Done: f3c1259 — L3 covers the wrapper's own `npm ci`; the Makefile's install target runs outside that lock (Phase 4 / adversary).)*
   (L2) a previous report still present after `clean()` is exit 2, never read as this run's; (L3) the wrapper's own
   `npm ci` takes a lock (or waits on the install target's marker) so `make -j test mutation-full` on a fresh clone does not
   run two installs on one `node_modules` — or, if a lock is not stdlib-simple, the Makefile note says not to run them
