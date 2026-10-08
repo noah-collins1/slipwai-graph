@@ -47,6 +47,8 @@ SYNTAX = (
 # A trailing `:<line>` or `:<start>-<end>` that `--mutate` reads as a line range, in a path or a pattern alike.
 RANGE = re.compile(r":\d+(-\d+)?$")
 STRYKER = "@stryker-mutator/"
+# The package that parses and plants the mutants; what it resolves in a lock decides which mutants exist (D222).
+INSTRUMENTER = f"{STRYKER}instrumenter"
 REPORT = "reports/mutation/mutation.json"
 SANDBOX = ".stryker-tmp"
 # Stryker's incremental mode keeps results here by default; `incremental: true` would let a run reuse them (T036).
@@ -179,6 +181,30 @@ def directory_refused(service: str) -> str | None:
             "would match. Run from a checkout whose path holds none")
 
 
+def resolved(table: dict, roots: list[str]) -> list[str]:
+    """The lock paths of everything `roots` need, transitively, found as npm finds a dependency: in the package's own
+    `node_modules`, then in each parent's up to the lock's top. A dependency the lock does not hold is skipped."""
+    seen: list[str] = []
+    pending = [path for path in roots if isinstance(table.get(path), dict)]
+    while pending:
+        path = pending.pop()
+        if path in seen:
+            continue
+        seen.append(path)
+        needs = {**(table[path].get("optionalDependencies") or {}), **(table[path].get("dependencies") or {})}
+        for name in needs if isinstance(needs, dict) else ():
+            where = path
+            while True:
+                candidate = f"{where}/node_modules/{name}" if where else f"node_modules/{name}"
+                if isinstance(table.get(candidate), dict):
+                    pending.append(candidate)
+                    break
+                if "node_modules/" not in where:
+                    break
+                where = where.rsplit("/node_modules/", 1)[0] if "/node_modules/" in where else ""
+    return seen
+
+
 def stryker_in(text: str, key: str) -> dict[str, str]:
     """The `@stryker-mutator/*` versions in a manifest's dependency tables or a lock's `packages`, or `Unreadable`."""
     try:
@@ -192,10 +218,15 @@ def stryker_in(text: str, key: str) -> dict[str, str]:
         entries = document.get("packages")
         # Keyed by the lock's own path: every copy of a package, hoisted or nested, is its own entry, so any copy moving
         # is a change (D215 b). Collapsing them to one version per name would hide a nested copy moving.
-        for path, entry in (entries if isinstance(entries, dict) else {}).items():
+        table = entries if isinstance(entries, dict) else {}
+        for path, entry in table.items():
             if "node_modules/" in path and path.rsplit("node_modules/", 1)[-1].startswith(STRYKER) \
                     and isinstance(entry, dict):
                 found[path] = str(entry.get("version"))
+        # And whatever the instrumenter resolves, which decides which mutants exist (D222): its parser and its regex mutator
+        # move through ranges while every `@stryker-mutator/*` version stands.
+        for path in resolved(table, [path for path in table if path.endswith(f"node_modules/{INSTRUMENTER}")]):
+            found[path] = str(table[path].get("version"))
         return found
     for table in ("dependencies", "devDependencies"):
         for name, version in (document.get(table) if isinstance(document.get(table), dict) else {}).items():
