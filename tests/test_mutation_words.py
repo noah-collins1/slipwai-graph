@@ -15,7 +15,7 @@ from slipwai.project.mutation import mutation_command, mutation_notes
 from slipwai.services import App
 
 BACKENDS = ("go", "java-spring", "java-quarkus", "typescript", "python")
-PLACEHOLDERS = ("java-quarkus", "typescript", "python")
+PLACEHOLDERS = ("java-quarkus", "python")
 SKILL = ROOT / "assets/toolkit/skills/mutation-testing/SKILL.md"
 FRAGMENT = ROOT / "changelog.d/scoped-mutation.md"
 PAGES = ("docs/backend-obligations.md", "docs/verification.md", "docs/requirements.md", "docs/maintaining.md")
@@ -95,11 +95,11 @@ class NoteTest(unittest.TestCase):
                 if backend == "java-quarkus":
                     self.assertIn("once a tool is wired", note)
 
-    def test_e2_hold_typescript_and_python_have_no_note_and_are_told_in_the_command_text(self) -> None:
-        """HOLD: the Makefile text of the two backends stays free of a note, which keeps `migrate` from conflicting
-        where `add-service` edited the lines above the rule; the command text says the target refuses until wired."""
-        for backend in ("typescript", "python"):
-            self.assertEqual(mutation_notes([service("orders", backend)]), "", backend)
+    def test_e2_hold_python_has_no_note_and_is_told_in_the_command_text(self) -> None:
+        """HOLD: the Makefile text of a Python project stays free of a note, which keeps `migrate` from conflicting
+        where `add-service` edited the lines above the rule; the command text says the target refuses until wired.
+        (TypeScript's note is S41's; `test_stryker_generated` holds it.)"""
+        self.assertEqual(mutation_notes([service("orders", "python")]), "")
 
     def test_e2_springs_failwhennomutations_paragraph_names_the_scoped_exception(self) -> None:
         note = flat(mutation_notes([service("ledger", "java-spring")]))

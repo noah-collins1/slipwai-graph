@@ -7,6 +7,8 @@ manifest. Projects are generated once per class; nothing is run except `make -np
 """
 from __future__ import annotations
 
+import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -22,10 +24,11 @@ from support import FactoryTestCase, commit_all
 from test_mutation_targets import go_and_typescript, recipe_of
 
 from slipwai.assets import ROOT
+from slipwai.project.mutation import UNWIRED, mutation_command, mutation_notes
 from slipwai.project.stryker import FULL_COMMAND, SCRIPT_PATH
 from slipwai.scaffold import write_project
 from slipwai.selection import Selection
-from slipwai.services import default_apps
+from slipwai.services import App, default_apps
 
 sys.dont_write_bytecode = True
 
@@ -177,6 +180,19 @@ class StrykerGeneratedTest(FactoryTestCase):
                     self.assertEqual(declared.get(package), EXACT)
                     self.assertEqual(packages[f"node_modules/{package}"]["version"], EXACT)
 
+    def test_e6_the_generated_makefile_carries_the_note_and_its_rules_and_help_are_unchanged(self) -> None:
+        """Teeth: add a global variable to the note and `rules.json` no longer equals the text."""
+        project = self.project("postgres")
+        text = (project / "Makefile").read_text(encoding="utf-8")
+        self.assertIn(mutation_notes([service("service", "typescript")]), text)
+        sys.path.insert(0, str(ROOT / "assets" / "toolkit" / "scripts"))
+        rules = importlib.import_module("verify_scoped.rules")
+        held = json.loads((project / "scripts/verify_scoped/rules.json").read_text(encoding="utf-8"))
+        self.assertEqual(rules.from_text(text), held)
+        helped = subprocess.run(["make", "-s", "help"], cwd=project, env=clean_environment(), text=True,
+                                capture_output=True, timeout=60).stdout
+        self.assertRegex(helped, r"(?m)^  mutation-full +\S")
+
     @unittest.skipUnless(shutil.which("npm") and os.environ.get("FACTORY_BACKENDS", "").find("typescript") >= 0,
                          "heavy: needs npm, the network and FACTORY_BACKENDS=typescript")
     def test_e7_audit_stays_green_over_the_new_tree(self) -> None:
@@ -185,3 +201,85 @@ class StrykerGeneratedTest(FactoryTestCase):
             done = subprocess.run(command, cwd=project, env=clean_environment(), text=True, capture_output=True,
                                   timeout=600)
             self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+
+
+# sha256 of what the other backends' notes and the gates page said before this slice: not this rule's to change.
+BEFORE = {"go": "db4dabb3917fb51911370261d9328bda8137d8b165bd111f64385d7dbc46d76f",
+          "java-spring": "ccfe2452d786d21eb47acc8d17d02a0d9ca8103932c3cd2f0ebba5273d657fcf",
+          "java-quarkus": "74fde152fd96f87e4597fb976e8827555cba9631feccb67bd7196c4776bd283a",
+          "python": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+GATES_PAGE = "53dad482d8dc5e54762bdcb6edf5045e520235cd201f8e38089034be900e1660"
+SKILL = ROOT / "assets/toolkit/skills/mutation-testing/SKILL.md"
+HAND_WIRED = ("- If no Stryker setup exists in a JS/TS project, recommend adding it before doing manual mutation "
+              "analysis.\n")
+SKILL_WITHOUT_THE_PASSAGE = "9bb3f69cec19d36de3b9b6a6750fee371830b096ffc9bc6e66111997f8e51c1e"
+
+
+def service(name: str, backend: str) -> App:
+    language, _, framework = backend.partition("-")
+    return App(name, f"apps/{name}", "service", language, {"spring": "spring-boot", "quarkus": "quarkus"}.get(
+        framework), 3000)
+
+
+def flat(text: str) -> str:
+    return " ".join(line.removeprefix("# ").removeprefix("#").strip() for line in text.splitlines())
+
+
+class WordsTest(unittest.TestCase):
+    def test_e1_the_typescript_note_carries_the_six_facts_and_the_other_notes_are_what_they_were(self) -> None:
+        note = flat(mutation_notes([service("orders", "typescript")]))
+        for fact in ("Stryker", "`scripts/stryker-mutation.py`", "`apps/orders/reports/mutation/mutation.json`",
+                     "decides the verdict", "// Stryker disable next-line <mutator>: <reason>", "named in the commit",
+                     "`related`", "`tsconfigFile`"):
+            self.assertIn(fact, note)
+        self.assertNotIn("__APP__", note)
+        for backend, digest in BEFORE.items():
+            self.assertEqual(hashlib.sha256(mutation_notes([service("orders", backend)]).encode()).hexdigest(), digest,
+                             backend)
+
+    def test_e2_the_command_text_names_the_wrapper_and_the_report_and_only_the_stubs_are_unwired(self) -> None:
+        for backends in (["typescript"], ["go", "typescript"]):
+            text = flat(mutation_command(backends))
+            for words in ("scripts/stryker-mutation.py", "reports/mutation/mutation.json",
+                          "make mutation SINCE=<review-base>", "CI and the trunk get the sweep"):
+                self.assertIn(words, text)
+            self.assertNotIn("refuses until a tool is wired", text)
+        for backends in (["python"], ["java-quarkus"]):
+            self.assertIn("refuses until a tool is wired", flat(mutation_command(backends)))
+        self.assertIn("Python and Quarkus", UNWIRED)
+        self.assertNotIn("TypeScript", UNWIRED)
+
+    def test_e3_the_skill_says_a_generated_service_is_wired_and_is_otherwise_what_it_was(self) -> None:
+        """HOLD for every other line (teeth: edit another line and the digest moves)."""
+        text = SKILL.read_text(encoding="utf-8")
+        self.assertNotIn(HAND_WIRED, text)
+        for words in ("already wired", "stryker.config.json", "scripts/stryker-mutation.py",
+                      "reports/mutation/mutation.json", "no `.mjs`", "no `mutation:diff`", "no threshold"):
+            self.assertIn(words, text)
+        rest = "".join(line for line in text.splitlines(keepends=True) if "already wired" not in line)
+        self.assertEqual(hashlib.sha256(rest.encode()).hexdigest(), SKILL_WITHOUT_THE_PASSAGE)
+
+    def test_e4_the_pages_say_stryker_is_wired_and_the_gates_page_and_the_adr_are_as_they_were(self) -> None:
+        for page in ("docs/backend-obligations.md", "docs/requirements.md"):
+            text = flat((ROOT / page).read_text(encoding="utf-8"))
+            self.assertIn("scripts/stryker-mutation.py", text, page)
+            self.assertNotIn("TypeScript** and **Python** exit 2", text, page)
+            self.assertNotIn("no tool wired (TypeScript, Python", text, page)
+        gates = hashlib.sha256((ROOT / "docs/verification.md").read_bytes()).hexdigest()
+        self.assertEqual(gates, GATES_PAGE)
+        adr = (ROOT / "delivery/docs/adr/0009-stryker-for-typescript-mutation.md").read_text(encoding="utf-8")
+        self.assertIn("## Status\n\nProposed\n", adr)
+        decision = " ".join(adr.split())
+        self.assertIn("`@stryker-mutator/core` 10.0.0 and `@stryker-mutator/vitest-runner` 10.0.0", decision)
+
+    def test_e5_the_provisional_gate_reads_stryker_config_as_gate_configuration(self) -> None:
+        spec = importlib.util.spec_from_file_location("provisional_under_test",
+                                                      ROOT / "assets/toolkit/scripts/provisional.py")
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        for name in ("stryker.config.json", "stryker.config.mjs", "stryker.config.js", "biome.jsonc", "go.mod"):
+            self.assertIsNotNone(module.GATE_CONFIGURATION.fullmatch(name), name)
+        for name in ("stryker.config.json.bak", "mystryker.config.json", "stryker.json"):
+            self.assertIsNone(module.GATE_CONFIGURATION.fullmatch(name), name)

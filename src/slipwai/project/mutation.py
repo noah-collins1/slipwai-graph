@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from ..backends import APP
 from ..services import App, backends_of, services_of
+from .stryker import CONFIG_NAME, REPORT, TYPESCRIPT_MUTATION_NOTE, TYPESCRIPT_REPORT_TEXT
 
 # Gremlins, pinned to a release and run through `go run`, so the tool is never a dependency of the module it
 # mutates and the same build runs on every machine. It replaced go-mutesting, whose package loader was
@@ -226,11 +227,12 @@ MUTATION_NOTES = {
     "go": GO_MUTATION_NOTE,
     "java-quarkus": JAVA_QUARKUS_MUTATION_NOTE,
     "java-spring": JAVA_SPRING_MUTATION_NOTE,
+    "typescript": TYPESCRIPT_MUTATION_NOTE,
 }
 
 # The per-service files a note names, spelled with `APP` where the service's path goes: PIT's scope is in the
 # pom, Gremlins' threshold is in its yaml, and a project with two services of one backend has two of each.
-NAMED_FILES = ("pom.xml", GO_GREMLINS_CONFIG, GO_GREMLINS_REPORT)
+NAMED_FILES = ("pom.xml", GO_GREMLINS_CONFIG, GO_GREMLINS_REPORT, CONFIG_NAME, REPORT)
 
 
 def mutation_notes(apps: list[App]) -> str:
@@ -257,7 +259,7 @@ priced by the change that merged.
 """
 GO_REPORT = """The Go run leaves its report at `<service>/gremlins.json` — read that, not the scrollback.
 """
-UNWIRED = """TypeScript, Python and Quarkus have no mutation tool wired: the target refuses until a tool is wired for the
+UNWIRED = """Python and Quarkus have no mutation tool wired: the target refuses until a tool is wired for the
 backend, with the setup message, and names the files it would mutate.
 """
 
@@ -265,8 +267,9 @@ backend, with the setup message, and names the files it would mutate.
 def mutation_command(backends: list[str]) -> str:
     tools = {"typescript": "Stryker", "python": "mutmut", "go": "Gremlins", "java-quarkus": "PIT (pitest)",
              "java-spring": "PIT (pitest)"}
-    unwired = any(backend in ("typescript", "python", "java-quarkus") for backend in backends)
-    scoping = SCOPING + (GO_REPORT if "go" in backends else "") + (UNWIRED if unwired else "")
+    unwired = any(backend in ("python", "java-quarkus") for backend in backends)
+    reports = (GO_REPORT if "go" in backends else "") + (TYPESCRIPT_REPORT_TEXT if "typescript" in backends else "")
+    scoping = SCOPING + reports + (UNWIRED if unwired else "")
     return f"""---
 description: Evaluate test effectiveness with mutation testing
 argument-hint: [changed-production-paths]

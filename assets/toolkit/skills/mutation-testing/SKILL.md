@@ -91,7 +91,7 @@ git ls-files --others --exclude-standard
 - `make mutation` runs the whole sweep instead of a scope when the `mutation` or `mutation-full` rule changed, or when the project has a `mutation-full` recipe that is not the one the factory wrote; that recipe runs as written, `SINCE` included.
 - For a stacked slice, mutate the focused layer against its parent. The top also runs the cumulative acceptance and repository gates required by `stack-pull-requests`.
 - In monorepos, start in the smallest affected package, then widen to the repo-level command when the targeted run is healthy.
-- If no Stryker setup exists in a JS/TS project, recommend adding it before doing manual mutation analysis.
+- A TypeScript service this factory generated is already wired: `stryker.config.json` beside its `package.json`, `scripts/stryker-mutation.py` and the report at `<service>/reports/mutation/mutation.json`, run by `make mutation` and `make mutation-full`; add no `.mjs` config, no `mutation:diff` script and no threshold (the verdict is the wrapper's, read from the report). Only where no Stryker setup exists in a JS/TS project, recommend adding it before doing manual mutation analysis.
 
 ### Step 2: Set Up Stryker When Missing
 
