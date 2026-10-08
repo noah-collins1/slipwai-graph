@@ -21,6 +21,7 @@ sys.dont_write_bytecode = True
 SCRIPTS = "assets/toolkit/scripts/"
 GO = "assets/languages/go/"
 TS_WRAPPER = "assets/languages/typescript/scripts/stryker-mutation.py"
+PY_WRAPPER = "assets/languages/python/scripts/mutmut-mutation.py"
 STYLES = SCRIPTS + "check-styles.py"  # read by the `slipwai` import these modules reach through `test_stryker_list`
 # module -> every path its reading proves it opens, copies, runs or loads by path (a directory is everything under it)
 READS = {
@@ -28,6 +29,7 @@ READS = {
     "test_gitea_pages": ["scripts/gitea-pages.py", "scripts/install-gitea-pages"],
     "test_go_mutation_file": [GO + "scripts/go-mutation.py"],
     "test_migration_script": ["scripts/test-migration.py"],
+    "test_mutmut_config": [PY_WRAPPER],
     "test_mutation": [GO + "app/.gremlins.yaml", GO + "scripts/go-coverage.py", GO + "scripts/go-mutation.py"],
     "test_pit_globs": [SCRIPTS + "mutation-scope.py"],
     "test_stryker_closure": [TS_WRAPPER, STYLES],
