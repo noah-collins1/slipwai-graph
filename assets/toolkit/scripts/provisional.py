@@ -2,27 +2,31 @@
 
 `python3 scripts/provisional.py status --decide <value> --ask no|approval|fact|must|release --when <ISO instant>
 --number D<n> [--reversibility '<the Reversibility line, with or without its label>']` prints the `Status:` line a
-decision entry carries (and, where provisional, its `Revert:` line), from the `decide` value of `.specify/cruise.json`
-(passed, never read: the verb reads no file). Provisional is `provisional` with a final tier of easy or guarded and none
+decision entry carries (and, where provisional, its `Revert:` line), for the `decide` value of `.specify/cruise.json`
+(passed, and refused with exit 2 where it differs from the file's, D209; no file is no check). Provisional is `provisional` with a final tier of easy or guarded and none
 of `ci_workflow=yes`, `migrate_file=yes`, `flag_default=yes` (FR-033); a fact, a constitution MUST and a release are
 unavailable whatever `decide` says. A missing `--reversibility` line is `hard`.
 `python3 scripts/provisional.py audit [--feature <name>]` is the completion audit: it prints `cruise: parked: ratify
 D<n> in specs/<feature>/decisions.md` and exits 3 while an entry of any feature's log has a first `Status` starting
-with the word `provisional`, the lowest-numbered named; `--feature` only has to name a feature under `specs/`.
+with the word `provisional`, the lowest-numbered named, in the log as `reading` gives it (fences and near-miss labels
+blanked, ASCII digits in a heading: the text the gate reads, D210); `--feature` only has to name a feature under `specs/`.
 The gate (`check-decisions.py`) loads this file by path, only for a log carrying a `Status: provisional|ratified|
 reverted` or a `Provisional (shadow|advisory):` line (a lone `Revert:` loads nothing, D206), and `check_log()` holds
-those lines to their grammar.
+those lines to their grammar, reads them from one reading of the log (`reading`, D210), refuses a mode entry dated after
+the gate runs and a provisional `Status` that no mode entry to `provisional` precedes in any feature's log (D209).
 Nothing here prints or exits outside `main`; `reversibility.py` beside this file is loaded by path, bytecode off.
 """
 from __future__ import annotations
 
 import importlib.util
+import json
+import posixpath
 import re
 import sys
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 DECIDE = ("recommended-first", "skipper-always", "provisional-shadow", "provisional-advisory", "provisional")
 ASKS = ("no", "approval", "fact", "must", "release")
@@ -51,19 +55,25 @@ MODE_LABELS = ("Provisional (shadow)", "Provisional (advisory)")
 REHEARSAL_FORM = re.compile(r"(easy|guarded|hard) · (provisional · ratify by ([0-9]{4}-[0-9]{2}-[0-9]{2})|"
                             r"blocks \(hard\)|blocks \((?:ci_workflow|migrate_file|flag_default)=yes\)) · Revert: "
                             r"commits carrying Decision: D([1-9][0-9]*)")
-# D204: what a provisional or ratified entry's `Written to` may not name. A workflow, a control the runner parks on
-# (`agents/cruise.py`'s CONTROL_PATHS, whether the delivery material is at the root or under `delivery/`), and a
-# configuration file a generated gate reads: the list is closed, and a test holds it against what the starters ship.
-# Each is written as its segments: the scoped gate reads a whole path in a check's script as a file the check reads.
+# D204, D210: what a provisional or ratified entry's `Written to` may not name. A workflow, a control the runner parks on
+# (`agents/cruise.py`'s CONTROL_PATHS, whether the delivery material is at the root or under `delivery/`, and the hook
+# file of every harness whose registry row projects one), the delivery directory an adopted project keeps its material
+# in (its scripts, Makefile and `.written`), and a configuration file a generated gate reads: the list is closed, and a
+# test holds it against what the starters ship and what the registry projects. Names compare in any case, the way the
+# committed list of S26 does. Each is written as its segments: the scoped gate reads a whole path in a check's script as
+# a file the check reads.
 CI_DIRECTORIES = tuple("/".join(parts) for parts in ((".github", "workflows"), (".gitea", "workflows")))
-CONTROL_DIRECTORIES = tuple("/".join(parts) for parts in (("scripts",), ("tools",), ("delivery", "scripts"),
-                                                         ("delivery", "Makefile"), (".claude", "settings.json")))
-CONTROL_FILES = ("Makefile", ".gitlab-ci.yml")
+CONTROL_DIRECTORIES = tuple("/".join(parts) for parts in (
+    ("scripts",), ("tools",), ("delivery", "scripts"), ("delivery", "Makefile"), (".claude", "settings.json"),
+    (".cursor", "hooks.json"), (".gemini", "settings.json"), (".slipwai", "propagated")))
+CONTROL_FILES = ("Makefile", "GNUmakefile", "makefile", ".gitlab-ci.yml")
+DELIVERY_PARTS = ("scripts", "Makefile", ".written")  # under an adopted project's `layout.delivery`
 GATE_CONFIGURATION = re.compile(
     r"(?:biome\.jsonc?|tsconfig(?:\.[\w.-]+)?\.json|package(?:-lock)?\.json|(?:vite|vitest)(?:\.[\w-]+)?\.config\.\w+|"
     r"pyproject\.toml|uv\.lock|\.python-version|\.nvmrc|go\.(?:mod|sum|work)|\.gremlins\.ya?ml|\.golangci\.ya?ml|"
     r"pom\.xml|checkstyle\.xml|pmd-ruleset\.xml|spotbugs-exclude\.xml|maven-wrapper\.properties|\.editorconfig|"
-    r"ruff\.toml|mypy\.ini|pytest\.ini|setup\.cfg|tox\.ini|\.importlinter|eslint\.config\.\w+|\.eslintrc(?:\.\w+)?)")
+    r"\.?ruff\.toml|mypy\.ini|pytest\.ini|setup\.cfg|tox\.ini|\.importlinter|eslint\.config\.\w+|"
+    r"\.eslintrc(?:\.\w+)?|conftest\.py|[\w.-]*flags[\w.-]*\.tfvars)", re.I)
 REVERT_FORM = re.compile(r"commits carrying Decision: D([1-9][0-9]*)")
 
 
@@ -81,11 +91,12 @@ def calendar(text: str) -> date | None:
     return None
 
 
-def utc_day(when: str) -> date | None:
-    """The UTC calendar date of an ISO date or instant: a `T` or a space between date and time, `Z` or an offset
-    (`+05:30`, `+0530`, `+05`) after it, none read as UTC. None where `when` is not one."""
+def instant_of(when: str) -> datetime | None:
+    """The UTC instant of an ISO date or instant: a `T` or a space between date and time, `Z` or an offset
+    (`+05:30`, `+0530`, `+05`) after it, none read as UTC, a date alone as its midnight. None where `when` is not one."""
     if len(when) <= 10:
-        return calendar(when)
+        day = calendar(when)
+        return None if day is None else datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
     if calendar(when[:10]) is None:
         return None
     tail = when[10:].strip() if when[10] == " " else when[10:]
@@ -96,7 +107,13 @@ def utc_day(when: str) -> date | None:
         instant = datetime.fromisoformat(when[:10] + (" " if tail[:1] not in ("T", "t") else "") + tail)
     except ValueError:
         return None
-    return (instant.astimezone(timezone.utc) if instant.tzinfo else instant).date()
+    return instant.astimezone(timezone.utc) if instant.tzinfo else instant.replace(tzinfo=timezone.utc)
+
+
+def utc_day(when: str) -> date | None:
+    """The UTC calendar date of an ISO date or instant (`instant_of`); None where `when` is not one."""
+    instant = instant_of(when)
+    return None if instant is None else instant.date()
 
 
 def ratify_by(when: str) -> str:
@@ -132,23 +149,61 @@ def written_to(value: str) -> list[str]:
     return [name.strip().replace("\\", "/").removeprefix("./").rstrip("/") for name in names if name.strip()]
 
 
-def protected(path: str) -> bool:
-    """Whether `path` is a workflow, a control, a configuration file of a generated gate, or a directory holding one."""
-    if path in ("", ".") or path.split("/")[-1] == "Makefile" or path in CONTROL_FILES:
+def delivery_directory(root: Path) -> str | None:
+    """The directory an adopted project keeps its delivery material in (`layout.delivery` of `project.json`), as a
+    project-relative path (`.` for the root, where it names none); None where the project is not adopted."""
+    try:
+        document = json.loads((root / "project.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(document, dict) or document.get("origin") != "adopted":
+        return None
+    layout = document.get("layout")
+    named = layout.get("delivery", ".") if isinstance(layout, dict) else "."
+    folded = posixpath.normpath(named.replace("\\", "/")) if isinstance(named, str) else "."
+    return "." if posixpath.isabs(folded) or folded.split("/")[0] == ".." else folded
+
+
+def protected(path: str, delivery: str | None = None) -> bool:
+    """Whether `path`, a project-relative posix path, is a workflow, a control, a configuration file of a generated gate,
+    or a directory holding one; `delivery` is an adopted project's delivery directory, whose scripts, Makefile and
+    `.written` are controls too. Names compare in any case."""
+    path = path.casefold()
+    if path in ("", ".") or path.split("/")[-1] in {name.casefold() for name in CONTROL_FILES} or ".mvn" in path.split("/"):
         return True
-    if any(path == name or path.startswith(name + "/") or name.startswith(path + "/")
-           for name in CI_DIRECTORIES + CONTROL_DIRECTORIES):
+    names = [name.casefold() for name in CI_DIRECTORIES + CONTROL_DIRECTORIES]
+    names += [posixpath.join(delivery, part).removeprefix("./").casefold() for part in DELIVERY_PARTS] if delivery else []
+    if any(path == name or path.startswith(name + "/") or name.startswith(path + "/") for name in names):
         return True
     return GATE_CONFIGURATION.fullmatch(path.rsplit("/", 1)[-1]) is not None
 
 
-def written_findings(where: str, fields: Mapping[str, str]) -> list[str]:
-    """One finding naming the protected paths of an entry's `Written to`, whatever its declared facts say (D204)."""
-    named = [path for path in written_to(fields.get("Written to", "")) if protected(path)]
-    if not named:
-        return []
-    return [f"{where} `Written to` names {', '.join(f'`{path}`' for path in named)}, a workflow, a control of the "
-            "run or a configuration file a generated gate reads; a provisional decision never edits one (D204)"]
+def named_paths(value: str, root: Path) -> list[str]:
+    """Every project-relative path a `Written to` value names, as S26 reads one (`written_paths`: backticked, bare beside
+    them, separated by `,`, `;` or `and`) and resolves it (`inside`: absolute inside the project, `..`, `//`, `./`);
+    a path that lands outside the project is no path in it."""
+    try:
+        module = reversibility_module()
+    except OSError:  # the gate says reversibility.py is missing in its own finding
+        return written_to(value)
+    return [path for path in (module.inside(name, root) for name in module.written_paths(value)) if path]
+
+
+def written_findings(where: str, fields: Mapping[str, str], twice: Collection[str] = ()) -> list[str]:
+    """The findings for an entry's `Written to`: said once, and no protected path in it, whatever its declared facts say
+    (D204, D210)."""
+    found = []
+    if "Written to" in twice:
+        found.append(f"{where} `Written to` is on more than one line; a provisional or ratified entry says it once, "
+                     "because only the first is read (D210)")
+    root = project_root(Path(__file__).resolve())
+    delivery = delivery_directory(root)
+    named = [path for path in dict.fromkeys(named_paths(fields.get("Written to", ""), root)) if protected(path, delivery)]
+    if named:
+        found.append(f"{where} `Written to` names {', '.join(f'`{path}`' for path in named)}, a workflow, a control of "
+                     "the run or a configuration file a generated gate reads; a provisional decision never edits one "
+                     "(D204)")
+    return found
 
 
 def reversibility_module() -> Any:
@@ -289,10 +344,66 @@ def rehearsal_findings(where: str, number: int, fields: Mapping[str, str], twice
     return found
 
 
+class Mode(NamedTuple):
+    """One mode entry (`## D<n> — decide moved from <a> to <b>`, written by `cruise.py mode`): where, and when."""
+    relative: str
+    line: int
+    number: int
+    when: str
+    instant: datetime | None
+    to: str
+
+
+MODE_HEADING = re.compile(r"^## D([0-9]+) — decide moved from (\S+) to (\S+)\s*$")
+WHEN_FIELD = re.compile(r"\*\*When:\*\* (\S+)")
+
+
+def mode_entries(relative: str, view: str) -> list[Mode]:
+    """The mode entries of a log as `reading` gives it, each with the instant its Stage line's `When` is (None where it
+    is no ISO date or instant)."""
+    found: list[Mode] = []
+    heading: re.Match[str] | None = None
+    for number, line in enumerate(view.splitlines(), start=1):
+        if line.startswith("## "):
+            heading = MODE_HEADING.match(line)
+            if heading:
+                found.append(Mode(relative, number, int(heading.group(1)), "", None, heading.group(3)))
+        elif heading and not found[-1].when and (stamp := WHEN_FIELD.search(line)) and line.startswith("- **Stage:**"):
+            found[-1] = found[-1]._replace(when=stamp.group(1), instant=instant_of(stamp.group(1)))
+    return found
+
+
+def mode_findings(modes: Iterable[Mode], now: datetime) -> list[str]:
+    """One finding for each mode entry dated after `now`: a mode entry is dated when it is written, and one dated ahead
+    would stand as the last for ever (D209)."""
+    return [f"{mode.relative}:{mode.line}: D{mode.number} (decide moved to {mode.to}) is dated {mode.when}, after now; a "
+            "mode entry is dated when it is written, and one dated ahead is no record of what was in force (D209)"
+            for mode in modes if mode.instant is not None and mode.instant > now]
+
+
+def basis_findings(where: str, fields: Mapping[str, str], modes: Iterable[Mode], now: datetime) -> list[str]:
+    """The finding for a provisional entry that no climb to `provisional` stands behind: the last mode entry of any
+    feature's log dated at or before its `When` (and not after `now`) has to record `provisional` (D209)."""
+    found = re.search(r"\*\*When:\*\* (.+?)\s*(?: · |$)", fields.get("Stage", ""))
+    when = instant_of(found.group(1)) if found else None
+    if when is None:  # `date_findings` says so
+        return []
+    earlier = [mode for mode in modes if mode.instant is not None and mode.instant <= min(when, now)]
+    last = max(earlier, key=lambda mode: (mode.instant, mode.relative, mode.line), default=None)
+    if last is not None and last.to == "provisional":
+        return []
+    said = f"the last, {last.relative}:{last.line}, records `{last.to}`" if last else "there is none"
+    return [f"{where} `Status` is provisional, but no mode entry in any feature's log puts `decide` at `provisional` "
+            f"before its `When`: {said}; a provisional entry follows a person's climb to `provisional`, which `cruise.py "
+            "mode` writes down (D209)"]
+
+
 def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
-              ) -> list[str]:
+              modes: Iterable[Mode], now: datetime) -> list[str]:
     """The findings for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
-    gate parsed them. Each is `<file>:<line>: D<n> ...`, one per fault, naming the field."""
+    gate parsed them; `modes` are the mode entries of every feature's log. Each is `<file>:<line>: D<n> ...`, one per
+    fault, naming the field."""
+    modes = list(modes)
     findings: list[str] = []
     for line, number, fields, twice in items:
         if number is None:
@@ -308,9 +419,10 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
             findings.append(f"{where} `Revert` is missing; a provisional entry says `commits carrying Decision: "
                             f"D{number}`")
         if sound and kind in ("provisional", "ratified"):
-            findings += written_findings(where, fields) + reversibility_findings(where, fields)
+            findings += written_findings(where, fields, twice) + reversibility_findings(where, fields)
         if sound and kind == "provisional":
-            findings += date_findings(where, fields, status_date(fields["Status"]))
+            findings += date_findings(where, fields, status_date(fields["Status"])) + basis_findings(where, fields,
+                                                                                                    modes, now)
         findings += rehearsal_findings(where, number, fields, twice)
     return findings
 
@@ -338,8 +450,30 @@ def parse_status(arguments: list[str]) -> dict[str, str]:
     return options
 
 
+CONFIG_PARTS = (".specify", "cruise.json")
+
+
+def configured_decide(root: Path) -> str | None:
+    """The `decide` of the project's `.specify/cruise.json`: the bottom rung where the file names none or a value that
+    is not one of the five (as `cruise.py` reads it), None where there is no file. A file that cannot be read is Usage."""
+    path = root.joinpath(*CONFIG_PARTS)
+    if not path.is_file():
+        return None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise Usage(f"{'/'.join(CONFIG_PARTS)} cannot be read ({error}); --decide is the file's value") from error
+    if not isinstance(document, dict):
+        raise Usage(f"{'/'.join(CONFIG_PARTS)} is not a JSON object; --decide is the file's value")
+    return document["decide"] if document.get("decide") in DECIDE else DECIDE[0]
+
+
 def status_verb(arguments: list[str]) -> int:
     options = parse_status(arguments)
+    configured = configured_decide(project_root(Path(__file__).resolve()))
+    if configured is not None and options["--decide"] != configured:
+        raise Usage(f"--decide {options['--decide']!r} is not the `decide` of {'/'.join(CONFIG_PARTS)}, "
+                    f"{configured!r}; the verb takes it from the file (D209)")
     out, err = status_lines(options["--decide"], options["--ask"], options["--when"], options["--number"],
                             options.get("--reversibility"))
     print("\n".join(out))
@@ -349,14 +483,78 @@ def status_verb(arguments: list[str]) -> int:
 
 FIELD_LINE = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 HEADING = re.compile(r"^## D([0-9]+) — ")
+ANY_HEADING = re.compile(r"^## D(\d+) — ")  # `\d` reads a fullwidth digit: the gate's heading, not the audit's
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+# A label written nearly right (another case, a space before the colon, underscores, another bullet): never read.
+NEAR_LABEL = re.compile(r"^\s*[-*+]\s*[*_]*\s*(?:reversibility|proposed\s*rule|status)\s*[*_]*\s*:[*_]*", re.I)
+EXACT_LABEL = re.compile(r"^- \*\*(?:Reversibility|Proposed rule|Status):\*\*")
+STATUS_LABEL = re.compile(r"^- \*\*Status:\*\*[^\S\n]*(?:provisional|ratified|reverted)\b|"
+                          r"^- \*\*Provisional \((?:shadow|advisory)\):\*\*", re.M)
+
+
+def reading(text: str) -> tuple[str, list[tuple[int, str, str]]]:
+    """The one reading of a log (D210): `text` with every line inside a ``` or ~~~ fence emptied, and every line whose
+    label is nearly `- **Reversibility:**`, `- **Proposed rule:**` or `- **Status:**` emptied, line endings kept so
+    every line number stands; and the near-miss lines as (line, entry, the label as written), each entry named `D<n>`
+    where a heading above it has one. A fence closes on its own character, at least as long; one left open runs on.
+    The gate decides to hold a log, reads its fields, and the audit finds its provisional entries, all from this."""
+    kept: list[str] = []
+    near: list[tuple[int, str, str]] = []
+    opened, where = "", ""
+    for number, piece in enumerate(text.splitlines(keepends=True), start=1):
+        content = piece.splitlines()[0] if piece.splitlines() else ""
+        fence = FENCE.match(content)
+        hidden = bool(opened)
+        if opened and fence and fence.group(1)[0] == opened[0] and len(fence.group(1)) >= len(opened) \
+                and not content.strip().strip(opened[0]):
+            opened = ""
+        elif not opened and fence:
+            opened, hidden = fence.group(1), True
+        if not hidden:
+            if content.startswith("## "):
+                heading = ANY_HEADING.match(content)
+                where = f"D{heading.group(1)}" if heading else ""
+            label = NEAR_LABEL.match(content)
+            if label and not EXACT_LABEL.match(content):
+                near.append((number, where, label.group(0).strip()))
+                hidden = True
+        kept.append(piece[len(content):] if hidden else piece)
+    return "".join(kept), near
+
+
+def moded(view: str) -> bool:
+    """Whether a log, as `reading` gave it, has a mode entry."""
+    return any(MODE_HEADING.match(line) for line in view.splitlines())
+
+
+def held(view: str) -> bool:
+    """Whether a log, as `reading` gave it, carries a line only this module reads: a `Status` of one of the three new
+    forms or a `Provisional (shadow|advisory):` line (a lone `Revert:` is not one, D206)."""
+    return STATUS_LABEL.search(view) is not None
+
+
+def reading_findings(relative: str, text: str) -> list[str]:
+    """What a held log's reading refuses in itself: a near-miss `Status` label, which no reader takes for the entry's,
+    and a heading whose number is spelled with a digit that is not 0-9 (which the audit cannot read)."""
+    view, near = reading(text)
+    found = [f"{relative}:{line}: {where or 'a line'} has `{label}`, which is not the label `- **Status:**` (or "
+             "`- **Reversibility:**`, `- **Proposed rule:**`); a log that holds a provisional form reads no other "
+             "spelling (D210)" for line, where, label in near if "status" in label.casefold()]
+    for number, line in enumerate(view.splitlines(), start=1):
+        heading = ANY_HEADING.match(line)
+        if heading and not HEADING.match(line):
+            found.append(f"{relative}:{number}: the heading `{line[:24]}` spells its number with a digit that is not "
+                         "0-9; a log that holds a provisional form reads ASCII digits in a heading (D210)")
+    return found
 
 
 def unratified(text: str) -> list[int]:
-    """The numbers of the entries whose first `Status` starts with the word `provisional`, lowest first. A line is read
-    as the gate reads it: split as `str.splitlines` splits, its label the text before the first colon, stripped."""
+    """The numbers of the entries whose first `Status` starts with the word `provisional`, lowest first, in the log as
+    `reading` gives it. A line is read as the gate reads it: split as `str.splitlines` splits, its label the text before
+    the first colon, stripped."""
     found: list[int] = []
     number, seen = None, False
-    for line in text.removeprefix("\ufeff").splitlines():
+    for line in reading(text.removeprefix("\ufeff"))[0].splitlines():
         heading = HEADING.match(line)
         if line.startswith("## "):
             number, seen = int(heading.group(1)) if heading else None, False

@@ -17,14 +17,15 @@ def waiting(number: int = 1, status: str = PROVISIONAL) -> str:
 
 
 class AuditReadsStatusAsTheGateDoesTest(unittest.TestCase):
-    def test_t029_e1_a_status_label_with_a_space_before_the_colon_is_the_gates_status_and_the_audits(self) -> None:
-        """Beside a real `ratified` entry the gate takes the near-miss label as the `Status` it reads; so does the
-        audit (alone, the gate refuses such an entry, and the audit stays with it)."""
+    def test_t029_e1_a_status_label_with_a_space_before_the_colon_is_no_status_to_the_gate_or_the_audit(self) -> None:
+        """Beside a real `ratified` entry the gate refuses the near-miss label (D210, T038) and the audit does not read
+        it, so neither takes it for D2's `Status`."""
         near = waiting(2).replace("**Status:**", "**Status :**")
         log = entry(1, "ratified 2026-10-09", reversibility=EASY_LINE) + near
-        self.assertEqual(0, gate(log).returncode, "the gate reads D2 as a provisional entry and finds it sound")
-        result = audit(log)
-        self.assertEqual((3, "cruise: parked: ratify D2 in specs/f/decisions.md\n"), (result.returncode, result.stdout))
+        refused = gate(log)
+        self.assertEqual(1, refused.returncode, refused.stdout)
+        self.assertIn("D2", refused.stderr)
+        self.assertEqual(0, audit(log).returncode)
 
     def test_t029_e2_a_status_that_only_starts_with_the_word_is_not_provisional_to_either(self) -> None:
         log = waiting(status="provisionally maybe")

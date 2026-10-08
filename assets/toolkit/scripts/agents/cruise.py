@@ -189,7 +189,10 @@ CONTROLS = {
               "decision covers it and `drive-skipper` otherwise, or `drive-skipper` for every question. Change it to "
               "`provisional-shadow` when always-ask questions are stalling slices and you want to see which ones "
               "would have been taken provisionally before letting any be; move on to `provisional-advisory`, then "
-              "`provisional`, once the shadow lines read right.",
+              "`provisional`, once the shadow lines read right. The first two take nothing and only show what "
+              "`provisional` would have done; `provisional` takes an easy or guarded approval itself. "
+              "`recommended-first` and `skipper-always` are both the bottom rung, so either moves to "
+              "`provisional-shadow` in one step.",
     "release": "the release-constraint stage: every slice continues or opens a flag seeded off, so every merge "
                "is dark; or park at the push and let a person say it is a release they want",
     "constitution": "an unratified constitution: the skipper drafts and ratifies it, marked pending human "
@@ -369,11 +372,11 @@ def mode(arguments: list[str]) -> None:
         logs = [ROOT / "specs" / arguments[1] / "decisions.md"]
     elif not arguments:
         logs = sorted((ROOT / "specs").glob("*/decisions.md"))
-        if len(logs) > 1:
-            raise RuntimeError("specs/ holds several decision logs; name one with `mode --feature <name>`")
     else:
         raise RuntimeError("usage: cruise.py mode [--feature <name>]")
-    text = logs[0].read_text(encoding="utf-8") if logs and logs[0].is_file() else ""
+    # The entry is numbered against every log the verb was pointed at; with several and no feature it names no log.
+    text = "\n".join(log.read_text(encoding="utf-8") for log in logs if log.is_file())
+    target = logs[0] if len(logs) == 1 else None
     value = load()["decide"]
     # D202: the baseline is the latest mode entry in any feature's log (ties: later sorted path, then file order).
     last = None
@@ -384,14 +387,17 @@ def mode(arguments: list[str]) -> None:
             block = content[begin:end]
             heading, stamp = MODE_HEADING.match(block), WHEN.search(block)
             instant = instant_of(stamp.group(1) if stamp else "")
-            if heading and (last is None or instant >= last[0]):
+            if heading and instant > datetime.now(timezone.utc):
+                print(f"cruise: D{heading.group(1)} in {relative(log)} is dated after now ({stamp.group(1)}); not read "
+                      "as a mode entry (D209)", file=sys.stderr)
+            elif heading and (last is None or instant >= last[0]):
                 last = (instant, heading.group(1), heading.group(3), log)
     recorded = last[2] if last else None
     if recorded is not None and recorded not in RUNGS:
         print(f"cruise: D{last[1]} records the mode `{recorded}`, which is not one of the five `decide` values; "
               "read as recommended-first", file=sys.stderr)
     if last and recorded == value:
-        own = last[3] == logs[0]
+        own = last[3] == target
         print(f"cruise: decide is {value}, as D{last[1]}" + ("" if own else f" in {relative(last[3])}") + " recorded")
         return
     base = RUNGS.get(recorded or "", 0)  # no mode entry anywhere reads as the bottom rung
@@ -400,7 +406,7 @@ def mode(arguments: list[str]) -> None:
         if last is None:
             print(f"cruise: parked: decide={value} skips {step}; set it through /cruise-settings")
         else:
-            where = "" if last[3] == logs[0] else f" in {relative(last[3])}"
+            where = "" if last[3] == target else f" in {relative(last[3])}"
             record = "python3 scripts/agents/cruise.py mode" + (f" --feature {arguments[1]}" if arguments else "")
             print(f"cruise: parked: decide={value} is more than one rung above {recorded} (D{last[1]}{where}); "
                   f"set decide={step} through /cruise-settings and let an iteration record it with `{record}`, "
@@ -422,8 +428,21 @@ def describe(table: dict[str, Any]) -> str:
     return "\n".join(f"{key}: {json.dumps(table[key])} — {CONTROLS[key]}" for key in DEFAULTS)
 
 
+def no_repeats(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """A JSON object whose keys are each there once: a second `"decide"` would be read by one tool and not another (D208)."""
+    keys = [key for key, _ in pairs]
+    repeated = sorted({key for key in keys if keys.count(key) > 1})
+    if repeated:
+        raise ValueError(f"{relative(CONFIG)} names {', '.join(f'`{key}`' for key in repeated)} more than once")
+    return dict(pairs)
+
+
+def parse(text: str) -> Any:
+    return json.loads(text, object_pairs_hook=no_repeats)
+
+
 def load() -> dict[str, Any]:
-    table = json.loads(CONFIG.read_text(encoding="utf-8"))
+    table = parse(CONFIG.read_text(encoding="utf-8"))
     findings = check(table)
     if findings:
         raise RuntimeError(f"{CONFIG.relative_to(ROOT)}:\n  - " + "\n  - ".join(findings))
@@ -771,7 +790,7 @@ def guard() -> None:
                 shown = str(path)
             print(GUARD_REASON.format(path=shown), file=sys.stderr)
             raise SystemExit(2)
-    if path == CONFIG.resolve():
+    if path == CONFIG.resolve() or (path.is_file() and CONFIG.is_file() and os.path.samefile(path, CONFIG)):
         print(SETTINGS_REASON, file=sys.stderr)
         raise SystemExit(2)
 
@@ -1166,15 +1185,19 @@ def stopping() -> None:
         print(json.dumps({"decision": "block", "reason": reason}))
 
 
-def park(reason: str, no_park: bool, poll: float, seen: str) -> None:
+def park(reason: str, no_park: bool, poll: float, seen: str, only_message: bool = False) -> None:
     """Wait for a person: the stop file ends the run, a change under specs/ or a message resumes it, `--no-park`
     exits 3. The tree is re-read every poll; the stop file and the inbox every second, because a person who typed
-    something into a parked run is waiting for it and `poll_minutes` is sized for a tree nobody is touching."""
+    something into a parked run is waiting for it and `poll_minutes` is sized for a tree nobody is touching.
+    With `only_message` (a raise of `decide`, D208) nothing but a message that arrives after the park resumes it: a
+    change in the tree or a message queued before is no person's word that the raise was meant."""
     print(f"cruise: parked — {reason}")
     if no_park:
         raise SystemExit(PARKED_EXIT)
-    print(f"cruise: waiting; `touch {relative(STOP)}` ends the run, a change under specs/, a commit or a message "
-          "(`python3 scripts/agents/cruise.py tell …`) resumes it", flush=True)
+    queued_before = len(queued())
+    resumes = ("only a message (`python3 scripts/agents/cruise.py tell …`) resumes it" if only_message else
+               "a change under specs/, a commit or a message (`python3 scripts/agents/cruise.py tell …`) resumes it")
+    print(f"cruise: waiting; `touch {relative(STOP)}` ends the run, {resumes}", flush=True)
     while True:
         slept = 0.0
         while slept < poll:
@@ -1184,10 +1207,10 @@ def park(reason: str, no_park: bool, poll: float, seen: str) -> None:
             if STOP.is_file():
                 print("cruise: stopped by human")
                 raise SystemExit(0)
-            if INBOX.is_file():
+            if INBOX.is_file() and (not only_message or len(queued()) > queued_before):
                 print("cruise: a person's message; resuming")
                 return
-        if fingerprint() != seen:
+        if not only_message and fingerprint() != seen:
             print("cruise: something changed; resuming")
             return
 
@@ -1284,11 +1307,29 @@ def told_argument(texts: list[str]) -> str:
     return " ".join(f"{TOLD_WORD} {' '.join(text.split())}" for text in texts)
 
 
+def enqueue(text: str, now_flag: bool = False, **extra: str) -> None:
+    INBOX.parent.mkdir(parents=True, exist_ok=True)
+    with INBOX.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps({"at": now(), "text": text, "now": now_flag, **extra}, ensure_ascii=False) + "\n")
+
+
+def confirmed(value: str) -> bool:
+    """Whether a person raised `decide` to `value` through `--set` while a runner ran: the confirmation it queued is in
+    the inbox, or an iteration's `told` took it (D208)."""
+    kept = TOLD.read_text(encoding="utf-8").splitlines() if TOLD.is_file() else []
+    return any(json.loads(line).get("decide") == value for line in kept if line.strip()) or any(
+        each.get("decide") == value for each in queued())
+
+
 def tell(arguments: list[str]) -> None:
     """Queue a message for the run: the next iteration carries it as `told: <message>` in its argument. With
     `--now` — the first word, on the command line or in the text — the iteration in flight is ended for it and
     the next starts at once. The message is the words given, or standard input when there are none, so a
-    command file can hand it over in a quoted heredoc and no quote inside it reaches the shell."""
+    command file can hand it over in a quoted heredoc and no quote inside it reaches the shell. Inside an iteration
+    (`CRUISE_ITERATION` set, even empty) it is refused: a `told:` message is what releases a park on a raise of
+    `decide`, and that word is a person's (D208)."""
+    if ITERATION_VARIABLE in os.environ:
+        raise RuntimeError("`tell` is a person's: an iteration never queues a message for the run (D208)")
     # A bare `tell` at a terminal is a person who forgot the message, not one about to type it into a pipe.
     text = " ".join(arguments).strip() if arguments else ("" if sys.stdin.isatty() else sys.stdin.read().strip())
     now_flag = False
@@ -1296,9 +1337,7 @@ def tell(arguments: list[str]) -> None:
         now_flag, text = True, text.removeprefix("--now").strip()
     if not text:
         raise RuntimeError("tell takes the message as its words, or on standard input")
-    INBOX.parent.mkdir(parents=True, exist_ok=True)
-    with INBOX.open("a", encoding="utf-8", newline="\n") as handle:
-        handle.write(json.dumps({"at": now(), "text": text, "now": now_flag}, ensure_ascii=False) + "\n")
+    enqueue(text, now_flag)
     waiting = len(queued())
     count = f"{waiting} message(s) queued" if waiting > 1 else "queued"
     running = running_pid()
@@ -1404,6 +1443,16 @@ def settings_now(table: dict[str, Any]) -> dict[str, Any]:
         return table
 
 
+RAISED = ("`decide` was raised from {seen} to {value} {where} — the run never takes more authority than a person gave "
+          "it; a person who raised it on purpose resumes the run with a `told:` message (/cruise-tell)")
+
+
+def raised(seen: str, value: str) -> bool:
+    """`decide` higher than the last value the runner saw and no confirmation a person queued for it (D208); a step back
+    and a move between the two zero-rung modes are never one."""
+    return RUNGS.get(value, 0) > RUNGS.get(seen, 0) and not confirmed(value)
+
+
 def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, why: str,
           environment: dict[str, str], prompt: str, first: str, feature: str | None, kickoff: str | None,
           no_park: bool) -> None:
@@ -1428,6 +1477,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
     left_as: dict[str, str] | None = None
     parked_since = False
     carried: list[str] = []
+    seen_decide = table["decide"]  # the last `decide` the runner saw: a broken file reads as it, a repair is compared with it
     global INTERRUPTED
     while True:
         table = settings_now(table)
@@ -1445,6 +1495,11 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         if table["max_hours"] is not None and time.monotonic() - started_run >= table["max_hours"] * 3600:
             print(f"cruise: budget spent — {table['max_hours']} hour(s)")
             return
+        if raised(seen_decide, table["decide"]):
+            # Between two iterations, while parked, or behind a file that was broken: nothing here is a person's word.
+            park(RAISED.format(seen=seen_decide, value=table["decide"], where="outside an iteration"),
+                 no_park, poll, fingerprint(), only_message=True)
+        seen_decide = table["decide"]
         # A person's message rides on this iteration's argument: after the kick-off on the first, in place of
         # the bosun's `unblock:` — a person's word is the likelier thing to move a stuck run, and the bosun's one
         # iteration is kept for after it — and alone on any other.
@@ -1464,7 +1519,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         if index:
             print(f"cruise: code index before iteration {iteration} — {index['state']}: {index['detail']} "
                   f"({index['seconds']}s)", flush=True)
-        controls_before, decide_before = controls_signature(), table["decide"]
+        controls_before, decide_before = controls_signature(), seen_decide
         between = controls_changed(left_as, controls_before) if left_as is not None else []
         if between and not parked_since:
             # Nothing parked the run since the last iteration ended, so whatever changed a control did it on its own:
@@ -1545,12 +1600,12 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
                  "resume with a message", no_park, poll, seen)
             parked_since = True
             continue
-        if decide_after != decide_before:
-            # D203: the run never widens its own authority. A change between iterations is a person's and `mode`
-            # records it; one inside an iteration is the iteration's, whatever route it took.
+        seen_decide = decide_after
+        if raised(decide_before, decide_after):
+            # D203, D208: the run never widens its own authority, and only a person's `told:` releases the park.
             park(f"iteration {iteration} moved `decide` from {decide_before} to {decide_after} — an iteration never "
                  "sets it; a person who changed it on purpose resumes the run with a `told:` message (/cruise-tell)",
-                 no_park, poll, seen)
+                 no_park, poll, seen, only_message=True)
             parked_since = True
             continue
         if unwritten is not None:
@@ -1984,7 +2039,7 @@ def main() -> None:
         verbs[arguments[0]]()
         return
     if "--set" in arguments:
-        table = json.loads(CONFIG.read_text(encoding="utf-8"))
+        table = parse(CONFIG.read_text(encoding="utf-8"))
         assignments = arguments[arguments.index("--set") + 1:]
         if not assignments:
             raise RuntimeError(f"--set takes key=value with a key from {', '.join(DEFAULTS)}")
@@ -2001,6 +2056,10 @@ def main() -> None:
         CONFIG.write_text(json.dumps(table, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         for line in changed:
             print(line)
+        if RUNGS.get(table["decide"], 0) > RUNGS.get(loaded, 0) and running_pid() is not None:
+            # D208: a raise through /cruise-settings is the person's, so the runner running here is told so.
+            enqueue(f"a person raised `decide` to {table['decide']} through /cruise-settings; nothing to do",
+                    decide=table["decide"])
         print(f"{CONFIG.relative_to(ROOT)} written; it takes effect at the next iteration /cruise runs. "
               "Commit it: the choice is versioned with the project.")
         return

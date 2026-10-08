@@ -108,7 +108,7 @@ class BriefsTest(FactoryTestCase):
                       "python3 scripts/agents/cruise.py mode", "Decision: D<n>", "`told: accept`", "no bosun",
                       "Only the skipper takes an always-ask item provisionally", "`Decided by: human`",
                       "`overridden by D<m>`", "question about a gate, a check or CI is never provisional",
-                      "`cruise: parked: ratify D<n>`", "`--set decide=…` refuses inside an iteration"):
+                      "`cruise: parked: ratify D<n>`", "`--set decide=…` and `tell` refuse inside an iteration"):
             self.assertIn(words, command)
         self.assertLess(command.index("python3 scripts/agents/cruise.py mode"), command.index("## The watch seat"))
         audit = command.index("## When the ready set is empty")

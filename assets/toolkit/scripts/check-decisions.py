@@ -61,7 +61,10 @@ space before the colon, underscores, another bullet) is never read, in any log, 
 A log with a `Status: provisional · ratify by YYYY-MM-DD`, `ratified YYYY-MM-DD` or `reverted YYYY-MM-DD` or a
 `- **Provisional (shadow|advisory):**` line is also held to `provisional.py` beside this script, loaded for that log
 alone: a provisional entry says `Revert:` once and for its own number, only such an entry carries one, a malformed date
-is a finding naming the entry and `Status`. A log with none of those lines never loads it and gets the answer it always
+is a finding naming the entry and `Status`. The log is read once, as `provisional.py` reads it for the audit: fences and
+near-miss labels blanked, ASCII digits in a heading (D210); a `Written to` path is resolved and compared in any case,
+a mode entry (`## D<n> — decide moved from <a> to <b>`) dated after the gate runs is a finding, and so is a provisional
+`Status` with no mode entry to `provisional` before its `When` in any feature's log (D209). A log with none of those lines never loads it and gets the answer it always
 did; a `Revert:` alone, which an older log may carry, does not load it (D206).
 
 Every `specs/<feature>/hand-backs.md` and `specs/<feature>/slices/<id>/hand-backs.md` is held to the result-contract
@@ -263,10 +266,20 @@ def scope_notes(path: Path) -> list[str]:
     return notes
 
 
-def provisional_wanted(text: str) -> bool:
-    """Whether `provisional.py` is beside this script and `text` carries a line only it reads (D65: any other log gets
-    the answer it always did, and `provisional.py` is not loaded)."""
-    return Path(__file__).resolve().with_name("provisional.py").is_file() and PROVISIONAL_LABEL.search(text) is not None
+MODE_HEADING_LINE = re.compile(r"^## D[0-9]+ \u2014 decide moved from ", re.M)
+
+
+def provisional_view(text: str) -> tuple[Any, str] | None:
+    """(`provisional.py` beside this script, the log as it reads it) for a log carrying a line only it reads or a mode
+    entry, else None (D65: any other log gets the answer it always did). The log is read once (D210): fences and
+    near-miss labels blanked, and that text decides whether the log is held, serves every field read from it and is
+    what the audit reads."""
+    if not ((PROVISIONAL_LABEL.search(text) or MODE_HEADING_LINE.search(text))
+            and Path(__file__).resolve().with_name("provisional.py").is_file()):
+        return None
+    module = sibling("provisional")
+    view = module.reading(text)[0]
+    return (module, view) if module.held(view) or module.moded(view) else None
 
 
 def check_decisions(path: Path) -> list[str]:
@@ -274,7 +287,10 @@ def check_decisions(path: Path) -> list[str]:
     findings: list[str] = []
     expected = 1
     text = read(path)
-    held = provisional_wanted(text)  # the new Status forms are left to provisional.py, which then holds them
+    reading = provisional_view(text)  # the new Status forms are left to provisional.py, which then holds them
+    held = reading is not None and reading[0].held(reading[1])
+    if reading is not None:
+        text = reading[1]
     for line, heading, fields in entries(text, DECISION_HEADING, legacy=True):
         where = f"{relative}:{line}"
         if heading is None:
@@ -596,15 +612,30 @@ def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
     return unread + findings, notes + said
 
 
-def provisional_findings(path: Path) -> list[str]:
-    """The findings for the `Status` forms, `Revert:` and rehearsal lines of one log, from `provisional.py` beside this
-    script, loaded only for a log that carries one."""
-    text, _ = near_misses(unfenced(read(path)), path.relative_to(ROOT).as_posix())  # as S26 reads `Reversibility:`
-    if not provisional_wanted(text):
+def mode_record(decisions: list[Path]) -> list[Any]:
+    """The mode entries of every feature's log, as `provisional.py` reads them; none where it is not beside this script."""
+    if not Path(__file__).resolve().with_name("provisional.py").is_file():
         return []
+    module, found = sibling("provisional"), []
+    for path in decisions:
+        text = read(path)
+        if MODE_HEADING_LINE.search(text):
+            found += module.mode_entries(path.relative_to(ROOT).as_posix(), module.reading(text)[0])
+    return found
+
+
+def provisional_findings(path: Path, modes: list[Any], now: datetime) -> list[str]:
+    """The findings for the `Status` forms, `Revert:` and rehearsal lines of one log, from `provisional.py` beside this
+    script, for a log that carries one, read as `provisional_view` reads it."""
+    text = read(path)
+    reading = provisional_view(text)
+    if reading is None:
+        return []
+    module, view = reading
+    relative = path.relative_to(ROOT).as_posix()
     items = [(line, int(heading.group(1)) if heading else None, fields, fields.twice)
-             for line, heading, fields in entries(text, DECISION_HEADING, legacy=True)]
-    return sibling("provisional").check_log(path.relative_to(ROOT).as_posix(), items)
+             for line, heading, fields in entries(view, DECISION_HEADING, legacy=True)]
+    return module.reading_findings(relative, text) + module.check_log(relative, items, modes, now)
 
 
 def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int, int]:
@@ -638,13 +669,16 @@ def gate() -> int:
     if not decisions and not logs and not records and not findings:
         print("check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet")
         return 0
+    modes, now = mode_record(decisions), datetime.now(timezone.utc)
+    if modes:
+        findings += sibling("provisional").mode_findings(modes, now)
     for path in decisions:
         for note in scope_notes(path):
             print(note)
         findings += check_decisions(path)
         held_lines, line_notes = reversibility_findings(path)
         findings += held_lines
-        findings += provisional_findings(path)
+        findings += provisional_findings(path, modes, now)
         for note in line_notes:
             print(note)
     for path in logs:

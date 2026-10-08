@@ -13,7 +13,9 @@ DECIDE_CONTROLS = (
     "it and `drive-skipper` otherwise, or `drive-skipper` for every question. Change it to `provisional-shadow` "
     "when always-ask questions are stalling slices and you want to see which ones would have been taken "
     "provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow "
-    "lines read right."
+    "lines read right. The first two take nothing and only show what `provisional` would have done; `provisional` "
+    "takes an easy or guarded approval itself. `recommended-first` and `skipper-always` are both the bottom rung, so "
+    "either moves to `provisional-shadow` in one step."
 )
 
 # What an exit of a verb other than 0 or 3 is: neither a pass nor the parked line, so the run stops and says why.
@@ -86,7 +88,8 @@ DISPATCH_WORDS = (" (under `provisional-shadow`, `provisional-advisory` and `pro
                   "where the stage recommends an answer)")
 # Says what the "never decided" sentence of the command's *unavailable* paragraph excepts.
 APPROVAL_EXCEPTION = ", except an approval under `decide: provisional` (*Provisional decisions*, above)"
-NEVER_SETS = " The run never sets `decide`: `--set decide=…` refuses inside an iteration."
+NEVER_SETS = (" The run never sets `decide`: `--set decide=…` and `tell` refuse inside an iteration, and a raise the "
+               "runner sees any other way parks it until a person's `told:` message.")
 STOP_EXCEPTION = (
     "Under `decide: provisional` the skipper takes a person's approval provisionally " + TAKES + " (*Deciding*, "
     "below): that is not a block, so no bosun and no ⛔"

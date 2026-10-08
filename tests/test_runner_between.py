@@ -157,7 +157,8 @@ echo "cruise: continue"''')
             repo, env = gapped(self, directory, "between-tell-now")
             enable(repo)
             arming = arm(directory, repo, f"echo '# edited' >> {repo / GATE}")
-            harness = fake_harness(Path(directory), f'''case "$n" in
+            harness = fake_harness(Path(directory), f'''unset CRUISE_ITERATION
+case "$n" in
   1) {arming}
      python3 scripts/agents/cruise.py tell --now "mind the gate"; sleep 30; echo "cruise: continue";;
   *) echo "cruise: done";;
