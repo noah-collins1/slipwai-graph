@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from collections import Counter
 from typing import IO, Any, Callable
 
 USAGE = "mutation: usage: mutmut-mutation.py <service> [--file <path within the service> ...]"
@@ -49,6 +50,25 @@ setup_source_paths()
 store_lines_covered_by_tests()
 create_mutants(os.cpu_count() or 4)
 """
+# mutmut 3.8.0's own table of exit codes (`stats.py`, `status_by_exit_code`), as the verdict reads it (D212): a status is
+# (what it is called, what it is called in the count, what it means for the run). A code not named here is not in the
+# table mutmut was read against, and fails, by the `.get` default and not by a branch.
+PASS, COUNTED, FAIL = "passes", "counted", "fails"
+STATUS: dict[Any, tuple[str, str, str]] = {
+    1: ("killed", "killed", PASS), 3: ("killed", "killed", PASS),
+    5: ("no tests", "no tests", COUNTED), 33: ("no tests", "no tests", COUNTED),
+    0: ("survived", "survived", FAIL),
+    **{code: ("timeout", "timed out", FAIL) for code in (36, 24, -24, 152, 255)},
+    35: ("suspicious", "suspicious", FAIL),
+    **{code: ("segfault", "segfault", FAIL) for code in (-11, -9)},
+    None: ("not checked", "not checked", FAIL),
+    2: ("check was interrupted by user", "interrupted", FAIL),
+    34: ("skipped", "skipped", FAIL),
+    37: ("caught by type check", "caught by type check", FAIL),
+}
+# `# pragma: no mutate block|start|end` silences the mutants of the lines it covers, and a silenced mutant is never
+# generated, so no status records it. Only the bare form on one line is the per-mutant comment D212 excuses.
+SILENCING = re.compile(r"#\s*pragma:\s*no mutate\s+(block|start|end)\b")
 EXITED = "(its exit status and the output above are mutmut's, never the verdict; the .meta files are)"
 # What `fnmatch` reads as syntax: the characters that make a path a pattern over mutant names, not a name.
 OPENERS = "*?["
@@ -206,6 +226,8 @@ class Job:
         self.files = files
         self.env: dict[str, str] = {}
         self.lock: IO[str] | None = None
+        self.config: dict[str, Any] = {}
+        self.judged: list[str] = []  # the files whose `.meta` is the verdict: the given ones, or every one in a sweep
         self.names: list[str] = []  # the mutant names a scoped run hands mutmut: every key of the given files
 
 
@@ -230,7 +252,7 @@ def check_refusal(job: Job) -> int | None:
 
 def check_table(job: Job) -> int | None:
     try:
-        targets(job.service)
+        job.config = targets(job.service)
     except Unreadable as error:
         return say(f"{job.service}/pyproject.toml: {error}")
     return None
@@ -310,13 +332,20 @@ def meta_path(service: str, file: str) -> Path:
     return Path(service) / "mutants" / f"{file}.meta"
 
 
-def keys_of(service: str, file: str) -> list[str] | None:
-    """The mutant names mutmut generated for a file, in its own order; None where it wrote no `.meta` for it."""
+def codes_of(service: str, file: str) -> dict[str, Any] | None:
+    """What mutmut recorded for each mutant of a file (its exit code, or null), in its own order; None where it wrote no
+    readable `.meta` for it."""
     try:
         codes = json.loads(meta_path(service, file).read_text(encoding="utf-8")).get("exit_code_by_key")
     except (OSError, ValueError, AttributeError):
         return None
-    return list(codes) if isinstance(codes, dict) else None
+    return codes if isinstance(codes, dict) else None
+
+
+def keys_of(service: str, file: str) -> list[str] | None:
+    """The mutant names mutmut generated for a file, in its own order; None where it wrote no `.meta` for it."""
+    codes = codes_of(service, file)
+    return None if codes is None else list(codes)
 
 
 def clean(job: Job) -> int | None:
@@ -342,11 +371,22 @@ def generate(job: Job) -> int | None:
     return None
 
 
+def sweep(job: Job) -> int | None:
+    """A sweep judges every file mutmut wrote a `.meta` for. With no mutant in any of them there is nothing to run, and
+    a pass on nothing is not a pass."""
+    root = Path(job.service) / "mutants"
+    job.judged = sorted(path.relative_to(root).as_posix()[: -len(".meta")] for path in root.rglob("*.meta"))
+    if not any(keys_of(job.service, file) for file in job.judged):
+        note(f"mutmut found nothing to mutate in {job.service}; a pass on nothing is not a pass")
+        return 1
+    return None
+
+
 def plan(job: Job) -> int | None:
     """What a scoped run hands mutmut: the keys of the given files that have any. A file with no `.meta` is outside what
     mutmut mutates; one whose `.meta` is empty holds no function to mutate. Neither starts mutmut."""
     if not job.files:
-        return None
+        return sweep(job)
     keyed: dict[str, list[str]] = {}
     for file in job.files:
         keys = keys_of(job.service, file)
@@ -362,6 +402,7 @@ def plan(job: Job) -> int | None:
         note(f"no mutant to run \u2014 {', '.join(keyed)}: mutmut found no function to mutate in "
              f"{'it' if len(keyed) == 1 else 'them'}")
         return 0
+    job.judged = list(keyed)
     job.names = [key for file in held for key in keyed[file]]
     note(f"scoped to {len(held)} given file(s): {', '.join(held)} \u2014 {len(job.names)} mutant(s)")
     return None
@@ -376,15 +417,64 @@ def run_mutmut(job: Job) -> int | None:
     return None
 
 
-def not_wired(job: Job) -> int | None:
-    return say("the verdict is not read by this script yet; nothing passes")
+def silenced(job: Job) -> list[str]:
+    """One line for each way a judged file or the table silences mutants without anyone looking at them."""
+    found = []
+    if job.config.get("do_not_mutate_patterns"):
+        found.append(f"{job.service}/pyproject.toml sets do_not_mutate_patterns, which silences every line a pattern "
+                     "matches without anyone looking at its mutants; only a bare \"# pragma: no mutate\" on the "
+                     "line excuses one")
+    for file in job.judged:
+        try:
+            text = (Path(job.service) / file).read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            found.append(f"{job.service}/{file} cannot be read as UTF-8, so its pragmas cannot be checked")
+            continue
+        except OSError:
+            continue
+        for number, line in enumerate(text.splitlines(), 1):
+            hit = SILENCING.search(line)
+            if hit:
+                found.append(f"{job.service}/{file}:{number} holds \"# pragma: no mutate {hit.group(1)}\", which "
+                             "silences mutants nobody looked at; only a bare \"# pragma: no mutate\" on the line "
+                             "excuses one")
+    return found
+
+
+def judge(job: Job) -> int | None:
+    """The verdict, from the `.meta` files and by D212's rule: killed passes, no tests is counted, and every other code,
+    `null` and a code nobody has heard of included, fails. A silenced mutant fails the run too."""
+    failed = silenced(job)
+    for line in failed:
+        note(line)
+    counts: Counter[str] = Counter()
+    total = 0
+    for file in job.judged:
+        codes = codes_of(job.service, file)
+        if codes is None:
+            failed.append(f"{job.service}/{file}: mutmut left no readable .meta, so nothing can be said of it")
+            note(failed[-1])
+            continue
+        for key, code in codes.items():
+            total += 1
+            name, counted, kind = STATUS.get(code, (f"unknown (exit {code})", f"unknown (exit {code})", FAIL))
+            counts[counted] += 1
+            if kind == FAIL:
+                failed.append(key)
+                note(f"{name} {job.service} {key} (mutmut show {key} in {job.service}; report {job.service}/mutants/)")
+    order = ["killed", "no tests"] + [name for _, name, kind in STATUS.values() if kind == FAIL]
+    parts = [f"{counts['killed']} killed", f"{counts['no tests']} no tests (reported, never failed)"]
+    parts += [f"{counts[name]} {name}" for name in dict.fromkeys(order[2:] + sorted(set(counts) - set(order)))
+              if counts[name]]
+    note(f"{total} mutants: {', '.join(parts)}; {'failed' if failed else 'passed'} \u2014 report {job.service}/mutants/")
+    return 1 if failed else 0
 
 
 # The order the rules fix, read in one place: what starts nothing first, then the host, `uv`, the run's own lock, the
 # environment, and the version in it.
 CHECKS: tuple[Callable[[Job], int | None], ...] = (
     check_refusal, check_table, check_host, check_uv, check_environment, take_lock_if_there, ensure_synced, take_lock,
-    check_mutmut_version, clean, generate, plan, run_mutmut, not_wired,
+    check_mutmut_version, clean, generate, plan, run_mutmut, judge,
 )
 
 

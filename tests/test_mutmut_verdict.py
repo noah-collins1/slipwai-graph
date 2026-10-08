@@ -1,11 +1,10 @@
 """S42 T005, T006 (rules 5 and 3 · AC-S42-3, -4 fresh `mutants/`, -5, -6): what `mutmut-mutation.py` generates and runs,
 and the verdict it reads from the `.meta` files.
 
-The wrapper is run as a subprocess in a temporary project with a fake `uv` first on `PATH`, written here. The fake logs
-every call (`argv`, `cwd`); answers the version question `3.8.0`; for `run … python -c` (mutmut's generation) refuses to
-run on a `mutants/` left from an earlier run and writes the `.meta` files the example hands it (`FAKE_META`); and for
-`run … mutmut run` writes the results the example hands it (`FAKE_RESULTS`) into those files and exits as told. Nothing
-here starts mutmut: the one real run of the slice is T012's.
+The wrapper runs as a subprocess against a fake `uv` first on `PATH`, written here: it logs every call, answers the
+version `3.8.0`, refuses to generate over a `mutants/` left from an earlier run and writes the `.meta` files the example
+hands it (`FAKE_META`), then writes the results it hands it (`FAKE_RESULTS`) when `mutmut run` is called and exits as
+told. Nothing here starts mutmut: the one real run of the slice is T012's.
 """
 from __future__ import annotations
 
@@ -236,6 +235,115 @@ class NamesAndShapesTest(Case):
                 self.assertEqual(lines_of(done)[0], "mutation: scoped to 1 given file(s): src/pkg/a.py — 1 mutant(s)")
                 call = self.the_mutmut_call()
                 self.assertEqual(call["argv"][-2:], ["--", "pkg.x_f__mutmut_1"])
+
+
+KEY = "pkg.x_f__mutmut_1"
+REPORT = "report apps/service/mutants/"
+PASSED = "mutation: {} mutants: {} killed, {} no tests (reported, never failed); passed \u2014 " + REPORT
+STATUSES = {0: "survived", 36: "timeout", 24: "timeout", -24: "timeout", 152: "timeout", 255: "timeout",
+            35: "suspicious", -11: "segfault", -9: "segfault", None: "not checked", 2: "check was interrupted by user",
+            34: "skipped", 37: "caught by type check", 99: "unknown (exit 99)", -1: "unknown (exit -1)"}
+
+
+class VerdictTest(Case):
+    def verdict(self, codes: dict[str, Any], **keywords: Any) -> subprocess.CompletedProcess[str]:
+        meta = {"src/pkg/a.py": {key: None for key in codes}}
+        return self.run_wrapper("apps/service", "--file", "src/pkg/a.py", meta=meta,
+                                results={"src/pkg/a.py": codes}, **keywords)
+
+    def test_e1_every_key_killed_passes_in_the_last_line_the_data_model_fixes(self) -> None:
+        done = self.verdict({KEY: 1, "pkg.x_f__mutmut_2": 3, "pkg.x_g__mutmut_1": 1})
+        self.assertEqual((done.returncode, lines_of(done)[-1]), (0, PASSED.format(3, 3, 0)))
+
+    def test_e2_each_code_of_the_table_fails_by_name_and_no_tests_is_counted_never_failed(self) -> None:
+        for code, status in STATUSES.items():
+            with self.subTest(code=code):
+                done = self.verdict({KEY: code})
+                self.assertEqual(done.returncode, 1)
+                self.assertIn(f"mutation: {status} apps/service {KEY} (mutmut show {KEY} in apps/service; {REPORT})",
+                              lines_of(done))
+                self.assertTrue(lines_of(done)[-1].endswith(f"; failed \u2014 {REPORT}"))
+        for code in (5, 33):
+            done = self.verdict({KEY: code, "pkg.x_f__mutmut_2": 1})
+            self.assertEqual((done.returncode, lines_of(done)[-1]), (0, PASSED.format(2, 1, 1)))
+        done = self.verdict({KEY: 0, "pkg.x_f__mutmut_2": 36, "pkg.x_f__mutmut_3": 5})
+        self.assertEqual(lines_of(done)[-1], "mutation: 3 mutants: 0 killed, 1 no tests (reported, never failed), "
+                                             f"1 survived, 1 timed out; failed \u2014 {REPORT}")
+
+    def test_e3_mutmut_s_exit_status_is_printed_and_never_decides(self) -> None:
+        self.assertEqual(self.verdict({KEY: 0}, mutmut_exit=0).returncode, 1)
+        self.assertEqual(self.verdict({KEY: 1}, mutmut_exit=1).returncode, 0)
+        done = self.verdict({KEY: None}, mutmut_exit=1)
+        self.assertEqual(done.returncode, 1)
+        self.assertTrue(any(line.startswith("mutation: not checked ") for line in lines_of(done)))
+        self.assertFalse(any(line.startswith("mutation: no tests ") for line in lines_of(done)))
+
+    def test_e4_a_sweep_of_nothing_is_not_a_pass(self) -> None:
+        done = self.run_wrapper("apps/service", meta={"src/pkg/types.py": {}})
+        self.assertEqual((done.returncode, lines_of(done)[-1]), (1, "mutation: mutmut found nothing to mutate in "
+                                                                    "apps/service; a pass on nothing is not a pass"))
+
+    def test_e5_scoped_means_scoped_and_a_sweep_judges_every_file(self) -> None:
+        meta = {"src/pkg/a.py": {KEY: None}, "src/pkg/b.py": {"pkg.y_h__mutmut_1": 0}}
+        done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", meta=meta, results={"src/pkg/a.py": {KEY: 1}})
+        self.assertEqual(done.returncode, 0)
+        done = self.run_wrapper("apps/service", meta=meta, results={"src/pkg/a.py": {KEY: 1}})
+        self.assertEqual(done.returncode, 1)
+        self.assertIn(f"mutation: survived apps/service pkg.y_h__mutmut_1 (mutmut show pkg.y_h__mutmut_1 in "
+                      f"apps/service; {REPORT})", lines_of(done))
+
+    def source(self, text: str | bytes, setting: str = "", name: str = "a") -> None:
+        """A source file under `src/pkg/` and, where `setting` is given, a line in the service's `[tool.mutmut]`."""
+        (self.service / "src/pkg").mkdir(parents=True, exist_ok=True)
+        (self.service / f"src/pkg/{name}.py").write_bytes(text if isinstance(text, bytes) else text.encode())
+        (self.service / "pyproject.toml").write_text(TABLE.replace("[tool.mutmut]\n", "[tool.mutmut]\n" + setting),
+                                                     encoding="utf-8")
+
+    def test_e6_a_block_start_or_end_pragma_fails_the_run_and_a_bare_one_does_not(self) -> None:
+        for word in ("block", "start", "end"):
+            with self.subTest(word=word):
+                self.source("x = 1\n" * 11 + f"y = 2  # pragma: no mutate {word}\n")
+                done = self.verdict({KEY: 1})
+                self.assertEqual(done.returncode, 1)
+                self.assertIn(f'mutation: apps/service/src/pkg/a.py:12 holds "# pragma: no mutate {word}", which '
+                              'silences mutants nobody looked at; only a bare "# pragma: no mutate" on the line '
+                              "excuses one", lines_of(done))
+
+    def test_e6_hold_a_bare_pragma_or_another_comment_is_not_flagged(self) -> None:
+        """HOLD (teeth: flag every `pragma` and see it fail)."""
+        self.source("a = 1  # pragma: no mutate\nb = 2  # pragma: no mutate -- a reason\nc = 3  # no mutate\n"
+                    "d = 4  # pragma: no cover\n")
+        self.assertEqual(self.verdict({KEY: 1}).returncode, 0)
+
+    def test_e6_an_undecodable_file_fails_closed(self) -> None:
+        self.source(b"x = '\xff'\n")
+        done = self.verdict({KEY: 1})
+        self.assertEqual(done.returncode, 1)
+        self.assertIn("mutation: apps/service/src/pkg/a.py cannot be read as UTF-8, so its pragmas cannot be checked",
+                      lines_of(done))
+
+    def test_e6_a_non_empty_do_not_mutate_patterns_fails_and_an_empty_one_does_not(self) -> None:
+        for setting, failed in (('do_not_mutate_patterns = ["x"]\n', True), ("do_not_mutate_patterns = []\n", False)):
+            with self.subTest(setting=setting):
+                self.source("x = 1\n", setting)
+                done = self.verdict({KEY: 1})
+                self.assertEqual(done.returncode, int(failed))
+                self.assertEqual(any("apps/service/pyproject.toml sets do_not_mutate_patterns" in line
+                                     for line in lines_of(done)), failed)
+
+    def test_e6_a_pragma_in_a_file_that_is_not_judged_is_not_read(self) -> None:
+        self.source("x = 1  # pragma: no mutate block\n", name="b")
+        self.assertEqual(self.verdict({KEY: 1}).returncode, 0)
+
+    def test_e7_hold_only_mutants_and_the_lock_are_written_and_mutmut_gets_only_the_names(self) -> None:
+        """HOLD (teeth: add a flag to the argv and see it fail)."""
+        self.source("x = 1\n")
+        before = {path: path.read_bytes() for path in self.service.rglob("*") if path.is_file()}
+        self.verdict({KEY: 1})
+        after = {path: path.read_bytes() for path in self.service.rglob("*") if path.is_file()
+                 and "mutants" not in path.parts and path.name != "mutmut-run.lock"}
+        self.assertEqual(after, before)
+        self.assertEqual(self.the_mutmut_call()["argv"][4:], ["mutmut", "run", "--", KEY])
 
 
 if __name__ == "__main__":
