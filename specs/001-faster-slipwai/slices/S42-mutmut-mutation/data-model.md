@@ -70,8 +70,9 @@ Every line is prefixed `mutation: `.
 |---|---|---|
 | no `os.fork` (Windows) | `mutmut needs os.fork, which this host does not have; run it under WSL` | 2 |
 | no `uv` | `uv is not on PATH; install it to run mutmut (see scripts/verify)` | 2 |
-| `uv sync --locked` refused | `<service>/uv.lock does not agree with <service>/pyproject.toml; run uv lock --project <service>, then this again` | 2 |
-| mutmut absent or another version | `mutmut <found or "is not"> installed in <service>'s environment; this wrapper runs mutmut 3.8.0: add mutmut==3.8.0 to the dev group of <service>/pyproject.toml and run uv lock --project <service> (slipwai migrate brings the wrapper for a newer pin)` | 2 |
+| `uv sync --locked` refused with uv's "`--locked` was provided" message (a lock out of date or missing) | `<service>/uv.lock does not agree with <service>/pyproject.toml; run uv lock --project <service>, then this again` | 2 |
+| `uv sync --locked` fails for any other reason (no network, a manifest uv cannot parse) | `uv sync --locked failed for <service> (exit <n>)[: <uv's last stderr line that is not a hint>]` | 2 |
+| mutmut absent or another version | `mutmut <found or "is not"> installed in <service>'s environment[ (<the probe's last stderr line>)]; this wrapper runs mutmut 3.8.0: add mutmut==3.8.0 to the dev group of <service>/pyproject.toml and run uv lock --project <service> (slipwai migrate brings the wrapper for a newer pin)` | 2 |
 | no `[tool.mutmut]` | `<service>/pyproject.toml: no [tool.mutmut] table` | 2 |
 | a refused `--file` | the refusal words | 2 |
 | `PYTEST_ADDOPTS` set | `PYTEST_ADDOPTS is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut] pytest_add_cli_args is where this service adds pytest options` | — |

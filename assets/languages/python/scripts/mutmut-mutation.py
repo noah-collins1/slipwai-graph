@@ -74,6 +74,9 @@ STATUS: dict[Any, tuple[str, str, str]] = {
 # generated, so no status records it. Only the bare form is the per-mutant comment D212 excuses.
 SILENCING_WORDS = ("block", "start", "end")
 MUTMUT_STACK_DEPTH = -1  # `max_stack_depth`'s default: any other value hides survivors a test reaches as "no tests"
+# What `uv sync --locked` says of a lock that is missing or out of date, in both of uv's wordings (0.12.21): the rest of
+# its refusals are not a lock disagreement.
+LOCKED_REFUSED = "`--locked` was provided"
 EXITED = "(its exit status and the output above are mutmut's, never the verdict; the .meta files are)"
 # What `fnmatch` reads as syntax: the characters that make a path a pattern over mutant names, not a name.
 OPENERS = "*?["
@@ -327,13 +330,34 @@ def uv(job: Job, *arguments: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["uv", *arguments], env=job.env, text=True, capture_output=True)
 
 
+def last_line(done: subprocess.CompletedProcess[str]) -> str:
+    """The last line a failed tool said, from what it wrote to stderr (to stdout where that is empty), leaving out the
+    `hint:` lines that follow the error itself; empty where it said nothing."""
+    for text in (done.stderr, done.stdout):
+        lines = [line.strip() for line in (text or "").splitlines() if line.strip()]
+        lines = [line for line in lines if not line.startswith("hint:")] or lines
+        if lines:
+            return lines[-1]
+    return ""
+
+
+def said(done: subprocess.CompletedProcess[str]) -> str:
+    """` (exit n): <the tool's last line>` for a line about a tool that failed."""
+    line = last_line(done)
+    return f" (exit {done.returncode})" + (f": {line}" if line else "")
+
+
 def ensure_synced(job: Job) -> int | None:
-    """The environment from the committed lock and nothing else, as `scripts/verify` builds it; the refusal is `uv`'s
-    exit status and is never parsed."""
-    if uv(job, "sync", "--project", job.service, "--locked", "--quiet").returncode != 0:
+    """The environment from the committed lock and nothing else, as `scripts/verify` builds it. A lock that disagrees is
+    what `uv sync --locked` says it is; any other failure (no network, a manifest it cannot parse) is said as `uv` said
+    it, because a person told to relock a lock that is fine loses an afternoon."""
+    done = uv(job, "sync", "--project", job.service, "--locked", "--quiet")
+    if done.returncode == 0:
+        return None
+    if LOCKED_REFUSED in done.stderr:
         return say(f"{job.service}/uv.lock does not agree with {job.service}/pyproject.toml; run uv lock --project "
                    f"{job.service}, then this again")
-    return None
+    return say(f"uv sync --locked failed for {job.service}{said(done)}")
 
 
 def check_mutmut_version(job: Job) -> int | None:
@@ -341,8 +365,9 @@ def check_mutmut_version(job: Job) -> int | None:
     found = done.stdout.strip() if done.returncode == 0 else ""
     if found == PINNED:
         return None
-    return say(f"mutmut {found or 'is not'} installed in {job.service}'s environment; this wrapper runs mutmut {PINNED}: "
-               f"add mutmut=={PINNED} to the dev group of {job.service}/pyproject.toml and run uv lock --project "
+    why = f" ({last_line(done)})" if done.returncode != 0 and last_line(done) else ""
+    return say(f"mutmut {found or 'is not'} installed in {job.service}'s environment{why}; this wrapper runs mutmut "
+               f"{PINNED}: add mutmut=={PINNED} to the dev group of {job.service}/pyproject.toml and run uv lock --project "
                f"{job.service} (slipwai migrate brings the wrapper for a newer pin)")
 
 
@@ -390,7 +415,7 @@ def generate(job: Job) -> int | None:
     if done.returncode != 0:
         if (done.stdout + done.stderr).strip():
             print((done.stdout + done.stderr).strip()[-2000:])
-        return say(f"mutmut could not generate mutants for {job.service} (exit {done.returncode})")
+        return say(f"mutmut could not generate mutants for {job.service}{said(done)}")
     return None
 
 

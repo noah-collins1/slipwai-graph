@@ -279,7 +279,7 @@ class MainTest(Case):
         self.service(TABLE)
         done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py")
         self.assertEqual(done.returncode, 2)
-        self.assertIn("uv.lock does not agree", done.stdout)
+        self.assertIn("uv sync --locked failed for apps/service (exit 99)", done.stdout)  # silent: no lock named
         self.assertEqual(self.log.read_text(encoding="utf-8").splitlines(), [
             "uv sync --project apps/service --locked --quiet"])
 

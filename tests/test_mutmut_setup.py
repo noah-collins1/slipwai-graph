@@ -30,6 +30,15 @@ source_paths = ["src"]
 pytest_add_cli_args_test_selection = ["tests", "--ignore=tests/integration"]
 pytest_add_cli_args = ["-p", "no:xdist"]
 """
+# What uv 0.12.21 prints on a real mismatch (a manifest the lock does not agree with), read from a run, and the offline
+# failure of a sync with an empty cache: the first is the only one of the two that is a lock disagreement.
+LOCKED = ("error: The lockfile at `uv.lock` needs to be updated, but `--locked` was provided.\n\n"
+          "hint: To update the lockfile, run `uv lock`.\n")
+NO_LOCK = ("error: Unable to find lockfile at `uv.lock`, but `--locked` was provided. To create a lockfile, run `uv "
+           "lock` or `uv sync` without the flag.\n")
+OFFLINE = ("error: Failed to download `mypy==2.3.1`\n  cause: Network connectivity is disabled, but the requested "
+           "data wasn't found in the cache for: `https://files.pythonhosted.org/mypy.whl`\n\n"
+           "hint: `mypy` (v2.3.1) was included because `demo-service:dev` (v0.1.0) depends on `mypy`\n")
 FAKE_UV = f"""#!{sys.executable}
 import json, os, sys
 args = sys.argv[1:]
@@ -39,14 +48,16 @@ with open(os.environ["FAKE_LOG"], "a", encoding="utf-8") as log:
 if args[0] == "sync":
     if os.environ.get("FAKE_WAIT"):
         open(os.environ["FAKE_WAIT"], encoding="utf-8").read()
-    sys.stderr.write("fake uv: the lock is out of date\\n")
+    sys.stderr.write(os.environ.get("FAKE_SYNC_STDERR", {LOCKED!r}))
     sys.exit(int(os.environ.get("FAKE_SYNC_EXIT", "0")))
 if args[:2] == ["run", "--no-sync"] and "importlib.metadata" in args[-1]:
     version = os.environ.get("FAKE_VERSION", "3.8.0")
     if version == "absent":
+        sys.stderr.write(os.environ.get("FAKE_PROBE_STDERR", ""))
         sys.exit(1)
     print(version)
     sys.exit(0)
+sys.stderr.write(os.environ.get("FAKE_GENERATE_STDERR", ""))
 sys.exit(97)
 """
 NO_FORK = "import os; del os.fork"
@@ -249,6 +260,50 @@ class CleanSlateTest(Case):
                                              "run this again")
         self.assertEqual([call["argv"][0] for call in self.calls()], ["sync", "run"], "setup only, no generation")
         self.assertTrue((stale / "old.py.meta").exists(), "the stale report is left for its owner, never read")
+
+
+class ToolFailureTest(Case):
+    """Every subprocess the wrapper judges by exit status says what the tool said where it fails (D212 item 5)."""
+
+    SYNC = "mutation: uv sync --locked failed for apps/service (exit {code}){said}"
+
+    def test_e9_a_sync_that_fails_for_another_reason_says_uv_s_last_error_line_and_is_no_lock_line(self) -> None:
+        for stderr, code, said in (
+                (OFFLINE, 1, ": cause: Network connectivity is disabled, but the requested data wasn't found in the "
+                             "cache for: `https://files.pythonhosted.org/mypy.whl`"),
+                ("error: Project directory `apps/nope` does not exist\n", 2,
+                 ": error: Project directory `apps/nope` does not exist"),
+                ("", 1, "")):
+            with self.subTest(stderr=stderr[:30]):
+                self.log.unlink(missing_ok=True)
+                done = self.run_wrapper("apps/service", extra={"FAKE_SYNC_EXIT": str(code), "FAKE_SYNC_STDERR": stderr})
+                self.assertEqual((done.returncode, lines_of(done)), (2, [self.SYNC.format(code=code, said=said)]))
+                self.assertEqual([call["argv"][0] for call in self.calls()], ["sync"], "mutmut never started")
+
+    def test_e9_hold_both_messages_uv_prints_for_a_lock_that_disagrees_keep_the_lock_line(self) -> None:
+        """HOLD (teeth: report uv's last line for every failure and see it fail)."""
+        for stderr in (LOCKED, NO_LOCK):
+            with self.subTest(stderr=stderr[:40]):
+                done = self.run_wrapper("apps/service", extra={"FAKE_SYNC_EXIT": "1", "FAKE_SYNC_STDERR": stderr})
+                self.assertEqual((done.returncode, lines_of(done)), (2, [
+                    "mutation: apps/service/uv.lock does not agree with apps/service/pyproject.toml; run uv lock "
+                    "--project apps/service, then this again"]))
+
+    def test_e9_a_version_probe_that_fails_says_what_it_said_beside_the_mutmut_line(self) -> None:
+        said = "importlib.metadata.PackageNotFoundError: No package metadata was found for mutmut"
+        done = self.run_wrapper("apps/service", extra={
+            "FAKE_VERSION": "absent", "FAKE_PROBE_STDERR": f"Traceback (most recent call last):\n{said}\n"})
+        self.assertEqual(done.returncode, 2)
+        self.assertTrue(lines_of(done)[0].startswith(
+            f"mutation: mutmut is not installed in apps/service's environment ({said}); this wrapper runs mutmut "
+            "3.8.0: "), lines_of(done))
+
+    def test_e9_a_generation_that_fails_says_the_last_line_it_printed(self) -> None:
+        stderr = "Traceback\nImportError: no mutmut here\n"
+        done = self.run_wrapper("apps/service", extra={"FAKE_GENERATE_STDERR": stderr})
+        self.assertEqual(done.returncode, 2)
+        self.assertEqual(lines_of(done)[-1], "mutation: mutmut could not generate mutants for apps/service (exit 97): "
+                                             "ImportError: no mutmut here")
 
 
 class NothingIsFetchedTest(Case):
