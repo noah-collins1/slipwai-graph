@@ -3,8 +3,8 @@
 **Branch**: `slice/S42-mutmut-mutation` | **Date**: 2026-10-08 | **Spec**: `specs/001-faster-slipwai/spec.md`,
 `### S42-mutmut-mutation` (AC-S42-1..13), FR-008 as D137 amends it
 
-**Status**: **blocked** on *Blocked on* Q1 and Q2 below (cruise iteration 30) — converged at pass 2 (`5a9840e`), the
-after-converge gaps fixed except the two findings those questions decide; the demo (T016) waits on Q1.
+**Status**: unblocked (cruise iteration 30): D223 answers Q1, D224 Q2, D225 *Handed back* 1, D226 the six readings
+below. Tasks T031 onward carry the answers; the demo (T016) follows the next converge pass.
 
 **Input**: the slice's criteria; D137, D138, D139, D149, D150 (S08's, cited); D212, D216 (this slice's), D214 (S42 is
 planned on S41's merged tip, `b9f16ef`); D215 (d), D218, D219, D222 (S41's, whose *reasons* this plan applies to mutmut —
@@ -192,41 +192,43 @@ them.
 **Nothing outside the slice's scope is needed**: no change to the root `Makefile`, `delivery/scripts/`, `tools/`, CI or
 harness settings.
 
-## Applied, not decided (standing decisions' reasons read onto mutmut — the host may read them otherwise)
+## Applied, not decided — confirmed by D226 (standing decisions' reasons read onto mutmut, all six as built)
 
 Each is a reading of a standing decision onto the second tool, not a new choice; each is one table or one branch to
 change if the host reads it otherwise, and none blocks the slice.
 
-1. **D222 → libcst.** D216 sweeps a service on a mutmut pin change; D222's reason (*a new parser changes which mutants
+1. **D222 → libcst** (D226 item 1). D216 sweeps a service on a mutmut pin change; D222's reason (*a new parser changes which mutants
    exist*) sweeps it on a move of `libcst`'s lock entries too (R6). pytest, coverage and textual are not in the set.
-2. **D219 → block pragmas.** D212 item 1 names mutmut's `# pragma: no mutate` as the escape; mutmut 3.8.0 also reads
+2. **D219 → block pragmas** (D226 item 2). D212 item 1 names mutmut's `# pragma: no mutate` as the escape; mutmut 3.8.0 also reads
    `block`, `start` … `end` and `do_not_mutate_patterns`, which silence mutants nobody looked at — D219's reason for
    failing Stryker's block comments and `excludedMutations`. The wrapper fails them (R4). mutmut's bare pragma takes no
    reason, so none is required (D212 item 1 names it as written).
-3. **D215 (d) / D218 → `*`, `?`, `[` in a scoped path.** `mutmut run` reads names through `fnmatch`; a module path
+3. **D215 (d) / D218 → `*`, `?`, `[` in a scoped path** (D226 item 3). `mutmut run` reads names through `fnmatch`; a module path
    holding one would widen the scope, so it is refused (data-model *refused*).
-4. **D215 (a) → the exact version.** A run never fetches, and the wrapper refuses (exit 2) an environment whose mutmut
+4. **D215 (a) → the exact version** (D226 item 4). A run never fetches, and the wrapper refuses (exit 2) an environment whose mutmut
    is not 3.8.0, because its generation step is 3.8.0's (R3). A project that raises the pin before the factory does gets
    that line until `slipwai migrate` brings a newer wrapper. Renovate will propose such a raise; a grouping or hold rule
    is `renovate.py`'s, not this slice's.
 
-5. **D219 → `mutate_only_covered_lines`** (converge pass 1's question). mutmut 3.8.0 with `mutate_only_covered_lines = true`
+5. **D219 → `mutate_only_covered_lines`** (D226 item 5) (converge pass 1's question). mutmut 3.8.0 with `mutate_only_covered_lines = true`
    generates no mutant for a line coverage excludes (`# pragma: no cover`, `exclude_lines`), covered or not — a setting that
    silences mutants nobody looked at, D219's class. The wrapper fails a run whose table sets it, beside
    `do_not_mutate_patterns` (T017). The alternatives the pass named: allow it (a table change already sweeps), or exit 2 at
    setup.
 
-6. **D219 → `max_stack_depth`** (converge pass 2, T022). A table that sets it turns survivors a test reaches through
+6. **D219 → `max_stack_depth`** (D226 item 6) (converge pass 2, T022). A table that sets it turns survivors a test reaches through
    deeper calls into *no tests* (`33`, counted, never failed) — reproduced against 3.8.0. The same reading as item 5: the
    wrapper fails a run whose table sets it. Alternative named: allow it (but the sweep reads the same `33`s and is green).
 
-## Blocked on (product questions from the after-converge gaps review — the slice stops here until they are answered)
+## Answered (product questions from the after-converge gaps review — D223, D224)
 
 The slice converged at pass 2 (`tasks.md`, *Convergence*); the after-converge gaps review then found one HIGH and one
 MEDIUM that each turn on a decision this slice may not take. The demo (AC-S42-13) cannot be recorded as the quickstart
 writes it until **Q1** is answered.
 
-**Q1 — What does `make mutation-full` do when an earlier service fails?** (gaps finding 1, HIGH; AC-S42-4, -13.) The
+**Q1 — What does `make mutation-full` do when an earlier service fails?** **Answered by D223: (c)** — one combined Python
+`mutation-full` line, the wrapper running each service fully and failing at the end, `--file` refused with more than one
+service, AC-S42-4 amended in place; (a) across backends is `S47-mutation-full-runs-every-service`; (b) refused. (gaps finding 1, HIGH; AC-S42-4, -13.) The
 recipe is one line per service and make stops at the first failing line. The default Python starter is red the day it is
 generated (R9), so on the two-service demo `apps/service` fails and `apps/billing` is never mutated; `make mutation` on the
 trunk delegates to the same recipe. Go and TypeScript recipes have the same shape today; their default starters are not
@@ -242,7 +244,9 @@ always red.
   (AC-S42-11), and leaves (a) for every backend as its own MINOR slice. The gaps reviewer recommended (b) now and (a) later;
   (b) changes S08's sweep for every backend inside S42.
 
-**Q2 — What does `add-service --backend python` do in a project an older factory last wrote?** (gaps finding 4, MEDIUM;
+**Q2 — What does `add-service --backend python` do in a project an older factory last wrote?** **Answered by D224: (a)**
+now — one Catch-up sentence, AC-S42-12's added clause, no code — and (b) as `S46-add-service-older-project`, warning
+only; (c) refused. (gaps finding 4, MEDIUM;
 AC-S42-2, -9, -12.) It writes the wrapper, the recipe line and the ignore line but not the newer `mutation-scope.py` or
 `verify-stamp.py` (it writes only files that differ between the two renders), so every scoped run sweeps ("`mutation-full`'s
 recipe is not the one the factory wrote") and the stamp cannot reuse after a run. TypeScript (S41) has the same exposure.
@@ -257,7 +261,9 @@ recipe is not the one the factory wrote") and the stamp cannot reuse after a run
 Recorded for the host; neither changes a criterion this slice implements or a decision it relies on, and either
 answer only adds work. The slice proceeds under the criteria as written.
 
-1. **The default Python starter's `make mutation-full` is red on day one** (research R9: 114 survivors in nine files —
+1. **The default Python starter's `make mutation-full` is red on day one** — **answered by D225: (a)**, D217 applied:
+   the note and the fragment say so, the fragment names `S45-python-starter-kills-mutants` as the fix, no pragma is added,
+   and the demo hand-replays a sample of survivors (D221's lesson) (research R9: 114 survivors in nine files —
    the memory stores, the HTTP app, the event port, logging, the projections and their lifespan, settings, tracing —
    none read as equivalent; the minimal `standard`/`http none`/`memory` starter is green). This is D217's shape on the
    TypeScript side.

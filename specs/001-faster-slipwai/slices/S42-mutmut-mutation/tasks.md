@@ -1025,6 +1025,51 @@ here; converge pass 2 stopped at the loop's bound and left the two below, neithe
   once and checked in each place.
 - **Files:** `changelog.d/mutmut-mutation.md` (Catch-up only), `tests/test_mutmut_migrate.py` (the pin only).
 
+### The answers (cruise iteration 30): D223, D224, D225, D226 — the tasks they need
+
+D226 confirms the six readings as built (no task). D223 (Q1), D224 (Q2) and D225 (*Handed back* 1) need T031–T033; T030
+above rides with them.
+
+### T031 — [US2] HIGH · The wrapper takes several services, runs each fully and fails at the end (D223 item 2; AC-S42-4 as amended)
+- [ ] **RED:** in a new `tests/test_mutmut_services.py` (fake `uv` as `tests/test_mutmut_verdict.py`'s, imported, not copied):
+  `mutmut-mutation.py apps/a apps/b` where `apps/a`'s `.meta` holds a survivor and `apps/b`'s is all killed → both services are
+  generated and judged (the fake logs a generation and a `mutmut run` in each, each from a fresh `mutants/`, each under its own
+  lock), one result line per service, then one summary line `mutation: 2 swept; failed: apps/a`, exit 1 — the first non-zero in
+  service order (a setup exit 2 in `apps/b` after a verdict 1 in `apps/a` → exit 1; reversed → 2); both green → `mutation: 2 swept;
+  passed`, exit 0; `--file` with two services → exit 2 with the usage line, nothing started; one service keeps today's output
+  byte for byte (no summary line) — a hold with teeth. **GREEN (the class):** every per-service step (refusal, setup, lock,
+  clean, generate, run, judge) runs inside one service's turn, so no service's failure or exit leaks into the next; the usage
+  line and data-model's rows say the new shape. **Files:** `assets/languages/python/scripts/mutmut-mutation.py`,
+  `tests/test_mutmut_services.py` (new), `tests/test_select_tests_real_loaders.py` (its `READS` row),
+  `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md` (the rows and the usage).
+
+### T032 — [US2] HIGH · All of a project's Python services share one `mutation-full` line (D223 item 1)
+- [ ] **RED:** `tests/test_mutmut_generated.py` (or a new `tests/test_mutmut_recipe.py` if it is at 350): a two-Python project's
+  `mutation-full` recipe holds exactly one Python line, `python3 scripts/mutmut-mutation.py apps/service apps/billing`, where the
+  first Python line sits today; Go before and after Python (`go`, `python`, `go`, `python` service order) keeps every Go line byte
+  for byte and the one Python line at the first Python position; `factory_recipe` equals the generated recipe for those shapes
+  (`tests/test_mutation_targets.py`'s check); `make mutation` on a slice branch of a two-Python project does not sweep with
+  *the recipe is not the one the factory wrote*; a project whose Python services were added one at a time with `add-service`
+  renders the same line byte for byte (D223's *would reverse if* — say what it showed). **GREEN (the class):** one rule, in
+  `native_commands.py`'s merge, that collapses every Python service's wrapper line into one at the first one's place, and the
+  same rule in `factory_recipe`; no other backend's line moves (AC-S42-11). **Files:** `src/slipwai/project/native_commands.py`,
+  `src/slipwai/project/mutmut.py`, `assets/toolkit/scripts/mutation-scope.py` (`factory_recipe` only), the test module,
+  `tests/test_scoped_targets.py` (hashes of the moved shapes), `tests/test_mutation_targets.py` (only if a shape needs adding).
+
+### T033 — [US2] MEDIUM · The note and the fragment say what D223, D224 and D225 decided (D223 item 4, D224 item 1, D225 item 1; AC-S42-12)
+- [ ] **RED:** pins in `tests/test_mutmut_generated.py` / `tests/test_mutmut_migrate.py`: the Makefile note says the sweep runs
+  every Python service and fails at the end naming each failed one, and that in a mixed project a failing Go or TypeScript service
+  listed earlier still stops the sweep before Python runs; the note says the default starter's sweep reports its own starter
+  tests' survivors and that a scoped run on a slice editing one of those files meets them (already there — hold), the minimal
+  starter green; the fragment says the same, names `S45-python-starter-kills-mutants`' fix in a user's words (a later release
+  makes the starter's tests kill them) and the mixed-project sentence; the Catch-up gains D224 item 1's sentence (migrate and
+  commit before `add-service` of a Python or TypeScript service in a project an older factory last wrote; what is and is not
+  brought; every `make mutation` sweeps and the stamp does not reuse until `migrate` runs; a `migrate` afterwards skips the notes
+  in between). **GREEN (the class):** the note, the fragment's two paragraphs and the skill say one thing about the sweep's
+  shape. **Files:** `src/slipwai/project/mutmut.py` (the note), `changelog.d/mutmut-mutation.md`,
+  `assets/toolkit/skills/mutation-testing/SKILL.md` (only if it describes the sweep), `tests/test_mutmut_generated.py`,
+  `tests/test_mutmut_migrate.py`, `tests/test_scoped_targets.py` (hashes).
+
 ### T030 — [US2] LOW · No factory test reads a slice's record under `specs/` (T027's words hold; found at host triage)
 - [ ] T027's hold reads `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md`, so archiving or moving the slice
   record fails the factory suite rather than the slice. **GREEN (the class):** the wrapper's fixed lines are held where the
