@@ -23,7 +23,7 @@ class PlanningRunner(FakeRunner):
 
     def plan(self, backend: str, path: str, files: list[str]) -> Any:
         kept = files if self.mutable is None else self.mutable.get(path, [])
-        return SimpleNamespace(keep=list(kept), unreadable=None,
+        return SimpleNamespace(keep=list(kept), unreadable=None, refusal=None,  # the shape of the script's `Plan`
                                left=[(name, "outside the tool's targets") for name in files if name not in kept])
 
 
