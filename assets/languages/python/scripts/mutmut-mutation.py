@@ -663,12 +663,15 @@ def main(arguments: list[str]) -> int:
     if parsed is None:
         print(USAGE)
         return 2
-    services, files = parsed
+    services = list(dict.fromkeys(parsed[0]))
+    files = parsed[1]
     if len(services) == 1:
         return run_service(services[0], files)
-    statuses = {service: run_service(service, files) for service in dict.fromkeys(services)}
+    statuses = {service: run_service(service, files) for service in services}
+    refused_count = sum(status == 2 for status in statuses.values())
     failed = [service for service, status in statuses.items() if status]
-    note(f"{len(statuses)} swept; {'failed: ' + ', '.join(failed) if failed else 'passed'}")
+    note(f"{len(statuses) - refused_count} swept, {refused_count} refused; "
+         f"{'failed: ' + ', '.join(failed) if failed else 'passed'}")
     return next((status for status in statuses.values() if status), 0)
 
 

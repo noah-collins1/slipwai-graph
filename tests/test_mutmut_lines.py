@@ -21,8 +21,8 @@ TEST_SELECTION = {"reads": ["assets/languages/python/scripts/mutmut-mutation.py"
                             "assets/toolkit/scripts/check-styles.py", "tests"]}
 TABLE = """\
 mutation: usage: mutmut-mutation.py <service> [<service> ...] [--file <path within the service> ...]
-mutation: <n> swept; passed
-mutation: <n> swept; failed: <service>, <service>
+mutation: <s> swept, <r> refused; passed
+mutation: <s> swept, <r> refused; failed: <service>, <service>
 mutation: mutmut needs os.fork, which this host does not have; run it under WSL
 mutation: uv is not on PATH; install it to run mutmut (see scripts/verify)
 mutation: <service>/uv.lock does not agree with <service>/pyproject.toml; run uv lock --project <service>, then this
