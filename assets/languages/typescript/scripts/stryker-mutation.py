@@ -28,6 +28,10 @@ CONFIG = "stryker.config.json"
 # Characters a segment may not hold: each is minimatch syntax this reader does not evaluate.
 SYNTAX = "?[]{}()+@\\!"
 RANGE = re.compile(r":\d+(-\d+)?$")
+# What `--mutate` reads as pattern syntax or a line range (comma-separated, `:<line>` after the name); a path holding one
+# would be mutated as something else, or not at all, so it is refused rather than passed.
+MISREAD = ",*?{[!"
+TRAILING_LINE = re.compile(r":\d+$")
 STRYKER = "@stryker-mutator/"
 REPORT = "reports/mutation/mutation.json"
 SANDBOX = ".stryker-tmp"
@@ -123,6 +127,15 @@ def targets(service: Path) -> list[str]:
     return patterns
 
 
+def refused(service: str, file: str) -> str | None:
+    """The words refusing a path within the service that Stryker's `--mutate` would misread, or None (D215 d)."""
+    found = next((char for char in MISREAD if char in file), None) or (TRAILING_LINE.search(file) or [None])[0]
+    if found is None:
+        return None
+    return (f"`{service}/{file}` holds `{found}`, which Stryker's --mutate reads as pattern syntax; rename it, or run "
+            "`make mutation-full`")
+
+
 def stryker_in(text: str, key: str) -> dict[str, str]:
     """The `@stryker-mutator/*` versions in a manifest's dependency tables or a lock's `packages`, or `Unreadable`."""
     try:
@@ -193,10 +206,10 @@ def stryker_present(root: Path, service: Path) -> bool:
         here = here.parent
 
 
-def ensure_installed(service: str) -> int | None:
+def installed(job: Job) -> int | None:
     """Exit 2 with one line where Stryker cannot be started, None where it can. Installs from the committed lock and
     never fetches: `npm ci` takes exactly the lock, and `npm exec --no` refuses to download what is not installed."""
-    root = Path.cwd()
+    service, root = job.service, Path.cwd()
     if shutil.which("npm") is None:
         wanted = root / ".nvmrc"
         node = wanted.read_text(encoding="utf-8").strip() if wanted.is_file() else ""
@@ -216,6 +229,13 @@ def ensure_installed(service: str) -> int | None:
             f"{PINNED} to {service}/package.json's devDependencies and run npm install")
         return 2
     return None
+
+
+class Job:
+    """One invocation: the service, and the files handed over (narrowed by the list check to those Stryker would take)."""
+
+    def __init__(self, service: str, given: list[str]) -> None:
+        self.service, self.given = service, given
 
 
 def clean(service: Path) -> None:
@@ -274,8 +294,9 @@ def verdict(service: str, given: list[str], report: str, files: dict[str, dict])
     return 1 if failing else 0
 
 
-def run(service: str, given: list[str]) -> int:
+def run(job: Job) -> int:
     """Stryker over the given files (or the config's whole list), judged by the report it wrote."""
+    service, given = job.service, job.given
     directory = Path(service)
     clean(directory)
     command = ["npm", "exec", "--no", "--", "stryker", "run"]
@@ -293,28 +314,52 @@ def run(service: str, given: list[str]) -> int:
     return verdict(service, given, report, files)
 
 
+def refusal(job: Job) -> int | None:
+    """A path `--mutate` would misread refuses the whole invocation: never a narrower or wider scope."""
+    for file in job.given:
+        words = refused(job.service, file)
+        if words is not None:
+            say(f"mutation: {words}")
+            return 2
+    return None
+
+
+def listed(job: Job) -> int | None:
+    """Hold the files against the config's list: name what Stryker would not take, and stop where none is left."""
+    try:
+        patterns = targets(Path(job.service))
+    except Unreadable as why:
+        say(f"mutation: {job.service}/{CONFIG}: {why}")
+        return 2
+    kept = []
+    for file in job.given:
+        if matched(patterns, file):
+            kept.append(file)
+        else:
+            say(f"mutation: not mutated {job.service}/{file} — outside Stryker's configured targets")
+    if job.given and not kept:
+        say(f"mutation: nothing under {job.service} that was given is a file Stryker would mutate; no mutant to run")
+        return 0
+    job.given = kept
+    return None
+
+
+# The order the rules fix, read in one place: each returns an exit status to stop with, or None to go on. A refusal
+# comes before everything (nothing is looked up or deleted for a run that will not happen), `run` always ends it.
+CHECKS = (refusal, listed, installed, run)
+
+
 def main(arguments: list[str]) -> int:
     parsed = parse(arguments)
     if parsed is None:
         say("mutation: usage: stryker-mutation.py <service> [--file <path within the service> ...]")
         return 2
-    service, given = parsed
-    try:
-        patterns = targets(Path(service))
-    except Unreadable as why:
-        say(f"mutation: {service}/{CONFIG}: {why}")
-        return 2
-    kept = []
-    for file in given:
-        if matched(patterns, file):
-            kept.append(file)
-        else:
-            say(f"mutation: not mutated {service}/{file} — outside Stryker's configured targets")
-    if given and not kept:
-        say(f"mutation: nothing under {service} that was given is a file Stryker would mutate; no mutant to run")
-        return 0
-    setup = ensure_installed(service)
-    return setup if setup is not None else run(service, kept)
+    job = Job(*parsed)
+    for check in CHECKS:
+        status = check(job)
+        if status is not None:
+            return status
+    return 2  # unreachable: `run` returns a status
 
 
 if __name__ == "__main__":

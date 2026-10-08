@@ -1,4 +1,4 @@
-"""S41 T003 (rule 2 · AC-S41-3 first clause, AC-S41-6 half): the list `stryker-mutation.py` reads and what it says.
+"""S41 T003, T006 (rules 2 and 7 · AC-S41-3, -6 half, -7): the list `stryker-mutation.py` reads, and what it refuses.
 
 The wrapper is loaded as a module (bytecode off) for `matched`, `targets` and `versions`, and run as a subprocess in a
 temporary project with a fake `npm` first on `PATH`, written here, that fails the example if it is ever called: every
@@ -175,6 +175,55 @@ class MainTest(Case):
                 self.assertEqual(done.stdout.splitlines()[0], "mutation: not mutated apps/billing/src/main.ts — "
                                  "outside Stryker's configured targets")
         self.assertNpmNeverCalled()
+
+
+class RefusalTest(Case):
+    """Rule 7, wrapper half (D215 d): a path `--mutate` would misread refuses the whole run, before anything is done."""
+
+    def words(self, file: str, char: str) -> str:
+        return (f"`apps/service/{file}` holds `{char}`, which Stryker's --mutate reads as pattern syntax; "
+                "rename it, or run `make mutation-full`")
+
+    def test_e1_each_character_and_a_trailing_line_number_is_refused_in_the_data_model_words(self) -> None:
+        for file, char in (("src/a,b.ts", ","), ("src/a*.ts", "*"), ("src/a?.ts", "?"), ("src/{a}.ts", "{"),
+                           ("src/[a].ts", "["), ("src/!a.ts", "!"), ("src/a.ts:12", ":12"), ("src/a.ts:3", ":3")):
+            with self.subTest(file=file):
+                self.assertEqual(self.module.refused("apps/service", file), self.words(file, char))
+        for file in ("src/a.ts:x", "src/a.ts:", "src/a:1.ts", "src/health.ts", "src/a b.ts", "src/$a.ts", "src/é.ts",
+                     "src/#a.ts"):
+            with self.subTest(file=file):
+                self.assertIsNone(self.module.refused("apps/service", file))
+
+    def test_e2_one_refused_file_refuses_the_whole_run_before_npm_the_config_or_anything_is_touched(self) -> None:
+        project(self.tree)
+        old = self.tree / "apps/service/reports/mutation/mutation.json"
+        old.parent.mkdir(parents=True)
+        old.write_text("{}", encoding="utf-8")
+        done = self.run_wrapper("apps/service", "--file", "src/health.ts", "--file", "src/a,b.ts")
+        self.assertEqual(done.returncode, 2)
+        self.assertEqual(done.stdout.splitlines(), ["mutation: " + self.words("src/a,b.ts", ",")])
+        self.assertNpmNeverCalled()
+        self.assertEqual(old.read_text(encoding="utf-8"), "{}")
+        self.assertFalse((self.tree / "apps/service/.stryker-tmp").exists())
+
+    def test_e3_the_refusal_is_louder_than_outside_the_targets(self) -> None:
+        project(self.tree)
+        for files in (("src/main,x.ts",), ("src/main.ts", "src/a?.ts")):
+            with self.subTest(files=files):
+                done = self.run_wrapper("apps/service", *(part for file in files for part in ("--file", file)))
+                self.assertEqual(done.returncode, 2, done.stdout)
+                self.assertEqual(len(done.stdout.splitlines()), 1, done.stdout)
+        self.assertNpmNeverCalled()
+
+    def test_e4_hold_a_space_a_dollar_a_unicode_letter_and_a_hash_reach_the_run(self) -> None:
+        """HOLD (teeth: refuse every non-alphanumeric character and see it fail)."""
+        project(self.tree)
+        for name in ("src/a b.ts", "src/$a.ts", "src/é.ts", "src/#a.ts"):
+            with self.subTest(file=name):
+                done = self.run_wrapper("apps/service", "--file", name)
+                self.assertNotIn("holds", done.stdout)
+                self.assertTrue(self.log.exists(), "the run was not reached")
+                self.log.unlink()
 
 
 if __name__ == "__main__":
