@@ -1,6 +1,6 @@
 """S08 T007 (rule 6 · AC-S08-5, -6): placeholders refuse with their setup message and name what they would mutate.
 
-TypeScript, Python and `java-quarkus` have no tool wired (D137, recorded as a stub): a service of one with a
+Python and `java-quarkus` have no tool wired (D137, a recorded stub; S41 wired TypeScript): a service of one with a
 changed production file refuses and fails the run after every service has run; an untouched one is skipped; a wired
 service beside it still runs. The wired side is a fake `Runner` written here, the placeholders are the script's own.
 """
@@ -24,7 +24,6 @@ ECHO = re.compile(r"echo '([^']+)'")
 PYTHON_ENDING = ("a Python service is refused until a later slipwai release wires mutmut, whether or not mutmut is "
                  "installed; `make mutation-full` runs mutmut today where it is installed")
 FILES = {
-    "typescript": "apps/service/src/x.ts",
     "python": "apps/service/src/pkg/x.py",
     "java-quarkus": "apps/service/src/main/java/com/x/Foo.java",
 }
@@ -74,9 +73,9 @@ class PlaceholderTest(ScopeCase):
                 self.commit()
 
     def test_t020_only_placeholders_changed_keeps_the_scope_line_first_and_each_service_named_once(self) -> None:
-        self.write(FILES["typescript"])
+        self.write(FILES["java-quarkus"])
         self.write(FILES["python"].replace("apps/service", "apps/other"))
-        _, lines, _ = self.run_mixed("typescript:apps/service", "python:apps/other", "java-quarkus:apps/third")
+        _, lines, _ = self.run_mixed("java-quarkus:apps/service", "python:apps/other", "java-quarkus:apps/third")
         self.assertTrue(lines[0].startswith("mutation: scoped to 2 changed file(s) since "), lines)
         for path, word in (("apps/service", "refuse"), ("apps/other", "refuse"), ("apps/third", "skip")):
             named = [line for line in lines if re.match(rf"mutation: (scope|skip|sweep|refuse) {path} —", line)]
@@ -90,8 +89,6 @@ class PlaceholderTest(ScopeCase):
         module = loaded(self.repo / "scripts/mutation-scope.py")
         self.assertEqual(set(module.PLACEHOLDERS), set(FILES))
         for backend in FILES:
-            if backend == "typescript":  # wired by S41: its recipe is the wrapper, not an echo (T007 drops the row)
-                continue
             recipe = service_commands(backend, "apps/service")["mutation"]
             said = ECHO.findall(recipe)
             self.assertEqual(module.PLACEHOLDERS[backend], said[0], backend)
@@ -106,14 +103,13 @@ class PlaceholderTest(ScopeCase):
             self.assertIn(words, refusal)
 
     def test_d149_hold_the_other_refusals_do_not_name_mutmut(self) -> None:
-        for backend in ("typescript", "java-quarkus"):
-            self.write(FILES[backend])
-            _, lines, _ = self.run_mixed(f"{backend}:apps/service")
-            self.assertNotIn("mutmut", " ".join(lines).lower().replace("mutation:", ""), backend)
+        self.write(FILES["java-quarkus"])
+        _, lines, _ = self.run_mixed("java-quarkus:apps/service")
+        self.assertNotIn("mutmut", " ".join(lines).lower().replace("mutation:", ""))
 
     def test_e3_a_placeholder_first_no_longer_stops_a_wired_service(self) -> None:
         self.write("apps/billing/b.go")
-        status, lines, runner = self.run_mixed("typescript:apps/service", "go:apps/billing")
+        status, lines, runner = self.run_mixed("java-quarkus:apps/service", "go:apps/billing")
         self.assertIn("mutation: skip apps/service — no changed production file", lines)
         self.assertEqual(runner.wired.seen, [("apps/billing", ["b.go"])])
         self.assertEqual(status, 0, "\n".join(lines))
@@ -121,8 +117,8 @@ class PlaceholderTest(ScopeCase):
 
     def test_e3_both_changed_the_wired_service_still_runs_and_the_run_fails_with_2(self) -> None:
         self.write("apps/billing/b.go")
-        self.write(FILES["typescript"])
-        status, lines, runner = self.run_mixed("typescript:apps/service", "go:apps/billing")
+        self.write(FILES["java-quarkus"])
+        status, lines, runner = self.run_mixed("java-quarkus:apps/service", "go:apps/billing")
         self.assertEqual(runner.wired.seen, [("apps/billing", ["b.go"])])
         self.assertEqual(status, 2)
         self.assertEqual(lines[-1], "mutation: 1 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/service")
@@ -134,9 +130,9 @@ class PlaceholderTest(ScopeCase):
         self.assertEqual(status, 1)
 
     def test_e4_only_a_test_file_changed_is_no_mutant_to_run_not_a_refusal(self) -> None:
-        self.write("apps/service/src/x.test.ts")
+        self.write("apps/service/src/test/java/com/x/FooTest.java")
         self.write("apps/other/tests/test_y.py")
-        status, lines, _ = self.run_mixed("typescript:apps/service", "python:apps/other")
+        status, lines, _ = self.run_mixed("java-quarkus:apps/service", "python:apps/other")
         self.assertTrue(lines[0].startswith("mutation: no mutant to run — only tests changed: "), lines)
         self.assertEqual(status, 0)
 
@@ -177,7 +173,6 @@ class PlaceholderTest(ScopeCase):
 
 
 PLACEHOLDER_MESSAGES = {
-    "typescript": "Configure the repository-selected Stryker mutator, then run its checked-in configuration.",
     "python": "install and configure mutmut for the selected production packages",
     "java-quarkus": "Configure PIT for the domain packages only — see the note above this target — then run it.",
 }

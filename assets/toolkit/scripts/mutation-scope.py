@@ -15,6 +15,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import unicodedata
@@ -76,6 +77,18 @@ EMPTY_SINCE = "SINCE is set and empty"
 INCLUDES = "`{makefile}` includes another makefile, which the factory cannot read, so it cannot vouch for what runs"
 MAKEFILES_SET = "`MAKEFILES` is set, so makefiles the factory cannot read run beside `{makefile}`"
 NOT_FACTORY = "`mutation-full`'s recipe is not the one the factory wrote, so it runs as written"
+
+
+def browser_apps() -> list[str]:
+    """The paths `project.json` records for a browser app (`kind: web`): nothing here mutates a file in one."""
+    try:
+        with open("project.json", encoding="utf-8") as handle:
+            records = json.load(handle).get("deployables")
+    except (OSError, ValueError, AttributeError):
+        return []
+    records = list(records.values()) if isinstance(records, dict) else records if isinstance(records, list) else []
+    return sorted(record["path"].rstrip("/") for record in records
+                  if isinstance(record, dict) and record.get("kind") == "web" and isinstance(record.get("path"), str))
 
 
 def say(text: str) -> None:
@@ -354,7 +367,7 @@ IGNORED = "`{path}` is a path git ignores, so whether it changed cannot be told"
 NESTED = "`{path}` is a nested repository, so the files in it cannot be told apart"
 # Directories of dependencies and build output, which no sweep of a service mutates and a scope never names.
 DEPENDENCIES = ("vendor", "node_modules", "target", "build", "dist", ".venv", "venv", "__pycache__", ".gradle")
-PRODUCTION_ROOT = {"go": "", "java-spring": "src/main/java/"}  # where a wired service's production sources live
+PRODUCTION_ROOT = {"go": "", "java-spring": "src/main/java/", "typescript": "src/"}  # where a wired service's sources live
 OTHER_JVM = (".kt", ".groovy", ".scala")
 
 
@@ -489,7 +502,38 @@ def go_plan(path: str, files: list[str]) -> Plan:
     except re.error as error:  # a pattern Go's regexp accepts and Python's `re` cannot compile: not read, so the sweep
         return Plan([], [], f"{path}/{tool.CONFIG}: the pattern `{shown(str(error.pattern))}` cannot be read "
                             f"({str(error.msg)[:80]})")
-    return Plan(sorted(keep), [(name, "outside Gremlins' configured targets") for name in files if name not in keep])
+    return planned(files, keep, "Gremlins'")
+
+
+def planned(files: list[str], keep: Any, tool: str) -> Plan:
+    """The files a tool takes of the given ones, sorted, and each it leaves out with the reason: the step Go's and
+    TypeScript's plans share, both of them intersections with the tool's own list."""
+    return Plan(sorted(keep), [(name, f"outside {tool} configured targets") for name in files if name not in keep])
+
+
+def typescript_plan(path: str, files: list[str]) -> Plan:
+    """The files Stryker will take within the given ones, by the service's own `mutate` list as the wrapper reads it: the
+    wrapper is loaded and never copied. A list it cannot read plans nothing and says why, and the service then sweeps."""
+    tool = load("stryker-mutation.py")
+    try:
+        patterns = tool.targets(Path(path))
+        keep = {name for name in files if tool.matched(patterns, name)}
+    except tool.Unreadable as why:
+        return Plan([], [], f"{path}/{tool.CONFIG}: {why}")
+    return planned(files, keep, "Stryker's")
+
+
+def typescript(path: str, files: list[str]) -> Result:
+    """Stryker over the given files only, through the wrapper; a file outside the list is named and left out, so a run
+    with nothing left starts no tool."""
+    plan = typescript_plan(path, files)
+    if plan.unreadable is not None:
+        return Result(0, [], [], None, plan.unreadable)
+    if not plan.keep:
+        return Result(0, [], plan.left)
+    command = [sys.executable, os.path.join(HERE, "stryker-mutation.py"), path]
+    command += [word for name in plan.keep for word in ("--file", name)]
+    return Result(subprocess.run(command, close_fds=False, check=False).returncode, plan.keep, plan.left)
 
 
 def go(path: str, files: list[str]) -> Result:
@@ -513,11 +557,10 @@ def go(path: str, files: list[str]) -> Result:
 
 # The setup message of each placeholder backend: the line `make mutation-full` prints for it, held equal to the factory's by a test.
 PLACEHOLDERS = {
-    "typescript": "Configure the repository-selected Stryker mutator, then run its checked-in configuration.",
     "python": "install and configure mutmut for the selected production packages",
     "java-quarkus": "Configure PIT for the domain packages only — see the note above this target — then run it.",
 }
-WIRED = ("go", "java-spring")
+WIRED = ("go", "java-spring", "typescript")
 # D149: the scoped run refuses a Python service whether or not mutmut is installed; only the sweep runs the tool today.
 PYTHON_REFUSED = ("a Python service is refused until a later slipwai release wires mutmut, whether or not mutmut is "
                   "installed; `make mutation-full` runs mutmut today where it is installed")
@@ -733,6 +776,8 @@ class Tools:
             return go_plan(path, files)
         if backend == "java-spring":
             return spring_plan(path, files)
+        if backend == "typescript":
+            return typescript_plan(path, files)
         return Plan(list(files), [])
 
     def gone(self, backend: str, path: str) -> str | None:
@@ -746,6 +791,8 @@ class Tools:
             return go(path, files)
         if backend == "java-spring":
             return spring(path, files, self.execute)
+        if backend == "typescript":
+            return typescript(path, files)
         return refusal(backend, path, files)
 
     def sweep(self, backend: str, path: str) -> Result:
@@ -757,20 +804,23 @@ class Tools:
             return Result(subprocess.run(command, close_fds=False, check=False).returncode, [], [])
         if backend == "java-spring":
             return Result(self.execute(PIT, path)[0], [], [])
+        if backend == "typescript":
+            command = [sys.executable, os.path.join(HERE, "stryker-mutation.py"), path]
+            return Result(subprocess.run(command, close_fds=False, check=False).returncode, [], [])
         return refusal(backend, path, [])
 
 
-GO_REPORT = "gremlins.json"  # where a Go run leaves its report, in the service; `go-mutation.py` writes it
+REPORTS = {"go": "gremlins.json", "typescript": os.path.join("reports", "mutation")}  # where a run leaves its report
 
 
 def drop_report(backend: str, root: str, dry: bool) -> None:
-    """A Go service this run starts no tool for keeps no earlier run's report, which would read as this run's. The report
+    """A service this run starts no tool for keeps no earlier run's report, which would read as this run's. The report
     is a tool's output, replaced by the next run that starts one; nothing is removed under a dry run."""
-    report = os.path.join(root, GO_REPORT)
-    if backend != "go" or dry or not os.path.isfile(report):
+    report = os.path.join(root, REPORTS.get(backend, ""))
+    if backend not in REPORTS or dry or not os.path.exists(report):
         return
     try:
-        os.remove(report)
+        shutil.rmtree(report) if os.path.isdir(report) else os.remove(report)
     except OSError as error:
         say(f"{shown(report)} is an earlier run's report and could not be removed ({str(error)[:60]})")
 
@@ -798,10 +848,15 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     plan is printed and each service reads as having run clean; a refusal, which starts none, is the runner's."""
     handled = {path for found in causes.values() for path in found}
     shared: list[str] = []
+    browser: list[str] = []
     deleted: list[str] = []
     tests: list[str] = []
     production: dict[str, list[str]] = {}
+    apps = browser_apps()
     for path in sorted(set(changes) - handled):
+        if any(path.startswith(app + "/") for app in apps):
+            browser.append(path)
+            continue
         kind, root, inside = classify(path, changes[path], services)
         if kind == "shared":
             shared.append(path)
@@ -824,13 +879,15 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         say(SWEEPS.format(reason=", ".join([*([said(sorted(handled))] if handled else []), *map(str, unread.values())])))
     elif outside:  # a production file a tool leaves out changed, whatever else did: it is named `not mutated` below
         say("no mutant to run — every changed production file is outside the tools' targets")
-    elif tests and not shared and not deleted:  # tests the only source files that changed (T022)
+    elif tests and not shared and not browser and not deleted:  # tests the only source files that changed (T022)
         say(f"no mutant to run — only tests changed: {', '.join(shown(name) for name in tests)}; "
             "`make mutation-full` is the run that measures them")
     else:
         say("no mutant to run — no production file changed")
     for path in shared:
         say(f"not mutated {shown(path)} — not mutated by this target")
+    for path in browser:
+        say(f"not mutated {shown(path)} — browser app, not mutated by this target")
     for path in deleted:
         say(f"not mutated {shown(path)} — deleted, no mutants")
     counts = {"scoped": 0, "swept": 0, "skipped": 0, "refused": 0}

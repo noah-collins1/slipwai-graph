@@ -93,7 +93,7 @@ class DryRunTest(ScopeCase):
         self.nothing_started(runner, lines)
 
     def test_a_refusal_is_the_plan_and_the_dry_run_exits_0(self) -> None:
-        paths = {"typescript": "apps/service/src/x.ts", "python": "apps/service/src/pkg/x.py",
+        paths = {"python": "apps/service/src/pkg/x.py",
                  "java-quarkus": "apps/service/src/main/java/com/x/Foo.java"}
         for backend, path in paths.items():
             for flags in ("n", "q", "t"):
