@@ -155,11 +155,12 @@ def stryker_in(text: str, key: str) -> dict[str, str]:
     found: dict[str, str] = {}
     if key == "packages":
         entries = document.get("packages")
-        # The shortest key is the hoisted one; a nested copy of the same package never overrules it.
-        for path in sorted(entries if isinstance(entries, dict) else {}, key=len):
-            name = path.rsplit("node_modules/", 1)[-1]
-            if name.startswith(STRYKER) and "node_modules/" in path and isinstance(entries[path], dict):
-                found.setdefault(name, str(entries[path].get("version")))
+        # Keyed by the lock's own path: every copy of a package, hoisted or nested, is its own entry, so any copy moving
+        # is a change (D215 b). Collapsing them to one version per name would hide a nested copy moving.
+        for path, entry in (entries if isinstance(entries, dict) else {}).items():
+            if "node_modules/" in path and path.rsplit("node_modules/", 1)[-1].startswith(STRYKER) \
+                    and isinstance(entry, dict):
+                found[path] = str(entry.get("version"))
         return found
     for table in ("dependencies", "devDependencies"):
         for name, version in (document.get(table) if isinstance(document.get(table), dict) else {}).items():
@@ -169,8 +170,8 @@ def stryker_in(text: str, key: str) -> dict[str, str]:
 
 
 def versions(manifest_text: str | None = None, lock_text: str | None = None) -> dict[str, str]:
-    """`{package: version}` for every `@stryker-mutator/*` entry of a manifest, a lock, or both (the lock's resolved
-    version wins). What the scope script compares between the base and the working tree (D215 b)."""
+    """`{key: version}` for every `@stryker-mutator/*` entry of a manifest (keyed by package name), a lock (keyed by the
+    lock path of each copy), or both. What the scope script compares between the base and the working tree (D215 b)."""
     found = stryker_in(manifest_text, "manifest") if manifest_text is not None else {}
     if lock_text is not None:
         found.update(stryker_in(lock_text, "packages"))

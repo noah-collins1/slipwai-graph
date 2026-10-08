@@ -127,6 +127,24 @@ class SweepsTypeScriptTest(TypeScriptCase):
                 self.assertEqual(sorted(swept), ["apps/second", "apps/service"] if sweeps else [], lines)
                 self.assertEqual(sweeps, "mutation: sweep apps/service — `package-lock.json` changed" in lines, lines)
 
+    def test_e3_either_copy_of_a_stryker_package_in_the_lock_moving_sweeps(self) -> None:
+        """T023: a nested copy beside a hoisted one at another version; only the nested, or only the hoisted, moves."""
+        nested = f"node_modules/{CORE}/node_modules/@stryker-mutator/util"
+
+        def lock(hoisted: str, copy: str) -> str:
+            packages = {**LOCK["packages"], "node_modules/@stryker-mutator/util": {"version": hoisted},
+                        nested: {"version": copy}}
+            return text({"packages": packages})
+
+        self.on_main("package-lock.json", text=lock("10.0.0", "9.0.0"))
+        for name, content, sweeps in (("only the nested copy", lock("10.0.0", "9.1.0"), True),
+                                      ("only the hoisted copy", lock("10.0.1", "9.0.0"), True),
+                                      ("neither", lock("10.0.0", "9.0.0"), False)):
+            with self.subTest(change=name):
+                self.write("package-lock.json", content)
+                swept, _, lines = self.swept(*TWO)
+                self.assertEqual(sorted(swept), ["apps/second", "apps/service"] if sweeps else [], lines)
+
     def test_e4_a_list_the_script_cannot_read_sweeps_naming_the_config_changed_or_not(self) -> None:
         bad = ({"mutate": ["src/**/*.{ts,tsx}"]}, {"other": 1}, None)
         for content in bad:

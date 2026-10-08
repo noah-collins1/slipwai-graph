@@ -132,13 +132,31 @@ class MatchedTest(Case):
             "apps/service/node_modules/@stryker-mutator/core": {"version": "10.0.0"},
             "node_modules/@stryker-mutator/vitest-runner": {"version": "10.0.1"},
             "node_modules/vitest": {"version": "4.1.11"}}})
+        # Keyed by the lock's own path, so every copy of a package is a key and any copy moving is a change (T023).
         self.assertEqual(self.module.versions(lock_text=lock),
-                         {"@stryker-mutator/core": "10.0.0", "@stryker-mutator/vitest-runner": "10.0.1"})
+                         {"node_modules/@stryker-mutator/core": "10.0.0",
+                          "apps/service/node_modules/@stryker-mutator/core": "10.0.0",
+                          "node_modules/@stryker-mutator/vitest-runner": "10.0.1"})
         for text in ("not json", "[1]", '"s"'):
             with self.subTest(text=text), self.assertRaises(self.module.Unreadable):
                 self.module.versions(manifest_text=text)
             with self.subTest(lock=text), self.assertRaises(self.module.Unreadable):
                 self.module.versions(lock_text=text)
+
+    def test_e3_a_nested_copy_of_a_package_is_a_version_of_its_own(self) -> None:
+        """T023: a hoisted `util` and a nested one at another version are two entries; either moving changes the map."""
+        nested = "node_modules/@stryker-mutator/core/node_modules/@stryker-mutator/util"
+
+        def lock(hoisted: str, copy: str) -> str:
+            return json.dumps({"packages": {"node_modules/@stryker-mutator/util": {"version": hoisted},
+                                            nested: {"version": copy}}})
+
+        self.assertEqual(self.module.versions(lock_text=lock("10.0.0", "9.0.0")),
+                         {"node_modules/@stryker-mutator/util": "10.0.0", nested: "9.0.0"})
+        self.assertNotEqual(self.module.versions(lock_text=lock("10.0.0", "9.0.0")),
+                            self.module.versions(lock_text=lock("10.0.0", "9.1.0")))
+        self.assertNotEqual(self.module.versions(lock_text=lock("10.0.0", "9.0.0")),
+                            self.module.versions(lock_text=lock("10.0.1", "9.0.0")))
 
 
 class MainTest(Case):
