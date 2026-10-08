@@ -190,3 +190,18 @@ starter with an `it.skip` of its own would label every static survivor `Incomple
 **Real run, default starter:** before, 415 killed, 13 not covered, 90 survived, 1 timed out; after, 415 killed, 13 not
 covered, 85 survived, 5 survived with the suite incomplete (`tracing.ts` 81:5 ×2, 81:44, 91:7 `false` and `!==`), 1 timed
 out. The real survivor on `tracing.ts` 91:7 is `ConditionalExpression → true`.
+
+## R12 — Which constructs Stryker 10.0.0 mutates, for what `holds_code` counts (AC-S41-3, T026, T033)
+
+Source: `@stryker-mutator/instrumenter` 10.0.0, `dist/src/mutators/`: arithmetic-operator, array-declaration,
+arrow-function, assignment-operator, block-statement, boolean-literal, conditional-expression, empty-expression,
+equality-operator, logical-operator, method-expression, object-literal, optional-chaining, regex, string-literal,
+unary-operator, update-operator. There is no numeric-literal mutator. Probed in scratch with the instrumenter's
+`instrument()` over one-line files (`mutate: true`): `export const A = 0;` (also typed, `10n`, `0xff`, `1.5e3`, `let`,
+`null`, `undefined`, `B`, `B.c`, `0 as const`, `0 satisfies number`) gave 0 mutants; `-1` gave a `UnaryOperator`, `'x'` and
+`` `x` `` a `StringLiteral`, `true` and `!B` a `BooleanLiteral`, `[]` an `ArrayDeclaration`, `{...B}` an `ObjectLiteral`.
+**Decision (T033):** besides type declarations, imports and re-exports, a top-level statement is not code for `holds_code`
+only when it is `[export] const|let|var NAME[: plain type] = <numeric literal | null | undefined | name or member path>
+[as const]`; every other statement, including anything the scanner cannot classify (`(0)`, a second declarator, a call),
+is code and fails closed. The starter's `read-models.ts` (`export const FROM_THE_BEGINNING = 0;` and types) is now *no
+mutant to run*, as `demo/q4d-starter-port-with-const.txt` required.

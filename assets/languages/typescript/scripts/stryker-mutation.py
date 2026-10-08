@@ -383,6 +383,14 @@ STATEMENT = re.compile(r"\s*(?:export|import|const|let|var|function|class|interf
 DECLARED = re.compile(r"(?:export\s+)?(?:declare\s+)?(?:interface|type)\s+[A-Za-z_$]|import\s+(?:type\s+)?[\w{*\"']|"
                       r"export\s+type\b")
 REEXPORT = re.compile(r"export\s*(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*(?:from\s+['\"][^'\"]*['\"])?")
+# A declaration whose initialiser no Stryker 10.0.0 mutator reads (research R12): a numeric literal (decimal, separators,
+# exponent, hex, octal, binary, bigint), `null`, `undefined` or a plain name or member path, with an optional plain type
+# and `as const`. The mutators read strings, templates, booleans, `!`, a unary sign, arrays, objects, arrows, function
+# bodies, regexes, operators and some method calls; a name is not a boolean. Anything else is not matched, so it is code.
+NUMBER = r"(?:0[xX][\da-fA-F_]+|0[oO][0-7_]+|0[bB][01_]+|(?:\d[\d_]*\.?[\d_]*|\.\d[\d_]*)(?:[eE][+-]?\d[\d_]*)?)n?"
+NAME = r"(?!(?:true|false)\b)[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*"
+INERT = re.compile(rf"(?:export\s+)?(?:const|let|var)\s+[A-Za-z_$][\w$]*(?:\s*:\s*[\w$.<>\[\]| ]+?)?\s*=\s*"
+                   rf"(?:{NUMBER}|null|undefined|{NAME})(?:\s+as\s+const)?")
 
 
 def statements(text: str) -> list[str]:
@@ -415,13 +423,14 @@ def statements(text: str) -> list[str]:
 
 
 def holds_code(path: Path) -> bool:
-    """Whether the file could hold a mutant: any top-level statement that is not a type declaration, an import or a
-    re-export. A file this cannot read counts as holding code, so the answer fails closed."""
+    """Whether the file could hold a mutant: any top-level statement that is not a type declaration, an import, a
+    re-export or a declaration of a value no mutator reads (T033). A file this cannot read counts as holding code, so the answer fails closed."""
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, ValueError):
         return True
-    return any(statement and not (DECLARED.match(statement) or REEXPORT.fullmatch(statement))
+    return any(statement and not (DECLARED.match(statement) or REEXPORT.fullmatch(statement)
+                                  or INERT.fullmatch(statement))
                for statement in statements(text))
 
 
