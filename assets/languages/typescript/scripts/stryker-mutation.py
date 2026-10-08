@@ -49,6 +49,8 @@ RANGE = re.compile(r":\d+(-\d+)?$")
 STRYKER = "@stryker-mutator/"
 REPORT = "reports/mutation/mutation.json"
 SANDBOX = ".stryker-tmp"
+# Stryker's incremental mode keeps results here by default; `incremental: true` would let a run reuse them (T036).
+INCREMENTAL = "reports/stryker-incremental.json"
 # The verdict of each status, in one place: anything not named here fails, so a status Stryker adds later fails closed.
 PASS = ("Killed", "Ignored")  # an `Ignored` one is then held to `unexcused`
 COUNTED = ("NoCoverage",)
@@ -328,11 +330,29 @@ class Job:
         self.service, self.given = service, given
 
 
+def incremental_files(service: Path) -> list[Path]:
+    """Where Stryker's incremental mode keeps an earlier run's results: its default file, and the one the config's
+    `incrementalFile` names where that stays inside the service (a path that leaves it is not this script's to delete)."""
+    found = [service / INCREMENTAL]
+    try:
+        named = json.loads((service / CONFIG).read_text(encoding="utf-8")).get("incrementalFile")
+    except (OSError, ValueError, AttributeError):
+        named = None
+    if isinstance(named, str) and named:
+        here = (service / named).resolve()
+        if here.is_relative_to(service.resolve()) and here != service.resolve():
+            found.append(here)
+    return found
+
+
 def clean(service: Path) -> None:
-    """Every run starts from nothing: an earlier report must not be able to pass a run that wrote none, and an earlier
-    sandbox is not this run's."""
+    """Every run starts from nothing: an earlier report must not be able to pass a run that wrote none, an earlier
+    sandbox is not this run's, and an earlier run's incremental file is no result of this one (T036; `--force` is the
+    other half, `run` passes it)."""
     shutil.rmtree(service / "reports" / "mutation", ignore_errors=True)
     shutil.rmtree(service / SANDBOX, ignore_errors=True)
+    for left in incremental_files(service):
+        left.unlink(missing_ok=True)
 
 
 def read_report(path: Path) -> dict[str, dict] | None:
@@ -530,7 +550,9 @@ def run(job: Job) -> int:
     if (directory / REPORT).exists():
         say(f"mutation: the previous report {service}/{REPORT} could not be removed; remove it, then run this again")
         return 2
-    command = ["npm", "exec", "--no", "--", "stryker", "run"]
+    # `--force` runs every mutant even where `incremental` is on and an incremental file exists: a green never rests on
+    # the results of an earlier run (T036, D212 item 7).
+    command = ["npm", "exec", "--no", "--", "stryker", "run", "--force"]
     if given:
         say(f"mutation: scoped to {len(given)} given file(s): {', '.join(given)}")
         command += ["--mutate", ",".join(given)]
