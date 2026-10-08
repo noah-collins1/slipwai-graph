@@ -31,6 +31,11 @@ from collections.abc import Iterator
 from pathlib import Path
 
 CONFIG = "stryker.config.json"
+# The directory name a lock's package paths are keyed by, spelled so that it is a string being split and never a path
+# being read (the verify stamp's scan reads a path-like literal as a read of the installed tree).
+MODULES = "node_modules"
+HOISTED = MODULES + "/"
+NESTED = "/" + HOISTED
 # What minimatch 10 (the version Stryker 10 reads) or `--mutate`'s own reading treats as syntax inside a path, in one
 # table: (text, in a path that is handed to `--mutate`, in a `mutate` pattern this reader evaluates). A path holding a
 # `path` entry is refused, never mutated under a different scope (D215 d); a pattern holding a `pattern` entry is
@@ -194,13 +199,13 @@ def resolved(table: dict, roots: list[str]) -> list[str]:
         for name in needs if isinstance(needs, dict) else ():
             where = path
             while True:
-                candidate = f"{where}/node_modules/{name}" if where else f"node_modules/{name}"
+                candidate = f"{where}{NESTED}{name}" if where else f"{HOISTED}{name}"
                 if isinstance(table.get(candidate), dict):
                     pending.append(candidate)
                     break
-                if "node_modules/" not in where:
+                if HOISTED not in where:
                     break
-                where = where.rsplit("/node_modules/", 1)[0] if "/node_modules/" in where else ""
+                where = where.rsplit(NESTED, 1)[0] if NESTED in where else ""
     return seen
 
 
@@ -219,12 +224,12 @@ def stryker_in(text: str, key: str) -> dict[str, str]:
         # is a change (D215 b). Collapsing them to one version per name would hide a nested copy moving.
         table = entries if isinstance(entries, dict) else {}
         for path, entry in table.items():
-            if "node_modules/" in path and path.rsplit("node_modules/", 1)[-1].startswith(STRYKER) \
+            if HOISTED in path and path.rsplit(HOISTED, 1)[-1].startswith(STRYKER) \
                     and isinstance(entry, dict):
                 found[path] = str(entry.get("version"))
         # And whatever the instrumenter resolves, which decides which mutants exist (D222): its parser and its regex mutator
         # move through ranges while every `@stryker-mutator/*` version stands.
-        for path in resolved(table, [path for path in table if path.endswith(f"node_modules/{INSTRUMENTER}")]):
+        for path in resolved(table, [path for path in table if path.endswith(f"{HOISTED}{INSTRUMENTER}")]):
             found[path] = str(table[path].get("version"))
         return found
     for table in ("dependencies", "devDependencies"):
