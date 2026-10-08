@@ -18,7 +18,8 @@ import unittest
 from test_stryker_verdict import REPORT, SCRIPT, SERVICE, VerdictCase, mutant, report
 
 sys.dont_write_bytecode = True
-TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py"]}
+TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py",
+                            "assets/toolkit/scripts/check-styles.py"]}
 PLAN = {"scoped_sleep": 3, "report": report(src__health_ts=[mutant("Killed")])}
 
 

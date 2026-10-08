@@ -14,7 +14,8 @@ from typing import Any
 from test_stryker_verdict import REPORT, SERVICE, VerdictCase
 
 sys.dont_write_bytecode = True
-TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py"]}
+TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py",
+                            "assets/toolkit/scripts/check-styles.py"]}
 EMPTY: dict[str, Any] = {"files": {}}
 NONE_TO_RUN = ("mutation: no mutant to run — src/a.ts: Stryker found no mutant in it (declarations and comments only: "
                "types, imports, plain constants)")
