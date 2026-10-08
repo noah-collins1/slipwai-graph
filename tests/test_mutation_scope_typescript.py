@@ -33,9 +33,10 @@ GO_AND = ("go:apps/service", "typescript:apps/second")
 class Planned(Recording):
     """The recording `Runner` with the script's own plan for TypeScript: what the config's list takes is real."""
 
-    def __init__(self, module: Any) -> None:
+    def __init__(self, module: Any, directories: bool = False) -> None:
         super().__init__(module)
         self.tools = module.Tools()
+        self.directories = directories  # whether a service with no directory is refused, as the real runner does
 
     def plan(self, backend: str, path: str, files: list[str]) -> Any:
         return self.tools.plan(backend, path, files)
@@ -45,6 +46,10 @@ class Planned(Recording):
         plan = self.plan(backend, path, files)
         self.scoped.append((path, plan.keep))
         return self.result(0, plan.keep, plan.left)
+
+    def gone(self, backend: str, path: str) -> str | None:
+        """As the script's own runner asks it: a wired service whose directory is not there."""
+        return self.tools.gone(backend, path) if self.directories else None
 
 
 class TypeScriptCase(Recorded):
@@ -62,10 +67,11 @@ class TypeScriptCase(Recorded):
         git(self.repo, "checkout", "-q", "--", ".")
         git(self.repo, "clean", "-qfd", "apps", "packages", "docs")
 
-    def run_planned(self, *services: str, env: dict[str, str] | None = None) -> tuple[int, list[str], Planned]:
+    def run_planned(self, *services: str, env: dict[str, str] | None = None,
+                    directories: bool = False) -> tuple[int, list[str], Planned]:
         self.fit_recipe(services)
         module = loaded(self.repo / "scripts/mutation-scope.py")
-        recording = Planned(module)
+        recording = Planned(module, directories)
         wanted, saved, here = (clean_environment() if env is None else env), dict(os.environ), os.getcwd()
         os.environ.clear()
         os.environ.update(wanted)
@@ -161,12 +167,32 @@ class ScopeTest(TypeScriptCase):
         project = json.loads((self.repo / "project.json").read_text(encoding="utf-8"))
         project["deployables"]["web"] = {"kind": "web", "path": "apps/web", "language": "typescript"}
         self.on_main("project.json", text=json.dumps(project))
-        self.write("apps/service/src/health.test.ts", "export const t = 1;\n")
+        self.write("apps/service/tests/health.test.ts", "export const t = 1;\n")
         self.write("apps/web/src/App.tsx", "export const App = 1;\n")
         status, lines, recording = self.run_planned("typescript:apps/service")
         self.assertEqual((status, recording.scoped), (0, []), lines)
         self.assertEqual(lines[0], "mutation: no mutant to run — no service production file changed")
         self.assertIn("mutation: not mutated apps/web/src/App.tsx — browser app, not mutated by this target", lines)
+
+    def test_t043_a_spec_named_file_under_src_that_the_list_takes_is_production_whatever_its_name(self) -> None:
+        """B3: `src/api.spec.ts` holding real code is scoped and mutated, never `only tests changed`."""
+        self.write("apps/service/src/api.spec.ts", "export const retries = (n: number) => n > 3;\n")
+        status, lines, recording = self.run_planned("typescript:apps/service")
+        self.assertEqual(status, 0, lines)
+        self.assertTrue(lines[0].startswith("mutation: scoped to 1 changed file(s) since `main` at "), lines)
+        self.assertTrue(lines[0].endswith(": apps/service/src/api.spec.ts"), lines[0])
+        self.assertEqual(recording.scoped, [("apps/service", ["src/api.spec.ts"])])
+        self.assertFalse([line for line in lines if "only tests changed" in line], lines)
+
+    def test_t043_hold_a_test_the_list_leaves_out_and_one_outside_src_stay_tests(self) -> None:
+        self.on_main("apps/service/stryker.config.json",
+                     text=json.dumps({"mutate": [*LIST, "!src/**/*.spec.ts", "!src/**/*.test.ts"]}))
+        self.write("apps/service/src/api.spec.ts", "export const retries = 1;\n")
+        self.write("apps/service/tests/api.spec.ts", "export const other = 1;\n")
+        status, lines, recording = self.run_planned("typescript:apps/service")
+        self.assertEqual((status, recording.scoped), (0, []), lines)
+        self.assertTrue(lines[0].startswith("mutation: no mutant to run — only tests changed: "), lines)
+        self.assertIn("apps/service/src/api.spec.ts", lines[0])
 
     def test_e4_hold_a_path_under_no_deployable_is_whatever_it_was(self) -> None:
         self.write("docs/notes.md", "x\n")

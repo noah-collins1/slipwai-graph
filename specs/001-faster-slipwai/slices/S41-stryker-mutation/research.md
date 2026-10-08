@@ -205,3 +205,22 @@ only when it is `[export] const|let|var NAME[: plain type] = <numeric literal | 
 [as const]`; every other statement, including anything the scanner cannot classify (`(0)`, a second declarator, a call),
 is code and fails closed. The starter's `read-models.ts` (`export const FROM_THE_BEGINNING = 0;` and types) is now *no
 mutant to run*, as `demo/q4d-starter-port-with-const.txt` required.
+
+## R13 — What the adversary pass (iteration 29) read in Stryker 10.0.0's own source (T036–T044)
+
+- **Reuse (T036).** `core/dist/src/mutants/incremental-differ.js` reuses an earlier result for `!mutant.status && !options.force`;
+  `--force` ("Run all mutants, even if --incremental is provided and an incremental file exists") is the one switch that
+  closes every route, whatever `incremental` and `incrementalFile` say, so the wrapper passes it on every run and also
+  removes the default file and the config's `incrementalFile` where that stays inside the service.
+- **Which comment ignored a mutant (T039).** `instrumenter/dist/src/transformers/directive-bookkeeper.js` attaches a
+  directive to the node whose `leadingComments` it is (so blank and comment-only lines between a comment and its code do not
+  separate them), matches a `next-line` rule on that node's start line, and chains rules from the latest: the first rule that
+  names the mutator (or `all`) answers, a `restore` included. The `statusReason` is that rule's reason, or `Ignored using a
+  comment` where it gave none, so a block `disable` and a `next-line` one differ in the report only by that reason. Lines are
+  Babel's: `\r\n`, `\n`, `\r`, U+2028, U+2029, never a form feed.
+- **Planted nothing (T037).** Probed with the instrumenter over one file each, `plugins: null`, `excludedMutations: []`: the
+  ambient forms (`declare const|let|var|function|class|namespace|module|global`, `export {}`), enums with and without
+  initialisers, and type unions gave 0 mutants. The reader still treats an initialiser as code, which fails closed.
+- **The closure (T044).** `@stryker-mutator/instrumenter` resolves `@babel/*` and `weapon-regex` through ranges; the wrapper's
+  `versions` follows `dependencies` and `optionalDependencies` as npm resolves them (the package's own `node_modules`, then
+  each parent's) and keys every entry by its lock path.

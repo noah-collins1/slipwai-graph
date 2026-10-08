@@ -16,7 +16,8 @@ from slipwai.assets import ROOT
 sys.dont_write_bytecode = True
 TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py"]}
 EMPTY: dict[str, Any] = {"files": {}}
-NONE_TO_RUN = "mutation: no mutant to run — src/a.ts: Stryker found no mutant in them (types or comments only)"
+NONE_TO_RUN = ("mutation: no mutant to run — src/a.ts: Stryker found no mutant in it (declarations and comments only: "
+               "types, imports, plain constants)")
 
 
 class ReportNamesTest(VerdictCase):
@@ -45,7 +46,7 @@ class ReportNamesTest(VerdictCase):
                 self.assertEqual((code, lines[-1]), (0, NONE_TO_RUN), lines)
 
     def test_e3_files_empty_over_a_given_file_that_holds_code_fails_naming_it(self) -> None:
-        for text in ("export const x = 'one';\n", "export function f() { return 1 }\n", "export enum E { A }\n",
+        for text in ("export const x = 'one';\n", "export function f() { return 1 }\n", "export enum E { A = 1 }\n",
                      "type A = { a: string }\nexport const x = [1]\n", "export type A = string;\nconst y = 'z';\n",
                      "import('./x.js');\n", "class K {}\n"):
             with self.subTest(text=text):

@@ -35,11 +35,13 @@ class IgnoredTest(VerdictCase):
         self.assertTrue(lines[-1].endswith(f"1 ignored without a next-line comment; failed — report {REPORT}"), lines)
 
     def test_e1_a_next_line_comment_naming_the_mutator_with_a_reason_passes(self) -> None:
-        for comment in ("// Stryker disable next-line StringLiteral: a label only",
-                        "  // Stryker disable next-line stringliteral,ConditionalExpression : equivalent",
-                        "//Stryker disable next-line ConditionalExpression, StringLiteral: a reason: with a colon"):
+        for comment, reason in (("// Stryker disable next-line StringLiteral: a label only", "a label only"),
+                                ("  // Stryker disable next-line stringliteral,ConditionalExpression : equivalent",
+                                 "equivalent"),
+                                ("//Stryker disable next-line ConditionalExpression, StringLiteral: a reason: with a "
+                                 "colon", "a reason: with a colon")):
             with self.subTest(comment=comment):
-                code, lines = self.judge([comment, CODE], ignored("a label only"))
+                code, lines = self.judge([comment, CODE], ignored(reason))
                 self.assertEqual(code, 0, lines)
                 self.assertEqual(lines[-1], "mutation: 2 mutants: 1 killed, 1 ignored, 0 not covered (reported, never "
                                             f"failed); passed — report {REPORT}")
@@ -90,6 +92,50 @@ class IgnoredTest(VerdictCase):
         (self.tree / SERVICE / "src/a.ts").write_text(CODE + "\n" + CODE, encoding="utf-8")
         code, lines = self.run_wrapper({"report": the_report}, "--file", "src/a.ts")
         self.assertEqual(code, 0, lines)
+
+
+    def test_e8_lines_are_split_where_stryker_counts_them_not_where_python_does(self) -> None:
+        """T039 (A5): a form feed is no line break to Stryker, so it must be none here; the comment above the mutant
+        is the one without a reason, not the one Python's `splitlines` would put there."""
+        self.failing(["// a page break here:\f next",
+                      "// Stryker disable next-line StringLiteral: a reason that excuses nothing",
+                      "// Stryker disable next-line StringLiteral", 'export const greeting = "hello";'],
+                     ignored("Ignored using a comment", line=4), "the next-line comment gives no reason")
+        for separator in ("\r\n", "\r", "\u2028", "\u2029"):
+            with self.subTest(separator=repr(separator)):
+                (self.tree / SERVICE / "src/a.ts").write_text(
+                    separator.join(["// Stryker disable next-line StringLiteral: a reason", CODE]), encoding="utf-8")
+                code, lines = self.run_wrapper({"report": report(src__a_ts=[mutant("Killed"), ignored("a reason")])},
+                                               "--file", "src/a.ts")
+                self.assertEqual(code, 0, lines)
+
+    def test_e9_the_excuse_is_the_comment_that_gave_strykers_reason_not_a_block_comment_beside_it(self) -> None:
+        """T039 (A6): a block disable ignored the mutant (Stryker's reason is the default one); a next-line comment
+        that is really template text, one line above it, must not pass it."""
+        source = ["// Stryker disable StringLiteral",
+                  "// Stryker disable next-line StringLiteral: the outer template is a fixture",
+                  "export const help = `",
+                  "// Stryker disable next-line StringLiteral: this line is template text, not a comment",
+                  '${"secret"}`;']
+        self.failing(source, ignored("Ignored using a comment", line=5),
+                     "Stryker's reason for ignoring it (`Ignored using a comment`) is not the next-line comment's "
+                     "(`this line is template text, not a comment`), so another directive ignored it")
+        code, lines = self.judge(source, ignored("this line is template text, not a comment", line=5))
+        self.assertEqual(code, 0, lines)
+        code, lines = self.judge(["// Stryker disable next-line StringLiteral: a reason", CODE], ignored(""))
+        self.assertEqual(code, 1, "a report that gives no reason at all is not the comment's")
+
+    def test_e10_the_nearest_directive_above_the_line_is_read_past_blank_and_comment_only_lines(self) -> None:
+        """T039 (A8): Stryker attaches the comment to the next node, past any blank or comment-only line."""
+        directive = "// Stryker disable next-line StringLiteral: a reason"
+        for between in ([""], ["// a note", ""], ["", "/* another", " * note */", ""]):
+            with self.subTest(between=between):
+                code, lines = self.judge([directive, *between, CODE], ignored("a reason", line=len(between) + 2))
+                self.assertEqual(code, 0, lines)
+        self.failing([directive, "doThing();", "", CODE], ignored("a reason", line=4),
+                     "the line above it is not a `// Stryker disable next-line StringLiteral: <reason>` comment")
+        self.failing([directive, "// Stryker restore next-line StringLiteral: no", CODE], ignored("a reason", line=3),
+                     "the line above it is not a `// Stryker disable next-line StringLiteral: <reason>` comment")
 
 
 if __name__ == "__main__":

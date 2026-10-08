@@ -492,6 +492,23 @@ def typescript_kind(path: str) -> str:
     return "production" if path.startswith("src/") and scripted and not named.endswith(".d.ts") else "other"
 
 
+def sourced(backend: str | None, inside: str) -> bool:
+    """Whether a path `typescript_kind` calls a test is a script under `src/` that Stryker's list may still take (B3)."""
+    named = inside.rsplit("/", 1)[-1]
+    return (backend == "typescript" and inside.startswith("src/") and not named.endswith(".d.ts")
+            and named.endswith((".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts")))
+
+
+# Stryker 10's `findConfigFile` would take these; the wrapper runs `stryker.config.json` by name, so they are never read (D213).
+UNREAD_CONFIGS = tuple(f"stryker.{stem}.{extension}" for stem, extension in (
+    ("conf", "json"), ("conf", "js"), ("conf", "mjs"), ("conf", "cjs"), ("config", "js"), ("config", "mjs"), ("config", "cjs")))
+
+
+def unread_configs(root: str) -> list[str]:
+    """The Stryker config files beside a TypeScript service's own that nothing reads, in the order Stryker would try them."""
+    return [name for name in UNREAD_CONFIGS if os.path.isfile(os.path.join(root, name))]
+
+
 def python_kind(path: str) -> str:
     if path.startswith("tests/"):
         return "test"
@@ -881,6 +898,7 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     deleted: list[str] = []
     tests: list[str] = []
     production: dict[str, list[str]] = {}
+    named_tests: dict[str, list[tuple[str, str]]] = {}
     apps = browser_apps()
     for path in sorted(set(changes) - handled):
         if any(path.startswith(app + "/") for app in apps):
@@ -892,9 +910,20 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         elif kind == "deleted":
             deleted.append(path)
         elif kind == "test":
-            tests.append(path)
+            owner = next((backend for backend, found in services if found == root), None)
+            if sourced(owner, inside):  # B3: production if the service's own list takes it, asked below
+                named_tests.setdefault(root, []).append((path, inside))
+            else:
+                tests.append(path)
         elif kind == "production" and root not in causes:
             production.setdefault(root, []).append(inside)
+    for root, candidates in named_tests.items():
+        ask = getattr(runner, "plan", None)
+        asked = ask("typescript", root, [inside for _, inside in candidates]) if ask else None
+        if asked is not None and root not in causes and (asked.keep or asked.refusal or asked.unreadable):
+            production.setdefault(root, []).extend(inside for _, inside in candidates)
+        else:
+            tests.extend(path for path, _ in candidates)
     plans: dict[str, Plan] = {}
     for backend, root in services:  # a runner with no plan takes every file, and says what it left out when it runs
         if root in production:
@@ -902,11 +931,20 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     unread = {root: plan.unreadable for root, plan in plans.items() if plan.unreadable is not None}
     named = sorted(f"{root}/{inside}" for root, plan in plans.items() if root not in unread
                    for inside in (production[root] if plan.refusal else plan.keep))
+    missing_of = getattr(runner, "gone", lambda *_: None)  # a runner with no `gone` has no tool to start
+    absent = [root for backend, root in services
+              if (root in causes or root in unread) and missing_of(backend, root) is not None]  # B5: refused below, not swept
+    swept_paths = sorted(path for root, found in causes.items() if root not in absent for path in found)
+    reasons = [unread[root] for root in unread if root not in absent]
+    named = sorted(f"{root}/{inside}" for root, plan in plans.items() if root not in unread
+                   for inside in (production[root] if plan.refusal else plan.keep))
     outside = any(plan.left for plan in plans.values())
     if named:
         say(f"scoped to {len(named)} changed file(s) since {words}: {', '.join(shown(name) for name in named)}")
-    elif causes or unread:
-        say(SWEEPS.format(reason=", ".join([*([said(sorted(handled))] if handled else []), *map(str, unread.values())])))
+    elif swept_paths or reasons:
+        say(SWEEPS.format(reason=", ".join([*([said(swept_paths)] if swept_paths else []), *map(str, reasons)])))
+    elif absent:  # the sweep the cause asks for cannot start: the first line names the refusal the service gets below
+        say(f"refusing {', '.join(absent)} — its directory does not exist, so nothing is swept")
     elif outside:  # a production file a tool leaves out changed, whatever else did: it is named `not mutated` below
         say("no mutant to run — every changed production file is outside the tools' targets")
     elif tests and not shared and not browser and not deleted:  # tests the only source files that changed (T022)
@@ -927,8 +965,10 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     status = 0
     for backend, root in services:
         plan = plans.get(root)
+        if backend == "typescript" and (unrun := unread_configs(root)):
+            say(f"note {root} — {', '.join(unrun)} not read — `make mutation` runs `stryker.config.json`")
         runs = root in causes or root in unread or (plan is not None and bool(plan.keep))
-        missing = getattr(runner, "gone", lambda *_: None)(backend, root)  # a runner with no `gone` has no tool to start
+        missing = missing_of(backend, root)
         if runs and missing is not None:  # no tool starts for a service that is not there
             why = missing
             say(f"refuse {root} — {why}")

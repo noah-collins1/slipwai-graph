@@ -180,7 +180,8 @@ class MainTest(Case):
         self.assertEqual(done.returncode, 1, done.stdout)  # the fake `npm` wrote no report: not a pass (T004 judges it)
         self.assertEqual(done.stdout.splitlines()[0],
                          "mutation: not mutated apps/service/src/main.ts — outside Stryker's configured targets")
-        self.assertIn("exec --no -- stryker run --mutate src/health.ts", self.log.read_text(encoding="utf-8"))
+        self.assertIn("exec --no -- stryker run stryker.config.json --force --mutate src/health.ts",
+                      self.log.read_text(encoding="utf-8"))
 
     def test_e4_an_unreadable_config_is_one_line_and_exit_2(self) -> None:
         project(self.tree, patterns=["src/**/*.{ts,tsx}"])
@@ -202,7 +203,8 @@ class MainTest(Case):
             (self.tree / name).parent.mkdir(parents=True, exist_ok=True)
             (self.tree / name).write_text("{}", encoding="utf-8")
         done = self.run_wrapper("apps/service")
-        self.assertIn("npm exec --no -- stryker run\n", self.log.read_text(encoding="utf-8"), done.stdout)
+        self.assertIn("npm exec --no -- stryker run stryker.config.json --force\n",
+                      self.log.read_text(encoding="utf-8"), done.stdout)
         (self.tree / "apps/service/stryker.config.json").unlink()
         self.log.unlink()
         done = self.run_wrapper("apps/service")

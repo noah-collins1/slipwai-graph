@@ -20,7 +20,7 @@ from typing import Any
 from scoped_fixture import ShapeCase
 from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE, git
 from support import FactoryTestCase, commit_all
-from test_stryker_verdict import FAKE_NPM, mutant, report
+from test_stryker_verdict import FAKE_NPM, RUN, mutant, report
 
 from slipwai.assets import ROOT
 
@@ -165,12 +165,12 @@ class PlaceholdersAfterTest(FactoryTestCase):
         self.assertEqual(done.returncode, 2, done.stdout)
         self.assertIn("mutation: scope apps/service — src/health.ts", done.stdout)
         self.assertIn("mutation: refuse apps/billing — install and configure mutmut", done.stdout)
-        self.assertEqual(self.started(), [["exec", "--no", "--", "stryker", "run", "--mutate", "src/health.ts"]])
+        self.assertEqual(self.started(), [[*RUN, "--mutate", "src/health.ts"]])
 
     def test_e4_hold_the_borders_and_since_decide_scoped_or_swept_for_typescript(self) -> None:
         git(self.project("ts"), "checkout", "-q", "slice/S1")
-        scoped = [["exec", "--no", "--", "stryker", "run", "--mutate", "src/health.ts"]]
-        swept = [["exec", "--no", "--", "stryker", "run"]]
+        scoped = [[*RUN, "--mutate", "src/health.ts"]]
+        swept = [RUN]
         for name, expected, words, env in (
                 ("slice", scoped, ["mutation"], {}), ("CI", swept, ["mutation"], {"CI": "true"}),
                 ("empty SINCE", swept, ["mutation"], {"SINCE": ""}), ("SINCE in CI", scoped, ["mutation"],

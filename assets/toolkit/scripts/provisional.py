@@ -73,7 +73,7 @@ GATE_CONFIGURATION = re.compile(
     r"pyproject\.toml|uv\.lock|\.python-version|\.nvmrc|go\.(?:mod|sum|work)|\.gremlins\.ya?ml|\.golangci\.ya?ml|"
     r"pom\.xml|checkstyle\.xml|pmd-ruleset\.xml|spotbugs-exclude\.xml|maven-wrapper\.properties|\.editorconfig|"
     r"\.?ruff\.toml|mypy\.ini|pytest\.ini|setup\.cfg|tox\.ini|\.importlinter|eslint\.config\.\w+|"
-    r"\.eslintrc(?:\.\w+)?|conftest\.py|stryker\.config\.\w+|[\w.-]*flags[\w.-]*\.tfvars)", re.I)
+    r"\.eslintrc(?:\.\w+)?|conftest\.py|stryker\.conf(?:ig)?\.\w+|[\w.-]*flags[\w.-]*\.tfvars)", re.I)
 REVERT_FORM = re.compile(r"commits carrying Decision: D([1-9][0-9]*)")
 
 

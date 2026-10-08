@@ -25,6 +25,8 @@ sys.dont_write_bytecode = True
 TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py"]}
 SERVICE = "apps/service"
 REPORT = f"{SERVICE}/reports/mutation/mutation.json"
+# What the wrapper starts Stryker as, before any `--mutate`.
+RUN = ["exec", "--no", "--", "stryker", "run", "stryker.config.json", "--force"]
 FAKE_NPM = f"""#!{sys.executable}
 import json, os, shutil, sys, time
 from pathlib import Path
@@ -50,9 +52,13 @@ if args[:1] == ["ci"]:
         (root / "@stryker-mutator" / name / "package.json").write_text("{{}}", encoding="utf-8")
     sys.exit(0)
 if args[:1] == ["exec"]:
-    old = (cwd / "reports/mutation/mutation.json").exists() or (cwd / ".stryker-tmp").exists()
+    old = ((cwd / "reports/mutation/mutation.json").exists() or (cwd / ".stryker-tmp").exists()
+           or (cwd / "reports/stryker-incremental.json").exists())
     if plan.get("expect_clean") and old:
         Path(os.environ["FAKE_LOG"] + ".dirty").write_text("dirty", encoding="utf-8")
+    if "--mutate" in args and plan.get("scoped_sleep"):
+        time.sleep(plan["scoped_sleep"])
+        sys.exit(1)
     if "report" in plan:
         (cwd / "reports/mutation").mkdir(parents=True, exist_ok=True)
         (cwd / "reports/mutation/mutation.json").write_text(
@@ -130,7 +136,7 @@ class VerdictTest(VerdictCase):
                                          "--file", "src/health.ts")
         self.assertEqual(status, 0, lines)
         self.assertEqual(lines[0], "mutation: scoped to 1 given file(s): src/health.ts")
-        self.assertEqual(self.execs(), [{"argv": ["exec", "--no", "--", "stryker", "run", "--mutate", "src/health.ts"],
+        self.assertEqual(self.execs(), [{"argv": [*RUN, "--mutate", "src/health.ts"],
                                          "cwd": str((self.tree / SERVICE).resolve())}])
         self.assertEqual(lines[-1], "mutation: 2 mutants: 2 killed, 0 ignored, 0 not covered (reported, never failed); "
                                     f"passed — report {REPORT}")
@@ -145,7 +151,8 @@ class VerdictTest(VerdictCase):
                 self.assertTrue(lines[-1].endswith(f"failed — report {REPORT}"), lines[-1])
         (self.tree / SERVICE / "src/a.ts").write_text(  # the Ignored mutant is at line 3: T028's one escape
             '\n// Stryker disable next-line StringLiteral: a label\nexport const a = "x";\n', encoding="utf-8")
-        code, lines = self.run_wrapper({"report": report(src__a_ts=[mutant("Killed"), mutant("Ignored"),
+        code, lines = self.run_wrapper({"report": report(src__a_ts=[mutant("Killed"),
+                                                                    {**mutant("Ignored"), "statusReason": "a label"},
                                                                     mutant("NoCoverage")])}, "--file", "src/a.ts")
         self.assertEqual(code, 0, lines)
         self.assertEqual(lines[-1], "mutation: 3 mutants: 1 killed, 1 ignored, 1 not covered (reported, never failed); "
@@ -183,8 +190,8 @@ class VerdictTest(VerdictCase):
         (self.tree / SERVICE / "src/a.ts").write_text("export interface A { b: string }\n", encoding="utf-8")
         code, lines = self.run_wrapper({"report": {"files": {}}}, "--file", "src/a.ts")
         self.assertEqual(code, 0, lines)
-        self.assertEqual(lines[-1], "mutation: no mutant to run — src/a.ts: Stryker found no mutant in them "
-                                    "(types or comments only)")
+        self.assertEqual(lines[-1], "mutation: no mutant to run — src/a.ts: Stryker found no mutant in it "
+                                    "(declarations and comments only: types, imports, plain constants)")
         code, lines = self.run_wrapper({"report": {"files": {}}})
         self.assertEqual(code, 1)
         self.assertEqual(lines[-1], f"mutation: Stryker found nothing to mutate in {SERVICE}; a pass on nothing is not "
@@ -196,7 +203,7 @@ class VerdictTest(VerdictCase):
         both = report(src__a_ts=[mutant("Killed")], src__b_ts=[mutant("Survived")])
         code, lines = self.run_wrapper({"report": both})
         self.assertEqual(code, 1)
-        self.assertEqual(self.execs()[-1]["argv"], ["exec", "--no", "--", "stryker", "run"])
+        self.assertEqual(self.execs()[-1]["argv"], RUN)
         self.assertIn(f'mutation: Survived {SERVICE}/src/b.ts:3:5 StringLiteral → "" (report {REPORT})', lines)
 
     def test_e5_a_dot_slash_file_is_judged_against_the_report_keyed_without_it(self) -> None:
