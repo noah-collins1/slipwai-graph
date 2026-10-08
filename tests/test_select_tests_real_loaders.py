@@ -31,6 +31,7 @@ READS = {
     "test_migration_script": ["scripts/test-migration.py"],
     "test_mutmut_config": [PY_WRAPPER],
     "test_mutmut_setup": [PY_WRAPPER],
+    "test_mutmut_verdict": [PY_WRAPPER],
     "test_mutation": [GO + "app/.gremlins.yaml", GO + "scripts/go-coverage.py", GO + "scripts/go-mutation.py"],
     "test_pit_globs": [SCRIPTS + "mutation-scope.py"],
     "test_stryker_closure": [TS_WRAPPER, STYLES],

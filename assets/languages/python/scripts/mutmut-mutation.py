@@ -15,6 +15,7 @@ This is the skeleton past the configuration: it refuses to run, which can only f
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -30,6 +31,25 @@ PINNED = "3.8.0"
 VERSION_CODE = "import importlib.metadata as m; print(m.version('mutmut'))"
 # Held by a run for its whole length, beside the environment it runs in; the kernel releases it when the run dies.
 LOCK = ".venv/mutmut-run.lock"
+# What `mutmut run` does before it collects stats, and nothing after (R3): copy `src/` and the files its tests need into
+# `mutants/`, then plant every mutant and write `mutants/<file>.meta` for each file. There is no generate-only command,
+# and `mutmut run <names>` asserts on an empty selection, so the names a scoped run hands over are read from these files
+# first, and an empty file is decided here and never by that assertion. The calls are mutmut 3.8.0's, not documented as
+# public: this is why an environment holding another mutmut is refused (T004) and a change of the pin sweeps (T008).
+GENERATE = """\
+import os
+from mutmut.__main__ import create_mutants, store_lines_covered_by_tests
+from mutmut.mutation.trampoline import set_mutant_under_test
+from mutmut.utils.file_utils import copy_also_copy_files, copy_src_dir, setup_source_paths
+set_mutant_under_test("mutant_generation")
+os.makedirs("mutants", exist_ok=True)
+copy_src_dir()
+copy_also_copy_files()
+setup_source_paths()
+store_lines_covered_by_tests()
+create_mutants(os.cpu_count() or 4)
+"""
+EXITED = "(its exit status and the output above are mutmut's, never the verdict; the .meta files are)"
 # What `fnmatch` reads as syntax: the characters that make a path a pattern over mutant names, not a name.
 OPENERS = "*?["
 # The packages whose version decides which mutants exist: mutmut, and libcst with everything libcst resolves to (D222).
@@ -52,7 +72,7 @@ def parse(arguments: list[str]) -> tuple[str, list[str]] | None:
             return None
         files.append(rest[1])
         rest = rest[2:]
-    return arguments[0].rstrip("/") or "/", files
+    return os.path.normpath(arguments[0]), [os.path.normpath(file) for file in files]
 
 
 def read_toml(text: str) -> dict[str, Any]:
@@ -186,11 +206,17 @@ class Job:
         self.files = files
         self.env: dict[str, str] = {}
         self.lock: IO[str] | None = None
+        self.names: list[str] = []  # the mutant names a scoped run hands mutmut: every key of the given files
+
+
+def note(line: str) -> None:
+    """One `mutation: ` line; every line this script prints is spelled here."""
+    print(f"mutation: {line}")
 
 
 def say(line: str) -> int:
-    """One `mutation: ` line, and the exit status that ends a run on it."""
-    print(f"mutation: {line}")
+    """A `mutation: ` line, and the exit status that ends a run on it."""
+    note(line)
     return 2
 
 
@@ -279,15 +305,86 @@ def check_mutmut_version(job: Job) -> int | None:
                f"{job.service} (slipwai migrate brings the wrapper for a newer pin)")
 
 
+def meta_path(service: str, file: str) -> Path:
+    """Where mutmut writes what it knows of one source file (a path within the service)."""
+    return Path(service) / "mutants" / f"{file}.meta"
+
+
+def keys_of(service: str, file: str) -> list[str] | None:
+    """The mutant names mutmut generated for a file, in its own order; None where it wrote no `.meta` for it."""
+    try:
+        codes = json.loads(meta_path(service, file).read_text(encoding="utf-8")).get("exit_code_by_key")
+    except (OSError, ValueError, AttributeError):
+        return None
+    return list(codes) if isinstance(codes, dict) else None
+
+
+def clean(job: Job) -> int | None:
+    """Every run starts from nothing: mutmut keeps results between runs and lets them stand, and the directory is the
+    report of the run that wrote it, not of the one before."""
+    shutil.rmtree(Path(job.service) / "mutants", ignore_errors=True)
+    return None
+
+
+def in_service(job: Job, *arguments: str, capture: bool) -> subprocess.CompletedProcess[str]:
+    """`uv run --no-sync` in the service's own environment, from its directory, where mutmut reads its configuration."""
+    project = str(Path(job.service).resolve())
+    return subprocess.run(["uv", "run", "--no-sync", "--project", project, *arguments], cwd=job.service, env=job.env,
+                          text=True, capture_output=capture)
+
+
+def generate(job: Job) -> int | None:
+    done = in_service(job, "python", "-c", GENERATE, capture=True)
+    if done.returncode != 0:
+        if (done.stdout + done.stderr).strip():
+            print((done.stdout + done.stderr).strip()[-2000:])
+        return say(f"mutmut could not generate mutants for {job.service} (exit {done.returncode})")
+    return None
+
+
+def plan(job: Job) -> int | None:
+    """What a scoped run hands mutmut: the keys of the given files that have any. A file with no `.meta` is outside what
+    mutmut mutates; one whose `.meta` is empty holds no function to mutate. Neither starts mutmut."""
+    if not job.files:
+        return None
+    keyed: dict[str, list[str]] = {}
+    for file in job.files:
+        keys = keys_of(job.service, file)
+        if keys is None:
+            note(f"not mutated {job.service}/{file} \u2014 outside mutmut's configured targets")
+        else:
+            keyed[file] = keys
+    if not keyed:
+        note(f"nothing under {job.service} that was given is a file mutmut would mutate; no mutant to run")
+        return 0
+    held = [file for file, keys in keyed.items() if keys]
+    if not held:
+        note(f"no mutant to run \u2014 {', '.join(keyed)}: mutmut found no function to mutate in "
+             f"{'it' if len(keyed) == 1 else 'them'}")
+        return 0
+    job.names = [key for file in held for key in keyed[file]]
+    note(f"scoped to {len(held)} given file(s): {', '.join(held)} \u2014 {len(job.names)} mutant(s)")
+    return None
+
+
+def run_mutmut(job: Job) -> int | None:
+    """`mutmut run`, for the names of a scoped run after `--` and for none in a sweep. Its output is for whoever is
+    watching; its exit status is printed and is never the verdict."""
+    names = ["--", *job.names] if job.files else []
+    done = in_service(job, "mutmut", "run", *names, capture=False)
+    note(f"mutmut exited {done.returncode} {EXITED}")
+    return None
+
+
 def not_wired(job: Job) -> int | None:
-    return say("mutmut is not wired by this script yet; nothing was run")
+    return say("the verdict is not read by this script yet; nothing passes")
 
 
 # The order the rules fix, read in one place: what starts nothing first, then the host, `uv`, the run's own lock, the
 # environment, and the version in it.
 CHECKS: tuple[Callable[[Job], int | None], ...] = (
     check_refusal, check_table, check_host, check_uv, check_environment, take_lock_if_there, ensure_synced, take_lock,
-    check_mutmut_version, not_wired,
+    check_mutmut_version, clean, generate, plan, run_mutmut, not_wired,
 )
 
 

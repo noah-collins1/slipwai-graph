@@ -41,7 +41,7 @@ if args[0] == "sync":
         open(os.environ["FAKE_WAIT"], encoding="utf-8").read()
     sys.stderr.write("fake uv: the lock is out of date\\n")
     sys.exit(int(os.environ.get("FAKE_SYNC_EXIT", "0")))
-if args[:2] == ["run", "--no-sync"] and "python" in args:
+if args[:2] == ["run", "--no-sync"] and "importlib.metadata" in args[-1]:
     version = os.environ.get("FAKE_VERSION", "3.8.0")
     if version == "absent":
         sys.exit(1)
@@ -52,7 +52,9 @@ sys.exit(97)
 NO_FORK = "import os; del os.fork"
 HOST = "mutation: mutmut needs os.fork, which this host does not have; run it under WSL"
 NO_UV = "mutation: uv is not on PATH; install it to run mutmut (see scripts/verify)"
-SKELETON = "mutation: mutmut is not wired by this script yet; nothing was run"
+# Where a run that passes every check ends in this module: the fake `uv` answers nothing but the version and the sync,
+# so mutmut's generation, the first thing after the checks, fails (T005's examples are `test_mutmut_verdict`'s).
+PASSED = "mutation: mutmut could not generate mutants for apps/service (exit 97)"
 
 
 def lines_of(done: subprocess.CompletedProcess[str]) -> list[str]:
@@ -168,14 +170,14 @@ class OrderedChecksTest(Case):
                 self.assertEqual((done.returncode, lines_of(done)),
                                  (2, [f"mutation: mutmut {found} installed in apps/service" + tail]))
         done = self.run_wrapper("apps/service", extra={"FAKE_VERSION": "3.8.0"})
-        self.assertEqual(lines_of(done), [SKELETON])
+        self.assertEqual(lines_of(done), [PASSED])
 
     def test_e4_the_version_is_read_in_the_service_s_environment_without_syncing_again(self) -> None:
         self.run_wrapper("apps/service")
         argv = [call["argv"] for call in self.calls()]
-        self.assertEqual(len(argv), 2)
         self.assertEqual(argv[:1], [["sync", "--project", "apps/service", "--locked", "--quiet"]])
         read = argv[1][:5] if len(argv) > 1 else []
+        self.assertEqual(argv[2][:3] if len(argv) > 2 else [], ["run", "--no-sync", "--project"], "then generation")
         self.assertEqual(read, ["run", "--no-sync", "--project", "apps/service", "python"])
 
 
@@ -216,7 +218,7 @@ class OneRunAtATimeTest(Case):
         first.communicate(timeout=30)
         self.release(wait)
         third = self.run_wrapper("apps/service")
-        self.assertEqual(lines_of(third), [SKELETON])
+        self.assertEqual(lines_of(third), [PASSED])
 
     def test_e6_two_services_run_at_once_because_the_lock_is_per_service(self) -> None:
         for path in ("apps/service", "apps/other"):
@@ -227,9 +229,9 @@ class OneRunAtATimeTest(Case):
         self.wait_for_calls(2)
         for wait in waits.values():
             self.release(wait)
-        for process in running:
+        for path, process in zip(waits, running, strict=True):
             out, _ = process.communicate(timeout=30)
-            self.assertEqual(out.strip().splitlines(), [SKELETON])
+            self.assertEqual(out.strip().splitlines(), [PASSED.replace("apps/service", path)])
 
 
 class NothingIsFetchedTest(Case):
