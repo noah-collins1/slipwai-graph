@@ -788,7 +788,7 @@ line as above when a `src/` or `assets/` file changed, else "reaches no user".
   check-structure`. Not `make verify`. A Go module cache under `/tmp/tmp*` made by a suite run is `chmod -R u+w`'d before it is removed.
 
 ### T014 — Converge, passes as needed (host task)
-- [ ] `drive-converge` over the slice's range; findings append as tasks in Phase 3.
+- [x] `drive-converge` over the slice's range; findings append as tasks in Phase 3. *(Done: pass 1 not converged (T017–T021), pass 2 converged at `5a9840e`, loop stopped at its bound with T022 (MEDIUM) and T023 (LOW) in Phase 4; both `drive-converge · model: opus · delegated, fresh context`.)*
 
 ### T015 — After-converge gaps (host task)
 - [ ] `drive-gaps` over the slice and the code it produced; findings append in Phase 3.
@@ -919,7 +919,56 @@ wrapper's change not sweeping, no `drop_report` for Python, no `do_not_mutate_pa
 
 ## Phase 4: After acceptance (host tasks)
 
-(none yet — the adversary pass, mutation, both full gates and the register row follow the demo as in S41 T018–T021 and are appended here)
+(the adversary pass, mutation, both full gates and the register row follow the demo as in S41 T018–T021 and are appended
+here; converge pass 2 stopped at the loop's bound and left the two below, neither of which re-opens it)
+
+### T022 — [US2] MEDIUM · A `[tool.mutmut]` table that sets `max_stack_depth` fails the run in `plan`, beside `do_not_mutate_patterns` and `mutate_only_covered_lines` (D212 items 1–2, 6; D219's reason as *Applied, not decided* 2 and 5 apply it; converge pass 2)
+- [ ] **RED evidence (reproduced against real mutmut 3.8.0, scratch `/tmp/s42/converge2/probe`).** mutmut records a function
+  as reached by a test only when the call is fewer than `max_stack_depth` user frames deep (`mutmut/stats.py:155–169`,
+  `record_trampoline_hit`), and a mutant of a function no test is recorded reaching gets exit `33`, *no tests*. A
+  `src/calc.py` with `helper(x)` called by `api(x)`, and a weak test `assert api(1) is not None`: without the key, both of
+  `helper`'s mutants are `0`, *survived*. With `max_stack_depth = 1` in `[tool.mutmut]` they are `33`. The wrapper's
+  `STATUS` (`assets/languages/python/scripts/mutmut-mutation.py:63`) counts `33` and never fails it, and `silenced`
+  (`:483–496`) does not read the key. So a scoped run over a change to `helper` alone ends `2 mutants: … 2 no tests
+  (reported, never failed); passed`, exit 0, over two survivors a test reaches. D212 item 2 counts *no tests* because a
+  missing test is a coverage question. Here the test exists and runs the line, and the setting hides the result. That is
+  D219's reason, the same one the host applied to `mutate_only_covered_lines` (pass 1's question, plan item 5).
+- **RED:** in `tests/test_mutmut_silenced.py` (166 lines), beside e3: a table setting `max_stack_depth = 1` fails a scoped
+  run in `plan` with one line naming the setting, exit 1, and no mutmut run is started. A sweep fails too. Hold:
+  `max_stack_depth = -1` (mutmut's default) and an absent key are not flagged. *Teeth:* drop the branch and see the first
+  example pass.
+- **GREEN (the class):** sweep mutmut 3.8.0's `Config` (`mutmut/configuration.py:178–221`) for every key that changes
+  which mutant reaches the verdict, or under which status, without a per-mutant comment. Each one is either named in
+  `silenced` or recorded with a reason it cannot pass a survivor. Read in pass 2: `do_not_mutate_patterns` and
+  `mutate_only_covered_lines` are named. `max_stack_depth` is the one left. `type_check_command` (`37`) and the timeout
+  knobs can only fail. `pytest_add_cli_args_test_selection` that selects no test stops mutmut before testing, which fails
+  as *not checked* (plan, *Open questions*). Narrowing it is the project's own test suite, not a silencing. `debug`,
+  `also_copy`, the tracking keys and the forkserver keys change no status under a clean slate. The fragment, the note and
+  the skill name the new key beside the other two.
+- **Product reading (the host's, as for item 5):** (a) fail the run, as the two siblings do. **Recommended:** it is the
+  same reading already applied, and no table the factory writes sets the key. (b) Allow it, because a table change already
+  sweeps. But the sweep reads the same `33`s and is green too.
+- **Files:** `assets/languages/python/scripts/mutmut-mutation.py`; `tests/test_mutmut_silenced.py`;
+  `src/slipwai/project/mutmut.py` (the note's sentence) and `tests/test_scoped_targets.py` (hashes, if the note moves);
+  `changelog.d/mutmut-mutation.md` and `assets/toolkit/skills/mutation-testing/SKILL.md` (the sentence naming what fails);
+  `tests/test_mutmut_generated.py` (its pin of the named settings); `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md`
+  (the row, :83) and `plan.md` (*Applied, not decided*, as item 5's sibling; host).
+
+### T023 — [US2] LOW · The fragment's Catch-up names every setting the wrapper fails, and stops saying that any pragma other than the bare one fails (Constitution I's catch-up note; T017's rides-along, left half-done)
+- [ ] **RED evidence (read):** T017's rides-along said that the fragment, the note and the skill name
+  `mutate_only_covered_lines` beside `do_not_mutate_patterns`. The fragment's first paragraph (`changelog.d/mutmut-mutation.md:3`),
+  the note (`src/slipwai/project/mutmut.py:55–56`) and the skill (`SKILL.md:95`) do. The **Catch-up** (`:5`) still says only
+  *"Pragma forms other than the bare `# pragma: no mutate`, and `do_not_mutate_patterns` in `[tool.mutmut]`, fail the run."*
+  Its reader is the maintainer whose mutmut was wired by hand, which is the one project likely to carry
+  `mutate_only_covered_lines = true` (and, after T022, `max_stack_depth`). That sentence also claims more than the code does.
+  `# pragma: no mutate, a reason`, `# pragma: no mutate: a reason` and `#pragma: no mutate block` are not the bare form, and
+  they pass, as `tests/test_mutmut_silenced.py:52–54` holds.
+- **RED:** `tests/test_mutmut_migrate.py`'s Catch-up pin (`:45`) also requires `` `mutate_only_covered_lines` `` (and
+  `` `max_stack_depth` `` once T022 lands) and no longer pins "Pragma forms other than".
+- **GREEN (the class):** each of the fragment's two paragraphs, the note and the skill names the same list of settings that
+  fail and the same three pragma words (`block`, `start`, `end`). Fix them in one commit with T022, so the list is written
+  once and checked in each place.
+- **Files:** `changelog.d/mutmut-mutation.md` (Catch-up only), `tests/test_mutmut_migrate.py` (the pin only).
 
 ---
 
@@ -1034,3 +1083,94 @@ If (a) or (c), it rides with T017's `silenced` check.
 already applies it to `block` pragmas and `do_not_mutate_patterns`; recorded there as item 5 for the coordinator, who may read it
 otherwise. It rides with T017: a `[tool.mutmut]` table that sets `mutate_only_covered_lines = true` fails the run in `plan`, in one
 line naming the setting, beside `do_not_mutate_patterns`.
+
+**Pass 2 — converged at the loop's bound, with one MEDIUM and one LOW left open as Phase 4 tasks** (2026-10-08, cruise
+iteration 30, judged at `5a9840e`; fixes `81b5a2d..5a9840e`, slice `15bf72b..5a9840e`; `drive-converge · delegated, fresh
+context`; complete, within budget). This is the second pass of a loop bounded at two, and it found nothing `CRITICAL`. No
+`HIGH` is open. T022 (MEDIUM) and T023 (LOW) are appended under Phase 4 and do not re-open the loop. The bound was reached,
+so the slice ships to the demo with them open. Before the pass, the slice's suites were green: `test_mutmut_config
+test_mutmut_setup test_mutmut_verdict test_mutmut_silenced test_mutation_scope_python test_mutation_sweeps_python
+test_mutation_words test_changelog test_stryker_verdict test_stryker_edges test_mutmut_generated test_mutmut_migrate
+test_select_tests_real_loaders test_mutation_scope_typescript` ran 198 tests OK, 1 skipped, in 58 s. Fourteen hand mutations
+of the fixes were applied one at a time, and each file was restored with `git checkout -- <path>` before the next.
+Thirteen were killed: the `: ` strip, the comma split, the plan check moved after the empty exits, the sweep check dropped,
+the `mutate_only_covered_lines` branch dropped, strings read as comments, `.` accepted, a `.py` entry accepted, `matched` on
+the raw root, `clean` not checking, `judged` set after the check, and Stryker's incremental and sandbox remains unchecked.
+One survived: `clean`'s `or left.is_symlink()` (`mutmut-mutation.py:374`). It matters only for a dangling `mutants`
+symlink, since a live one is caught by `exists()`. That is no task: mutmut cannot make its directory over a dangling link,
+so no `.meta` is written and no verdict can be read (by reading; not run). No `.codegraph/`, so blast radius comes from
+`grep -rn`.
+
+**The five pass-1 tasks, as classes.**
+- *T017 (HIGH) — closed.* `pragma_word` (`mutmut-mutation.py:447–454`) is `_parse_pragma_token`
+  (`mutmut/mutation/pragma_handling.py:98–110`) line for line, over `tokenize` `COMMENT` tokens only (`:464`). One `silenced`
+  (`:483`) serves both paths: `plan` runs it before the *nothing under* and *no mutant to run* exits (`:421–424`), and `sweep`
+  runs it before *found nothing* (`:401`). The table test covers each spelling, with holds that have teeth
+  (`tests/test_mutmut_silenced.py:44–54`). The over-flag pass 1 named (`#pragma` with no space) is now a hold. One
+  over-flag remains, and it is not a finding: a trailing `x = 1  # pragma: no mutate block` silences only its own line in
+  mutmut (`visit_SimpleStatementLine`, `:212–217`), yet the wrapper fails it. That matches the published words ("`block`,
+  `start` and `end` … fail the run") and fails closed. The rides-along `mutate_only_covered_lines` is checked (`:491`) and
+  named in the note, the skill and the fragment's first paragraph, but not in its Catch-up (T023). Its siblings were not
+  swept, and `max_stack_depth` passes survivors as *no tests* (T022, reproduced).
+- *T018 (HIGH) — closed.* No fragment says TypeScript or Python is unwired. `scoped-mutation.md:3,5` and
+  `stryker-mutation.md:3` name `java-quarkus` alone, and the hold in `tests/test_mutation_words.py` reads every
+  `changelog.d/*.md`.
+- *T019 (MEDIUM) — closed.* One `source_root` (`:119–129`) is shared by `check_paths` (`:132`) and `matched` (`:172`). mutmut
+  walks `source_paths or paths_to_mutate` (`configuration.py:144–146`), and the wrapper reads the same fallback (`:161`).
+  The `.`, file and raw-root mutations were killed by the config and scope suites.
+- *T020 (LOW) — closed in both wrappers.* `clean` refuses with exit 2 (`mutmut-mutation.py:369–376`), as does Stryker's
+  `clean` and `judge` (`stryker-mutation.py:469–483`, `:814–817`). **The implementer's lead, judged harmless; no task:**
+  `drop_report` (`mutation-scope.py:877–886`) warns and carries on only on the `skip` paths (`:1000–1003`, `:1007–1012`).
+  For those, the scope script starts no tool and judges nothing. The gate never reads the leftover: the verdict is the
+  service's `skipped` count, and the next run that starts the tool meets its wrapper's `clean`, which now refuses. The line
+  it prints names the leftover as "an earlier run's report", so a person reading the skill's report path is told. Making
+  it exit 2 would fail a service this run did not touch over a file nothing reads. The same code predates S42 for Go and
+  TypeScript, and S42 added only the `python` row (`:874`).
+- *T021 (LOW) — closed.* The wrapper's docstring states the exit statuses (`:14–16`). `check-imports.py`'s `deployables`
+  docstring names `.stryker-tmp`, `target` and `mutants` (`:151–154`). No `skeleton`, `until T0` or `not wired by this
+  script` remains in the files the slice touched under `assets/` or `src/`.
+
+**What the fixes introduced.** Nothing that breaks a verdict. `judge` no longer reads silencing, because `plan` and `sweep`
+return 1 before mutmut starts. The run is the same failure, reached earlier, and it is cheaper. The one gap the fixes
+opened is in the words: T017's new setting reached three places and missed the Catch-up (T023).
+
+**Per level.**
+- *Domain (the wrapper's rules):* the verdict table (`:57–72`), the silencing decision (`:447–503`), the canonical
+  `source_paths` (`:119–176`), the clean slate (`:369–376`) and the setup order hold under the suites and the 13 killed
+  mutations. **Not proved:** that no other `[tool.mutmut]` key turns a reached survivor into *no tests*. `max_stack_depth`
+  does (T022).
+- *Use case (the scope script):* unchanged by the fixes apart from the `matched` it loads from the wrapper. The T019
+  mutations were killed through `test_mutation_scope_python`. `drop_report`'s warning is judged above.
+- *Delivery adapters:* the note (`mutmut.py:55–56`), the skill line (`SKILL.md:95`), `check-imports` (`:151–154`) and
+  Stryker's `clean` are held by `test_mutmut_generated`, `test_stryker_verdict` and `test_stryker_edges`. `make starters`
+  was not re-run this pass. The fixes touched the note's text and two shipped scripts, and `test_scoped_targets`' hashes
+  were updated in `dcbfc1a`.
+- *Screen:* none.
+- *Published contract:* the fragment's first paragraph matches the code. Its Catch-up lags (T023). The release entry as a
+  whole no longer contradicts itself (T018). `VERSION` `1.6.0.dev0` against MINOR fragments is unchanged and agrees
+  (`test_changelog` green).
+
+**Principles the diff touches.**
+- I (owns its files; passes its own gate; the catch-up note): the wrapper is still written once per project and made
+  executable. `changelog.d/mutmut-mutation.md:1` is `MINOR`, and its Catch-up stands at `:5`, with T023 its unmet half.
+  `changelog.d/scoped-mutation.md:3,5` now says what the release ships (T018).
+- II (retry safety): the clean slate refuses rather than reading leftovers, at `mutmut-mutation.py:373–375` and
+  `stryker-mutation.py:479–483`/`:814–817`.
+- III (simplicity): the silencing reader is stdlib `tokenize` (`:457–465`), with one `silenced` for both paths and one
+  `source_root` for both readers.
+- V (GWT, fakes): `tests/test_mutmut_silenced.py` is new and uses the fake `uv` harness, with no `unittest.mock`.
+- VI (contract-bounded): the pragma rule is read from the pinned tool's source, checked spelling by spelling against the
+  3.8.0 install. An unreadable file fails closed (`:468–480`). T022 is the residual: one tool setting the contract does not
+  yet bound.
+- VIII (exact pins): `mutmut==3.8.0` is unchanged. The reader names its version in `pragma_word`'s docstring (`:448`).
+- IX (supply chain): unchanged by the fixes.
+
+**Question for the host (a product reading, carried in T022):** does `max_stack_depth` fail the run as
+`mutate_only_covered_lines` does? (a) Yes. **Recommended**, as the same reading of D219's reason (plan item 5). (b) No,
+because a table change sweeps. But the sweep reads the same `33`s and is green too, so (b) is the silent pass D212 rules
+out.
+
+**Tree.** Code touched while proving, each restored with `git checkout -- <path>` before the next:
+`assets/languages/python/scripts/mutmut-mutation.py` and `assets/languages/typescript/scripts/stryker-mutation.py`. Scratch
+lives outside the repository, at `/tmp/s42/converge2/`. At the end of the pass, `git status` shows only the host's
+`benchmark.json` and this file.
