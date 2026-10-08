@@ -32,7 +32,7 @@ mutation: mutmut <found or is not> installed in <service>'s environment[ (<the p
     wrapper runs mutmut 3.8.0: add mutmut==3.8.0 to the dev group of <service>/pyproject.toml and run uv lock
     --project <service> (slipwai migrate brings the wrapper for a newer pin)
 mutation: <service>/pyproject.toml: no [tool.mutmut] table
-mutation: PYTEST_ADDOPTS is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut]
+mutation: <PYTEST_* variable> is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut]
     pytest_add_cli_args is where this service adds pytest options
 mutation: not mutated <service>/<file> — outside mutmut's configured targets
 mutation: nothing under <service> that was given is a file mutmut would mutate; no mutant to run
@@ -42,6 +42,8 @@ mutation: mutmut exited <code> (its exit status and the output above are mutmut'
     are)
 mutation: <service>/<file>:<line> holds "# pragma: no mutate <block|start|end>", which silences mutants nobody looked
     at; only a bare "# pragma: no mutate" on the line excuses one
+mutation: <service>/pyproject.toml <setting> is <value found, or missing>, not <value held, or absent>, which narrows what
+    the tests reach without anyone looking at it
 mutation: <service>/pyproject.toml sets do_not_mutate_patterns, which silences every line a pattern matches without
     anyone looking at its mutants; only a bare "# pragma: no mutate" on the line excuses one
 mutation: <service>/pyproject.toml sets mutate_only_covered_lines, which leaves out the mutants of every line coverage

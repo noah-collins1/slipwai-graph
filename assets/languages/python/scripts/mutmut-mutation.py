@@ -85,6 +85,10 @@ EXITED = "(its exit status and the output above are mutmut's, never the verdict;
 # What `fnmatch` reads as syntax: the characters that make a path a pattern over mutant names, not a name.
 OPENERS = "*?["
 # The packages whose version decides which mutants exist: mutmut, and libcst with everything libcst resolves to (D222).
+# What the test selection is held to (D227): the generated values, exactly, and no `tests_dir`, which mutmut appends to the
+# selection. Anything else narrows what the tests reach, and a mutant no test reaches is counted and passes (D212).
+HELD: dict[str, Any] = {"pytest_add_cli_args_test_selection": ["tests", "--ignore=tests/integration"],
+                        "pytest_add_cli_args": ["-p", "no:xdist"]}
 ROOT_PACKAGE = "mutmut"
 PARSER_PACKAGE = "libcst"
 
@@ -301,12 +305,12 @@ def check_uv(job: Job) -> int | None:
 
 
 def check_environment(job: Job) -> int | None:
-    """What mutmut and `uv` are handed: this environment without `PYTEST_ADDOPTS`, which would change how every mutant's
-    tests run (`[tool.mutmut] pytest_add_cli_args` is where a service adds pytest options)."""
-    job.env = {name: value for name, value in os.environ.items() if name != "PYTEST_ADDOPTS"}
-    if "PYTEST_ADDOPTS" in os.environ:
-        say("PYTEST_ADDOPTS is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut] "
-            "pytest_add_cli_args is where this service adds pytest options")
+    """What mutmut and `uv` are handed: this environment without any `PYTEST_*` variable, which would change how every
+    mutant's tests run (`[tool.mutmut] pytest_add_cli_args` is where a service adds pytest options), each named once."""
+    job.env = {name: value for name, value in os.environ.items() if not name.startswith("PYTEST_")}
+    for name in sorted(set(os.environ) - set(job.env)):
+        note(f"{name} is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut] "
+             "pytest_add_cli_args is where this service adds pytest options")
     return None
 
 
@@ -530,6 +534,12 @@ def silenced(job: Job) -> list[str]:
     """One line for each way a judged file or the table silences mutants without anyone looking at them: decided in
     `plan`, before any exit that finds nothing to run, so that the two cannot disagree about what silences."""
     found = []
+    for setting, held in (*HELD.items(), ("tests_dir", None)):
+        if (setting not in job.config) == (held is None) and (held is None or job.config[setting] == held):
+            continue
+        shown = "missing" if setting not in job.config else json.dumps(job.config[setting])
+        found.append(f"{job.service}/pyproject.toml {setting} is {shown}, not {'absent' if held is None else json.dumps(held)}"
+                     ", which narrows what the tests reach without anyone looking at it")
     if job.config.get("do_not_mutate_patterns"):
         found.append(f"{job.service}/pyproject.toml sets do_not_mutate_patterns, which silences every line a pattern "
                      "matches without anyone looking at its mutants; only a bare \"# pragma: no mutate\" on the "

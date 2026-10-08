@@ -80,6 +80,11 @@ PYTHON_MUTATION_NOTE = f"""\
 # tests leave them; a slice that edits one of those files meets that file's survivors in its scoped `make mutation`. The
 # minimal starter (no HTTP framework, the memory store) is green.
 #
+# The wrapper does not read pytest's own configuration (`addopts` in `[tool.pytest.ini_options]`, `pytest.ini`, `tox.ini`,
+# `setup.cfg`, `conftest.py` hooks): a `--deselect`, `-k` or `-m` there, or a collection hook, narrows `make test` and
+# `make mutation` alike, and those mutants show as `no tests`. It does hold the table's test selection to the generated
+# one and drops every `PYTEST_*` variable from the environment it hands mutmut.
+#
 # Two settings in the table look odd and are not. `tests/integration` is left out of the test selection, as it is of
 # `make test`, because it needs a database. And `-p no:xdist` keeps pytest on one process, because mutmut records which
 # tests reach which function from a single one.

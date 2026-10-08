@@ -13,11 +13,15 @@ import signal
 import stat
 import subprocess
 import sys
+import tomllib
 import unittest
 from pathlib import Path
 from typing import Any
 
-from test_mutmut_verdict import FAKE_UV, KEY, TABLE, Case, lines_of
+from slipwai.assets import LANGUAGE_ROOT
+from slipwai.project.mutmut import PYTHON_MUTATION_NOTE
+from test_mutmut_config import loaded
+from test_mutmut_verdict import FAKE_UV, KEY, SCRIPT, TABLE, Case, lines_of
 
 sys.dont_write_bytecode = True
 # `test_mutmut_verdict` imports `slipwai`, which reads this script on import (as `test_stryker_closure` does)
@@ -141,6 +145,98 @@ class ForgedMetaTest(PhaseCase):
                                 results={"tests/test_a.py": {KEY: 0}})
         self.assertEqual(done.returncode, 0)
         self.assertEqual(self.started_mutmut(), [])
+
+
+SELECTION = '["tests", "--ignore=tests/integration"]'
+CLI_ARGS = '["-p", "no:xdist"]'
+FRAGMENT = Path(__file__).resolve().parent.parent / "changelog.d" / "mutmut-mutation.md"
+
+
+def narrowed(selection: str | None = SELECTION, cli_args: str | None = CLI_ARGS, extra: str = "") -> str:
+    lines = ["[tool.mutmut]", 'source_paths = ["src"]']
+    if selection is not None:
+        lines.append(f"pytest_add_cli_args_test_selection = {selection}")
+    if cli_args is not None:
+        lines.append(f"pytest_add_cli_args = {cli_args}")
+    return "\n".join(lines) + "\n" + extra
+
+
+def narrowing(setting: str, found: str, held: str) -> str:
+    return (f"mutation: apps/service/pyproject.toml {setting} is {found}, not {held}, which narrows what the tests "
+            "reach without anyone looking at it")
+
+
+class TestSelectionTest(PhaseCase):
+    """T038 (A3 · D227 items 1-3): the selection is the generated one, and the shell cannot narrow it either."""
+
+    def run_table(self, text: str) -> subprocess.CompletedProcess[str]:
+        (self.service / "pyproject.toml").write_text(text, encoding="utf-8")
+        return self.run_wrapper("apps/service", meta={"src/pkg/a.py": {KEY: None}}, results={"src/pkg/a.py": {KEY: 1}})
+
+    def test_a3_the_held_values_are_the_ones_the_starter_is_generated_with(self) -> None:
+        generated = tomllib.loads((LANGUAGE_ROOT / "python" / "app" / "pyproject.toml").read_text(encoding="utf-8"))
+        table = generated["tool"]["mutmut"]
+        module = loaded(SCRIPT)
+        for setting, held in module.HELD.items():
+            self.assertEqual(held, table[setting], setting)
+        self.assertNotIn("tests_dir", table)
+
+    def test_a3_the_generated_selection_passes(self) -> None:
+        done = self.run_table(narrowed())
+        self.assertEqual(done.returncode, 0, lines_of(done))
+
+    def test_a3_each_narrowing_fails_the_run_with_one_line_before_anything_runs(self) -> None:
+        held_selection, held_args = SELECTION, CLI_ARGS
+        cases = (
+            (narrowed('["tests"]'), narrowing("pytest_add_cli_args_test_selection", '["tests"]', held_selection)),
+            (narrowed('["tests/unit", "--ignore=tests/integration"]'),
+             narrowing("pytest_add_cli_args_test_selection", '["tests/unit", "--ignore=tests/integration"]',
+                       held_selection)),
+            (narrowed(None), narrowing("pytest_add_cli_args_test_selection", "missing", held_selection)),
+            (narrowed(cli_args='["-p", "no:xdist", "-k", "not slow"]'),
+             narrowing("pytest_add_cli_args", '["-p", "no:xdist", "-k", "not slow"]', held_args)),
+            (narrowed(cli_args='["-p", "no:xdist", "--deselect", "tests/test_a.py::test_b"]'),
+             narrowing("pytest_add_cli_args", '["-p", "no:xdist", "--deselect", "tests/test_a.py::test_b"]',
+                       held_args)),
+            (narrowed(cli_args=None), narrowing("pytest_add_cli_args", "missing", held_args)),
+            (narrowed(extra='tests_dir = ["tests/unit"]\n'), narrowing("tests_dir", '["tests/unit"]', "absent")),
+            (narrowed(extra='tests_dir = []\n'), narrowing("tests_dir", "[]", "absent")),
+        )
+        for text, line in cases:
+            with self.subTest(line=line):
+                done = self.run_table(text)
+                self.assertEqual(done.returncode, 1)
+                self.assertEqual([found for found in lines_of(done) if "narrows" in found], [line])
+
+    def test_a3_a_narrowing_is_decided_before_a_file_with_no_mutant_to_run_exits(self) -> None:
+        (self.service / "pyproject.toml").write_text(narrowed('["tests"]'), encoding="utf-8")
+        done = self.run_wrapper("apps/service", "--file", "src/pkg/types.py", meta={"src/pkg/types.py": {}})
+        self.assertEqual(done.returncode, 1)
+        done = self.run_wrapper("apps/service", "--file", "src/pkg/other.py", meta={})
+        self.assertEqual(done.returncode, 1)
+
+    def test_a3_every_pytest_variable_is_stripped_from_every_call_with_a_line_each_and_the_rest_passes(self) -> None:
+        extra = {"PYTEST_CURRENT_TEST": "x", "PYTEST_PLUGINS": "evil", "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+                 "PYTHONPATH": "/some/path"}
+        done = self.run_with("apps/service", extra=extra, meta={"src/pkg/a.py": {KEY: None}},
+                             results={"src/pkg/a.py": {KEY: 1}})
+        said = [line for line in lines_of(done) if "is not passed to mutmut" in line]
+        tail = ("is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut] "
+                "pytest_add_cli_args is where this service adds pytest options")
+        self.assertEqual(said, [f"mutation: {name} {tail}" for name in
+                                ("PYTEST_CURRENT_TEST", "PYTEST_DISABLE_PLUGIN_AUTOLOAD", "PYTEST_PLUGINS")])
+        self.assertGreaterEqual(len(self.calls()), 2)
+        for call in self.calls():
+            self.assertEqual(call["env"], {})
+
+    def test_a3_the_note_and_the_fragment_each_say_what_the_wrapper_does_not_read(self) -> None:
+        sentence = ("The wrapper does not read pytest's own configuration (`addopts` in `[tool.pytest.ini_options]`, "
+                    "`pytest.ini`, `tox.ini`, `setup.cfg`, `conftest.py` hooks): a `--deselect`, `-k` or `-m` there, "
+                    "or a collection hook, narrows `make test` and `make mutation` alike, and those mutants show as "
+                    "`no tests`.")
+        note = " ".join(line.removeprefix("# ").removeprefix("#") for line in PYTHON_MUTATION_NOTE.splitlines())
+        self.assertIn(sentence, " ".join(note.split()))
+        self.assertIn(sentence, " ".join(FRAGMENT.read_text(encoding="utf-8").split()))
 
 
 if __name__ == "__main__":
