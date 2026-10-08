@@ -491,6 +491,15 @@ def dry_run_tests(path: Path) -> int | None:
         return None
 
 
+def test_owners(path: Path) -> dict[str, str]:
+    """The test file each of the report's dry-run tests is in, by test id; empty where the report does not say."""
+    try:
+        listed = json.loads(path.read_text(encoding="utf-8"))["testFiles"]
+        return {str(test["id"]): name for name, entry in listed.items() for test in entry["tests"]}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return {}
+
+
 def ignores_static(service: Path) -> bool:
     """Whether the service's config sets `ignoreStatic`, under which Stryker runs a static mutant under the tests that
     cover it and not under the whole suite (A9)."""
@@ -500,7 +509,8 @@ def ignores_static(service: Path) -> bool:
         return False
 
 
-def incomplete(one: dict, dry_run: int | None, covering_only: bool = False) -> str | None:
+def incomplete(one: dict, dry_run: int | None, covering_only: bool = False,
+               owners: dict[str, str] | None = None) -> str | None:
     """Why a `Survived` mutant is not a survivor (D217, research R11), or None. Stryker 10.0.0's Vitest runner skips the
     tests of a file whose `beforeAll` throws and reads a run with no failed test as `Survived`; the report keeps only
     `testsCompleted`. A static mutant is one every test runs under, so it must complete the dry run's count, or with
@@ -510,15 +520,22 @@ def incomplete(one: dict, dry_run: int | None, covering_only: bool = False) -> s
     if one.get("status") != "Survived" or one.get("static") is not True:
         return None
     covering = one.get("coveredBy")
+    # The test files the report places the mutant's covering tests in: where the tests went missing is not recorded, so
+    # these are the files to look in, named only where the report says.
+    files = sorted({(owners or {}).get(str(test)) for test in covering if (owners or {}).get(str(test))}) \
+        if isinstance(covering, list) else []
+    where = f"; the tests that cover it are in {', '.join(files)}" if files else ""
+    remedy = (" — make the setup that failed fail inside a test (a hook inside a `describe`), and the mutant counts as "
+              "killed")
     if covering_only:
         if not isinstance(covering, list) or not isinstance(done, int) or isinstance(done, bool) or done >= len(covering):
             return None
         return (f"Stryker says it survived, but the suite ran {done} of the {len(covering)} tests that cover it "
-                f"(a hook or a file failed, so that is not a survivor and not a pass)")
+                f"(a hook or a file failed, so that is not a survivor and not a pass{where}){remedy}")
     if dry_run is None or not isinstance(done, int) or isinstance(done, bool) or done >= dry_run:
         return None
     return (f"Stryker says it survived, but the suite ran {done} of the dry run's {dry_run} tests under it "
-            f"(a hook or a file failed, so that is not a survivor and not a pass)")
+            f"(a hook or a file failed, so that is not a survivor and not a pass{where}){remedy}")
 
 
 def judged(files: dict[str, dict], given: list[str]) -> list[tuple[str, dict]]:
@@ -744,14 +761,15 @@ def unseen(service: str, given: list[str], report: str, files: dict[str, dict]) 
 
 
 def verdict(service: str, given: list[str], report: str, files: dict[str, dict], dry_run: int | None = None,
-            covering_only: bool = False) -> int:
+            covering_only: bool = False, owners: dict[str, str] | None = None) -> int:
     mutants = judged(files, given)
     problems = unseen(service, given, report, files) if given else []
     for line in problems:
         say(line)
     if not mutants:
         if given and not problems:
-            say(f"mutation: no mutant to run — {', '.join(given)}: Stryker found no mutant in them (types or comments only)")
+            say(f"mutation: no mutant to run — {', '.join(given)}: Stryker found no mutant in "
+                f"{'it' if len(given) == 1 else 'them'} (declarations and comments only: types, imports, plain constants)")
             return 0
         if given:
             return 1
@@ -759,7 +777,7 @@ def verdict(service: str, given: list[str], report: str, files: dict[str, dict],
         return 1
     why = {(name, id(one)): unexcused(service, name, files[name], one) for name, one in mutants
            if one.get("status") == "Ignored"}
-    short = {(name, id(one)): incomplete(one, dry_run, covering_only) for name, one in mutants}
+    short = {(name, id(one)): incomplete(one, dry_run, covering_only, owners) for name, one in mutants}
     failing = [(name, one) for name, one in mutants
                if one.get("status") not in PASS + COUNTED or why.get((name, id(one)))]
     for name, one in failing:
@@ -794,14 +812,15 @@ def judge(job: Job) -> int:
         say(f"mutation: scoped to {len(given)} given file(s): {', '.join(given)}")
         command += ["--mutate", ",".join(given)]
     code = subprocess.run(command, cwd=directory).returncode
-    say(f"mutation: Stryker exited {code} (its exit status is printed, never the verdict; the report is)")
+    say(f"mutation: Stryker exited {code} (its exit status and the output above it are Stryker's, never the verdict; the report is)")
     report = f"{service}/{REPORT}"
     files = read_report(directory / REPORT)
     shutil.rmtree(directory / SANDBOX, ignore_errors=True)
     if files is None:
         say(f"mutation: Stryker exited {code} and left no readable report at {report}; that is not a pass")
         return 1
-    return verdict(service, given, report, files, dry_run_tests(directory / REPORT), ignores_static(directory))
+    return verdict(service, given, report, files, dry_run_tests(directory / REPORT), ignores_static(directory),
+                   test_owners(directory / REPORT))
 
 
 def refusal(job: Job) -> int | None:

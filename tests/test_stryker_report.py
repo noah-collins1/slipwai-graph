@@ -16,7 +16,8 @@ from slipwai.assets import ROOT
 sys.dont_write_bytecode = True
 TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py"]}
 EMPTY: dict[str, Any] = {"files": {}}
-NONE_TO_RUN = "mutation: no mutant to run — src/a.ts: Stryker found no mutant in them (types or comments only)"
+NONE_TO_RUN = ("mutation: no mutant to run — src/a.ts: Stryker found no mutant in it (declarations and comments only: "
+               "types, imports, plain constants)")
 
 
 class ReportNamesTest(VerdictCase):

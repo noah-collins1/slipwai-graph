@@ -190,8 +190,8 @@ class VerdictTest(VerdictCase):
         (self.tree / SERVICE / "src/a.ts").write_text("export interface A { b: string }\n", encoding="utf-8")
         code, lines = self.run_wrapper({"report": {"files": {}}}, "--file", "src/a.ts")
         self.assertEqual(code, 0, lines)
-        self.assertEqual(lines[-1], "mutation: no mutant to run — src/a.ts: Stryker found no mutant in them "
-                                    "(types or comments only)")
+        self.assertEqual(lines[-1], "mutation: no mutant to run — src/a.ts: Stryker found no mutant in it "
+                                    "(declarations and comments only: types, imports, plain constants)")
         code, lines = self.run_wrapper({"report": {"files": {}}})
         self.assertEqual(code, 1)
         self.assertEqual(lines[-1], f"mutation: Stryker found nothing to mutate in {SERVICE}; a pass on nothing is not "

@@ -16,7 +16,8 @@ from test_stryker_verdict import REPORT, SERVICE, VerdictCase
 sys.dont_write_bytecode = True
 TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py"]}
 EMPTY: dict[str, Any] = {"files": {}}
-NONE_TO_RUN = "mutation: no mutant to run — src/a.ts: Stryker found no mutant in them (types or comments only)"
+NONE_TO_RUN = ("mutation: no mutant to run — src/a.ts: Stryker found no mutant in it (declarations and comments only: "
+               "types, imports, plain constants)")
 # A2: a statement that begins like a declaration and is followed, with no `;`, by code on the next line. Stryker planted
 # mutants in every one of these.
 CODE_AFTER_A_DECLARATION = (

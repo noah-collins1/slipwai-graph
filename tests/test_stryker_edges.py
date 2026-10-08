@@ -58,6 +58,12 @@ class EdgesTest(VerdictCase):
                       done.stdout.splitlines())
         self.assertTrue(done.stdout.splitlines()[-1].endswith(f"failed — report {REPORT}"))
 
+    def test_l6_t035_the_table_above_the_verdict_is_said_to_be_strykers(self) -> None:
+        code, lines = self.run_wrapper(OK, "--file", "src/a.ts")
+        self.assertEqual(code, 0, lines)
+        self.assertIn("mutation: Stryker exited 0 (its exit status and the output above it are Stryker's, never the "
+                      "verdict; the report is)", lines)
+
     def test_l5_t042_stryker_is_told_which_config_to_read_whatever_other_file_lies_beside_it(self) -> None:
         """B1: Stryker 10 reads `stryker.conf.json`, `.js`, `.mjs`, `.cjs` and `stryker.config.js|mjs|cjs` before
         `stryker.config.json` where none is named; the scope reads `stryker.config.json`, so the wrapper names it."""

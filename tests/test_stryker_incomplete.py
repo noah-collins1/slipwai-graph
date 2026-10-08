@@ -45,11 +45,25 @@ class IncompleteTest(VerdictCase):
         self.assertEqual(lines[1], f"mutation: Incomplete {SERVICE}/src/tracing.ts:81:5 ConditionalExpression → false "
                                    "— Stryker says it survived, but the suite ran 81 of the dry run's 86 tests "
                                    "under it "
-                                   "(a hook or a file failed, so that is not a survivor and not a pass) "
+                                   "(a hook or a file failed, so that is not a survivor and not a pass; the tests that "
+                                   "cover it are in tests/a.test.ts) — make the setup that failed fail inside a test "
+                                   "(a hook inside a `describe`), and the mutant counts as killed "
                                    f"(report {REPORT})")
         self.assertEqual(lines[-1], "mutation: 1 mutants: 0 killed, 0 ignored, 0 not covered (reported, never failed), "
                                     f"1 survived with the suite incomplete; failed — report {REPORT}")
         self.assertNotIn(" 1 survived;", lines[-1])
+
+    def test_e9_t035_the_line_names_no_file_the_report_does_not_place_and_says_the_remedy_either_way(self) -> None:
+        the_report = report(src__tracing_ts=[survived(81, covered=("99",))])
+        the_report["testFiles"] = tests(86)
+        code, lines = self.run_wrapper({"report": the_report})
+        self.assertEqual(code, 1, lines)
+        self.assertNotIn("the tests that cover it are in", lines[1])
+        self.assertIn("make the setup that failed fail inside a test (a hook inside a `describe`)", lines[1])
+        the_report = report(src__tracing_ts=[survived(81, covered=("3", "83", "4"))])
+        the_report["testFiles"] = tests(86)
+        self.assertIn("the tests that cover it are in tests/a.test.ts, tests/b.test.ts",
+                      self.run_wrapper({"report": the_report})[1][1])
 
     def test_e2_a_static_survivor_that_ran_every_test_stays_a_survivor(self) -> None:
         code, lines = self.run_report(survived(86, line=91, replacement="true"))
