@@ -25,6 +25,7 @@ from support import FactoryTestCase, commit_all
 from test_replay import newer_factory
 
 from slipwai.assets import ROOT
+from slipwai.project.mutmut import PYTHON_MUTATION_NOTE
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / "assets" / "toolkit" / "scripts"))
@@ -49,6 +50,17 @@ CATCH_UP_WORDS = (
     "`mutants/`", "`.mutmut-cache`", "`make mutation` exits 2", "`uv sync --locked`", "`make mutation-full`",
     "survivors", "WSL", "`java-quarkus`", "recorded stub", "wired by hand", "`# pragma: no mutate`",
     *FAILED_SETTINGS, "No `project.json` key changes")
+# T033 (D223 item 4, D224 item 1, D225 item 1): what the sweep does with several services, said in each place
+SWEEP_SHAPE = ("`make mutation-full` runs every Python service, each from a fresh `mutants/`, and a failed service "
+               "does not stop the next: the run fails at the end, naming each failed one. A failing Go or TypeScript "
+               "service listed earlier in a mixed project still stops the sweep before Python runs.")
+ADD_SERVICE_WORDS = (
+    "run `slipwai migrate` and commit before `slipwai add-service`", "Python or TypeScript service",
+    "an older factory last wrote", "`scripts/mutation-scope.py`", "`scripts/verify-stamp.py`",
+    "every `make mutation` sweeps", "the stamp does not reuse", "`generator.updatedWith`",
+    "a `migrate` afterwards brings the scripts but skips the catch-up notes in between")
+STARTER_WORDS = ("default Python starter", "reports survivors the day it is generated", "its own starter tests",
+                 "that file's survivors in its scoped `make mutation`", "minimal starter", "is green")
 LOCK_LINE = "does not agree with"
 UV_UNREACHABLE = ("error sending request", "dns error", "failed to fetch", "connection", "network", "offline")
 
@@ -120,6 +132,41 @@ class FragmentTest(unittest.TestCase):
             self.assertIn(words, body)
         for stale in ("does not run mutmut yet", "still refuses a changed Python", "still exits 2"):
             self.assertNotIn(stale, body)
+
+
+def place_texts() -> dict[str, str]:
+    """Every place that says what the sweep does, as one line of words: both paragraphs, the note and the skill."""
+    first = squashed(FRAGMENT.read_text(encoding="utf-8").split("\n\n")[1])
+    skill = squashed((ROOT / "assets/toolkit/skills/mutation-testing/SKILL.md").read_text(encoding="utf-8"))
+    note = squashed(re.sub(r"^# ?", "", PYTHON_MUTATION_NOTE, flags=re.M))
+    return {"first paragraph": first, "catch-up": catch_up(), "Makefile note": note, "skill": skill}
+
+
+class SweepWordsTest(unittest.TestCase):
+    def test_t033_every_place_says_the_sweeps_shape_in_the_same_words(self) -> None:
+        for place, text in place_texts().items():
+            with self.subTest(place=place):
+                self.assertIn(SWEEP_SHAPE, text)
+
+    def test_t033_hold_the_default_starter_reports_its_own_survivors_and_the_minimal_one_is_green(self) -> None:
+        """HOLD (teeth: reword the note's or the fragment's sentence)."""
+        for place, text in place_texts().items():
+            if place in ("first paragraph", "Makefile note"):
+                for words in STARTER_WORDS:
+                    with self.subTest(place=place, words=words):
+                        self.assertIn(words, text)
+
+    def test_t033_the_fragment_says_in_a_users_words_that_a_later_release_fixes_the_starters_tests(self) -> None:
+        text = place_texts()["first paragraph"]
+        self.assertIn("A later release makes the starter's own tests kill them.", text)
+        self.assertNotIn("S45", text)
+
+    def test_t033_the_catch_up_asks_for_migrate_before_add_service_and_says_what_it_does_not_bring(self) -> None:
+        note = catch_up()
+        for words in ADD_SERVICE_WORDS:
+            with self.subTest(words=words):
+                self.assertIn(words, note)
+        self.assertNotIn("D224", note)
 
 
 class MigrateTest(FactoryTestCase):
