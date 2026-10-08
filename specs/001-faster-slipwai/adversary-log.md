@@ -791,3 +791,22 @@ Slice `S42-mutmut-mutation` (cruise iteration 30), diff `b9f16ef..1f2a0b7^2` (me
 
 Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
 
+Spawned: seam A — the wrapper as a Python project reaches it (verdict, stale and forged `.meta`, silencing and narrowing settings, environment, paths, several services, the lock, the version) · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/languages/python/scripts/mutmut-mutation.py`, `src/slipwai/project/mutmut.py`, `assets/languages/python/app/pyproject.toml`, `tests/test_mutmut_*.py`
+Spawned: seam B — what scopes, sweeps, refuses or skips a Python service, and what generation, `add-service` and `migrate` put in a project · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/toolkit/scripts/mutation-scope.py`, `assets/toolkit/scripts/verify-stamp.py`, `assets/toolkit/scripts/check-imports.py`, `src/slipwai/project/{mutation,native_commands,mutmut,gitignore}.py`, `src/slipwai/project/languages/python.py`, `src/slipwai/backends.py`, `changelog.d/mutmut-mutation.md`, `tests/test_mutation_scope*.py`, `tests/test_mutmut_*.py`
+Omitted: the default starter's survivors (D225, known; S45) · the OpenTelemetry `atfork` noise and mutmut's spinner (the demo's notes, LOW, known) · `add-service` on an older project (D224; S46)
+Findings: twelve — four `HIGH`, five `MEDIUM`, five `LOW` counted with B2's pre-existing pattern; no `CRITICAL`. Reproduced against real mutmut 3.8.0 in scratch projects (seam A) and factory-generated projects (seam B).
+
+| # | Seam | Severity | Finding | Triage | State |
+|---|---|---|---|---|---|
+| A1 | A | HIGH | A killed wrapper releases its `flock` while its `mutmut run` child lives on; the orphan writes its `.meta` results into the next run's fresh `mutants/`, which mutmut keeps — a weak suite reads `8 killed; passed`. New | Confirmed (3/3 reproductions); S42 Phase 4 | open |
+| A2 | A | HIGH | A committed `.meta` file beside a source (or under `tests/`, copied by `also_copy`) is copied into `mutants/` and taken as the verdict: forged codes with matching hashes hide survivors; a ghost `.meta` makes an empty sweep pass. No check that every code is null after the wrapper's own generation step. New | Confirmed; S42 Phase 4 | open |
+| A3 | A | MEDIUM | Narrowing the test selection (`pytest_add_cli_args_test_selection`, `tests_dir`, `-k`/`--deselect` in `pytest_add_cli_args`, pytest's own `addopts`, `PYTEST_PLUGINS` in the environment) turns survivors into `no tests`, which pass. New | Question → D227 | open |
+| A4 | A | MEDIUM | A `mutmut` package on `PYTHONPATH` runs in place of the venv's 3.8.0 while `importlib.metadata` still reads 3.8.0; a patched copy makes a weak suite pass. New | Confirmed; S42 Phase 4 | open |
+| A5 | A | MEDIUM | `do_not_mutate` / `only_mutate` drop whole files from the sweep with no line naming them. New | Question → D227 | open |
+| A6 | A | LOW | With several services, one that could not start (exit 2) is reported as exit 1 and counted as swept. New | Question → D228 | open |
+| A7 | A | LOW | An absolute `--file` path reads as *outside mutmut's configured targets* (exit 0); `also_copy = ["../x"]` copies outside `mutants/` and is never cleaned. From reading; unreproduced. New | Confirmed (by reading the code); S42 Phase 4 | open |
+| B1 | B | HIGH | A changed module under a `source_paths` root other than `src/` is never scoped (`PRODUCTION_ROOT`/`python_kind` fix `src/`), though the wrapper and mutmut mutate it: `make mutation` passes with no mutant run. New | Confirmed; S42 Phase 4 | open |
+| B2 | B | MEDIUM | `rule_of` matches only `mutation-full:`; `mutation-full :` or a multi-target line overrides the recipe unseen by the recipe check and the rule-changed sweep. Predates S42 (Go, Spring share it) | Confirmed; S42 Phase 4 | open |
+| B3 | B | LOW | A libcst or mutmut lock entry whose `source` or hashes change at the same version does not sweep (`lock_versions` compares only `version`). New | Confirmed; S42 Phase 4 | open |
+| B4 | B | LOW | The sweep's first line repeats one cause once per Python service. Go's pattern, multiplied. New | Confirmed; S42 Phase 4 | open |
+| B5 | B | LOW | `migrate` of a project with an added Python service conflicts in five files (`Makefile`, `pyproject.toml`, `uv.lock`, `commands/mutation.md`, `rules.json`); the Catch-up names two. New | Confirmed; S42 Phase 4 | open |
