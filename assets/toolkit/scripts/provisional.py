@@ -18,9 +18,11 @@ Nothing here prints or exits outside `main`; `reversibility.py` beside this file
 from __future__ import annotations
 
 import importlib.util
+import json
+import posixpath
 import re
 import sys
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -52,19 +54,25 @@ MODE_LABELS = ("Provisional (shadow)", "Provisional (advisory)")
 REHEARSAL_FORM = re.compile(r"(easy|guarded|hard) · (provisional · ratify by ([0-9]{4}-[0-9]{2}-[0-9]{2})|"
                             r"blocks \(hard\)|blocks \((?:ci_workflow|migrate_file|flag_default)=yes\)) · Revert: "
                             r"commits carrying Decision: D([1-9][0-9]*)")
-# D204: what a provisional or ratified entry's `Written to` may not name. A workflow, a control the runner parks on
-# (`agents/cruise.py`'s CONTROL_PATHS, whether the delivery material is at the root or under `delivery/`), and a
-# configuration file a generated gate reads: the list is closed, and a test holds it against what the starters ship.
-# Each is written as its segments: the scoped gate reads a whole path in a check's script as a file the check reads.
+# D204, D210: what a provisional or ratified entry's `Written to` may not name. A workflow, a control the runner parks on
+# (`agents/cruise.py`'s CONTROL_PATHS, whether the delivery material is at the root or under `delivery/`, and the hook
+# file of every harness whose registry row projects one), the delivery directory an adopted project keeps its material
+# in (its scripts, Makefile and `.written`), and a configuration file a generated gate reads: the list is closed, and a
+# test holds it against what the starters ship and what the registry projects. Names compare in any case, the way the
+# committed list of S26 does. Each is written as its segments: the scoped gate reads a whole path in a check's script as
+# a file the check reads.
 CI_DIRECTORIES = tuple("/".join(parts) for parts in ((".github", "workflows"), (".gitea", "workflows")))
-CONTROL_DIRECTORIES = tuple("/".join(parts) for parts in (("scripts",), ("tools",), ("delivery", "scripts"),
-                                                         ("delivery", "Makefile"), (".claude", "settings.json")))
-CONTROL_FILES = ("Makefile", ".gitlab-ci.yml")
+CONTROL_DIRECTORIES = tuple("/".join(parts) for parts in (
+    ("scripts",), ("tools",), ("delivery", "scripts"), ("delivery", "Makefile"), (".claude", "settings.json"),
+    (".cursor", "hooks.json"), (".gemini", "settings.json"), (".slipwai", "propagated")))
+CONTROL_FILES = ("Makefile", "GNUmakefile", "makefile", ".gitlab-ci.yml")
+DELIVERY_PARTS = ("scripts", "Makefile", ".written")  # under an adopted project's `layout.delivery`
 GATE_CONFIGURATION = re.compile(
     r"(?:biome\.jsonc?|tsconfig(?:\.[\w.-]+)?\.json|package(?:-lock)?\.json|(?:vite|vitest)(?:\.[\w-]+)?\.config\.\w+|"
     r"pyproject\.toml|uv\.lock|\.python-version|\.nvmrc|go\.(?:mod|sum|work)|\.gremlins\.ya?ml|\.golangci\.ya?ml|"
     r"pom\.xml|checkstyle\.xml|pmd-ruleset\.xml|spotbugs-exclude\.xml|maven-wrapper\.properties|\.editorconfig|"
-    r"ruff\.toml|mypy\.ini|pytest\.ini|setup\.cfg|tox\.ini|\.importlinter|eslint\.config\.\w+|\.eslintrc(?:\.\w+)?)")
+    r"\.?ruff\.toml|mypy\.ini|pytest\.ini|setup\.cfg|tox\.ini|\.importlinter|eslint\.config\.\w+|"
+    r"\.eslintrc(?:\.\w+)?|conftest\.py|[\w.-]*flags[\w.-]*\.tfvars)", re.I)
 REVERT_FORM = re.compile(r"commits carrying Decision: D([1-9][0-9]*)")
 
 
@@ -133,23 +141,61 @@ def written_to(value: str) -> list[str]:
     return [name.strip().replace("\\", "/").removeprefix("./").rstrip("/") for name in names if name.strip()]
 
 
-def protected(path: str) -> bool:
-    """Whether `path` is a workflow, a control, a configuration file of a generated gate, or a directory holding one."""
-    if path in ("", ".") or path.split("/")[-1] == "Makefile" or path in CONTROL_FILES:
+def delivery_directory(root: Path) -> str | None:
+    """The directory an adopted project keeps its delivery material in (`layout.delivery` of `project.json`), as a
+    project-relative path (`.` for the root, where it names none); None where the project is not adopted."""
+    try:
+        document = json.loads((root / "project.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(document, dict) or document.get("origin") != "adopted":
+        return None
+    layout = document.get("layout")
+    named = layout.get("delivery", ".") if isinstance(layout, dict) else "."
+    folded = posixpath.normpath(named.replace("\\", "/")) if isinstance(named, str) else "."
+    return "." if posixpath.isabs(folded) or folded.split("/")[0] == ".." else folded
+
+
+def protected(path: str, delivery: str | None = None) -> bool:
+    """Whether `path`, a project-relative posix path, is a workflow, a control, a configuration file of a generated gate,
+    or a directory holding one; `delivery` is an adopted project's delivery directory, whose scripts, Makefile and
+    `.written` are controls too. Names compare in any case."""
+    path = path.casefold()
+    if path in ("", ".") or path.split("/")[-1] in {name.casefold() for name in CONTROL_FILES} or ".mvn" in path.split("/"):
         return True
-    if any(path == name or path.startswith(name + "/") or name.startswith(path + "/")
-           for name in CI_DIRECTORIES + CONTROL_DIRECTORIES):
+    names = [name.casefold() for name in CI_DIRECTORIES + CONTROL_DIRECTORIES]
+    names += [posixpath.join(delivery, part).removeprefix("./").casefold() for part in DELIVERY_PARTS] if delivery else []
+    if any(path == name or path.startswith(name + "/") or name.startswith(path + "/") for name in names):
         return True
     return GATE_CONFIGURATION.fullmatch(path.rsplit("/", 1)[-1]) is not None
 
 
-def written_findings(where: str, fields: Mapping[str, str]) -> list[str]:
-    """One finding naming the protected paths of an entry's `Written to`, whatever its declared facts say (D204)."""
-    named = [path for path in written_to(fields.get("Written to", "")) if protected(path)]
-    if not named:
-        return []
-    return [f"{where} `Written to` names {', '.join(f'`{path}`' for path in named)}, a workflow, a control of the "
-            "run or a configuration file a generated gate reads; a provisional decision never edits one (D204)"]
+def named_paths(value: str, root: Path) -> list[str]:
+    """Every project-relative path a `Written to` value names, as S26 reads one (`written_paths`: backticked, bare beside
+    them, separated by `,`, `;` or `and`) and resolves it (`inside`: absolute inside the project, `..`, `//`, `./`);
+    a path that lands outside the project is no path in it."""
+    try:
+        module = reversibility_module()
+    except OSError:  # the gate says reversibility.py is missing in its own finding
+        return written_to(value)
+    return [path for path in (module.inside(name, root) for name in module.written_paths(value)) if path]
+
+
+def written_findings(where: str, fields: Mapping[str, str], twice: Collection[str] = ()) -> list[str]:
+    """The findings for an entry's `Written to`: said once, and no protected path in it, whatever its declared facts say
+    (D204, D210)."""
+    found = []
+    if "Written to" in twice:
+        found.append(f"{where} `Written to` is on more than one line; a provisional or ratified entry says it once, "
+                     "because only the first is read (D210)")
+    root = project_root(Path(__file__).resolve())
+    delivery = delivery_directory(root)
+    named = [path for path in dict.fromkeys(named_paths(fields.get("Written to", ""), root)) if protected(path, delivery)]
+    if named:
+        found.append(f"{where} `Written to` names {', '.join(f'`{path}`' for path in named)}, a workflow, a control of "
+                     "the run or a configuration file a generated gate reads; a provisional decision never edits one "
+                     "(D204)")
+    return found
 
 
 def reversibility_module() -> Any:
@@ -309,7 +355,7 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
             findings.append(f"{where} `Revert` is missing; a provisional entry says `commits carrying Decision: "
                             f"D{number}`")
         if sound and kind in ("provisional", "ratified"):
-            findings += written_findings(where, fields) + reversibility_findings(where, fields)
+            findings += written_findings(where, fields, twice) + reversibility_findings(where, fields)
         if sound and kind == "provisional":
             findings += date_findings(where, fields, status_date(fields["Status"]))
         findings += rehearsal_findings(where, number, fields, twice)
