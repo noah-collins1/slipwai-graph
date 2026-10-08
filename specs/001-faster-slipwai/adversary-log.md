@@ -777,3 +777,17 @@ Findings: fifteen — one `HIGH`, six `MEDIUM`, eight `LOW`; no `CRITICAL`. All 
 | B3 | B | LOW | A `.spec.ts`/`.test.ts` under `src/` that the mutate list matches is scoped as a test and never mutated, then fails the sweep. New | Confirmed; T043 | open |
 | B4 | B | LOW | A move of the instrumenter's own dependencies (`@babel/*`, `weapon-regex`) in the lock does not sweep. New | Confirmed; D222, T044 | open |
 | B5 | B | LOW | A deleted service's first line says the sweep runs, then the service is refused and nothing sweeps. Older pattern (the Go rows), newly reachable | Confirmed; T045 | open |
+
+## S42 · 1f2a0b7 · 2026-10-08
+
+Slice `S42-mutmut-mutation` (cruise iteration 30), diff `b9f16ef..1f2a0b7^2` (merged into adopt-method at `1f2a0b7`): every generated Python service gets `mutmut==3.8.0` in its dev group and a `[tool.mutmut]` table, a wrapper of its own (`assets/languages/python/scripts/mutmut-mutation.py`) taking one or several services, one combined Python `mutation-full` line (D223), the scope script's Python rows and sweep triggers, the four Python locks, the `apps/*/mutants/` ignore, stamp and `check-imports` rows, and a MINOR fragment with a Catch-up.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | A new script a project runs (`scripts/mutmut-mutation.py`) and new behaviour behind `make mutation` and `make mutation-full` for Python |
+| driven adapter or the provider types behind one | widened | The wrapper starts `uv sync --locked`, mutmut's generation step and `mutmut run`, and reads mutmut's `.meta` files, `pyproject.toml` and `uv.lock` |
+| authorisation decision (who can reach one that already exists) | not present | Nothing grants or checks access |
+| concurrency, idempotency, ordering, retention, or time | widened | A per-service `flock`; a fresh `mutants/` before each run; several services in one run, failing at the end in service order |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
+
