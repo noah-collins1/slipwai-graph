@@ -817,7 +817,7 @@ killed. The survivors and two reproductions are the tasks below.
 ### Demo 1 (T017, cruise iteration 29) — `implementation`: two tasks, one wording
 
 ### T032 — [US2] HIGH · A mutant under which the suite did not run to completion is never reported as a survivor (D212, D217's *Would reverse if*, AC-S41-4)
-- [ ] Demo 1 replayed all 91 failing mutants of the default starter's sweep by hand: five reported `Survived`
+- [x] Demo 1 replayed all 91 failing mutants of the default starter's sweep by hand: five reported `Survived` *(Done: 3fafdb1 — R11: no Stryker or Vitest setting turns a file-level hook error into a kill; a static `Survived` mutant with `testsCompleted` below the report's test total fails as `Incomplete`, never counted killed; real sweep 85 survived, 5 incomplete, 1 timeout.)*
   (`tracing.ts` 81:5 ×2, 81:44, 91:7 ×2) turn Vitest red when applied directly — `tracing.test.ts`'s `beforeAll`
   throws and its tests are skipped. All five are `static: true` with `testsCompleted: 81` against the dry run's 86
   (`demo/d217c-survivor-by-hand.txt`, `demo/d217c-replay-all-survivors.txt`, `demo/d217c-report-excerpt-tracing.json`).
@@ -834,7 +834,7 @@ killed. The survivors and two reproductions are the tasks below.
   `tests/test_stryker_incomplete.py`, `research.md`, `changelog.d/stryker-mutation.md`, `src/slipwai/project/stryker.py`.
 
 ### T033 — [US2] HIGH · A matched file with no construct Stryker 10 mutates is *no mutant to run*, never a failure (AC-S41-3, T026)
-- [ ] A comment edit to the starter's own `ports/read-models.ts` gives exit 2 — *holds code it could mutate* — because
+- [x] A comment edit to the starter's own `ports/read-models.ts` gives exit 2 — *holds code it could mutate* — because *(Done: 31c877c — R12.)*
   `holds_code` reads `export const FROM_THE_BEGINNING = 0;` as mutable; Stryker 10 has no numeric-literal mutator, so no
   test and no comment can ever make that run green (`demo/q4d-starter-port-with-const.txt`). **Close the class:** derive
   what `holds_code` counts from Stryker 10.0.0's mutator list (cite it) — a statement holds code only where it carries a
@@ -844,7 +844,7 @@ killed. The survivors and two reproductions are the tasks below.
 - **Files:** `assets/languages/typescript/scripts/stryker-mutation.py`, `tests/test_stryker_report.py` (or a split).
 
 ### T034 — [US2] LOW · A browser-only change does not open with *no production file changed*
-- [ ] On a change to `apps/web/src/App.tsx` alone, the first line says *no production file changed* and the next names
+- [x] On a change to `apps/web/src/App.tsx` alone, the first line says *no production file changed* and the next names *(Done: 075b6be.)*
   the browser app; the first line contradicts the second for the actor. GREEN: the first line counts the browser-app
   files it names (or says *no service production file changed*), in the scope script's one place that words it, with
   the example in `tests/test_mutation_scope_typescript.py`.
