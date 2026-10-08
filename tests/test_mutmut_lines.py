@@ -31,6 +31,8 @@ mutation: uv sync --locked failed for <service> (exit <n>)[: <uv's last stderr l
 mutation: mutmut <found or is not> installed in <service>'s environment[ (<the probe's last stderr line>)]; this
     wrapper runs mutmut 3.8.0: add mutmut==3.8.0 to the dev group of <service>/pyproject.toml and run uv lock
     --project <service> (slipwai migrate brings the wrapper for a newer pin)
+mutation: <mutmut or libcst> is imported from <directory>, not from <service>'s environment; a package on PYTHONPATH
+    ahead of the environment's is refused: remove it from PYTHONPATH
 mutation: <service>/pyproject.toml: no [tool.mutmut] table
 mutation: <PYTEST_* variable> is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut]
     pytest_add_cli_args is where this service adds pytest options

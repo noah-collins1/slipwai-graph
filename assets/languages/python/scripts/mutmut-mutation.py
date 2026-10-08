@@ -35,7 +35,22 @@ USAGE = "mutation: usage: mutmut-mutation.py <service> [<service> ...] [--file <
 # The one mutmut this script was written against: it calls functions mutmut does not document as public (R3), so another
 # version is refused, and a change of the pin sweeps (T008).
 PINNED = "3.8.0"
-VERSION_CODE = "import importlib.metadata as m; print(m.version('mutmut'))"
+# The probe says the version of mutmut on its first line, then one `shadowed <package> <directory>` line for each of mutmut
+# and libcst that Python would import from anywhere but the directory holding the distribution that was locked, such as a
+# copy on `PYTHONPATH`, which comes ahead of the environment's own and which `importlib.metadata` does not see (A4).
+VERSION_CODE = """\
+import importlib.metadata as m, importlib.util as u, pathlib as p
+print(m.version('mutmut'))
+for name in ('mutmut', 'libcst'):
+    try:
+        home = p.Path(str(m.distribution(name).locate_file(''))).resolve()
+        found = u.find_spec(name)
+        origin = p.Path(found.origin).resolve() if found and found.origin else None
+    except (m.PackageNotFoundError, ValueError, OSError):
+        continue
+    if origin is not None and home not in origin.parents:
+        print('shadowed', name, origin.parent)
+"""
 # Held by a run for its whole length, beside the environment it runs in; the kernel releases it when the last process
 # holding the descriptor dies, and `mutmut` and the generation step are handed it, so a killed wrapper's `mutmut run` that
 # lives on still holds the service (A1).
@@ -374,8 +389,14 @@ def ensure_synced(job: Job) -> int | None:
 
 def check_mutmut_version(job: Job) -> int | None:
     done = uv(job, "run", "--no-sync", "--project", job.service, "python", "-c", VERSION_CODE)
-    found = done.stdout.strip() if done.returncode == 0 else ""
+    seen = done.stdout.strip().splitlines() if done.returncode == 0 else []
+    found = seen[0].strip() if seen else ""
     if found == PINNED:
+        for line in seen[1:]:
+            _, name, where = line.split(" ", 2) if line.startswith("shadowed ") else ("", "", "")
+            if name:
+                return say(f"{name} is imported from {where}, not from {job.service}'s environment; a package on "
+                           "PYTHONPATH ahead of the environment's is refused: remove it from PYTHONPATH")
         return None
     why = f" ({last_line(done)})" if done.returncode != 0 and last_line(done) else ""
     return say(f"mutmut {found or 'is not'} installed in {job.service}'s environment{why}; this wrapper runs mutmut "

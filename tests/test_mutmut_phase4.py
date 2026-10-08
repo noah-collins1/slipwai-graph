@@ -46,9 +46,13 @@ ORPHAN = ('write(json.loads(os.environ.get("FAKE_RESULTS", "{}")))',
 write(json.loads(os.environ.get("FAKE_RESULTS", "{}")))''')
 
 
+PROBE = ('    print("3.8.0")\n',
+         '    print("3.8.0")\n    if os.environ.get("FAKE_SHADOW"):\n        print("shadowed " + os.environ["FAKE_SHADOW"])\n')
+
+
 def fake_uv() -> str:
     text = FAKE_UV
-    for old, new in (LOG_ENV, ORPHAN):
+    for old, new in (LOG_ENV, ORPHAN, PROBE):
         assert old in text, "test_mutmut_verdict's fake uv no longer reads as this expects"
         text = text.replace(old, new)
     return text
@@ -237,6 +241,27 @@ class TestSelectionTest(PhaseCase):
         note = " ".join(line.removeprefix("# ").removeprefix("#") for line in PYTHON_MUTATION_NOTE.splitlines())
         self.assertIn(sentence, " ".join(note.split()))
         self.assertIn(sentence, " ".join(FRAGMENT.read_text(encoding="utf-8").split()))
+
+
+class ShadowedPackageTest(PhaseCase):
+    """T039 (A4): the mutmut and libcst the run imports are the environment's, not a copy found first on `PYTHONPATH`."""
+
+    def test_a4_a_package_found_ahead_of_the_environments_exits_2_naming_where_it_was_found(self) -> None:
+        for name in ("mutmut", "libcst"):
+            with self.subTest(package=name):
+                done = self.run_with("apps/service", extra={"FAKE_SHADOW": f"{name} /elsewhere/{name}"},
+                                     meta={"src/pkg/a.py": {KEY: None}}, results={"src/pkg/a.py": {KEY: 1}})
+                self.assertEqual(done.returncode, 2)
+                self.assertEqual(lines_of(done), [
+                    f"mutation: {name} is imported from /elsewhere/{name}, not from apps/service's environment; a "
+                    "package on PYTHONPATH ahead of the environment's is refused: remove it from PYTHONPATH"])
+                self.assertEqual(self.started_mutmut(), [])
+
+    def test_a4_hold_the_probe_asks_where_the_packages_are_imported_from(self) -> None:
+        """HOLD (teeth: drop the location check from the probe and see it fail)."""
+        module = loaded(SCRIPT)
+        for needle in ("find_spec", "locate_file", "'mutmut'", "'libcst'"):
+            self.assertIn(needle, module.VERSION_CODE)
 
 
 if __name__ == "__main__":
