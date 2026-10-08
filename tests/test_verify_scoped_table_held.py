@@ -90,6 +90,14 @@ NOT_AN_INPUT_FOR = {
                                   "(a string, not a module it loads)",
     ("check-agents", ".."): "reached only through `provisional.py` -> `reversibility.py`'s `inside`, which `cruise.py` "
                             "names as a `decide` value (a string, not a module it loads)",
+    # S27 T027 (D204): `provisional.py`'s closed list names CI workflow directories and control paths by their segments,
+    # to compare with a decision's `Written to`; `check-decisions` loads it, and `check-agents` reaches it as above.
+    **for_checks(("check-agents", "check-decisions"), ".github",
+                 "a segment of `provisional.py`'s closed list (`CI_DIRECTORIES`), compared with `Written to`, never "
+                 "opened"),
+    **for_checks(("check-agents", "check-decisions"), ".claude",
+                 "a segment of `provisional.py`'s closed list (a control path), compared with `Written to`, never "
+                 "opened"),
     ("check-agents", ".slipwai/extensions.json"): "`agents/code_index.py`'s `adopted()`, which `cruise.py` imports "
                                                   "and calls on `health`/`run` paths; `cruise.py --check` never does",
 }

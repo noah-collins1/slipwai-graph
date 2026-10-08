@@ -143,8 +143,8 @@ names the recommendation, and `/cruise-tell accept` takes it: the skipper return
 verbatim in `unresolved`, and a park on that item ends the run on it. Under all three provisional values every
 always-ask item goes to the skipper, even where the stage recommends an answer, and the host names `decide` in its
 brief. Under `provisional`, and only there, an easy or guarded item that holds none of `flag_default=yes`,
-`ci_workflow=yes` or `migrate_file=yes`, and whose `Written to` names no CI workflow, no control and no file a gate
-reads as its configuration, goes ahead with `Status: provisional · ratify by <date>` — the entry's `When` date plus
+`ci_workflow=yes` or `migrate_file=yes` goes ahead, where its `Written to` names no CI workflow, no control and no file
+a gate reads as its configuration, with `Status: provisional · ratify by <date>` — the entry's `When` date plus
 seven days, UTC — and a `Revert:` line, and every commit made under it carries the trailer `Decision: D<n>`. A gate, a
 check, CI, a credential, a third party's behaviour, a constitution MUST and a release are never provisional, and
 `check-decisions` holds a ratified entry to the same refusals. At the start of an iteration
@@ -329,7 +329,7 @@ effect at the next iteration. `make check-agents` holds the file's shape.
 | Setting | Values | Default | Controls |
 |---|---|---|---|
 | `enabled` | `true`, `false` | `false` | whether `/cruise` runs at all |
-| `decide` | `recommended-first`, `skipper-always`, `provisional-shadow`, `provisional-advisory`, `provisional` | `recommended-first` | who answers a product question: the host where the stage recommends an answer or a standing decision covers it, and `drive-skipper` otherwise; or `drive-skipper` for every question. Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right, letting an iteration record each rung before the next. |
+| `decide` | `recommended-first`, `skipper-always`, `provisional-shadow`, `provisional-advisory`, `provisional` | `recommended-first` | who answers a product question: the host where the stage recommends an answer or a standing decision covers it, and `drive-skipper` otherwise; or `drive-skipper` for every question. Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right. Let an iteration record each rung before setting the next. |
 | `release` | `flagged`, `park` | `flagged` | the release-constraint stage: every slice behind a flag seeded off, so every merge is dark; or park at the push and let a person decide |
 | `constitution` | `ratify`, `park` | `ratify` | an unratified constitution: the skipper drafts and ratifies it, marked pending human review; or park |
 | `hand` | `browser`, `http`, `cli` | `browser` | the top of the hand's ladder for a demo; each falls through to the next where it cannot run |
