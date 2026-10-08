@@ -930,14 +930,14 @@ killed. The survivors and two reproductions are the tasks below.
 - **Files:** `assets/toolkit/scripts/mutation-scope.py`, its tests.
 
 ### T019 — Mutation (host task)
-- [ ] Per `project.json`'s recorded mutation command for this repository (S08 recorded none: `"mutation": null`); if still
+- [x] Per `project.json`'s recorded mutation command for this repository (S08 recorded none: `"mutation": null`); if still *(Done, cruise iteration 29: N/A — `project.json` records no mutation command for this repository (S08: `"mutation": null`); owed to the cruise report.)*
   none, N/A, said in the register row and owed to the cruise report.
 
 ### T020 — Both full gates on the final tip (host task)
-- [ ] `make verify` once, and the delivery gate, with the `build/` diff of T001: only the intended generated changes.
+- [x] `make verify` once, and the delivery gate, with the `build/` diff of T001: only the intended generated changes. *(Done, cruise iteration 29: both full gates green at `a561bbe` (3787 tests, ~63 min the factory, ~63 min the delivery gate), after two red runs fixed by `slice/S41-gate` and `slice/S41-gate2` and one run the host spoiled with `VERIFY_FORCE=1` in the environment.)*
 
 ### T021 — Register row and benchmark close (host task)
-- [ ] Slice register row, `benchmark.json`.
+- [x] Slice register row, `benchmark.json`. *(Done, cruise iteration 29: register row in `slices/README.md`; benchmark closed.)*
 
 ---
 

@@ -1,10 +1,10 @@
 # Benchmark — 001-faster-slipwai
 
-Drawn 2026-10-08T05:16:04Z at `faa03e0` from 23 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
+Drawn 2026-10-08T15:24:17Z at `a561bbe` from 25 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
 
 ## Slices
 
-22 slice(s) recorded, 100h46m+ in all.
+24 slice(s) recorded, 111h01m+ in all.
 
 | slice | delegate/cycle | wall | in | out | models | sessions | converge | +tasks | gaps | mutation | adversary | demo | verify✗ | rework | tasks | files | ±lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -30,6 +30,8 @@ Drawn 2026-10-08T05:16:04Z at `faa03e0` from 23 record(s) under `specs/001-faste
 | S33-factory-gate-stamp | rule/rule, task/rule | 4h30m | 39.7M | 120.9k | claude-opus-5-5, claude-sonnet-5-5 | 5 | 2 | 6 | 10/7 | — | 5 | accepted | 0 | 0 | 31 | 135 | +42301/-105 |
 | S38-factory-test-selection | rule/rule, story/rule | 18h00m | 237.8M | 352k | claude-opus-5-5, claude-sonnet-5-5 | 3 | 2 | 11 | 0/0 | — | 18 | accepted | 0 | 0 | 56 | 227 | +38148/-124 |
 | S39-benchmark-elapsed | story/rule, task/rule | 6h50m | 207.4M | 265.3k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 2 | 16 | 0/0 | — | 28 | accepted | 0 | 0 | 57 | 81 | +23082/-242 |
+| S41-stryker-mutation | story/rule | 10h04m | 222.7M (+1 unread) | 214.6k | claude-opus-5-5, claude-sonnet-5-5 | 1 | 1 | 0 | 0/11 | — | 15 | accepted | 0 | 0 | 45 | 103 | +43528/-3776 |
+| S42-mutmut-mutation | — | 10m25s | 15M | 22.2k | claude-opus-5-5 | 1 | 0 | 0 | 13/0 | — | 0 | — | 0 | 0 | — | — | — |
 | S43-test-declarations | — | 17m27s | 10.7M | 14k | claude-opus-5-5 | 1 | 0 | 0 | 11/0 | — | 0 | — | 0 | 0 | — | — | — |
 
 delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes wall a floor because an unbracketed stage is missing; tokens are not prices.
@@ -489,6 +491,32 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | hand | 2026-10-06 11:21 | 9m50s | 2.4M | 4.3k | claude-opus-5-5 | drive-hand | yes | outcome=accepted, driver=cruise |
 | gate | 2026-10-06 19:37 | 3h38m | 15.8M | 33.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-hand, drive-implement | yes | driver=cruise |
 
+### S41-stryker-mutation — 10h04m
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-08 05:17 | 7m40s | 0 | 0 | — | — | no | — |
+| skipper | 2026-10-08 05:25 | 2m46s | 1.7M | 15.3k | claude-opus-5-5 | drive-skipper | yes | — |
+| plan | 2026-10-08 05:28 | 19m00s | 18.6M | 15.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-slice, drive-tasks | yes | — |
+| tasks | 2026-10-08 05:47 | 18m07s | 8.8M | 3.5k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | — |
+| implement | 2026-10-08 06:05 | 2h01m | 94.8M | 36.5k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-implement, drive-slice | yes | delegate=story, cycle=rule, split=0, verify_failures=0 |
+| converge | 2026-10-08 08:07 | 22m55s | 10.1M | 11.3k | claude-opus-5-5, claude-sonnet-5-5 | drive-converge, drive-implement, drive-slice | yes | — |
+| skipper | 2026-10-08 08:30 | 2m02s | 917.1k | 3.1k | claude-opus-5-5 | drive-skipper | yes | — |
+| gaps | 2026-10-08 08:32 | 8m28s | 7.6M | 5.9k | claude-opus-5-5 | drive-gaps | yes | gaps=11 |
+| implement | 2026-10-08 08:41 | 19m29s | 9.3M | 19.4k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | delegate=story, cycle=rule, split=2, verify_failures=0 |
+| demo | 2026-10-08 09:01 | 11m13s | 3.3M | 9k | claude-opus-5-5 | drive-hand | yes | outcome=implementation |
+| implement | 2026-10-08 09:12 | 17m28s | 6.2M | 11.5k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | delegate=story, cycle=rule, split=0, verify_failures=0 |
+| demo | 2026-10-08 09:30 | 4m15s | 1.8M | 6.9k | claude-opus-5-5 | drive-hand | yes | outcome=accepted |
+| adversary | 2026-10-08 09:34 | 14m18s | 10.7M | 8.9k | claude-opus-5-5 | drive-adversary | yes | findings=15, seams=2 |
+| implement | 2026-10-08 09:49 | 34m32s | 24.9M | 31.2k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | delegate=story, cycle=rule, split=2, verify_failures=0 |
+| gate | 2026-10-08 10:24 | 5h00m | 23.9M | 36.2k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | — |
+
+### S42-mutmut-mutation — 10m25s
+
+| stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
+|---|---|---|---|---|---|---|---|---|
+| gaps | 2026-10-08 05:17 | 10m25s | 15M | 22.2k | claude-opus-5-5 | drive-gaps | yes | gaps=13 |
+
 ### S43-test-declarations — 17m27s
 
 | stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
@@ -529,6 +557,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 - S20-slice-scope-root gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S27-provisional-decisions demo: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S33-factory-gate-stamp skipper: cut off — a new `implement` entry started while it was open; its wall is real, its signals were never reported
+- S41-stryker-mutation gaps: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
 
 ## Reading these numbers
 
