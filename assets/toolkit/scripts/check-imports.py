@@ -148,8 +148,10 @@ def deployables(kind: str) -> list[dict]:
     """Every application record of one kind, from `project.json` — the one list this repository keeps.
 
     The hexagonal rules below need no list: they apply inside every directory under `apps/` and `packages/`
-    whatever it is called — bar the six nobody reads: `.venv`, `node_modules`, `__pycache__`, `.git`, a mutation run's `.stryker-tmp` and the `target`
-    at the root of a Java deployable `project.json` records, beside its `pom.xml`, which are never descended — and
+    whatever it is called — bar the seven nobody reads: `.venv`, `node_modules`, `__pycache__`, `.git`, a mutation run's
+    `.stryker-tmp`, and the build output at the root of a deployable `project.json` records as that language, beside its
+    manifest (`target` beside a Java `pom.xml`, mutmut's `mutants` beside a Python `pyproject.toml`), which are never
+    descended — and
     never a directory that is a recorded deployable's path or on the way to one. The frontend rule has to know which directories are *services* and which are
     *browser apps*, because it forbids each of the latter to import from any of the former; the context rule
     has to know which bounded contexts each service says it holds.

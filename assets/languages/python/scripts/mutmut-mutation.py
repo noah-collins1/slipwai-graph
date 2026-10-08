@@ -11,7 +11,9 @@ The configuration is read here, by the subset of `[tool.mutmut]` the factory wri
 against what mutmut would mutate (`matched`) and a path mutmut would misread is refused (`refused`): `mutmut run` takes
 mutant names as `fnmatch` patterns, so a `*`, `?` or `[` in a path is a pattern and not the file.
 
-This is the skeleton past the configuration: it refuses to run, which can only fail, never pass.
+Exit status: 0 when every mutant is killed (or has no test reaching it, which is counted), 1 when a mutant fails the
+run or a sweep finds nothing to mutate, 2 when the run could not start (a refused path, an unreadable table, a host,
+`uv`, lock or mutmut version that does not fit, a `mutants/` that could not be removed).
 """
 from __future__ import annotations
 

@@ -9,6 +9,7 @@ the wrapper with no arguments and (where `uv` is on PATH) `uv lock --check`.
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import importlib
 import json
@@ -307,6 +308,33 @@ class MutmutNoteGeneratedTest(FactoryTestCase):
             helped = subprocess.run(["make", "-s", "help"], cwd=project, env=clean_environment(), text=True,
                                     capture_output=True, timeout=60).stdout
             self.assertRegex(helped, r"(?m)^  mutation-full +\S")
+
+
+class WordsOfShippedFilesTest(unittest.TestCase):
+    """T021 (Constitution I, the words level): a file a project carries says what the code does now."""
+
+    TRANSIENT = ("skeleton", "refuses to run", "until t0", "not wired by this script yet", "can only fail")
+
+    def test_t021_the_wrapper_s_docstring_carries_no_word_of_the_task_that_wrote_its_first_half(self) -> None:
+        text = (ROOT / "assets/languages/python/scripts/mutmut-mutation.py").read_text(encoding="utf-8")
+        words = (ast.get_docstring(ast.parse(text)) or "").lower()
+        self.assertIn("mutmut", words)
+        for word in self.TRANSIENT:
+            with self.subTest(word=word):
+                self.assertNotIn(word, words)
+
+    def test_t021_check_imports_names_every_directory_it_walks_past_in_the_docstring_that_lists_them(self) -> None:
+        tree = ast.parse((ROOT / "assets/toolkit/scripts/check-imports.py").read_text(encoding="utf-8"))
+        values = {target.id: ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+                  for target in node.targets if isinstance(target, ast.Name) and target.id in ("PRUNED", "OUTPUT")}
+        names = sorted({*values["PRUNED"], *(output for output, _ in values["OUTPUT"].values())})
+        docstring = next(" ".join((ast.get_docstring(node) or "").split()) for node in tree.body
+                         if isinstance(node, ast.FunctionDef) and node.name == "deployables")
+        for name in names:
+            with self.subTest(name=name):
+                self.assertIn(f"`{name}`", docstring)
+        count = {5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine"}[len(names)]
+        self.assertIn(f"the {count} nobody reads", docstring)
 
 
 if __name__ == "__main__":
