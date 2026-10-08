@@ -75,10 +75,9 @@ class WordsTest(ScopeCase):
 
     def test_e7_the_words_are_the_same_for_every_backend(self) -> None:
         shapes = {
-            "python": (["python:apps/service"], "apps/service/src/pkg/mod.py"),
             "typescript": (["typescript:apps/service"], "apps/service/src/app.ts"),
             "go-go": (["go:apps/service", "go:apps/billing"], "apps/billing/b.go"),
-            "mixed": (["go:apps/service", "python:apps/worker"], "apps/worker/src/w.py"),
+            "mixed": (["go:apps/service", "typescript:apps/worker"], "apps/worker/src/w.ts"),
         }
         for name, (services, path) in shapes.items():
             with self.subTest(shape=name):

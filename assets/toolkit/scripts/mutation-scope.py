@@ -368,7 +368,7 @@ IGNORED = "`{path}` is a path git ignores, so whether it changed cannot be told"
 NESTED = "`{path}` is a nested repository, so the files in it cannot be told apart"
 # Directories of dependencies and build output, which no sweep of a service mutates and a scope never names.
 DEPENDENCIES = ("vendor", "node_modules", "target", "build", "dist", ".venv", "venv", "__pycache__", ".gradle")
-PRODUCTION_ROOT = {"go": "", "java-spring": "src/main/java/", "typescript": "src/"}  # where a wired service's sources live
+PRODUCTION_ROOT = {"go": "", "java-spring": "src/main/java/", "typescript": "src/", "python": "src/"}  # where a wired service's sources live
 OTHER_JVM = (".kt", ".groovy", ".scala")
 
 
@@ -552,11 +552,17 @@ def planned(files: list[str], keep: Any, tool: str) -> Plan:
     return Plan(sorted(keep), [(name, f"outside {tool} configured targets") for name in files if name not in keep])
 
 
-def typescript_plan(path: str, files: list[str]) -> Plan:
-    """The files Stryker will take within the given ones, by the service's own `mutate` list as the wrapper reads it: the
+# The wired backends whose tool a wrapper script owns: the wrapper, the words naming its list, and the file that list is in.
+WRAPPERS = {"typescript": ("stryker-mutation.py", "Stryker's", "stryker.config.json"),
+            "python": ("mutmut-mutation.py", "mutmut's", "pyproject.toml")}
+
+
+def wrapper_plan(backend: str, path: str, files: list[str]) -> Plan:
+    """The files a wrapper's tool will take within the given ones, by the service's own list as the wrapper reads it: the
     wrapper is loaded and never copied. A list it cannot read plans nothing and says why, and the service then sweeps."""
-    tool = load("stryker-mutation.py")
-    for name in files:  # a misread glob is the louder fact: it refuses the service, before the list is even asked
+    script, whose, config = WRAPPERS[backend]
+    tool = load(script)
+    for name in files:  # a misread pattern is the louder fact: it refuses the service, before the list is even asked
         words = tool.refused(path, shown(name))
         if words is not None:
             return Plan([], [], None, words)
@@ -564,21 +570,26 @@ def typescript_plan(path: str, files: list[str]) -> Plan:
         patterns = tool.targets(Path(path))
         keep = {name for name in files if tool.matched(patterns, name)}
     except tool.Unreadable as why:
-        return Plan([], [], f"{path}/{tool.CONFIG}: {why}")
-    return planned(files, keep, "Stryker's")
+        return Plan([], [], f"{path}/{config}: {why}")
+    return planned(files, keep, whose)
 
 
-def typescript(path: str, files: list[str]) -> Result:
-    """Stryker over the given files only, through the wrapper; a file outside the list is named and left out, so a run
+def wrapper_run(backend: str, path: str, files: list[str]) -> Result:
+    """The tool over the given files only, through its wrapper; a file outside the list is named and left out, so a run
     with nothing left starts no tool."""
-    plan = typescript_plan(path, files)
+    plan = wrapper_plan(backend, path, files)
     if plan.unreadable is not None:
         return Result(0, [], [], None, plan.unreadable)
     if not plan.keep:
         return Result(0, [], plan.left)
-    command = [sys.executable, os.path.join(HERE, "stryker-mutation.py"), path]
+    command = [sys.executable, os.path.join(HERE, WRAPPERS[backend][0]), path]
     command += [word for name in plan.keep for word in ("--file", name)]
     return Result(subprocess.run(command, close_fds=False, check=False).returncode, plan.keep, plan.left)
+
+
+def wrapper_sweep(backend: str, path: str) -> Result:
+    command = [sys.executable, os.path.join(HERE, WRAPPERS[backend][0]), path]
+    return Result(subprocess.run(command, close_fds=False, check=False).returncode, [], [])
 
 
 def go(path: str, files: list[str]) -> Result:
@@ -602,13 +613,9 @@ def go(path: str, files: list[str]) -> Result:
 
 # The setup message of each placeholder backend: the line `make mutation-full` prints for it, held equal to the factory's by a test.
 PLACEHOLDERS = {
-    "python": "install and configure mutmut for the selected production packages",
     "java-quarkus": "Configure PIT for the domain packages only — see the note above this target — then run it.",
 }
-WIRED = ("go", "java-spring", "typescript")
-# D149: the scoped run refuses a Python service whether or not mutmut is installed; only the sweep runs the tool today.
-PYTHON_REFUSED = ("a Python service is refused until a later slipwai release wires mutmut, whether or not mutmut is "
-                  "installed; `make mutation-full` runs mutmut today where it is installed")
+WIRED = ("go", "java-spring", "typescript", "python")
 
 
 class Unreadable(Exception):
@@ -796,8 +803,7 @@ def refusal(backend: str, path: str, files: list[str]) -> Result:
     if backend not in PLACEHOLDERS:
         return Result(2, [], [], f"no runner for {backend}")
     said = PLACEHOLDERS[backend].rstrip(".")
-    return Result(2, [], [], f"{said}; the scope will apply once a tool is wired; it would mutate: {named}"
-                  + (" (" + PYTHON_REFUSED + ")" if backend == "python" else ""))
+    return Result(2, [], [], f"{said}; the scope will apply once a tool is wired; it would mutate: {named}")
 
 
 def gone(path: str) -> str | None:
@@ -821,8 +827,8 @@ class Tools:
             return go_plan(path, files)
         if backend == "java-spring":
             return spring_plan(path, files)
-        if backend == "typescript":
-            return typescript_plan(path, files)
+        if backend in WRAPPERS:
+            return wrapper_plan(backend, path, files)
         return Plan(list(files), [])
 
     def gone(self, backend: str, path: str) -> str | None:
@@ -836,8 +842,8 @@ class Tools:
             return go(path, files)
         if backend == "java-spring":
             return spring(path, files, self.execute)
-        if backend == "typescript":
-            return typescript(path, files)
+        if backend in WRAPPERS:
+            return wrapper_run(backend, path, files)
         return refusal(backend, path, files)
 
     def sweep(self, backend: str, path: str) -> Result:
@@ -849,13 +855,12 @@ class Tools:
             return Result(subprocess.run(command, close_fds=False, check=False).returncode, [], [])
         if backend == "java-spring":
             return Result(self.execute(PIT, path)[0], [], [])
-        if backend == "typescript":
-            command = [sys.executable, os.path.join(HERE, "stryker-mutation.py"), path]
-            return Result(subprocess.run(command, close_fds=False, check=False).returncode, [], [])
+        if backend in WRAPPERS:
+            return wrapper_sweep(backend, path)
         return refusal(backend, path, [])
 
 
-REPORTS = {"go": "gremlins.json", "typescript": os.path.join("reports", "mutation")}  # where a run leaves its report
+REPORTS = {"go": "gremlins.json", "typescript": os.path.join("reports", "mutation"), "python": "mutants"}  # where a run leaves its report
 
 
 def drop_report(backend: str, root: str, dry: bool) -> None:

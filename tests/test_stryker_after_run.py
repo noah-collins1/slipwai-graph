@@ -108,7 +108,8 @@ class AfterARunTest(ShapeCase):
 
 
 class PlaceholdersAfterTest(FactoryTestCase):
-    """Rule 8: Python and Quarkus still refuse; a TypeScript service beside them runs; the borders and `SINCE` hold."""
+    """Rule 8: Quarkus still refuses and Python no longer does; a TypeScript service beside them runs; the borders and
+    `SINCE` hold."""
 
     parent: Path
     projects: dict[str, Path]
@@ -130,8 +131,7 @@ class PlaceholdersAfterTest(FactoryTestCase):
                            check=True, capture_output=True, timeout=120)
             commit_all(made, "billing")
         git(made, "checkout", "-q", "-b", "slice/S1")
-        edits = {"quarkus": ["apps/service/src/main/java/com/x/Foo.java"], "mixed": [
-            "apps/service/src/health.ts", "apps/billing/src/billing/extra.py"]}
+        edits = {"quarkus": ["apps/service/src/main/java/com/x/Foo.java"], "mixed": ["apps/service/src/health.ts"]}
         for path in edits.get(name, ["apps/service/src/health.ts"]):
             (made / path).parent.mkdir(parents=True, exist_ok=True)
             with (made / path).open("a", encoding="utf-8") as handle:
@@ -156,15 +156,17 @@ class PlaceholdersAfterTest(FactoryTestCase):
         calls = [json.loads(line)["argv"] for line in self.log.read_text(encoding="utf-8").splitlines()]
         return [argv for argv in calls if argv[:1] == ["exec"]]
 
-    def test_e3_quarkus_and_python_still_refuse_with_their_setup_messages_and_a_typescript_service_runs(self) -> None:
-        """HOLD (teeth: change a placeholder string in `native_commands` and see it fail)."""
+    def test_e3_quarkus_still_refuses_python_does_not_and_a_typescript_service_runs(self) -> None:
+        """HOLD for Quarkus (teeth: change a placeholder string in `native_commands` and see it fail); Python is wired
+        (S42), so its service is skipped here, unchanged, and refused by nothing."""
         done = self.make("quarkus", "mutation")
         self.assertEqual(done.returncode, 2, done.stdout)
         self.assertIn("Configure PIT for the domain packages only", done.stdout)
         done = self.make("mixed", "mutation")
-        self.assertEqual(done.returncode, 2, done.stdout)
+        self.assertEqual(done.returncode, 0, done.stdout)
         self.assertIn("mutation: scope apps/service — src/health.ts", done.stdout)
-        self.assertIn("mutation: refuse apps/billing — install and configure mutmut", done.stdout)
+        self.assertIn("mutation: skip apps/billing — no changed production file", done.stdout)
+        self.assertNotIn("refuse apps/billing", done.stdout)
         self.assertEqual(self.started(), [[*RUN, "--mutate", "src/health.ts"]])
 
     def test_e4_hold_the_borders_and_since_decide_scoped_or_swept_for_typescript(self) -> None:
