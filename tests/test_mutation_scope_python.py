@@ -194,6 +194,62 @@ class ScopeTest(PythonCase):
         self.assertEqual((recording.swept, recording.scoped), (["apps/service"], []), lines)
 
 
+class SourceRootTest(PythonCase):
+    """B1: a module is production where the service's own `source_paths` say, not only under `src/`."""
+
+    def test_b1_a_module_under_another_source_paths_root_is_scoped(self) -> None:
+        self.table('[tool.mutmut]\nsource_paths = ["lib", "app/core"]\n')
+        self.write("apps/service/lib/health.py", SOURCE)
+        self.write("apps/service/app/core/deep/x.py", SOURCE)
+        self.write("apps/service/src/pkg/health.py", SOURCE)
+        status, lines, recording = self.run_planned("python:apps/service")
+        self.assertEqual(status, 0, lines)
+        self.assertEqual(lines[-1], "mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed", lines)
+        self.assertEqual(recording.scoped, [("apps/service", ["app/core/deep/x.py", "lib/health.py"])])
+
+    def test_b1_a_module_outside_every_root_is_still_no_production_file(self) -> None:
+        self.table('[tool.mutmut]\nsource_paths = ["lib"]\n')
+        self.write("apps/service/src/pkg/health.py", SOURCE)
+        status, lines, recording = self.run_planned("python:apps/service")
+        self.assertEqual((status, recording.scoped, recording.swept), (0, [], []), lines)
+        self.assertTrue(lines[0].startswith("mutation: no mutant to run — "), lines)
+
+    def test_b1_an_unreadable_table_sweeps_for_a_change_outside_src(self) -> None:
+        self.table('[tool.mutmut]\nsource_paths = ["s*"]\n')
+        self.write("apps/service/lib/health.py", SOURCE)
+        status, lines, recording = self.run_planned("python:apps/service")
+        self.assertEqual(status, 0, lines)
+        self.assertEqual((recording.swept, recording.scoped), (["apps/service"], []), lines)
+
+    def test_b1_an_ignored_file_under_a_listed_root_sweeps_the_service(self) -> None:
+        self.table('[tool.mutmut]\nsource_paths = ["lib"]\n')
+        self.on_main(".gitignore", text=(self.repo / ".gitignore").read_text(encoding="utf-8") + "ghost.py\n")
+        self.write("apps/service/lib/ghost.py", SOURCE)
+        self.write("apps/service/lib/health.py", SOURCE)
+        status, lines, recording = self.run_planned("python:apps/service")
+        self.assertEqual(status, 0, lines)
+        self.assertEqual((recording.swept, recording.scoped), (["apps/service"], []), lines)
+
+
+class CauseOnceTest(PythonCase):
+    """B4: the sweep's first line names a cause once, however many Python services it sweeps."""
+
+    def test_b4_one_changed_wrapper_is_named_once_for_two_services(self) -> None:
+        self.write("scripts/mutmut-mutation.py", WRAPPER.read_text(encoding="utf-8") + "\n# changed\n")
+        status, lines, recording = self.run_planned(*TWO)
+        self.assertEqual(status, 0, lines)
+        self.assertEqual(sorted(recording.swept), ["apps/second", "apps/service"], lines)
+        self.assertEqual(lines[0].count("scripts/mutmut-mutation.py"), 1, lines[0])
+
+    def test_b4_hold_each_service_still_names_its_own_cause(self) -> None:
+        self.write("apps/service/pyproject.toml", '[tool.mutmut]\nsource_paths = ["lib"]\n')
+        self.write("apps/second/pyproject.toml", '[tool.mutmut]\nsource_paths = ["app"]\n')
+        _, lines, _ = self.run_planned(*TWO)
+        self.assertIn("apps/service/pyproject.toml", lines[0])
+        self.assertIn("apps/second/pyproject.toml", lines[0])
+        self.assertEqual(lines[0].count("apps/service/pyproject.toml"), 1, lines[0])
+
+
 def words(file: str, char: str) -> str:
     return (f"`apps/service/{file}` holds `{char}`, which mutmut reads as a pattern over mutant names; "
             "rename it, or run `make mutation-full`")
