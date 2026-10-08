@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """`make mutation` and `make mutation-full` for a Python service: mutmut, held to what its own `.meta` files say.
 
-    python3 scripts/mutmut-mutation.py <service> [--file <path within the service> ...]
+    python3 scripts/mutmut-mutation.py <service> [<service> ...] [--file <path within the service> ...]
 
 Without `--file` the whole of the service's `[tool.mutmut]` `source_paths` is mutated; `--file`, repeatable, hands over
-only those files. The verdict is read from the `mutants/<file>.meta` files mutmut writes, never from mutmut's exit status
+only those files, and is taken with one service only. With several services each is run fully in turn, from a fresh
+`mutants/` and under its own lock; one that fails never stops the next, and the run ends on one summary line naming each
+failed service (D223). The verdict is read from the `mutants/<file>.meta` files mutmut writes, never from mutmut's exit status
 (D212).
 
 The configuration is read here, by the subset of `[tool.mutmut]` the factory writes (`targets`), so a `--file` is held
 against what mutmut would mutate (`matched`) and a path mutmut would misread is refused (`refused`): `mutmut run` takes
 mutant names as `fnmatch` patterns, so a `*`, `?` or `[` in a path is a pattern and not the file.
 
-Exit status: 0 when every mutant is killed (or has no test reaching it, which is counted), 1 when a mutant fails the
+Exit status (with several services, the first non-zero in service order): 0 when every mutant is killed (or has no test reaching it, which is counted), 1 when a mutant fails the
 run or a sweep finds nothing to mutate, 2 when the run could not start (a refused path, an unreadable table, a host,
 `uv`, lock or mutmut version that does not fit, a `mutants/` that could not be removed).
 """
@@ -29,7 +31,7 @@ from pathlib import Path
 from collections import Counter
 from typing import IO, Any, Callable
 
-USAGE = "mutation: usage: mutmut-mutation.py <service> [--file <path within the service> ...]"
+USAGE = "mutation: usage: mutmut-mutation.py <service> [<service> ...] [--file <path within the service> ...]"
 # The one mutmut this script was written against: it calls functions mutmut does not document as public (R3), so another
 # version is refused, and a change of the pin sweeps (T008).
 PINNED = "3.8.0"
@@ -89,18 +91,22 @@ class Unreadable(Exception):
     """A configuration this script cannot read; the message is what is wrong, without the file it is in."""
 
 
-def parse(arguments: list[str]) -> tuple[str, list[str]] | None:
-    """The service and the files handed over with `--file`, or None where the arguments are not that shape."""
-    if not arguments or arguments[0].startswith("-"):
-        return None
+def parse(arguments: list[str]) -> tuple[list[str], list[str]] | None:
+    """The services and the files handed over with `--file`, or None where the arguments are not that shape. Files go
+    with one service only: which of several they belong to is not said."""
+    services = []
+    rest = list(arguments)
+    while rest and not rest[0].startswith("-"):
+        services.append(os.path.normpath(rest.pop(0)))
     files: list[str] = []
-    rest = arguments[1:]
     while rest:
         if rest[0] != "--file" or len(rest) < 2:
             return None
         files.append(rest[1])
         rest = rest[2:]
-    return os.path.normpath(arguments[0]), [os.path.normpath(file) for file in files]
+    if not services or (files and len(services) > 1):
+        return None
+    return services, [os.path.normpath(file) for file in files]
 
 
 def read_toml(text: str) -> dict[str, Any]:
@@ -567,17 +573,32 @@ CHECKS: tuple[Callable[[Job], int | None], ...] = (
 )
 
 
+def run_service(service: str, files: list[str]) -> int:
+    """One service's turn: every step from its refusals to its verdict, and the lock let go at the end of it."""
+    job = Job(service, files)
+    try:
+        for check in CHECKS:
+            status = check(job)
+            if status is not None:
+                return status
+    finally:
+        if job.lock is not None:
+            job.lock.close()
+    return 2  # unreachable: the last check returns a status
+
+
 def main(arguments: list[str]) -> int:
     parsed = parse(arguments)
     if parsed is None:
         print(USAGE)
         return 2
-    job = Job(*parsed)
-    for check in CHECKS:
-        status = check(job)
-        if status is not None:
-            return status
-    return 2  # unreachable: the last check returns a status
+    services, files = parsed
+    if len(services) == 1:
+        return run_service(services[0], files)
+    statuses = {service: run_service(service, files) for service in dict.fromkeys(services)}
+    failed = [service for service, status in statuses.items() if status]
+    note(f"{len(statuses)} swept; {'failed: ' + ', '.join(failed) if failed else 'passed'}")
+    return next((status for status in statuses.values() if status), 0)
 
 
 if __name__ == "__main__":

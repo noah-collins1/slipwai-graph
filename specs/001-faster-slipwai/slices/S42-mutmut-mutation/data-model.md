@@ -62,9 +62,9 @@ rename it, or run `make mutation-full` ``.
 | `37` | caught by type check | fail |
 | anything else | (unknown) | fail, as `unknown (exit <n>)` |
 
-## The wrapper's lines and status (`scripts/mutmut-mutation.py <service> [--file <path> …]`)
+## The wrapper's lines and status (`scripts/mutmut-mutation.py <service> [<service> …] [--file <path> …]`)
 
-Every line is prefixed `mutation: `.
+Every line is prefixed `mutation: `. With several services each runs fully in turn (a fresh `mutants/`, its own lock, its own verdict), a failure never stops the next, and the exit status is the first non-zero in service order (D223); `--file` is taken with one service only.
 
 | Situation | Line | Exit |
 |---|---|---|
@@ -84,6 +84,8 @@ Every line is prefixed `mutation: `.
 | a silencing pragma or setting | `<service>/<file>:<line> holds "# pragma: no mutate <block|start|end>", which silences mutants nobody looked at; only a bare "# pragma: no mutate" on the line excuses one` · `<service>/pyproject.toml sets do_not_mutate_patterns, which silences every line a pattern matches without anyone looking at its mutants; only a bare "# pragma: no mutate" on the line excuses one` · `<service>/pyproject.toml sets mutate_only_covered_lines, which leaves out the mutants of every line coverage excludes without anyone looking at them` · `<service>/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches through deeper calls into mutants no test reaches without anyone looking at them` (any value but mutmut's default `-1`; read as mutmut 3.8.0's `_parse_pragma_token` reads a comment; decided in `plan`, before any empty exit) | 1, before mutmut starts |
 | each failing mutant | `<status> <service> <mutant name> (mutmut show <mutant name> in <service>; report <service>/mutants/)` | — |
 | sweep, zero mutants | `mutmut found nothing to mutate in <service>; a pass on nothing is not a pass` | 1 |
+| usage: no service, an option first, a `--file` without its path, or `--file` with more than one service | `usage: mutmut-mutation.py <service> [<service> ...] [--file <path within the service> ...]` | 2, nothing started |
+| several services, after the last one's result line | `<n> swept; passed` · `<n> swept; failed: <service>, …` (each failed service, in the order given; one service prints no such line) | the first non-zero, else 0 |
 | last line | `<n> mutants: <k> killed, <u> no tests (reported, never failed)[, <s> survived, <t> timed out, …]; <passed|failed> — report <service>/mutants/` | 0 / 1 |
 
 ### The rest of the wrapper's lines (each `mutation: ` line, fixed text in full; `<…>` is what the run fills in)

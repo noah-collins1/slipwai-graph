@@ -30,6 +30,7 @@ READS = {
     "test_go_mutation_file": [GO + "scripts/go-mutation.py"],
     "test_migration_script": ["scripts/test-migration.py"],
     "test_mutmut_config": [PY_WRAPPER],
+    "test_mutmut_services": [PY_WRAPPER, STYLES],
     "test_mutmut_setup": [PY_WRAPPER],
     "test_mutmut_silenced": [PY_WRAPPER, STYLES],
     "test_mutmut_verdict": [PY_WRAPPER],
