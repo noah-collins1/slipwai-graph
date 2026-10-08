@@ -472,15 +472,31 @@ def dry_run_tests(path: Path) -> int | None:
         return None
 
 
-def incomplete(one: dict, dry_run: int | None) -> str | None:
+def ignores_static(service: Path) -> bool:
+    """Whether the service's config sets `ignoreStatic`, under which Stryker runs a static mutant under the tests that
+    cover it and not under the whole suite (A9)."""
+    try:
+        return json.loads((service / CONFIG).read_text(encoding="utf-8")).get("ignoreStatic") is True
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
+def incomplete(one: dict, dry_run: int | None, covering_only: bool = False) -> str | None:
     """Why a `Survived` mutant is not a survivor (D217, research R11), or None. Stryker 10.0.0's Vitest runner skips the
     tests of a file whose `beforeAll` throws and reads a run with no failed test as `Survived`; the report keeps only
-    `testsCompleted`. A static mutant is one every test runs under, so it must complete the dry run's count; a mutant
-    that is not static runs only its covering tests, and is never compared."""
+    `testsCompleted`. A static mutant is one every test runs under, so it must complete the dry run's count, or with
+    `ignoreStatic` (`covering_only`) the tests that cover it; a mutant that is not static runs only its covering tests,
+    and is never compared."""
     done = one.get("testsCompleted")
-    if one.get("status") != "Survived" or one.get("static") is not True or dry_run is None:
+    if one.get("status") != "Survived" or one.get("static") is not True:
         return None
-    if not isinstance(done, int) or isinstance(done, bool) or done >= dry_run:
+    covering = one.get("coveredBy")
+    if covering_only:
+        if not isinstance(covering, list) or not isinstance(done, int) or isinstance(done, bool) or done >= len(covering):
+            return None
+        return (f"Stryker says it survived, but the suite ran {done} of the {len(covering)} tests that cover it "
+                f"(a hook or a file failed, so that is not a survivor and not a pass)")
+    if dry_run is None or not isinstance(done, int) or isinstance(done, bool) or done >= dry_run:
         return None
     return (f"Stryker says it survived, but the suite ran {done} of the dry run's {dry_run} tests under it "
             f"(a hook or a file failed, so that is not a survivor and not a pass)")
@@ -708,7 +724,8 @@ def unseen(service: str, given: list[str], report: str, files: dict[str, dict]) 
     return lines
 
 
-def verdict(service: str, given: list[str], report: str, files: dict[str, dict], dry_run: int | None = None) -> int:
+def verdict(service: str, given: list[str], report: str, files: dict[str, dict], dry_run: int | None = None,
+            covering_only: bool = False) -> int:
     mutants = judged(files, given)
     problems = unseen(service, given, report, files) if given else []
     for line in problems:
@@ -723,7 +740,7 @@ def verdict(service: str, given: list[str], report: str, files: dict[str, dict],
         return 1
     why = {(name, id(one)): unexcused(service, name, files[name], one) for name, one in mutants
            if one.get("status") == "Ignored"}
-    short = {(name, id(one)): incomplete(one, dry_run) for name, one in mutants}
+    short = {(name, id(one)): incomplete(one, dry_run, covering_only) for name, one in mutants}
     failing = [(name, one) for name, one in mutants
                if one.get("status") not in PASS + COUNTED or why.get((name, id(one)))]
     for name, one in failing:
@@ -763,7 +780,7 @@ def judge(job: Job) -> int:
     if files is None:
         say(f"mutation: Stryker exited {code} and left no readable report at {report}; that is not a pass")
         return 1
-    return verdict(service, given, report, files, dry_run_tests(directory / REPORT))
+    return verdict(service, given, report, files, dry_run_tests(directory / REPORT), ignores_static(directory))
 
 
 def refusal(job: Job) -> int | None:
