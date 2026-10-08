@@ -4678,3 +4678,15 @@
 - **Confidence:** high · **Would reverse if:** the widened list refuses an entry a person reads as plainly outside every gate.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D211 — A project with no mode entry, and `mode` across several features without `--feature`
+- **Stage:** Phase 4 adversary fixes · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T02:58:15Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** T041 (D209) refuses every provisional entry in a project whose logs hold no mode entry recording `provisional`; should a project with no mode entry at all take `decide: provisional` in `cruise.json` as its basis? And T042 (B6): with several features and no `--feature`, `mode` now numbers the entry against every log and prints it, leaving the iteration to append it to the log of the feature it works in — or should it print one per feature?
+- **Options:** for the first, (a) leave it: the only route to `provisional` is the ladder, and `mode` records each rung as it is reached, so a project that climbed has the entries (recommended by the host; D209's *Would reverse if* covers a log migrated in), (b) take the file as the basis when no log holds a mode entry; for the second, (a) one entry, numbered against every log, appended where the iteration works (as built), (b) one per feature.
+- **Decision:** (a) and (a).
+- **Why:** the record a person reads must show the climb before any provisional entry; a value nobody could have set before this release needs no carve-out, and one mode entry per change keeps the log a single history a person reads once.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a person brings in a log from another repository whose climb is recorded elsewhere.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing
