@@ -166,8 +166,9 @@ class MainTest(Case):
         self.assertNpmNeverCalled()
 
     def test_e4_the_sweep_runs_stryker_over_a_list_this_reader_cannot_evaluate(self) -> None:
-        """D213 item 3: a list the scope script cannot read is the service's *sweep* — Stryker reads its own globs, so
-        the whole-list run must start, not refuse. Only a missing config stops it (Stryker would mutate its defaults)."""
+        """D213 item 3: a list the scope script cannot read is the service's *sweep* — Stryker reads its own globs,
+        so the whole-list run must start, not refuse. Only a missing config stops it (Stryker would mutate its
+        defaults)."""
         project(self.tree, patterns=["src/**/*.{ts,tsx}"])
         for name in ("package.json", "node_modules/.package-lock.json", *(
                 f"node_modules/@stryker-mutator/{package}/package.json" for package in ("core", "vitest-runner"))):
@@ -179,7 +180,8 @@ class MainTest(Case):
         self.log.unlink()
         done = self.run_wrapper("apps/service")
         self.assertEqual(done.returncode, 2, done.stdout)
-        self.assertEqual(done.stdout.splitlines(), ["mutation: apps/service/stryker.config.json: no stryker.config.json"])
+        self.assertEqual(done.stdout.splitlines(),
+                         ["mutation: apps/service/stryker.config.json: no stryker.config.json"])
         self.assertNpmNeverCalled()
 
     def test_e5_hold_a_nested_service_and_a_trailing_slash_answer_alike(self) -> None:
