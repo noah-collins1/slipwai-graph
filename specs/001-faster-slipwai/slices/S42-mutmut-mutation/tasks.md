@@ -1,0 +1,863 @@
+# Tasks: S42-mutmut-mutation — a Python slice's mutation run is real and proportional to its change
+
+**Input**: [plan.md](plan.md) (*Rules* 1–11 are what the tasks cut on; *Source Code*; *Structure Decision*; *Pin*;
+*Applied, not decided*; *Handed back*), [research.md](research.md) (R1–R9), [data-model.md](data-model.md) (`[tool.mutmut]`,
+`targets`, `matched`, `refused`, `versions`, `.meta`, the exit-code table, the wrapper's lines and status, what sweeps a
+Python service, the scope script's tables — the words are fixed there and tested verbatim), [quickstart.md](quickstart.md);
+acceptance criteria AC-S42-1 … AC-S42-13 in `specs/001-faster-slipwai/spec.md` under `### S42-mutmut-mutation`; decisions
+D212, D216 (this slice's), D137, D138, D149, D150, D219, D222 (cited, not re-decided) in
+`specs/001-faster-slipwai/decisions.md`; ADR 0010 (`delivery/docs/adr/0010-mutmut-for-python-mutation.md`, already
+written, `Proposed`). Precedent read for shape: `slices/S41-stryker-mutation/tasks.md`. No `examples.md`: a method slice with
+no screen and no event model of its own, so **no white box, no mockup task and no styling task**. The one story is **US2**
+(FR-008 as D137 amends it, scenario 6), *a mutation run is priced per change where a tool is wired, and says so where it is
+not*.
+
+**Branch**: `slice/S42-mutmut-mutation`, worktree `/home/noahc/math/slipwai-graph-S42-mutmut-mutation`. One commit per
+task. No push, no claim.
+
+**Delegation**: one `drive-implement` delegate takes US2 — T002 … T012 in dependency order — or more than one where the
+manifests below are disjoint (*Parallel opportunities*). Each task is one RED-GREEN-REFACTOR cycle and one commit and
+opens with **one rule's examples**; a delegate never writes a rule's tests ahead of the previous rule's commit. A task's
+*Files* line is its manifest, the only files that delegate may write. Nobody but the host writes `tasks.md`. A delegate
+that needs a file outside its manifest — a test elsewhere that pins text it changes — **stops and names the file; the host
+adds it.**
+
+**Not tasks:**
+- **AC-S42-13** (plan rule list, last line; quickstart) is the demo's (T016): `make mutation` against `make
+  mutation-full` on a two-service Python starter, wall time, mutant counts, the command and the machine, measured by the
+  hand after the converged verdict. A task for it would be a test that cannot fail.
+- **Handed back 1** (the default Python starter's own 114 survivors, R9) and **Handed back 2** (S41's fragment, which rule 9
+  narrows — that *is* a task, T010) — the first is the host's: no task widens the slice to kill or suppress a starter
+  survivor, none narrows `[tool.mutmut]` to the green files, and the note and fragment are written to option (a) without
+  promising a follow-on.
+- **Open questions** (`type_check_command`, a project with no test reaching any mutant, `os.cpu_count()` workers) are
+  recorded residuals, not tasks.
+- **ADR 0010** exists at `Proposed`; T010 only holds that the words agree with it and does not edit it unless a test shows it
+  disagrees (then the delegate stops and names it).
+- No white box: `check-model` has nothing to refuse. *Design review* below says so.
+- No task edits `spec.md`, `decisions.md`, `story-split.md`, `slices/README.md`, the root `Makefile`, `delivery/scripts/`,
+  `tools/`, CI files, `.github/`, `VERSION`, anything under `release/`, S06's `rules.py`, `scoped_targets.py`,
+  `verify-scoped.py`, `check-slice-scope.py`, `verify_scoped/*`.
+
+## Constraints that hold for every task
+
+- **MINOR, `VERSION` stays `1.6.0.dev0`.** `changelog.d/` already holds MINOR fragments (S41's among them), so a MINOR
+  fragment leaves the number as it is (`tests/test_changelog.py` checks the pair). **`changelog.d/mutmut-mutation.md` lands
+  in T002** — the first commit that changes a user-visible tree — as a first draft whose first line is `MINOR`, one bold
+  lead sentence and one paragraph beginning `**Catch-up.**` that stands alone and says only what is true at that commit; T011
+  completes it. T010 alone edits `changelog.d/stryker-mutation.md` (the Python clause only). Shape: `changelog.d/README.md`.
+  A commit that changes `src/slipwai/` or `assets/` says `Level MINOR; VERSION already carries it (1.6.0.dev0); inside S42's
+  fragment` and the reason; a commit that changes only `tests/` says it reaches no user.
+- **Commit messages end `(cruise iteration 30)`**, then `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- **Write scope of the whole slice** (every manifest stays inside it): `specs/001-faster-slipwai/slices/S42-mutmut-mutation/`,
+  the files listed under *Source Code* in `plan.md`, `tests/` (the new modules this file names and the named lines of the
+  existing tests listed in *The sweep at planning*), `changelog.d/mutmut-mutation.md`, `changelog.d/stryker-mutation.md`
+  (T010, one clause). A delegate that finds a file outside it needs a change stops and names it.
+- **Size and width.** Every file under `src/` and `tests/` stays within 350 lines and 120 columns (`make check-structure`).
+  Current line counts (`wc -l`) and each task's budget: `src/slipwai/project/languages/python.py` **283** (T002 adds one
+  call site, net ≤ 6; **new code goes in `src/slipwai/project/mutmut.py`**, never in `python.py`),
+  `src/slipwai/project/native_commands.py` **321** (T002 replaces the Python `mutation` line with `FULL_COMMAND` from
+  `mutmut.py`, net ≤ 0; T010 net ≤ 2), `src/slipwai/backends.py` **332** (T002 net 0: `set()` becomes the script's
+  `frozenset`), `src/slipwai/project/gitignore.py` **172** (T002 net ≤ 2), `src/slipwai/project/mutation.py` **291** (T010
+  rewrites notes and command text and ends ≤ 330 — mutmut's note text lives in `mutmut.py`, imported, not written in
+  `mutation.py`), `src/slipwai/project/mutmut.py` new (≤ 200). Tests: `test_mutation_placeholders.py` 178,
+  `test_mutation_words.py` 187, `test_mutation_words_script.py` 186, `test_mutation_dry_run.py` 118, `test_mutation.py` 300,
+  `test_scoped_targets.py` 240, `test_stryker_generated.py` 301, `test_stryker_migrate.py` 209, `test_verify_stamp_lists.py`
+  141, `test_uv.py` (read its count before editing), `test_select_tests_real_loaders.py` 231,
+  `test_select_tests_cross_reads.py` 251. **A new test module that nears 350 stops and names the split; the host adds the
+  manifest line.** Assets are not counted by `check-structure` (`assets/toolkit/scripts/mutation-scope.py` 1066,
+  `verify-stamp.py` 1108, `check-imports.py` 405), but the wrapper and the additions to `mutation-scope.py` stay readable:
+  small named functions, no class beyond the seams that exist.
+- **Before every commit** run `make lint typecheck check-structure`. **When `assets/toolkit/` is touched** (T002 `factory_recipe`,
+  T007–T009) also `make test TESTS="test_toolkit test_utf8_io test_changelog"`. Do not run `make verify`; the host runs the
+  suites once, in T013.
+- **A task that adds a `tests/test_*` module owes the selector's three pins,** and runs
+  `make test TESTS="test_select_tests_declarations test_select_tests_real_helpers test_select_tests_real_audit test_select_tests_real_declared"`
+  before committing, with those test files in its manifest: (1) a module that generates nothing and loads the wrapper or
+  the scope script by path declares `TEST_SELECTION = {"reads": [...]}` naming every path it opens, copies, runs or loads, and
+  the module's row goes into `tests/test_select_tests_real_loaders.py`'s `READS` (`test_select_tests_real_audit` checks it
+  under an audit hook) and so into `tests/test_select_tests_real_declared.py`'s pin — which is satisfied by `READS` alone,
+  the file is edited only if a module must be named in `LEFT_UNDECLARED`; (2) a module that generates a project or imports a
+  test module that does stays undeclared (as `test_stryker_generated` is) and is not added to `READS`; (3) a new
+  `src/slipwai/project/*.py` module owes a `SERVES` row in `tests/test_select_tests_cross_reads.py` (T002:
+  `"project/mutmut.py": {("backend", "python")}`, as `project/stryker.py` has its row); (4) no void declaration — a declared
+  `reads` that the module never opens is a failure. Add the wrapper path to `READS` as a segment-built constant beside
+  `TS_WRAPPER` (`PY_WRAPPER = "assets/languages/python/scripts/mutmut-mutation.py"`).
+- **A task that changes what a toolkit check script reads runs every `test_verify_scoped_*` module** (T009, T007/T008 if
+  `mutation-scope.py` gains a read). A path literal a toolkit check loads is read by `test_verify_scoped_table_held` as a file
+  the check reads: write such lists as segments (`("scripts", "mutmut-mutation.py")`), or add a reasoned `NOT_AN_INPUT_FOR`
+  entry. A literal the verify stamp's scan reads as a path under an exempt entry needs a reasoned row in
+  `tests/test_verify_stamp_lists.py`'s `EXEMPT_PATHS` (S41 added `.stryker-tmp`); **T009, which adds `apps/*/mutants/` to
+  `EXEMPT`, carries that file and runs every `test_verify_stamp*` module** (the root `Makefile` runs the stamp files as this
+  repository's own stamp — say so in the report).
+- **A generated-Makefile text change moves `tests/test_scoped_targets.py`'s e5 digests (`PRE_SLICE`), deliberately:** the task
+  that changes the Python recipe line (T002) or the note (T010) carries that file and regenerates the Python shapes' hashes
+  only (`standard-python`, `model-python-sqlite`, `two-python`, `java-python-web` and any other shape whose Makefile above
+  `# Scoped gate` holds a Python service).
+- **A new test module that imports a `test_verify_scoped_*` module and sorts before `test_benchmark*` shadows
+  `tests/test_benchmark`:** name such a module `test_verify_scoped_*`. None of this slice's modules is expected to; if one
+  imports `test_verify_scoped_*` (T009's `test_mutmut_after_run` might, for the `verify-scoped` not-broadened example) the
+  delegate names it accordingly or imports nothing from there.
+- **Docs prose pinned by writers' tests breaks when reworded.** A task that edits a doc (T010) runs `grep -rln "<sentence>" tests`
+  for every sentence it changes and carries the pinning tests (`tests/test_backend_obligations.py`, `test_docs_index`,
+  `test_commands`, `test_scoped_ladder`, `test_mutation_words`) in its manifest or stops and names them.
+- **Assets.** Every `read_text`/`open` in a script under `assets/` names `encoding="utf-8"`. A test that loads a toolkit or
+  asset script as a module sets `sys.dont_write_bytecode = True` first (the helper in `tests/test_mutation.py` is the
+  model); every probe of anything under `assets/` runs as **`python3 -B`**, so no `__pycache__/` is left under `assets/`. No
+  literal `apps/service` or `apps/web` in a new script (`toolkit.spoken_for` rewrites those). `mutation-scope.py` **loads** the
+  wrapper by path (never copies it) and writes nothing under the project. The wrapper imports `tomllib` lazily (inside the
+  reader), so loading it on Python 3.10 never fails — `Unreadable` is raised where it is read.
+- **Tests.** Standard library only; **no mocking framework, `unittest.mock` included.** The wrapper is tested in-process and as
+  a subprocess against **a fake `uv` executable written into a temporary directory first on `PATH`**: it records its argv and
+  cwd (one JSON line per call) and, for `run … python -c` writes the `.meta` files the example hands it under
+  `<service>/mutants/`, for `run … mutmut run` writes the results the example hands it, for `sync` exits as the example says.
+  The scope script is tested behind S08's `FakeRunner` (`tests/mutation_scope_fixture.py`, read, not edited). **Real `git` in
+  temporary repositories** (`git init`, `slice/S1`, a `main` ref) — never a stubbed diff. Evidence is a log, a file or an exit
+  status, never a clock. **Every `subprocess.run` carries `timeout=`**, and anything that can hang (a fake `uv` that waits, a
+  real mutmut) runs under one. A test that runs a generated project's command removes `CI`, `GITHUB_ACTIONS`, `GITLAB_CI`
+  (and, as S08's `clean_environment` does, `MAKEFLAGS`, `MFLAGS`, `MAKELEVEL`, `MAKEOVERRIDES`, `MAKEFILES`, `SINCE`) from its
+  environment unless the example sets one; **each touched test module is also run once under `CI=true`** and the report says
+  so. Projects are generated with **this worktree's `./slipwai`** (`FactoryTestCase.generate` does; a hand run says
+  `./slipwai generate …`, never the one on `PATH`). **Scratch only under `/tmp/s42/`**; keep `/tmp` clean on every exit
+  path. A Go module cache under `/tmp/tmp*` is read-only — `chmod -R u+w` before `rm -rf` — should one appear.
+- **A recipe line is never changed before the tests that rebuild it are searched** (*The sweep at planning*): `tests/` was
+  searched for helpers that rebuild an old Makefile by regex or pin the `mutation` recipe; the hits are met by the tasks
+  named. A delegate who changes a recipe line searches again for the one it changes.
+- **`verify`, `verify-checks`, `ci` and the CI workflow stay byte for byte**; the `mutation` line is unchanged, only
+  `mutation-full`'s Python recipe line changes, and `factory_recipe` mirrors it in the same commit (T002). **`SINCE` reaches
+  no Python line** (D216). No Makefile variable, `export` or `define` is added.
+- **Real runs are slow and few.** Exactly one real mutmut run of the slice as a test, in T012, gated like
+  `tests/test_mutation_scope_real_typescript.py` (`backends_under_test()` names `python`, `uv` on `PATH`; network for the first
+  `uv sync`) and skipped otherwise. Every other example fakes `uv` or the `Runner`. **T005 owes one hand probe**, not a test:
+  its generation snippet (R3's calls — `copy_src_dir`, `copy_also_copy_files`, `setup_source_paths`,
+  `store_lines_covered_by_tests`, `create_mutants` — are mutmut 3.8.0's, not documented as public, and a fake `uv` cannot
+  prove them) is run once by hand against a real mutmut 3.8.0 install in `/tmp/s42/` on a generated starter, and the report
+  says what it printed; a snippet that fails there is T005's defect, found before T012.
+- **Commit by path** — `git commit -m … -- <the task's files>`, a new file `git add`ed by its exact path first; never
+  `git add -A`, never `git commit -a`, never `git checkout --` on work that is not the delegate's own (the sanctioned
+  RED/teeth route in `delivery/docs/delegated-agent-safety.md` is the only one).
+- **RED is seen** for its stated reason before the production file is touched. A **hold** (an example that passes today) is
+  written as a hold, said so in its name or docstring, and **seen to have teeth** before commit: change the production file,
+  observe the failure, restore with `git checkout -- <exact path>`. A hold with no teeth is not claimed.
+- **GREEN is a class**, not an instance: where a rule says *every service* or *every backend*, the examples run a two-service
+  project (two Python services; Go beside Python) and the shapes the rule names.
+- **No `.codegraph/`** in this repository: callers were found by text search; the tasks name them.
+
+### The sweep at planning
+
+`tests/` searched for helpers that rebuild or pin a generated Makefile's `mutation` / `mutation-full` recipe, Python as a
+placeholder, the Python lock against its manifest, `BASE_DEVELOPMENT`'s contents and the ignore text
+(`grep -rn "mutmut" tests`, `grep -rn "PYTHON_REFUSED\|UNWIRED" tests assets src`, `grep -rn "factory_recipe" tests`,
+`grep -rln "uv.lock\|regenerate-locks" tests`, `grep -rn "pytest-xdist==\|ruff==\|mypy==" tests`, `grep -rn "python" tests/test_mutation*.py`).
+**Hits**, each met by the task named:
+
+| Hit | Pins | Met by |
+|---|---|---|
+| `tests/test_mutation_targets.py:49` (`standard-python` shape) and `:182` (`factory_recipe(services)` equals the generated `mutation-full` recipe) | the script's reconstruction of the recipe equals the generated one | **T002** changes both sides in one commit (`native_commands.py` and `factory_recipe`'s Python branch); no edit to the test expected |
+| `tests/test_scoped_targets.py:47–58` `PRE_SLICE` | sha256 of each shape's Makefile above `# Scoped gate`; Python shapes `standard-python`, `model-python-sqlite`, `two-python`, `java-python-web` among them | **T002** (the recipe line), **T010** (the note): hashes only, regenerated by the delegate where a Python shape's text above the section moved |
+| `tests/test_mutation_placeholders.py:24–25` `PYTHON_ENDING`, `:27` `FILES["python"]`, `:67–68`, `:77–78`, `:97–108` (`test_d149_*` pin the Python refusal words and the "other refusals do not name mutmut" hold), `:128–141`, `:150` (file-class table), `:176` `PLACEHOLDER_MESSAGES["python"]`, and the `test_e1_the_scripts_table…` hold (`set(PLACEHOLDERS) == set(FILES)`; each recipe's `echo`) | Python as the placeholder: its message, `PYTHON_REFUSED`, the file classes, the recipe echo | `test_e1_the_scripts_table…` and the `PLACEHOLDER_MESSAGES` row re-pointed in **T002** (the recipe stops echoing a setup message; Python leaves the loop of echo-bearing placeholders, the script's `PLACEHOLDERS["python"]` stays until T007); the rest in **T007** (Python leaves `PLACEHOLDERS`, `PYTHON_ENDING` and the two `test_d149_*` Python examples are deleted or inverted — D149's *until a later release* is the sentence that stops being true; the file-class table keeps Python's row; `test_d149_hold_the_other_refusals_do_not_name_mutmut` stays, with Quarkus) |
+| `tests/test_mutation_words_script.py:78–81`, `tests/test_mutation_dry_run.py:96` | Python in the class of backends the placeholder words apply to (`python:apps/service`, `python:apps/worker` mixed) | **T007**: Python moves from the placeholder class to the wired one in those lines only |
+| `tests/test_stryker_after_run.py:167` (`mutation: refuse apps/billing — install and configure mutmut`) and the test around it (`test_e3_quarkus_and_python_still_refuse…`) | a Python service beside a TypeScript one is refused with the setup message | **T007**: the example is re-pointed (Python now runs; Quarkus is the refused one), the TypeScript half of the example is unchanged; `tests/test_stryker_after_run.py` is in T007's manifest for that line only |
+| `tests/test_mutation_words.py:17–18` (`PLACEHOLDERS = ("java-quarkus", "python")`), `:102` (`mutation_notes([python])` is `""`), `:163–182` (`FragmentTest`: S41's fragment says Python is refused *until a later slipwai release wires mutmut*; `"TypeScript, Python and `java-quarkus`"`) | Python has no note; S41's fragment carries Python's stub words | **T010**: named lines only — the inverse of S08's hold for Python, and the fragment tests re-pointed at the narrowed clause (*Handed back* 2) |
+| `tests/test_mutation.py:112–114` | `mutation_command(["typescript"])` text | hold in **T010**; a `["python"]` example is added beside it in `test_mutmut_generated.py`, not here |
+| `tests/test_stryker_generated.py:265` (`assertIn("Python and Quarkus", UNWIRED)`), `:282–283` (docs no longer say "TypeScript and Python exit 2" / "no tool wired (TypeScript, Python") | `UNWIRED`'s wording and the docs' | **T010**: the `UNWIRED` line becomes `UNWIRED` names only Quarkus; `:282–283` stay true (hold) |
+| `tests/test_stryker_migrate.py:67` (`for words in (…, "Python", "java-quarkus")` in S41's fragment) | S41's Catch-up names Python | **T010**: the `"Python"` word dropped from that tuple; `"java-quarkus"` stays |
+| `tests/test_uv.py:59` (the exact `dependency-groups.dev` list of the default Python starter) and `:139` (`uv{suffix}.lock` names) | `["httpx==0.28.1", "mypy==2.3.1", "pytest-xdist==3.8.0", "pytest==9.1.1", "ruff==0.16.3"]`; the four lock names | **T002**: `"mutmut==3.8.0"` joins the list at `:59` (sorted: after `mypy`); `:139` is a hold |
+| `tests/test_xdist_plugin.py:20,42`, `tests/test_gates.py:143`, `tests/test_renovate.py:44–55` | `assertIn` of a pin in `dev`; `mypy==` present; `apps/service/uv.lock` is Renovate's | holds, **T002**: all stay true; no edit expected |
+| lock checks (`scripts/regenerate-locks.py --check`, `tests/test_pruning.py`, `tests/test_language_skeletons.py`, `tests/test_backing_services.py` read the Python manifest and `uv*.lock`) | each committed lock agrees with its manifest | **T002**: the manifest line and all four `uv*.lock` move in one commit, or the suite is red between them |
+| `tests/test_monorepos.py:103,:120–126` | every shape's Makefile contains `mutation:`; Go's recipes contain `python3 scripts/go-mutation.py apps/service` | hold, **T002**: both stay true; no edit expected |
+| `tests/test_verify_stamp_pinned.py`, `tests/test_verify_stamp_*.py`, `tests/test_verify_stamp_lists.py:20–28` (`EXEMPT_PATHS`) | `.PHONY: verify ci` then the exact `verify` rule bytes; `EXEMPT`; a literal under an exempt entry needs a reason | hold in **T002**; **T009** adds the `EXEMPT` row and, if the scan demands it, a reasoned `EXEMPT_PATHS` row for `mutants`, and runs the whole `test_verify_stamp*` set |
+| `tests/test_verify_scoped_*`, `tests/test_scoped_adopted.py`, `tests/test_scoped_migrate.py` | `rules.json` from-text equals from-database; a fresh slice branch is not broadened; a path literal in a check is a read | read-only suites, run in **T002**, **T009**; none is edited |
+| `tests/test_select_tests_real_loaders.py` `READS`, `tests/test_select_tests_real_declared.py`, `tests/test_select_tests_cross_reads.py` `SERVES` | every declared module's reads; every `project/*.py` module's serving configuration | **T002** (`project/mutmut.py`), and each task that adds a wrapper-loading module (**T003**, **T004**, **T005/T006** share one, **T007**, **T008** if they load by path) |
+| `tests/test_backend_obligations.py` | names no `mutation` text, rebuilds no Makefile | **T010**: reads `docs/backend-obligations.md`; the delegate runs it and edits it only if the new sentence breaks a pin |
+| `tests/test_changelog.py` | the fragments' highest level against `VERSION` | hold in every commit touching `changelog.d/` |
+| `tests/test_matrix.py`, every Python row's `make verify` | the starters pass their own gate; each now `uv sync --locked`s mutmut | not edited; run by the host in **T013** |
+| `.gitignore`'s Python line (`src/slipwai/project/gitignore.py:70–72`; `test_stryker_generated.py:160–167` is the TypeScript analogue) | the Python block `__pycache__/ … /apps/*/requirements.txt` | **T002**: `apps/*/mutants/` joins the Python block; the new example reads it; a Go-only and a TypeScript-only project do not have it |
+| `PYTHON_REFUSED` (`assets/toolkit/scripts/mutation-scope.py:611, :801`), `UNWIRED` (`src/slipwai/project/mutation.py:262`), `native_commands.py:103` (`@command -v mutmut … mutmut run`) | the old Python stub, in the scope script, the command text and the recipe | `native_commands.py:103` in **T002**; `PYTHON_REFUSED` and `:801` in **T007**; `UNWIRED` in **T010** |
+
+## Format: `[ID] [P?] [Story] Description` — each task is one increment, one commit
+
+`[P]` marks a task whose files are disjoint from every sibling it could run beside; see *Parallel opportunities*.
+
+---
+
+## Phase 1: Implementation stage
+
+Each task starts from the green committed suite.
+
+### T001 — Pin: the baseline before anything moves (host task)
+
+- [ ] **Host task; no story; no commit.** Run the pin set once and record that it is green:
+  `make test TESTS="test_mutation_targets test_mutation_placeholders test_mutation_words test_mutation_words_script test_mutation_dry_run test_mutation test_monorepos test_scoped_targets test_uv test_verify_stamp_pinned test_verify_scoped_rules test_scoped_adopted test_scoped_migrate test_changelog test_backend_obligations test_stryker_generated test_stryker_migrate test_stryker_after_run"`.
+  Confirm `cat VERSION` reads `1.6.0.dev0`, that `delivery/docs/adr/0010-mutmut-for-python-mutation.md` is `Proposed`, that `uv`
+  and network are reachable (T002 regenerates four locks) and `uv --version` prints 0.12 or newer. Then `make starters` and
+  keep `build/` aside (untracked) so T013's diff of that tree is the change a user sees (`docs/maintaining.md`): a `mutmut`
+  dev pin and a `[tool.mutmut]` table per Python service, one new script, an ignore line, a Makefile line, a changed
+  command text.
+
+### T002 — [US2] What a Python service is given: the dev pin, the table, the wrapper's path, the ignore line, the recipe line, the four locks (R1 · AC-S42-1, AC-S42-4 recipe, AC-S42-9 first clause, AC-S42-11 `mutation-full` carries no `SINCE`)
+
+- [ ] **Rule 1.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first line `MINOR`;
+  a **Catch-up.** paragraph that stands alone and says only what is true at this commit: a project made before gains
+  `mutmut==3.8.0` in every Python service's dev group and `[tool.mutmut]` where its files merge, `scripts/mutmut-mutation.py`,
+  the `apps/*/mutants/` ignore line and the regenerated `scripts/verify_scoped/rules.json`; T011 completes it). The wrapper
+  lands here as a **skeleton**: it parses `<service> [--file <path> …]`, and every run ends `exit 2` with one line saying
+  mutmut is not wired by this script yet. That transient can only fail, never pass, and is the same refusal `mutation-full`
+  printed before (exit 2), so `mutation-full` is never wrong in between; T003–T006 build it. **The locks are regenerated
+  here, not in a final task:** `uv sync --locked` refuses a lock that disagrees with its manifest, and the lock checks read
+  the manifest, so a commit that moves `BASE_DEVELOPMENT` without the four locks leaves the suite red and every generated
+  Python starter unsyncable. Needs network; if it is absent the delegate stops and says so. If `scripts/regenerate-locks.py
+  --check` cannot run with the machine's `uv` (S41's npm 9.2 problem), the delegate regenerates with a newer `uv` in
+  `/tmp/s42/` and says so; the evidence of AC-S42-1 is then `uv sync --locked` accepting each of the four combinations.
+
+**RED** (new `tests/test_mutmut_generated.py`; `FactoryTestCase.generate`; files read from the project, nothing run except
+`make -npq` and the lock check):
+- e1 a Python project (default answers: FastAPI, Postgres) and a project with a Python service beside a Go one:
+  `apps/service/pyproject.toml`'s `dependency-groups.dev` holds `mutmut==3.8.0` exactly, sorted among the base tools, no
+  range *(fails today: not there)*. A `--profile standard --frontend none --http none --event-store memory` project has it too.
+- e2 `apps/service/pyproject.toml` parses (`tomllib`) and `[tool.mutmut]` equals data-model's table: `source_paths = ["src"]`,
+  `pytest_add_cli_args_test_selection = ["tests", "--ignore=tests/integration"]`, `pytest_add_cli_args = ["-p", "no:xdist"]`;
+  the raw text carries a comment line above each key (the table is read from the template, so every Python service has it,
+  a second service too) *(fails today: no table)*.
+- e3 `scripts/mutmut-mutation.py` exists once per project however many Python services it has, is executable
+  (`os.access(…, os.X_OK)`), holds no literal `apps/service` or `apps/web`, a `python3 -B` import leaves no `__pycache__/`, and
+  is absent from a Go-only and a TypeScript-only project; in an adopted layout it lands under `<delivery>/scripts/` as
+  `go-mutation.py` does *(fails today: no script)*. Run as a subprocess with no arguments or an unknown flag it exits 2 with
+  one `mutation: ` line.
+- e4 `mutation-full:` in the generated Makefile of a Python project is exactly `python3 scripts/mutmut-mutation.py apps/service`
+  — no `SINCE`, no `$(if`, no `@command -v` — and in a two-Python-service project one such line per service in service
+  order; Go beside Python keeps Go's `$(if $(SINCE),--since $(SINCE))` line byte for byte; `mutation:` is byte for byte what
+  it was; `verify`, `verify-checks`, `ci` and the generated workflows are byte for byte the pre-slice text for the shapes of
+  `test_verify_stamp_scan.SHAPES` and `test_mutation_targets.SHAPES` *(the first half fails today: the `@command -v mutmut`
+  line; the second is a hold, teeth: add `mutation-full` as a prerequisite of `verify-checks` and see it fail)*.
+- e5 `.gitignore` of a Python project names `apps/*/mutants/` (inside the Python block, leading it as S41 led the TypeScript
+  block so `migrate` merges beside `add-service`'s lines); a Go-only project does not; `git status --short` of a fresh commit
+  is empty after `apps/service/mutants/src/x.py.meta` is created *(fails today)*.
+- e6 **hold, the class** (the lock rule, AC-S42-1): for each of the four committed `uv*.lock`, `uv lock --check --project`
+  over a service written with that combination's manifest exits 0, and `uv sync --locked --dry-run` accepts it (skipped, with
+  its reason, where `uv` is not on `PATH`); the lock names `mutmut` and its closure (`libcst`, `textual`, `coverage`,
+  `setproctitle`, `click`) *(fails the moment `BASE_DEVELOPMENT` changes without the locks — the RED this task goes through
+  before the locks are regenerated; teeth: restore one lock from `git` and see it fail)*. Use `scripts/regenerate-locks.py
+  --check`'s own comparison through its module, imported with bytecode off, where it runs; do not reimplement it.
+
+**GREEN** — `src/slipwai/project/mutmut.py` (new): `SCRIPT_PATH = "scripts/mutmut-mutation.py"`, `SCRIPT_ASSET`,
+`FULL_COMMAND = f"python3 {SCRIPT_PATH} {APP}"`, `mutmut_files(services)` (the wrapper once per project with a Python
+service); `assets/languages/python/scripts/mutmut-mutation.py` (new, skeleton); `assets/languages/python/app/pyproject.toml`
+(the `[tool.mutmut]` table, below `[tool.pytest.ini_options]`, a comment above each key); `python.py` one call site writing
+the script once (net ≤ 6) and `BASE_DEVELOPMENT` gaining `mutmut==3.8.0`; `native_commands.py` the Python `mutation` line
+becomes `FULL_COMMAND` (net ≤ 0); `backends.py` `BACKEND_EXECUTABLES["python"] = frozenset({"scripts/mutmut-mutation.py"})`;
+`gitignore.py` the `apps/*/mutants/` line; `assets/toolkit/scripts/mutation-scope.py` **`factory_recipe` only**: its Python
+branch writes `python3 scripts/mutmut-mutation.py <path>` (so `test_mutation_targets.py:182` stays green — the rest of rule 6
+is T007); `python3 scripts/regenerate-locks.py` rewrites the four locks; `changelog.d/mutmut-mutation.md` first draft;
+`tests/test_select_tests_cross_reads.py` the `project/mutmut.py` row.
+
+**REFACTOR:** the line `python3 scripts/mutmut-mutation.py <path>` is spelled once, in `mutmut.py`, and used by
+`native_commands.py` and `factory_recipe`'s test-side expectation; the `[tool.mutmut]` comment lines sit in the template, once.
+
+**Verify:** `make test TESTS="test_mutmut_generated test_mutation_targets test_mutation_placeholders test_uv test_xdist_plugin test_gates test_monorepos test_scoped_targets test_verify_stamp_pinned test_verify_scoped_rules test_scoped_adopted test_scoped_migrate test_pruning test_language_skeletons test_backing_services test_select_tests_cross_reads test_select_tests_declarations test_select_tests_real_helpers test_select_tests_real_audit test_select_tests_real_declared test_changelog test_toolkit test_utf8_io"`,
+then `python3 scripts/regenerate-locks.py --check` (or the `uv` equivalent above), then `make lint typecheck check-structure`;
+the touched modules once under `CI=true`. Commit by path; level line as above.
+
+**Files:** `src/slipwai/project/mutmut.py` (new), `src/slipwai/project/languages/python.py`,
+`src/slipwai/project/native_commands.py`, `src/slipwai/backends.py`, `src/slipwai/project/gitignore.py`,
+`assets/languages/python/scripts/mutmut-mutation.py` (new, skeleton), `assets/languages/python/app/pyproject.toml`,
+`assets/languages/python/locks/uv.lock`, `uv-fastapi.lock`, `uv-postgres.lock`, `uv-fastapi-postgres.lock`,
+`assets/toolkit/scripts/mutation-scope.py` (`factory_recipe` only), `changelog.d/mutmut-mutation.md` (new),
+`tests/test_mutmut_generated.py` (new, undeclared: it generates), `tests/test_mutation_placeholders.py` (the
+`test_e1_the_scripts_table…` hold and the Python row of `PLACEHOLDER_MESSAGES` only), `tests/test_uv.py` (`:59` only),
+`tests/test_scoped_targets.py` (`PRE_SLICE` hashes only, where a Python shape moved), `tests/test_select_tests_cross_reads.py`
+(one row).
+
+### T003 — [US2] The configuration the wrapper reads: `targets`, `matched`, `refused`, `versions`, and what a table it cannot read says (R2 · AC-S42-6 half, AC-S42-8 half; D215 d's reason, D218)
+
+- [ ] **Rule 2.** Needs T002 (the skeleton). In `mutmut-mutation.py`: `targets(service)` reads the service's `pyproject.toml`
+  with `tomllib` (imported inside the function; `Unreadable("no tomllib: Python 3.11 or newer reads [tool.mutmut]")` where it
+  is absent) and returns the parsed table: `source_paths` (or, only where empty, deprecated `paths_to_mutate`) must be a
+  non-empty list of relative POSIX strings with no `..`, no leading `/`, no `*`, `?`, `[` — else `Unreadable` naming the
+  value; `only_mutate` and `do_not_mutate` lists of strings; no `[tool.mutmut]` is `Unreadable("no [tool.mutmut] table")`.
+  `matched(config, file)` is mutmut's `should_mutate` with Python's `fnmatch` exactly as `configuration.py` applies it (R2).
+  `refused(service, file)` returns data-model's words for a path holding `*`, `?` or `[`. `versions(pyproject_text,
+  lock_text)` returns `{"tool.mutmut": <table>, "requirement": [<every mutmut requirement string>]}` from a manifest (the
+  `mutmut` entries of `[dependency-groups]`, `[project.dependencies]`, `[project.optional-dependencies]`) and `{"<name>":
+  [<every version>]}` for `mutmut` and the closure of `libcst` (traversing the lock's `[[package]]` `dependencies`, R6)
+  from a lock; text that does not parse, and no `tomllib`, raise `Unreadable`. `main` reaches the first lines of the
+  data-model table and nothing that starts a process: **a refused `--file` is exit 2, one line, before anything else is
+  looked for or deleted**; an unreadable table is `<service>/pyproject.toml: <why>`, exit 2 (the no-table words of the
+  data-model's table); neither starts `uv`. `versions` is the reader T008 compares; it is tested here because it is the
+  wrapper's, not the scope script's.
+
+**RED** (new `tests/test_mutmut_config.py`, declared `TEST_SELECTION` reads = the wrapper; wrapper loaded in-process with
+bytecode off, and run as a subprocess with a fake `uv` that fails the example if it is ever called):
+- e1 `targets` on the generated table: `{"source_paths": ["src"], …}`; the deprecated `paths_to_mutate = ["lib"]` alone is read as
+  `source_paths`, and ignored when `source_paths` is also set; `matched` — `src/pkg/a.py`, `src/a.py`, `src/pkg/sub/b.py`,
+  `src/pkg/__init__.py` match; `src/pkg/a.pyi`, `src/pkg/data.txt`, `tests/test_a.py`, `scripts/x.py`, `srcx/a.py` do not; with
+  `only_mutate = ["src/pkg/a*"]` only the matching files are in; with `do_not_mutate = ["*/gen_*"]` a `src/pkg/gen_x.py` is out;
+  a table with two `source_paths` matches under either *(fails today: no such function)*.
+- e2 each value outside the subset is `Unreadable` naming it: `source_paths = []`, `["../x"]`, `["/abs"]`, `["s*"]`, `["s?"]`,
+  `["s[ab]"]`, `"src"` (a string), `[1]`; `only_mutate = "x"`, `do_not_mutate = [1]`; a missing `[tool.mutmut]` table, a missing
+  `pyproject.toml`, invalid TOML; no `tomllib` (the example blocks the import by running the subprocess with `sys.modules`
+  poisoned through a one-line `sitecustomize`-free `-c` wrapper: `sys.modules["tomllib"] = None`) gives the no-tomllib words.
+- e3 `refused`: `` `apps/service/src/pkg/a*.py` holds `*`, which mutmut reads as a pattern over mutant names; rename it, or run
+  `make mutation-full` `` for `*`, `?`, `[` as a table test, one example per character; an ordinary path, a path with a
+  space, `$`, `#`, `!`, `,`, `{`, a unicode letter, and `]` alone return `None` (a **hold**: only the three fnmatch openers
+  are refused; teeth: refuse every non-alphanumeric and see it fail).
+- e4 `versions`: a manifest naming `mutmut==3.8.0` in the dev group and one table; a manifest with two mutmut entries in two
+  groups lists both; a manifest naming neither (`{"tool.mutmut": None, "requirement": []}`); a lock holding `mutmut`, `libcst`
+  and the packages `libcst` resolves to (`pyyaml` on one marker, `pyyaml-ft` on another) keyed by name with every version,
+  while `pytest`, `coverage` and `textual` are **not** keys (D222's reason read as R6 reads it — a hold, teeth: add them and
+  see it fail); two versions of one name are both listed; non-TOML text and a TOML document without `package` raise
+  `Unreadable`.
+- e5 `main`: `--file src/pkg/a*.py` among matched ones is exit 2, one line, the fake `uv` never called, nothing created
+  under the service (a pre-placed `mutants/old.meta` still there); a service with no `[tool.mutmut]` is exit 2 with `<service>/pyproject.toml: no [tool.mutmut] table`,
+  `uv` never called; a valid invocation reaches the skeleton's exit 2 line (the next tasks' seam).
+- e6 **hold** (class): the same table read in a service nested one level (`apps/billing`) and with a path argument that has a
+  trailing `/` — the same answers.
+
+**GREEN** — `mutmut-mutation.py`: `Unreadable`, `targets`, `matched`, `refused`, `versions`, the argument handling and the
+first lines of `main`.
+
+**REFACTOR:** one `check_paths(values)` function used by `targets` for `source_paths` and for the refused-character set, so
+"readable" and "refused" cannot drift; the lock walk is one function from a package name to its closure.
+
+**Verify:** `make test TESTS="test_mutmut_config test_mutmut_generated test_select_tests_declarations test_select_tests_real_helpers test_select_tests_real_audit test_select_tests_real_declared test_toolkit test_utf8_io"`, then
+`make lint typecheck check-structure`. Commit by path; level line as above.
+
+**Files:** `assets/languages/python/scripts/mutmut-mutation.py`, `tests/test_mutmut_config.py` (new),
+`tests/test_select_tests_real_loaders.py` (the module's `READS` row and `PY_WRAPPER`).
+
+### T004 — [US2] Setup and environment: a host without `os.fork`, a project without `uv`, a lock that disagrees, an environment without mutmut 3.8.0, a stray `PYTEST_ADDOPTS`, one run at a time (R7 · AC-S42-10)
+
+- [ ] **Rule 4.** Needs T003. After the refusal and the table are read (both start nothing), `main` checks in this order, each
+  an exit 2 with the data-model line: no `os.fork` (or `sys.platform` Windows) → the WSL line; no `uv` on `PATH` → the `uv`
+  line; `uv sync --project <svc> --locked --quiet` refused → the `uv lock --project <svc>` line (the refusal is `uv`'s exit
+  status, never parsed); `importlib.metadata.version("mutmut")` read in the service's environment through `uv run --no-sync
+  --project <svc> python -c …` — absent, or not `3.8.0`, → the mutmut line naming what was found; `PYTEST_ADDOPTS` removed
+  from the environment handed to mutmut, and named in one line where it was set; an exclusive `fcntl.flock` on
+  `<svc>/.venv/mutmut-run.lock` held for the run, non-blocking, a second run exiting 2 with one line naming the lock (released
+  by the kernel when the process dies). The skeleton's exit-2 line remains after setup passes (T005 replaces it).
+
+**RED** (new `tests/test_mutmut_setup.py`, declared reads = the wrapper; the fake `uv` logs every call as `{"argv", "cwd",
+"env"}`; its `sync` exit status and its `python -c` output are the example's):
+- e1 no `os.fork` (the example poisons `os.fork` through the in-process loader, or runs `main` with `os` patched by the
+  subprocess driver's `del os.fork`): `mutation: mutmut needs os.fork, which this host does not have; run it under WSL`, exit 2,
+  the fake `uv` never called, nothing created under the service *(fails today: the skeleton's own line, and no WSL words)*.
+- e2 no `uv` (an empty temporary `PATH` that still finds `python3` by its absolute path): the data-model's `uv` line, exit 2.
+- e3 `uv sync` fails (fake exits 1 with a message on stderr): exit 2, `<service>/uv.lock does not agree with
+  <service>/pyproject.toml; run uv lock --project <service>, then this again`, `mutmut` never started; the call recorded is
+  `sync --project <service> --locked --quiet` with cwd the project root, and the same invocation is made for a scoped and a
+  swept run (class over `--file` present/absent).
+- e4 the environment's mutmut: absent (the fake `python -c` prints nothing and exits 1), `3.7.0`, `3.8.1`, `3.8.0` — the first
+  three are exit 2 with `mutmut is not installed in …'s environment` / `mutmut 3.7.0 installed in …` (data-model's line, found
+  or "is not"); `3.8.0` passes the check *(fails today: no check)*.
+- e5 `PYTEST_ADDOPTS="-n 2"` in the caller's environment: the fake `uv` records that `PYTEST_ADDOPTS` is **absent** from the
+  environment of every call after the check, and the output carries the data-model's line once; without it set, no such line.
+  Other variables (`PYTHONPATH`, `VIRTUAL_ENV`) are passed through unchanged (a **hold**; teeth: clear the whole environment
+  and see it fail).
+- e6 two runs of one service: the first holds the lock (the fake `uv` waits on a pipe the example controls, under a timeout);
+  the second exits 2 with one line and never calls `uv sync`; after the first ends, a third run is not refused (the kernel
+  released the lock — the example kills the first with a signal and checks it); two runs of two different services at once
+  both proceed (class: the lock is per service).
+- e7 **hold, with teeth** (nothing is fetched): in every example the recorded argv of every call to `uv` is `sync … --locked`,
+  `run --no-sync …` — never `uv pip`, `uv add`, `uv run` without `--no-sync`, `uvx`, `pip` — *(teeth: drop `--no-sync` from one
+  call and see it fail)*; no file under the service other than `.venv/mutmut-run.lock` is written by setup.
+
+**GREEN** — `mutmut-mutation.py`: `check_host`, `ensure_synced`, `check_mutmut_version`, `mutmut_env`, `service_lock`, called
+in that order after the config.
+
+**REFACTOR:** `main` becomes the ordered list of its checks (refusal, table, host, uv, sync, version, lock), each returning an
+exit or nothing, so the order the rules fix is read in one place; one place spells a `mutation: ` line.
+
+**Verify:** `make test TESTS="test_mutmut_setup test_mutmut_config test_mutmut_generated test_select_tests_declarations test_select_tests_real_helpers test_select_tests_real_audit test_select_tests_real_declared test_toolkit test_utf8_io"`, then
+`make lint typecheck check-structure`; the new module once under `CI=true`. Commit by path; level line as above.
+
+**Files:** `assets/languages/python/scripts/mutmut-mutation.py`, `tests/test_mutmut_setup.py` (new),
+`tests/test_select_tests_real_loaders.py` (the module's `READS` row).
+
+### T005 — [US2] Generate, then run: a fresh `mutants/`, mutmut's own generation, the names read from `.meta`, an empty file is *no mutant to run*, `mutmut run` handed exactly those names (R3, R5 · AC-S42-6, AC-S42-4 fresh `mutants/`, AC-S42-3 own directory and configuration)
+
+- [ ] **Rule 5.** Needs T004 (the setup it follows). `<svc>/mutants/` is deleted before every run (and kept after: it is the report).
+  Generation: `uv run --no-sync --project <svc> python -c <snippet>` from the service directory, the snippet making the same
+  calls `mutmut run` makes before it collects stats (R3). Then, per given file (`src/…` within the service), `mutants/<file>.meta`'s
+  `exit_code_by_key` is read: a given file with no `.meta` prints `not mutated <service>/<file> — outside mutmut's configured
+  targets` and is dropped; no `--file` left prints the *nothing under …* line, exit 0; every remaining file's `exit_code_by_key`
+  empty prints `no mutant to run — <files>: mutmut found no function to mutate in it|them`, exit 0, and `mutmut run` is **never
+  started**; otherwise `scoped to <n> given file(s): <files> — <m> mutant(s)` and `uv run --no-sync --project <svc> mutmut run --
+  <every key of the given files>` from the service directory (a sweep, no `--file`: `mutmut run` with no names). A changed
+  `pkg/__init__.py` runs that file's keys only (its submodules share the `pkg.` prefix; the names come from the file's own
+  `.meta`, never a pattern). The wrapper prints `mutmut exited <code> (…)` and — until T006 — ends exit 2 with the skeleton's
+  one line (a transient that can only fail; the one exception is the exit-0 *no mutant to run* paths above, which are final).
+
+**RED** (in new `tests/test_mutmut_verdict.py`, declared reads = the wrapper; the fake `uv` writes the `.meta` files the
+example hands it for the `python -c` call, logs `run … mutmut run -- <names>` and exits as told; setup passes via a
+`3.8.0` answer):
+- e1 a scoped run of `src/pkg/a.py` whose `.meta` holds three keys: the call order is `sync`, `run … python -c`, `run … mutmut
+  run -- pkg.x_f__mutmut_1 pkg.x_f__mutmut_2 pkg.x_g__mutmut_1` (the exact keys, in `.meta` order), cwd the service directory;
+  first line `scoped to 1 given file(s): src/pkg/a.py — 3 mutant(s)`; `mutmut exited 0 (its exit status and the output above
+  are mutmut's, never the verdict; the .meta files are)` is printed *(fails today: the skeleton exits 2 before generation)*.
+- e2 clean slate: a `mutants/` from an earlier run (an old `.meta` with a `0` that would read as a survivor, a stale
+  `mutmut-stats.json`) is gone before the fake runs (the fake asserts it) and is **present** after (the new one) — *(teeth: skip
+  the delete and see the stale-results example below pass wrongly)*; a run that writes no `.meta` does not read the old one.
+- e3 no mutant to run: a given file whose `.meta` is `{"exit_code_by_key": {}}` — the starter's types-only `read_models.py` — is
+  `no mutant to run — src/pkg/types.py: mutmut found no function to mutate in it`, exit 0, and the fake never saw `mutmut run`;
+  two such files read `in them`; one empty and one holding keys runs `mutmut run` with the non-empty file's keys only.
+- e4 a given file with no `.meta` (a file `[tool.mutmut]` leaves out) is named `not mutated … — outside mutmut's configured
+  targets`, exit 0 when nothing is left (the *nothing under …* line), `mutmut run` never started; a given file that is unmatched
+  beside a matched one runs the matched one only and names the other.
+- e5 `pkg/__init__.py`: `.meta` of `src/pkg/__init__.py` holds `pkg.x_health__mutmut_1`; `src/pkg/sub.py` holds `pkg.sub.x_f__mutmut_1`
+  and is **not** given; the run is handed `pkg.x_health__mutmut_1` only, never `pkg.*` or the submodule's key.
+- e6 a sweep (no `--file`): `mutmut run` is started with no names after the generation step; the fake sees no `--` (class over
+  scoped/swept for the clean slate and the cwd).
+- e7 two services: `apps/service` and `apps/second`, each run from its own directory with its own `pyproject.toml` read (the
+  fake records cwd; a different `source_paths` in the second is honoured); one's `mutants/` is not touched by the other's run.
+- e8 `./`-prefixed and trailing-slash forms of `--file` and of the service are read as the same file (a **hold**; teeth: drop the
+  normalisation and see e1 fail for `./src/pkg/a.py`).
+
+**GREEN** — `mutmut-mutation.py`: `clean`, `generate`, `keys_of`, `run_mutmut`, `scoped_names`, the printer lines.
+
+**REFACTOR:** the snippet is one named constant with a docstring naming the 3.8.0 functions it calls (R3) and the sentence
+"sweeps on a pin change (T008) and refuses another version (T004) because of this"; the `.meta` path is built in one function
+shared with T006's reader.
+
+**Verify:** `make test TESTS="test_mutmut_verdict test_mutmut_setup test_mutmut_config test_mutmut_generated test_select_tests_declarations test_select_tests_real_helpers test_select_tests_real_audit test_select_tests_real_declared"`, then
+`make lint typecheck check-structure`; under `CI=true` once. **And the hand probe** (not a test): the snippet run once against a
+real mutmut 3.8.0 in a starter under `/tmp/s42/` — report what it printed (the demo's `mutants/src/<pkg>/settings.py.meta` with 14
+keys and `application/ports/read_models.py.meta` with `{}` are what R3 saw). Commit by path; level line as above.
+
+**Files:** `assets/languages/python/scripts/mutmut-mutation.py`, `tests/test_mutmut_verdict.py` (new),
+`tests/test_select_tests_real_loaders.py` (the module's `READS` row).
+
+### T006 — [US2] The verdict is the `.meta`'s, by D212's rule: killed passes, no tests is counted, everything else fails, a silenced mutant fails the run (R4 · AC-S42-5; D219's reason applied, *Applied, not decided* 2)
+
+- [ ] **Rule 3.** Needs T005. After `mutmut run`, the wrapper reads `exit_code_by_key` of the judged files — the given files
+  (scoped) or every file that has a `.meta` (swept) — and decides with its own copy of 3.8.0's table (data-model): `1`, `3` pass;
+  `5`, `33` are counted on the last line (`no tests`, "reported, never failed"); every other code, `null` and any code not in the
+  table fail, one line per mutant `<status> <service> <mutant name> (mutmut show <mutant name> in <service>; report
+  <service>/mutants/)`, an unlisted code as `unknown (exit <n>)`; a sweep with no mutant at all is `mutmut found nothing to
+  mutate in <service>; a pass on nothing is not a pass`, exit 1; the last line is `<n> mutants: <k> killed, <u> no tests (reported,
+  never failed)[, <s> survived, <t> timed out, …]; passed|failed — report <service>/mutants/`. Before the verdict, a `# pragma: no
+  mutate block|start|end` in a judged file, or a non-empty `do_not_mutate_patterns` in the table, fails in one line each
+  (data-model's wording, file and line, or the `pyproject.toml` line); the bare `# pragma: no mutate` on a line is not flagged
+  and needs no reason (*Applied, not decided* 2). `mutmut`'s exit status is printed and never the verdict. The skeleton's exit-2
+  line is gone.
+
+**RED** (in `tests/test_mutmut_verdict.py`; the fake `uv` writes each example's results into the `.meta` of its `mutmut run`
+call):
+- e1 a scoped run, every key `1`/`3`: argv as T005 e1; last line `3 mutants: 3 killed, 0 no tests (reported, never failed); passed
+  — report apps/service/mutants/`; exit 0 *(fails today: the transient exits 2)*.
+- e2 the class over codes (a table test over data-model's whole table, one example per code): `0` survived, `36`, `24`, `-24`,
+  `152`, `255` timeout, `35` suspicious, `-11`, `-9` segfault, `null` not checked, `2` check was interrupted by user, `34`
+  skipped, `37` caught by type check, `99` and `-1` `unknown (exit 99)` each fail the run, exit 1, with the line naming
+  service, mutant and status; `1`, `3` pass; `5`, `33` pass and are counted (`n no tests` appears and `reported, never failed`
+  stays); two failing mutants give two lines and the last line counts both statuses.
+- e3 mutmut's exit code is printed and never decides: a fake that exits 0 with a survivor fails (exit 1) — R4's observed 114
+  survivors under exit 0; one that exits 1 with every key `1` passes; one that exits 1 with every key `null` (R7's
+  `PYTEST_ADDOPTS` shape) fails as `not checked`, never as *no tests*.
+- e4 zero mutants: scoped is T005 e3 (hold here, no `mutmut run`); a sweep whose every `.meta` is empty is the *found nothing*
+  line, exit 1.
+- e5 scoped means scoped: a `.meta` of a file that was **not** given holding a `0` does not fail a scoped run for the given
+  file's kills; a sweep judges every file's `.meta`.
+- e6 silencing: `src/pkg/a.py:12` holding `# pragma: no mutate block`, `… start`, `… end` each fail the run in one line naming
+  `<service>/src/pkg/a.py:12` with the data-model words (a source file is read with `encoding="utf-8"`, a file that cannot be
+  decoded fails closed with its own line); a line `# pragma: no mutate` (bare, with or without a trailing reason) and
+  `# no mutate` / `# pragma: no cover` are **not** flagged (a **hold**; teeth: flag every `pragma` and see it fail); a table with
+  `do_not_mutate_patterns = ["x"]` fails with the `pyproject.toml` line, `[]` does not; a pragma in a file not judged (scoped,
+  not given) is not read.
+- e7 **hold** with teeth: no file under the service other than `mutants/` and `.venv/mutmut-run.lock` is written (hash of the
+  service tree before/after, ignoring those); `mutmut run` is never passed `--max-children`, `--no-progress` or any option the
+  wrapper does not own (the argv is `run` then `--` then names — teeth: add a flag and see it fail).
+
+**GREEN** — `mutmut-mutation.py`: `STATUS` table (one dict: `PASS`, `COUNTED`, every other code fails by default), `read_meta`,
+`judge`, `silenced`, the printer.
+
+**REFACTOR:** the status table is one dict with a default, so an unknown code fails closed by construction rather than by a
+branch; the summary line is built from the dict's order.
+
+**Verify:** `make test TESTS="test_mutmut_verdict test_mutmut_setup test_mutmut_config test_mutmut_generated test_select_tests_declarations test_select_tests_real_helpers test_select_tests_real_audit test_select_tests_real_declared"`, then
+`make lint typecheck check-structure`; under `CI=true` once. Commit by path; level line as above.
+
+**Files:** `assets/languages/python/scripts/mutmut-mutation.py`, `tests/test_mutmut_verdict.py`.
+
+### T007 — [P] [US2] Python is wired in the scope script: a changed module mutates alone, an unmatched one starts nothing, the other service starts no mutmut, a refused path refuses its service, `java-quarkus` still refuses (R6 · AC-S42-2, -3, -8, -11; D138 items 1 and 5)
+
+- [ ] **Rule 6.** Needs T003 (`targets`/`matched`/`refused` loaded by path); does **not** need T004–T006 (every example runs
+  behind `FakeRunner`; the real wrapper is T012's), so it may run beside them. In `mutation-scope.py`, tables and dispatch only:
+  `WIRED = ("go", "java-spring", "typescript", "python")`, `PRODUCTION_ROOT` gains `"python": "src/"`, `PLACEHOLDERS` loses
+  Python (`java-quarkus` stays), `PYTHON_REFUSED` and its use in `refusal` (`:801`) are removed, `REPORTS` gains `"python":
+  "mutants"`; `Tools.plan/run/sweep` hand Python to the wrapper as TypeScript's are handed to `stryker-mutation.py`
+  (`python3 scripts/mutmut-mutation.py <path> --file <within>` per file, paths relative to the service); the wrapper is
+  **loaded** for the table, never copied; a matched file is scoped with `--file`; a file the table does not match is named
+  *outside mutmut's configured targets* and the runner is not called; a changed path holding `*`, `?` or `[` refuses its
+  service (`refuse <service> — <refusal words>`, status 2, counted `refused`, no tool started, never a sweep, the other
+  services still run and the run fails after all have run); `drop_report` removes a skipped Python service's earlier `mutants/`;
+  two Python services, and Go beside Python, run only the changed one and name the other skipped; a test-only change, a deleted
+  module and a file outside the table are D138's lines, exit 0; `java-quarkus` still refuses; `SINCE` and D117's borders hold;
+  `make mutation-full SINCE=<ref>` sweeps Python whole (the recipe carries no `SINCE`). (`factory_recipe` was done in T002.)
+
+**RED** (new `tests/test_mutation_scope_python.py`; `FakeRunner`; real git; services declared as `python:apps/service
+python:apps/second` / `go:apps/service python:apps/second` / `java-quarkus:apps/service python:apps/second`; the
+`tests/mutation_scope_fixture.py` helpers are read, not edited):
+- e1 `slice/S1`, one changed `apps/service/src/pkg/health.py`: first line `mutation: scoped to 1 changed file(s) since `main` at
+  <short>: apps/service/src/pkg/health.py`, `mutation: scope apps/service — src/pkg/health.py`, last line `mutation: 1 scoped, 0
+  swept, 0 skipped, 0 refused; passed`; the fake saw `(python, apps/service, ["src/pkg/health.py"])` once *(fails today: Python is a
+  placeholder and refuses)*.
+- e2 two Python services, a change in one: the other is `skip apps/second — no changed production file`, its runner not called,
+  and the `mutants/` it held from an earlier run is gone (`drop_report`); likewise Go + Python with the change in the Python side
+  (Gremlins not called, its `gremlins.json` gone) and in the Go side (mutmut not called); each service is handed its own path.
+- e3 a changed `tests/test_x.py` alone, a deleted `src/pkg/old.py` alone (D138's lines), and a changed file that
+  `[tool.mutmut]` leaves out (`only_mutate` not matching, `do_not_mutate` matching, a file outside `source_paths`): `mutation:
+  not mutated apps/service/<file> — outside mutmut's configured targets` (the test and deleted cases carry S08's own words),
+  `no mutant to run — every changed production file is outside the tools' targets` where that is the case, exit 0, the runner
+  **not** called; a matched and an unmatched file together: only the matched one is handed over and the other is named.
+- e4 a changed `apps/service/src/pkg/a*.py` (and `?`, `[`) refuses its service: `mutation: refuse apps/service — `apps/service/src/pkg/a*.py`
+  holds `*`, which mutmut reads as a pattern over mutant names; rename it, or run `make mutation-full``, last line `0 scoped, 0
+  swept, 0 skipped, 1 refused; failed: apps/service`, exit 2; the fake not called, no sweep; the refusal wins over "outside
+  configured targets" (an unmatched refused path is refused); next to a good file in the same service the service is refused whole;
+  next to a good file in another service that one runs and the run exits 2; the dry run says `would fail`, and `drop_report`
+  does not delete the earlier `mutants/` of a refused service. A path with a space, `$`, `!`, `,` or `{` is **not** refused (hold).
+- e5 `java-quarkus:apps/service` beside `python:apps/second`, a change in each: Quarkus is `refuse` with its setup message (the
+  `Configure PIT …` text), Python `scope`; Python-alone is no longer refused; the Quarkus refusal never names mutmut (AC-S42-11,
+  hold with teeth: put `mutmut` in the Quarkus message and see it fail).
+- e6 **hold**: `SINCE`, the borders (`ci`, trunk, detached, no base) and an empty change set behave for Python as for Go and
+  TypeScript — `make mutation SINCE=HEAD~1` scopes; on `main` the whole run is `mutation-full`; a branch with no change is `no
+  production file changed` *(teeth: make the empty set sweep and see it fail)*; `factory_recipe` for `python` services has no
+  `SINCE`.
+- e7 a config whose table cannot be read (`source_paths = []`, no `[tool.mutmut]`, no `tomllib`) is the service's sweep via
+  `Plan.unreadable` — the line names `apps/service/pyproject.toml` and the run calls `sweep`, not `run` *(the sweep cause for a
+  changed table is T008; here only that the runner is not asked to scope it)*.
+- e8 the S08 tests that used Python as their placeholder example are re-pointed (named lines of `test_mutation_placeholders.py` —
+  `PYTHON_ENDING`, the Python entries of `FILES`, the loops at `:67–68`, `:77–78`, `:97–108`, `:128–141`, with `test_d149_*`'s Python
+  examples deleted or inverted and the quarkus-only hold kept — and the Python rows of `test_mutation_words_script.py:78–81`,
+  `test_mutation_dry_run.py:96`, and `test_stryker_after_run.py:167` and its example) at `java-quarkus` (placeholder) or moved to
+  the wired class; every example they held for the placeholder class still holds with Quarkus *(they fail first, for the reason
+  that Python is no longer a placeholder)*.
+
+**GREEN** — `mutation-scope.py`: the tables, `Tools`, the Python runner (argv built in one function), `drop_report`, the
+refusal wiring, the wrapper loader (generalised from TypeScript's, one loader per wrapper path).
+
+**REFACTOR:** the Python runner, TypeScript's and Go's share the "intersect with the tool's own table, name what is left" step
+and the `refused`/`unreadable` branch; no new `mutation:` line is spelled outside the printer.
+
+**Verify:** `make test TESTS="test_mutation_scope_python test_mutation_placeholders test_mutation_words_script test_mutation_dry_run test_stryker_after_run test_mutation_targets test_mutation_scope_typescript test_mutation_scope_go test_mutation_scope_spring test_mutation_change_set test_mutation_borders test_select_tests_declarations test_select_tests_real_helpers test_select_tests_real_audit test_select_tests_real_declared test_toolkit test_utf8_io test_changelog"`,
+then `make lint typecheck check-structure`; the new module once under `CI=true`. Commit by path; level line as above.
+
+**Files:** `assets/toolkit/scripts/mutation-scope.py`, `tests/test_mutation_scope_python.py` (new),
+`tests/test_mutation_placeholders.py` (named lines), `tests/test_mutation_words_script.py` (`:78–81` only),
+`tests/test_mutation_dry_run.py` (`:96` only), `tests/test_stryker_after_run.py` (`:167` and its example only),
+`tests/test_select_tests_real_loaders.py` (a `READS` row if the new module is declared; otherwise none — it uses
+`mutation_scope_fixture`, which the helpers pin leaves undeclared).
+
+### T008 — [P] [US2] What sweeps a Python service: its `[tool.mutmut]`, its mutmut requirement, its mutmut or libcst lock entries, the wrapper, a table it cannot read, an ignored file (R7 · AC-S42-7; D138 item 3, D216, D222's reason)
+
+- [ ] **Rule 7.** Needs T007 (same file, serial with it) and T003 (`versions`). `sweep_causes` gains data-model's table:
+  `<service>/pyproject.toml` whose parsed `[tool.mutmut]` or mutmut requirement strings differ between base and working tree →
+  that service; `<service>/uv.lock` whose `mutmut` or `libcst`-closure versions (keyed by name, every version) differ → that
+  service; `scripts/mutmut-mutation.py` changed → every Python service; a side that cannot be parsed, or no `tomllib` → that service
+  sweeps (fail closed); a table `targets()` cannot read → that service (`Plan.unreadable`); an ignored file under
+  `<service>/src/` → that service (`unlisted`, via `PRODUCTION_ROOT`). Each line names the file. A swept service runs `sweep`,
+  the wrapper without `--file`.
+
+**RED** (new `tests/test_mutation_sweeps_python.py`; `FakeRunner` recording scope versus sweep; real git with the base commit
+holding the old files):
+- e1 `apps/service/pyproject.toml` with `[tool.mutmut]` changed (a key added, `source_paths` altered; also the table added, also
+  removed): `sweep apps/service — `apps/service/pyproject.toml` changed`; a second Python service still scopes to its own file; a
+  Go service is unaffected.
+- e2 `scripts/mutmut-mutation.py` changed: every Python service sweeps, naming the file; a Go and a TypeScript service do not;
+  `scripts/go-mutation.py` or `scripts/stryker-mutation.py` changed does not sweep a Python service (S08's/S41's hold with
+  Python present).
+- e3 the pin: the dev group's `mutmut==3.8.0` → `mutmut==3.8.1` sweeps that service only; an unrelated dependency changed
+  (`ruff`), key order, whitespace or a comment in the file do **not** (the second half passes today, a hold with teeth: compare
+  raw text and see it sweep); an unparseable `pyproject.toml` at the base or in the working tree sweeps naming the file; a
+  `pyproject.toml` with no `tomllib` (the example runs the scope script's loader with `tomllib` blocked) sweeps.
+- e4 the lock: `apps/service/uv.lock` with `mutmut` `3.8.0` → `3.8.1` sweeps; `libcst` `1.9.0` → `1.9.1` sweeps; `pyyaml` (in
+  libcst's closure) moving sweeps; `pytest`, `coverage` or `textual` moving does **not** (R6/D222 — a hold with teeth: widen the
+  closure to every package and see it fail); a second copy of `libcst` at another version in the lock counts as a version change
+  (keyed by name, every version); a lock that does not parse sweeps; `apps/second/uv.lock` unchanged does not sweep `apps/second`.
+- e5 a table `targets()` cannot evaluate (`source_paths = ["s*"]`, no `[tool.mutmut]`) sweeps that service naming the manifest;
+  with the file unchanged since base it still sweeps (the sweep is about the unreadable table, not the diff).
+- e6 an ignored file under `apps/service/src/` (`.gitignore`d, e.g. `src/pkg/gen/x.py`): `unlisted` sweeps that service, named.
+- e7 two causes at once (table and a production file in one service): the service sweeps once, naming the manifest; the
+  production file is not additionally scoped. `SINCE` runs sweep on the same triggers (S08's hold, with Python).
+
+**GREEN** — `mutation-scope.py`: the Python rows of `sweep_causes`, the `versions` comparison through the loaded wrapper, the
+swept Python command.
+
+**REFACTOR:** the Python causes join S08's `is_sweep(path)` table and TypeScript's comparison helper (one `moved(base, now)` for
+both ecosystems); no second diff is run.
+
+**Verify:** `make test TESTS="test_mutation_sweeps_python test_mutation_scope_python test_mutation_sweeps test_mutation_sweeps_typescript test_mutation_change_set test_select_tests_declarations test_select_tests_real_helpers test_select_tests_real_audit test_select_tests_real_declared test_toolkit test_utf8_io"`,
+then `make lint typecheck check-structure`; the new module once under `CI=true`. Commit by path; level line as above.
+
+**Files:** `assets/toolkit/scripts/mutation-scope.py`, `tests/test_mutation_sweeps_python.py` (new),
+`tests/test_select_tests_real_loaders.py` (a `READS` row if declared).
+
+### T009 — [P] [US2] The stamp, `check-imports` and the scoped gate hold after a Python run (R5, R8 · AC-S42-9)
+
+- [ ] **Rule 8.** Needs T006 and T007 (real runs of the wrapper with a fake `uv`, and the scope script's Python dispatch), and T002
+  (the ignore line). `assets/toolkit/scripts/verify-stamp.py` gains one `EXEMPT` row — `apps/*/mutants/` — so a run's copy of `src/`
+  and `tests/`, its `.meta` files and `mutmut-stats.json` are neither read as the stamp's input nor as a reach.
+  `assets/toolkit/scripts/check-imports.py` prunes a directory named `mutants` at the root of a Python deployable `project.json`
+  records, beside its `pyproject.toml`, and nowhere else (a package named `mutants` under `src/` is still read, a directory
+  named `mutants` in a TypeScript or Go deployable is not pruned) — in `skipped()`, beside the `target` rule, by the record,
+  never by a file the tree holds alone.
+
+**RED** (new `tests/test_mutmut_after_run.py`, undeclared: it generates; a project generated once per class, `slice/S1`, a
+baseline recorded; a fake `uv` on `PATH` writes the `.meta` files, runs nothing else, and for a second project leaves a failing
+result):
+- e1 after a passing and after a failing `make mutation`, and after `make mutation-full`: `git status --porcelain --ignored`
+  differs from before only by `apps/service/mutants/` (ignored); `verify-stamp.py`'s ignored-files digest is what it was; the stamp
+  reuses; `make verify-scoped` on the branch is not broadened *(fails today: the digest includes the copy under `mutants/`
+  — the RED that brings the row; teeth: remove the row and see it fail)*.
+- e2 `check-imports`: a `mutants/src/<pkg>/` copy beside `src/<pkg>/` in a Python deployable (a copy that would be read as a
+  second set of modules and trip a layering or duplicate check) is neither read nor a violation, with `project.json` recording
+  the deployable; a **hold** with teeth: `mutants/` at the root of a Go or TypeScript deployable, and a `mutants` directory that
+  is not at a recorded Python deployable's root (`apps/service/src/mutants/`, `apps/other/docs/mutants/`) **is** read (teeth: prune
+  every `mutants` and see the second fail); a Python package named `mutants` under `src/` is read.
+- e3 a left-behind `mutants/` that holds a real `.venv`-like `pyvenv.cfg` or a symlink pointing back into the service: `verify-scoped`
+  reads neither as a reach (`reach.py` unchanged); pinned for both shapes, with teeth (point a link outside the deployable and see a
+  reach appear).
+- e4 `java-quarkus` still exits 2 with its setup message on `make mutation` (changed file) and `make mutation-full` (**hold,
+  teeth:** change the Quarkus message and see it fail), and a Go service beside a Python one: the changed one runs, the other is
+  skipped; a Python service beside a Quarkus one: Python runs, Quarkus is `refuse`, the run exits 2 (AC-S08-6's class).
+- e5 **hold** (D117's borders and `SINCE` for Python, D150): `make mutation` in CI markers, on `main`, detached and with an empty
+  `SINCE` sweeps (`mutation-full`); `SINCE=<ref>` scopes Python on any checkout; `make mutation-full SINCE=<ref>` sweeps Python
+  **whole** — the recipe line carries no `SINCE`, and the fake `uv` sees no `--`-names after `mutmut run`.
+
+**GREEN** — `verify-stamp.py`: the one `EXEMPT` row, in the grouped cache rows beside `.stryker-tmp/` and
+`apps/*/reports/mutation/`, in the same form; `check-imports.py`: the `skipped()` clause (the `mutants` literal built as a
+segment or given a reasoned `NOT_AN_INPUT_FOR`/`EXEMPT_PATHS` row if `test_verify_scoped_table_held` or
+`test_verify_stamp_lists` reads it as a path). If e3 or e5 fail for a real reason the delegate stops and names it: `reach.py` and
+`rules.py` are not in this manifest.
+
+**REFACTOR:** the `mutants` clause shares the "root of a recorded deployable of kind X, beside its manifest" helper with the Java
+`target` rule rather than copying it.
+
+**Verify:** `make test TESTS="test_mutmut_after_run test_mutation_placeholders test_mutation_scope_python $(ls tests | grep -E '^test_verify_stamp' | sed 's/\.py$//' | tr '\n' ' ') $(ls tests | grep -E '^test_verify_scoped_' | sed 's/\.py$//' | tr '\n' ' ') test_scoped_adopted test_gates_imports test_toolkit test_utf8_io"`, then
+`make lint typecheck check-structure`; under `CI=true` once (the root `Makefile` runs the stamp files as this repository's own
+stamp — say so in the report). Commit by path; level line as above.
+
+**Files:** `assets/toolkit/scripts/verify-stamp.py`, `assets/toolkit/scripts/check-imports.py`,
+`tests/test_mutmut_after_run.py` (new), `tests/test_verify_stamp_lists.py` (a reasoned `EXEMPT_PATHS` row if the scan demands it).
+
+### T010 — [P] [US2] The words: the Makefile note, the mutation command, `UNWIRED`, the skill, the obligations and requirements pages, S41's fragment narrowed, ADR 0010 held (R9 · AC-S42-11 placeholder half, the *wired* half of the criteria)
+
+- [ ] **Rule 9.** Needs T002 (`mutmut.py` exists). Disjoint from the wrapper and scope-script tasks, so it may run beside them. The
+  words describe what T003–T009 build, as the plan and data-model fix them; this task reads none of their code. A Python note above
+  the target in `mutmut.py` (what runs; the `.meta` report at `apps/<service>/mutants/`; that the verdict is decided in
+  `scripts/mutmut-mutation.py`; the escape for an equivalent mutant — the bare `# pragma: no mutate` named in the commit, and that
+  `block`, `start`/`end` and `do_not_mutate_patterns` fail the run; that the default starter's sweep reports its own survivors and the
+  minimal one is green, written to *Handed back* 1 option (a) **without promising a follow-on**; why `tests/integration` is left out;
+  why `-p no:xdist`); `mutation_command(["python"])` names mutmut, the wrapper and the `.meta` report, `UNWIRED` names only
+  `java-quarkus`; `mutation-testing/SKILL.md` says a generated Python service is already wired and keeps every other sentence;
+  `docs/backend-obligations.md` and `docs/requirements.md` say the same (the latter's "**Python** exits 2 asking for `mutmut` on the
+  PATH" is replaced; "only three backends have one wired up" becomes four); `changelog.d/stryker-mutation.md`'s two Python clauses
+  (*Python and `java-quarkus` still have no tool wired…*, *…stay recorded stubs…*) say `java-quarkus` only (*Handed back* 2); ADR 0010
+  is read and agrees (its `Status` is `Proposed`, its decision line names `mutmut==3.8.0`).
+
+**RED** (new examples in `tests/test_mutmut_generated.py`, named lines of `tests/test_mutation_words.py`, `tests/test_stryker_generated.py`,
+`tests/test_stryker_migrate.py`):
+- e1 `mutation_notes([service("service", "python")])` is non-empty and carries the facts above (each a sentence the test looks
+  for); `__APP__` never survives and the service's own paths substitute; Go's, Spring's, Quarkus's and TypeScript's notes are byte for
+  byte what they were *(fails today: Python has no note — `test_mutation_words.py:102` is inverted for Python only)*.
+- e2 `mutation_command(["python"])` and a mixed `["go", "python"]` say `scripts/mutmut-mutation.py`, `mutants/`, `make mutation
+  SINCE=<review-base>`, and that CI and the trunk sweep (S08's sentences stay); `mutation_command(["java-quarkus"])` still says the
+  target refuses until a tool is wired; `UNWIRED` names exactly `java-quarkus` and not Python *(fails today: Python is in `UNWIRED`,
+  `test_stryker_generated.py:265`'s assertion is inverted here)*.
+- e3 `mutation-testing/SKILL.md`: the sentence saying a Python project must hand-wire mutmut is gone; the replacement says a
+  generated service is already wired and names the table, the wrapper and the report; the file equals the old one except for that
+  passage (a hold; teeth: edit another line).
+- e4 `docs/backend-obligations.md` and `docs/requirements.md` say Python's mutation tool is mutmut and wired; no `docs/` page still
+  says it is a placeholder or exits 2 asking for mutmut on the PATH; the gates page is unchanged. ADR 0010's `Status` is `Proposed`
+  and its decision line names `mutmut==3.8.0` (a hold).
+- e5 S41's fragment: first line `MINOR`, its Catch-up paragraph still stands alone and names `java-quarkus` as a recorded stub and
+  **not** "Python and `java-quarkus`"; `test_mutation_words.py`'s D149 fragment examples (`:174–182`) and `test_stryker_migrate.py:67`
+  are re-pointed at what the fragment now says (the clause about *until a later slipwai release wires mutmut* goes with Python's
+  refusal, which T007 removed); `tests/test_changelog.py` holds.
+- e6 the generated half: a Python project's `Makefile` note is the `mutmut.py` text; `make help` shows `mutation-full` with its
+  description unchanged; `rules.json` from the generated text equals `rules.json` from the make database (S06's reader, imported)
+  *(teeth: add a global variable to the note and see it fail)*.
+
+**GREEN** — `mutmut.py` (the note text, constants), `mutation.py` (`MUTATION_NOTES`, `NAMED_FILES`, `UNWIRED`, the report line;
+ends ≤ 330 lines, shortening a note rather than splitting a file — a delegate that cannot make it fit stops and names it),
+`native_commands.py` only if the note is assembled there (net ≤ 2), `assets/toolkit/skills/mutation-testing/SKILL.md`,
+`docs/backend-obligations.md`, `docs/requirements.md`, `changelog.d/stryker-mutation.md`.
+
+**REFACTOR:** the `.meta` report path is spelled once in `mutmut.py` and used by the note, the command text and the
+fragment-facing sentence.
+
+**Verify:** `make test TESTS="test_mutation test_mutation_words test_mutmut_generated test_stryker_generated test_stryker_migrate test_backend_obligations test_provisional_gate test_commands test_scoped_ladder test_docs_index test_scoped_targets test_changelog test_toolkit test_utf8_io"`,
+then `make lint typecheck check-structure`; the touched modules once under `CI=true`. Before editing a doc sentence:
+`grep -rln "<sentence>" tests`. Commit by path; level line as above.
+
+**Files:** `src/slipwai/project/mutmut.py`, `src/slipwai/project/mutation.py`, `src/slipwai/project/native_commands.py` (only if the
+note is assembled there), `assets/toolkit/skills/mutation-testing/SKILL.md`, `docs/backend-obligations.md`, `docs/requirements.md`,
+`changelog.d/stryker-mutation.md` (the Python clauses only), `tests/test_mutmut_generated.py` (new examples),
+`tests/test_mutation_words.py` (named lines), `tests/test_mutation.py` (`:112–114` only, if a pin there breaks),
+`tests/test_stryker_generated.py` (`:265` and `:282–283` only), `tests/test_stryker_migrate.py` (`:67` only),
+`tests/test_scoped_targets.py` (`PRE_SLICE` hashes only — the note sits above `# Scoped gate`).
+
+### T011 — [US2] A project made before is brought forward, and the fragment says what that asks of it (R10 · AC-S42-12)
+
+- [ ] **Rule 10.** Needs T009 and T010 (everything `migrate` must bring now exists) and T008. The fragment's **Catch-up.** paragraph is
+  completed: it stands alone and names the `uv.lock` conflict in every Python service (take the factory's side, then run `uv lock
+  --project apps/<svc>` for each service), that a leftover `mutants/` or `.mutmut-cache` may be deleted, that `make mutation` exits 2
+  until the lock is redone (the wrapper's `uv sync --locked` is refused), that `make mutation-full` now runs mutmut and its sweep of
+  the default starter reports the starter's own survivors (plan, *Handed back* 1(a), no promise of a follow-on), that Windows needs
+  WSL, that `java-quarkus` stays a recorded stub, that `mutmut` hand-wired in a project is to be removed or kept knowingly (the scope
+  script sweeps on the wrapper's change and refuses any pin but 3.8.0), that the `[tool.mutmut]` pragma forms other than the bare
+  one fail the run, and that no `project.json` key changes.
+
+**RED** (new `tests/test_mutmut_migrate.py`, undeclared; the technique of `tests/test_stryker_migrate.py` and
+`tests/test_scoped_migrate.py`, **failing, never skipping,** where the commit before this slice's first (`b9f16ef`) is not in the
+clone):
+- e1 the fragment: first line `MINOR`; a `**Catch-up.**` paragraph naming `uv.lock`, `uv lock --project apps/`, `mutants/`,
+  `.mutmut-cache`, `make mutation` exiting 2 until the lock is redone, `make mutation-full`, WSL, and the recorded stub;
+  `tests/test_changelog.py` holds *(fails today: the draft says only what T002 could say)*.
+- e2 a Python project generated by the commit before this slice's first, after `slipwai migrate`: `apps/service/pyproject.toml` names
+  `mutmut==3.8.0` in `dev` and a `[tool.mutmut]` table that parses to data-model's, `scripts/mutmut-mutation.py` exists and is
+  executable, `.gitignore` names `apps/*/mutants/`, `scripts/verify_scoped/rules.json` is regenerated, `mutation-full` is the wrapper's
+  line, and `make verify-scoped` on a slice branch of it is not broadened.
+- e3 a project made before whose `pyproject.toml` was edited by hand (an unrelated dependency added): `migrate` keeps the edit and adds
+  the pin and the table (three-way); `uv.lock` is reported as conflicting (or left to the person) and the example follows the Catch-up —
+  take the factory's lock, `uv lock --project apps/service` (skipped, with its reason, where `uv` or network is absent) — to `uv sync
+  --locked` accepted and `rules.text_problem(...) is None`; a wrapper or table the project edited is not overwritten silently (the
+  existing `migrate` rule for files the project owns, held with a mutmut file as the example); before the lock is redone, `make
+  mutation` exits 2 with the lock line (AC-S42-12's last clause).
+- e4 a Go-only project made before gains no mutmut file, and a project with two Python services gets the pin and the table in each
+  service and one wrapper.
+
+**GREEN** — `changelog.d/mutmut-mutation.md` completed. If e2–e4 fail for a real reason (the wrapper is not in `migrate`'s written set,
+`pyproject.toml` merges badly) the fix is the smallest one in a file this manifest names, RED seen first; where a needed file is not
+named the delegate stops and names it. If they pass at once they are written as holds and **seen to have teeth** (remove the wrapper
+from the written set and see e2 fail, restore) — the fragment is the guaranteed RED.
+
+**REFACTOR:** none expected; the fragment is edited for the reader who skips to its Catch-up.
+
+**Verify:** `make test TESTS="test_mutmut_migrate test_mutmut_generated test_stryker_migrate test_scoped_migrate test_changelog test_toolkit test_utf8_io"`,
+then `make lint typecheck check-structure`; under `CI=true` once. Commit by path; level line as above.
+
+**Files:** `changelog.d/mutmut-mutation.md`, `tests/test_mutmut_migrate.py` (new), and, only if e2–e4 prove a gap,
+`src/slipwai/project/mutmut.py` (named in the report if touched).
+
+### T012 — [US2] One real mutmut run on a generated starter (R11 · AC-S42-1, AC-S42-2, AC-S42-4, AC-S42-5 end to end)
+
+- [ ] **Rule 11.** Needs T011. This is the **heavy** test: it is the one place the fake `uv` of T004–T006 and the `FakeRunner` of
+  T007–T008 are checked against the real tool, mutmut 3.8.0 and libcst 1.9.0 (R1) — and the generation snippet and the `.meta` shape of
+  T005–T006. Its file is `tests/test_mutation_scope_real_python.py` and its module docstring says **heavy — S43's list**, as
+  `test_mutation_scope_real_typescript.py` carries its gate. It is gated by `backends_under_test()` naming `python`, `uv` on `PATH`
+  (and network for the first `uv sync`), `skipTest` otherwise; every `subprocess.run` carries a `timeout=` (the sweep up to 600 s).
+  **Honest about its RED:** the example proves behaviour T002–T011 produced, so it may pass at once. The delegate runs it first;
+  whatever the real run shows wrong in the wrapper, the table, the snippet or the dispatch (R3's calls, R4's code table, the `.meta` path,
+  the lock, the `PYTEST_ADDOPTS` handling) is this task's GREEN, RED seen first. If it passes untouched, it is committed as a hold and
+  **seen to have teeth** by the sanctioned route — change the wrapper so a survivor's code `0` passes, run, see the weakened-test
+  example fail, `git checkout -- <exact path>` — and the report says so.
+
+**RED/hold** (one class, examples sharing one generated project, `--profile standard --frontend none --http none --event-store
+memory` so the minimal starter is green, R9; `slice/S1` cut from its `main`; scratch under `/tmp/s42/`):
+- e1 a changed `apps/service/src/<pkg>/<module>.py` and a test that kills its mutants: `make mutation` exits 0; the first line names the
+  scope and its base, the last line counts it scoped; `apps/service/mutants/src/<pkg>/<module>.py.meta` holds the only keys that are not
+  `null`; fewer mutants than e4's sweep.
+- e2 the same module with the killing test weakened: `make mutation` exits 1 and names the survivor (`survived apps/service
+  <pkg>.x_…__mutmut_<n> (mutmut show … in apps/service; report apps/service/mutants/)`); the previous `mutants/` was replaced.
+- e3 a changed types-only module (the starter's `application/ports/read_models.py`-shaped file, declaring types only): *no mutant to run*,
+  exit 0, no `mutmut run` started (the run's `mutants/` holds `{}` for it); a changed `pkg/__init__.py` mutates that file's functions only.
+- e4 `make mutation-full` mutates the table's list: exit 0 on the minimal starter, every file under `src/` has a `.meta` and the sweep's
+  mutants are those of every file (no named exclusion — mutmut has no coverage denominator, R2).
+- e5 afterwards `git status --short` is empty and `make verify-scoped` is not broadened (AC-S42-9, end to end).
+
+**GREEN** — only what the real run proves wrong, in the files below; otherwise none.
+
+**REFACTOR:** none.
+
+**Verify:** `FACTORY_BACKENDS=python make test TESTS="test_mutation_scope_real_python test_mutmut_generated"` (a hand run says so in the
+report), then `make lint typecheck check-structure`; the module without `FACTORY_BACKENDS` is skipped, not failed. Commit by path; level
+line as above when a `src/` or `assets/` file changed, else "reaches no user".
+
+**Files:** `tests/test_mutation_scope_real_python.py` (new), and, only if the real run proves a defect,
+`assets/languages/python/scripts/mutmut-mutation.py`, `src/slipwai/project/mutmut.py`, `assets/toolkit/scripts/mutation-scope.py`
+(each named in the report if touched).
+
+---
+
+## Phase 2: Host closing tasks
+
+### T013 — Every suite that reads a generated gate, once, before the gates (host task)
+- [ ] After T012 is committed and the chain T002 … T012 is: `make test TESTS="$(ls tests | grep -E '^test_(verify_stamp|parallel_gate|model_|gate_|verify_scoped|scoped_|mutation|mutmut|stryker|select_tests)' | sed 's/\.py$//' | tr '\n' ' ') test_matrix test_uv test_commands test_commit_boundaries test_monorepos test_layout test_changelog test_pruning test_language_skeletons test_backend_obligations"`,
+  `python3 scripts/regenerate-locks.py --check`, `make starters` and the diff of `build/` against T001's: only the intended generated
+  changes (a `mutmut` dev pin and `[tool.mutmut]` per Python service, one wrapper per project with a Python service, the ignore line, the
+  Makefile line and note, the changed command text, the four `uv*.lock`, Python's `UNWIRED` words gone); then `make lint typecheck
+  check-structure`. Not `make verify`. A Go module cache under `/tmp/tmp*` made by a suite run is `chmod -R u+w`'d before it is removed.
+
+### T014 — Converge, passes as needed (host task)
+- [ ] `drive-converge` over the slice's range; findings append as tasks in Phase 3.
+
+### T015 — After-converge gaps (host task)
+- [ ] `drive-gaps` over the slice and the code it produced; findings append in Phase 3.
+
+### T016 — The demo, with the measurement (host task; AC-S42-13)
+- [ ] The hand runs quickstart scenarios 1–6 in a project generated by this worktree's `./slipwai`, and records `make mutation` against
+  `make mutation-full` on a two-service Python starter (the default answers plus `add-service billing --backend python`): wall time,
+  mutant counts, `nproc` and CPU model. The Phase 1 real run (T012) is evidence for AC-S42-1, -2, -4, -5, not for this. **And what
+  *Handed back* 1 asks of the demo:** the default starter's sweep red, naming survivors that are not equivalent (R9's
+  `settings.py` `"; "` → `"XX; XX"` among them); the minimal starter and the bare `add-service` skeleton green.
+
+## Phase 3: Findings appended by converge and gaps
+
+(none yet — T014 and T015 append here)
+
+## Phase 4: After acceptance (host tasks)
+
+(none yet — the adversary pass, mutation, both full gates and the register row follow the demo as in S41 T018–T021 and are appended here)
+
+---
+
+## Parallel opportunities
+
+By manifest (each task's *Files* line):
+
+| Task | Writes | Needs another task's file |
+|---|---|---|
+| T002 | `mutmut.py` (new), `python.py`, `native_commands.py`, `backends.py`, `gitignore.py`, wrapper skeleton (new), `app/pyproject.toml`, 4 `uv*.lock`, `mutation-scope.py` (`factory_recipe` only), fragment (new), `test_mutmut_generated.py` (new), `test_mutation_placeholders.py` (one hold + one row), `test_uv.py` (`:59`), `test_scoped_targets.py` (hashes), `test_select_tests_cross_reads.py` (one row) | none |
+| T003 | wrapper, `test_mutmut_config.py` (new), `test_select_tests_real_loaders.py` (a row) | T002's skeleton |
+| T004 | wrapper, `test_mutmut_setup.py` (new), `test_select_tests_real_loaders.py` (a row) | T003 |
+| T005 | wrapper, `test_mutmut_verdict.py` (new), `test_select_tests_real_loaders.py` (a row) | T004 |
+| T006 | wrapper, `test_mutmut_verdict.py` | T005 |
+| T007 | `mutation-scope.py`, `test_mutation_scope_python.py` (new), `test_mutation_placeholders.py`, `test_mutation_words_script.py`, `test_mutation_dry_run.py`, `test_stryker_after_run.py` | T003 (`targets`, `matched`, `refused`) loaded by path; T002 |
+| T008 | `mutation-scope.py`, `test_mutation_sweeps_python.py` (new) | T007; T003 (`versions`) |
+| T009 | `verify-stamp.py`, `check-imports.py`, `test_mutmut_after_run.py` (new), `test_verify_stamp_lists.py` | T006 (a run that completes), T007, T002 |
+| T010 | `mutmut.py`, `mutation.py`, `native_commands.py` (maybe), `SKILL.md`, two `docs/` pages, `changelog.d/stryker-mutation.md`, `test_mutmut_generated.py`, `test_mutation_words.py`, `test_mutation.py`, `test_stryker_generated.py`, `test_stryker_migrate.py`, `test_scoped_targets.py` (hashes) | T002 |
+| T011 | `mutmut-mutation.md` fragment, `test_mutmut_migrate.py` (new), `mutmut.py` (only if a gap is proved) | T008, T009, T010 |
+| T012 | `test_mutation_scope_real_python.py` (new), defect fixes only | T011 |
+
+- **Two chains, each serial inside.** The **wrapper chain** T002 → T003 → T004 → T005 → T006 each write `mutmut-mutation.py` (T005/T006
+  also share `test_mutmut_verdict.py`, and T003–T005 each add a `READS` row to `test_select_tests_real_loaders.py`), so never two of them
+  at once. The **scope chain** T007 → T008 each write `mutation-scope.py`, so never both at once.
+- **`[P]` means "beside the other chain", not "beside a sibling in its own".** T007 and T008 write nothing the wrapper chain's T004–T006
+  write (T007's and T008's `test_select_tests_real_loaders.py` row, if they declare a module, is the one shared line: the host adds it
+  after the merge rather than the two delegates both editing the file, and a delegate that declares a module names the row it needs), and
+  they need only T003's functions — their examples run behind `FakeRunner`, so the real wrapper's later behaviour is not read. So **T007
+  and T008 may each run beside any of T004, T005, T006**, in a worktree of its own off the commit that holds T003. T003 itself must
+  precede T007. The wrapper tasks T004–T006 are not marked `[P]`, because marking them would let two of them be read as parallel with
+  each other; they are parallel only with T007 and T008.
+- **T009 `[P]` beside T008 only.** Its files (`verify-stamp.py`, `check-imports.py`, `test_mutmut_after_run.py`,
+  `test_verify_stamp_lists.py`) are disjoint from T008's (`mutation-scope.py`, `test_mutation_sweeps_python.py`), but it needs T006 (a run
+  that completes) and T007 (the dispatch it drives), so it starts in a worktree off a commit holding both; it may not run beside T004–T006
+  or T007.
+- **The other `[P]`: T010.** Its files (`mutmut.py`, `mutation.py`, the skill, two `docs/` pages, S41's fragment, `test_mutation_words.py`,
+  `test_stryker_generated.py`, `test_stryker_migrate.py`) are disjoint from both chains' and from T009's, and it needs only T002
+  (`mutmut.py` exists). It may run beside any of T003–T009 in a worktree of its own off T002's commit. It shares `test_mutmut_generated.py`
+  and `test_scoped_targets.py` with T002, and the fragment story with T011, which it must not run beside: **T011 never runs beside T010**,
+  and T010 never before T002 is committed. It does not share a file with T007 (`test_mutation_placeholders.py` is T007's;
+  `test_mutation_words.py` is T010's).
+- **May not:** T003 before T002; T004 before T003; T005 before T004 (the setup it follows); T006 before T005; T008 before T007; T009 before
+  T006 and T007; T011 before T008, T009 and T010; T012 before T011; two tasks that write `mutation-scope.py` or `mutmut-mutation.py`
+  together; T010 beside T011; any `[P]` task before T002 is committed. The host commits by path and resolves no conflict by hand — a
+  conflict means a manifest overlap this table says there is none of.
+- **Host tasks:** T001 first, alone; T013 alone after T012; T014 … T016 follow in order; Phase 4 after the demo.
+
+## Design review
+
+No screen in this slice
+
+## Convergence
+
+(the verdict that comes later — T014 writes it)
