@@ -413,11 +413,10 @@ def unlisted(changes: dict[str, str], services: list[tuple[str, str]], tool: Any
         inside = path[len(root) + 1:]
         if any(part in DEPENDENCIES for part in inside.split("/")):
             continue
-        prefix = PRODUCTION_ROOT[backend]
         if path.endswith("/"):
-            reads = inside.startswith(prefix) or prefix.startswith(inside)
+            reads = any(inside.startswith(prefix) or prefix.startswith(inside) for prefix in production_roots(backend, root))
         else:
-            reads = KINDS[backend](inside) == "production"
+            reads = kind_of(backend, root, inside) == "production"
         if reads:
             nested = path in changes
             found.append((Unlisted(path, (NESTED if nested else IGNORED).format(path=shown(path))), root))
@@ -521,10 +520,31 @@ def unread_configs(root: str) -> list[str]:
     return [name for name in UNREAD_CONFIGS if os.path.isfile(os.path.join(root, name))]
 
 
-def python_kind(path: str) -> str:
+def python_roots(service: str) -> list[str]:
+    """The directories (each with its trailing slash) a Python service's `[tool.mutmut]` `source_paths` name, read as the
+    wrapper reads them; `[""]`, every directory, where the table cannot be read, so that the service sweeps."""
+    try:
+        wrapper = load("mutmut-mutation.py")
+        return [wrapper.source_root(entry) + "/" for entry in wrapper.targets(Path(service))["source_paths"]]
+    except Exception:  # the wrapper's Unreadable, a wrapper or tomllib that is not there: the table is not read
+        return [""]
+
+
+def python_kind(path: str, service: str = "") -> str:
     if path.startswith("tests/"):
         return "test"
-    return "production" if path.startswith("src/") and path.endswith(".py") else "other"
+    return "production" if path.endswith(".py") and any(
+        path.startswith(root) for root in ["src/", *python_roots(service)]) else "other"
+
+
+def production_roots(backend: str, service: str) -> list[str]:
+    """Where a wired service's sources live, as prefixes within it: a Python service's are its own `source_paths`."""
+    return ["src/", *python_roots(service)] if backend == "python" else [PRODUCTION_ROOT[backend]]
+
+
+def kind_of(backend: str, service: str, inside: str) -> str:
+    """Production, test or other for a path within a service."""
+    return python_kind(inside, service) if backend == "python" else KINDS[backend](inside)
 
 
 # Production, test or other for a path within a service, per backend: one table, so `classify` asks one place.
@@ -541,7 +561,7 @@ def classify(path: str, status: str, services: list[tuple[str, str]]) -> tuple[s
         return "other", "", path
     backend, root = max(owners, key=lambda owner: len(owner[1]))
     inside = path[len(root) + 1:]
-    kind = KINDS[backend](inside)
+    kind = kind_of(backend, root, inside)
     return ("deleted" if status == "D" and kind == "production" else kind), root, inside
 
 
