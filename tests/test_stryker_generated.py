@@ -17,7 +17,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE
+from stamp_fixture import CI_MARKERS, GIT_STATE, MAKE_STATE, git
 from support import FactoryTestCase, commit_all
 from test_mutation_targets import go_and_typescript, recipe_of
 
@@ -148,14 +148,21 @@ class StrykerGeneratedTest(FactoryTestCase):
                 self.assertIsNotNone(line, rule)
                 self.assertNotIn("mutation", line.group(1) if line else "", f"{name}: {rule}")
 
-    def test_e5_the_ignore_lines_are_a_typescript_project_s(self) -> None:
+    def test_e5_the_ignore_lines_are_a_typescript_project_s_and_git_ignores_what_a_run_leaves(self) -> None:
         for name in ("postgres", "go-ts"):
-            ignored = (self.project(name) / ".gitignore").read_text(encoding="utf-8").splitlines()
+            project = self.project(name)
+            if git(project, "status", "--short").strip():
+                commit_all(project, "as generated")
+            ignored = (project / ".gitignore").read_text(encoding="utf-8").splitlines()
             self.assertIn(".stryker-tmp/", ignored)
-            self.assertIn("reports/mutation/", ignored)
+            self.assertIn("apps/*/reports/mutation/", ignored)
+            for path in ("apps/service/reports/mutation/mutation.json", "apps/service/.stryker-tmp/sandbox-x/a.ts"):
+                (project / path).parent.mkdir(parents=True, exist_ok=True)
+                (project / path).write_text("{}", encoding="utf-8")
+            self.assertEqual(git(project, "status", "--short").strip(), "", f"{name}: a run's leavings show in git")
         ignored = (self.project("go") / ".gitignore").read_text(encoding="utf-8").splitlines()
         self.assertNotIn(".stryker-tmp/", ignored)
-        self.assertNotIn("reports/mutation/", ignored)
+        self.assertNotIn("apps/*/reports/mutation/", ignored)
 
     def test_e6_hold_every_committed_typescript_lock_agrees_with_the_manifest_the_factory_writes(self) -> None:
         """HOLD (teeth: restore one lock from git and see it fail): the root record of each lock names both."""

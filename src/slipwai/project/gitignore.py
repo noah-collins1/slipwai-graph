@@ -60,7 +60,7 @@ def build_artifacts(event: bool, apps: list[App], target: str = "none") -> str:
     """Every backend's artifacts once each, then the frontend's, the event profile's, the selection's and the
     production target's."""
     per_backend = {
-        "typescript": "node_modules/\ncoverage/\n.build/\n.stryker-tmp/\nreports/mutation/\n",
+        "typescript": "node_modules/\ncoverage/\n.build/\n.stryker-tmp/\napps/*/reports/mutation/\n",
         # `.venv/` is what `uv sync` builds beside each service's manifest, from the committed `uv.lock`
         # that *is* committed. `apps/*/requirements.txt` is the runtime half of that lock, exported by
         # `make build` for the buildpack and thrown away after: derived from the lock, never edited, and a
