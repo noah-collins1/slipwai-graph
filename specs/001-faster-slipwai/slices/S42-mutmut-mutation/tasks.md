@@ -787,6 +787,8 @@ line as above when a `src/` or `assets/` file changed, else "reaches no user".
   Makefile line and note, the changed command text, the four `uv*.lock`, Python's `UNWIRED` words gone); then `make lint typecheck
   check-structure`. Not `make verify`. A Go module cache under `/tmp/tmp*` made by a suite run is `chmod -R u+w`'d before it is removed.
 
+*(Re-run after the answers' work, at the head after T035: the same set with `test_toolkit` and `test_utf8_io` — 1786 tests OK, 4 skipped, 2269 s, `test_matrix` and the four `test_select_tests_*` pins included; `make lint typecheck check-structure` green.)*
+
 ### T014 — Converge, passes as needed (host task)
 - [x] `drive-converge` over the slice's range; findings append as tasks in Phase 3. *(Done: pass 1 not converged (T017–T021), pass 2 converged at `5a9840e`, loop stopped at its bound with T022 (MEDIUM) and T023 (LOW) in Phase 4; both `drive-converge · model: opus · delegated, fresh context`.)*
 
