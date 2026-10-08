@@ -538,6 +538,52 @@ Persons' commands were run with `CRUISE_ITERATION` unset.
   `specs/…/S27-provisional-decisions/{data-model,research,quickstart}.md`, `tests/test_cruise_decide_ladder.py`,
   `tests/test_provisional_migrate.py`.
 
+## Phase 10: After-converge gaps — host's `drive-gaps` pass at `5223155` (D203–D207; AC-S27-18..22)
+
+Two chains with disjoint manifests, each a RED-GREEN-REFACTOR increment per task, each committing by path.
+**Chain G (the gate and the verb):** `assets/toolkit/scripts/check-decisions.py`, `assets/toolkit/scripts/provisional.py`,
+new test modules `tests/test_provisional_after_converge_gate.py` (and a second if the 350-line budget needs it).
+**Chain C (the setting, the runner and the text):** `assets/toolkit/scripts/agents/cruise.py` (and its guard),
+`src/slipwai/project/cruise_provisional.py`, `src/slipwai/project/cruise_agents.py`, the generated briefs for
+`drive-implement` and `drive-slice` wherever they are written, `changelog.d/provisional-decisions.md`, this slice's
+`data-model.md`, `research.md`, `quickstart.md`, new test modules `tests/test_cruise_after_converge.py` (and a second
+if needed).
+
+- [ ] T027 [G] **HIGH — P2, D204, AC-S27-19.** The gate refuses a provisional or ratified entry whose `Written to`
+  names a CI workflow path (`.github/workflows/`, `.gitea/workflows/`, `.gitlab-ci.yml`), a control path the runner
+  parks on, or a configuration file a generated gate reads — a closed list in the toolkit, held by a test against
+  the configuration files the starters ship. One finding naming the entry and the path.
+- [ ] T028 [G] **MEDIUM — P3.** `provisional_findings` reads `Reversibility` through the same near-miss and fence
+  blanking S26's `reversibility_findings` uses: a near-miss label (`Reversibility :`) or a fenced line is no line, so
+  a provisional entry carrying only one is refused as missing its `Reversibility`.
+- [ ] T029 [G] **MEDIUM — P4.** The audit reads `Status` the way the gate does (or the gate refuses the near-miss
+  `Status :` label): the two never disagree on whether an entry is provisional.
+- [ ] T030 [G] **MEDIUM — P5, D205, AC-S27-20.** The FR-033 refusals hold for `ratified` entries; a provisional
+  entry's ratify-by date must equal its `When` plus seven days, UTC, else refused naming `Status`.
+- [ ] T031 [G] **MEDIUM — P6, D206, AC-S27-21.** The new checks load only when a new `Status` form or a rehearsal
+  line is present; a log whose only new-release line is `Revert:` gets the earlier checker's answer (differential
+  test case added).
+- [ ] T032 [G] **LOW — P9.** `ratify_by` parses any `When` longer than a date with `datetime.fromisoformat` (a space
+  separator and offsets included), converts to UTC, and refuses what it cannot parse.
+- [ ] T033 [G] **LOW — P11, D207, AC-S27-22.** `provisional.py audit` reads every feature's log, with or without
+  `--feature`, and parks on the lowest-numbered unratified entry naming its feature; a `--feature` naming nothing stays
+  exit 2.
+- [ ] T034 [C] **HIGH — P1, D203, AC-S27-18.** `guard` refuses an editing tool targeting `.specify/cruise.json` in a
+  runner's session; an empty `CRUISE_ITERATION` counts as set in `climb()`; the runner records `decide` before and
+  after each iteration and parks when it moved inside one, the park line saying a person who changed it resumes with
+  a `told:` message.
+- [ ] T035 [C] **MEDIUM — T024, T025, P10.** (T024) the skip park names the recorded mode entry and the way out
+  (record the intermediate rung — the exact `mode` command — or step back), within D196; (T025) `mode` orders `When`
+  as instants (`fromisoformat`, UTC), refusing what it cannot parse; (P10) an unrecognised recorded mode reads as the
+  bottom rung in `mode`, and an unknown current value as the bottom rung in `climb`, each with a line saying so.
+- [ ] T036 [C] **MEDIUM — P7.** The `Decision: D<n>` trailer reaches every commit made under a provisional decision:
+  the command says the host's own commit writing the decision into its artifact carries it, and the `drive-implement`
+  and `drive-slice` briefs say a commit under a decision the brief names carries the trailer.
+- [ ] T037 [C] **LOW — T026, P8.** The fragment's **Catch-up.** paragraph is true under D202 and D203 (one entry in
+  the first feature's log the iteration reads; `mode` run by the iteration, not printed by the runner); `MODE_LINE`
+  shows the whole rehearsal line as optional and the tier as required; `mode`'s docstring, `data-model.md`,
+  research R-5 and quickstart step 1 (no `git commit` after `generate`) said the same way.
+
 ## Design review
 
 No screen in this slice.
