@@ -8,7 +8,8 @@ of `ci_workflow=yes`, `migrate_file=yes`, `flag_default=yes` (FR-033); a fact, a
 unavailable whatever `decide` says. A missing `--reversibility` line is `hard`.
 `python3 scripts/provisional.py audit [--feature <name>]` is the completion audit: it prints `cruise: parked: ratify
 D<n> in specs/<feature>/decisions.md` and exits 3 while an entry of any feature's log has a first `Status` starting
-with the word `provisional`, the lowest-numbered named; `--feature` only has to name a feature under `specs/`.
+with the word `provisional`, the lowest-numbered named, in the log as `reading` gives it (fences and near-miss labels
+blanked, ASCII digits in a heading: the text the gate reads, D210); `--feature` only has to name a feature under `specs/`.
 The gate (`check-decisions.py`) loads this file by path, only for a log carrying a `Status: provisional|ratified|
 reverted` or a `Provisional (shadow|advisory):` line (a lone `Revert:` loads nothing, D206), and `check_log()` holds
 those lines to their grammar.
@@ -349,14 +350,73 @@ def status_verb(arguments: list[str]) -> int:
 
 FIELD_LINE = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 HEADING = re.compile(r"^## D([0-9]+) — ")
+ANY_HEADING = re.compile(r"^## D(\d+) — ")  # `\d` reads a fullwidth digit: the gate's heading, not the audit's
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+# A label written nearly right (another case, a space before the colon, underscores, another bullet): never read.
+NEAR_LABEL = re.compile(r"^\s*[-*+]\s*[*_]*\s*(?:reversibility|proposed\s*rule|status)\s*[*_]*\s*:[*_]*", re.I)
+EXACT_LABEL = re.compile(r"^- \*\*(?:Reversibility|Proposed rule|Status):\*\*")
+STATUS_LABEL = re.compile(r"^- \*\*Status:\*\*[^\S\n]*(?:provisional|ratified|reverted)\b|"
+                          r"^- \*\*Provisional \((?:shadow|advisory)\):\*\*", re.M)
+
+
+def reading(text: str) -> tuple[str, list[tuple[int, str, str]]]:
+    """The one reading of a log (D210): `text` with every line inside a ``` or ~~~ fence emptied, and every line whose
+    label is nearly `- **Reversibility:**`, `- **Proposed rule:**` or `- **Status:**` emptied, line endings kept so
+    every line number stands; and the near-miss lines as (line, entry, the label as written), each entry named `D<n>`
+    where a heading above it has one. A fence closes on its own character, at least as long; one left open runs on.
+    The gate decides to hold a log, reads its fields, and the audit finds its provisional entries, all from this."""
+    kept: list[str] = []
+    near: list[tuple[int, str, str]] = []
+    opened, where = "", ""
+    for number, piece in enumerate(text.splitlines(keepends=True), start=1):
+        content = piece.splitlines()[0] if piece.splitlines() else ""
+        fence = FENCE.match(content)
+        hidden = bool(opened)
+        if opened and fence and fence.group(1)[0] == opened[0] and len(fence.group(1)) >= len(opened) \
+                and not content.strip().strip(opened[0]):
+            opened = ""
+        elif not opened and fence:
+            opened, hidden = fence.group(1), True
+        if not hidden:
+            if content.startswith("## "):
+                heading = ANY_HEADING.match(content)
+                where = f"D{heading.group(1)}" if heading else ""
+            label = NEAR_LABEL.match(content)
+            if label and not EXACT_LABEL.match(content):
+                near.append((number, where, label.group(0).strip()))
+                hidden = True
+        kept.append(piece[len(content):] if hidden else piece)
+    return "".join(kept), near
+
+
+def held(view: str) -> bool:
+    """Whether a log, as `reading` gave it, carries a line only this module reads: a `Status` of one of the three new
+    forms or a `Provisional (shadow|advisory):` line (a lone `Revert:` is not one, D206)."""
+    return STATUS_LABEL.search(view) is not None
+
+
+def reading_findings(relative: str, text: str) -> list[str]:
+    """What a held log's reading refuses in itself: a near-miss `Status` label, which no reader takes for the entry's,
+    and a heading whose number is spelled with a digit that is not 0-9 (which the audit cannot read)."""
+    view, near = reading(text)
+    found = [f"{relative}:{line}: {where or 'a line'} has `{label}`, which is not the label `- **Status:**` (or "
+             "`- **Reversibility:**`, `- **Proposed rule:**`); a log that holds a provisional form reads no other "
+             "spelling (D210)" for line, where, label in near if "status" in label.casefold()]
+    for number, line in enumerate(view.splitlines(), start=1):
+        heading = ANY_HEADING.match(line)
+        if heading and not HEADING.match(line):
+            found.append(f"{relative}:{number}: the heading `{line[:24]}` spells its number with a digit that is not "
+                         "0-9; a log that holds a provisional form reads ASCII digits in a heading (D210)")
+    return found
 
 
 def unratified(text: str) -> list[int]:
-    """The numbers of the entries whose first `Status` starts with the word `provisional`, lowest first. A line is read
-    as the gate reads it: split as `str.splitlines` splits, its label the text before the first colon, stripped."""
+    """The numbers of the entries whose first `Status` starts with the word `provisional`, lowest first, in the log as
+    `reading` gives it. A line is read as the gate reads it: split as `str.splitlines` splits, its label the text before
+    the first colon, stripped."""
     found: list[int] = []
     number, seen = None, False
-    for line in text.removeprefix("\ufeff").splitlines():
+    for line in reading(text.removeprefix("\ufeff"))[0].splitlines():
         heading = HEADING.match(line)
         if line.startswith("## "):
             number, seen = int(heading.group(1)) if heading else None, False

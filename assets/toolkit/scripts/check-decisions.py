@@ -263,10 +263,15 @@ def scope_notes(path: Path) -> list[str]:
     return notes
 
 
-def provisional_wanted(text: str) -> bool:
-    """Whether `provisional.py` is beside this script and `text` carries a line only it reads (D65: any other log gets
-    the answer it always did, and `provisional.py` is not loaded)."""
-    return Path(__file__).resolve().with_name("provisional.py").is_file() and PROVISIONAL_LABEL.search(text) is not None
+def provisional_view(text: str) -> tuple[Any, str] | None:
+    """(`provisional.py` beside this script, the log as it reads it) for a log carrying a line only it reads, else None
+    (D65: any other log gets the answer it always did). The log is read once (D210): fences and near-miss labels blanked,
+    and that text decides whether the log is held, serves every field read from it and is what the audit reads."""
+    if not (PROVISIONAL_LABEL.search(text) and Path(__file__).resolve().with_name("provisional.py").is_file()):
+        return None
+    module = sibling("provisional")
+    view = module.reading(text)[0]
+    return (module, view) if module.held(view) else None
 
 
 def check_decisions(path: Path) -> list[str]:
@@ -274,7 +279,10 @@ def check_decisions(path: Path) -> list[str]:
     findings: list[str] = []
     expected = 1
     text = read(path)
-    held = provisional_wanted(text)  # the new Status forms are left to provisional.py, which then holds them
+    reading = provisional_view(text)  # the new Status forms are left to provisional.py, which then holds them
+    held = reading is not None
+    if reading is not None:
+        text = reading[1]
     for line, heading, fields in entries(text, DECISION_HEADING, legacy=True):
         where = f"{relative}:{line}"
         if heading is None:
@@ -598,13 +606,16 @@ def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
 
 def provisional_findings(path: Path) -> list[str]:
     """The findings for the `Status` forms, `Revert:` and rehearsal lines of one log, from `provisional.py` beside this
-    script, loaded only for a log that carries one."""
-    text, _ = near_misses(unfenced(read(path)), path.relative_to(ROOT).as_posix())  # as S26 reads `Reversibility:`
-    if not provisional_wanted(text):
+    script, for a log that carries one, read as `provisional_view` reads it."""
+    text = read(path)
+    reading = provisional_view(text)
+    if reading is None:
         return []
+    module, view = reading
+    relative = path.relative_to(ROOT).as_posix()
     items = [(line, int(heading.group(1)) if heading else None, fields, fields.twice)
-             for line, heading, fields in entries(text, DECISION_HEADING, legacy=True)]
-    return sibling("provisional").check_log(path.relative_to(ROOT).as_posix(), items)
+             for line, heading, fields in entries(view, DECISION_HEADING, legacy=True)]
+    return module.reading_findings(relative, text) + module.check_log(relative, items)
 
 
 def check_hand_backs(records: list[Path]) -> tuple[list[str], list[str], int, int]:
