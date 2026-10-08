@@ -22,8 +22,8 @@ from support import FactoryTestCase
 from test_stryker_after_run import PASSING, fake_npm
 
 sys.dont_write_bytecode = True
-TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py",
-                            "src/slipwai/project/shared_packages.py"]}
+# No `TEST_SELECTION`: this module generates projects and borrows `parallel_gate` and `test_stryker_after_run`, whose
+# helpers declare nothing, so a declaration would be void; undeclared, it runs on every change.
 MARKER = "node_modules/.package-lock.json"
 
 
