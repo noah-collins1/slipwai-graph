@@ -201,7 +201,11 @@ class InstalledEnvironmentsTest(FactoryTestCase):
         """e8: `node_modules/.package-lock.json` is a file target — `npm ci` runs when `package.json` or the lock is
         newer than it, not on every run — so what is installed is an input, by the manifest npm wrote."""
         makefile = (self.project("typescript") / "Makefile").read_text(encoding="utf-8")
-        self.assertIn("node_modules/.package-lock.json: package.json package-lock.json\n\tnpm ci\n", makefile)
+        # The recipe is `npm ci` bare, or through the Stryker wrapper (S41 T040) where a TypeScript service is present;
+        # either way it is the file target keyed by the manifest and the lock.
+        target = "node_modules/.package-lock.json: package.json package-lock.json\n\t"
+        runs = ("npm ci", "python3 scripts/stryker-mutation.py --install npm ci")
+        self.assertTrue(any(target + run + "\n" in makefile for run in runs), makefile)
         self.assertIsNone(self.exempt("node_modules/.package-lock.json"))
         self.assertIsNotNone(self.exempt("node_modules/left-pad/index.js"))
 
