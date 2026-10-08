@@ -674,7 +674,7 @@ differs from the text above, and why:
   changes; then `make lint typecheck check-structure`. Not `make verify`. *(Done: `make test` on the branch selected every module (`.gitignore` rule changed): 3708 tests; the failures it found — the stamp-inputs scanner (os.access, a mutmut probe), a feature branched on by name (`postgres`), the test-selection declarations and cross-read map, S08's planning fake missing `refusal` — fixed in e7cc480, 1b04314, 0d4066d and each re-run green; test_matrix's one error was a uv copy failure in a Python row (environmental), and `FACTORY_BACKENDS=python make test TESTS=test_matrix` re-ran green; every TypeScript row's `make verify` passed. `regenerate-locks.py --check` cannot run under npm 9.2 (see the implementation record). `make starters` diff: TypeScript gains `stryker.config.json`, `scripts/stryker-mutation.py`, the manifest, lock, Makefile, .gitignore, rules.json and command text; every backend's toolkit copies of mutation-scope.py, verify-stamp.py, provisional.py and the skill; Python's and Quarkus's command text (UNWIRED).)*
 
 ### T015 — Converge, passes as needed (host task)
-- [ ] `drive-converge` over the slice's range; findings append as tasks below.
+- [x] `drive-converge` over the slice's range; findings append as tasks below. *(Done: pass 1, `drive-converge · model: host (opus) · delegated, fresh context`; converged, see *Convergence*.)*
 
 ### T016 — After-converge gaps (host task)
 - [ ] `drive-gaps` over the slice and the code it produced.
@@ -697,7 +697,7 @@ script were applied one at a time, those suites run, and each file restored with
 killed. The survivors and two reproductions are the tasks below.
 
 ### T022 — [US2] MEDIUM · Every path Stryker's `--mutate` would read as something other than itself is refused, not only D215's six characters (D215 d's *why*, AC-S41-7; partial)
-- [ ] **Close the class, not the instance:** the refusal set and the pattern reader each decide what minimatch reads as
+- [x] **Close the class, not the instance:** the refusal set and the pattern reader each decide what minimatch reads as *(Done: c21a339.)*
   syntax, from two tables (`MISREAD = ",*?{[!"`, `SYNTAX = "?[]{}()+@\\!"` in
   `assets/languages/typescript/scripts/stryker-mutation.py`) that have already drifted. Derive both from one table of
   what minimatch 10 (the version R3 read) treats as syntax inside a path — at least the extglob openers `+(` and `@(`
@@ -715,7 +715,7 @@ killed. The survivors and two reproductions are the tasks below.
   `tests/test_mutation_scope_typescript.py`, `changelog.d/stryker-mutation.md` (the list it names).
 
 ### T023 — [US2] LOW · A change to any copy of a `@stryker-mutator/*` package in the lock sweeps, not only the copy the reader keeps (D215 b, AC-S41-6; partial)
-- [ ] `stryker_in(..., "packages")` collapses every lock entry to one version per package name (`setdefault` over paths
+- [x] `stryker_in(..., "packages")` collapses every lock entry to one version per package name (`setdefault` over paths *(Done: 1d008bc.)*
   sorted by length), so a nested copy (`node_modules/@stryker-mutator/core/node_modules/@stryker-mutator/util`) can move
   without the comparison seeing it. Key the lock's versions by the lock path (every `…node_modules/@stryker-mutator/<name>`
   entry), so any copy moving is a version change; add an example where only the nested copy moves and the service
@@ -727,7 +727,7 @@ killed. The survivors and two reproductions are the tasks below.
   `tests/test_mutation_sweeps_typescript.py`.
 
 ### T024 — [US2] LOW · The guards the suites do not hold: each removal below left every S41 suite green (plan rules 3, 5, 6; test coverage)
-- [ ] Sweep the wrapper's and the scope script's TypeScript guards for one whose removal no example notices, and give
+- [x] Sweep the wrapper's and the scope script's TypeScript guards for one whose removal no example notices, and give *(Done: 10423c9; `marker.touch()` kept: it still matters where `npm ci` writes no hidden lockfile.)*
   each its example; the three found here by hand mutation (each applied, the suites run, the file restored):
   - `judged` strips a leading `./` from a given file (`wanted = [name[2:] if …]` → `list(given)`: **survived**). Without
     it `stryker-mutation.py <service> --file ./src/x.ts` — a form `matched` accepts — reads a report keyed `src/x.ts` as
@@ -742,7 +742,7 @@ killed. The survivors and two reproductions are the tasks below.
   `tests/test_mutation_scope_typescript.py` (and the wrapper only if the touch is dropped).
 
 ### T025 — [US2] LOW · The fragment names every shape that is refused (AC-S41-7, published contract; partial)
-- [ ] `changelog.d/stryker-mutation.md` lists the refused characters as "a comma, `*`, `?`, `{`, `[` or `!`" and omits
+- [x] `changelog.d/stryker-mutation.md` lists the refused characters as "a comma, `*`, `?`, `{`, `[` or `!`" and omits *(Done: f111a55.)*
   the trailing `:<digits>` the wrapper also refuses (`TRAILING_LINE`) and D215 d names. Sweep every user-facing place that
   enumerates the refusal (today only the fragment; the Makefile note and `commands/mutation.md` name none) and make it
   say the set the wrapper refuses — after T022, from the same table. Evidence: `grep -n "trailing" changelog.d/stryker-mutation.md`
@@ -814,4 +814,34 @@ No screen in this slice
 
 ## Convergence
 
-(the verdict that comes later)
+**Converged at pass 1 of 2** (2026-10-08, cruise iteration 29, at f111a55 for the code; `drive-converge · model: host (opus)
+· delegated, fresh context`). Pass 1 found no CRITICAL and no HIGH, so the loop did not re-open (*commands/drive.md* stage 9:
+only those re-open it); its one MEDIUM (T022) and three LOWs (T023–T025) were implemented at once rather than left to
+Phase 4, each its own RED-GREEN commit, and the slice's suites re-ran green after them (lint, typecheck, check-structure;
+21 modules OK, 2 skipped — the heavy real run and one tool gate). Twenty hand mutations of the wrapper and the scope script
+were applied by the pass; fifteen were killed, and the five survivors are now killed by T022–T024's examples or are
+equivalent (`marker.touch()`).
+
+**Per level.** *Domain:* D212's verdict (`stryker-mutation.py`, the `PASS`/`COUNTED` table and `verdict`), D213's list and
+its intersection (`stryker.py` `mutate_list`, by the trait `integration_feature`; the wrapper's `matched`/`targets`), D215's
+install from the lock, never fetching, version sweep (lock keyed by path, T023) and refusal (one `SYNTAX` table, T022).
+*Use case:* `make mutation` scoped and swept, one and two TypeScript services, Go beside TypeScript, types-only, excluded,
+browser-app and refused files — held by `test_mutation_scope_typescript`, `test_mutation_sweeps_typescript`,
+`test_stryker_after_run` and, on the real tool, `test_mutation_scope_real_typescript`. *Delivery adapter:* the
+`mutation-full` line (`stryker.py:21`), the wrapper's CLI, `npm ci`/`npm exec --no`, the ignore lines, the stamp's
+`EXEMPT` rows, reach unchanged. *Screen:* none. *Published contract:* the generated config and wrapper, the Makefile note,
+`commands/mutation.md`, the skill line, `docs/backend-obligations.md`, the fragment's Catch-up, `migrate`
+(`test_stryker_migrate`), ADR 0009 `Proposed`.
+
+**Principles the diff touches.** I (owns its files, passes its own gate): `src/slipwai/project/stryker.py` writes the config
+and wrapper, `languages/typescript.py:28,332`; every TypeScript row of `test_matrix` passed `make verify`; `verify`,
+`verify-checks`, `ci` unchanged. I (version and fragment): `VERSION` `1.6.0.dev0`, `changelog.d/stryker-mutation.md:1`
+`MINOR` with its Catch-up. II (retry safety): the wrapper's `clean` and the sandbox removal after the run, `"incremental":
+false`. III (simplicity): stdlib JSON reader, no factory dependency. V (GWT, fakes): seven new modules, a fake `npm` and S08's
+`FakeRunner`, no mocking library. VI (contract-bounded): the report's statuses read through its schema, unknown fails. VIII
+(versions): exact pins in `assets/languages/typescript/app/package.json`, a pin change sweeps. IX (supply chain): `npm ci`
+and `npm exec --no`; `npm audit --audit-level=critical` exits 0. ADR rule: `delivery/docs/adr/0009-stryker-for-typescript-mutation.md`, `Proposed`.
+
+**Not run here, by the brief:** the two full gates (the host runs them on the merged tip), the after-converge gaps (T016),
+the demo (T017, AC-S41-14). `make check-convergence` and the map: no rung moved (the slice changes generated code, not this
+repository's ladders). Handed back in `plan.md`: the default starter's own survivors, and D213's Parking Lot line.
