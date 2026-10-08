@@ -88,7 +88,7 @@ class PlaceholderTest(ScopeCase):
         """HOLD (teeth: change a string in the script's table): one source of the setup sentence per placeholder."""
         module = loaded(self.repo / "scripts/mutation-scope.py")
         self.assertEqual(set(module.PLACEHOLDERS), set(FILES))
-        for backend in FILES:
+        for backend in ("java-quarkus",):  # Python's recipe is the wrapper's line and echoes nothing (S42)
             recipe = service_commands(backend, "apps/service")["mutation"]
             said = ECHO.findall(recipe)
             self.assertEqual(module.PLACEHOLDERS[backend], said[0], backend)

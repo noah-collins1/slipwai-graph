@@ -295,8 +295,7 @@ def factory_recipe(services: list[tuple[str, str]]) -> list[str]:
         elif backend == "java-spring":
             line = f"cd {path} && " + " ".join(PIT)
         elif backend == "python":
-            line = ("@command -v mutmut >/dev/null 2>&1 || { echo '" + PLACEHOLDERS[backend] +
-                    "' >&2; exit 2; }; mutmut run")
+            line = f"python3 scripts/mutmut-mutation.py {path}"
         else:
             line = f"@echo '{PLACEHOLDERS[backend]}'; exit 2"
         if line not in lines:

@@ -24,6 +24,15 @@ package = false
 addopts = "--strict-config --strict-markers"
 testpaths = ["tests"]
 
+[tool.mutmut]
+# What `make mutation` mutates and how it runs the tests (scripts/mutmut-mutation.py, ADR 0010): the production code
+# under src/ ...
+source_paths = ["src"]
+# ... against the default suite, as `make test` runs it: tests/integration needs a database, so it is left out ...
+pytest_add_cli_args_test_selection = ["tests", "--ignore=tests/integration"]
+# ... and never across cores: mutmut records which tests reach which function from one process.
+pytest_add_cli_args = ["-p", "no:xdist"]
+
 [tool.mypy]
 # What `make typecheck` runs, over the same two trees ruff reads. The gate passes the paths and the
 # search path itself (`scripts/verify`), because it runs from the repository root and this service is one

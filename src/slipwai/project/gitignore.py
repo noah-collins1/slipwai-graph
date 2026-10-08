@@ -68,7 +68,7 @@ def build_artifacts(event: bool, apps: list[App], target: str = "none") -> str:
         # `make build` for the buildpack and thrown away after: derived from the lock, never edited, and a
         # committed copy would be the second dependency list this backend exists without.
         "python": (
-            "__pycache__/\n*.pyc\n.venv/\n.pytest_cache/\n.ruff_cache/\n/apps/*/requirements.txt\n"
+            "apps/*/mutants/\n__pycache__/\n*.pyc\n.venv/\n.pytest_cache/\n.ruff_cache/\n/apps/*/requirements.txt\n"
         ),
         # `coverage.out` is what `make test` writes beside the service; `gremlins.json` is what
         # `make mutation` now copies out of its staging tree, for the same reason and with the same

@@ -21,6 +21,7 @@ from ..services import App, services_of, web_apps, wrapped_of
 from ..tooling import for_app, verify_path
 from .languages.go import GO_COVDATA_READY, GO_COVERAGE_GATE, GO_STATICCHECK, GO_TEST
 from .mutation import GO_MUTATION_SCRIPT, JAVA_QUARKUS_MUTATION_PLACEHOLDER, scope_command
+from .mutmut import FULL_COMMAND as MUTMUT_COMMAND
 from .shared_packages import PACKAGES
 from .stryker import FULL_COMMAND
 
@@ -100,7 +101,7 @@ def service_commands(backend: str, path: str, verify: str = "scripts/verify") ->
                 "audit' >&2; exit 2; }; pip-audit -r <(uv export --project "
                 f"{APP} --frozen --no-emit-project --no-hashes)"
             ),
-            "mutation": "@command -v mutmut >/dev/null 2>&1 || { echo 'install and configure mutmut for the selected production packages' >&2; exit 2; }; mutmut run",
+            "mutation": MUTMUT_COMMAND,
         },
         "go": {
             "install": f"cd {APP} && go mod download",
