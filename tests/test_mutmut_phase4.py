@@ -379,5 +379,55 @@ class PathsLeavingTheServiceTest(PhaseCase):
         self.assertEqual(done.returncode, 0, lines_of(done))
 
 
+LOCK = """version = 1
+[[package]]
+name = "mutmut"
+version = "3.8.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [{ name = "libcst" }]
+sdist = { url = "https://x/mutmut.tar.gz", hash = "sha256:aaa" }
+wheels = [{ url = "https://x/mutmut.whl", hash = "sha256:bbb" }]
+[[package]]
+name = "libcst"
+version = "1.9.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [{ url = "https://x/libcst-a.whl", hash = "sha256:ccc" }, { url = "https://x/libcst-b.whl", hash = "sha256:ddd" }]
+[[package]]
+name = "pytest"
+version = "9.1.1"
+source = { registry = "https://pypi.org/simple" }
+"""
+
+
+class LockEntryTest(unittest.TestCase):
+    """T043 (B3): the sweep reads each closure entry's source and hashes as well as its version."""
+
+    def setUp(self) -> None:
+        self.module = loaded(SCRIPT)
+
+    def moved(self, old: str, new: str) -> bool:
+        return bool(self.module.versions(None, LOCK) != self.module.versions(None, LOCK.replace(old, new)))
+
+    def test_b3_the_same_version_with_other_hashes_or_another_source_is_a_move(self) -> None:
+        for old, new in (("sha256:bbb", "sha256:eee"), ("sha256:aaa", "sha256:eee"), ("sha256:ddd", "sha256:eee"),
+                         ('registry = "https://pypi.org/simple" }\ndependencies', 'registry = "https://evil/simple" }'
+                          "\ndependencies"),
+                         ('name = "libcst"\nversion = "1.9.0"\nsource = { registry = "https://pypi.org/simple" }',
+                          'name = "libcst"\nversion = "1.9.0"\nsource = { git = "https://x/libcst" }')):
+            with self.subTest(old=old, new=new):
+                self.assertTrue(self.moved(old, new))
+
+    def test_b3_hold_a_lock_that_did_not_change_and_a_package_outside_the_closure_is_not_a_move(self) -> None:
+        """HOLD (teeth: include pytest in the closure and see it fail)."""
+        self.assertEqual(self.module.versions(None, LOCK), self.module.versions(None, LOCK))
+        self.assertFalse(self.moved('name = "pytest"\nversion = "9.1.1"', 'name = "pytest"\nversion = "9.1.1"\n'
+                                    'wheels = [{ url = "u", hash = "sha256:zzz" }]'))
+        self.assertFalse(self.moved("hash = \"sha256:bbb\"", "hash = \"sha256:bbb\""))
+
+    def test_b3_a_bare_version_is_still_the_version_alone(self) -> None:
+        found = self.module.versions(None, 'version = 1\n[[package]]\nname = "mutmut"\nversion = "3.8.0"\n')
+        self.assertEqual(found, {"mutmut": ["3.8.0"]})
+
+
 if __name__ == "__main__":
     unittest.main()

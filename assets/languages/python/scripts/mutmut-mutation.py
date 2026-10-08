@@ -254,6 +254,16 @@ def closure(packages: list[dict[str, Any]], root: str) -> set[str]:
     return found
 
 
+def lock_entry(package: dict[str, Any]) -> str:
+    """What a lock says of one package: its version, and where it comes from and the hashes of what is installed where
+    the lock says them, so that a rebuild of the same version or a changed source is a move too (B3)."""
+    files = [package.get("sdist"), *package.get("wheels", [])]
+    hashes = sorted(str(item["hash"]) for item in files if isinstance(item, dict) and "hash" in item)
+    held = {"source": package.get("source"), "hashes": hashes}
+    version = package["version"]
+    return f"{version} {json.dumps(held, sort_keys=True)}" if held["source"] or hashes else version
+
+
 def lock_versions(text: str) -> dict[str, list[str]]:
     packages = read_toml(text).get("package")
     if not isinstance(packages, list):
@@ -262,7 +272,7 @@ def lock_versions(text: str) -> dict[str, list[str]]:
     found: dict[str, list[str]] = {}
     for package in packages:
         if package["name"] in names:
-            found.setdefault(package["name"], []).append(package["version"])
+            found.setdefault(package["name"], []).append(lock_entry(package))
     return found
 
 
