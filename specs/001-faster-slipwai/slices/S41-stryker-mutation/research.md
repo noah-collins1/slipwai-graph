@@ -145,3 +145,24 @@ in `app.ts` (29), `events.ts` (12), `tracing.ts` (19), `projections-plugin.ts` (
 `tracing.ts`/`config.ts`) does not apply. The minimal starter (mini) is green. A scoped run on a slice that edits
 `app.ts` will fail on that file's existing survivors, as a Go run does on a file with survivors. Handed back in
 `plan.md` with options; nothing in this slice's design depends on the answer.
+
+## R10 — What 10.0.0 lets the wrapper tell about an `Ignored` mutant (D219, T028)
+
+Run in scratch: `npm i @stryker-mutator/core@10.0.0` under `/tmp/cruise29/s41-impl-a/`, then `stryker run` with the
+`command` test runner (`command: "true"`, `coverageAnalysis: off`, the `json` reporter) over one file holding, in order, a
+`// Stryker disable next-line StringLiteral: equivalent, it is only a label` comment, a next-line one with no reason, a
+block `// Stryker disable StringLiteral: block scope reason`, then `// Stryker restore StringLiteral`, and a boolean under
+`mutator.excludedMutations: ["BooleanLiteral"]`. The report (`mutation.json`) gave: the next-line mutant `Ignored` with
+`statusReason` "equivalent, it is only a label"; the reason-less next-line one `Ignored`, "Ignored using a comment"; the
+block one `Ignored`, "block scope reason"; the excluded one `Ignored`, `Ignored because of excluded mutation
+"BooleanLiteral"`; a mutant after `restore` `Survived`, no reason. Read in
+`instrumenter/dist/src/transformers/directive-bookkeeper.js` and `babel-transformer.js:188-190`: the reason is the
+directive's own text (default "Ignored using a comment") for all three comment scopes, and the `excludedMutations`
+reason is checked after the directive's, so a mutant that has a comment never reads as excluded. **So** the report tells
+`excludedMutations` apart by `statusReason` (the "Ignored because of excluded mutation" prefix) but cannot tell a
+next-line comment from a block or file-wide one that gives a reason. **Decision:** the wrapper fails the excluded prefix,
+and for every other `Ignored` mutant reads the source line above `location.start.line` (the report's `files[name].source`
+where it has one, else the file in the service): it must be `// Stryker disable next-line <mutators>: <reason>` with the
+mutant's `mutatorName` among the comma-separated names (case-insensitive; `all` does not count) and a non-empty reason.
+A `/* ... */` form of the directive, which Stryker also reads, and a comment separated from its statement by a blank line
+fail closed. A source that cannot be read fails. The wrapper counts such mutants as "ignored without a next-line comment".

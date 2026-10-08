@@ -5,7 +5,8 @@
 
 Without `--file` the whole of the service's `stryker.config.json` `mutate` list is mutated; `--file`, repeatable, hands
 over only those files. The verdict is read from `<service>/reports/mutation/mutation.json`, never from Stryker's exit
-status (D212): `Killed` and `Ignored` pass, `NoCoverage` is counted and reported, and every other status, a status
+status (D212): `Killed` passes, `Ignored` passes only where a `// Stryker disable next-line <mutator>: <reason>`
+comment on the line above excuses it (D219), `NoCoverage` is counted and reported, and every other status, a status
 nobody has heard of included, fails; a run that leaves no readable report fails whatever Stryker exited.
 
 The list of files Stryker mutates is the service's `mutate` patterns, and `--mutate` replaces that list rather than
@@ -43,12 +44,16 @@ STRYKER = "@stryker-mutator/"
 REPORT = "reports/mutation/mutation.json"
 SANDBOX = ".stryker-tmp"
 # The verdict of each status, in one place: anything not named here fails, so a status Stryker adds later fails closed.
-PASS = ("Killed", "Ignored")
+PASS = ("Killed", "Ignored")  # an `Ignored` one is then held to `unexcused`
 COUNTED = ("NoCoverage",)
 # The version the factory pins both packages at (ADR 0009); this names it in the one line that says Stryker is missing.
 PINNED = "10.0.0"
 PACKAGES = ("core", "vitest-runner")
-FAILED_AS = {"Survived": "survived", "Timeout": "timed out", "RuntimeError": "runtime error",
+# An `Ignored` mutant whose source does not excuse it is counted under this name (D219), which is not a Stryker status.
+UNEXCUSED = "Unexcused"
+# What D219 reads of the line above an `Ignored` mutant: Stryker's own `next-line` directive, written with `//`.
+NEXT_LINE = re.compile(r"\s*//\s?Stryker disable next-line ([a-zA-Z, ]+)(?::(.*))?")
+FAILED_AS = {UNEXCUSED: "ignored without a next-line comment", "Survived": "survived", "Timeout": "timed out", "RuntimeError": "runtime error",
              "CompileError": "compile error", "Pending": "pending"}
 
 
@@ -332,11 +337,36 @@ def holds_code(path: Path) -> bool:
                for statement in statements(text))
 
 
-def failure_line(service: str, name: str, one: dict, report: str) -> str:
+def unexcused(service: str, name: str, entry: dict, one: dict) -> str | None:
+    """Why an `Ignored` mutant does not pass (D219), or None where a `// Stryker disable next-line <mutator>: <reason>`
+    comment on the line above it names its mutator with a reason. Stryker 10.0.0 marks a next-line, a block and a
+    file-wide comment alike `Ignored` (and the block and next-line ones with the same `statusReason` when they give a
+    reason), so the source decides; only `excludedMutations` is told apart by its reason (research R10)."""
+    if str(one.get("statusReason") or "").startswith("Ignored because of excluded mutation"):
+        return "the config's mutator.excludedMutations ignored it, which is not a per-mutant comment"
+    source = entry.get("source")
+    if not isinstance(source, str):
+        try:
+            source = (Path(service) / name).read_text(encoding="utf-8")
+        except (OSError, ValueError):
+            source = ""
+    lines = source.splitlines()
+    mutator = str(one.get("mutatorName"))
+    line = ((one.get("location") or {}).get("start") or {}).get("line")
+    above = NEXT_LINE.fullmatch(lines[line - 2].rstrip()) if isinstance(line, int) and 2 <= line <= len(lines) + 1 else None
+    if above is None:
+        return f"the line above it is not a `// Stryker disable next-line {mutator}: <reason>` comment"
+    if mutator.lower() not in [named.strip().lower() for named in above[1].split(",")]:
+        return f"the next-line comment does not name {mutator}"
+    return None if (above[2] or "").strip() else "the next-line comment gives no reason"
+
+
+def failure_line(service: str, name: str, one: dict, report: str, why: str | None = None) -> str:
     start = (one.get("location") or {}).get("start") or {}
     replacement = " ".join(str(one.get("replacement", "")).split())
+    excuse = f" — not excused: {why}" if why else ""
     return (f"mutation: {one.get('status')} {service}/{name}:{start.get('line')}:{start.get('column')} "
-            f"{one.get('mutatorName')} → {replacement} (report {report})")
+            f"{one.get('mutatorName')} → {replacement}{excuse} (report {report})")
 
 
 def last_line(counts: Counter, failed: bool, report: str) -> str:
@@ -381,10 +411,14 @@ def verdict(service: str, given: list[str], report: str, files: dict[str, dict])
             return 1
         say(f"mutation: Stryker found nothing to mutate in {service}; a pass on nothing is not a pass")
         return 1
-    failing = [(name, one) for name, one in mutants if one.get("status") not in PASS + COUNTED]
+    why = {(name, id(one)): unexcused(service, name, files[name], one) for name, one in mutants
+           if one.get("status") == "Ignored"}
+    failing = [(name, one) for name, one in mutants
+               if one.get("status") not in PASS + COUNTED or why.get((name, id(one)))]
     for name, one in failing:
-        say(failure_line(service, name, one, report))
-    say(last_line(Counter(str(one.get("status")) for _, one in mutants), bool(failing or problems), report))
+        say(failure_line(service, name, one, report, why.get((name, id(one)))))
+    counts = Counter(UNEXCUSED if why.get((name, id(one))) else str(one.get("status")) for name, one in mutants)
+    say(last_line(counts, bool(failing or problems), report))
     return 1 if failing or problems else 0
 
 
