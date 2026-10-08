@@ -15,13 +15,21 @@ This is the skeleton past the configuration: it refuses to run, which can only f
 """
 from __future__ import annotations
 
+import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import IO, Any, Callable
 
 USAGE = "mutation: usage: mutmut-mutation.py <service> [--file <path within the service> ...]"
-NOT_WIRED = "mutation: mutmut is not wired by this script yet; nothing was run"
+# The one mutmut this script was written against: it calls functions mutmut does not document as public (R3), so another
+# version is refused, and a change of the pin sweeps (T008).
+PINNED = "3.8.0"
+VERSION_CODE = "import importlib.metadata as m; print(m.version('mutmut'))"
+# Held by a run for its whole length, beside the environment it runs in; the kernel releases it when the run dies.
+LOCK = ".venv/mutmut-run.lock"
 # What `fnmatch` reads as syntax: the characters that make a path a pattern over mutant names, not a name.
 OPENERS = "*?["
 # The packages whose version decides which mutants exist: mutmut, and libcst with everything libcst resolves to (D222).
@@ -170,24 +178,130 @@ def versions(pyproject_text: str | None = None, lock_text: str | None = None) ->
     return found
 
 
+class Job:
+    """One run: the service, the files handed over, the environment mutmut and `uv` get, and the lock once held."""
+
+    def __init__(self, service: str, files: list[str]) -> None:
+        self.service = service
+        self.files = files
+        self.env: dict[str, str] = {}
+        self.lock: IO[str] | None = None
+
+
+def say(line: str) -> int:
+    """One `mutation: ` line, and the exit status that ends a run on it."""
+    print(f"mutation: {line}")
+    return 2
+
+
+def check_refusal(job: Job) -> int | None:
+    for file in job.files:
+        refusal = refused(job.service, file)
+        if refusal:
+            return say(refusal)
+    return None
+
+
+def check_table(job: Job) -> int | None:
+    try:
+        targets(job.service)
+    except Unreadable as error:
+        return say(f"{job.service}/pyproject.toml: {error}")
+    return None
+
+
+def check_host(job: Job) -> int | None:
+    if sys.platform == "win32" or not hasattr(os, "fork"):
+        return say("mutmut needs os.fork, which this host does not have; run it under WSL")
+    return None
+
+
+def check_uv(job: Job) -> int | None:
+    if shutil.which("uv", path=os.environ.get("PATH", "")) is None:
+        return say("uv is not on PATH; install it to run mutmut (see scripts/verify)")
+    return None
+
+
+def check_environment(job: Job) -> int | None:
+    """What mutmut and `uv` are handed: this environment without `PYTEST_ADDOPTS`, which would change how every mutant's
+    tests run (`[tool.mutmut] pytest_add_cli_args` is where a service adds pytest options)."""
+    job.env = {name: value for name, value in os.environ.items() if name != "PYTEST_ADDOPTS"}
+    if "PYTEST_ADDOPTS" in os.environ:
+        say("PYTEST_ADDOPTS is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut] "
+            "pytest_add_cli_args is where this service adds pytest options")
+    return None
+
+
+def take_lock(job: Job, environment_only: bool = False) -> int | None:
+    """One run of a service at a time: an exclusive, non-blocking lock beside its environment. Before the sync where
+    the environment is already there; after it where it is not, because `uv sync` refuses a `.venv` that holds
+    nothing but this file."""
+    import fcntl
+
+    path = Path(job.service) / LOCK
+    if job.lock is not None or (environment_only and not (path.parent / "pyvenv.cfg").is_file()):
+        return None
+    path.parent.mkdir(exist_ok=True)
+    handle = open(path, "a", encoding="utf-8", newline="\n")
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        handle.close()
+        return say(f"another mutmut run of {job.service} holds {path.as_posix()}; wait for it, then run this again")
+    job.lock = handle
+    return None
+
+
+def take_lock_if_there(job: Job) -> int | None:
+    return take_lock(job, environment_only=True)
+
+
+def uv(job: Job, *arguments: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["uv", *arguments], env=job.env, text=True, capture_output=True)
+
+
+def ensure_synced(job: Job) -> int | None:
+    """The environment from the committed lock and nothing else, as `scripts/verify` builds it; the refusal is `uv`'s
+    exit status and is never parsed."""
+    if uv(job, "sync", "--project", job.service, "--locked", "--quiet").returncode != 0:
+        return say(f"{job.service}/uv.lock does not agree with {job.service}/pyproject.toml; run uv lock --project "
+                   f"{job.service}, then this again")
+    return None
+
+
+def check_mutmut_version(job: Job) -> int | None:
+    done = uv(job, "run", "--no-sync", "--project", job.service, "python", "-c", VERSION_CODE)
+    found = done.stdout.strip() if done.returncode == 0 else ""
+    if found == PINNED:
+        return None
+    return say(f"mutmut {found or 'is not'} installed in {job.service}'s environment; this wrapper runs mutmut {PINNED}: "
+               f"add mutmut=={PINNED} to the dev group of {job.service}/pyproject.toml and run uv lock --project "
+               f"{job.service} (slipwai migrate brings the wrapper for a newer pin)")
+
+
+def not_wired(job: Job) -> int | None:
+    return say("mutmut is not wired by this script yet; nothing was run")
+
+
+# The order the rules fix, read in one place: what starts nothing first, then the host, `uv`, the run's own lock, the
+# environment, and the version in it.
+CHECKS: tuple[Callable[[Job], int | None], ...] = (
+    check_refusal, check_table, check_host, check_uv, check_environment, take_lock_if_there, ensure_synced, take_lock,
+    check_mutmut_version, not_wired,
+)
+
+
 def main(arguments: list[str]) -> int:
     parsed = parse(arguments)
     if parsed is None:
         print(USAGE)
         return 2
-    service, files = parsed
-    for file in files:
-        refusal = refused(service, file)
-        if refusal:
-            print(f"mutation: {refusal}")
-            return 2
-    try:
-        targets(service)
-    except Unreadable as error:
-        print(f"mutation: {service}/pyproject.toml: {error}")
-        return 2
-    print(NOT_WIRED)
-    return 2
+    job = Job(*parsed)
+    for check in CHECKS:
+        status = check(job)
+        if status is not None:
+            return status
+    return 2  # unreachable: the last check returns a status
 
 
 if __name__ == "__main__":

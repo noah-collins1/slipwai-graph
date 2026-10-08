@@ -258,11 +258,13 @@ class MainTest(Case):
         self.assertUvNeverCalled()
 
     def test_e5_a_valid_invocation_reaches_the_next_task_s_seam(self) -> None:
+        """The seam is the setup (T004): the fake `uv` that fails every call is first reached by `uv sync`."""
         self.service(TABLE)
         done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py")
         self.assertEqual(done.returncode, 2)
-        self.assertIn("not wired", done.stdout)
-        self.assertUvNeverCalled()
+        self.assertIn("uv.lock does not agree", done.stdout)
+        self.assertEqual(self.log.read_text(encoding="utf-8").splitlines(), [
+            "uv sync --project apps/service --locked --quiet"])
 
 
 if __name__ == "__main__":
