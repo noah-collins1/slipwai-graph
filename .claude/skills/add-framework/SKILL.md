@@ -265,6 +265,7 @@ current, and the question is what makes them the user's.
 | `RUNNERS`, read by `parallel_tests_page` | `project/parallel_tests.py` | **Yes, always** — one row per backend key, the gates page's sentence on whether the runner already runs tests in parallel; the sibling's is usually its family's sentence word for word, as both Java rows are. A missing row is silent, not a `KeyError` |
 | `paths` | `project/event_model.py` | Usually **no** — illustrative source paths |
 | `tools` | `project/mutation.py` | Usually **no** — one mutation tester per ecosystem |
+| `MUTATION_NOTES` | `project/mutation.py` | **Yes** where the framework's test harness changes what the mutation tester can do — keyed by backend, never by family (PIT works under Spring Boot and not under Quarkus) |
 | `language_artifacts` | `project/gitignore.py` | Usually **no** — one build output per build tool |
 | `BACKENDS` dispatch | `project/languages/__init__.py` | **Yes, always** — one module per backend (section 5) |
 | the layout table in `backing_service_service_files` | `project/backing_services.py` | **Yes** — adapters are framework-shaped |

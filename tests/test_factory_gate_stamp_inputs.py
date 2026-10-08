@@ -116,6 +116,9 @@ UNREADABLE = {
                                              "the load, so the shell's value never reaches the script (T030)",
     "test_monorepos.py: os.access(landed, os.X_OK)": "a file the generated repository holds, not a tool",
     "test_parallel_slices.py: os.access(gate, os.X_OK)": "a file the generated repository holds, not a tool",
+    "test_mutmut_generated.py: os.access(script, os.X_OK)": "a file the generated repository holds, not a tool",
+    "test_mutmut_generated.py: os.access(repo / 'delivery' / SCRIPT_PATH, os.X_OK)":
+        "a file the generated repository holds, not a tool",
 }
 
 

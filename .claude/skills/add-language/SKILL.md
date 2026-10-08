@@ -482,7 +482,8 @@ rotted.
    (`documented_java_segment`/`documented_java_path`) as a second worked template.
 8. **`project/mutation.py`** — `mutation_command`'s `tools` dict: the mutation-testing tool name
    for this ecosystem (only used in generated prose; the mutation Make target itself lives in item 3
-   above).
+   above) — and `MUTATION_NOTES`, the per-backend note printed above `make mutation` in the generated
+   Makefile, looked up with a default: add a row only where the new tool has something to say.
 9. **`project/languages/__init__.py`** — the `BACKENDS` dispatch: `"<language>": <language>`,
    naming the module you write in section 3 below. The facade does one thing per service — prefix every
    path `service_files` returned with that service's directory and hand it to your `name_service` — and
