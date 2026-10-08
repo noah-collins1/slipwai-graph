@@ -669,9 +669,9 @@ differs from the text above, and why:
 ## Phase 2: Host closing tasks
 
 ### T014 — Every suite that reads a generated gate, once, before the gates (host task)
-- [ ] After T013 is committed and the chain T002 … T013 is: `make test TESTS="$(ls tests | grep -E '^test_(verify_stamp|parallel_gate|model_|gate_|verify_scoped|scoped_|mutation|stryker)' | sed 's/\.py$//' | tr '\n' ' ') test_matrix test_commands test_commit_boundaries test_monorepos test_layout test_changelog test_pruning test_language_skeletons test_backend_obligations"`,
+- [x] After T013 is committed and the chain T002 … T013 is: `make test TESTS="$(ls tests | grep -E '^test_(verify_stamp|parallel_gate|model_|gate_|verify_scoped|scoped_|mutation|stryker)' | sed 's/\.py$//' | tr '\n' ' ') test_matrix test_commands test_commit_boundaries test_monorepos test_layout test_changelog test_pruning test_language_skeletons test_backend_obligations"`,
   `python3 scripts/regenerate-locks.py --check`, `make starters` and the diff of `build/` against T001's: only the intended generated
-  changes; then `make lint typecheck check-structure`. Not `make verify`.
+  changes; then `make lint typecheck check-structure`. Not `make verify`. *(Done: `make test` on the branch selected every module (`.gitignore` rule changed): 3708 tests; the failures it found — the stamp-inputs scanner (os.access, a mutmut probe), a feature branched on by name (`postgres`), the test-selection declarations and cross-read map, S08's planning fake missing `refusal` — fixed in e7cc480, 1b04314, 0d4066d and each re-run green; test_matrix's one error was a uv copy failure in a Python row (environmental), and `FACTORY_BACKENDS=python make test TESTS=test_matrix` re-ran green; every TypeScript row's `make verify` passed. `regenerate-locks.py --check` cannot run under npm 9.2 (see the implementation record). `make starters` diff: TypeScript gains `stryker.config.json`, `scripts/stryker-mutation.py`, the manifest, lock, Makefile, .gitignore, rules.json and command text; every backend's toolkit copies of mutation-scope.py, verify-stamp.py, provisional.py and the skill; Python's and Quarkus's command text (UNWIRED).)*
 
 ### T015 — Converge, passes as needed (host task)
 - [ ] `drive-converge` over the slice's range; findings append as tasks below.
