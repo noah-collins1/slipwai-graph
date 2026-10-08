@@ -1,0 +1,59 @@
+### AC-S42-1
+26:  "mutmut==3.8.0",
+43:[tool.mutmut]
+44:# What `make mutation` mutates and how it runs the tests (scripts/mutmut-mutation.py, ADR 0010): the production code
+767:name = "mutmut"
+768-version = "3.8.0"
+Checked 62 packages in 0.74ms
+uv sync --locked exit 0
+26:  "mutmut==3.8.0",
+43:[tool.mutmut]
+44:# What `make mutation` mutates and how it runs the tests (scripts/mutmut-mutation.py, ADR 0010): the production code
+767:name = "mutmut"
+768-version = "3.8.0"
+Checked 62 packages in 0.80ms
+uv sync --locked exit 0
+
+### AC-S42-8: test-only change
+ M apps/service/tests/test_health.py
+mutation: no mutant to run — only tests changed: apps/service/tests/test_health.py; `make mutation-full` is the run that measures them
+mutation: skip apps/service — no changed production file
+mutation: skip apps/billing — no changed production file
+mutation: 0 scoped, 0 swept, 2 skipped, 0 refused; passed
+real	0m0.153s
+exit 0
+
+### AC-S42-10: mutmut absent from apps/service environment
+ - mutmut==3.8.0
+mutation: scoped to 1 changed file(s) since `main` at 8d61e56: apps/service/src/demo/__init__.py
+mutation: scope apps/service — src/demo/__init__.py
+mutation: scoped to 1 given file(s): src/demo/__init__.py — 4 mutant(s)
+mutation: mutmut exited 0 (its exit status and the output above are mutmut's, never the verdict; the .meta files are)
+mutation: 4 mutants: 4 killed, 0 no tests (reported, never failed); passed — report apps/service/mutants/
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; passed
+exit 0
+Checked 62 packages in 0.41ms
+### AC-S42-10 (b): mutmut removed from the dev group, lock not redone
+ apps/service/pyproject.toml       | 1 -
+ apps/service/src/demo/__init__.py | 1 +
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+mutation: the sweep runs — `apps/service/pyproject.toml` changed
+mutation: sweep apps/service — `apps/service/pyproject.toml` changed
+mutation: apps/service/uv.lock does not agree with apps/service/pyproject.toml; run uv lock --project apps/service, then this again
+mutation: skip apps/billing — no changed production file
+mutation: 0 scoped, 1 swept, 1 skipped, 0 refused; failed: apps/service
+make: *** [Makefile:300: mutation] Error 2
+exit 2
+
+### AC-S42-10 (c): and the lock redone (uv lock --project apps/service), so the environment has no mutmut
+Removed setproctitle v1.3.8
+Removed textual v8.2.8
+mutation: the sweep runs — `apps/service/pyproject.toml` changed, `apps/service/uv.lock` changed
+mutation: sweep apps/service — `apps/service/pyproject.toml` changed, `apps/service/uv.lock` changed
+mutation: mutmut is not installed in apps/service's environment (importlib.metadata.PackageNotFoundError: No package metadata was found for mutmut); this wrapper runs mutmut 3.8.0: add mutmut==3.8.0 to the dev group of apps/service/pyproject.toml and run uv lock --project apps/service (slipwai migrate brings the wrapper for a newer pin)
+mutation: skip apps/billing — no changed production file
+mutation: 0 scoped, 1 swept, 1 skipped, 0 refused; failed: apps/service
+make: *** [Makefile:300: mutation] Error 2
+exit 2
+ + textual==8.2.8

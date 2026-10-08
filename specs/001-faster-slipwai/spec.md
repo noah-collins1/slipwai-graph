@@ -3061,8 +3061,9 @@ pin bump sits outside `[tool.mutmut]` (D216); an xdist `-n` in `PYTEST_ADDOPTS` 
   under `src/`, when `make mutation` runs, then only that module's mutants run and the last line counts it scoped.
 - **AC-S42-3** — Given two Python services and a change in one, then the other is named skipped and starts no mutmut;
   each service runs in its own directory with its own configuration.
-- **AC-S42-4** — Given `make mutation-full`, then every service's sources are mutated from a fresh `mutants/`, one line
-  per service.
+- **AC-S42-4** — *D223.* Given `make mutation-full`, then every Python service's sources are mutated from a fresh
+  `mutants/`, one result line per service; a service that fails does not stop the next, and the run fails at the end
+  naming each failed service.
 - **AC-S42-5** — *D212.* Given a scoped mutant that survives, times out, is suspicious, segfaults, is not checked, or
   has a status the wrapper does not know, then the run exits non-zero naming the service, the mutant and its status;
   *no tests* mutants are counted, not failed; the verdict is the wrapper's, read from the per-file results for the
@@ -3082,6 +3083,10 @@ pin bump sits outside `[tool.mutmut]` (D216); an xdist `-n` in `PYTEST_ADDOPTS` 
   every other backend; `SINCE` does not narrow Python's `mutation-full`.
 - **AC-S42-12** — Given a project made before, `slipwai migrate` brings the recipe, the wrapper, the ignore lines and
   `rules.json`; the MINOR fragment's catch-up names the `uv.lock` conflict and `uv lock --project apps/<svc>`, says a
-  leftover `mutants/` or `.mutmut-cache` may be deleted, and says `make mutation` exits 2 until the lock is redone.
+  leftover `mutants/` or `.mutmut-cache` may be deleted, and says `make mutation` exits 2 until the lock is redone; *D224:*
+  it says to run `slipwai migrate` and commit before `slipwai add-service` of a Python or TypeScript service in a project
+  an older factory last wrote, since `add-service` brings the service's wrapper, recipe and ignore line but not
+  `scripts/mutation-scope.py` or the stamp script, so until `migrate` runs every `make mutation` sweeps and the stamp does
+  not reuse, and a `migrate` afterwards skips the catch-up notes in between.
 - **AC-S42-13** — The demo records `make mutation` against `make mutation-full` on a two-service Python starter: wall
   time, mutant counts, the command and the machine.

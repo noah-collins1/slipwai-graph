@@ -1,0 +1,43 @@
+$ make verify (1)
+
+
+ RUN  v4.1.11 /tmp/s42-hand/demo-out/demo/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  16:08:08
+   Duration  927ms (transform 98ms, setup 276ms, import 138ms, tests 279ms, environment 1.48s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 304ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+
+real	0m17.937s
+user	0m27.975s
+sys	0m3.869s
+exit 0
+$ make verify (2)
+   Duration  942ms (transform 112ms, setup 288ms, import 135ms, tests 272ms, environment 1.49s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+
+real	0m9.336s
+user	0m15.815s
+sys	0m1.882s

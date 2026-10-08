@@ -11,6 +11,7 @@ from ..backing_services import backing_service_service_files
 from ..composition import wire_store
 from ..flag_route import wire_entry
 from ..flags import flag_reader
+from ..mutmut import mutmut_files
 from ..openapi import published_document
 from ..parallel_tests import FLAGS
 
@@ -47,7 +48,7 @@ def service_files(event: bool, selection: Selection, target: str = "none") -> di
 # the factory holds itself to — the factory should not be checked by a stricter tool than the one it hands
 # its own output. mypy beside pytest and ruff, because `typecheck` is a type check: `compileall` only
 # proves the files parse.
-BASE_DEVELOPMENT = ("mypy==2.3.1", "pytest==9.1.1", "pytest-xdist==3.8.0", "ruff==0.16.3")
+BASE_DEVELOPMENT = ("mutmut==3.8.0", "mypy==2.3.1", "pytest==9.1.1", "pytest-xdist==3.8.0", "ruff==0.16.3")
 
 # What each feature pins, split by where it belongs: `runtime` is what the service imports when it is
 # running and is therefore what the production image carries, `development` what only the gate needs. One
@@ -280,4 +281,5 @@ def repository_files(
 ) -> dict[str, str]:
     """The verify script above the services; nothing else sits at the root for this backend."""
     files[verify] = python_verify(services)
+    files.update(mutmut_files(services))
     return files

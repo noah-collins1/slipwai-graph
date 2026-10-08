@@ -99,7 +99,7 @@ MAVEN_EXECUTABLES = frozenset({f"{APP}/mvnw"})
 
 BACKEND_EXECUTABLES = {
     "typescript": frozenset({"scripts/stryker-mutation.py"}),  # `project/stryker.py` says what it is
-    "python": set(),
+    "python": frozenset({"scripts/mutmut-mutation.py"}),  # `project/mutmut.py` says what it is
     # The gate scripts a Go service runs through; `project/languages/go.py` writes them, `project/mutation.py` says why.
     "go": frozenset({"scripts/go-coverage.py", "scripts/go-mutation.py"}),
     "java-quarkus": MAVEN_EXECUTABLES,

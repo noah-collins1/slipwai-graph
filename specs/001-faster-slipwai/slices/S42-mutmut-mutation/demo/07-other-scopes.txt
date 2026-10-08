@@ -1,0 +1,79 @@
+### 1b: settings.py changed
+$ time make mutation
+mutation: scoped to 1 changed file(s) since `main` at 8d61e56: apps/service/src/demo/settings.py
+mutation: scope apps/service — src/demo/settings.py
+mutation: scoped to 1 given file(s): src/demo/settings.py — 14 mutant(s)
+mutation: mutmut exited 0 (its exit status and the output above are mutmut's, never the verdict; the .meta files are)
+mutation: survived apps/service demo.settings.x_load_settings__mutmut_3 (mutmut show demo.settings.x_load_settings__mutmut_3 in apps/service; report apps/service/mutants/)
+mutation: survived apps/service demo.settings.x_load_settings__mutmut_6 (mutmut show demo.settings.x_load_settings__mutmut_6 in apps/service; report apps/service/mutants/)
+mutation: 14 mutants: 12 killed, 0 no tests (reported, never failed), 2 survived; failed — report apps/service/mutants/
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; failed: apps/service
+make: *** [Makefile:300: mutation] Error 1
+real	0m3.103s
+exit 2
+
+### 4: read_models.py (types only) changed
+$ make mutation
+mutation: scoped to 1 changed file(s) since `main` at 8d61e56: apps/service/src/demo/application/ports/read_models.py
+mutation: scope apps/service — src/demo/application/ports/read_models.py
+mutation: no mutant to run — src/demo/application/ports/read_models.py: mutmut found no function to mutate in it
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; passed
+real	0m1.467s
+exit 0
+
+### 5: [tool.mutmut] in apps/billing/pyproject.toml changed
+43:[tool.mutmut]
+44-# What `make mutation` mutates and how it runs the tests (scripts/mutmut-mutation.py, ADR 0010): the production code
+45-# under src/ ...
+46-source_paths = ["src"]
+47-# ... against the default suite, as `make test` runs it: tests/integration needs a database, so it is left out ...
+48-pytest_add_cli_args_test_selection = ["tests", "--ignore=tests/integration"]
+49-# ... and never across cores: mutmut records which tests reach which function from one process.
+50-pytest_add_cli_args = ["-p", "no:xdist"]
+51-
+### 5a: a comment added inside [tool.mutmut]
+diff --git a/apps/billing/pyproject.toml b/apps/billing/pyproject.toml
+index 1a6a795..a8bd47d 100644
+--- a/apps/billing/pyproject.toml
++++ b/apps/billing/pyproject.toml
+@@ -43,6 +43,7 @@ testpaths = ["tests"]
+ [tool.mutmut]
+ # What `make mutation` mutates and how it runs the tests (scripts/mutmut-mutation.py, ADR 0010): the production code
+ # under src/ ...
++# a reviewer note
+ source_paths = ["src"]
+ # ... against the default suite, as `make test` runs it: tests/integration needs a database, so it is left out ...
+ pytest_add_cli_args_test_selection = ["tests", "--ignore=tests/integration"]
+mutation: no mutant to run — no production file changed
+mutation: skip apps/service — no changed production file
+mutation: skip apps/billing — no changed production file
+mutation: 0 scoped, 0 swept, 2 skipped, 0 refused; passed
+real	0m0.147s
+exit 0
+
+### 5b: a value changed in [tool.mutmut]: debug = false added
+diff --git a/apps/billing/pyproject.toml b/apps/billing/pyproject.toml
+index 1a6a795..48cdc6d 100644
+--- a/apps/billing/pyproject.toml
++++ b/apps/billing/pyproject.toml
+@@ -43,6 +43,7 @@ testpaths = ["tests"]
+ [tool.mutmut]
+ # What `make mutation` mutates and how it runs the tests (scripts/mutmut-mutation.py, ADR 0010): the production code
+ # under src/ ...
++debug = false
+ source_paths = ["src"]
+ # ... against the default suite, as `make test` runs it: tests/integration needs a database, so it is left out ...
+ pytest_add_cli_args_test_selection = ["tests", "--ignore=tests/integration"]
+$ time make mutation
+exit 2
+mutation: the sweep runs — `apps/billing/pyproject.toml` changed
+mutation: skip apps/service — no changed production file
+mutation: sweep apps/billing — `apps/billing/pyproject.toml` changed
+mutation: mutmut exited 0 (its exit status and the output above are mutmut's, never the verdict; the .meta files are)
+mutation: 992 mutants: 415 killed, 463 no tests (reported, never failed), 114 survived; failed — report apps/billing/mutants/
+mutation: 0 scoped, 1 swept, 1 skipped, 0 refused; failed: apps/billing
+make: *** [Makefile:300: mutation] Error 1
+real	0m9.392s
+survivor lines: 114

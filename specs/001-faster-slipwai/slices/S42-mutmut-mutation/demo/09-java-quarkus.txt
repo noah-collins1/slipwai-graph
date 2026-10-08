@@ -1,0 +1,11 @@
+### AC-S42-11: java-quarkus mutation still exits 2
+$ slipwai generate q --backend java-quarkus --output /tmp/s42-hand/q-out --no-init --no-install --skip-checks
+created: /tmp/s42-hand/q-out/q
+$ grep -A2 ^mutation-full: Makefile
+mutation-full: ## Run native mutation testing over every service, the whole run; `make mutation` scopes on a slice branch
+	@echo 'Configure PIT for the domain packages only — see the note above this target — then run it.'; exit 2
+audit: ## Run the ecosystem-native dependency vulnerability audit
+$ make mutation-full
+Configure PIT for the domain packages only — see the note above this target — then run it.
+make: *** [Makefile:231: mutation-full] Error 2
+exit 2

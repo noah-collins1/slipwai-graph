@@ -1,0 +1,243 @@
+$ (baseline) PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.53s
+pytest exit 0
+
+===== demo.settings.x_load_settings__mutmut_3
+$ uv run --no-sync mutmut show demo.settings.x_load_settings__mutmut_3
+# demo.settings.x_load_settings__mutmut_3: survived
+--- src/demo/settings.py
++++ src/demo/settings.py
+@@ -8,7 +8,7 @@
+     try:
+         return Settings()
+     except ValidationError as error:
+-        problems = "; ".join(
++        problems = "XX; XX".join(
+             f"{'.'.join(str(part) for part in problem['loc']).upper()}: {problem['msg']}"
+             for problem in error.errors()
+         )
+$ uv run --no-sync mutmut apply demo.settings.x_load_settings__mutmut_3
+$ git diff --stat -- src
+ apps/service/src/demo/__init__.py | 1 +
+ apps/service/src/demo/settings.py | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.53s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.logging_setup.x_configure_logging__mutmut_8
+$ uv run --no-sync mutmut show demo.logging_setup.x_configure_logging__mutmut_8
+# demo.logging_setup.x_configure_logging__mutmut_8: survived
+--- src/demo/logging_setup.py
++++ src/demo/logging_setup.py
+@@ -4,7 +4,7 @@
+     Both arguments default to the environment, and are parameters at all so that a test
+     can ask for a format without setting a variable the rest of the suite then runs under.
+     """
+-    resolved_level = (level or environ.get("LOG_LEVEL", "info")).upper()
++    resolved_level = (level or environ.get("XXLOG_LEVELXX", "info")).upper()
+     resolved_format = log_format or environ.get("LOG_FORMAT", "json")
+     handler = logging.StreamHandler(sys.stdout)
+     handler.setFormatter(
+$ uv run --no-sync mutmut apply demo.logging_setup.x_configure_logging__mutmut_8
+$ git diff --stat -- src
+ apps/service/src/demo/logging_setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.53s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.logging_setup.xǁJsonFormatterǁformat__mutmut_7
+$ uv run --no-sync mutmut show demo.logging_setup.xǁJsonFormatterǁformat__mutmut_7
+# demo.logging_setup.xǁJsonFormatterǁformat__mutmut_7: survived
+--- src/demo/logging_setup.py
++++ src/demo/logging_setup.py
+@@ -1,6 +1,6 @@
+ def format(self, record: logging.LogRecord) -> str:
+     payload: dict[str, object] = {
+-        "time": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
++        "time": self.formatTime(record, ),
+         "level": record.levelname.lower(),
+         "logger": record.name,
+         "message": record.getMessage(),
+$ uv run --no-sync mutmut apply demo.logging_setup.xǁJsonFormatterǁformat__mutmut_7
+$ git diff --stat -- src
+ apps/service/src/demo/logging_setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.52s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.tracing.x_start_tracing__mutmut_7
+$ uv run --no-sync mutmut show demo.tracing.x_start_tracing__mutmut_7
+# demo.tracing.x_start_tracing__mutmut_7: survived
+--- src/demo/tracing.py
++++ src/demo/tracing.py
+@@ -14,7 +14,7 @@
+         # No processor at all is the "no exporter" state, and it is not the same as a disabled
+         # SDK: spans are still created, so every id below is real and every log line still
+         # carries one. They are simply not kept once they end.
+-        exporter = OTLPSpanExporter(endpoint=f"{endpoint.rstrip('/')}/v1/traces")
++        exporter = None
+         provider.add_span_processor(BatchSpanProcessor(exporter))
+     trace.set_tracer_provider(provider)
+     return Tracing(exporting=endpoint is not None, provider=provider)
+$ uv run --no-sync mutmut apply demo.tracing.x_start_tracing__mutmut_7
+$ git diff --stat -- src
+ apps/service/src/demo/tracing.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.53s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.tracing.xǁTracingǁshutdown__mutmut_3
+$ uv run --no-sync mutmut show demo.tracing.xǁTracingǁshutdown__mutmut_3
+# demo.tracing.xǁTracingǁshutdown__mutmut_3: survived
+--- src/demo/tracing.py
++++ src/demo/tracing.py
+@@ -9,5 +9,5 @@
+         self.provider.shutdown()
+     except Exception as error:
+         logging.getLogger(__name__).warning(
+-            "traces could not be flushed on shutdown: %s", error
++            error
+         )
+$ uv run --no-sync mutmut apply demo.tracing.xǁTracingǁshutdown__mutmut_3
+$ git diff --stat -- src
+ apps/service/src/demo/tracing.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.54s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.adapters.driven.event_store_memory.xǁInMemoryEventStoreǁappend_if__mutmut_7
+$ uv run --no-sync mutmut show demo.adapters.driven.event_store_memory.xǁInMemoryEventStoreǁappend_if__mutmut_7
+# demo.adapters.driven.event_store_memory.xǁInMemoryEventStoreǁappend_if__mutmut_7: survived
+--- src/demo/adapters/driven/event_store_memory.py
++++ src/demo/adapters/driven/event_store_memory.py
+@@ -6,7 +6,7 @@
+     if self.read_tagged(condition.query, condition.after).events:
+         return ConditionConflict(self.database.head)
+     if not events:
+-        return Recorded(self.database.head)
++        return Recorded(None)
+     with self.database.unit_of_work():
+         for event in events:
+             # Each event still lands at the next version of the stream it names, so a
+$ uv run --no-sync mutmut apply demo.adapters.driven.event_store_memory.xǁInMemoryEventStoreǁappend_if__mutmut_7
+$ git diff --stat -- src
+ apps/service/src/demo/adapters/driven/event_store_memory.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.53s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.adapters.driven.event_store_memory.x__as_domain__mutmut_1
+$ uv run --no-sync mutmut show demo.adapters.driven.event_store_memory.x__as_domain__mutmut_1
+# demo.adapters.driven.event_store_memory.x__as_domain__mutmut_1: survived
+--- src/demo/adapters/driven/event_store_memory.py
++++ src/demo/adapters/driven/event_store_memory.py
+@@ -7,7 +7,7 @@
+     would notice.
+     """
+     return DomainEvent(
+-        type=event.type,
++        type=None,
+         schema_version=event.schema_version,
+         stream_id=event.stream_id,
+         payload=event.payload,
+$ uv run --no-sync mutmut apply demo.adapters.driven.event_store_memory.x__as_domain__mutmut_1
+$ git diff --stat -- src
+ apps/service/src/demo/adapters/driven/event_store_memory.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.53s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.adapters.driving.http.app.x_build_app__mutmut_6
+$ uv run --no-sync mutmut show demo.adapters.driving.http.app.x_build_app__mutmut_6
+# demo.adapters.driving.http.app.x_build_app__mutmut_6: survived
+--- src/demo/adapters/driving/http/app.py
++++ src/demo/adapters/driving/http/app.py
+@@ -19,7 +19,7 @@
+     # API explorable. `/openapi.json` is the document itself — what a browser app generates a
+     # client from and what a test asserts the contract against — and `/docs` is the same document
+     # with a page around it.
+-    app = FastAPI(title=SERVICE_NAME, version="0.1.0", lifespan=lifespan)
++    app = FastAPI(title=SERVICE_NAME, lifespan=lifespan)
+     @app.middleware("http")
+     async def security_headers(request: Request, call_next: Callable) -> Response:
+$ uv run --no-sync mutmut apply demo.adapters.driving.http.app.x_build_app__mutmut_6
+$ git diff --stat -- src
+ apps/service/src/demo/adapters/driving/http/app.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.53s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.projections.x_catch_up_each__mutmut_7
+$ uv run --no-sync mutmut show demo.projections.x_catch_up_each__mutmut_7
+# demo.projections.x_catch_up_each__mutmut_7: survived
+--- src/demo/projections.py
++++ src/demo/projections.py
+@@ -23,7 +23,7 @@
+                 store,
+                 checkpoints,
+                 projection,
+-                owner=owner,
++                owner=None,
+                 clock=clock,
+                 ttl=ttl,
+                 batch_size=batch_size,
+$ uv run --no-sync mutmut apply demo.projections.x_catch_up_each__mutmut_7
+$ git diff --stat -- src
+ apps/service/src/demo/projections.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.53s
+pytest exit 0
+$ git checkout -- src
+
+===== demo.adapters.driven.checkpoint_store_memory.xǁInMemoryCheckpointStoreǁclaim__mutmut_9
+$ uv run --no-sync mutmut show demo.adapters.driven.checkpoint_store_memory.xǁInMemoryCheckpointStoreǁclaim__mutmut_9
+# demo.adapters.driven.checkpoint_store_memory.xǁInMemoryCheckpointStoreǁclaim__mutmut_9: survived
+--- src/demo/adapters/driven/checkpoint_store_memory.py
++++ src/demo/adapters/driven/checkpoint_store_memory.py
+@@ -6,7 +6,7 @@
+     ttl: timedelta,
+ ) -> Lease | None:
+     held = self._database.leases.get(projection)
+-    if held is not None and held[0] != owner and held[1] > now:
++    if held is not None and held[0] != owner and held[1] >= now:
+         return None
+     expires_at = now + ttl
+     self._database.leases[projection] = (owner, expires_at)
+$ uv run --no-sync mutmut apply demo.adapters.driven.checkpoint_store_memory.xǁInMemoryCheckpointStoreǁclaim__mutmut_9
+$ git diff --stat -- src
+ apps/service/src/demo/adapters/driven/checkpoint_store_memory.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ PYTHONPATH=src uv run --no-sync pytest tests --ignore=tests/integration -p no:xdist -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+87 passed, 1 warning in 0.55s
+pytest exit 0
+$ git checkout -- src
+
+$ git status --short (after the last restore)

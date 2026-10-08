@@ -15,7 +15,7 @@ from slipwai.project.mutation import mutation_command, mutation_notes
 from slipwai.services import App
 
 BACKENDS = ("go", "java-spring", "java-quarkus", "typescript", "python")
-PLACEHOLDERS = ("java-quarkus", "python")
+PLACEHOLDERS = ("java-quarkus",)
 SKILL = ROOT / "assets/toolkit/skills/mutation-testing/SKILL.md"
 FRAGMENT = ROOT / "changelog.d/scoped-mutation.md"
 PAGES = ("docs/backend-obligations.md", "docs/verification.md", "docs/requirements.md", "docs/maintaining.md")
@@ -95,11 +95,11 @@ class NoteTest(unittest.TestCase):
                 if backend == "java-quarkus":
                     self.assertIn("once a tool is wired", note)
 
-    def test_e2_hold_python_has_no_note_and_is_told_in_the_command_text(self) -> None:
-        """HOLD: the Makefile text of a Python project stays free of a note, which keeps `migrate` from conflicting
-        where `add-service` edited the lines above the rule; the command text says the target refuses until wired.
-        (TypeScript's note is S41's; `test_stryker_generated` holds it.)"""
-        self.assertEqual(mutation_notes([service("orders", "python")]), "")
+    def test_e2_python_has_mutmuts_note_and_is_not_told_the_target_refuses(self) -> None:
+        """S42 T010 inverts S08's hold for Python only: mutmut is wired, so Python has a note (S08's other backends'
+        notes are held byte for byte by `test_mutmut_generated`) and the command text no longer says it refuses."""
+        self.assertIn("Wired up: mutmut", mutation_notes([service("orders", "python")]))
+        self.assertNotIn("refuses until a tool is wired", mutation_command(["python"]))
 
     def test_e2_springs_failwhennomutations_paragraph_names_the_scoped_exception(self) -> None:
         note = flat(mutation_notes([service("ledger", "java-spring")]))
@@ -154,6 +154,13 @@ class SkillAndPagesTest(unittest.TestCase):
         obligations = flat((ROOT / "docs/backend-obligations.md").read_text(encoding="utf-8"))
         self.assertIn("no gate runs `make mutation` or `make mutation-full`", obligations)
 
+    def test_t028_the_requirements_row_names_the_python_3_11_a_python_service_s_mutation_run_needs(self) -> None:
+        row = flat((ROOT / "docs/requirements.md").read_text(encoding="utf-8"))
+        row = row[row.index("**Python**: Python 3"):]
+        row = row[:row.index(" | ")]
+        for words in ("**Python**: Python 3.11+ and `uv`", "`tomllib`", "Python 3.10", "sweeps", "exits 2"):
+            self.assertIn(words, row)
+
     def test_e4_the_gates_page_of_a_generated_project_is_unchanged(self) -> None:
         """HOLD: the pages a project is given say nothing of mutation, as before."""
         self.assertNotIn("mutation-full", (ROOT / "src/slipwai/project/docs.py").read_text(encoding="utf-8"))
@@ -167,20 +174,35 @@ class FragmentTest(unittest.TestCase):
         self.assertEqual(len(paragraphs), 1)
         catch_up = " ".join(paragraphs[0].split())
         for sentence in ("`make mutation` on a `slice/<id>` branch", "`make mutation-full`", "`SINCE`", "CI", "trunk",
-                         "TypeScript, Python and `java-quarkus`", "stub"):
+                         "`java-quarkus` still has no mutation tool wired", "stub"):
             self.assertIn(sentence, catch_up)
         self.assertTrue(re.match(r"^\*\*[^*]+[.!?]\*\*", text.split("\n\n")[1]), "a bold lead sentence")
 
-    def test_d149_the_fragment_says_python_is_refused_until_a_later_release_wires_mutmut(self) -> None:
+    def test_d149_the_fragment_names_java_quarkus_alone_as_the_stub_and_not_python_or_typescript(self) -> None:
         text = FRAGMENT.read_text(encoding="utf-8")
         catch_up = " ".join(next(block for block in text.split("\n\n") if block.startswith("**Catch-up.**")).split())
         for where, words in (("body", " ".join(text.split())), ("catch-up", catch_up)):
             with self.subTest(where=where):
-                self.assertIn("until a later slipwai release wires mutmut", words)
+                stub = "`java-quarkus` has no mutation tool wired" if where == "body" else "`java-quarkus` still has no"
+                self.assertIn(stub, words)
                 self.assertNotIn("S42", words)
-                self.assertIn("whether or not mutmut is installed", words)
-                self.assertIn("`make mutation-full` runs mutmut today where it is installed", words)
+                self.assertNotIn("Python", words)
+                self.assertNotIn("TypeScript", words)
+                self.assertNotIn("mutmut", words)
         self.assertNotIn("until you wire a tool", text)
+
+    def test_e6_no_fragment_of_the_release_says_python_or_typescript_has_no_mutation_tool(self) -> None:
+        """Every fragment is one entry of one release (`make release` assembles them): once a language is wired, no
+        fragment says it is not. Teeth: put the old clause back into any one of them."""
+        stale = (r"(Python|TypeScript)[^.]*\bno (mutation )?tool\b", r"until a later slipwai release wires",
+                 r"Python service (stays |is )?refused")
+        fragments = sorted((ROOT / "changelog.d").glob("*.md"))
+        self.assertGreater(len(fragments), 10)
+        for fragment in fragments:
+            words = " ".join(fragment.read_text(encoding="utf-8").split())
+            for pattern in stale:
+                with self.subTest(fragment=fragment.name, pattern=pattern):
+                    self.assertIsNone(re.search(pattern, words), "a fragment that says a wired language is not")
 
 
 if __name__ == "__main__":

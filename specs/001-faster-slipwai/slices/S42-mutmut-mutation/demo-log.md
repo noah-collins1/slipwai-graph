@@ -1,0 +1,43 @@
+# Demo log: S42-mutmut-mutation
+
+## 2026-10-08T21:11:47Z — accepted · iteration 30 · drive-hand (claude-opus-5-5)
+- **Started with:** `./slipwai generate demo --backend python --output /tmp/s42-hand/demo-out --no-init --no-install --skip-checks` from the worktree at `24eca79`. Then `cd /tmp/s42-hand/demo-out/demo && ./slipwai add-service billing --backend python`, a commit, `git checkout -b slice/S1` and `make verify` twice. After that I followed quickstart items 1–6 with `time make mutation` and `time make mutation-full`. AC-S42-11 was checked on a separate scratch project, `generate q --backend java-quarkus`. Both scratch projects were deleted afterwards. · **Seeded:** none
+- **Driven through:** CLI. The brief named `cli`, and the slice is a make target with no screen and no HTTP surface.
+- **Examples:**
+  - Baseline: passed. `make verify` passed twice, in 17.9 s and then 9.3 s. A third run reused the stamp (key 131436670825). `mutation-full` is one Python line, `python3 scripts/mutmut-mutation.py apps/service apps/billing`. On the clean branch, `make mutation` printed *no mutant to run — no production file changed* and *0 scoped, 0 swept, 2 skipped, 0 refused; passed*, exit 0.
+  - Q1 / AC-S42-2, -3, -6, a comment added to `apps/service/src/demo/__init__.py`: passed.
+    - The run said *scoped to 1 changed file(s) since `main` at 8d61e56* and *4 mutants: 4 killed, 0 no tests …; passed*, then *skip apps/billing — no changed production file* and *1 scoped, 0 swept, 1 skipped, 0 refused; passed*, exit 0.
+    - Wall time was 3.2 s.
+    - Only the `x_health` mutants ran, so none of the package's submodules were mutated. `__init__.py.meta` is the only `.meta` with non-null results. No `apps/billing/mutants/` was created.
+  - Q1b, `settings.py` changed: passed (the starter's known red). *14 mutants: 12 killed, … 2 survived; failed*, naming `demo.settings.x_load_settings__mutmut_3` and `_6`. The summary was *failed: apps/service*, exit 2.
+  - Q2 / AC-S42-4 / D223, `make mutation-full`: passed.
+    - `apps/service` swept first and failed. `apps/billing` still swept after it, from its own `mutants/`.
+    - Each service ended *992 mutants: 415 killed, 463 no tests (reported, never failed), 114 survived; failed*. Each survivor got its own line with a `mutmut show` hint.
+    - The summary was *mutation: 2 swept; failed: apps/service, apps/billing*, and make exited non-zero.
+    - The survivors per file match R9 exactly: `checkpoint_store_memory` 1, `event_store_memory` 22, `http/app` 11, `ports/events` 10, `logging_setup` 24, `projections` 9, `projections_lifespan` 14, `settings` 2, `tracing` 21.
+  - Q3 / D225 item 2, survivors replayed by hand: passed. I replayed 10 survivors from 7 files: `settings` `x_load_settings__mutmut_3`, `logging_setup` `x_configure_logging__mutmut_8` and `JsonFormatter.format__mutmut_7`, `tracing` `x_start_tracing__mutmut_7` and `Tracing.shutdown__mutmut_3`, `event_store_memory` `append_if__mutmut_7` and `x__as_domain__mutmut_1`, `http/app` `x_build_app__mutmut_6`, `projections` `x_catch_up_each__mutmut_7`, and `checkpoint_store_memory` `claim__mutmut_9`.
+    - For each, `mutmut apply` changed exactly one line in `src/`. Pytest run directly (`PYTHONPATH=src … pytest tests --ignore=tests/integration -p no:xdist -q`) then gave 87 passed, exit 0.
+    - All 10 are real survivors, and none was killed by a direct run. D225's *Would reverse if* is not met.
+    - `git status --short` was empty after the last `git checkout -- src`.
+  - Q4 / AC-S42-6, `ports/read_models.py` (types only): passed. *no mutant to run — … mutmut found no function to mutate in it*, exit 0, in 1.5 s.
+  - Q5 / AC-S42-7, `[tool.mutmut]` in `apps/billing/pyproject.toml`: passed.
+    - Adding `debug = false` gave *sweep apps/billing — `apps/billing/pyproject.toml` changed* and *skip apps/service*. The sweep reported the same 114 survivors, exit 2.
+    - A comment-only edit inside the table was read as *no production file changed*, exit 0. That reads the table and not its text, which is fine.
+  - Q6 / AC-S42-9: passed. Both `mutants/` directories are ignored (`!!`), and `git status --short` was empty. After every mutation run, `make verify` and `make verify-scoped` both said *the full gate did not run; this tree already passed it* with the same key (131436670825), in about 0.56 s each.
+  - AC-S42-1: passed. Both services have `mutmut==3.8.0` in the dev group and `mutmut 3.8.0` in `uv.lock`, and `uv sync --locked` exits 0. `[tool.mutmut]` sets `source_paths = ["src"]`, `--ignore=tests/integration` and `-p no:xdist`.
+  - AC-S42-8, test-only change: passed. *no mutant to run — only tests changed: …; `make mutation-full` is the run that measures them*, exit 0.
+  - AC-S42-10: passed.
+    - With mutmut uninstalled from the venv only, the wrapper's `uv sync --locked` reinstalled it, and the run was green. That is correct, because the lock still names mutmut.
+    - With mutmut removed from the dev group and the lock not redone: *uv.lock does not agree with pyproject.toml; run uv lock --project apps/service*, exit 2.
+    - After relocking: *mutmut is not installed in apps/service's environment … add mutmut==3.8.0 …*, exit 2. That is never 0 and never mutmut's 1.
+  - AC-S42-11: passed. `java-quarkus` `make mutation-full` still prints the PIT placeholder and exits 2.
+  - AC-S42-13: passed, recorded in `demo/10-ac-s42-13-measurement.txt`. The machine was a 12th Gen Intel(R) Core(TM) i5-12400 (`nproc` 12) running Linux 7.0.0-31, with uv 0.12.21, Python 3.14.4 and mutmut 3.8.0. The 1-minute load was 0.8 and 1.3 at the start of the timed runs, with nothing heavy running.
+    - `time make mutation`: 3.21 s wall, 4 mutants, 1 service.
+    - `time make mutation-full`: 18.58 s wall, 992 + 992 mutants, 2 services.
+    - The scoped run is about 5.8× faster.
+  - Not exercised: AC-S42-5 (only the *survived* status occurred), the host without `os.fork` in AC-S42-10, AC-S42-12 (`migrate`), and the deleted-module and excluded-file cases of AC-S42-8.
+- **Evidence:** `demo/00-generate.txt`, `demo/01-verify-twice.txt`, `demo/02-baseline.txt`, `demo/03-scoped-init.txt`, `demo/04-mutation-full.txt`, `demo/05-replay-survivors.txt`, `demo/06-verify-after.txt`, `demo/07-other-scopes.txt`, `demo/08-other-criteria.txt`, `demo/09-java-quarkus.txt`, `demo/10-ac-s42-13-measurement.txt`
+- **Feedback:** Nothing re-enters the ladder. Notes for the next slice:
+  - Every mutmut child prints an OpenTelemetry `Exception ignored in atfork callback … TypeError: 'NoneType' object is not callable` traceback. The sweep printed 2116 of them, which buries the wrapper's own lines. The verdict is unaffected. It comes from the starter's `BatchProcessor` under `os.fork`. S45, or a note in the wrapper, could silence it.
+  - mutmut's spinner writes thousands of carriage-return frames into a non-TTY log.
+  - In a scoped run, mutmut's own progress line reads `4/992`, which can look like a whole-tree run. The wrapper's *scoped to 1 given file(s) … 4 mutant(s)* line says what actually ran.

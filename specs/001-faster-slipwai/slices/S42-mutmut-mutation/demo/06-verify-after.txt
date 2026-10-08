@@ -1,0 +1,15 @@
+$ git status --short; git status --short --ignored apps/*/mutants
+!! apps/billing/mutants/
+!! apps/service/mutants/
+$ time make verify
+verify: the full gate did not run; this tree already passed it at 2026-10-08T21:08:20Z (key 131436670825); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.561s
+user	0m0.442s
+sys	0m0.081s
+$ time make verify-scoped
+verify: the full gate did not run; this tree already passed it at 2026-10-08T21:08:20Z (key 131436670825); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.592s
+user	0m0.451s
+sys	0m0.106s

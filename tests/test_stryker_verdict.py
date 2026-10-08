@@ -320,5 +320,27 @@ class InstallTest(VerdictCase):
                 self.assertIn("mutation: installing from the committed lock (npm ci)", lines)
 
 
+class CleanSlateTest(VerdictCase):
+    def test_d212_7_a_sandbox_or_incremental_file_the_delete_could_not_remove_is_exit_2_and_stryker_is_not_started(
+            self) -> None:
+        if os.geteuid() == 0:
+            self.skipTest("root can remove what a read-only directory holds")
+        service = self.tree / SERVICE
+        for what, left, held in (("sandbox", ".stryker-tmp", service / ".stryker-tmp/sandbox-x"),
+                                 ("incremental file", "reports/stryker-incremental.json", service / "reports")):
+            with self.subTest(what=what):
+                held.mkdir(parents=True, exist_ok=True)
+                (held / "left").write_text("{}", encoding="utf-8")
+                (service / left).write_text("{}", encoding="utf-8") if what != "sandbox" else None
+                held.chmod(0o555)
+                code, lines = self.run_wrapper({"report": report(src__a_ts=[mutant("Killed")])}, "--file", "src/a.ts")
+                held.chmod(0o755)
+                shutil.rmtree(service / left.split("/")[0], ignore_errors=True)
+                words = (f"mutation: the previous {what} {SERVICE}/{left} could not be removed; "
+                         "remove it, then run this again")
+                self.assertEqual((code, lines[-1:]), (2, [words]))
+                self.assertEqual(self.execs(), [])
+
+
 if __name__ == "__main__":
     unittest.main()

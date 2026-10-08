@@ -48,7 +48,7 @@ def squashed(text: str) -> str:
 
 
 def made_by_the_factory_as_it_was(directory: str, name: str, frontend: str, added: tuple[str, ...] = (),
-                                  backend: str = "typescript") -> Path:
+                                  backend: str = "typescript", conflicts: tuple[str, ...] = ()) -> Path:
     """A project the factory as it stood before this slice generated: `git archive` of that commit, its own
     `slipwai generate` (and `add-service` for each name in `added`), so every file is the one it wrote then."""
     old = Path(directory) / "factory-before"
@@ -114,7 +114,7 @@ class AProjectMadeBeforeGainsTheScopedGateTest(FactoryTestCase):
             raise unittest.SkipTest(missing[1])
 
     def migrated(self, directory: str, frontend: str, added: tuple[str, ...], units: tuple[str, ...],
-                 backend: str = "typescript") -> Path:
+                 backend: str = "typescript", conflicts: tuple[str, ...] = ()) -> Path:
         repo = made_by_the_factory_as_it_was(directory, "product", frontend, added, backend)
         before = targets_of(repo)
         self.assertNotIn("\nverify-scoped:", before)
@@ -125,7 +125,15 @@ class AProjectMadeBeforeGainsTheScopedGateTest(FactoryTestCase):
 
         result = migrate(repo, factory)
 
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        if conflicts:  # a service added by hand: both sides changed its manifest and lock (S42's mutmut pin)
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            for name in conflicts:
+                self.assertIn(f"  {name}\n", result.stdout + result.stderr)
+                git(repo, "checkout", "--theirs", "--", name)
+                git(repo, "add", name)
+            git(repo, "commit", "-m", "settle the conflicts")
+        else:
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         after = targets_of(repo)
         for target in ("verify-scoped", *units):
             self.assertRegex(after, rf"(?m)^{target}:", f"{target} arrives with migrate")
@@ -151,9 +159,11 @@ class AProjectMadeBeforeGainsTheScopedGateTest(FactoryTestCase):
     def test_the_same_for_two_python_services(self) -> None:
         # Two Python services, as the name says. A TypeScript project with a service added by hand now conflicts on the
         # `mutation` recipe under `migrate` (S41 rewrote the line `add-service` appends beside); `test_stryker_migrate`
-        # holds that conflict and the fragment's words for it.
+        # holds that conflict and the fragment's words for it. A Python one conflicts on the added service's
+        # manifest and lock (S42: `mutmut==3.8.0` and `[tool.mutmut]` land in both); the example settles them as told.
         with tempfile.TemporaryDirectory() as directory:
-            self.migrated(directory, "none", ("billing",), ("lint-service", "lint-billing", "test-billing"), "python")
+            self.migrated(directory, "none", ("billing",), ("lint-service", "lint-billing", "test-billing"), "python",
+                          ("apps/billing/pyproject.toml", "apps/billing/uv.lock"))
 
 
 class TheFragmentIsMinorAndItsCatchUpStandsAloneTest(FactoryTestCase):
