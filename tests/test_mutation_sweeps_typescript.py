@@ -192,6 +192,26 @@ class SweepsTypeScriptTest(TypeScriptCase):
         swept, _, lines = self.swept(*TWO, env={**clean_environment(), "SINCE": "HEAD~1"})
         self.assertEqual(swept, ["apps/service"], lines)
 
+    def test_t045_a_swept_service_that_is_gone_opens_with_the_refusal_not_a_sweep(self) -> None:
+        """B5: `git rm -r apps/second` with the Makefile unchanged: the first line must not promise a sweep."""
+        git(self.repo, "rm", "-rq", "apps/second")
+        status, lines, recording = self.run_planned(*TWO, directories=True)
+        self.assertEqual(status, 2, lines)
+        self.assertEqual(lines[0], "mutation: refusing apps/second — its directory does not exist, so nothing is swept")
+        self.assertFalse([line for line in lines if "the sweep runs" in line], lines)
+        self.assertTrue([line for line in lines if line.startswith("mutation: refuse apps/second — ")], lines)
+        self.assertEqual((recording.swept, recording.scoped), ([], []))
+
+    def test_t045_hold_another_service_still_sweeping_keeps_the_sweep_line_without_the_gone_one(self) -> None:
+        git(self.repo, "rm", "-rq", "apps/second")
+        self.write(CONFIG, text({"mutate": ["src/**/*.ts"]}))
+        status, lines, recording = self.run_planned(*TWO, directories=True)
+        self.assertEqual(status, 2, lines)
+        self.assertTrue(lines[0].startswith("mutation: the sweep runs — "), lines)
+        self.assertIn(CONFIG, lines[0])
+        self.assertNotIn("apps/second", lines[0])
+        self.assertEqual(recording.swept, ["apps/service"])
+
     def reset(self) -> None:
         super().reset()
         git(self.repo, "checkout", "-q", "-B", SLICE, "main")

@@ -921,11 +921,20 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     unread = {root: plan.unreadable for root, plan in plans.items() if plan.unreadable is not None}
     named = sorted(f"{root}/{inside}" for root, plan in plans.items() if root not in unread
                    for inside in (production[root] if plan.refusal else plan.keep))
+    missing_of = getattr(runner, "gone", lambda *_: None)  # a runner with no `gone` has no tool to start
+    absent = [root for backend, root in services
+              if (root in causes or root in unread) and missing_of(backend, root) is not None]  # B5: refused below, not swept
+    swept_paths = sorted(path for root, found in causes.items() if root not in absent for path in found)
+    reasons = [unread[root] for root in unread if root not in absent]
+    named = sorted(f"{root}/{inside}" for root, plan in plans.items() if root not in unread
+                   for inside in (production[root] if plan.refusal else plan.keep))
     outside = any(plan.left for plan in plans.values())
     if named:
         say(f"scoped to {len(named)} changed file(s) since {words}: {', '.join(shown(name) for name in named)}")
-    elif causes or unread:
-        say(SWEEPS.format(reason=", ".join([*([said(sorted(handled))] if handled else []), *map(str, unread.values())])))
+    elif swept_paths or reasons:
+        say(SWEEPS.format(reason=", ".join([*([said(swept_paths)] if swept_paths else []), *map(str, reasons)])))
+    elif absent:  # the sweep the cause asks for cannot start: the first line names the refusal the service gets below
+        say(f"refusing {', '.join(absent)} — its directory does not exist, so nothing is swept")
     elif outside:  # a production file a tool leaves out changed, whatever else did: it is named `not mutated` below
         say("no mutant to run — every changed production file is outside the tools' targets")
     elif tests and not shared and not browser and not deleted:  # tests the only source files that changed (T022)
@@ -947,7 +956,7 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     for backend, root in services:
         plan = plans.get(root)
         runs = root in causes or root in unread or (plan is not None and bool(plan.keep))
-        missing = getattr(runner, "gone", lambda *_: None)(backend, root)  # a runner with no `gone` has no tool to start
+        missing = missing_of(backend, root)
         if runs and missing is not None:  # no tool starts for a service that is not there
             why = missing
             say(f"refuse {root} — {why}")

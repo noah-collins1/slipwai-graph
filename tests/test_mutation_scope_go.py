@@ -131,6 +131,18 @@ class GoScopeTest(ScopeCase):
         self.assertIn("mutation: scope apps/service — health/health.go", lines)
         self.assertEqual(lines[-1], "mutation: 1 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/ghost")
 
+    def test_t045_a_swept_service_that_is_gone_opens_with_the_refusal_not_a_sweep(self) -> None:
+        """B5: the deleted `.gremlins.yaml` is a sweep cause, the directory is gone: no first line promises a sweep."""
+        git(self.repo, "checkout", "-q", "main")
+        self.write("apps/ghost/.gremlins.yaml", "unleash:\n  integration: true\n")
+        self.commit("a service the Makefile still names")
+        git(self.repo, "checkout", "-q", "-B", "slice/S1")
+        git(self.repo, "rm", "-rq", "apps/ghost")
+        status, lines, _ = self.run_default("go:apps/service", "go:apps/ghost")
+        self.assertEqual(status, 2, "\n".join(lines))
+        self.assertEqual(lines[0], "mutation: refusing apps/ghost — its directory does not exist, so nothing is swept")
+        self.assertFalse([line for line in lines if "the sweep runs" in line], lines)
+
     def test_e4_the_tools_failure_is_the_services_failure(self) -> None:
         self.fit_recipe(TWO)
         (self.repo / HEALTH).write_text("package health\n// edited\n", encoding="utf-8")

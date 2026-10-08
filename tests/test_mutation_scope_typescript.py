@@ -33,9 +33,10 @@ GO_AND = ("go:apps/service", "typescript:apps/second")
 class Planned(Recording):
     """The recording `Runner` with the script's own plan for TypeScript: what the config's list takes is real."""
 
-    def __init__(self, module: Any) -> None:
+    def __init__(self, module: Any, directories: bool = False) -> None:
         super().__init__(module)
         self.tools = module.Tools()
+        self.directories = directories  # whether a service with no directory is refused, as the real runner does
 
     def plan(self, backend: str, path: str, files: list[str]) -> Any:
         return self.tools.plan(backend, path, files)
@@ -45,6 +46,10 @@ class Planned(Recording):
         plan = self.plan(backend, path, files)
         self.scoped.append((path, plan.keep))
         return self.result(0, plan.keep, plan.left)
+
+    def gone(self, backend: str, path: str) -> str | None:
+        """As the script's own runner asks it: a wired service whose directory is not there."""
+        return self.tools.gone(backend, path) if self.directories else None
 
 
 class TypeScriptCase(Recorded):
@@ -62,10 +67,11 @@ class TypeScriptCase(Recorded):
         git(self.repo, "checkout", "-q", "--", ".")
         git(self.repo, "clean", "-qfd", "apps", "packages", "docs")
 
-    def run_planned(self, *services: str, env: dict[str, str] | None = None) -> tuple[int, list[str], Planned]:
+    def run_planned(self, *services: str, env: dict[str, str] | None = None,
+                    directories: bool = False) -> tuple[int, list[str], Planned]:
         self.fit_recipe(services)
         module = loaded(self.repo / "scripts/mutation-scope.py")
-        recording = Planned(module)
+        recording = Planned(module, directories)
         wanted, saved, here = (clean_environment() if env is None else env), dict(os.environ), os.getcwd()
         os.environ.clear()
         os.environ.update(wanted)
