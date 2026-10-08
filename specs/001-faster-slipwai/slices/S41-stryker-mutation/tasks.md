@@ -688,6 +688,67 @@ differs from the text above, and why:
 
 (none yet — T015 and T016 append here)
 
+### Converge pass 1 (T015, cruise iteration 29) — no CRITICAL, no HIGH
+
+The suites were green before the pass (`test_stryker_list`, `test_stryker_verdict`, `test_mutation_scope_typescript`,
+`test_mutation_sweeps_typescript`, `test_stryker_after_run`, `test_stryker_generated`, `test_stryker_migrate`,
+`test_mutation_placeholders`: 90 tests, 1 skipped — the heavy real run). Twenty hand mutations of the wrapper and the scope
+script were applied one at a time, those suites run, and each file restored with `git checkout -- <path>`; fifteen were
+killed. The survivors and two reproductions are the tasks below.
+
+### T022 — [US2] MEDIUM · Every path Stryker's `--mutate` would read as something other than itself is refused, not only D215's six characters (D215 d's *why*, AC-S41-7; partial)
+- [ ] **Close the class, not the instance:** the refusal set and the pattern reader each decide what minimatch reads as
+  syntax, from two tables (`MISREAD = ",*?{[!"`, `SYNTAX = "?[]{}()+@\\!"` in
+  `assets/languages/typescript/scripts/stryker-mutation.py`) that have already drifted. Derive both from one table of
+  what minimatch 10 (the version R3 read) treats as syntax inside a path — at least the extglob openers `+(` and `@(`
+  and the `\` escape, beside the six D215 lists and the trailing line range — so a path is refused by exactly the rule
+  that makes a pattern unreadable. One example per entry of that table, in the wrapper's refusal examples and in the scope
+  script's (`RefusalTest`), each asserting the one refusal line, exit 2 and no tool started.
+  **RED evidence (reproduced, minimatch 10.2.6 from the scratch install):** `minimatch("src/a+(b).ts", "src/a+(b).ts")`
+  is `false` and `minimatch("src/ab.ts", "src/a+(b).ts")` is `true`; the same for `src/a@(b).ts` and `src/a\b.ts`. The
+  wrapper's `refused("apps/service", f)` returns `None` and `matched(<D213 list>, f)` returns `True` for all three, so the
+  file is handed to `--mutate`; Stryker mutates `src/ab.ts` (or nothing), and `judged(<report keyed src/ab.ts>,
+  ["src/a+(b).ts"])` is `[]`, which `verdict` turns into *no mutant to run*, exit 0 — a green over a scope nobody chose,
+  the outcome D215 d exists to prevent. **Product edge for the host:** D215 d enumerates six characters; if that list is
+  read as exhaustive rather than as an instance of its *why*, this is a question for the owner, not a task.
+- **Files:** `assets/languages/typescript/scripts/stryker-mutation.py`, `tests/test_stryker_list.py`,
+  `tests/test_mutation_scope_typescript.py`, `changelog.d/stryker-mutation.md` (the list it names).
+
+### T023 — [US2] LOW · A change to any copy of a `@stryker-mutator/*` package in the lock sweeps, not only the copy the reader keeps (D215 b, AC-S41-6; partial)
+- [ ] `stryker_in(..., "packages")` collapses every lock entry to one version per package name (`setdefault` over paths
+  sorted by length), so a nested copy (`node_modules/@stryker-mutator/core/node_modules/@stryker-mutator/util`) can move
+  without the comparison seeing it. Key the lock's versions by the lock path (every `…node_modules/@stryker-mutator/<name>`
+  entry), so any copy moving is a version change; add an example where only the nested copy moves and the service
+  sweeps, and one where the hoisted one moves. **RED evidence (reproduced):** `versions(lock_text=L("9.0.0")) ==
+  versions(lock_text=L("9.1.0"))` is `True` for a lock with a hoisted `@stryker-mutator/util` 10.0.0 and a nested copy at
+  9.0.0 / 9.1.0; and the hand mutation `key=len` → `key=len, reverse=True` (the nested copy wins) **survived** every
+  suite, so nothing holds which copy is read.
+- **Files:** `assets/languages/typescript/scripts/stryker-mutation.py`, `tests/test_stryker_list.py`,
+  `tests/test_mutation_sweeps_typescript.py`.
+
+### T024 — [US2] LOW · The guards the suites do not hold: each removal below left every S41 suite green (plan rules 3, 5, 6; test coverage)
+- [ ] Sweep the wrapper's and the scope script's TypeScript guards for one whose removal no example notices, and give
+  each its example; the three found here by hand mutation (each applied, the suites run, the file restored):
+  - `judged` strips a leading `./` from a given file (`wanted = [name[2:] if …]` → `list(given)`: **survived**). Without
+    it `stryker-mutation.py <service> --file ./src/x.ts` — a form `matched` accepts — reads a report keyed `src/x.ts` as
+    *no mutant to run*, exit 0. Example: a `./`-prefixed `--file` whose report holds a survivor fails and names it.
+  - `stryker_versions_moved` counts a side that is gone as moved (`now is None or …` → `now is not None and …`:
+    **survived**). Example: the root `package-lock.json` deleted on the branch sweeps every TypeScript service.
+  - `scope` keeps *only tests changed* from swallowing a browser-app change (`not browser` dropped: **survived**).
+    Example: a changed test and a changed `apps/web/**` file print *no production file changed* and the browser line.
+  (`marker.touch()` removed also survived; it is equivalent where `npm ci` writes the marker itself, so it needs no
+  example — say so in a comment or drop the touch.)
+- **Files:** `tests/test_stryker_verdict.py`, `tests/test_mutation_sweeps_typescript.py`,
+  `tests/test_mutation_scope_typescript.py` (and the wrapper only if the touch is dropped).
+
+### T025 — [US2] LOW · The fragment names every shape that is refused (AC-S41-7, published contract; partial)
+- [ ] `changelog.d/stryker-mutation.md` lists the refused characters as "a comma, `*`, `?`, `{`, `[` or `!`" and omits
+  the trailing `:<digits>` the wrapper also refuses (`TRAILING_LINE`) and D215 d names. Sweep every user-facing place that
+  enumerates the refusal (today only the fragment; the Makefile note and `commands/mutation.md` name none) and make it
+  say the set the wrapper refuses — after T022, from the same table. Evidence: `grep -n "trailing" changelog.d/stryker-mutation.md`
+  finds nothing; `refused("s", "src/a.ts:12")` returns the refusal.
+- **Files:** `changelog.d/stryker-mutation.md`.
+
 ## Phase 4: After acceptance (host tasks)
 
 ### T018 — The adversary pass (host task)
