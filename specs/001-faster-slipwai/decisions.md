@@ -4808,3 +4808,88 @@
 - **Confidence:** high · **Would reverse if:** mutmut publishes a 4.x before S42 is planned whose scope or report differs; the plan re-reads the pin.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D217 — The default TypeScript starter's `make mutation-full` is red the day it is generated: what does S41 ship?
+- **Stage:** convergence (a delegate's hand-back in `plan.md`) · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T08:31:07Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation
+- **Question:** Under D212, the default TypeScript starter's `make mutation-full` fails on the day it is generated. Research R9 found 90 survivors and 1 timeout across `app.ts` (29), `events.ts` (12), `tracing.ts` (19), the two projection files (8 + 8), `config.ts` (6) and the memory stores (9). None of them is an equivalent mutant. The minimal starter (`standard`, `http none`, `memory`) is green. A slice that later edits `app.ts` will meet that file's existing survivors in its scoped `make mutation`. No gate in a generated project runs `make mutation`, but Phase 4 of the ladder runs it scoped. What does S41 ship?
+- **Options:**
+  - **(a)** Ship what the criteria say, and say so. The Makefile note and the fragment state that the default starter's sweep reports its own weak tests. A follow-on slice, *the TypeScript starter's own tests kill every mutant*, is added to the split. **Recommended by the slice delegate.**
+  - **(b)** Make S41 bigger: kill or suppress every survivor in the starter before it ships. That is about 90 mutants per variant and roughly triples the slice.
+  - **(c)** Narrow D213's list to the files that are green today.
+- **Decision:** (a), as the delegate recommended.
+  1. **What S41 ships.** S41 ships under its criteria as written, with D212's rule and D213's list unchanged.
+     - The generated `Makefile` note above `mutation` / `mutation-full` says the default TypeScript starter's sweep reports survivors in its own starter tests. It also says that a scoped run on a slice that edits one of those files will meet that file's survivors.
+     - `changelog.d/stryker-mutation.md` says the same in a user's words. It adds that the minimal starter is green and that the fix is planned.
+     - S41's demo shows the default starter red as the honest verdict, naming at least one non-equivalent survivor (R9's `tracing.ts` `endpoint === undefined`). It shows the minimal starter green.
+     - No suppression comment is added to make the starter pass.
+  2. **Follow-on slice.** `S44-typescript-starter-kills-mutants` is added to the split. Its row fields follow this entry.
+  3. **Order.** S44 depends on S41 and is placed after S42 in the split's order. It does not take S42's place: D214 made S42 next, planned on S41's merged tip.
+     - S44 is `parallel_ok_with` S42. S44 edits only files under `assets/backing-services/typescript/tests/`. None of those is a line D214 says the two slices share.
+     - So S44 may take a free fan-out seat beside S42, as S43 does (D169), rather than wait at the back of the pool.
+     - It does not jump ahead of the PRD's remaining slices. D39 puts a finding-opened slice behind them unless the finding is `CRITICAL`, and this one is not. Before S41 the same runs refused with exit 2, so S41 makes nothing worse. It only replaces a refusal with an honest red.
+  4. **Go and Spring, as S08's demo log shows them.**
+     - **Go is green under its own rule.** The two-service Go sweep ran 500 mutants: 266 killed, 0 survived, 234 not covered. Not-covered is reported, not failed, so "threshold held", exit 0.
+     - **Spring is not green under D212's rule.** The sweep ran 67 mutations: 53 killed, 9 no coverage, and from the per-class lines 5 survived and 1 timed out (`demo/22-spring-full-1.log`). It passes only because Spring's PIT recipe reports and has no threshold.
+     - **S44 should match Go's claim, not Spring's.** Every in-list mutant is killed or suppressed with a reason, and the wrapper says so.
+     - **Spring's survivors are not part of this decision.** The host should record them as a Parking Lot line, not as part of S44.
+- **Why:**
+  - **The red is true.** None of the 90 is equivalent. For example, the tracing exporter branch that D213 names as a rule the tests carry is not asserted, and the `config.ts` patterns can be emptied without a test failing.
+  - **(c) would be a false green.** It hides weak tests behind a shorter list, which D213's *Why* and owner priority 5 rule out.
+  - **(b) is too big.** It triples a slice the owner asked to keep small (D128, priority 4), and a review failure would then cost the whole diff again.
+  - **The suppression escape is for equivalent mutants only.** Using it on 90 real survivors to make S41 pass would make the escape mean nothing.
+  - **(a) keeps both promises.** S41 stays its planned size and its verdict stays honest.
+  - **A developer who reads the red is told why.** The Makefile note and the fragment explain it. The developer is not left to think Stryker is broken.
+  - **The cost is bounded.** A slice that edits `app.ts` meets the same work a Go slice meets on a file with survivors, and S44 removes that cost for every later project.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** high · **Would reverse if:** S41's own demo shows the survivors cannot be told apart from a Stryker or wrapper defect. For example, the same mutants are killed when Vitest runs directly with the mutant applied. If so, the red is S41's bug and S41 does not converge until it is fixed.
+- **Written to:** `specs/001-faster-slipwai/story-split.md` (S44's Split Candidates row and Slice graph row; Parking Lot line for Spring's report-only survivors), `changelog.d/stryker-mutation.md`, `specs/001-faster-slipwai/slices/S41-stryker-mutation/plan.md`
+- **Status:** standing
+
+## D218 — Is D215 (d)'s list of refused path characters exhaustive, or an instance of its reason?
+- **Stage:** convergence (pass 1, T022) · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T08:30:30Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation
+- **Question:** D215 (d) refuses a changed production path containing `,`, `*`, `?`, `{`, `[`, `!` or a trailing `:<digits>`. Converge pass 1 found that Stryker's glob matcher (minimatch) also reads a backslash, `+(` and `@(` as syntax, and a line range in more spellings; T022 widened the refusal to every shape minimatch reads as syntax, from one table both the refusal and the pattern reader use. Does the widening stand?
+- **Options:** (a) the list is an instance of D215 (d)'s reason — *a path read as a glob is a verdict over something nobody chose* — so every shape the matcher reads as syntax is refused, as T022 built (recommended by the stage); (b) the six characters and the trailing range only.
+- **Decision:** (a).
+- **Why:** The reason names the class, not the characters; a path the matcher reads as `+(a|b)` mutates a different scope from the one the developer changed, which is what (d) refuses.
+- **Decided by:** host (standing decision D215)
+- **Confidence:** high · **Would reverse if:** a generated project's own layout is found to need one of the added characters in a production path.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D219 — Does an `Ignored` Stryker mutant pass only when a per-mutant `next-line` comment excused it?
+- **Stage:** convergence (after-converge gaps, M3) · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T08:41:28Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation
+- **Question:** The wrapper passes every `Ignored` mutant. Stryker 10 also marks as `Ignored` every mutant of a mutator listed in the config's `mutator.excludedMutations`, and every mutant under a block or file-wide `// Stryker disable` comment. Does D212's pass for `Ignored` cover those?
+- **Options:** (a) any `Ignored` passes — a config change already sweeps and the config is on the provisional gate-configuration list; (b) only an `Ignored` excused by a `// Stryker disable next-line <mutator>: <reason>` comment passes; `excludedMutations`, block and file-wide disables fail — recommended by the stage.
+- **Decision:** (b).
+- **Why:** D212 item 6 names the per-mutant comment, with its reason, as the only escape for an equivalent mutant; a list in the config or a file-wide comment silences mutants nobody looked at, which is the silent pass D212 rules out.
+- **Decided by:** host (standing decision D212)
+- **Confidence:** high · **Would reverse if:** Stryker 10.0.0 gives the wrapper no way to tell a next-line comment from a block one, from the report or the source — then the question returns with that evidence.
+- **Written to:** `specs/001-faster-slipwai/slices/S41-stryker-mutation/tasks.md`
+- **Status:** standing
+
+## D220 — With no command that rewrites `rules.json` in a project, what does S41's Catch-up tell a person who re-adds their own Makefile edits?
+- **Stage:** convergence (after-converge gaps fix T030, a delegate's hand-back) · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T09:01:04Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation
+- **Question:** T030 asked the Catch-up to name the command that brings `rules.json` back in step after a person re-adds their own edits to the Makefile `migrate` replaced. No `make` target or `slipwai` verb does that: `rules.json` is written at generate time and by the pruner, and ADR 0005 says no factory tool offers it. Add one, or say what happens?
+- **Options:** (a) the Catch-up says the Makefile and `rules.json` are a pair, that re-added edits make the scoped gate run the full gate (the fail-closed rule D127 and D140 already publish), and that a project's own targets belong in a file `make verify` does not read — as T030 built (recommended by the stage, and by ADR 0005); (b) a regenerate command added as a task in S41.
+- **Decision:** (a).
+- **Why:** The person loses nothing — the gate they get is the full one, never a narrower one — and a new verb that rewrites a fingerprint from whatever the Makefile says would let an edit vouch for itself, which ADR 0005 exists to prevent. A verb is a capability of its own, not S41's.
+- **Decided by:** host (standing decision D140)
+- **Confidence:** high · **Would reverse if:** ADR 0005 is superseded by one that offers a project-side regenerate step.
+- **Written to:** `changelog.d/stryker-mutation.md`
+- **Status:** standing
+
+## D221 — Demo 1 met D217's *Would reverse if* for five of the ninety-one: does D217 stand?
+- **Stage:** demo (S41 demo 1, `implementation`) · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T09:13:30Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation
+- **Question:** D217 shipped the default TypeScript starter's red sweep as honest, and would reverse if the survivors could not be told apart from a Stryker or wrapper defect. The hand replayed all ninety-one by hand: eighty-five are real survivors and one the real timeout, but five reported `Survived` turn Vitest red when applied directly — a `beforeAll` throws, the file's tests are skipped, and the run reads no failure. Does D217 stand?
+- **Options:** (a) D217 stands for the eighty-six that are real; the five are S41's defect, fixed in S41 before it converges (T032), and D217's example sentences are corrected to a real survivor — the reversal clause applied to the part it names (recommended by the stage: the demo's feedback); (b) D217 is reversed wholesale and S41 waits on the starter's tests (S44) before it ships.
+- **Decision:** (a).
+- **Why:** The clause was written for the case where the red is S41's bug; for five mutants it is, and they are fixed where they arise. The other eighty-six are the starter's weak tests, which the actor is right to see, and which S44 strengthens.
+- **Decided by:** host (standing decision D217)
+- **Confidence:** high · **Would reverse if:** T032's real run leaves a reported survivor that a direct Vitest run kills.
+- **Written to:** `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing

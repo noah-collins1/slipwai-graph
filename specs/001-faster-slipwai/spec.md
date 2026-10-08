@@ -3018,7 +3018,8 @@ joins the provisional gate-configuration list; S42 shares every dispatch table, 
   manifest or lock, then that service sweeps; given a changed wrapper script, then every TypeScript service sweeps; each
   line names the file; a config whose list the scope script cannot evaluate sweeps.
 - **AC-S41-7** — *D215.* Given a changed production path containing `,`, `*`, `?`, `{`, `[`, `!` or a trailing
-  `:<digits>`, then it is refused in one line and never mutated under a different scope.
+  `:<digits>` — or any other shape Stryker's glob matcher reads as syntax: a backslash, `+(`, `@(`, a line range (D218)
+  — then it is refused in one line and never mutated under a different scope.
 - **AC-S41-8** — Given two TypeScript services, or a Go and a TypeScript service, and a change in one, then only the
   changed service runs and the other is named skipped with its reason.
 - **AC-S41-9** — After `make mutation` passes or fails, the verify stamp still reuses and `verify-scoped` is not
