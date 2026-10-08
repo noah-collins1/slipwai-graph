@@ -1031,7 +1031,7 @@ D226 confirms the six readings as built (no task). D223 (Q1), D224 (Q2) and D225
 above rides with them.
 
 ### T031 — [US2] HIGH · The wrapper takes several services, runs each fully and fails at the end (D223 item 2; AC-S42-4 as amended)
-- [ ] **RED:** in a new `tests/test_mutmut_services.py` (fake `uv` as `tests/test_mutmut_verdict.py`'s, imported, not copied):
+- [x] **RED:** in a new `tests/test_mutmut_services.py` (fake `uv` as `tests/test_mutmut_verdict.py`'s, imported, not copied): *(Done: e060dfa — the lock is released in a `finally` after each service's turn; one service prints what it printed before.)*
   `mutmut-mutation.py apps/a apps/b` where `apps/a`'s `.meta` holds a survivor and `apps/b`'s is all killed → both services are
   generated and judged (the fake logs a generation and a `mutmut run` in each, each from a fresh `mutants/`, each under its own
   lock), one result line per service, then one summary line `mutation: 2 swept; failed: apps/a`, exit 1 — the first non-zero in
@@ -1044,7 +1044,7 @@ above rides with them.
   `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md` (the rows and the usage).
 
 ### T032 — [US2] HIGH · All of a project's Python services share one `mutation-full` line (D223 item 1)
-- [ ] **RED:** `tests/test_mutmut_generated.py` (or a new `tests/test_mutmut_recipe.py` if it is at 350): a two-Python project's
+- [x] **RED:** `tests/test_mutmut_generated.py` (or a new `tests/test_mutmut_recipe.py` if it is at 350): a two-Python project's *(Done: ace93f8 — `one_line()` in `mutmut.py`, called by `merged()`, and the same rule in `factory_recipe`; D223's *would reverse if* did not hold: `billing` then `ledger` added one at a time render the line byte for byte.)*
   `mutation-full` recipe holds exactly one Python line, `python3 scripts/mutmut-mutation.py apps/service apps/billing`, where the
   first Python line sits today; Go before and after Python (`go`, `python`, `go`, `python` service order) keeps every Go line byte
   for byte and the one Python line at the first Python position; `factory_recipe` equals the generated recipe for those shapes
@@ -1057,7 +1057,7 @@ above rides with them.
   `tests/test_scoped_targets.py` (hashes of the moved shapes), `tests/test_mutation_targets.py` (only if a shape needs adding).
 
 ### T033 — [US2] MEDIUM · The note and the fragment say what D223, D224 and D225 decided (D223 item 4, D224 item 1, D225 item 1; AC-S42-12)
-- [ ] **RED:** pins in `tests/test_mutmut_generated.py` / `tests/test_mutmut_migrate.py`: the Makefile note says the sweep runs
+- [x] **RED:** pins in `tests/test_mutmut_generated.py` / `tests/test_mutmut_migrate.py`: the Makefile note says the sweep runs *(Done: d61ccb9 — the note, the fragment's two paragraphs and the skill share the sweep's two sentences; pins in `tests/test_mutmut_migrate.py` (`SweepWordsTest`).)*
   every Python service and fails at the end naming each failed one, and that in a mixed project a failing Go or TypeScript service
   listed earlier still stops the sweep before Python runs; the note says the default starter's sweep reports its own starter
   tests' survivors and that a scoped run on a slice editing one of those files meets them (already there — hold), the minimal
@@ -1071,7 +1071,7 @@ above rides with them.
   `tests/test_mutmut_migrate.py`, `tests/test_scoped_targets.py` (hashes).
 
 ### T030 — [US2] LOW · No factory test reads a slice's record under `specs/` (T027's words hold; found at host triage)
-- [ ] T027's hold reads `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md`, so archiving or moving the slice
+- [x] T027's hold reads `specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md`, so archiving or moving the slice *(Done: 58e3d72 — T027's check moved to `tests/test_mutmut_lines.py` with the factory's own table and a guard that no `tests/test_mutmut_*.py` reads a slice record; other slices' tests that read `specs/` (`test_verify_scoped_contracts.py`, S06's) are outside this slice.)*
   record fails the factory suite rather than the slice. **GREEN (the class):** the wrapper's fixed lines are held where the
   factory keeps its own contracts (the test's own table, or a page under `docs/`), and `grep -rn "specs/" tests` finds no test that
   reads a slice record. **Files:** `tests/test_scoped_targets.py` or the test holding T027's check, and whatever it moves the table to.
