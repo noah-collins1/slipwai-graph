@@ -142,14 +142,20 @@ nothing is taken: the item stays `unavailable`, the skipper's `status` is `unava
 names the recommendation, and `/cruise-tell accept` takes it: the skipper returns the verb's `cruise: parked: …` line
 verbatim in `unresolved`, and a park on that item ends the run on it. Under all three provisional values every
 always-ask item goes to the skipper, even where the stage recommends an answer, and the host names `decide` in its
-brief. Under `provisional`, and only there, an easy or guarded
-item that holds none of `flag_default=yes`, `ci_workflow=yes` or `migrate_file=yes` goes ahead with `Status: provisional · ratify by <date>` and a `Revert:` line, and every commit made under it
-carries the trailer `Decision: D<n>`. A gate, a
-check, CI, a credential, a third party's behaviour, a constitution MUST and a release are never provisional. At
-the start of an iteration `python3 scripts/agents/cruise.py mode` records any change of `decide` as an entry, and the
-completion audit runs `python3 scripts/provisional.py audit`: while a provisional entry stands, the run ends
-`cruise: parked: ratify D<n>`. Ratify by editing `Status` to `ratified <date>`; revert the commits carrying the trailer
-and write `reverted <date>`.
+brief. Under `provisional`, and only there, an easy or guarded item that holds none of `flag_default=yes`,
+`ci_workflow=yes` or `migrate_file=yes`, and whose `Written to` names no CI workflow, no control and no file a gate
+reads as its configuration, goes ahead with `Status: provisional · ratify by <date>` — the entry's `When` date plus
+seven days, UTC — and a `Revert:` line, and every commit made under it carries the trailer `Decision: D<n>`. A gate, a
+check, CI, a credential, a third party's behaviour, a constitution MUST and a release are never provisional, and
+`check-decisions` holds a ratified entry to the same refusals. At the start of an iteration
+`python3 scripts/agents/cruise.py mode` records any change of `decide` as one entry in the log of the feature it works
+in, judged against the last mode entry in any feature's log; a value more than one rung above it parks the run, so
+let an iteration record each rung before setting the next. An iteration never sets `decide`: `guard` refuses an edit
+to `.specify/cruise.json` in a runner's session, `--set decide` is refused while `CRUISE_ITERATION` is set, and the
+runner parks when `decide` moved inside an iteration — a person who changed it on purpose resumes with `/cruise-tell`.
+The completion audit runs `python3 scripts/provisional.py audit` over every feature's log: while a provisional entry
+stands, the run ends `cruise: parked: ratify D<n> in specs/<feature>/decisions.md`. Ratify by editing `Status` to
+`ratified <date>`; revert the commits carrying the trailer and write `reverted <date>`.
 
 ## Where it keeps its answers
 
@@ -323,7 +329,7 @@ effect at the next iteration. `make check-agents` holds the file's shape.
 | Setting | Values | Default | Controls |
 |---|---|---|---|
 | `enabled` | `true`, `false` | `false` | whether `/cruise` runs at all |
-| `decide` | `recommended-first`, `skipper-always`, `provisional-shadow`, `provisional-advisory`, `provisional` | `recommended-first` | who answers a product question: the host where the stage recommends an answer or a standing decision covers it, and `drive-skipper` otherwise; or `drive-skipper` for every question. Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right. |
+| `decide` | `recommended-first`, `skipper-always`, `provisional-shadow`, `provisional-advisory`, `provisional` | `recommended-first` | who answers a product question: the host where the stage recommends an answer or a standing decision covers it, and `drive-skipper` otherwise; or `drive-skipper` for every question. Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right, letting an iteration record each rung before the next. |
 | `release` | `flagged`, `park` | `flagged` | the release-constraint stage: every slice behind a flag seeded off, so every merge is dark; or park at the push and let a person decide |
 | `constitution` | `ratify`, `park` | `ratify` | an unratified constitution: the skipper drafts and ratifies it, marked pending human review; or park |
 | `hand` | `browser`, `http`, `cli` | `browser` | the top of the hand's ladder for a demo; each falls through to the next where it cannot run |
