@@ -4582,3 +4582,63 @@
 - **Confidence:** high · **Would reverse if:** a person wants each feature to roll the mode out on its own, when the per-feature reading of (b) is the one to take.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D203 — How is the run kept from setting `decide` other than through `--set`?
+- **Stage:** 9 after-converge gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T00:48:09Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** After-converge gaps P1: `.specify/cruise.json` is not a control, so an iteration can edit it directly and the next `mode` entry credits a person; `climb()` reads an empty `CRUISE_ITERATION` as unset.
+- **Options:** (a) the toolkit's `guard` refuses an edit to `.specify/cruise.json` in a runner's session, an empty `CRUISE_ITERATION` counts as set, and the runner compares `decide` before and after each iteration and parks when it moved inside one, the park line saying a person who changed it mid-iteration resumes with a `told:` message (recommended by the stage); (b) make `cruise.json` a control, parking on every mid-run settings change; (c) prose only.
+- **Decision:** (a). A change between iterations stays a person's, recorded by `mode` as D196 and D202 say.
+- **Why:** the run must never widen its own authority (D62, D201); the guard stops the ordinary route and the runner's comparison catches any other, while a person's change between iterations goes on working as `/cruise-settings` promises.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** persons commonly change `decide` while an iteration is in flight, when the park costs more than it saves.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D204 — Does FR-033 read a provisional entry's `Written to`, beyond its declared facts?
+- **Stage:** 9 after-converge gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T00:48:09Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** After-converge gaps P2: a provisional entry declaring `ci_workflow=no` with a `Written to` of `.github/workflows/verify.yml`, `biome.jsonc` or `tsconfig.json` scores `easy` and passes; the gate reads `Written to` for `migrate_file` but never for CI or check configuration.
+- **Options:** (a) the gate refuses a provisional entry whose `Written to` names a CI workflow path (`.github/workflows/`, `.gitea/workflows/`, `.gitlab-ci.yml`), a control path the runner parks on, or a file a generated gate reads as its configuration — a closed list in the toolkit, held by a test against the configuration files the starters ship (recommended by the stage); (b) prose in the skipper's brief only; (c) a gate fact in rules v2 (D200's (b)).
+- **Decision:** (a).
+- **Why:** the one outcome the owner brief says would make this work pointless is a gate a developer trusts changing without a person seeing it; a declared `no` must not be enough when the path itself says otherwise.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** the list refuses entries a person reads as plainly outside the gate, when it narrows to workflows and controls.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D205 — Are ratified entries and the ratify-by date held to FR-033 and D199 too?
+- **Stage:** 9 after-converge gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T00:48:09Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions, S28-ratify-revert
+- **Question:** After-converge gaps P5: an entry written straight as `ratified <date>` with hard facts skips FR-033 and the audit; a provisional entry may carry any ratify-by date (`2099-12-31`) or say `Decided by: host`.
+- **Options:** (a) the FR-033 refusals apply to `ratified` entries as to `provisional` ones; (b) `provisional` requires `Decided by: drive-skipper`; (c) the ratify-by date must be the entry's `When` date plus seven days, UTC (recommended by the stage: (a) and (c), (b) optional).
+- **Decision:** (a) and (c); not (b), since a person may write a provisional entry by hand and the brief, not the gate, holds who decides.
+- **Why:** a legitimate ratified entry was once provisional, so holding it refuses nothing real; a date the verb computes is one a person can predict and S28's dated refusal cannot be dodged.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** S28 lets a person choose a later date when ratifying in batches.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D206 — Does a lone `Revert:` line in an older log load the new checks?
+- **Stage:** 9 after-converge gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T00:48:09Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** After-converge gaps P6: a log written before this release with a `Revert:` line on a standing entry passed the earlier checker and is refused by the new one, against D65 and the fragment's "pass unchanged".
+- **Options:** (a) load the new checks only when a new `Status` form or a rehearsal line is present, so a lone `Revert:` reads as before (recommended by the stage); (b) amend AC-S27-7 and the fragment to name `Revert:`.
+- **Decision:** (a).
+- **Why:** a project's existing log must keep passing after `migrate` (D65); the new refusals bind only lines this release defines.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** never — a log with a new Status form still gets every refusal.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D207 — Does the completion audit read one feature's log or every one?
+- **Stage:** 9 after-converge gaps · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T00:48:09Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions, S28-ratify-revert
+- **Question:** After-converge gaps P11: `provisional.py audit --feature F` ignores another feature's provisional entry, and without `--feature` a project with several features exits 2, which the command reads as a park; D197 says "any `decisions.md`".
+- **Options:** (a) audit every feature's log, naming the lowest-numbered unratified entry with its feature (recommended by the stage, matching D202's every-feature reading); (b) amend D197 to the feature's own log.
+- **Decision:** (a).
+- **Why:** a run must not say `done` while any decision a person never saw stands provisional, whichever feature took it.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** runs are scoped to one feature with `--feature` and the owner wants each feature's `done` judged alone.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
