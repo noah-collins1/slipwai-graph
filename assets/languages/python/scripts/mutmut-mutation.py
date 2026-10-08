@@ -36,7 +36,9 @@ USAGE = "mutation: usage: mutmut-mutation.py <service> [<service> ...] [--file <
 # version is refused, and a change of the pin sweeps (T008).
 PINNED = "3.8.0"
 VERSION_CODE = "import importlib.metadata as m; print(m.version('mutmut'))"
-# Held by a run for its whole length, beside the environment it runs in; the kernel releases it when the run dies.
+# Held by a run for its whole length, beside the environment it runs in; the kernel releases it when the last process
+# holding the descriptor dies, and `mutmut` and the generation step are handed it, so a killed wrapper's `mutmut run` that
+# lives on still holds the service (A1).
 LOCK = ".venv/mutmut-run.lock"
 # What `mutmut run` does before it collects stats, and nothing after (R3): copy `src/` and the files its tests need into
 # `mutants/`, then plant every mutant and write `mutants/<file>.meta` for each file. There is no generate-only command,
@@ -412,8 +414,9 @@ def clean(job: Job) -> int | None:
 def in_service(job: Job, *arguments: str, capture: bool) -> subprocess.CompletedProcess[str]:
     """`uv run --no-sync` in the service's own environment, from its directory, where mutmut reads its configuration."""
     project = str(Path(job.service).resolve())
+    held = [job.lock.fileno()] if job.lock is not None else []
     return subprocess.run(["uv", "run", "--no-sync", "--project", project, *arguments], cwd=job.service, env=job.env,
-                          text=True, capture_output=capture)
+                          text=True, capture_output=capture, pass_fds=held)
 
 
 def generate(job: Job) -> int | None:
