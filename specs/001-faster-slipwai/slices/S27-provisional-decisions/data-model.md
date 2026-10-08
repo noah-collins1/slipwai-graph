@@ -68,9 +68,15 @@ exit 2 and one line naming the features where `specs/` holds several logs and no
 
 ## `scripts/agents/cruise.py mode [--feature <name>]`
 
-Mode entry heading: `## D<n> — decide moved from <a> to <b>`, `<a>` a value or `unrecorded`. Outputs: exit 0
-`cruise: decide is <v>, as D<n> recorded`; exit 0 and the entry to append (below); exit 3
-`cruise: parked: decide=<v> skips <next>; set it through /cruise-settings`.
+Mode entry heading: `## D<n> — decide moved from <a> to <b>`, `<a>` a value or `unrecorded`. The baseline is the
+latest `When` (an instant, UTC; one that does not parse sorts first) across every feature's `specs/*/decisions.md`
+(D202); none anywhere reads as the bottom rung, and a recorded mode that is not one of the five reads as the bottom
+rung too, with a stderr line saying so. Outputs: exit 0 `cruise: decide is <v>, as D<n> recorded` (` in <log>` where
+another feature's log holds it); exit 0 and the entry to append (below), to the log of `--feature`; exit 3
+`cruise: parked: decide=<v> is more than one rung above <recorded> (D<n>[ in <log>]); set decide=<next> through
+/cruise-settings and let an iteration record it with `python3 scripts/agents/cruise.py mode`, or step back to
+<recorded>` (where no mode entry exists anywhere: `cruise: parked: decide=<v> skips <next>; set it through
+/cruise-settings`).
 
 ```markdown
 ## D<next> — decide moved from <a> to <b>

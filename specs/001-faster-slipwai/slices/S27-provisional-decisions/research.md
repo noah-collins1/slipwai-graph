@@ -63,8 +63,7 @@ Each entry: the question, what was read, the choice and why. Facts about the tre
   ADR 0008.
 - **Choice:** `RUNGS` in `agents/cruise.py`; the refusal in the `--set` branch of `main`, before the file is written,
   reading the current value from the file; the iteration guard there too (`ITERATION_VARIABLE` in the environment,
-  `decide` among the keys). `mode` is a verb of the same script: it reads `CONFIG`, the feature's
-  `specs/<feature>/decisions.md` headings, `git log -1 --format=%h -- .specify/cruise.json` and
+  `decide` among the keys). `mode` is a verb of the same script: it reads `CONFIG`, every feature's `specs/*/decisions.md` headings, the latest `When` as an instant (D202), `git log -1 --format=%h -- .specify/cruise.json` and
   `git status --porcelain -- .specify/cruise.json`, and prints; it writes nothing. The first entry's heading is
   `decide moved from unrecorded to <v>` (P3).
 - **Why:** the runner already owns the file, the iteration variable and git; the ladder is a property of the setting,

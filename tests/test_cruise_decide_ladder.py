@@ -213,10 +213,10 @@ class DecideModeTest(unittest.TestCase):
         self.assertTrue(result.stdout.startswith("## D1 — decide moved from unrecorded to recommended-first\n"))
         decision, why = (self.line(result.stdout, name) for name in ("Decision", "Why"))
         self.assertIn("recorded as found", decision)
-        self.assertIn("no earlier mode entry", decision)
+        self.assertIn("no feature's log had an earlier mode entry", decision)
         self.assertRegex(decision, r"\((commit [0-9a-f]+|uncommitted at [^)]+)\)")
         self.assertIn("records the mode as found", why)
-        self.assertIn("no earlier mode entry", why)
+        self.assertIn("no feature's log had an earlier mode entry", why)
         for text in (decision, why):
             self.assertNotIn("a person", text)
             self.assertNotIn("changed", text)
@@ -254,8 +254,9 @@ class DecideModeTest(unittest.TestCase):
         project = mode_project("recommended-first", "provisional")
         result = cruise(project, "mode")
         self.assertEqual(result.returncode, 3, result.stderr)
-        self.assertEqual(result.stdout.strip(), "cruise: parked: decide=provisional skips provisional-shadow; "
-                                                "set it through /cruise-settings")
+        self.assertTrue(result.stdout.startswith(
+            "cruise: parked: decide=provisional is more than one rung above recommended-first (D1); set "
+            "decide=provisional-shadow through /cruise-settings"), result.stdout)
 
     def test_a_step_back_is_an_entry(self) -> None:
         project = mode_project("provisional", "recommended-first")

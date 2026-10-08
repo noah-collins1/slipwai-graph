@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from ..layout import AT_ROOT, Layout
 from .converge_stage import levels
 from .cruise_agents import cruise_body, cruise_summary
+from .cruise_provisional import COMMIT_WORDS
 from .design_stage import tasks_brief as design_tasks_brief
 from .result_contract import brief_paragraph, converge_sentence, slice_record_sentence
 from .stage_models import AGENT, ANY, MANIFEST, NO_STAGE, STAGES
@@ -165,7 +166,9 @@ of their own: what each did, and its evidence, goes in your one block.
 Return what you finished, the boundary you were given and the cycle unit you ran, whether you fanned out and
 into how many groups, the tests you added with their names, the commands you ran and their
 results, and anything you had to leave undone. A task that cannot be done as specified is reported, not reinterpreted:
-say what the plan assumed and what the code actually is.""",
+say what the plan assumed and what the code actually is.
+
+{COMMIT_WORDS}""",
 
         "drive-converge": f"""You judge whether one slice converged, and append what it still owes.
 
@@ -256,6 +259,8 @@ Return the converged verdict, what you built, and anything you left. A product q
 artifacts do not settle, or a need outside that scope goes back to the session that delegated you — recorded
 in the slice's `plan.md`, with the slice marked blocked. Never guess past one: a sibling is building against
 the same contract, and a guess here becomes their rework.
+
+{COMMIT_WORDS}
 
 {slice_record_sentence()}""",
         **cruise_body(layout),

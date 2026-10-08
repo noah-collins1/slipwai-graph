@@ -5,15 +5,18 @@ worktree's checkout (`./slipwai`, not the one on PATH), in a scratch directory u
 run inside the generated project.
 
 1. **A project, and the setting's ladder** (AC-S27-11, -16).
-   `./slipwai generate demo27 --output /tmp/s27-demo --no-init --no-install --skip-checks`, then
-   `git init -q && git add -A && git commit -qm init` inside `/tmp/s27-demo/demo27`.
+   `./slipwai generate demo27 --output /tmp/s27-demo --no-init --no-install --skip-checks`; `generate` has already made
+   the first commit, so work inside `/tmp/s27-demo/demo27` without a `git init` or a `git commit`.
    `python3 scripts/agents/cruise.py` lists `decide` with its five values' sentence.
    `python3 scripts/agents/cruise.py --set decide=provisional` → refused: set `provisional-shadow` first; the file is
    unchanged (`git diff --quiet .specify/cruise.json`).
 2. **The run cannot set it** (AC-S27-13). `CRUISE_ITERATION=1 python3 scripts/agents/cruise.py --set
    decide=provisional-shadow` → refused, naming `/cruise-settings`.
 3. **Step up one rung at a time.** `--set decide=provisional-shadow`, commit it; `python3 scripts/agents/cruise.py
-   mode` prints the entry `decide moved from unrecorded to provisional-shadow` citing that commit (AC-S27-12).
+   mode --feature demo` prints the entry `decide moved from unrecorded to provisional-shadow` citing that commit
+   (AC-S27-12). Append it to `specs/demo/decisions.md` (create it with a `# Decisions` title) with the `Reversibility:`
+   line `python3 scripts/reversibility.py --scope global contract=no schema=no auth=no customer_visible=no export=no
+   ci_workflow=no migrate_file=no behind_flag=no-code flag_default=no rollback_complexity=trivial` prints, and commit.
 4. **Shadow** (AC-S27-10). Score the guarded fixture:
    `python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours`
    → `guarded`. Then `python3 scripts/provisional.py status --decide provisional-shadow --ask approval --when
@@ -21,9 +24,11 @@ run inside the generated project.
    `Provisional (shadow): guarded · provisional · ratify by 2026-10-14 · Revert: commits carrying Decision: D2` line,
    `Status: standing`.
 5. **A skipping hand edit parks** (AC-S27-12). Edit `.specify/cruise.json` by hand to `"decide": "provisional"`;
-   `python3 scripts/agents/cruise.py mode` → `cruise: parked: decide=provisional skips provisional-advisory; set it
-   through /cruise-settings`, exit 3. Restore it with `git checkout -- .specify/cruise.json`.
-6. **Enforced** (AC-S27-1, -2, -4). `--set decide=provisional-advisory`, then `--set decide=provisional`. The step-4
+   `python3 scripts/agents/cruise.py mode --feature demo` → `cruise: parked: decide=provisional is more than one rung
+   above provisional-shadow (D1); set decide=provisional-advisory through /cruise-settings and let an iteration record
+   it …`, exit 3. Restore it with `git checkout -- .specify/cruise.json`.
+6. **Enforced** (AC-S27-1, -2, -4). `--set decide=provisional-advisory`, then `mode --feature demo` and append the entry it prints (D2, scored as in step 3),
+   then `--set decide=provisional`: an iteration records each rung before the next is taken. The step-4
    command with `--decide provisional` → `Status: provisional · ratify by 2026-10-14` and
    `Revert: commits carrying Decision: D2`. The flag fixture (`flag_default=yes rollback_complexity=trivial`) →
    `unavailable`, stderr naming `flag_default=yes`. The D54 fixture (`ci_workflow=yes migrate_file=yes

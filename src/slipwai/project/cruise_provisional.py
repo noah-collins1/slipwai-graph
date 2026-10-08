@@ -29,8 +29,15 @@ TRAILER = "Decision: D<n>"
 STATUS_FORMS = "provisional · ratify by <date> | ratified <date> | reverted <date>"
 REVERT_LINE = ("- **Revert:** <on a provisional, ratified or reverted entry: commits carrying Decision: D<n>, "
                "its own number>")
-MODE_LINE = ("- **Provisional (shadow | advisory):** <optional: final tier> · <provisional · ratify by <date> | "
+MODE_LINE = ("- **Provisional (shadow | advisory):** <optional line; written, it opens with the final tier, which is "
+             "required> · <provisional · ratify by <date> | "
              "blocks (hard) | blocks (<fact>=yes)> · Revert: commits carrying Decision: D<n>")
+
+# What the standing briefs of `drive-implement` and `drive-slice` say about the trailer (the per-call brief names the decision).
+COMMIT_WORDS = (f"**A commit under a decision the brief names carries its trailer.** Where the brief names a "
+                f"provisional decision, `D<n>`, every commit you make under it ends with the trailer `{TRAILER}` "
+                "(`git commit --trailer 'Decision: D<n>'`), so one `git log --grep` finds them all and a person who "
+                "reverts the decision has its commits.")
 
 # What `provisional` takes, as the verb decides it: the held-back facts are FR-033's three and the exclusion is D200's.
 TAKES = ("where the change is easy or guarded to reverse and none of `flag_default=yes`, `ci_workflow=yes` or "
@@ -58,7 +65,9 @@ only say why, and go nowhere in the entry. Under advisory the skipper also retur
 Every other question is decided as under `recommended-first`. A question about a gate, a check or CI is never
 provisional, whatever its declared facts; a credential, a third party's behaviour, a MUST or a release never is.
 An enforced provisional decision, which only `decide: provisional` makes, is not a block: no bosun, no ⛔. Every
-commit made under it carries the trailer `{TRAILER}`, which this session puts in every implement brief. A person's
+commit made under it carries the trailer `{TRAILER}`: this session's own commit writing the decision into its
+artifact carries it too, and this session names the decision in every implement and slice brief, whose delegates
+put the trailer on theirs. A person's
 `told: accept` is written as a `Decided by: human` entry taking the recommendation at `Status: standing`, and the
 `unavailable` entry's `Status` becomes `overridden by D<m>`."""
 MODE_SENTENCE = (
