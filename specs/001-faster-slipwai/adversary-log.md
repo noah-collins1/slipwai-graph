@@ -700,3 +700,16 @@ Findings: eight — two `HIGH`, three `MEDIUM`, three `LOW`; no `CRITICAL`. Both
 | B4 | B | LOW | Run directly from inside another repository, `since.py` reads that repository's branch and scopes a trunk run. New | Confirmed; S07 T024: every git question in `since.py` runs at the project root | fixed `a3c88b3` |
 | B5 | B | LOW | An uncommitted `ci.branch` in `project.json` retargets a slice's own base | Declined: `check-slice-scope` refuses a `project.json` edit on a slice branch, and CI renders every preview whatever the branch says | declined |
 
+
+## S27 · f2d8473 · 2026-10-07
+
+Slice `S27-provisional-decisions` (cruise iteration 28), diff `5f4fc00..f2d8473^2` (merged into adopt-method at `f2d8473`): `decide` gains `provisional-shadow`, `provisional-advisory` and `provisional`, climbed one rung at a time; a new verb `assets/toolkit/scripts/provisional.py` (`status`, `audit`) says what an always-ask entry's `Status:` and `Revert:` are; `check-decisions` holds the three new Status forms, `Revert:`, the rehearsal lines and FR-033's refusals (tier, facts, a closed list of paths); `agents/cruise.py` gains `mode`, a guard on `.specify/cruise.json` and the runner's park when `decide` moves inside an iteration; the command, the skipper's brief and the stop table say all of it.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | A new CLI, `scripts/provisional.py` (`status`, `audit`); `agents/cruise.py` gains `mode` and changes `--set`; `check-decisions` reads new labels from every log |
+| driven adapter or the provider types behind one | widened | `mode` and `audit` read every feature's `decisions.md`; the runner reads `.specify/cruise.json` before and after each iteration; the guard reads the editing tool's target path |
+| authorisation decision (who can reach one that already exists) | widened | The slice's whole point: under `provisional` an always-ask approval is taken without a person (FR-030), bounded by FR-033's refusals and by the run never setting `decide` (D62, D201, D203) |
+| concurrency, idempotency, ordering, retention, or time | widened | Ratify-by dates computed from `When` (UTC, D199); `mode` orders mode entries by instant across logs (D202); the runner compares `decide` across an iteration (D203) |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: four triggers `widened`.
