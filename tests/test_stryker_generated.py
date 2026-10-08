@@ -206,8 +206,7 @@ class StrykerGeneratedTest(FactoryTestCase):
 # sha256 of what the other backends' notes and the gates page said before this slice: not this rule's to change.
 BEFORE = {"go": "db4dabb3917fb51911370261d9328bda8137d8b165bd111f64385d7dbc46d76f",
           "java-spring": "ccfe2452d786d21eb47acc8d17d02a0d9ca8103932c3cd2f0ebba5273d657fcf",
-          "java-quarkus": "74fde152fd96f87e4597fb976e8827555cba9631feccb67bd7196c4776bd283a",
-          "python": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+          "java-quarkus": "74fde152fd96f87e4597fb976e8827555cba9631feccb67bd7196c4776bd283a"}
 GATES_PAGE = "53dad482d8dc5e54762bdcb6edf5045e520235cd201f8e38089034be900e1660"
 SKILL = ROOT / "assets/toolkit/skills/mutation-testing/SKILL.md"
 HAND_WIRED = ("- If no Stryker setup exists in a JS/TS project, recommend adding it before doing manual mutation "
@@ -261,8 +260,9 @@ class WordsTest(unittest.TestCase):
                 self.assertIn(words, text)
             self.assertNotIn("refuses until a tool is wired", text)
         for backends in (["python"], ["java-quarkus"]):
-            self.assertIn("refuses until a tool is wired", flat(mutation_command(backends)))
-        self.assertIn("Python and Quarkus", UNWIRED)
+            self.assertEqual("refuses until a tool is wired" in flat(mutation_command(backends)), backends == [
+                "java-quarkus"])
+        self.assertIn("Quarkus", UNWIRED)
         self.assertNotIn("TypeScript", UNWIRED)
 
     def test_e3_the_skill_says_a_generated_service_is_wired_and_is_otherwise_what_it_was(self) -> None:

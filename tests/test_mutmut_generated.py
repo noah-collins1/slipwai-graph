@@ -1,5 +1,7 @@
 """S42 (US2): what a generated Python service is given for mutmut, and what the project's gates keep of it.
 
+T010 (rule 9 · AC-S42-11 placeholder half): the words — the Makefile note, command text, skill and pages.
+
 T002 (rule 1 · AC-S42-1, -4 recipe, -9 first clause, -11 `mutation-full` carries no `SINCE`): the exact dev pin, the
 `[tool.mutmut]` table per service, the wrapper once per project, the `mutation-full` line, the ignore line and the
 committed locks that agree with the manifest. Projects are generated once per class; nothing is run except `make -npq`,
@@ -7,6 +9,9 @@ the wrapper with no arguments and (where `uv` is on PATH) `uv lock --check`.
 """
 from __future__ import annotations
 
+import hashlib
+import importlib
+import json
 import os
 import re
 import shutil
@@ -20,14 +25,16 @@ from pathlib import Path
 from stamp_fixture import GIT_STATE, git
 from support import FactoryTestCase, commit_all
 from test_mutation_targets import LINE, recipe_of
+from test_stryker_generated import BEFORE, GATES_PAGE, SKILL_WITHOUT_THE_PASSAGE, clean_environment
 
 from slipwai.assets import ROOT
 from slipwai.layout import Layout
 from slipwai.project.languages.python import python_pyproject
+from slipwai.project.mutation import UNWIRED, mutation_command, mutation_notes
 from slipwai.project.mutmut import FULL_COMMAND, SCRIPT_PATH
 from slipwai.scaffold import write_project
 from slipwai.selection import Selection
-from slipwai.services import default_apps
+from slipwai.services import App, default_apps
 
 sys.dont_write_bytecode = True
 
@@ -39,6 +46,24 @@ TABLE = {
 }
 LOCKS = ROOT / "assets/languages/python/locks"
 CLOSURE = ("mutmut", "libcst", "textual", "coverage", "setproctitle", "click")
+SKILL = ROOT / "assets/toolkit/skills/mutation-testing/SKILL.md"
+NOTE_FACTS = ("mutmut 3.8.0", "`scripts/mutmut-mutation.py`", "`apps/orders/pyproject.toml`", "`apps/orders/mutants/`",
+              "`.meta`", "decides the verdict itself", "never from mutmut's exit status", "`uv sync --locked`",
+              "bare `# pragma: no mutate`", "named in the commit",
+              "`# pragma: no mutate block`, `start` and `end`, and `do_not_mutate_patterns`", "fails the run",
+              "default Python starter's `make mutation-full` reports survivors the day it is generated",
+              "its own starter tests leave them", "minimal starter", "is green", "`tests/integration`", "`-p no:xdist`",
+              "scopes itself on a `slice/<id>` branch", "`make mutation SINCE=<the commit before the merge>`")
+
+
+def service(name: str, backend: str) -> App:
+    language, _, framework = backend.partition("-")
+    return App(name, f"apps/{name}", "service", language, {"spring": "spring-boot", "quarkus": "quarkus"}.get(
+        framework), 3000)
+
+
+def flat(text: str) -> str:
+    return " ".join(line.removeprefix("# ").removeprefix("#").strip() for line in text.splitlines())
 
 
 def add_service(project: Path, name: str, language: str) -> None:
@@ -191,6 +216,96 @@ class MutmutGeneratedTest(FactoryTestCase):
                 packages = {entry["name"] for entry in tomllib.loads(text)["package"]}
                 for name in CLOSURE:
                     self.assertIn(name, packages)
+
+
+class MutmutWordsTest(unittest.TestCase):
+    def test_t010_e1_python_has_a_note_with_the_facts_and_the_others_are_what_they_were(self) -> None:
+        note = flat(mutation_notes([service("orders", "python")]))
+        for fact in NOTE_FACTS:
+            self.assertIn(fact, note)
+        self.assertNotIn("__APP__", note)
+        self.assertNotIn("follow-on", note)
+        self.assertNotIn("is planned", note)
+        both = flat(mutation_notes([service("a", "python"), service("b", "python")]))
+        self.assertIn("`apps/a/mutants/` and `apps/b/mutants/`", both)
+        for backend, digest in BEFORE.items():
+            if backend != "python":
+                self.assertEqual(hashlib.sha256(mutation_notes([service("orders", backend)]).encode()).hexdigest(),
+                                 digest, backend)
+        self.assertNotIn("mutmut", mutation_notes([service("orders", "typescript")]))
+
+    def test_t010_e2_the_command_text_names_the_wrapper_and_the_report_and_only_quarkus_is_unwired(self) -> None:
+        for backends in (["python"], ["go", "python"]):
+            text = flat(mutation_command(backends))
+            for words in ("mutmut", "scripts/mutmut-mutation.py", "mutants/", "make mutation SINCE=<review-base>",
+                          "CI and the trunk get the sweep"):
+                self.assertIn(words, text)
+            self.assertNotIn("refuses until a tool is wired", text)
+        self.assertIn("refuses until a tool is wired", flat(mutation_command(["java-quarkus"])))
+        self.assertIn("refuses until a tool is wired", flat(mutation_command(["python", "java-quarkus"])))
+        self.assertIn("Quarkus", UNWIRED)
+        self.assertNotIn("Python", UNWIRED)
+
+    def test_t010_e3_the_skill_says_a_generated_python_service_is_wired_and_is_otherwise_what_it_was(self) -> None:
+        """HOLD for every other line (teeth: edit another line and the digest moves)."""
+        text = SKILL.read_text(encoding="utf-8")
+        self.assertNotIn("hand-wire mutmut", text)
+        lines = [line for line in text.splitlines(keepends=True) if "Python service this factory generated" in line]
+        self.assertEqual(len(lines), 1)
+        for words in ("already wired", "[tool.mutmut]", "scripts/mutmut-mutation.py", "mutants/", "`.meta`"):
+            self.assertIn(words, lines[0])
+        rest = "".join(line for line in text.splitlines(keepends=True) if "already wired" not in line)
+        self.assertEqual(hashlib.sha256(rest.encode()).hexdigest(), SKILL_WITHOUT_THE_PASSAGE)
+
+    def test_t010_e4_the_pages_say_mutmut_is_wired_and_the_gates_page_and_the_adr_are_as_they_were(self) -> None:
+        for page in ("docs/backend-obligations.md", "docs/requirements.md"):
+            text = flat((ROOT / page).read_text(encoding="utf-8"))
+            self.assertIn("mutmut 3.8.0", text, page)
+            self.assertIn("scripts/mutmut-mutation.py", text, page)
+            self.assertNotIn("**Python** exits 2", text, page)
+            self.assertNotIn("asking for `mutmut` on the PATH", text, page)
+            self.assertNotIn("(Python, `java-quarkus`)", text, page)
+        self.assertIn("only four backends have one wired up", flat((ROOT / "docs/requirements.md").read_text(
+            encoding="utf-8")))
+        self.assertEqual(hashlib.sha256((ROOT / "docs/verification.md").read_bytes()).hexdigest(), GATES_PAGE)
+        adr = (ROOT / "delivery/docs/adr/0010-mutmut-for-python-mutation.md").read_text(encoding="utf-8")
+        self.assertIn("## Status\n\nProposed\n", adr)
+        self.assertIn("`mutmut==3.8.0`", " ".join(adr.split()))
+
+    def test_t010_e5_stryker_s_fragment_names_java_quarkus_alone_as_a_recorded_stub(self) -> None:
+        text = (ROOT / "changelog.d/stryker-mutation.md").read_text(encoding="utf-8")
+        self.assertEqual(text.splitlines()[0], "MINOR")
+        paragraphs = [block for block in text.split("\n\n") if block.startswith("**Catch-up.**")]
+        self.assertEqual(len(paragraphs), 1)
+        for where, words in (("body", " ".join(text.split("\n\n")[1].split())), ("catch-up", " ".join(
+                paragraphs[0].split()))):
+            with self.subTest(where=where):
+                self.assertIn("`java-quarkus`", words)
+                self.assertNotIn("Python and `java-quarkus`", words)
+        stub = " ".join(paragraphs[0].split())
+        self.assertIn("`java-quarkus` stays a recorded stub", stub)
+        self.assertNotIn("Python and `java-quarkus` stay", stub)
+
+
+class MutmutNoteGeneratedTest(FactoryTestCase):
+    def test_t010_e6_the_generated_makefile_carries_the_note_and_its_rules_and_help_are_unchanged(self) -> None:
+        """Teeth: add a global variable to the note and `rules.json` no longer equals the text."""
+        with tempfile.TemporaryDirectory(prefix="mutmut-note-") as directory:
+            project = self.generate(Path(directory), "noted", "standard", "python", "none", http="none",
+                                    event_store="memory")
+            text = (project / "Makefile").read_text(encoding="utf-8")
+            self.assertIn(mutation_notes([service("service", "python")]), text)
+            for line in mutation_notes([service("service", "python")]).splitlines():
+                self.assertTrue(line.startswith("#"), f"the note is comments only, never a variable: {line!r}")
+            sys.path.insert(0, str(ROOT / "assets" / "toolkit" / "scripts"))
+            rules = importlib.import_module("verify_scoped.rules")
+            held = json.loads((project / "scripts/verify_scoped/rules.json").read_text(encoding="utf-8"))
+            self.assertEqual(rules.from_text(text), held)
+            self.assertIsNone(rules.text_problem(str(project / "Makefile"), str(
+                project / "scripts/verify_scoped/rules.json"), {}))
+            helped = subprocess.run(["make", "-s", "help"], cwd=project, env=clean_environment(), text=True,
+                                    capture_output=True, timeout=60).stdout
+            self.assertRegex(helped, r"(?m)^  mutation-full +\S")
 
 
 if __name__ == "__main__":

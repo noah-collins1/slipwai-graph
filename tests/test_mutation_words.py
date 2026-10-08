@@ -15,7 +15,7 @@ from slipwai.project.mutation import mutation_command, mutation_notes
 from slipwai.services import App
 
 BACKENDS = ("go", "java-spring", "java-quarkus", "typescript", "python")
-PLACEHOLDERS = ("java-quarkus", "python")
+PLACEHOLDERS = ("java-quarkus",)
 SKILL = ROOT / "assets/toolkit/skills/mutation-testing/SKILL.md"
 FRAGMENT = ROOT / "changelog.d/scoped-mutation.md"
 PAGES = ("docs/backend-obligations.md", "docs/verification.md", "docs/requirements.md", "docs/maintaining.md")
@@ -95,11 +95,11 @@ class NoteTest(unittest.TestCase):
                 if backend == "java-quarkus":
                     self.assertIn("once a tool is wired", note)
 
-    def test_e2_hold_python_has_no_note_and_is_told_in_the_command_text(self) -> None:
-        """HOLD: the Makefile text of a Python project stays free of a note, which keeps `migrate` from conflicting
-        where `add-service` edited the lines above the rule; the command text says the target refuses until wired.
-        (TypeScript's note is S41's; `test_stryker_generated` holds it.)"""
-        self.assertEqual(mutation_notes([service("orders", "python")]), "")
+    def test_e2_python_has_mutmuts_note_and_is_not_told_the_target_refuses(self) -> None:
+        """S42 T010 inverts S08's hold for Python only: mutmut is wired, so Python has a note (S08's other backends'
+        notes are held byte for byte by `test_mutmut_generated`) and the command text no longer says it refuses."""
+        self.assertIn("Wired up: mutmut", mutation_notes([service("orders", "python")]))
+        self.assertNotIn("refuses until a tool is wired", mutation_command(["python"]))
 
     def test_e2_springs_failwhennomutations_paragraph_names_the_scoped_exception(self) -> None:
         note = flat(mutation_notes([service("ledger", "java-spring")]))

@@ -64,7 +64,7 @@ class FragmentTest(unittest.TestCase):
         note = squashed(paragraphs[0])
         for words in CATCH_UP_WORDS:
             self.assertIn(words, note)
-        for words in ("stryker.config.json", "scripts/stryker-mutation.py", "Python", "java-quarkus"):
+        for words in ("stryker.config.json", "scripts/stryker-mutation.py", "java-quarkus"):
             self.assertIn(words, note)
 
 

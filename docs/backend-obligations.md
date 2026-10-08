@@ -59,7 +59,7 @@ review found Gremlins scoring the build failure that layout caused as a kill, a 
 level could see (`project/mutation.py`). So the last four rows are otherwise claims, not proofs, until someone
 runs them by hand — which is why `add-language` section 10 requires exactly that before a backend is called done.
 
-`make mutation` scopes itself on a slice branch (to the production files that differ from the trunk commit the branch was cut from), `make mutation SINCE=<ref>` scopes it on any checkout, and `make mutation-full` is the sweep it was before; no gate runs `make mutation` or `make mutation-full`, and a backend with no tool wired (Python, `java-quarkus`) refuses a changed service until one is. TypeScript's is wired: Stryker 10.0.0 with its Vitest runner, one `stryker.config.json` per service and `scripts/stryker-mutation.py` for the project, which decides the verdict from `<service>/reports/mutation/mutation.json` rather than from Stryker's exit status (`project/stryker.py`, ADR 0009).
+`make mutation` scopes itself on a slice branch (to the production files that differ from the trunk commit the branch was cut from), `make mutation SINCE=<ref>` scopes it on any checkout, and `make mutation-full` is the sweep it was before; no gate runs `make mutation` or `make mutation-full`, and a backend with no tool wired (`java-quarkus`) refuses a changed service until one is. TypeScript's is wired: Stryker 10.0.0 with its Vitest runner, one `stryker.config.json` per service and `scripts/stryker-mutation.py` for the project, which decides the verdict from `<service>/reports/mutation/mutation.json` rather than from Stryker's exit status (`project/stryker.py`, ADR 0009). Python's is wired too: mutmut 3.8.0, a `[tool.mutmut]` table per service and `scripts/mutmut-mutation.py` for the project, which decides the verdict from the `.meta` files under `<service>/mutants/` rather than from mutmut's exit status (`project/mutmut.py`, ADR 0010).
 
 A project with a production target gets a second set of targets beside these eight — `build`, `push`,
 `smoke-image`, `smoke`, `deploy`, `rollback`, `url`, and `migrate-remote` where a store is applied by a task
@@ -86,6 +86,7 @@ degrading, so a missing entry fails generation at a predictable point. Paths are
 | `gates` | `project/docs.py` | backend | always |
 | `paths` | `project/event_model.py` | backend | always |
 | `tools` | `project/mutation.py` | backend | always |
+| `MUTATION_NOTES` | `project/mutation.py` | backend | always |
 | `per_backend` (agent permissions) | `project/agent_settings.py` | backend | always |
 | `LANGUAGES` | `assets/backing-services/prune.py` | family | always |
 | `HEALTH_BODIES` | `probes.py` | backend | always |
