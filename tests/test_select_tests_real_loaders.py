@@ -20,6 +20,8 @@ sys.dont_write_bytecode = True
 
 SCRIPTS = "assets/toolkit/scripts/"
 GO = "assets/languages/go/"
+TS_WRAPPER = "assets/languages/typescript/scripts/stryker-mutation.py"
+STYLES = SCRIPTS + "check-styles.py"  # read by the `slipwai` import these modules reach through `test_stryker_list`
 # module -> every path its reading proves it opens, copies, runs or loads by path (a directory is everything under it)
 READS = {
     "test_assets_bytecode": ["assets", "tests"],
@@ -28,8 +30,17 @@ READS = {
     "test_migration_script": ["scripts/test-migration.py"],
     "test_mutation": [GO + "app/.gremlins.yaml", GO + "scripts/go-coverage.py", GO + "scripts/go-mutation.py"],
     "test_pit_globs": [SCRIPTS + "mutation-scope.py"],
-    "test_stryker_list": ["assets/languages/typescript/scripts/stryker-mutation.py"],
-    "test_stryker_verdict": ["assets/languages/typescript/scripts/stryker-mutation.py"],
+    "test_stryker_closure": [TS_WRAPPER, STYLES],
+    "test_stryker_edges": [TS_WRAPPER, STYLES],
+    "test_stryker_ignored": [TS_WRAPPER, STYLES],
+    "test_stryker_incomplete": [TS_WRAPPER, STYLES],
+    "test_stryker_install": [TS_WRAPPER, STYLES],
+    "test_stryker_list": [TS_WRAPPER],
+    "test_stryker_report": [TS_WRAPPER, "assets/backing-services/typescript/read-models.ts"],
+    "test_stryker_reuse": [TS_WRAPPER, STYLES],
+    "test_stryker_run_lock": [TS_WRAPPER, STYLES],
+    "test_stryker_statements": [TS_WRAPPER, STYLES],
+    "test_stryker_verdict": [TS_WRAPPER, STYLES],
     "test_release": [".github/workflows/release.yml", "scripts/gitea-askpass", "scripts/tag-release.py"],
     "test_versions": ["scripts/publish-wheel.py", "scripts/snapshot-version.py", "src/slipwai/versions.py"],
 }

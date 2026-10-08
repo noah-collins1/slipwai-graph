@@ -12,6 +12,7 @@ checks its own prerequisite that way.
 """
 from __future__ import annotations
 
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -48,7 +49,11 @@ class NpmInstallTest(FactoryTestCase):
             makefile = (self.npm_project(directory) / "Makefile").read_text()
             self.assertNotIn("|| npm ci", makefile)
             self.assertIn("\nnode_modules/.package-lock.json: package.json package-lock.json\n", makefile)
-            self.assertEqual(2, makefile.count("\n\tnpm ci\n"), makefile)
+            # The install target's line is `npm ci` in a project with no TypeScript service and, where one is present,
+            # the same command through the Stryker wrapper (`--install`), which takes the lock a concurrent
+            # `make mutation-full` shares (S41 T040); `make install` stays a bare `npm ci`. Both spellings count.
+            runs = re.findall(r"\n\t(?:python3 scripts/stryker-mutation\.py --install )?npm ci\n", makefile)
+            self.assertEqual(2, len(runs), makefile)
 
     def test_every_entry_point_installs_the_workspace_exactly_once(self) -> None:
         """Once, not never: a target that lost the prerequisite would run `npm --workspace` against a tree

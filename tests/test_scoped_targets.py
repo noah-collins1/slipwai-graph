@@ -46,8 +46,8 @@ SHAPES["integration-billing"] = (
 # that changes on purpose regenerates these; this slice adds text after everything and moves nothing before it.
 PRE_SLICE: dict[str, str] = {
     "standard-python": "e0f55e165135548b364d5e4ec116c25a36b519ac4efba9acd874d25df849b5af",
-    "model-typescript-web": "c0a2ebdd07a6c782cedba5b295fa0f1b19e209570bdeec52f67941b793557782",
-    "model-typescript-web-cloud": "9da7017c8f6b07d220e17b80ea163b3ee98fd122e33bbd1e9444e4b878fca40b",
+    "model-typescript-web": "984e9a38b969f4362834e5288e14ea7b6fb352e9980531fbd799c7071aa4661d",
+    "model-typescript-web-cloud": "ac36b4ebcdf92e5cfc0b452e89f4abe9297c61d3a5f10aef031c4fd64bdcb00c",
     "model-python-sqlite": "5339b0746b90b0fbe6f4e548ff686bd80c3f7fe05c1c397ddb6f23e4629ab9e9",
     "model-go-azure": "4e1460b376ec99d6df9dbb610d9e9cbf36303cd96f146c9108dd926a92b8e71f",
     "standard-quarkus": "74efc08991dfe6e26f8a1d08c92058adb4874763026935514074f51059ff3491",

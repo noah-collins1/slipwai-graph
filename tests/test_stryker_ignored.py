@@ -13,7 +13,8 @@ import unittest
 from test_stryker_verdict import REPORT, SERVICE, VerdictCase, mutant, report
 
 sys.dont_write_bytecode = True
-TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py"]}
+TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py",
+                            "assets/toolkit/scripts/check-styles.py"]}
 CODE = 'export const a = "x";'
 EXCLUDED = 'Ignored because of excluded mutation "StringLiteral"'
 

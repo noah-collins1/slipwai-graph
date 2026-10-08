@@ -22,7 +22,8 @@ from typing import Any
 from test_stryker_list import SCRIPT, project
 
 sys.dont_write_bytecode = True
-TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py"]}
+TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutation.py",
+                            "assets/toolkit/scripts/check-styles.py"]}
 SERVICE = "apps/service"
 REPORT = f"{SERVICE}/reports/mutation/mutation.json"
 # What the wrapper starts Stryker as, before any `--mutate`.
