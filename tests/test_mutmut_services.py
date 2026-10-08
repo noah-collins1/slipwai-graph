@@ -41,7 +41,9 @@ class ServicesCase(Case):
         self.b = self.make_service("apps/b")
 
     def sweep(self, *services: str, answers: dict[str, dict[str, Any]]) -> subprocess.CompletedProcess[str]:
-        return self.run_wrapper(*services, meta=answers, results=answers)
+        generated = {name: {file: {key: None for key in keys} for file, keys in files.items()}
+                     for name, files in answers.items()}  # nothing has a code until mutmut has run (A2)
+        return self.run_wrapper(*services, meta=generated, results=answers)
 
     def mutmut_runs(self) -> list[str]:
         return [Path(call["cwd"]).name for call in self.started_mutmut()]

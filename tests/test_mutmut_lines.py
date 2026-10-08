@@ -55,6 +55,8 @@ mutation: <n> mutants: <k> killed, <u> no tests (reported, never failed)[, <s> s
 mutation: another mutmut run of <service> holds <service>/.venv/mutmut-run.lock; wait for it, then run this again
 mutation: mutmut could not generate mutants for <service> (exit <n>)[: <its last stderr line>]
 mutation: <service>/mutants/ could not be removed; delete it, then run this again
+mutation: <service>/<file>: mutmut's generation left an exit code on <n> mutant(s) before any test ran (a committed
+    .meta file copied into mutants/?), so the verdict cannot be trusted
 mutation: <service>/<file>: mutmut left no readable .meta, so nothing can be said of it
 mutation: <service>/<file> cannot be read as UTF-8, so its pragmas cannot be checked
 mutation: <service>/<file> cannot be read as Python, so its pragmas cannot be checked

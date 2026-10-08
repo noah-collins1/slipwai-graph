@@ -104,5 +104,44 @@ class OrphanTest(PhaseCase):
             time.sleep(0.05)
 
 
+class ForgedMetaTest(PhaseCase):
+    """T037 (A2): after the wrapper's own generation every code is null, and only sources under `source_paths` are read."""
+
+    FORGED = ("mutation: apps/service/src/pkg/a.py: mutmut's generation left an exit code on 1 mutant(s) before any "
+              "test ran (a committed .meta file copied into mutants/?), so the verdict cannot be trusted")
+
+    def test_a2_a_scoped_key_that_already_has_a_code_fails_the_run_naming_the_file(self) -> None:
+        done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", meta={"src/pkg/a.py": {KEY: 1}},
+                                results={"src/pkg/a.py": {KEY: 1}})
+        self.assertEqual(done.returncode, 1)
+        self.assertIn(self.FORGED, lines_of(done))
+        self.assertEqual(self.started_mutmut(), [])
+
+    def test_a2_a_sweep_of_a_forged_file_fails_the_same_way(self) -> None:
+        done = self.run_wrapper("apps/service", meta={"src/pkg/a.py": {KEY: 1}}, results={"src/pkg/a.py": {KEY: 1}})
+        self.assertEqual(done.returncode, 1)
+        self.assertIn(self.FORGED, lines_of(done))
+
+    def test_a2_a_meta_beside_a_test_or_outside_the_source_roots_is_never_a_verdict(self) -> None:
+        meta = {"src/pkg/a.py": {KEY: None}, "tests/test_a.py": {"t.x_f__mutmut_1": 1},
+                "scripts/b.py": {"b.x_f__mutmut_1": 0}, "src/pkg/readme.txt": {"r.x_f__mutmut_1": 0}}
+        done = self.run_wrapper("apps/service", meta=meta, results={"src/pkg/a.py": {KEY: 1}})
+        self.assertEqual(done.returncode, 0, lines_of(done))
+        self.assertEqual(lines_of(done)[-1].split(" \u2014 ")[0], "mutation: 1 mutants: 1 killed, 0 no tests "
+                                                                 "(reported, never failed); passed")
+
+    def test_a2_a_ghost_meta_outside_the_roots_does_not_make_an_empty_sweep_pass(self) -> None:
+        done = self.run_wrapper("apps/service", meta={"src/pkg/types.py": {}, "tests/ghost.py": {"g.x_f__mutmut_1": 1}})
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(lines_of(done)[-1], "mutation: mutmut found nothing to mutate in apps/service; a pass on "
+                                             "nothing is not a pass")
+
+    def test_a2_a_file_handed_over_that_the_table_does_not_take_is_not_run_on_a_copied_meta(self) -> None:
+        done = self.run_wrapper("apps/service", "--file", "tests/test_a.py", meta={"tests/test_a.py": {KEY: None}},
+                                results={"tests/test_a.py": {KEY: 0}})
+        self.assertEqual(done.returncode, 0)
+        self.assertEqual(self.started_mutmut(), [])
+
+
 if __name__ == "__main__":
     unittest.main()

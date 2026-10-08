@@ -284,10 +284,11 @@ class VerdictTest(Case):
                                                                     "apps/service; a pass on nothing is not a pass"))
 
     def test_e5_scoped_means_scoped_and_a_sweep_judges_every_file(self) -> None:
-        meta = {"src/pkg/a.py": {KEY: None}, "src/pkg/b.py": {"pkg.y_h__mutmut_1": 0}}
-        done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", meta=meta, results={"src/pkg/a.py": {KEY: 1}})
+        meta = {"src/pkg/a.py": {KEY: None}, "src/pkg/b.py": {"pkg.y_h__mutmut_1": None}}
+        results = {"src/pkg/a.py": {KEY: 1}, "src/pkg/b.py": {"pkg.y_h__mutmut_1": 0}}
+        done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", meta=meta, results=results)
         self.assertEqual(done.returncode, 0)
-        done = self.run_wrapper("apps/service", meta=meta, results={"src/pkg/a.py": {KEY: 1}})
+        done = self.run_wrapper("apps/service", meta=meta, results=results)
         self.assertEqual(done.returncode, 1)
         self.assertIn(f"mutation: survived apps/service pkg.y_h__mutmut_1 (mutmut show pkg.y_h__mutmut_1 in "
                       f"apps/service; {REPORT})", lines_of(done))

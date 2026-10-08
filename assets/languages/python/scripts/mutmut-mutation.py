@@ -432,7 +432,8 @@ def sweep(job: Job) -> int | None:
     """A sweep judges every file mutmut wrote a `.meta` for, and reads the silencing of every one of them first. With
     no mutant in any of them there is nothing to run, and a pass on nothing is not a pass."""
     root = Path(job.service) / "mutants"
-    job.judged = sorted(path.relative_to(root).as_posix()[: -len(".meta")] for path in root.rglob("*.meta"))
+    written = (path.relative_to(root).as_posix()[: -len(".meta")] for path in root.rglob("*.meta"))
+    job.judged = sorted(file for file in written if matched(job.config, file))
     failed = refuse_silenced(job)
     if not any(keys_of(job.service, file) for file in job.judged):
         note(f"mutmut found nothing to mutate in {job.service}; a pass on nothing is not a pass")
@@ -448,7 +449,7 @@ def plan(job: Job) -> int | None:
         return sweep(job)
     keyed: dict[str, list[str]] = {}
     for file in job.files:
-        keys = keys_of(job.service, file)
+        keys = keys_of(job.service, file) if matched(job.config, file) else None
         if keys is None:
             note(f"not mutated {job.service}/{file} \u2014 outside mutmut's configured targets")
         else:
@@ -515,6 +516,16 @@ def silenced_by_file(service: str, file: str) -> list[str]:
             "only a bare \"# pragma: no mutate\" on the line excuses one" for number, word in found]
 
 
+def forged_by_file(service: str, file: str) -> list[str]:
+    """A mutant with an exit code before any test has run was not recorded by this run: `copy_src_dir` copies a `.meta`
+    file committed beside a source into `mutants/`, and mutmut keeps the codes whose hashes match (A2)."""
+    held = [key for key, code in (codes_of(service, file) or {}).items() if code is not None]
+    if not held:
+        return []
+    return [f"{service}/{file}: mutmut's generation left an exit code on {len(held)} mutant(s) before any test ran (a "
+            "committed .meta file copied into mutants/?), so the verdict cannot be trusted"]
+
+
 def silenced(job: Job) -> list[str]:
     """One line for each way a judged file or the table silences mutants without anyone looking at them: decided in
     `plan`, before any exit that finds nothing to run, so that the two cannot disagree about what silences."""
@@ -530,6 +541,7 @@ def silenced(job: Job) -> list[str]:
         found.append(f"{job.service}/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches "
                      "through deeper calls into mutants no test reaches without anyone looking at them")
     for file in job.judged:
+        found.extend(forged_by_file(job.service, file))
         found.extend(silenced_by_file(job.service, file))
     return found
 
