@@ -4975,5 +4975,5 @@
 - **Why:** "3 swept" says a service was mutated when it never started — a false statement about coverage the owner brief rules out (a gate says what it checked in one line a person can act on); counting it refused, in the scope script's word, fixes that. Exit 2 outranking 1 is refused: it would give the two scripts different precedence for one situation (D212's one meaning of red), `make` reports any failed recipe as its own exit 2 anyway, and the refused service is already named.
 - **Decided by:** drive-skipper (claude-opus-5-5)
 - **Confidence:** high · **Would reverse if:** a consumer of the bare exit code (the scope script's runner, CI, S47's design) branches on 2 against 1 — then exit 2 wins in both scripts together, decided once for both.
-- **Written to:** `assets/languages/python/scripts/mutmut-mutation.py` (`main`'s summary line), `changelog.d/mutmut-mutation.md` and the generated Makefile note where they quote the summary, `specs/001-faster-slipwai/adversary-log.md` (A6)
+- **Written to:** `assets/languages/python/scripts/mutmut-mutation.py` (the summary line), `changelog.d/mutmut-mutation.md` and the generated Makefile note where they quote the summary, `specs/001-faster-slipwai/adversary-log.md` (A6)
 - **Status:** standing

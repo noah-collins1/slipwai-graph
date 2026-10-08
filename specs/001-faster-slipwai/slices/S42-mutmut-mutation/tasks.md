@@ -1391,3 +1391,20 @@ per-service sweep and the recipe check still hold under their own suites.
 **Tree.** No code was mutated in this pass. The real run wrote only under `/tmp/s42/research/p/apps/service/mutants/` and
 `/tmp/s42-converge3-run.log`. A `.venv/` that an aborted `uv run` created in the worktree was removed. At the end of the pass,
 `git status` shows only the host's `benchmark.json` and this file.
+
+## Phase 4 — adversary findings (cruise iteration 30; `adversary-log.md`, S42 · 1f2a0b7)
+
+Two fix worktrees with disjoint manifests: **W** (`slice/S42-phase4-w`) owns `assets/languages/python/scripts/mutmut-mutation.py`, `src/slipwai/project/mutmut.py`, `src/slipwai/project/mutation.py`'s Python note, `changelog.d/mutmut-mutation.md` and `tests/test_mutmut_*.py`; **S** (`slice/S42-phase4-s`) owns `assets/toolkit/scripts/mutation-scope.py` and `tests/test_mutation_scope*.py` (+ `tests/mutation_scope_fixture.py`).
+
+- [ ] T036 [W] A1 (HIGH): a killed wrapper's `mutmut run` child can no longer write into a later run — the lock is held for as long as any process the run started lives (e.g. the lock's descriptor passed to the child, or the child in its own process group, ended with the wrapper), and a run that finds an earlier run's process still alive refuses (exit 2)
+- [ ] T037 [W] A2 (HIGH): after the wrapper's own generation step every scoped key's exit code is null, or the run fails naming the file; the sweep reads only the `.meta` files the generation step wrote for sources under `source_paths` — a committed `*.py.meta` beside a source, or one under `tests/`, is never a verdict
+- [ ] T038 [W] A3, D227 items 1–3: the test selection held to the generated values (exit 1, one line each), `tests_dir` failed, every `PYTEST_*` variable stripped with a note line; the residual sentence in the Makefile note and the fragment
+- [ ] T039 [W] A4 (MEDIUM): the `mutmut` (and `libcst`) the run imports is the venv's — a `mutmut` package found on `PYTHONPATH` ahead of the venv's dist-info exits 2 naming its location
+- [ ] T040 [W] A5, D227 item 4: every file `[tool.mutmut]` excludes is named, one line each with its reason; the sweep's last line counts them
+- [ ] T041 [W] A6, D228: the multi-service summary `<s> swept, <r> refused; …`, exit unchanged; the note and the fragment quote it
+- [ ] T042 [W] A7 (LOW): an absolute or `..` `--file` is refused or made relative to the service before matching; an `also_copy` entry that leaves the service's `mutants/` is refused
+- [ ] T043 [W] B3 (LOW): `lock_versions` compares each closure entry's version, source and hashes, so a same-version rebuild or a changed source sweeps
+- [ ] T044 [W] B5 (LOW): the Catch-up names every file a `migrate` of a project with an added Python service can conflict in (`Makefile`, `pyproject.toml`, `uv.lock`, `commands/mutation.md`, `scripts/verify_scoped/rules.json`) and says to take the factory's side of the `mutation-full` hunk
+- [ ] T045 [S] B1 (HIGH): a Python file is production when it sits under one of its service's `[tool.mutmut]` `source_paths` roots, read as the wrapper reads them; an unreadable table sweeps the service; `unlisted()` follows the same rule
+- [ ] T046 [S] B2 (MEDIUM): `rule_of` finds a `mutation-full` (and `mutation`) rule however make spells it — whitespace before the colon, several targets on one line — and a second rule for the target is *not the recipe the factory wrote*
+- [ ] T047 [S] B4 (LOW): the sweep's first line names each cause once
