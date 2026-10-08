@@ -145,6 +145,10 @@ class MainTest(Case):
 
     def test_e4_a_matched_file_reaches_the_run_and_the_unmatched_one_is_named_first(self) -> None:
         project(self.tree)
+        for name in ("package.json", "node_modules/.package-lock.json", *(
+                f"node_modules/@stryker-mutator/{package}/package.json" for package in ("core", "vitest-runner"))):
+            (self.tree / name).parent.mkdir(parents=True, exist_ok=True)
+            (self.tree / name).write_text("{}", encoding="utf-8")  # installed, so the run is reached
         done = self.run_wrapper("apps/service", "--file", "src/main.ts", "--file", "src/health.ts")
         self.assertEqual(done.returncode, 1, done.stdout)  # the fake `npm` wrote no report: not a pass (T004 judges it)
         self.assertEqual(done.stdout.splitlines()[0],

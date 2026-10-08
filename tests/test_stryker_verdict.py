@@ -217,5 +217,86 @@ class VerdictTest(VerdictCase):
             self.assertFalse([a for a in call["argv"] if "incremental" in a or "thresholds" in a], call)
 
 
+class InstallTest(VerdictCase):
+    """Rule 4: install from the committed lock, never fetch; a missing tool is one setup line (T005)."""
+
+    installed = False
+    OK = {"report": report(src__a_ts=[mutant("Killed")])}
+
+    def argvs(self) -> list[list[str]]:
+        return [call["argv"] for call in self.calls()]
+
+    def test_e1_a_fresh_clone_installs_from_the_lock_at_the_root_and_then_starts_stryker(self) -> None:
+        code, lines = self.run_wrapper(self.OK, "--file", "src/a.ts")
+        self.assertEqual(code, 0, lines)
+        self.assertEqual(self.argvs()[0], ["ci"])
+        self.assertEqual(self.calls()[0]["cwd"], str(self.tree.resolve()))
+        self.assertTrue((self.tree / "node_modules/.package-lock.json").is_file())
+        self.assertEqual(self.argvs()[1][:3], ["exec", "--no", "--"])
+        self.assertEqual(lines.count("mutation: installing from the committed lock (npm ci)"), 1, lines)
+
+    def test_e2_a_fresh_marker_skips_the_install_and_a_newer_manifest_or_root_lock_brings_it_back(self) -> None:
+        self.install(("core", "vitest-runner"))
+        self.run_wrapper(self.OK, "--file", "src/a.ts")
+        self.assertEqual([a[0] for a in self.argvs()], ["exec"])
+        later = time.time() + 500
+        for touched in (f"{SERVICE}/package.json", "package.json", "package-lock.json"):
+            with self.subTest(touched=touched):
+                self.install(("core", "vitest-runner"))
+                before = len(self.argvs())
+                os.utime(self.tree / touched, (later, later))
+                self.run_wrapper(self.OK, "--file", "src/a.ts")
+                self.assertEqual(self.argvs()[before][0], "ci")
+                later += 500
+
+    def test_e3_a_failing_install_is_one_setup_line_and_stryker_is_never_started(self) -> None:
+        code, lines = self.run_wrapper({**self.OK, "ci_exit": 1}, "--file", "src/a.ts")
+        self.assertEqual(code, 2)
+        self.assertEqual(lines[-1], "mutation: npm ci failed (exit 1); fix the install, then run this again")
+        self.assertEqual(self.execs(), [])
+
+    def test_e4_no_npm_is_one_line_and_nothing_is_created(self) -> None:
+        (self.tree / ".nvmrc").write_text("24\n", encoding="utf-8")
+        empty = self.root / "empty"
+        empty.mkdir()
+        code, lines = self.run_wrapper(self.OK, "--file", "src/a.ts", path=str(empty))
+        self.assertEqual(code, 2)
+        self.assertEqual(lines, ["mutation: npm is not on PATH; install Node 24 to run Stryker"])
+        self.assertEqual(self.calls(), [])
+        self.assertFalse((self.tree / SERVICE / "reports").exists())
+        self.assertFalse((self.tree / "node_modules").exists())
+
+    def test_e5_stryker_missing_after_the_install_is_one_line_naming_both_packages(self) -> None:
+        for installs in (["core"], ["vitest-runner"], []):
+            with self.subTest(installs=installs):
+                shutil.rmtree(self.tree / "node_modules", ignore_errors=True)
+                code, lines = self.run_wrapper({**self.OK, "installs": installs}, "--file", "src/a.ts")
+                self.assertEqual(code, 2, lines)
+                self.assertEqual(lines[-1], "mutation: Stryker is not installed in this project: add "
+                                            "@stryker-mutator/core and @stryker-mutator/vitest-runner 10.0.0 to "
+                                            f"{SERVICE}/package.json's devDependencies and run npm install")
+                self.assertEqual(self.execs(), [])
+                self.log.unlink()
+
+    def test_e6_hold_nothing_is_fetched_stryker_only_starts_through_exec_no(self) -> None:
+        """HOLD (teeth: drop `--no` from the command and see it fail)."""
+        for files in ((), ("--file", "src/a.ts")):
+            shutil.rmtree(self.tree / "node_modules", ignore_errors=True)
+            self.run_wrapper(self.OK, *files)
+        for argv in self.argvs():
+            self.assertIn(argv[0], ("ci", "exec"), argv)
+            self.assertNotIn("install", argv)
+            self.assertTrue(argv[0] != "exec" or argv[1] == "--no", argv)
+
+    def test_e7_a_swept_run_and_a_scoped_run_install_alike(self) -> None:
+        for files in ((), ("--file", "src/a.ts")):
+            with self.subTest(files=files):
+                shutil.rmtree(self.tree / "node_modules", ignore_errors=True)
+                self.log.unlink(missing_ok=True)
+                code, lines = self.run_wrapper(self.OK, *files)
+                self.assertEqual(self.argvs()[0], ["ci"])
+                self.assertIn("mutation: installing from the committed lock (npm ci)", lines)
+
+
 if __name__ == "__main__":
     unittest.main()

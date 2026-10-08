@@ -34,6 +34,9 @@ SANDBOX = ".stryker-tmp"
 # The verdict of each status, in one place: anything not named here fails, so a status Stryker adds later fails closed.
 PASS = ("Killed", "Ignored")
 COUNTED = ("NoCoverage",)
+# The version the factory pins both packages at (ADR 0009); this names it in the one line that says Stryker is missing.
+PINNED = "10.0.0"
+PACKAGES = ("core", "vitest-runner")
 FAILED_AS = {"Survived": "survived", "Timeout": "timed out", "RuntimeError": "runtime error",
              "CompileError": "compile error", "Pending": "pending"}
 
@@ -166,6 +169,55 @@ def parse(arguments: list[str]) -> tuple[str, list[str]] | None:
     return service, files
 
 
+def stale(root: Path, service: Path) -> bool:
+    """Whether `npm ci` has to run: the install marker is missing or older than a manifest or lock that feeds it.
+
+    The same rule the Makefile's `node_modules/.package-lock.json: package.json package-lock.json` target and the
+    family verify script (`if [ ! -d node_modules ]; then npm ci; fi`) apply, so a change to one is read against the
+    others: install from the committed lock when the lock is newer than what was installed, otherwise leave it.
+    """
+    marker = root / "node_modules" / ".package-lock.json"
+    if not marker.is_file():
+        return True
+    inputs = (root / "package.json", root / "package-lock.json", service / "package.json", service / "package-lock.json")
+    return any(path.is_file() and path.stat().st_mtime > marker.stat().st_mtime for path in inputs)
+
+
+def stryker_present(root: Path, service: Path) -> bool:
+    """Whether both Stryker packages are installed, looked for from the service up to the project root."""
+    here, top, found = service.resolve(), root.resolve(), set()
+    while True:
+        found |= {name for name in PACKAGES if (here / "node_modules" / "@stryker-mutator" / name / "package.json").is_file()}
+        if here == top or here.parent == here:
+            return found == set(PACKAGES)
+        here = here.parent
+
+
+def ensure_installed(service: str) -> int | None:
+    """Exit 2 with one line where Stryker cannot be started, None where it can. Installs from the committed lock and
+    never fetches: `npm ci` takes exactly the lock, and `npm exec --no` refuses to download what is not installed."""
+    root = Path.cwd()
+    if shutil.which("npm") is None:
+        wanted = root / ".nvmrc"
+        node = wanted.read_text(encoding="utf-8").strip() if wanted.is_file() else ""
+        say(f"mutation: npm is not on PATH; install Node{' ' + node if node else ''} to run Stryker")
+        return 2
+    if stale(root, Path(service)):
+        say("mutation: installing from the committed lock (npm ci)")
+        done = subprocess.run(["npm", "ci"], cwd=root)
+        if done.returncode != 0:
+            say(f"mutation: npm ci failed (exit {done.returncode}); fix the install, then run this again")
+            return 2
+        marker = root / "node_modules" / ".package-lock.json"
+        marker.parent.mkdir(exist_ok=True)
+        marker.touch()
+    if not stryker_present(root, Path(service)):
+        say(f"mutation: Stryker is not installed in this project: add @stryker-mutator/core and @stryker-mutator/vitest-runner "
+            f"{PINNED} to {service}/package.json's devDependencies and run npm install")
+        return 2
+    return None
+
+
 def clean(service: Path) -> None:
     """Every run starts from nothing: an earlier report must not be able to pass a run that wrote none, and an earlier
     sandbox is not this run's."""
@@ -261,7 +313,8 @@ def main(arguments: list[str]) -> int:
     if given and not kept:
         say(f"mutation: nothing under {service} that was given is a file Stryker would mutate; no mutant to run")
         return 0
-    return run(service, kept)
+    setup = ensure_installed(service)
+    return setup if setup is not None else run(service, kept)
 
 
 if __name__ == "__main__":
