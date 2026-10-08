@@ -45,11 +45,13 @@ class Result(NamedTuple):
 
 class Plan(NamedTuple):
     """What a wired service's tool would take of the changed files, decided before any tool starts: the files it will
-    mutate, each it will not with the reason, and, where its configuration cannot be read, the words of that."""
+    mutate, each it will not with the reason, where its configuration cannot be read the words of that, and where a
+    changed path would be misread by the tool the words of the refusal (which starts no tool)."""
 
     keep: list[str]
     left: list[tuple[str, str]]
     unreadable: str | None = None
+    refusal: str | None = None
 
 
 class Runner(Protocol):
@@ -538,6 +540,10 @@ def typescript_plan(path: str, files: list[str]) -> Plan:
     """The files Stryker will take within the given ones, by the service's own `mutate` list as the wrapper reads it: the
     wrapper is loaded and never copied. A list it cannot read plans nothing and says why, and the service then sweeps."""
     tool = load("stryker-mutation.py")
+    for name in files:  # a misread glob is the louder fact: it refuses the service, before the list is even asked
+        words = tool.refused(path, shown(name))
+        if words is not None:
+            return Plan([], [], None, words)
     try:
         patterns = tool.targets(Path(path))
         keep = {name for name in files if tool.matched(patterns, name)}
@@ -894,7 +900,8 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
         if root in production:
             plans[root] = getattr(runner, "plan", lambda *_: Plan(production[root], []))(backend, root, production[root])
     unread = {root: plan.unreadable for root, plan in plans.items() if plan.unreadable is not None}
-    named = sorted(f"{root}/{inside}" for root, plan in plans.items() if root not in unread for inside in plan.keep)
+    named = sorted(f"{root}/{inside}" for root, plan in plans.items() if root not in unread
+                   for inside in (production[root] if plan.refusal else plan.keep))
     outside = any(plan.left for plan in plans.values())
     if named:
         say(f"scoped to {len(named)} changed file(s) since {words}: {', '.join(shown(name) for name in named)}")
@@ -938,6 +945,8 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
             drop_report(backend, root, dry)
             counts["skipped"] += 1
             continue
+        elif plan.refusal is not None:  # a refusal starts no tool, and the shared tail below counts and fails it
+            result, kind = Result(2, [], [], plan.refusal), "scoped"
         elif not plan.keep and plan.left:
             say(f"skip {root} — no changed production file within the tool's targets")
             for name, why in plan.left:

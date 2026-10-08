@@ -175,3 +175,73 @@ class ScopeTest(TypeScriptCase):
         status, lines, recording = self.run_planned("typescript:apps/service")
         self.assertEqual((status, lines[0], recording.scoped, recording.swept),
                          (0, "mutation: no mutant to run — no production file changed", [], []))
+
+
+def words(file: str, char: str) -> str:
+    return (f"`apps/service/{file}` holds `{char}`, which Stryker's --mutate reads as pattern syntax; "
+            "rename it, or run `make mutation-full`")
+
+
+class RefusalTest(TypeScriptCase):
+    """Rule 7, scope half (D215 d): a changed path `--mutate` would misread refuses its service, and starts no tool."""
+
+    def test_e1_a_comma_in_a_changed_path_refuses_the_service_and_runs_and_sweeps_nothing(self) -> None:
+        self.write("apps/service/src/a,b.ts", "export const a = 1;\n")
+        status, lines, recording = self.run_planned("typescript:apps/service")
+        self.assertEqual(status, 2, lines)
+        self.assertIn("mutation: refuse apps/service — " + words("src/a,b.ts", ","), lines)
+        self.assertEqual(lines[-1], "mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/service")
+        self.assertEqual((recording.scoped, recording.swept), ([], []))
+
+    def test_e2_every_misread_shape_is_refused(self) -> None:
+        for file, char in (("a,b.ts", ","), ("a*.ts", "*"), ("a?.ts", "?"), ("{a}.ts", "{"), ("[a].ts", "["),
+                           ("!a.ts", "!")):
+            with self.subTest(file=file):
+                self.write(f"apps/service/src/{file}", "export const a = 1;\n")
+                status, lines, recording = self.run_planned("typescript:apps/service")
+                self.assertEqual(status, 2, lines)
+                self.assertIn("mutation: refuse apps/service — " + words(f"src/{file}", char), lines)
+                self.assertEqual((recording.scoped, recording.swept), ([], []))
+                self.reset()
+
+    def test_e2_a_trailing_line_number_never_reaches_the_service_as_a_production_file(self) -> None:
+        """`src/a.ts:12` ends in no TypeScript extension, so it is no production file and is never handed to
+        Stryker: the wrapper's refusal of that shape (`test_stryker_list`) is for a `--file` given by hand."""
+        self.write("apps/service/src/a.ts:12", "export const a = 1;\n")
+        status, lines, recording = self.run_planned("typescript:apps/service")
+        self.assertEqual((status, recording.scoped, recording.swept), (0, [], []), lines)
+        self.assertFalse([line for line in lines if "refuse " in line], lines)
+
+    def test_e3_a_refused_file_refuses_the_whole_service_and_another_service_still_runs(self) -> None:
+        self.write("apps/service/src/a,b.ts", "export const a = 1;\n")
+        self.write(HEALTH, "export const h = 1;\n")
+        self.write("apps/second/src/b.ts", "export const b = 1;\n")
+        status, lines, recording = self.run_planned(*TWO)
+        self.assertEqual(status, 2, lines)
+        self.assertEqual(recording.scoped, [("apps/second", ["src/b.ts"])])
+        self.assertEqual(lines[-1], "mutation: 1 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/service")
+
+    def test_e4_the_refusal_is_louder_than_outside_targets_and_only_typescript_production(self) -> None:
+        self.write("apps/service/src/main,x.ts", "export const m = 1;\n")
+        _, lines, _ = self.run_planned("typescript:apps/service")
+        self.assertIn("mutation: refuse apps/service — " + words("src/main,x.ts", ","), lines)
+        self.assertFalse([line for line in lines if OUTSIDE in line], lines)
+        self.reset()
+        self.write("apps/service/src/a,b.test.ts", "export const t = 1;\n")
+        self.write("apps/service/domain/a,b.go", "package domain\n")
+        status, lines, recording = self.run_planned(*GO_AND)
+        self.assertEqual(status, 0, lines)
+        self.assertFalse([line for line in lines if "refuse " in line], lines)
+        self.assertEqual(recording.scoped, [("apps/service", ["domain/a,b.go"])])
+
+    def test_e5_a_dry_run_says_would_fail_and_leaves_the_earlier_report(self) -> None:
+        earlier = self.repo / "apps/service/reports/mutation/mutation.json"
+        earlier.parent.mkdir(parents=True)
+        earlier.write_text("{}", encoding="utf-8")
+        self.write("apps/service/src/a,b.ts", "export const a = 1;\n")
+        status, lines, recording = self.run_planned("typescript:apps/service", env=clean_environment(MAKEFLAGS="n"))
+        self.assertEqual(status, 0, lines)
+        self.assertEqual(lines[-1], "mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; "
+                                    "dry run — would fail: apps/service")
+        self.assertEqual((recording.scoped, recording.swept), ([], []))
+        self.assertTrue(earlier.exists(), "the run did not happen, so the earlier report is not this run's to remove")
