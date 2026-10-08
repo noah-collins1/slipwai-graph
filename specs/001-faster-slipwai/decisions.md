@@ -4690,3 +4690,121 @@
 - **Confidence:** high · **Would reverse if:** a person brings in a log from another repository whose climb is recorded elsewhere.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
+
+## D212 — What fails a `make mutation` / `make mutation-full` run on Stryker and mutmut, where that rule lives, and whether a run starts from a clean slate
+
+- **Stage:** slice gaps (pre-planning) · **Slice:** S41-stryker-mutation, S42-mutmut-mutation · **When:** 2026-10-08T05:26:11Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation, S42-mutmut-mutation
+- **Question:** Neither tool's own defaults catch a bad run. Stryker counts a timeout as detected. It exits 0 when it finds nothing to mutate. It has no failing threshold unless `thresholds.break` is set. Its mutation score also puts uncovered (NoCoverage) mutants in the denominator. mutmut 3.8 exits 0 when mutants survive, and `export-cicd-stats` counts every file, not only the scoped ones. So what makes a run on these two tools fail, and where does that rule live? A second question rides with it: does each mutmut run start from a fresh `mutants/`?
+- **Options:**
+  - **(a)** Use Go's rule for both tools. A survivor, a timeout, or a crashed or suspicious result fails. A sweep that finds zero mutants fails. A scoped run whose changed files hold no mutant says "no mutant to run" and exits 0. Uncovered or no-tests mutants are reported but do not fail. One wrapper script per tool enforces this by reading the tool's own report for the scoped files, as `go-mutation.py` does. Stryker also gets `thresholds.break: 100` in a checked-in `stryker.config.json`. **Recommended by the gaps stage.**
+  - **(b)** As (a), but uncovered or no-tests mutants also fail.
+  - **(c)** The Spring rule: report only, no threshold.
+  - **(d)** A threshold each project can set, defaulting to (a).
+- **Decision:** (a), with one change: Stryker gets no `thresholds.break: 100`. The rule lives in one place, the tool's wrapper script.
+  1. **What fails.** The wrapper reads each mutant's status from the tool's report, for the scoped files only. Stryker's report is `mutation.json`; mutmut's is the per-file `mutants/**/*.meta`. Neither tool's exit code nor its aggregate stats decide the verdict. A scoped mutant passes only in two cases:
+     - a test killed it (Stryker `Killed`, mutmut `killed`);
+     - a comment in the source suppressed it (Stryker `Ignored` through `// Stryker disable next-line <mutator>: <reason>`, mutmut's `# pragma: no mutate`).
+  2. **Reported but not failed.** Uncovered mutants (Stryker `NoCoverage`, mutmut `no tests`) are counted on the last line. They never fail the run.
+  3. **Everything else fails.** That covers survivors, timeouts, Stryker `RuntimeError`/`CompileError`, mutmut `suspicious`/`segfault`/`not checked`, and any status the wrapper does not recognise. The failing line names the service, the mutant, its status and the report path.
+  4. **Empty runs.**
+     - A `mutation-full` sweep that finds zero mutants in a service fails.
+     - A scoped run whose changed files hold no mutant prints `no mutant to run — <file>: <why>` and exits 0. The wrapper decides this from the tool's own generated data (Stryker's report, mutmut's `.meta`) before it trusts the tool's exit code or message. It never treats mutmut's `AssertionError` as either verdict.
+  5. **Setup problems exit 2.** Examples: the tool is missing from the service's locked environment, or the host has no `fork` for mutmut. Exit 2 is never a score.
+  6. **Threshold settings.** Stryker's config sets `thresholds.break` to `null`, and its comment points to the wrapper. Neither tool's config carries a number a project can lower. The only escape for an equivalent mutant is the per-mutant comment above, named in the commit that adds it.
+  7. **Clean slate on every run.** No leftover tool output from an earlier run is ever read as this run's verdict.
+     - mutmut: the wrapper deletes the service's `mutants/` before it starts. The gaps stage's second recommendation is taken.
+     - Stryker: the wrapper deletes the previous report before it starts, and incremental mode stays off.
+- **Why:**
+  - **Why (a).** A developer reading a green `make mutation` must be able to trust that no changed line has a surviving mutant. Both tools' defaults would show green over survivors, timeouts or an empty run: mutmut exits 0 with survivors, and Stryker counts timeouts as detected and passes an empty run. The owner brief forbids exactly that kind of silent pass (priority 5, and "a faster loop that lets through what today's gate catches"). Go already ships this rule, so a project with services in both languages reads one meaning of red.
+  - **Why not (b).** The constitution says "Coverage percentage is not a gate". Failing on uncovered mutants would turn mutation into a coverage gate through the back door. A missing test belongs to a coverage gate; mutation catches a weak one.
+  - **Why the change from the stage's recommendation.** `thresholds.break: 100` cannot express this rule. Stryker's break threshold compares the total mutation score, which counts NoCoverage as a failure, so it would turn every uncovered mutant red and contradict item 2. It also counts a timeout as detected, so it would let item 3's timeouts through. Two judges that disagree are worse than one.
+  - **Why not (c) or (d).** (c) is the silent pass. (d) brings back D155's problem: a lowered threshold is a share of the whole module, and judged over a scoped subset it gives false reds and false greens. A suppression comment on the one mutant avoids that problem completely, because it holds the same way over any scope.
+  - **Why a clean slate.** A cached result, a stale copy of a deleted module, or an old report can show green for code this run never tested. The cost is one extra full-suite stats run per service, which priority 5 accepts.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium. The rule itself is high. The medium is for the exact status names and the null-threshold behaviour, which S41's and S42's plans must confirm against the pinned tool versions.
+- **Would reverse if:** S41's or S42's demo shows `RuntimeError` or `segfault` coming from the tool or the runner rather than from the mutant, red on most scoped runs of an unchanged starter. Those two statuses would then move to "reported but not failed". The rest of the rule would hold.
+- **Written to:** `specs/001-faster-slipwai/spec.md` (S41's and S42's criteria for the verdict, the empty-scope line, the setup exit 2 and the clean slate, at planning); `specs/001-faster-slipwai/decisions.md`
+- **Status:** standing
+
+## D213 — What does a generated TypeScript service's checked-in Stryker config list to mutate, so what does `make mutation-full` sweep and what can a scoped run intersect with, and does this target mutate browser apps?
+
+- **Stage:** slice gaps (pre-planning) · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T05:26:12Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation
+- **Question:** D138 item 1 says that under Stryker a scoped `make mutation` mutates "the file, within the files its config lists to mutate". Today nothing defines that list. Two facts from the gaps report make it a product question:
+  - `--mutate` on the command line replaces the config's list instead of narrowing it (G2).
+  - Some of the TypeScript backend's files have no mutant a Docker-free test can kill (G15). The postgres event store and checkpoint store under `src/adapters/driven/event-store-postgres/` are reached only by `tests/integration/**`, and the default `vitest.config.ts` excludes that folder.
+
+  Separately, a changed `apps/web/**` file currently counts as "no production file changed" and nothing reports it (G18).
+- **Options:**
+  - **(a)** List `src/**/*.ts`, minus the entry files (`main.ts`, `tracing.ts`, `openapi.ts`, `config.ts`) and minus the adapters that only integration tests reach.
+    - The config is `stryker.config.json`, so the Python scope script can read it without Node.
+    - A changed file outside the list is named as outside Stryker's configured targets and is not mutated.
+    - Browser apps are not mutated in this feature. A changed `apps/web/**` file is named as not mutated by this target, and a Parking Lot line records this.
+    - *Recommended by the gaps stage.*
+  - **(b)** All of `src/`.
+  - **(c)** The domain and application layers only.
+- **Decision:** (a), with one narrowing. Only true entry points are excluded. `tracing.ts` and `config.ts` stay in the list.
+  1. **The config file and its list.** Each TypeScript service gets a checked-in `stryker.config.json`. Its `mutate` list is `src/**/*.ts` with three exclusions:
+     - `!src/main.ts`
+     - `!src/openapi.ts`
+     - `!src/adapters/driven/event-store-postgres/**`
+
+     These are the two process entry points and the adapters that only `tests/integration/**` reaches. A future adapter that only integration tests reach is excluded the same way, in the commit that adds it, with its reason written beside it.
+  2. **What `make mutation-full` sweeps.** Exactly that list. No other flag narrows it or adds to it.
+  3. **What a scoped run mutates.** Each changed production file that the list matches. The scope script works this out from the JSON before any tool starts.
+     - A changed file the list does not match (for example `src/main.ts`) is named in one line as *outside Stryker's configured targets*. Stryker does not start for it, and the exit is 0.
+     - A matched file with no mutants, such as a types-only port, reports *no mutant to run* and exits 0.
+     - If the scope script cannot evaluate a glob in the list, the run fails closed into the sweep (D138 item 3).
+  4. **Browser apps.** This target does not mutate them in this feature.
+     - A changed file under a browser app (`apps/<web>/**`, the react-vite frontend) is named in one line as *browser app — not mutated by this target*, with exit 0, the same way AC-S08-9 treats `packages/`.
+     - The feature's Parking Lot gets one line: mutation testing for browser apps, which would need its own runner (Vitest Browser Mode) and its own config.
+- **Why:**
+  - **The whole module, minus wiring.** A developer who runs `make mutation-full` on a TypeScript service should get Go's whole-module run without Go's wiring. `.gremlins.yaml` leaves out `cmd/` because "a survivor is a test of the framework nobody should write". `main.ts` and `openapi.ts` are TypeScript's `cmd/`: `service_layouts.py` describes `openapi.ts` as a second entry point that "builds the app exactly as `main.ts` does and then binds nothing".
+  - **Why the postgres adapters are excluded.** Gremlins only reports untested code and never fails on it. Stryker counts a mutant no test reaches as NoCoverage, and that lowers the score whatever threshold Q1 sets. Listing files that no Docker-free test reaches would put a permanent false red, or a permanently diluted number, into every TS-with-postgres project. That works against the owner's taste that "a gate says what it checked and why it failed in one line".
+  - **Why I narrowed the stage's exclusion list.** `tracing.ts` and `config.ts` carry rules: export only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, and the environment's one schema. The default suite tests them (`tests/edge/tracing.test.ts`, and the app tests through `@fastify/env`). Excluding tested code that carries a rule would let a weak test there pass unseen. That is the false green owner priority 5 and "the one thing that would make it pointless" rule out. If a mutant there turns out to be equivalent, `.gremlins.yaml` already shows the remedy: exclude the file in the config and write the reason beside the exclusion.
+  - **Against (b).** Mutating all of `src/` mutates code no default test can reach.
+  - **Against (c).** Domain and application only would leave out the driving and driven adapters that the default suite does test (memory, sqlite, http). Go's run mutates those, so this would be a smaller claim than Go's.
+  - **The config format.** JSON is the format D138 item 1 needs. The intersection has to be decided before any tool starts, and the owner's taste rules out a new dependency "where a stdlib or an existing script will do". A `.mjs` config would need Node to evaluate it.
+  - **Browser apps.** Mutating them is a separate capability with its own runner, and it is not part of D137's slice. Silence was the actual gap (G18). Naming the file keeps the run honest and keeps S41 small (D128).
+  - **Standing entries.** This agrees with D137, which wires Stryker with a checked-in config and passes the scope as `--mutate`, and with D138 items 1 and 3. It overrides none of them.
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** a `make mutation-full` on a fresh TypeScript starter shows that the surviving mutants in `tracing.ts` or `config.ts` are equivalent ones no test could kill. If so, those files join the exclusions with their reasons written in the config, which is the stage's original option (a).
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D214 — S41 and S42 are both ready and marked parallel; are they driven concurrently?
+- **Stage:** ready set · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T05:27:17Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation, S42-mutmut-mutation
+- **Question:** The slice graph marks S41 and S42 `parallel_ok_with` each other, and D129 fans out ready slices. Both gaps reports (G8; S42's overlap list) show the two slices edit the same lines: the wired and placeholder tables, `factory_recipe` and the sweep causes in the toolkit's `mutation-scope.py`, `UNWIRED` and the notes in `src/slipwai/project/mutation.py`, `native_commands.py`, the stamp's exemption list, `gitignore.py`, `check-imports.py`'s pruned names, `docs/backend-obligations.md`, and the placeholder tests that use TypeScript as their example. Run them side by side?
+- **Options:** (a) one after the other: S41 first (split order; TypeScript is the catalog default), S42 planned on S41's merged tip — recommended by the ladder's own rule (*Running ready slices concurrently*: a slice runs beside its siblings only when what they share is settled); (b) concurrently, S42 rebasing onto S41 at merge.
+- **Decision:** (a). S41 is this iteration's slice; S42 keeps its criteria (written now, from its own gaps pass) and is planned once S41 has merged. Nothing else ready is marked parallel with S41, so S41 runs alone. The ADR numbers follow the order: 0009 is S41's, 0010 S42's.
+- **Why:** What the two share is the dispatch table both are changing; the second to merge would redo its plan against the first's, and the conflicts would be in the very lines that decide whether a run is scoped or swept.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** S41's plan moves every per-tool table into a per-tool module, so S42 touches none of S41's lines.
+- **Written to:** `specs/001-faster-slipwai/story-split.md`
+- **Status:** standing
+
+## D215 — S41: how Stryker is installed, versioned and handed its scope
+- **Stage:** slice gaps (pre-planning) · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T05:27:17Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation
+- **Question:** Four smaller questions from S41's gaps pass (G1, G3, G5, G12, and its product questions on versions and the type-checker): may the scoped or swept run fetch Stryker; does a change to the Stryker versions sweep; is the TypeScript type-checker plugin used; and what happens to a changed path that `--mutate`'s glob syntax would misread?
+- **Options:** for each, the gaps stage recommended: (a) install only from the committed lock, never `npx` or `npm exec` without `--no` — a missing install is exit 2 with a setup line; (b) a change to the parsed `@stryker-mutator/*` versions in a service's manifest or lock sweeps that service, as D138 item 3 reasons for the tool's configuration; (c) no type-checker plugin, recorded in ADR 0009, unless the plan's research shows it runs under the starter's TypeScript 7; (d) a changed production path containing `,`, `*`, `?`, `{`, `[`, `!` or a trailing `:<digits>` is refused in one line and never mutated under a different scope.
+- **Decision:** (a), (b), (c) and (d), as recommended. The install is not a prerequisite of `mutation-full` in a way that makes the scope script read the recipe as a project's own (G1): the plan puts it inside the recipe or the wrapper.
+- **Why:** Owner priority 5: a run that downloads whatever release is current, or reads a path as a glob, is a verdict over something nobody chose. A new tool version changes which mutants exist, so it is a configuration change.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** the plan's real run shows Stryker's Vitest runner cannot be installed from the committed lock offline — then it is a block for the bosun, not a download.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D216 — S42: mutmut's version, scope edges, Windows and `SINCE`
+- **Stage:** slice gaps (pre-planning) · **Slice:** S42-mutmut-mutation · **When:** 2026-10-08T05:27:17Z · **Iteration:** 29
+- **Scope:** S42-mutmut-mutation
+- **Question:** From S42's gaps pass (its product questions 3 to 6, and findings H4, M3, M4, M6): which mutmut; what a changed module with nothing to mutate does; whether a mutmut pin change sweeps; what a host without `fork` does; and whether `make mutation-full SINCE=` narrows Python's run.
+- **Options:** recommended by the gaps stage: `mutmut==3.8.0` pinned in each service's dev group (2.x is unmaintained, and D138 already reads 3.x's `[tool.mutmut]`); a function-less module is *no mutant to run*, exit 0, as AC-S08-4 and D212 item 4; a pin change sweeps that service, and a Python too old to parse the table (no `tomllib`) sweeps too, failing closed; no `os.fork` exits 2 with one line naming WSL; `SINCE` does not narrow `mutation-full` for Python (D150 keeps it for Go only, where it was a published option). Against each, the alternative the report names: 2.x, a red run, no sweep, mutmut's own exit 1, `SINCE` honoured.
+- **Decision:** as recommended, on all five.
+- **Why:** Each keeps a green run meaning that the changed code's mutants were tried by this run's tests, and keeps exit 2 meaning setup is missing, which is what S08 published (AC-S08-5).
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** mutmut publishes a 4.x before S42 is planned whose scope or report differs; the plan re-reads the pin.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

@@ -1,0 +1,111 @@
+{
+  "_comment": "What each stage of /drive cost this slice and how well it did, one entry per stage run, appended by scripts/agents/benchmark.py at the stage's start and end. Tokens come from the harness's own transcript or are null with the reason; signals are what the stage reported. `make benchmark` reads every record. docs/agent-harnesses.md says what the numbers can and cannot be compared with.",
+  "feature": "001-faster-slipwai",
+  "slice": "S41-stryker-mutation",
+  "from": "94d16b1b1bcd46d9da4fa938d281481fbdc0a9bf",
+  "stages": [
+    {
+      "stage": "gaps",
+      "started": "2026-10-08T05:17:33Z",
+      "planned": "gaps: strong → host model — `strong` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 0,
+          "done": 43
+        },
+        "end": {
+          "open": 0,
+          "done": 43
+        }
+      },
+      "ended": "2026-10-08T05:25:13Z",
+      "seconds": 460,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca.jsonl": 537523
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca.jsonl": 741064,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca/subagents/agent-a5655e5a19877974e.jsonl": 841542,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca/subagents/agent-a93b39d740bb9fbd3.jsonl": 824578
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "2832dd28-6bed-474f-ac24-09c768d15aca",
+        "read": "message.usage on each assistant line, once per requestId; 222 request(s) left to a bracket open at the same time; read after the session that opened the entry had ended",
+        "host": {},
+        "subagents": {},
+        "agents": []
+      },
+      "ran": null,
+      "agents": null,
+      "delegated": false,
+      "signals": {},
+      "cut_off": "a new `skipper` entry started while it was open"
+    },
+    {
+      "stage": "skipper",
+      "started": "2026-10-08T05:25:13Z",
+      "planned": "skipper: skipper → host model — `skipper` maps to the host model",
+      "tasks": {
+        "start": {
+          "open": 0,
+          "done": 43
+        },
+        "end": {
+          "open": 0,
+          "done": 43
+        }
+      },
+      "ended": "2026-10-08T05:27:59Z",
+      "seconds": 166,
+      "span": {
+        "from": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca.jsonl": 741064,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca/subagents/agent-a5655e5a19877974e.jsonl": 841542,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca/subagents/agent-a93b39d740bb9fbd3.jsonl": 824578
+        },
+        "to": {
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca.jsonl": 948267,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca/subagents/agent-a5655e5a19877974e.jsonl": 841542,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca/subagents/agent-a93b39d740bb9fbd3.jsonl": 824578,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca/subagents/agent-ae354f12a564108bf.jsonl": 251688,
+          "/home/noahc/.claude/projects/-home-noahc-math-slipwai-graph/2832dd28-6bed-474f-ac24-09c768d15aca/subagents/agent-af709f9745012584a.jsonl": 283794
+        }
+      },
+      "usage": {
+        "source": "claude",
+        "session": "2832dd28-6bed-474f-ac24-09c768d15aca",
+        "read": "message.usage on each assistant line, once per requestId",
+        "host": {
+          "claude-opus-5-5": {
+            "input": 16,
+            "output": 12124,
+            "cache_read": 956609,
+            "cache_creation": 21201
+          }
+        },
+        "subagents": {
+          "claude-opus-5-5": {
+            "input": 32,
+            "output": 3204,
+            "cache_read": 586811,
+            "cache_creation": 90116
+          }
+        },
+        "agents": [
+          "drive-skipper"
+        ]
+      },
+      "ran": [
+        "claude-opus-5-5"
+      ],
+      "agents": [
+        "drive-skipper"
+      ],
+      "delegated": true,
+      "signals": {}
+    }
+  ]
+}

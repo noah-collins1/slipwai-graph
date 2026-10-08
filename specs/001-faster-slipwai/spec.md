@@ -2978,3 +2978,109 @@ Ratifying and reverting by verb, the listings and the dated refusal stay with `S
 - **AC-S27-25** — *D210.* Given a held log, then the gate and the audit read one text — fences and near-miss labels
   blanked, ASCII digits only — and never disagree on an entry's Status; given a protected path spelled absolute, with
   `..`, `//`, `./`, bare beside a backticked one, or on a second `Written to` line, then the gate refuses the entry.
+
+### S41-stryker-mutation
+
+**Gaps reviewed** 2026-10-08, cruise iteration 29, `drive-gaps` (read only) with `drive-skipper` for D212 and D213 and
+the host's own D214 and D215: User Story 2's scenario 6, FR-008 as D137 amends it, S08's criteria and its note, the S08,
+S41 and S42 rows, D137–D139 and D149–D155, the owner brief and the constitution; against `mutation.py`,
+`native_commands.py`, `makefile()`, `shared_packages.consumers()`, `languages/typescript.py`, `frontend.py`'s lock
+assembly, the four TypeScript and eight react-vite committed locks, the toolkit's `mutation-scope.py`,
+`go-mutation.py`, `verify-stamp.py`'s exemption list, `verify_scoped/reach.py`, `rules.py`, `provisional.py`'s gate
+configuration list, `gitignore.py`, `biome.jsonc`, `docs/backend-obligations.md`, the mutation-testing skill and S08's
+placeholder tests. Found and written back: a prerequisite on `mutation-full` makes the scope script sweep every run;
+`--mutate` replaces the config's list, so the scope intersects a JSON config before any tool starts (D213); Stryker's
+defaults pass timeouts, empty runs and survivors, so a wrapper reads the report and decides (D212); Vitest 4 and
+TypeScript 7 compatibility is unproven and is the plan's first research; the run never downloads a tool, a version
+change sweeps, glob characters in a path are refused (D215); `.stryker-tmp/` and the report stay out of the stamp's key,
+git and the scoped gate's link reader; twelve locks move and `migrate` will conflict on a project's own lock; the config
+joins the provisional gate-configuration list; S42 shares every dispatch table, so the two run one after the other
+(D214). `mutation-scope.py` is 933 lines: Stryker's logic goes in a wrapper of its own, as Go's does.
+
+- **AC-S41-1** — Given a TypeScript starter on `slice/<id>` with one changed production file that `stryker.config.json`'s
+  `mutate` list matches, when `make mutation` runs, then Stryker mutates only that file, the first line names the scope
+  and its base, and the last line counts it scoped.
+- **AC-S41-2** — Given `make mutation-full`, then Stryker mutates exactly the config's `mutate` list — `src/**/*.ts`
+  less `src/main.ts`, `src/openapi.ts` and the adapters only integration tests reach (D213) — and the recipe stays the
+  factory's, so `mutation` is never driven to the sweep by its own prerequisite.
+- **AC-S41-3** — Given only a changed file the list does not match (for example `src/main.ts`), then Stryker does not
+  start, the file is named as outside Stryker's configured targets, and the exit is 0; given a matched file with no
+  mutant (a types-only port), then *no mutant to run*, exit 0; given a changed browser-app file, then it is named as a
+  browser app not mutated by this target, exit 0 (D213).
+- **AC-S41-4** — *D212.* Given a scoped mutant that survives, times out, or ends in a runtime or compile error, or any
+  status the wrapper does not know, then the run fails and names the service, the mutant, its status and the report
+  path; uncovered mutants are counted on the last line and do not fail; a `mutation-full` that finds no mutant fails;
+  the verdict is the wrapper's, read from `mutation.json` for the scoped files, never Stryker's exit code or a
+  `thresholds.break`; the previous report is removed before the run and incremental mode is off.
+- **AC-S41-5** — *D215.* Given a fresh clone with no `node_modules`, then both targets install from the committed lock
+  and nothing is fetched beyond it; given Stryker missing from the installed tree, then exit 2 with one setup line.
+- **AC-S41-6** — Given a changed `stryker.config.json`, or changed `@stryker-mutator/*` versions in the service's
+  manifest or lock, then that service sweeps; given a changed wrapper script, then every TypeScript service sweeps; each
+  line names the file; a config whose list the scope script cannot evaluate sweeps.
+- **AC-S41-7** — *D215.* Given a changed production path containing `,`, `*`, `?`, `{`, `[`, `!` or a trailing
+  `:<digits>`, then it is refused in one line and never mutated under a different scope.
+- **AC-S41-8** — Given two TypeScript services, or a Go and a TypeScript service, and a change in one, then only the
+  changed service runs and the other is named skipped with its reason.
+- **AC-S41-9** — After `make mutation` passes or fails, the verify stamp still reuses and `verify-scoped` is not
+  broadened: `.stryker-tmp/` and the report are git-ignored and exempt in the stamp, and a sandbox left behind is never
+  read as a reach.
+- **AC-S41-10** — Python (until S42 lands) and `java-quarkus` still exit 2 with their setup messages (AC-S08-5, -6), now
+  tested with Quarkus as the example placeholder; `SINCE` and D117's borders hold for TypeScript; `SINCE` does not
+  narrow TypeScript's `mutation-full` (D150).
+- **AC-S41-11** — Every committed TypeScript lock — the four backend locks and the eight react-vite ones — agrees with
+  its manifest: `npm ci` succeeds in each starter with and without react-vite, and `make audit` stays green.
+- **AC-S41-12** — Given a project made before, `slipwai migrate` brings the dependencies, the config, the wrapper, the
+  ignore lines and the regenerated `rules.json`; the MINOR fragment's catch-up says how to settle a `package-lock.json`
+  conflict and what to do where Stryker was wired by hand.
+- **AC-S41-13** — `commands/mutation.md`, the Makefile note and the mutation-testing skill name Stryker as wired, its
+  report path and where the verdict is decided; `UNWIRED` no longer names TypeScript; ADR 0009 records the dependency at
+  `Proposed`.
+- **AC-S41-14** — The demo records `make mutation` against `make mutation-full` on a TypeScript starter: wall time,
+  mutant counts and the machine.
+
+### S42-mutmut-mutation
+
+**Gaps reviewed** 2026-10-08, cruise iteration 29, `drive-gaps` (read only) with `drive-skipper` for D212 and the host's
+own D214 and D216: S42's row against FR-008 as D137 amends it, D138, D139, D149, D150, S05's criteria and S08's section;
+against `mutation.py`, `native_commands.py`, the toolkit's `mutation-scope.py`, `go-mutation.py`, `python_verify()`,
+the Python `pyproject` template and its locks, `verify-stamp.py`'s exemption list, `gitignore.py`, `check-imports.py`,
+`verify_scoped/rules.py`, and the mutmut 3.8.0 source. Found and written back: mutmut's `mutants/` copy fails
+`check-imports` after any run; `mutmut run` exits 0 with survivors, so a wrapper owns the verdict (D212); the scope
+reaches mutmut only as mutant-name patterns, and a function-less module asserts (D216); the Postgres suite fails the
+clean run unless `tests/integration` is deselected; the recipe merges into one root-level line whatever the number of
+services; cached results and stale copies persist (D212 item 7); `tomllib` is 3.11+ while gate scripts run on 3.10; a
+pin bump sits outside `[tool.mutmut]` (D216); an xdist `-n` in `PYTEST_ADDOPTS` hides tests from mutmut; Windows exits
+1 (D216); `migrate` leaves the lock to a person; S41 shares the ADR number and most files (D214: S42 follows S41, ADR
+0010).
+
+- **AC-S42-1** — Given `generate` with the Python backend, then `mutmut==3.8.0` is in each service's dev group and in
+  every committed Python lock, `uv sync --locked` accepts them, and `[tool.mutmut]` sets the service's source paths, a
+  test selection that leaves out `tests/integration`, and `-p no:xdist`.
+- **AC-S42-2** — Given a one-service Python starter (with Postgres included) on a slice branch changing one module
+  under `src/`, when `make mutation` runs, then only that module's mutants run and the last line counts it scoped.
+- **AC-S42-3** — Given two Python services and a change in one, then the other is named skipped and starts no mutmut;
+  each service runs in its own directory with its own configuration.
+- **AC-S42-4** — Given `make mutation-full`, then every service's sources are mutated from a fresh `mutants/`, one line
+  per service.
+- **AC-S42-5** — *D212.* Given a scoped mutant that survives, times out, is suspicious, segfaults, is not checked, or
+  has a status the wrapper does not know, then the run exits non-zero naming the service, the mutant and its status;
+  *no tests* mutants are counted, not failed; the verdict is the wrapper's, read from the per-file results for the
+  scoped files, never mutmut's exit code or its whole-tree stats; a sweep with no mutant fails.
+- **AC-S42-6** — *D216.* Given a changed module with no function, then *no mutant to run*, exit 0, decided from
+  mutmut's own data and never from its assertion; given a changed `pkg/__init__.py`, then only that file's functions are
+  mutated, never its submodules'.
+- **AC-S42-7** — *D216.* Given a change to `[tool.mutmut]`, to the mutmut pin, or to the wrapper, then that service
+  sweeps (the wrapper: every Python service), each line naming the file; a Python without `tomllib` sweeps.
+- **AC-S42-8** — Given a test-only change, a deleted module, or a file the configuration leaves out, then D138's lines
+  hold with exit 0.
+- **AC-S42-9** — After any mutation run, `make verify` is green, the stamp still reuses and `verify-scoped` is not
+  broadened: `apps/*/mutants/` is git-ignored, exempt in the stamp, and outside `check-imports`.
+- **AC-S42-10** — *D216.* Given a service whose environment lacks mutmut, or a host without `os.fork`, then exit 2 with
+  one setup line, never 0 and never mutmut's own 1.
+- **AC-S42-11** — `java-quarkus` still exits 2; `SINCE`, the trunk and CI sweeps and `mutation-full` are unchanged for
+  every other backend; `SINCE` does not narrow Python's `mutation-full`.
+- **AC-S42-12** — Given a project made before, `slipwai migrate` brings the recipe, the wrapper, the ignore lines and
+  `rules.json`; the MINOR fragment's catch-up names the `uv.lock` conflict and `uv lock --project apps/<svc>`, says a
+  leftover `mutants/` or `.mutmut-cache` may be deleted, and says `make mutation` exits 2 until the lock is redone.
+- **AC-S42-13** — The demo records `make mutation` against `make mutation-full` on a two-service Python starter: wall
+  time, mutant counts, the command and the machine.

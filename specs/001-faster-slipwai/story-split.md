@@ -105,8 +105,8 @@ starter, run its gate, read what it enumerated — is the demo path every later 
 | `S39-benchmark-elapsed` | `S02-runner-bookkeeping` | `S06-scoped-gate`, `S14-result-contract`, `S08-scoped-mutation`, `S38-factory-test-selection` | A method slice taken with the fan-out (D130); `S37` reads its measures |
 | `S07-scoped-checks` | `S06-scoped-gate`, `S03-verify-stamp`, `S38-factory-test-selection` | `S08-scoped-mutation`, `S12-model-sidecar`, `S34a-evidence-records`, `S34b-evidence-lifecycle` | Stays inside the check scripts and their entries in `S06`'s record; rewritten before it started (D110, D111) |
 | `S08-scoped-mutation` | `S04-parallel-gate` | `S05-xdist`, `S06-scoped-gate`, `S07-scoped-checks`, `S12-model-sidecar`, `S14-result-contract` | `mutation.py`, `native_commands.py`; the `mutation-full` target is its one `makefile.py` line and its `.PHONY` entry; never `rules.py`, `scoped_targets.py`, `commands.py`, `parallel_slices.py` or `agents.py`; rebases onto `S06`'s final tip and merges after it (D129) |
-| `S41-stryker-mutation` | `S08-scoped-mutation` | `S42-mutmut-mutation` | Follow-on of `S08` (D137); first, because TypeScript is the catalog default |
-| `S42-mutmut-mutation` | `S08-scoped-mutation` | `S41-stryker-mutation` | Follow-on of `S08` (D137) |
+| `S41-stryker-mutation` | `S08-scoped-mutation` | `S42-mutmut-mutation` | Follow-on of `S08` (D137); first, because TypeScript is the catalog default. **Driven alone, ahead of `S42` (D214)**: the two edit the same dispatch tables; gaps reviewed, criteria in spec.md |
+| `S42-mutmut-mutation` | `S08-scoped-mutation` | `S41-stryker-mutation` | Follow-on of `S08` (D137). **Planned on `S41`'s merged tip, not beside it (D214)**; gaps reviewed, criteria in spec.md, ADR 0010 at its plan |
 | `S34a-evidence-records` | `S06-scoped-gate`, `S14-result-contract` | `S07-scoped-checks`, `S08-scoped-mutation` | Split from `S34-evidence-milestone` by the owner (D128): FR-039, FR-040. Reads input fingerprints through `S06`'s record |
 | `S34b-evidence-lifecycle` | `S34a-evidence-records` | `S07-scoped-checks`, `S08-scoped-mutation` | Split from `S34-evidence-milestone` by the owner (D128): FR-041 and SC-013's milestone demo. Hands back through `S14`'s result contract |
 | `S35-negotiation-budget` | `S34b-evidence-lifecycle` | `S36-integration-invariants` | The round budget and escalation; disjoint from `S36` once `S34`'s record exists — part of FR-046's coordination tool (D130) |
@@ -362,6 +362,7 @@ that cannot delegate takes the earliest ready slice in split order and names the
   `delivery_workflow()` in `src/slipwai/project/adopted_ci.py` writes `branches: [{branch}]` unquoted, so a trunk
   named `a,b`, `1.0`, `true` or `{x}` parses to something else and `x]`, `!x`, `%x` is a YAML error, with `adopt`
   exiting 0. Older than S24, another capability (D39); quote the name, with a test over those names.
+- **Mutation testing for browser apps (D213), unowned.** `make mutation` names a changed `apps/<web>/**` file as a browser app not mutated by this target; mutating one needs its own runner (Vitest Browser Mode) and its own config. For the completion audit.
 
 ## Warnings
 
