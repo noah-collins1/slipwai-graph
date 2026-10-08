@@ -1076,6 +1076,31 @@ above rides with them.
   factory keeps its own contracts (the test's own table, or a page under `docs/`), and `grep -rn "specs/" tests` finds no test that
   reads a slice record. **Files:** `tests/test_scoped_targets.py` or the test holding T027's check, and whatever it moves the table to.
 
+### Converge pass 3 (Phase 4; neither re-opens the loop)
+
+### T034 — [US2] MEDIUM · The mixed-project sentence names every line that stops the sweep before or after Python, not only Go and TypeScript (D223 item 4's class; converge pass 3)
+- [ ] **RED:** in `tests/test_mutmut_migrate.py` (`SweepWordsTest`) or `tests/test_mutmut_generated.py`, reach the case the sentence
+  leaves out. A `java-quarkus:apps/service, python:apps/second` project (`QUARKUS_AND` in `tests/test_mutation_scope_python.py`)
+  has a `mutation-full` recipe whose first line is the setup placeholder `@echo '…'; exit 2`, so make stops there on every run
+  and the Python line never starts. A `java-spring` service listed earlier with a survivor stops it the same way. The note
+  (`src/slipwai/project/mutmut.py:75–76`), the fragment (`changelog.d/mutmut-mutation.md:3` and the Catch-up at `:5`) and the
+  skill (`assets/toolkit/skills/mutation-testing/SKILL.md:95`) say only "a failing Go or TypeScript service listed earlier". None
+  of them says the converse either: the one Python line fails at the end, so make never runs a Go, TypeScript or Java line after
+  it. That is new with D223 item 1 for a Go or TypeScript service that sat *between* two Python services, because it now runs
+  after both (`full_recipe(["go:apps/a","python:apps/b","go:apps/c","python:apps/d"])` → `[go a, python b d, go c]`). The pin
+  fails until the words name the class. **GREEN (the class):** one sentence, shared by the note, both fragment paragraphs and the
+  skill, says what make does with the lines: each other service's line still stops the sweep where it fails, before or after the
+  one Python line, and a Java Quarkus service's setup line always does. Name no backend list that a new backend would leave stale.
+  This is the wording of D223 item 4 widened to its reason, and no product choice: the behaviour is the one D223 decided.
+  **Files:** `src/slipwai/project/mutmut.py` (the note), `changelog.d/mutmut-mutation.md`,
+  `assets/toolkit/skills/mutation-testing/SKILL.md`, `tests/test_mutmut_migrate.py`, `tests/test_scoped_targets.py` (hashes).
+
+### T035 — [US2] LOW · The Catch-up says the sweep's shape once
+- [ ] The Catch-up (`changelog.d/mutmut-mutation.md:5`) says "`make mutation-full` now runs mutmut for every Python service." and
+  then, at once, "`make mutation-full` runs every Python service, each from a fresh `mutants/` …". These are T033's two
+  sentences, set beside the one that was already there. Keep the second. **GREEN:** no sentence of the fragment repeats another
+  (it rides with T034's edit to the same paragraph). **Files:** `changelog.d/mutmut-mutation.md`.
+
 ---
 
 ## Parallel opportunities
@@ -1280,3 +1305,87 @@ out.
 `assets/languages/python/scripts/mutmut-mutation.py` and `assets/languages/typescript/scripts/stryker-mutation.py`. Scratch
 lives outside the repository, at `/tmp/s42/converge2/`. At the end of the pass, `git status` shows only the host's
 `benchmark.json` and this file.
+
+**Pass 3 — converged, with one MEDIUM and one LOW appended to Phase 4** (2026-10-08, cruise iteration 30, judged at
+`f6f8970`, new work `1e4398f..f6f8970`: T031 `e060dfa`, T032 `ace93f8`, T033 `d61ccb9`, T030 `58e3d72`; `drive-converge ·
+delegated, fresh context`; complete, within budget). The coordinator asked for this pass over the answers to D223–D226
+only. It adds no product scope. It found no `CRITICAL` and no `HIGH`. T034 (MEDIUM) and T035 (LOW) sit under Phase 4 and do
+not re-open the loop. Before judging, `make test TESTS="test_mutmut_services test_mutmut_recipe test_mutmut_lines
+test_mutmut_migrate test_mutmut_generated test_scoped_targets test_mutation_targets test_mutation_scope_python
+test_changelog"` ran 94 tests OK, 1 skipped, in 35 s. No `.codegraph/` exists here, so blast radius comes from `grep -rn`.
+`one_line` is called only from `merged()` (`native_commands.py:203`), and `_PREFIX` matches no other backend's line.
+
+**The four tasks, as classes.**
+- *T031 (D223 item 2; AC-S42-4 as amended) — holds.* Each service gets a whole turn in `run_service`
+  (`mutmut-mutation.py:576–588`): its checks, its lock released in `finally` (`:584`), its own verdict. `main` (`:590–601`)
+  runs every service (`dict.fromkeys` at `:598`), then prints the summary in the scope script's words (`:600`), and exits with
+  the first non-zero status in service order. `parse` (`:94`) returns the usage line, exit 2, for `--file` given with more than
+  one service. One service prints exactly what it printed before. All of it is pinned in `tests/test_mutmut_services.py`, e1–e9.
+  **On the real mutmut 3.8.0** (`/tmp/s42/research/p`, run with this worktree's wrapper as `mutmut-mutation.py apps/web
+  apps/service`): `apps/web` (no `pyproject.toml`) refuses first, with `cannot be read`. `apps/service` still runs fully: `992
+  mutants: 415 killed, 463 no tests …, 114 survived; failed`, which is R9's 114. The run then prints `mutation: 2 swept; failed:
+  apps/web, apps/service` and exits 2, the first non-zero. Wall time was 9.3 s. The run wrote `mutants/` only under `/tmp`.
+- *T032 (D223 item 1; AC-S42-11) — holds in every service order.* `one_line` (`mutmut.py:28`) and `factory_recipe`
+  (`mutation-scope.py:291,300`) write one line at the first Python line's place. They agree for Python only, Python first
+  (`python, go, python`), Python last, Python between Go services (`go, python, go, python` → `[go a, python b d, go c]`),
+  TypeScript between Python services, and three Python services (`test_mutmut_recipe` e1–e4). I also checked the Java case by
+  hand: `java-quarkus, python, java-spring, python` gives `[placeholder, python b d, pit c]`. The recipe check
+  (`mutation-scope.py:1070`) therefore holds for a project with two Python services (e6) and for Quarkus beside Python (e7).
+  D223's *would reverse if* did not trigger: services added one at a time with `add-service` render the line byte for byte
+  (e5). **AC-S42-11, byte for byte:** every non-Python line is kept as written, and the `test_scoped_targets` hashes moved only
+  for the shapes that carry Python: `standard-python`, `model-python-sqlite`, `two-python`, `java-python-web`, `integration`
+  and `integration-billing`, through the note text and the merged line. The Go, TypeScript, Spring and Quarkus shapes are
+  unchanged. `make starters` was not re-run. **The scoped `make mutation`, when its causes sweep several Python services**,
+  calls `Tools.sweep` → `wrapper_sweep` once per service (`mutation-scope.py:998–1001`, `:603–605`). Each call is the
+  wrapper's one-service path, a failure goes into `failed` and does not stop the loop, and the closing line counts them. That is
+  the same shape the sweep now has. A whole-run `Sweep` hands off to `make mutation-full` and gets the combined line.
+- *T033 (D223 item 4, D224 item 1, D225 item 1; AC-S42-12) — holds as written, but the class is too narrow (T034).* The note
+  (`mutmut.py:74–76`), the fragment (`:3`, `:5`) and the skill (`SKILL.md:95`) share the two sentences, pinned by
+  `SweepWordsTest`. The Catch-up carries D224's sentence word for word against AC-S42-12's clause. The note and the fragment
+  carry D225's survivors sentence, the green minimal starter, and "a later release makes the starter's own tests kill them".
+  **A mixed project's sweep does not fully match what the note says.** A Quarkus service listed earlier always stops the sweep
+  before Python runs, and a failing Spring service stops it the same way. The Python line now also stops any Go or TypeScript
+  line after it, including one that used to sit between two Python services. The words name only "Go or TypeScript … earlier"
+  (T034, MEDIUM: words only, since D223 decided this behaviour and the sweep fails closed). The Catch-up says the sweep's shape
+  twice in a row (T035, LOW).
+- *T030 — holds.* The table now lives in `tests/test_mutmut_lines.py:22–`. The guard keeps `tests/test_mutmut_*.py` from reading a
+  slice record. `test_t027` in `test_mutmut_generated.py` is gone. `grep -ln "specs/" tests/test_mutmut*.py` finds only that
+  module's docstring.
+- *D226 — no code, and none was owed.* The six readings stand as built (the pass 2 verdict above).
+
+**What the new work broke among the parts already converged:** nothing. The wrapper's single-service output, the scope script's
+per-service sweep and the recipe check still hold under their own suites.
+
+**Per level.**
+- *Domain (the wrapper):* one service's turn, the summary, exit-status precedence and the usage refusal are proved by the
+  fake-`uv` suite and by one real mutmut run. **Not proved:** a real run with two Python services that both reach mutmut.
+  The fake proves each service starts from a fresh `mutants/` under its own lock (e1, e6), and the real run proves a refusal
+  does not stop the next service.
+- *Use case (the scope script):* `factory_recipe` is equal to the generated recipe in every shape named, and the scoped sweep
+  is per service. Nothing in `scope()` changed.
+- *Delivery adapter (the generated Makefile):* `merged()` + `one_line` is proved by `test_mutmut_recipe`, `test_mutmut_generated`
+  and the hashes. **Not proved:** a fresh `make starters` diff in this pass.
+- *Screen:* none.
+- *Published contract:* AC-S42-4 (amended) and AC-S42-11 hold, as shown above. AC-S42-12's D224 clause is present. The
+  fragment's mixed-project sentence is narrower than the behaviour (T034). `VERSION` `1.6.0.dev0` against `MINOR`
+  (`changelog.d/mutmut-mutation.md:1`) is unchanged, and `test_changelog` is green.
+
+**Principles the new work touches.**
+- I (passes its own gate; the catch-up note): the generated recipe still matches the factory's own check
+  (`mutation-scope.py:1070`). The Catch-up gains D224's migrate-before-`add-service` sentence (`changelog.d/mutmut-mutation.md:5`).
+  T034 and T035 are the unmet words.
+- II (retry safety): each service is a fresh run under its own lock, and the lock is let go on every exit path
+  (`mutmut-mutation.py:584`).
+- III (simplicity): one rule in two places that are held equal (`mutmut.py:28`, `mutation-scope.py:291`). No backend other than
+  Python is touched.
+- V (GWT, fakes): `test_mutmut_services` reuses `test_mutmut_verdict`'s fake `uv` and edits only its answer lookup, with no
+  `unittest.mock`.
+- VI (contract-bounded): exit-status precedence is the scope script's own fail-at-the-end rule, applied in the wrapper
+  (`mutmut-mutation.py:601`).
+- VIII and IX: unchanged (no pin or install path moved).
+
+**Question for the host:** none is new. T034 widens wording only, inside D223's decision.
+
+**Tree.** No code was mutated in this pass. The real run wrote only under `/tmp/s42/research/p/apps/service/mutants/` and
+`/tmp/s42-converge3-run.log`. A `.venv/` that an aborted `uv run` created in the worktree was removed. At the end of the pass,
+`git status` shows only the host's `benchmark.json` and this file.
