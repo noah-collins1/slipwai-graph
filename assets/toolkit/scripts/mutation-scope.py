@@ -255,12 +255,24 @@ def change_set(env: Mapping[str, str]) -> tuple[str, dict[str, str], Any, str]:
         raise Sweep(unreadable(error)) from error
 
 
+TARGET_LINE = re.compile(r"^(?P<names>[^\s#:=][^:#=]*?)\s*(?:::|:(?![:=]))")
+
+
+def targets_of(line: str) -> list[str]:
+    """The targets a Makefile line makes rules for: the words before its colon, however it is spaced; none for a recipe, a
+    variable assignment, a comment or a line that is not a rule."""
+    found = TARGET_LINE.match(line)
+    return found.group("names").split() if found else []
+
+
 def rule_of(text: str, target: str) -> list[str]:
-    """One rule of a Makefile as written: its target line and the recipe lines under it."""
+    """Every rule of a Makefile that has `target` among its targets, as written: each target line and the recipe lines
+    under it, in file order. Whitespace before the colon, several targets on a line and a second rule for the target all
+    count, since make runs each."""
     found: list[str] = []
     following = False
     for line in text.splitlines():
-        if re.match(re.escape(target) + r":(?!=)", line):
+        if target in targets_of(line):
             following = True
             found.append(line)
         elif following and line.startswith("\t"):
@@ -274,7 +286,8 @@ def prerequisites(rule: list[str]) -> list[str]:
     """The prerequisites on a rule's target line: the words after the colon, before a comment or a recipe after `;`."""
     if not rule:
         return []
-    return rule[0].partition(":")[2].split("#")[0].split(";")[0].split()
+    return [word for line in rule if not line.startswith("\t")
+            for word in re.sub(r"^[^:]*::?", "", line, count=1).split("#")[0].split(";")[0].split()]
 
 
 def mutation_rule(text: str) -> list[str]:
@@ -1087,7 +1100,9 @@ def main(argv: list[str], runner: Runner | None = None) -> int:
         if INCLUDE.search(read(makefile) or ""):
             raise Sweep(INCLUDES.format(makefile=shown(os.path.relpath(makefile))))
         written = rule_of(read(makefile) or "", "mutation-full")
-        if [line[1:] for line in written[1:]] != factory_recipe(services) or prerequisites(written):
+        heads = [line for line in written if not line.startswith("\t")]
+        if (len(heads) != 1 or targets_of(heads[0]) != ["mutation-full"]
+                or [line[1:] for line in written[1:]] != factory_recipe(services) or prerequisites(written)):
             handed = os.environ.get("SINCE")
             raise Sweep(NOT_FACTORY + (f", with `SINCE={shown(handed)}`" if handed else ""), keeps_since=True)
     except Sweep as why:
