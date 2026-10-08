@@ -114,14 +114,27 @@ def opener(path: str) -> str | None:
     return next((char for char in path if char in OPENERS), None)
 
 
+def source_root(value: Any) -> str | None:
+    """A `source_paths` entry as the one directory it names, or None where it is not the canonical form: a relative POSIX
+    directory of literal segments, with no `.`, `..` or empty segment, no pattern syntax, no backslash and no `.py` file,
+    with or without a trailing slash. mutmut reads an entry as `Path(entry)` and walks it, so any other spelling names
+    files that a prefix of the entry as written would not place; the reader takes the subset it can place."""
+    if not isinstance(value, str) or "\\" in value or opener(value):
+        return None
+    parts = value.removesuffix("/").split("/")
+    if any(part in ("", ".", "..") for part in parts) or parts[-1].endswith(".py"):
+        return None
+    return "/".join(parts)
+
+
 def check_paths(values: Any, name: str) -> list[str]:
-    """`source_paths` as a non-empty list of relative POSIX paths with no `..` and no pattern syntax, else Unreadable."""
+    """`source_paths` as a non-empty list of canonical relative directories (`source_root`), else Unreadable."""
     if not isinstance(values, list) or not values:
         raise Unreadable(f"{name} must be a non-empty list of paths, not {values!r}")
     for value in values:
-        if (not isinstance(value, str) or not value or value.startswith("/") or ".." in value.split("/")
-                or opener(value)):
-            raise Unreadable(f"{name} holds {value!r}, which is not a relative path of literal segments under the service")
+        if source_root(value) is None:
+            raise Unreadable(f"{name} holds {value!r}, which is not a relative directory of literal segments under the "
+                             "service")
     return values
 
 
@@ -154,7 +167,8 @@ def matched(config: dict[str, Any], file: str) -> bool:
     `should_mutate` takes, `fnmatch` applied to the path exactly as its `configuration.py` applies it."""
     from fnmatch import fnmatch
 
-    if not file.endswith(".py") or not any(file.startswith(root.rstrip("/") + "/") for root in config["source_paths"]):
+    roots = [source_root(root) for root in config["source_paths"]]
+    if not file.endswith(".py") or not any(root and file.startswith(root + "/") for root in roots):
         return False
     included = not config["only_mutate"] or any(fnmatch(file, pattern) for pattern in config["only_mutate"])
     return included and not any(fnmatch(file, pattern) for pattern in config["do_not_mutate"])

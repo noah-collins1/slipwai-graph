@@ -164,14 +164,17 @@ class ScopeTest(PythonCase):
                          ["python3 scripts/mutmut-mutation.py apps/service"])
 
     def test_e7_a_table_the_script_cannot_read_is_that_service_s_sweep(self) -> None:
+        forms = {f"source_paths {value}": f'[tool.mutmut]\nsource_paths = ["{value}"]\n'
+                 for value in ("./src", "src/./pkg", ".", "src/app.py", "src//pkg")}
         for name, text in (("a glob in source_paths", '[tool.mutmut]\nsource_paths = ["s*"]\n'),
-                           ("no table", '[project]\nname = "x"\n')):
+                           ("no table", '[project]\nname = "x"\n'), *forms.items()):
             with self.subTest(table=name):
                 self.table(text)
                 self.write(HEALTH, SOURCE)
                 status, lines, recording = self.run_planned("python:apps/service")
                 self.assertEqual(status, 0, lines)
-                sweep = next(line for line in lines if line.startswith("mutation: sweep apps/service — "))
+                sweep = next((line for line in lines if line.startswith("mutation: sweep apps/service — ")), "")
+                self.assertTrue(sweep, lines)
                 self.assertIn("apps/service/pyproject.toml", sweep)
                 self.assertEqual((recording.swept, recording.scoped), (["apps/service"], []))
                 self.reset()

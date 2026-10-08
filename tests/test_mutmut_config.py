@@ -150,6 +150,23 @@ class UnreadableTest(Case):
                     self.module.targets(self.service(table(source_paths=["src"], **{key: value})))
                 self.assertIn(key, str(raised.exception))
 
+    def test_e2_a_source_path_matched_cannot_place_as_mutmut_walks_it_is_unreadable_and_named(self) -> None:
+        """mutmut reads each entry as `Path(entry)` and walks it, a file included; `matched` places a file by the prefix
+        of the entry as written. An entry that is not the canonical relative directory form is not read at all."""
+        for value in ("./src", "src/./pkg", ".", "./", "src/app.py", "src//pkg", "src/.", "", "src\\pkg", "//src"):
+            with self.subTest(source_paths=value):
+                self.assertUnreadable(table(source_paths=[value]), repr(value))
+                self.assertUnreadable(table(source_paths=["src", value]), repr(value))
+
+    def test_e2_hold_the_canonical_directory_forms_are_read_and_place_their_files(self) -> None:
+        """HOLD (teeth: refuse a trailing slash, or any nested entry, and see it fail)."""
+        for value, inside in (("src", "src/pkg/a.py"), ("src/", "src/pkg/a.py"), ("lib/sub", "lib/sub/a.py"),
+                              ("lib/sub/", "lib/sub/a.py")):
+            with self.subTest(source_paths=value):
+                config = self.module.targets(self.service(table(source_paths=[value])))
+                self.assertTrue(self.module.matched(config, inside))
+                self.assertFalse(self.module.matched(config, "other/a.py"))
+
     def test_e2_a_missing_table_file_or_toml_is_unreadable(self) -> None:
         self.assertUnreadable("[tool.other]\nx = 1\n", "no [tool.mutmut] table")
         self.assertUnreadable(None, "cannot be read", "apps/absent")
