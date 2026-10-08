@@ -24,8 +24,7 @@ from elapsed_fixture import (
     summaries,
     write,
 )
-
-from slipwai.assets import ROOT
+from test_decisions_scope_gate import own_log
 
 sys.dont_write_bytecode = True
 
@@ -186,8 +185,7 @@ class DecisionHealthTest(unittest.TestCase):
         return lines, summaries(self.repo)["(feature)"].get("decision_health", {})
 
     def test_e1_this_repositorys_log_reads_three_unknowns_and_prints_no_percent(self) -> None:
-        shutil.copy2(ROOT / "specs/001-faster-slipwai/decisions.md", self.repo / "d.md")
-        lines, found = self.health((self.repo / "d.md").read_text(encoding="utf-8"))
+        lines, found = self.health(own_log())  # less the lines a later release defines, D195's line among them
         self.assertEqual(3, len(lines), lines)
         for line in lines:
             self.assertIn(UNKNOWN, line)

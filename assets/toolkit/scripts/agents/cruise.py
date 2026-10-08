@@ -11,7 +11,7 @@ with `start`, and the session that typed it runs no stage of the ladder.
 
     python3 scripts/agents/cruise.py                       # every setting and what it controls
     python3 scripts/agents/cruise.py --check               # well-formed; `make check-agents` runs this
-    python3 scripts/agents/cruise.py --set enabled=true    # change settings, checked, any time
+    python3 scripts/agents/cruise.py --set enabled=true    # change settings, checked, any time (`decide` one rung up at a time)
     python3 scripts/agents/cruise.py run [--feature F] [--no-park] [--sandbox] [kick-off…]   # the loop; `make cruise`
     python3 scripts/agents/cruise.py start [--feature F] [--no-park] [--sandbox] [kick-off…] # the loop, detached
     python3 scripts/agents/cruise.py watch [--minutes M] [--quiet S]  # the watch seat: the feed since the last watch
@@ -25,6 +25,7 @@ with `start`, and the session that typed it runs no stage of the ladder.
     python3 scripts/agents/cruise.py loop        # what is reading this session's last line: the runner, or nobody
     python3 scripts/agents/cruise.py stopping    # a harness's stop hook: refuse to end a runner's iteration early
     python3 scripts/agents/cruise.py responded   # a harness's after-response hook: keep the last message for `stopping`
+    python3 scripts/agents/cruise.py mode [--feature F]  # the decision entry for a person's change to `decide`, or the park
 
 `run` marks every session it starts with `CRUISE_RUNNER=1` and `CRUISE_ITERATION=<n>`, which is how `loop` and
 `stopping` tell a runner's iteration from a `/cruise` a person typed — where nothing reads the last line, so the
@@ -152,16 +153,25 @@ GUARD_REASON = ("cruise: `{path}` is a gate or a control of this run, and an ite
                 "satisfied in the tree it measures, or the run parks with the gate's own output as the reason "
                 "(`cruise: parked: <gate>: <what it said>`). The bosun's brief and commands/cruise.md, *Blocked: the "
                 "bosun protocol*, say so; the runner parks the run at the end of an iteration that changed one anyway.")
+# The run's own settings are a person's (D203): `decide` is what the run may not widen, so an editing tool aimed at the
+# file is refused in a runner's session, the way `--set decide=…` is refused there.
+SETTINGS_REASON = ("cruise: `.specify/cruise.json` is the run's own setting, and an iteration never edits it — `decide` "
+                   "is a person's to move, through /cruise-settings (`cruise.py --set`, which refuses inside an "
+                   "iteration), and the runner parks the run at the end of an iteration that moved it anyway.")
 # Every setting: the values it takes — a tuple of words, or a kind — its default, and what it controls. The
 # factory writes the same list into `.specify/cruise.json` and `commands/cruise-settings.md`.
 CHOICES: dict[str, tuple[str, ...]] = {
     "enabled": ("true", "false"),
-    "decide": ("recommended-first", "skipper-always"),
+    "decide": ("recommended-first", "skipper-always", "provisional-shadow", "provisional-advisory", "provisional"),
     "release": ("flagged", "park"),
     "constitution": ("ratify", "park"),
     "hand": ("browser", "http", "cli"),
     "unblock": ("bosun", "park"),
 }
+# How far up `decide` has gone: `--set` writes a step up of one rung at most (any step down, and the move between the
+# two rung-0 values, is written), so provisional approval is reached through the shadow and the advisory.
+RUNGS = {"recommended-first": 0, "skipper-always": 0, "provisional-shadow": 1, "provisional-advisory": 2,
+         "provisional": 3}
 # Whole numbers: the least value allowed, and whether `null` is one of the answers.
 NUMBERS: dict[str, tuple[int, bool]] = {
     "stuck_after": (1, False), "max_iterations": (1, True), "max_hours": (1, True), "poll_minutes": (1, False),
@@ -176,7 +186,10 @@ DEFAULTS: dict[str, Any] = {
 CONTROLS = {
     "enabled": "whether `/cruise` runs at all; `false` is a refusal that says so",
     "decide": "who answers a product question: the host where the stage recommends an answer or a standing "
-              "decision covers it and `drive-skipper` otherwise, or `drive-skipper` for every question",
+              "decision covers it and `drive-skipper` otherwise, or `drive-skipper` for every question. Change it to "
+              "`provisional-shadow` when always-ask questions are stalling slices and you want to see which ones "
+              "would have been taken provisionally before letting any be; move on to `provisional-advisory`, then "
+              "`provisional`, once the shadow lines read right.",
     "release": "the release-constraint stage: every slice continues or opens a flag seeded off, so every merge "
                "is dark; or park at the push and let a person say it is a release they want",
     "constitution": "an unratified constitution: the skipper drafts and ratifies it, marked pending human "
@@ -266,6 +279,143 @@ def assign(table: dict[str, Any], assignment: str) -> str:
             raise RuntimeError(f"`{key}` takes a whole number{' or null' if NUMBERS[key][1] else ''}, "
                                f"not {value!r}") from None
     return f"{key} = {json.dumps(table[key])}"
+
+
+def bottom_rung(current: Any) -> Any:
+    """`current` where it is one of the five `decide` values; otherwise the bottom rung, with a line on stderr saying
+    so (D203): an unknown value in the file is no licence to climb past a rung."""
+    if current in RUNGS:
+        return current
+    print(f"cruise: `decide` in {relative(CONFIG)} is {current!r}, which is not one of the five values; read as "
+          "recommended-first", file=sys.stderr)
+    return "recommended-first"
+
+
+def climb(current: Any, assignment: str) -> None:
+    """Refuse a `decide` change an iteration makes (`CRUISE_ITERATION` set, even to the empty string), or a step up
+    of more than one rung from `current`, the value the file held when the call began, never one an earlier
+    assignment in the same call set; `check` judges the rest."""
+    key, _, value = assignment.partition("=")
+    if key != "decide":
+        return
+    if ITERATION_VARIABLE in os.environ:
+        raise RuntimeError("`decide` changes only through /cruise-settings, a person's command; an iteration never "
+                           "sets it (D62)")
+    if value in RUNGS and RUNGS[value] > RUNGS[current] + 1:
+        step = next(name for name, rung in RUNGS.items() if rung == RUNGS[current] + 1)
+        raise RuntimeError(f"`decide` moves one mode at a time: set `{step}` first")
+
+
+def instant_of(text: str) -> datetime:
+    """A `When` as an instant in UTC: an offset is converted, a bare date or time is read as UTC, and what does not
+    parse sorts before every instant that does."""
+    try:
+        read = datetime.fromisoformat(text.replace("Z", "+00:00").replace("z", "+00:00"))
+    except ValueError:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    try:
+        return read.astimezone(timezone.utc) if read.tzinfo else read.replace(tzinfo=timezone.utc)
+    except (OverflowError, ValueError):
+        return datetime.min.replace(tzinfo=timezone.utc)
+
+
+MODE_HEADING = re.compile(r"^## D(\d+) — decide moved from (\S+) to (\S+)\s*$", re.MULTILINE)
+WHEN = re.compile(r"\*\*When:\*\* (\S+)")
+DECISION_HEADING = re.compile(r"^## D(\d+) — ", re.MULTILINE)
+MODE_ENTRY = """## D{number} — decide moved from {before} to {after}
+- **Stage:** iteration start · **Slice:** none · **When:** {when} · **Iteration:** {iteration}
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** {options}
+- **Decision:** {decision}
+- **Why:** {why}
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+"""
+
+
+def mode_words(before: str | None, after: str, cited: str) -> tuple[str, str]:
+    """The Decision and Why of a mode entry, each true of its case: no mode entry in any feature's log (a mode
+    recorded as found, never a person's change; D202 reads it as the bottom rung), a step up the ladder, a step back
+    down it, or a move between the two zero-rung modes."""
+    if before is None:
+        return (f"{after}, recorded as found in `.specify/cruise.json` ({cited}); no feature's log had an earlier "
+                "mode entry, so what it was before is unknown",
+                "no feature's log had an earlier mode entry, so the run records the mode as found and claims no "
+                "change (D196, D202)")
+    was = RUNGS.get(before, 0)  # a mode this release does not know reads as the bottom rung
+    way = ("raised the setting up the ladder" if RUNGS[after] > was else
+           "stepped the setting back down the ladder" if RUNGS[after] < was else
+           "moved the setting sideways between the two zero-rung modes")
+    return (f"{after}, as a person set it in `.specify/cruise.json` ({cited})",
+            f"a person {way} through /cruise-settings; the run records the move and never sets it (D62)")
+
+
+def git_output(*arguments: str) -> str:
+    done = subprocess.run(["git", *arguments], cwd=ROOT, text=True, capture_output=True, encoding="utf-8")
+    return done.stdout.strip() if done.returncode == 0 else ""
+
+
+def mode(arguments: list[str]) -> None:
+    """`mode [--feature F]`: compare `decide` with the latest mode entry in any feature's log (D202: the latest `When`
+    as an instant, UTC; none reads as the bottom rung) and print the entry to append to F's log where a person moved
+    it, or the park line where a hand edit skipped a rung. Writes nothing."""
+    if arguments[:1] == ["--feature"] and len(arguments) == 2:
+        if not (ROOT / "specs" / arguments[1]).is_dir():
+            print(f"cruise: no specs/{arguments[1]}/ directory to name a feature", file=sys.stderr)
+            raise SystemExit(2)
+        logs = [ROOT / "specs" / arguments[1] / "decisions.md"]
+    elif not arguments:
+        logs = sorted((ROOT / "specs").glob("*/decisions.md"))
+        if len(logs) > 1:
+            raise RuntimeError("specs/ holds several decision logs; name one with `mode --feature <name>`")
+    else:
+        raise RuntimeError("usage: cruise.py mode [--feature <name>]")
+    text = logs[0].read_text(encoding="utf-8") if logs and logs[0].is_file() else ""
+    value = load()["decide"]
+    # D202: the baseline is the latest mode entry in any feature's log (ties: later sorted path, then file order).
+    last = None
+    for log in sorted((ROOT / "specs").glob("*/decisions.md")):
+        content = log.read_text(encoding="utf-8")
+        starts = [m.start() for m in DECISION_HEADING.finditer(content)] + [len(content)]
+        for begin, end in zip(starts, starts[1:]):
+            block = content[begin:end]
+            heading, stamp = MODE_HEADING.match(block), WHEN.search(block)
+            instant = instant_of(stamp.group(1) if stamp else "")
+            if heading and (last is None or instant >= last[0]):
+                last = (instant, heading.group(1), heading.group(3), log)
+    recorded = last[2] if last else None
+    if recorded is not None and recorded not in RUNGS:
+        print(f"cruise: D{last[1]} records the mode `{recorded}`, which is not one of the five `decide` values; "
+              "read as recommended-first", file=sys.stderr)
+    if last and recorded == value:
+        own = last[3] == logs[0]
+        print(f"cruise: decide is {value}, as D{last[1]}" + ("" if own else f" in {relative(last[3])}") + " recorded")
+        return
+    base = RUNGS.get(recorded or "", 0)  # no mode entry anywhere reads as the bottom rung
+    if RUNGS[value] > base + 1:
+        step = next(name for name, rung in RUNGS.items() if rung == base + 1)
+        if last is None:
+            print(f"cruise: parked: decide={value} skips {step}; set it through /cruise-settings")
+        else:
+            where = "" if last[3] == logs[0] else f" in {relative(last[3])}"
+            record = "python3 scripts/agents/cruise.py mode" + (f" --feature {arguments[1]}" if arguments else "")
+            print(f"cruise: parked: decide={value} is more than one rung above {recorded} (D{last[1]}{where}); "
+                  f"set decide={step} through /cruise-settings and let an iteration record it with `{record}`, "
+                  f"or step back to {recorded}")
+        raise SystemExit(PARKED_EXIT)
+    relative_config = relative(CONFIG)
+    if git_output("status", "--porcelain", "--", relative_config):
+        cited = f"uncommitted at {now()}"
+    else:
+        cited = f"commit {git_output('log', '-1', '--format=%h', '--', relative_config) or 'unknown'}"
+    numbers = [int(number) for number in DECISION_HEADING.findall(text)]
+    decision, why = mode_words(recorded, value, cited)
+    print(MODE_ENTRY.format(number=max(numbers, default=0) + 1, before=recorded or "unrecorded", after=value,
+                            when=now(), iteration=os.environ.get(ITERATION_VARIABLE) or "unknown", decision=decision,
+                            why=why, options=" · ".join(CHOICES["decide"])), end="")
 
 
 def describe(table: dict[str, Any]) -> str:
@@ -571,6 +721,15 @@ def controls_signature() -> dict[str, str]:
     return signature
 
 
+def decide_now(held: Any) -> Any:
+    """`decide` as the file holds it now; `held` where the file is broken, since the runner goes on under the last good
+    settings and a broken file moves nothing it would use (it is judged again when it is mended)."""
+    try:
+        return load()["decide"]
+    except (RuntimeError, ValueError, OSError):
+        return held
+
+
 def controls_changed(before: dict[str, str], after: dict[str, str]) -> list[str]:
     """What an iteration did to the controls, each with its kind — except a file installed under `tools/`."""
     installed = INSTALLED.relative_to(ROOT).as_posix() + "/"
@@ -612,6 +771,9 @@ def guard() -> None:
                 shown = str(path)
             print(GUARD_REASON.format(path=shown), file=sys.stderr)
             raise SystemExit(2)
+    if path == CONFIG.resolve():
+        print(SETTINGS_REASON, file=sys.stderr)
+        raise SystemExit(2)
 
 
 def stream_of(harness: dict[str, Any] | None) -> str | None:
@@ -1302,7 +1464,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         if index:
             print(f"cruise: code index before iteration {iteration} — {index['state']}: {index['detail']} "
                   f"({index['seconds']}s)", flush=True)
-        controls_before = controls_signature()
+        controls_before, decide_before = controls_signature(), table["decide"]
         between = controls_changed(left_as, controls_before) if left_as is not None else []
         if between and not parked_since:
             # Nothing parked the run since the last iteration ended, so whatever changed a control did it on its own:
@@ -1327,6 +1489,7 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
         left_as = controls_signature()
         parked_since = False
         changed = controls_changed(controls_before, left_as)
+        decide_after = decide_now(decide_before)
         if INTERRUPTED:
             last = "interrupted: a person's message"
             cut_off_brackets("the iteration was ended by `tell --now`")
@@ -1350,6 +1513,8 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
                 print(line, flush=True)
         if changed:
             entry["controls_changed"] = changed
+        if decide_after != decide_before:
+            entry["decide_moved"] = [decide_before, decide_after]
         if between:
             entry["controls_changed_between"] = between
         given = delivered()
@@ -1378,6 +1543,14 @@ def drive(table: dict[str, Any], harness: dict[str, Any] | None, template: str, 
             park(f"iteration {iteration} changed a gate or a control of the run — {', '.join(changed)} — and a gate "
                  "is satisfied in the tree it measures, never edited; revert the change, or keep it on purpose and "
                  "resume with a message", no_park, poll, seen)
+            parked_since = True
+            continue
+        if decide_after != decide_before:
+            # D203: the run never widens its own authority. A change between iterations is a person's and `mode`
+            # records it; one inside an iteration is the iteration's, whatever route it took.
+            park(f"iteration {iteration} moved `decide` from {decide_before} to {decide_after} — an iteration never "
+                 "sets it; a person who changed it on purpose resumes the run with a `told:` message (/cruise-tell)",
+                 no_park, poll, seen)
             parked_since = True
             continue
         if unwritten is not None:
@@ -1805,7 +1978,8 @@ def main() -> None:
              "watch": lambda: watch(arguments[1:]), "stop": lambda: stop(arguments[1:]), "status": status,
              "tell": lambda: tell(arguments[1:]), "told": told,
              "denials": denials, "resume": resume, "compacting": compacting, "loop": loop, "stopping": stopping,
-             "responded": responded, "guard": guard}
+             "responded": responded, "guard": guard,
+             "mode": lambda: mode(arguments[1:])}
     if arguments and arguments[0] in verbs:
         verbs[arguments[0]]()
         return
@@ -1814,7 +1988,13 @@ def main() -> None:
         assignments = arguments[arguments.index("--set") + 1:]
         if not assignments:
             raise RuntimeError(f"--set takes key=value with a key from {', '.join(DEFAULTS)}")
-        changed = [assign(table, assignment) for assignment in assignments]
+        changed = []
+        loaded = table.get("decide")
+        if any(each.startswith("decide=") for each in assignments):
+            loaded = bottom_rung(loaded)
+        for assignment in assignments:
+            climb(loaded, assignment)
+            changed.append(assign(table, assignment))
         findings = check(table)
         if findings:
             raise RuntimeError("not written — the change would leave the file malformed:\n  - " + "\n  - ".join(findings))

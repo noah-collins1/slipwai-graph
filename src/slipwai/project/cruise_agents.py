@@ -11,6 +11,7 @@ module is at its budget, and because these two are the only types a project neve
 from __future__ import annotations
 
 from ..layout import Layout
+from .cruise_provisional import SKIPPER_PARAGRAPH
 
 SKIPPER, HAND, BOSUN = "drive-skipper", "drive-hand", "drive-bosun"
 # Where a decision is written, per feature; the shape of an entry is `cruise.DECISION_ENTRY`.
@@ -85,6 +86,8 @@ quotes: the shell runs them as a command and leaves the value empty. Put the lin
 a time with `--raise guarded` or `--raise hard` and write each step on the line, `easy → guarded → hard`: you
 never skip a tier, and the step never lowers a computed tier. Never leave a question in a diff or a note
 instead of escalating it.
+
+{SKIPPER_PARAGRAPH}
 
 **Propose a rule when you have decided the same way three times.** The brief lists every entry heading of the
 feature, each `D<n>` with its heading, Stage and Scope. When three standing entries of the feature were

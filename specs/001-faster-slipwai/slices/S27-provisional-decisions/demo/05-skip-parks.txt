@@ -1,0 +1,12 @@
+$ sed -i 's/"decide": "provisional-shadow"/"decide": "provisional"/' .specify/cruise.json && git diff --stat
+ .specify/cruise.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py mode --feature demo
+cruise: parked: decide=provisional is more than one rung above provisional-shadow (D1); set decide=provisional-advisory through /cruise-settings and let an iteration record it with `python3 scripts/agents/cruise.py mode --feature demo`, or step back to provisional-shadow
+[exit 3]
+
+$ git checkout -- .specify/cruise.json && git status --short
+[exit 0]
+

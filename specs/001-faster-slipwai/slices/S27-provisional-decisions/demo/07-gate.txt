@@ -1,0 +1,64 @@
+# NOTE: the page calls this entry D2, but D2 and D3 are the mode entries step 6 appended, so it is D4 here.
+
+$ tail -15 specs/demo/decisions.md
+- **Status:** standing
+
+## D4 — may the export button ship behind its flag before the owner has seen it?
+- **Stage:** plan · **Slice:** S1 · **When:** 2026-10-07T21:00:00Z · **Iteration:** 1
+- **Scope:** S1
+- **Question:** may S1 ship its export button behind a flag, seeded off, before the owner approves the wording?
+- **Options:** ship behind the flag (recommended) · wait for the owner
+- **Decision:** ship behind the flag, seeded off
+- **Why:** the owner sees it before the flag is flipped, and it stays dark meanwhile
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** the owner rejects the wording
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+- **Written to:** `README.md`
+- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D4
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+# mutation: '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours' -> '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=yes rollback_complexity=trivial'
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Reversibility` has flag_default=yes; provisional approval never flips a flag (FR-033)
+
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# mutation: 'Revert:** commits carrying Decision: D4' -> 'Revert:** commits carrying Decision: D9'
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Revert` names D9; it names this entry, D4
+
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+# mutation: 'Status:** provisional · ratify by 2026-10-14' -> 'Status:** ratified tomorrow'
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/demo/decisions.md:42: D4 `Status` is 'ratified tomorrow'; it is `provisional · ratify by YYYY-MM-DD`, `ratified YYYY-MM-DD` or `reverted YYYY-MM-DD`, a calendar date
+
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ git add -A specs && git commit -qm 'D4 provisional' && git log --oneline -1
+a3b7bef D4 provisional
+[exit 0]
+

@@ -7,6 +7,7 @@ released before this change, taken from git into a scratch file.
 """
 from __future__ import annotations
 
+import re
 import subprocess
 import tempfile
 import unittest
@@ -18,6 +19,16 @@ from slipwai.assets import ROOT
 
 RELEASED = "596740f"  # the last commit before the Scope: line was read by the checker
 FIXTURE = ROOT / "specs/001-faster-slipwai/decisions.md"
+# Lines only a later release defines, which the released checker never read. From D195 on this repository's own log
+# carries them, and D65's carve-out lets a log holding one get a different answer (S26's R5 e2), so the holds read the
+# log without them: the question they ask is whether everything else in it still gets the released answer.
+LATER_LINES = re.compile(r"^- \*\*(?:Reversibility|Proposed rule|Revert|Provisional \((?:shadow|advisory)\)):\*\*.*\n",
+                         re.M)
+
+
+def own_log() -> str:
+    """This repository's own decisions log, less the lines only a later release defines (`LATER_LINES`)."""
+    return LATER_LINES.sub("", FIXTURE.read_text(encoding="utf-8"))
 
 
 def released_checker(directory: str) -> Path:
@@ -34,7 +45,7 @@ class DecisionsScopeGateTest(unittest.TestCase):
             return run(scratch(directory, log))
 
     def test_e57_hold_this_repositorys_own_log_gets_the_verdict_the_released_checker_gave(self) -> None:
-        log = FIXTURE.read_text(encoding="utf-8")
+        log = own_log()
         with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryDirectory() as other:
             repo = scratch(directory, "", script=released_checker(other))
             (repo / "specs/f/decisions.md").write_text(log, encoding="utf-8", newline="\n")

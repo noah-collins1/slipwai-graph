@@ -1,0 +1,59 @@
+$ echo '{"tool_name":"Edit","tool_input":{"file_path":".specify/cruise.json"},"cwd":"/tmp/s27-demo/demo27"}' | env -u CRUISE_ITERATION CRUISE_RUNNER=1 python3 scripts/agents/cruise.py guard
+cruise: `.specify/cruise.json` is the run's own setting, and an iteration never edits it — `decide` is a person's to move, through /cruise-settings (`cruise.py --set`, which refuses inside an iteration), and the runner parks the run at the end of an iteration that moved it anyway.
+[exit 2]
+
+$ echo '{"tool_name":"Edit","tool_input":{"file_path":".specify/cruise.json"},"cwd":"/tmp/s27-demo/demo27"}' | env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/agents/cruise.py guard
+[exit 0]
+
+$ echo '{"tool_name":"Write","tool_input":{"file_path":"README.md"},"cwd":"/tmp/s27-demo/demo27"}' | env -u CRUISE_ITERATION CRUISE_RUNNER=1 python3 scripts/agents/cruise.py guard
+[exit 0]
+
+$ grep -n '^## D\|Status\|Revert' specs/*/decisions.md
+specs/alpha/decisions.md:3:## D2 — may the export button ship behind its flag before the owner has seen it?
+specs/alpha/decisions.md:14:- **Status:** provisional · ratify by 2026-10-14
+specs/alpha/decisions.md:15:- **Revert:** commits carrying Decision: D2
+specs/demo/decisions.md:3:## D1 — decide moved from unrecorded to provisional-shadow
+specs/demo/decisions.md:14:- **Status:** standing
+specs/demo/decisions.md:16:## D2 — decide moved from provisional-shadow to provisional-advisory
+specs/demo/decisions.md:27:- **Status:** standing
+specs/demo/decisions.md:29:## D3 — decide moved from provisional-advisory to provisional
+specs/demo/decisions.md:40:- **Status:** standing
+specs/demo/decisions.md:42:## D4 — may the export button ship behind its flag before the owner has seen it?
+specs/demo/decisions.md:53:- **Status:** provisional · ratify by 2026-10-14
+specs/demo/decisions.md:54:- **Revert:** commits carrying Decision: D4
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/alpha/decisions.md:3: D2 where D1 was expected — entries are numbered contiguously
+
+make: *** [Makefile:87: check-decisions] Error 1
+[exit 2]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py audit
+cruise: parked: ratify D2 in specs/alpha/decisions.md
+[exit 3]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py audit --feature demo
+cruise: parked: ratify D2 in specs/alpha/decisions.md
+[exit 3]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py audit --feature alpha
+cruise: parked: ratify D2 in specs/alpha/decisions.md
+[exit 3]
+
+$ make check-decisions; env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py audit --feature alpha
+python3 scripts/check-decisions.py
+check-decisions: the record is not in the shape commands/cruise.md shows
+
+  specs/alpha/decisions.md:3: D2 where D1 was expected — entries are numbered contiguously
+
+make: *** [Makefile:87: check-decisions] Error 1
+cruise: parked: ratify D4 in specs/demo/decisions.md
+[exit 3]
+
+$ git status --short
+[exit 0]
+

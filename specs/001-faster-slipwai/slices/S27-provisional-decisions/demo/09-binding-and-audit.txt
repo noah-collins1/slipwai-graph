@@ -1,0 +1,112 @@
+$ python3 scripts/check-decisions.py --scope S1
+## D1 — decide moved from unrecorded to provisional-shadow
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:24:10Z · **Iteration:** unknown
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** provisional-shadow, recorded as found in `.specify/cruise.json` (commit 8f73b05); no feature's log had an earlier mode entry, so what it was before is unknown
+- **Why:** no feature's log had an earlier mode entry, so the run records the mode as found and claims no change (D196, D202)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+
+## D2 — decide moved from provisional-shadow to provisional-advisory
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:24:31Z · **Iteration:** unknown
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** provisional-advisory, as a person set it in `.specify/cruise.json` (uncommitted at 2026-10-08T02:24:31Z)
+- **Why:** a person raised the setting up the ladder through /cruise-settings; the run records the move and never sets it (D62)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+
+## D3 — decide moved from provisional-advisory to provisional
+- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-08T02:24:41Z · **Iteration:** unknown
+- **Scope:** global
+- **Question:** which `decide` mode does this run work under?
+- **Options:** recommended-first · skipper-always · provisional-shadow · provisional-advisory · provisional
+- **Decision:** provisional, as a person set it in `.specify/cruise.json` (commit 5bab969)
+- **Why:** a person raised the setting up the ladder through /cruise-settings; the run records the move and never sets it (D62)
+- **Decided by:** human
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+
+## D4 — may the export button ship behind its flag before the owner has seen it?
+- **Stage:** plan · **Slice:** S1 · **When:** 2026-10-07T21:00:00Z · **Iteration:** 1
+- **Scope:** S1
+- **Question:** may S1 ship its export button behind a flag, seeded off, before the owner approves the wording?
+- **Options:** ship behind the flag (recommended) · wait for the owner
+- **Decision:** ship behind the flag, seeded off
+- **Why:** the owner sees it before the flag is flipped, and it stays dark meanwhile
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** the owner rejects the wording
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+- **Written to:** `README.md`
+- **Status:** provisional · ratify by 2026-10-14
+- **Revert:** commits carrying Decision: D4
+
+check-decisions: carried 4 of 4 entries for S1: 1 in scope, 3 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: none; provisional and binding: D4
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py audit
+cruise: parked: ratify D4 in specs/demo/decisions.md
+[exit 3]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py audit --feature demo
+cruise: parked: ratify D4 in specs/demo/decisions.md
+[exit 3]
+
+$ tail -3 specs/demo/decisions.md
+- **Written to:** `README.md`
+- **Status:** ratified 2026-10-08
+- **Revert:** commits carrying Decision: D4
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py audit
+provisional: no unratified provisional decision in specs/demo/decisions.md
+[exit 0]
+
+$ make check-decisions
+python3 scripts/check-decisions.py
+check-decisions: 4 decision(s) in 1 file(s), 0 demo(s) in 0 log(s), every field present and every path in the tree, every done slice in the adversary log
+[exit 0]
+
+$ python3 scripts/check-decisions.py --scope S1 | tail -20
+- **Confidence:** high · **Would reverse if:** a person sets `decide` again
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+
+## D4 — may the export button ship behind its flag before the owner has seen it?
+- **Stage:** plan · **Slice:** S1 · **When:** 2026-10-07T21:00:00Z · **Iteration:** 1
+- **Scope:** S1
+- **Question:** may S1 ship its export button behind a flag, seeded off, before the owner approves the wording?
+- **Options:** ship behind the flag (recommended) · wait for the owner
+- **Decision:** ship behind the flag, seeded off
+- **Why:** the owner sees it before the flag is flipped, and it stays dark meanwhile
+- **Decided by:** drive-skipper (claude-opus-5-5)
+- **Confidence:** medium · **Would reverse if:** the owner rejects the wording
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+- **Written to:** `README.md`
+- **Status:** ratified 2026-10-08
+- **Revert:** commits carrying Decision: D4
+
+check-decisions: carried 4 of 4 entries for S1: 1 in scope, 3 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: none
+[exit 0]
+
+$ python3 scripts/check-decisions.py --scope S1 | tail -5; env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py audit
+- **Reversibility:** hard · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=yes behind_flag=no-code flag_default=no rollback_complexity=trivial
+- **Written to:** `.specify/cruise.json`
+- **Status:** standing
+
+check-decisions: carried 3 of 4 entries for S1: 0 in scope, 3 global, 0 carried as global for want of a line; 0 left out as out of scope; overridden and left out: D4 (reverted 2026-10-08)
+provisional: no unratified provisional decision in specs/demo/decisions.md
+[exit 0]
+

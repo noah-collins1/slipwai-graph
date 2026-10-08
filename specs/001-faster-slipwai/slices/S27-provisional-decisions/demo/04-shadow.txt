@@ -1,0 +1,32 @@
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/reversibility.py --scope S1 contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+reversibility: R2 rollback_complexity=hours
+- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional-shadow --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: unavailable - decide is provisional-shadow
+unavailable: a person's approval
+- **Provisional (shadow):** guarded · provisional · ratify by 2026-10-14 · Revert: commits carrying Decision: D2
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide provisional-advisory --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: unavailable - decide is provisional-advisory
+cruise: parked: D2 needs a person's approval; recommended: provisional · ratify by 2026-10-14 (guarded) — answer accept through /cruise-tell
+unavailable: a person's approval
+- **Provisional (advisory):** guarded · provisional · ratify by 2026-10-14 · Revert: commits carrying Decision: D2
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide recommended-first --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: unavailable - decide is recommended-first
+unavailable: a person's approval
+- **Status:** standing
+[exit 0]
+
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER python3 scripts/provisional.py status --decide skipper-always --ask approval --when 2026-10-07T21:00:00Z --number D2 --reversibility '- **Reversibility:** guarded · rules 1 · contract=no schema=no auth=no customer_visible=no export=no ci_workflow=no migrate_file=no behind_flag=yes flag_default=no rollback_complexity=hours'
+provisional: unavailable - decide is skipper-always
+unavailable: a person's approval
+- **Status:** standing
+[exit 0]
+

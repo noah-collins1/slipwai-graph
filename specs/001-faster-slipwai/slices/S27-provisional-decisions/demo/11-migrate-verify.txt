@@ -1,0 +1,112 @@
+$ env -u CRUISE_ITERATION -u CRUISE_RUNNER make verify   # in /tmp/s27-demo/demo27old, after slipwai migrate
+npm ci
+
+added 276 packages, and audited 280 packages in 2s
+
+74 packages are looking for funding
+  run `npm fund` for details
+
+8 high severity vulnerabilities
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/s27-demo/demo27old/packages/api-client/src/schema.ts [12ms]
+npm --workspace apps/service run lint
+
+> demo27old-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 33 files in 22ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> demo27old-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> demo27old-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> demo27old-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (77 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (77 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: on `main`, not a `slice/<id>` branch — nothing to hold
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+npm --workspace apps/service test
+
+> demo27old-service@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s27-demo/demo27old/apps/service
+
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  21:26:44
+   Duration  798ms (transform 552ms, setup 0ms, import 1.23s, tests 528ms, environment 1ms)
+
+npm --workspace apps/web test
+
+> demo27old-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/s27-demo/demo27old/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  21:26:46
+   Duration  939ms (transform 122ms, setup 287ms, import 125ms, tests 273ms, environment 1.47s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 307ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+[exit 0]

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from hand_backs_fixture import HEADING, RECORD, decision, entry, fence, findings, gate, run, scratch, valid
 from test_decisions_scope import entry as scope_entry
+from test_decisions_scope_gate import LATER_LINES
 
 from slipwai.assets import ROOT
 
@@ -133,9 +134,12 @@ def with_logs(repo: Path) -> None:
 
 
 def with_own_specs(repo: Path) -> None:
-    """This repository's own specs/, which holds no hand-backs.md."""
+    """This repository's own specs/, which holds no hand-backs.md; each log less the lines a later release defines
+    (`LATER_LINES`), which the released checker never read."""
     shutil.rmtree(repo / "specs")
     shutil.copytree(ROOT / "specs", repo / "specs")
+    for log in (repo / "specs").glob("*/decisions.md"):
+        log.write_text(LATER_LINES.sub("", log.read_text(encoding="utf-8")), encoding="utf-8", newline="\n")
 
 
 class NothingRecordedTest(unittest.TestCase):

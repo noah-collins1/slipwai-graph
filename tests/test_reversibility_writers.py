@@ -89,7 +89,8 @@ class LineWritersTest(FactoryTestCase):
                 lines = text.split("- **Confidence:**", 1)[1].splitlines()
                 self.assertEqual(lines[1], LINE)
                 self.assertEqual(lines[2], RULE_LINE)
-                self.assertTrue(lines[3].startswith("- **Written to:**"), lines[3])
+                self.assertTrue(lines[3].startswith("- **Provisional ("), lines[3])
+                self.assertTrue(lines[4].startswith("- **Written to:**"), lines[4])
 
     def test_e2_the_skipper_brief_names_the_verb_the_escalation_and_the_proposal(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

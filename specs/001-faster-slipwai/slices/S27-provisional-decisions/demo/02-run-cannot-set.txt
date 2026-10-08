@@ -1,0 +1,11 @@
+$ env -u CRUISE_RUNNER CRUISE_ITERATION=1 python3 scripts/agents/cruise.py --set decide=provisional-shadow
+cruise: `decide` changes only through /cruise-settings, a person's command; an iteration never sets it (D62)
+[exit 1]
+
+$ env -u CRUISE_RUNNER CRUISE_ITERATION= python3 scripts/agents/cruise.py --set decide=provisional-shadow
+cruise: `decide` changes only through /cruise-settings, a person's command; an iteration never sets it (D62)
+[exit 1]
+
+$ git diff --quiet .specify/cruise.json
+[exit 0]
+
