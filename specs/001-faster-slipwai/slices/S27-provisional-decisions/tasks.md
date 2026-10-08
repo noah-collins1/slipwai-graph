@@ -737,3 +737,12 @@ modules were run green at `075c7d0` (`make test SINCE=adopt-method`). Quickstart
 - AC-S27-15 — R7 e1–e2, and observed (`provisional and binding: D2`).
 - AC-S27-16 — the writers' four-sources test, and observed in the generated `commands/cruise-settings.md`.
 - AC-S27-17 — `test_provisional_migrate` e1–e2.
+
+### The full selected set at the tip — host
+
+`make test SINCE=adopt-method` at `879b2b4` selected the whole suite (the generator changed): 3534 tests, 2 failed,
+8 skipped. Both failures were the base-state class `b1ae449` closed for two other tests — a test reading this
+repository's own `decisions.md`, which D195 (at `5f4fc00`) gave its first `Reversibility:` line — not this slice's
+code: `test_benchmark_feature` e1 and `test_hand_backs_record` e1 (`with_own_specs`). Repaired in `c79d125` (both read
+the log less the lines only a later release defines; every other test reading it passed). Both modules green after;
+lint, typecheck and structure green. Open: T024, T025 (MEDIUM), T026 (LOW), Phase 9 — the bounded loop's Phase 4 work.
