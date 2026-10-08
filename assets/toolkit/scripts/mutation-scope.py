@@ -422,19 +422,27 @@ def unlisted(changes: dict[str, str], services: list[tuple[str, str]], tool: Any
     return found
 
 
-def stryker_versions_moved(tool: Any, commit: str, path: str, field: str) -> bool:
-    """Whether the `@stryker-mutator/*` versions of a manifest (`field` `manifest_text`) or a lock (`lock_text`) differ from
-    the base's, as the wrapper reads them (D215 b); a side that cannot be parsed does. A file the base does not have
-    belongs to a service that is new, whose every file is in the scope already."""
+def versions_moved(script: str, tool: Any, commit: str, path: str, field: str) -> bool:
+    """Whether the versions a wrapper reads from a file (`field` names the argument of its `versions`: `manifest_text` and
+    `lock_text` for Stryker's, `pyproject_text` and `lock_text` for mutmut's) differ from the base's (D215 b); a side that
+    cannot be parsed does. A file the base does not have belongs to a service that is new, whose every file is in the
+    scope already."""
     then = tool.git("show", f"{commit}:./{path}")
     if then is None:
         return False
     now = read(path)
-    wrapper = load("stryker-mutation.py")
+    wrapper = load(script)
     try:
         return bool(now is None or wrapper.versions(**{field: then}) != wrapper.versions(**{field: now}))
     except wrapper.Unreadable:
         return True
+
+
+def python_moved(root: str, path: str, script: str, tool: Any, commit: str) -> bool:
+    """Whether a changed path sweeps a Python service: the wrapper, or the service's manifest or lock where what mutmut
+    reads of it moved (its `[tool.mutmut]` table, its requirement, the lock's mutmut and libcst closure)."""
+    field = {f"{root}/pyproject.toml": "pyproject_text", f"{root}/uv.lock": "lock_text"}.get(path)
+    return path == script or (field is not None and versions_moved("mutmut-mutation.py", tool, commit, path, field))
 
 
 def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool: Any, commit: str,
@@ -445,9 +453,10 @@ def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool:
     here = os.path.relpath(os.path.abspath(__file__))
     backend_script = os.path.join(os.path.dirname(here), "go-mutation.py")
     wrapper_script = os.path.join(os.path.dirname(here), "stryker-mutation.py")
+    python_script = os.path.join(os.path.dirname(here), "mutmut-mutation.py")
     lock = "package-lock.json"
-    lock_moved = lock in changes and any(backend == "typescript" for backend, _ in services) and stryker_versions_moved(
-        tool, commit, lock, "lock_text")
+    lock_moved = lock in changes and any(backend == "typescript" for backend, _ in services) and versions_moved(
+        "stryker-mutation.py", tool, commit, lock, "lock_text")
     rule = os.path.relpath(os.path.abspath(makefile))  # project-relative, whatever form `--makefile` takes (make's own)
     whole: list[str] = []
     per: dict[str, list[str]] = {}
@@ -463,7 +472,9 @@ def sweep_causes(changes: dict[str, str], services: list[tuple[str, str]], tool:
                 backend == "typescript" and (path in (wrapper_script, f"{root}/stryker.config.json")
                                              or (path == lock and lock_moved)
                                              or (path == f"{root}/package.json"
-                                                 and stryker_versions_moved(tool, commit, path, "manifest_text"))))
+                                                 and versions_moved("stryker-mutation.py", tool, commit, path,
+                                                                    "manifest_text")))) or (
+                backend == "python" and python_moved(root, path, python_script, tool, commit))
             if wired:
                 per.setdefault(root, []).append(path)
     for path, root in unlisted(changes, services, tool):
