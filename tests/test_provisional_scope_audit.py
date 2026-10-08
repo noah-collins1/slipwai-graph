@@ -55,7 +55,8 @@ class CompletionAuditTest(unittest.TestCase):
         log = "\n".join([entry(1), entry(2, PROVISIONAL, revert="own", reversibility=EASY_LINE), entry(3),
                          entry(4, PROVISIONAL, revert="own", reversibility=EASY_LINE)])
         result = audit(log)
-        self.assertEqual((3, "cruise: parked: ratify D2\n"), (result.returncode, result.stdout), result.stderr)
+        self.assertEqual((3, "cruise: parked: ratify D2 in specs/f/decisions.md\n"), (result.returncode, result.stdout),
+                         result.stderr)
 
     def test_r8_e2_ratified_reverted_and_overridden_by_a_person_no_longer_hold_the_run(self) -> None:
         log = "\n".join([entry(1), entry(2, "ratified 2026-10-09"), entry(3), entry(4, "reverted 2026-10-09"),
@@ -69,16 +70,14 @@ class CompletionAuditTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("no decisions.md", result.stdout)
 
-    def test_r8_e4_two_features_and_no_choice_is_exit_two_naming_both(self) -> None:
+    def test_r8_e4_two_features_are_both_read_with_or_without_a_choice(self) -> None:
+        """D207 (T033): the audit reads every feature's log; `--feature` no longer chooses one (see the
+        after-converge audit module for the cases)."""
         logs = {"alpha": entry(1, PROVISIONAL, revert="own", reversibility=EASY_LINE), "beta": entry(1)}
-        result = audit(logs)
-        self.assertEqual((2, ""), (result.returncode, result.stdout))
-        self.assertEqual(1, len(result.stderr.strip().splitlines()), result.stderr)
-        self.assertTrue("alpha" in result.stderr and "beta" in result.stderr, result.stderr)
-        chosen = audit(logs, "--feature", "beta")
-        self.assertEqual((0, True), (chosen.returncode, "specs/beta/decisions.md" in chosen.stdout), chosen.stderr)
-        parked = audit(logs, "--feature", "alpha")
-        self.assertEqual((3, "cruise: parked: ratify D1\n"), (parked.returncode, parked.stdout))
+        for arguments in ((), ("--feature", "beta"), ("--feature", "alpha")):
+            parked = audit(logs, *arguments)
+            self.assertEqual((3, "cruise: parked: ratify D1 in specs/alpha/decisions.md\n"),
+                             (parked.returncode, parked.stdout), arguments)
 
     def test_r8_e5_a_feature_naming_no_directory_is_exit_two_naming_it(self) -> None:
         """T020: `--feature nope` fails open as `no decisions.md`, exit 0; it refuses as `--scope … --feature` does."""

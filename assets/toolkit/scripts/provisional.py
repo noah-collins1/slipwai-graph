@@ -7,7 +7,8 @@ decision entry carries (and, where provisional, its `Revert:` line), from the `d
 of `ci_workflow=yes`, `migrate_file=yes`, `flag_default=yes` (FR-033); a fact, a constitution MUST and a release are
 unavailable whatever `decide` says. A missing `--reversibility` line is `hard`.
 `python3 scripts/provisional.py audit [--feature <name>]` is the completion audit: it prints `cruise: parked: ratify
-D<n>` and exits 3 while an entry of `specs/<feature>/decisions.md` has a first `Status` starting `provisional`.
+D<n> in specs/<feature>/decisions.md` and exits 3 while an entry of any feature's log has a first `Status` starting
+with the word `provisional`, the lowest-numbered named; `--feature` only has to name a feature under `specs/`.
 The gate (`check-decisions.py`) loads this file by path, only for a log carrying a `Status: provisional|ratified|
 reverted` or a `Provisional (shadow|advisory):` line (a lone `Revert:` loads nothing, D206), and `check_log()` holds
 those lines to their grammar.
@@ -344,21 +345,23 @@ def status_verb(arguments: list[str]) -> int:
     return 0
 
 
-STATUS_LINE = re.compile(r"^- \*\*Status:\*\* ?(.*)$")
+FIELD_LINE = re.compile(r"^- \*\*([^*]+):\*\* ?(.*)$")
 HEADING = re.compile(r"^## D([0-9]+) — ")
 
 
 def unratified(text: str) -> list[int]:
-    """The numbers of the entries whose first `Status` starts with `provisional`, lowest first."""
+    """The numbers of the entries whose first `Status` starts with the word `provisional`, lowest first. A line is read
+    as the gate reads it: split as `str.splitlines` splits, its label the text before the first colon, stripped."""
     found: list[int] = []
     number, seen = None, False
-    for line in text.removeprefix("\ufeff").split("\n"):
+    for line in text.removeprefix("\ufeff").splitlines():
         heading = HEADING.match(line)
         if line.startswith("## "):
             number, seen = int(heading.group(1)) if heading else None, False
-        elif number is not None and not seen and (status := STATUS_LINE.match(line)):
+        elif number is not None and not seen and (field := FIELD_LINE.match(line)) \
+                and field.group(1).split(":")[0].strip() == "Status":
             seen = True
-            if status.group(1).strip().startswith("provisional"):
+            if field.group(2).split()[:1] == ["provisional"]:
                 found.append(number)
     return sorted(found)
 
@@ -369,31 +372,32 @@ def project_root(script: Path) -> Path:
 
 
 def audit_verb(arguments: list[str]) -> int:
-    """`audit [--feature <name>]`: exit 3, `cruise: parked: ratify D<n>`, while a provisional decision is unratified."""
+    """`audit [--feature <name>]`: exit 3, `cruise: parked: ratify D<n> in <log>`, while any feature's log holds an
+    unratified provisional decision, the lowest-numbered named (D207). `--feature` must name a directory of `specs/`
+    and changes nothing else: the run is not done while any feature's decision stands provisional."""
     if arguments and (len(arguments) != 2 or arguments[0] != "--feature" or not arguments[1]):
         raise Usage("audit takes only --feature <name>, once")
     specs = project_root(Path(__file__).resolve()) / "specs"
     if arguments and not (specs / arguments[1]).is_dir():
         raise Usage(f"specs/{arguments[1]}/ is no directory; --feature names a feature under specs/")
     logs = sorted(specs.glob("*/decisions.md")) if specs.is_dir() else []
-    if arguments:
-        logs = [log for log in logs if log.parent.name == arguments[1]]
-    elif len(logs) > 1:
-        raise Usage("specs/ holds several decisions.md; choose one with --feature <name>: "
-                    + ", ".join(log.parent.name for log in logs))
     if not logs:
         print("provisional: no decisions.md, so no unratified provisional decision")
         return 0
-    relative = logs[0].relative_to(specs.parent).as_posix()
-    try:
-        waiting = unratified(logs[0].read_text(encoding="utf-8"))
-    except UnicodeDecodeError as error:
-        print(f"provisional: {relative}: not UTF-8 ({error.reason} at byte {error.start})", file=sys.stderr)
-        return 1
+    waiting: list[tuple[int, str, str]] = []
+    for log in logs:
+        relative = log.relative_to(specs.parent).as_posix()
+        try:
+            waiting += [(number, log.parent.name, relative) for number in unratified(log.read_text(encoding="utf-8"))]
+        except UnicodeDecodeError as error:
+            print(f"provisional: {relative}: not UTF-8 ({error.reason} at byte {error.start})", file=sys.stderr)
+            return 1
     if waiting:
-        print(f"cruise: parked: ratify D{waiting[0]}")
+        number, _, relative = min(waiting)
+        print(f"cruise: parked: ratify D{number} in {relative}")
         return 3
-    print(f"provisional: no unratified provisional decision in {relative}")
+    print("provisional: no unratified provisional decision in "
+          + ", ".join(log.relative_to(specs.parent).as_posix() for log in logs))
     return 0
 
 
