@@ -127,6 +127,10 @@ TYPESCRIPT_MUTATION_NOTE = f"""\
 # survivors; a slice that edits one of those files meets that file's survivors in its scoped `make mutation`. The minimal
 # starter is green. A fix is planned: a follow-on slice makes the starter's tests kill them.
 #
+# A mutant that Stryker reports `Survived` while the suite did not run to completion under it (a `beforeAll` threw, so the
+# file's tests were skipped and no test failed) is not a survivor: the wrapper reads that from the report, `testsCompleted`
+# below the dry run's test count on a mutant every test runs under, and fails it as `Incomplete`, never as `Survived`.
+#
 # Two settings in the config look odd and are not. `related` is off in `vitest`, so that a file holding no mutant
 # reports zero mutants and the wrapper says so, where Stryker's related mode exits 1 with no report. And `tsconfigFile`
 # names a file that does not exist: Stryker rewrites a tsconfig's `extends` and `references` with TypeScript's JavaScript

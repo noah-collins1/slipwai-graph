@@ -248,6 +248,7 @@ class WordsTest(unittest.TestCase):
                              "`make mutation`",
                              "minimal starter is green",
                              "fix is planned",
+                             "`Incomplete`",
                              "Only a `// Stryker disable next-line <mutator>: <reason>` comment excuses a mutant",
                              "`excludedMutations` in the config and block or file-wide disable comments do not"):
                 self.assertIn(sentence, text)

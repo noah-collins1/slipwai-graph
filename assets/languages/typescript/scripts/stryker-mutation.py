@@ -57,9 +57,13 @@ PINNED = "10.0.0"
 PACKAGES = ("core", "vitest-runner")
 # An `Ignored` mutant whose source does not excuse it is counted under this name (D219), which is not a Stryker status.
 UNEXCUSED = "Unexcused"
+# A static `Survived` mutant under which fewer tests completed than the dry run ran is counted under this name (D217): its
+# suite did not run to completion, so Stryker's "survived" is not a verdict (research R11). Not a Stryker status either.
+INCOMPLETE = "Incomplete"
 # What D219 reads of the line above an `Ignored` mutant: Stryker's own `next-line` directive, written with `//`.
 NEXT_LINE = re.compile(r"\s*//\s?Stryker disable next-line ([a-zA-Z, ]+)(?::(.*))?")
-FAILED_AS = {UNEXCUSED: "ignored without a next-line comment", "Survived": "survived", "Timeout": "timed out", "RuntimeError": "runtime error",
+FAILED_AS = {UNEXCUSED: "ignored without a next-line comment", INCOMPLETE: "survived with the suite incomplete",
+             "Survived": "survived", "Timeout": "timed out", "RuntimeError": "runtime error",
              "CompileError": "compile error", "Pending": "pending"}
 
 
@@ -341,6 +345,30 @@ def read_report(path: Path) -> dict[str, dict] | None:
     return files if isinstance(files, dict) else None
 
 
+def dry_run_tests(path: Path) -> int | None:
+    """How many tests the dry run found, from the report's `testFiles`; None where the report does not say."""
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+        listed = document["testFiles"]
+        return sum(len(entry["tests"]) for entry in listed.values())
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return None
+
+
+def incomplete(one: dict, dry_run: int | None) -> str | None:
+    """Why a `Survived` mutant is not a survivor (D217, research R11), or None. Stryker 10.0.0's Vitest runner skips the
+    tests of a file whose `beforeAll` throws and reads a run with no failed test as `Survived`; the report keeps only
+    `testsCompleted`. A static mutant is one every test runs under, so it must complete the dry run's count; a mutant
+    that is not static runs only its covering tests, and is never compared."""
+    done = one.get("testsCompleted")
+    if one.get("status") != "Survived" or one.get("static") is not True or dry_run is None:
+        return None
+    if not isinstance(done, int) or isinstance(done, bool) or done >= dry_run:
+        return None
+    return (f"Stryker says it survived, but the suite ran {done} of the dry run's {dry_run} tests under it "
+            f"(a hook or a file failed, so that is not a survivor and not a pass)")
+
+
 def judged(files: dict[str, dict], given: list[str]) -> list[tuple[str, dict]]:
     """The mutants the verdict is about: those of the given files, or of every file in the report when none were given."""
     wanted = [name[2:] if name.startswith("./") else name for name in given]
@@ -421,11 +449,12 @@ def unexcused(service: str, name: str, entry: dict, one: dict) -> str | None:
     return None if (above[2] or "").strip() else "the next-line comment gives no reason"
 
 
-def failure_line(service: str, name: str, one: dict, report: str, why: str | None = None) -> str:
+def failure_line(service: str, name: str, one: dict, report: str, why: str | None = None,
+                 unfinished: str | None = None) -> str:
     start = (one.get("location") or {}).get("start") or {}
     replacement = " ".join(str(one.get("replacement", "")).split())
-    excuse = f" — not excused: {why}" if why else ""
-    return (f"mutation: {one.get('status')} {service}/{name}:{start.get('line')}:{start.get('column')} "
+    excuse = f" — not excused: {why}" if why else f" — {unfinished}" if unfinished else ""
+    return (f"mutation: {INCOMPLETE if unfinished else one.get('status')} {service}/{name}:{start.get('line')}:{start.get('column')} "
             f"{one.get('mutatorName')} → {replacement}{excuse} (report {report})")
 
 
@@ -458,7 +487,7 @@ def unseen(service: str, given: list[str], report: str, files: dict[str, dict]) 
     return lines
 
 
-def verdict(service: str, given: list[str], report: str, files: dict[str, dict]) -> int:
+def verdict(service: str, given: list[str], report: str, files: dict[str, dict], dry_run: int | None = None) -> int:
     mutants = judged(files, given)
     problems = unseen(service, given, report, files) if given else []
     for line in problems:
@@ -473,11 +502,13 @@ def verdict(service: str, given: list[str], report: str, files: dict[str, dict])
         return 1
     why = {(name, id(one)): unexcused(service, name, files[name], one) for name, one in mutants
            if one.get("status") == "Ignored"}
+    short = {(name, id(one)): incomplete(one, dry_run) for name, one in mutants}
     failing = [(name, one) for name, one in mutants
                if one.get("status") not in PASS + COUNTED or why.get((name, id(one)))]
     for name, one in failing:
-        say(failure_line(service, name, one, report, why.get((name, id(one)))))
-    counts = Counter(UNEXCUSED if why.get((name, id(one))) else str(one.get("status")) for name, one in mutants)
+        say(failure_line(service, name, one, report, why.get((name, id(one))), short[(name, id(one))]))
+    counts = Counter(UNEXCUSED if why.get((name, id(one))) else INCOMPLETE if short[(name, id(one))]
+                     else str(one.get("status")) for name, one in mutants)
     say(last_line(counts, bool(failing or problems), report))
     return 1 if failing or problems else 0
 
@@ -502,7 +533,7 @@ def run(job: Job) -> int:
     if files is None:
         say(f"mutation: Stryker exited {code} and left no readable report at {report}; that is not a pass")
         return 1
-    return verdict(service, given, report, files)
+    return verdict(service, given, report, files, dry_run_tests(directory / REPORT))
 
 
 def refusal(job: Job) -> int | None:
