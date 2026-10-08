@@ -15,12 +15,14 @@ This is the skeleton past the configuration: it refuses to run, which can only f
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tokenize
 from pathlib import Path
 from collections import Counter
 from typing import IO, Any, Callable
@@ -67,8 +69,8 @@ STATUS: dict[Any, tuple[str, str, str]] = {
     37: ("caught by type check", "caught by type check", FAIL),
 }
 # `# pragma: no mutate block|start|end` silences the mutants of the lines it covers, and a silenced mutant is never
-# generated, so no status records it. Only the bare form on one line is the per-mutant comment D212 excuses.
-SILENCING = re.compile(r"#\s*pragma:\s*no mutate\s+(block|start|end)\b")
+# generated, so no status records it. Only the bare form is the per-mutant comment D212 excuses.
+SILENCING_WORDS = ("block", "start", "end")
 EXITED = "(its exit status and the output above are mutmut's, never the verdict; the .meta files are)"
 # What `fnmatch` reads as syntax: the characters that make a path a pattern over mutant names, not a name.
 OPENERS = "*?["
@@ -372,19 +374,21 @@ def generate(job: Job) -> int | None:
 
 
 def sweep(job: Job) -> int | None:
-    """A sweep judges every file mutmut wrote a `.meta` for. With no mutant in any of them there is nothing to run, and
-    a pass on nothing is not a pass."""
+    """A sweep judges every file mutmut wrote a `.meta` for, and reads the silencing of every one of them first. With
+    no mutant in any of them there is nothing to run, and a pass on nothing is not a pass."""
     root = Path(job.service) / "mutants"
     job.judged = sorted(path.relative_to(root).as_posix()[: -len(".meta")] for path in root.rglob("*.meta"))
+    failed = refuse_silenced(job)
     if not any(keys_of(job.service, file) for file in job.judged):
         note(f"mutmut found nothing to mutate in {job.service}; a pass on nothing is not a pass")
         return 1
-    return None
+    return 1 if failed else None
 
 
 def plan(job: Job) -> int | None:
     """What a scoped run hands mutmut: the keys of the given files that have any. A file with no `.meta` is outside what
-    mutmut mutates; one whose `.meta` is empty holds no function to mutate. Neither starts mutmut."""
+    mutmut mutates; one whose `.meta` is empty holds no function to mutate. Neither starts mutmut. What silences
+    mutants is decided before any of those exits, over every given file that has a `.meta`."""
     if not job.files:
         return sweep(job)
     keyed: dict[str, list[str]] = {}
@@ -394,6 +398,10 @@ def plan(job: Job) -> int | None:
             note(f"not mutated {job.service}/{file} \u2014 outside mutmut's configured targets")
         else:
             keyed[file] = keys
+    job.judged = list(keyed)
+    failed = refuse_silenced(job)
+    if failed:
+        return 1
     if not keyed:
         note(f"nothing under {job.service} that was given is a file mutmut would mutate; no mutant to run")
         return 0
@@ -402,7 +410,6 @@ def plan(job: Job) -> int | None:
         note(f"no mutant to run \u2014 {', '.join(keyed)}: mutmut found no function to mutate in "
              f"{'it' if len(keyed) == 1 else 'them'}")
         return 0
-    job.judged = list(keyed)
     job.names = [key for file in held for key in keyed[file]]
     note(f"scoped to {len(held)} given file(s): {', '.join(held)} \u2014 {len(job.names)} mutant(s)")
     return None
@@ -417,36 +424,69 @@ def run_mutmut(job: Job) -> int | None:
     return None
 
 
+def pragma_word(comment: str) -> str | None:
+    """What mutmut 3.8.0's `_parse_pragma_token` makes of one comment, for the three words that silence more than a line:
+    a comment holding `# pragma:` and `no mutate` takes the tail after the first `no mutate`, strips `: ` from its
+    start, and reads the first word before a comma."""
+    if "# pragma:" not in comment or "no mutate" not in comment:
+        return None
+    words = comment.partition("no mutate")[-1].strip().lstrip(": ").split(",", 1)[0].split()
+    return words[0] if words and words[0] in SILENCING_WORDS else None
+
+
+def pragmas(text: str) -> list[tuple[int, str]]:
+    """The (line, word) of every comment in a source text that mutmut reads as a block, start or end pragma; strings
+    that hold the same text are not comments. Raises SyntaxError where the text cannot be tokenized."""
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
+    except (tokenize.TokenError, SyntaxError) as error:
+        raise SyntaxError(str(error)) from None
+    return [(token.start[0], word) for token in tokens if token.type == tokenize.COMMENT
+            and (word := pragma_word(token.string))]
+
+
+def silenced_by_file(service: str, file: str) -> list[str]:
+    try:
+        text = (Path(service) / file).read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return [f"{service}/{file} cannot be read as UTF-8, so its pragmas cannot be checked"]
+    except OSError:
+        return []
+    try:
+        found = pragmas(text)
+    except SyntaxError:
+        return [f"{service}/{file} cannot be read as Python, so its pragmas cannot be checked"]
+    return [f"{service}/{file}:{number} holds \"# pragma: no mutate {word}\", which silences mutants nobody looked at; "
+            "only a bare \"# pragma: no mutate\" on the line excuses one" for number, word in found]
+
+
 def silenced(job: Job) -> list[str]:
-    """One line for each way a judged file or the table silences mutants without anyone looking at them."""
+    """One line for each way a judged file or the table silences mutants without anyone looking at them: decided in
+    `plan`, before any exit that finds nothing to run, so that the two cannot disagree about what silences."""
     found = []
     if job.config.get("do_not_mutate_patterns"):
         found.append(f"{job.service}/pyproject.toml sets do_not_mutate_patterns, which silences every line a pattern "
                      "matches without anyone looking at its mutants; only a bare \"# pragma: no mutate\" on the "
                      "line excuses one")
+    if job.config.get("mutate_only_covered_lines"):
+        found.append(f"{job.service}/pyproject.toml sets mutate_only_covered_lines, which leaves out the mutants of "
+                     "every line coverage excludes without anyone looking at them")
     for file in job.judged:
-        try:
-            text = (Path(job.service) / file).read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            found.append(f"{job.service}/{file} cannot be read as UTF-8, so its pragmas cannot be checked")
-            continue
-        except OSError:
-            continue
-        for number, line in enumerate(text.splitlines(), 1):
-            hit = SILENCING.search(line)
-            if hit:
-                found.append(f"{job.service}/{file}:{number} holds \"# pragma: no mutate {hit.group(1)}\", which "
-                             "silences mutants nobody looked at; only a bare \"# pragma: no mutate\" on the line "
-                             "excuses one")
+        found.extend(silenced_by_file(job.service, file))
+    return found
+
+
+def refuse_silenced(job: Job) -> list[str]:
+    found = silenced(job)
+    for line in found:
+        note(line)
     return found
 
 
 def judge(job: Job) -> int | None:
     """The verdict, from the `.meta` files and by D212's rule: killed passes, no tests is counted, and every other code,
-    `null` and a code nobody has heard of included, fails. A silenced mutant fails the run too."""
-    failed = silenced(job)
-    for line in failed:
-        note(line)
+    `null` and a code nobody has heard of included, fails."""
+    failed: list[str] = []
     counts: Counter[str] = Counter()
     total = 0
     for file in job.judged:

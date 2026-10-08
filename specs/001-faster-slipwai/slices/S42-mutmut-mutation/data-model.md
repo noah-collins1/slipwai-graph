@@ -79,7 +79,7 @@ Every line is prefixed `mutation: `.
 | scoped, every file empty | `no mutant to run — <files>: mutmut found no function to mutate in it` / `in them` | 0 |
 | scoped | `scoped to <n> given file(s): <files> — <m> mutant(s)` | — |
 | mutmut's exit | `mutmut exited <code> (its exit status and the output above are mutmut's, never the verdict; the .meta files are)` | — |
-| a silencing pragma or setting | `<service>/<file>:<line> holds "# pragma: no mutate <block|start|end>", which silences mutants nobody looked at; only a bare "# pragma: no mutate" on the line excuses one` · `<service>/pyproject.toml sets do_not_mutate_patterns, which silences …` | — (fails) |
+| a silencing pragma or setting | `<service>/<file>:<line> holds "# pragma: no mutate <block|start|end>", which silences mutants nobody looked at; only a bare "# pragma: no mutate" on the line excuses one` · `<service>/pyproject.toml sets do_not_mutate_patterns, which silences …` · `<service>/pyproject.toml sets mutate_only_covered_lines, which leaves out the mutants of every line coverage excludes without anyone looking at them` (read as mutmut 3.8.0's `_parse_pragma_token` reads a comment; decided in `plan`, before any empty exit) | 1, before mutmut starts |
 | each failing mutant | `<status> <service> <mutant name> (mutmut show <mutant name> in <service>; report <service>/mutants/)` | — |
 | sweep, zero mutants | `mutmut found nothing to mutate in <service>; a pass on nothing is not a pass` | 1 |
 | last line | `<n> mutants: <k> killed, <u> no tests (reported, never failed)[, <s> survived, <t> timed out, …]; <passed|failed> — report <service>/mutants/` | 0 / 1 |

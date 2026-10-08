@@ -45,20 +45,20 @@ SHAPES["integration-billing"] = (
 # sha256 of each shape's Makefile before this slice's section, from the commit that came before it (R3 e5). A gate
 # that changes on purpose regenerates these; this slice adds text after everything and moves nothing before it.
 PRE_SLICE: dict[str, str] = {
-    "standard-python": "b97a8bf6f3f3de5fadbb9dacd8f99bb3882c0aa23ffba94de5caac884eb63284",
+    "standard-python": "075e4cf86fe457bec23136cd4ad98eb1afb6f6816b159fbf759df1f38ce59bab",
     "model-typescript-web": "984e9a38b969f4362834e5288e14ea7b6fb352e9980531fbd799c7071aa4661d",
     "model-typescript-web-cloud": "ac36b4ebcdf92e5cfc0b452e89f4abe9297c61d3a5f10aef031c4fd64bdcb00c",
-    "model-python-sqlite": "92743f755a54a7a5c71d5cec18ca21116a1fbee8ad8427c436cb9892fc205ad8",
+    "model-python-sqlite": "d5bbe35548f548034281963a541f878775f5dfb7f03a2d764b2529041a20cd9a",
     "model-go-azure": "4e1460b376ec99d6df9dbb610d9e9cbf36303cd96f146c9108dd926a92b8e71f",
     "standard-quarkus": "74efc08991dfe6e26f8a1d08c92058adb4874763026935514074f51059ff3491",
     "standard-spring-web": "f08f581ddf2ee0fdfb8ed5ae2fe7c3446a009b182f0740604f55ab780a0e0c6e",
-    "two-python": "e89ab63e3def860fb1cb29efdc61aa9b9beb6f9cdfc5cb579774f262c1c59180",
+    "two-python": "d8a52b16ad8ec70ac6d94641b0a61730f2372fb325a8a263ae57f324c549e231",
     "go-web": "247491616ca93133108871785fd8863c27c2ca410058b2fa415c8749b7afe52a",
     "java-go": "1e4574d4f9cb761120d338e0b17c3f227b475f6f2c2b8aa134e852ab823773b5",
-    "java-python-web": "a5e7c97776a75bc015f593464173d3997635bb1de58c18c529ac65c6e7c563fa",
+    "java-python-web": "abbe32f027235ce81d6e9114048b35b49faa0ae0be0b7ac8d7cc883a73c77fca",
     "two-go": "6fbf55df732ad2b631de9f105cd7d9a713123dfece1681f6d335b86d7271dcd7",
-    "integration": "6050cef843a4abd2699cdc96ec9e76b42435ceb13039ec6e0044ea2e76d67f12",
-    "integration-billing": "fd578435736ca4ad04681e406eb92373e754bd8f51d840521262461bda81c452",
+    "integration": "f0aea1276b2a5aa5fc2d21b743bb07903735d36fcdca5d3010d77335d4ede4a9",
+    "integration-billing": "5a5f4a72c21c4e81b1ff9aa2fcab602b43f4e52fa365a9de931dc7e421276c80",
 }
 
 
