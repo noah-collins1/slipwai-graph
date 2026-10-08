@@ -4642,3 +4642,39 @@
 - **Confidence:** high · **Would reverse if:** runs are scoped to one feature with `--feature` and the owner wants each feature's `done` judged alone.
 - **Written to:** `specs/001-faster-slipwai/spec.md`
 - **Status:** standing
+
+## D208 — How does the runner tell a person's raise of `decide` from the run's own?
+- **Stage:** Phase 4 adversary · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T02:36:37Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** Adversary B1, B2, B5, B8: a `decide_moved` park resumes on any change and the raised value becomes the baseline; a process an iteration leaves behind (`setsid`) raises `decide` after the iteration ends, unseen; a broken file hides a move until a person's unrelated `--set` repairs it; a hard link or another case passes the guard. Each ends in a `mode` entry saying `Decided by: human`.
+- **Options:** (a) every raise of `decide` the runner sees — inside an iteration, between two, or while parked, and a broken file read as the last value it saw — parks the run until a `told:` message confirms it, and only a `told:` releases that park; `--set` run outside an iteration queues that confirmation itself, so a person's `/cruise-settings` raise is not parked; `tell` refuses inside an iteration; a step back never parks (recommended by the adversary's fix directions, widened to every route); (b) only release the in-iteration park on `told:`, leaving the between-iteration routes; (c) accept prose.
+- **Decision:** (a). Amends D203: the comparison is against the last value the runner saw, not the file freshly loaded.
+- **Why:** an iteration has a shell, so no file it can write is proof a person acted; a raise the person did not make through `/cruise-settings` costs them one `/cruise-tell`, and the run can never take provisional authority nobody gave it.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** medium · **Would reverse if:** persons raise `decide` by editing the file rather than through `/cruise-settings` often enough that the confirmation park is a nuisance.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D209 — What makes a provisional Status and a mode entry trustworthy to the gate?
+- **Stage:** Phase 4 adversary · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T02:36:37Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** Adversary B3, B4: a mode entry dated in the future becomes `mode`'s baseline for ever and lets a hand edit skip every rung; `provisional.py status` takes `--decide` from the brief, so `--decide provisional` under `recommended-first` writes a provisional entry the gate accepts.
+- **Options:** (a) the gate refuses a mode entry whose `When` is later than the moment it runs, and `mode` ignores one; the gate refuses a provisional Status unless the last mode entry before it, across every feature's log, records `provisional`; the verb reads `decide` from `.specify/cruise.json` and refuses a `--decide` that differs (recommended); (b) the verb alone reads the file.
+- **Decision:** (a).
+- **Why:** the record a person reads must say what was in force when each entry was written; a provisional entry is only possible where the log shows a person climbed to `provisional` first.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** a project's logs carry no mode entries for a reason a person accepts (a log migrated in), when the gate's rule reads the file's value instead.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing
+
+## D210 — How does the gate read the entries and paths it holds to FR-033?
+- **Stage:** Phase 4 adversary · **Slice:** S27-provisional-decisions · **When:** 2026-10-08T02:36:37Z · **Iteration:** 28
+- **Scope:** S27-provisional-decisions
+- **Question:** Adversary A1–A10: the gate decides whether to hold a log from the raw text but reads fields with fences removed, and the audit reads them a third way, so a fenced or near-miss Status, a fullwidth digit or a fenced standing line splits them; `Written to` paths spelled absolute, with `..`, `//`, bare beside backticked, or on a second line are not compared; `GNUmakefile`, `makefile`, an adopted layout's delivery directory, the hook projections the runner parks on, a flag file and tool configurations a gate reads are off the list. Also A11 (a log whose second Status is `reverted`) and the byte-order mark.
+- **Options:** (a) one reading of a log — fences and near-miss labels blanked, ASCII digits only — serves the gate's decision to hold it, every field it reads and the audit; `Written to` is read with S26's `written_paths` and normalised (absolute inside the project, `..`, `//`, `./`) before `protected()`; a second `Written to` or a near-miss `Status` on a held entry is refused; the list gains `GNUmakefile`, `makefile`, the adopted delivery directory's scripts, Makefile and verification record, the runner's control paths from the registry's hook projections, flag files (`*flags*.tfvars`), and tool configurations a gate reads when present (`.ruff.toml`, `ruff.toml`, `conftest.py`, `.mvn/`); A11 and the byte-order mark declined — a log carrying a new-release Status form gets the new rules (D206), and D65 keeps the mark (recommended); (b) fix only the reproduced spellings.
+- **Decision:** (a).
+- **Why:** FR-033 is a promise about what a decision touches, not about how its writer spelled it; two readers of one log must never disagree on whether a decision a person has not seen still stands.
+- **Decided by:** host (stage recommendation)
+- **Confidence:** high · **Would reverse if:** the widened list refuses an entry a person reads as plainly outside every gate.
+- **Written to:** `specs/001-faster-slipwai/spec.md`
+- **Status:** standing

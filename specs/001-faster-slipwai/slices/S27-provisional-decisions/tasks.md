@@ -584,6 +584,39 @@ if needed).
   shows the whole rehearsal line as optional and the tier as required; `mode`'s docstring, `data-model.md`,
   research R-5 and quickstart step 1 (no `git commit` after `generate`) said the same way.
 
+## Phase 11: Phase 4 — the adversary's findings (D208–D210; AC-S27-23..25)
+
+Two chains with disjoint manifests, each task a RED-GREEN-REFACTOR increment committed by path, in the worktree
+`/home/noahc/math/slipwai-graph-S27-phase4` on `slice/S27-phase4` cut from adopt-method.
+**Chain A (the gate and the verb):** `assets/toolkit/scripts/check-decisions.py`, `assets/toolkit/scripts/provisional.py`,
+new tests `tests/test_provisional_adversary_*.py`. **Chain B (the run and the text):**
+`assets/toolkit/scripts/agents/cruise.py`, `src/slipwai/project/cruise_provisional.py`,
+`src/slipwai/project/cruise_agents.py`, `docs/cruise.md`, `changelog.d/provisional-decisions.md`, this slice's
+`quickstart.md`, new tests `tests/test_cruise_adversary_*.py`.
+
+- [ ] T038 [A] **HIGH — A1, A2, A7, A8; D210, AC-S27-25.** One reading of a log — fences and near-miss labels blanked,
+  ASCII digits only in headings — decides whether the gate holds it, serves every field the provisional checks read,
+  and serves the audit; a near-miss `Status` on a held entry is refused.
+- [ ] T039 [A] **HIGH — A3–A6, A9, A10; D210.** `Written to` read with S26's `written_paths` and normalised (absolute
+  inside the project, `..`, `//`, `./`) before `protected()`; a second `Written to` on a held entry refused; the list
+  gains `GNUmakefile`, `makefile`, the adopted delivery directory's scripts, Makefile and verification record, the
+  runner's control paths from the registry's hook projections, `*flags*.tfvars`, `.ruff.toml`, `ruff.toml`,
+  `conftest.py` and `.mvn/`.
+- [ ] T041 [A] **HIGH — B3, B4; D209, AC-S27-24.** The gate refuses a mode entry dated after it runs, and a provisional
+  Status with no earlier mode entry recording `provisional` in any feature's log; the verb reads `decide` from
+  `.specify/cruise.json` and refuses a `--decide` that differs.
+- [ ] T040 [B] **HIGH — B1, B2, B5, B8; D208, AC-S27-23.** The runner keeps the last `decide` it saw; any raise seen —
+  inside an iteration, between two, while parked, behind a broken file — parks until a `told:` message, and only a
+  `told:` releases it; `--set` outside an iteration queues the confirmation; `tell` refuses inside an iteration; a step
+  back never parks.
+- [ ] T042 [B] **MEDIUM — B3, B6, B7.** `mode` ignores a mode entry dated in the future; `mode` without `--feature` in
+  a project with several features prints the entry naming no log and exits 0; `check()` refuses a second key.
+- [ ] T043 [B] **LOW — the actor's demo-1 notes.** Quickstart step 3 creates `specs/demo/` before `mode`, scores the
+  mode entry with `migrate_file=yes`, and numbers entries as they fall (D2, D3, D4); the `decide` row says what the
+  three provisional values do and that the two off values share the bottom rung; *Provisional decisions* says hand
+  ratification holds until the ratify and revert verbs ship; the Catch-up names `migrate_file=yes` for a mode entry
+  scored by hand; the text says what D208 and D209 changed.
+
 ## Design review
 
 No screen in this slice.

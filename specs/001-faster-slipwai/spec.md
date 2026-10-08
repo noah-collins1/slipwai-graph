@@ -2968,3 +2968,13 @@ Ratifying and reverting by verb, the listings and the dated refusal stay with `S
   stands.
 - **AC-S27-22** — *D207.* Given unratified provisional entries in two features' logs, then the audit parks on the
   lowest-numbered, naming its feature, with or without `--feature`.
+- **AC-S27-23** — *D208.* Given the runner sees `decide` higher than the last value it saw — moved inside an
+  iteration, between two, while parked, or behind a broken file — and no confirmation queued by `--set`, then it parks
+  until a `told:` message, and nothing else releases that park; given a `--set` raise outside an iteration, then it
+  queues the confirmation and the run is not parked; given `CRUISE_ITERATION`, then `tell` is refused.
+- **AC-S27-24** — *D209.* Given a mode entry dated after the gate runs, then the gate refuses it and `mode` ignores it;
+  given a provisional Status with no earlier mode entry recording `provisional` in any feature's log, then the gate
+  refuses it; given `--decide` differing from `.specify/cruise.json`, then the verb refuses.
+- **AC-S27-25** — *D210.* Given a held log, then the gate and the audit read one text — fences and near-miss labels
+  blanked, ASCII digits only — and never disagree on an entry's Status; given a protected path spelled absolute, with
+  `..`, `//`, `./`, bare beside a backticked one, or on a second `Written to` line, then the gate refuses the entry.
