@@ -62,7 +62,9 @@ class StatusFormsAndRevertTest(GateCase):
                      words=("D2", "`Revert`", "D1"))
 
     def test_r3_e7_a_revert_on_a_standing_entry_is_refused(self) -> None:
-        self.refused(entry(1, "standing", revert="own"), words=("D1", "`Revert`", "standing"))
+        """With a new `Status` form in the log (D206: a lone `Revert:` loads nothing; see the differential case)."""
+        self.refused(entry(1, "standing", revert="own"), entry(2, "ratified 2026-10-09", reversibility=EASY_LINE),
+                     words=("D1", "`Revert`", "standing"))
 
     def test_r3_e8_a_revert_that_is_not_commits_carrying_the_decision_is_refused(self) -> None:
         self.refused(provisional(revert="the last three commits"), words=("D1", "`Revert`"))

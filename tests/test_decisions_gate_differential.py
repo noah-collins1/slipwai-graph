@@ -167,18 +167,22 @@ class GateHoldsTheEarlierAnswerBesideProvisionalPyTest(unittest.TestCase):
                     self.assertEqual((earlier.returncode, earlier.stderr), (after.returncode, after.stderr), name)
                     self.assertEqual(without_notes(earlier.stdout), without_notes(after.stdout), name)
 
-    def test_r6_e2_a_revert_line_on_a_standing_entry_passed_before_and_is_refused_now(self) -> None:
-        """D65's carve-out (P4): `Revert:` is a label only this release defines, so a log that carried one passed an
-        earlier checker and is refused by this one, naming the entry and the field."""
-        log = (TITLE + entry(1).replace("- **Status:** standing\n", "- **Status:** standing\n"
-                                        "- **Revert:** commits carrying Decision: D1\n")).encode("utf-8")
+    def test_r6_e2_a_lone_revert_line_gets_the_earlier_checkers_answer_and_a_new_form_loads_the_checks(self) -> None:
+        """D206 (T031, AC-S27-21): a `Revert:` is a label this release defines, but a log whose only new-release line
+        is one passed before and passes now; with a new `Status` form in the log the standing `Revert:` is refused."""
+        revert = "- **Status:** standing\n- **Revert:** commits carrying Decision: D1\n"
+        lone = (TITLE + entry(1).replace("- **Status:** standing\n", revert)).encode("utf-8")
         with tempfile.TemporaryDirectory() as other:
-            before = gate_with(checker_at(BEFORE_S27, other), log, ("reversibility.py",))
-        after = gate_with(SCRIPT, log, ("reversibility.py", "provisional.py"))
-        self.assertEqual(0, before.returncode, before.stderr)
-        self.assertEqual(1, after.returncode, after.stdout)
-        self.assertIn("D1", after.stderr)
-        self.assertIn("`Revert`", after.stderr)
+            before = gate_with(checker_at(BEFORE_S27, other), lone, ("reversibility.py",))
+        after = gate_with(SCRIPT, lone, ("reversibility.py", "provisional.py"))
+        self.assertEqual((0, before.stderr), (after.returncode, after.stderr), after.stdout)
+        self.assertEqual(without_notes(before.stdout), without_notes(after.stdout))
+        ratified = entry(2).replace("- **Status:** standing", "- **Status:** ratified 2026-10-09")
+        mixed = lone + b"\n" + ratified.encode("utf-8")
+        refused = gate_with(SCRIPT, mixed, ("reversibility.py", "provisional.py"))
+        self.assertEqual(1, refused.returncode, refused.stdout)
+        self.assertIn("D1", refused.stderr)
+        self.assertIn("`Revert`", refused.stderr)
 
     def test_r6_e3_without_provisional_py_beside_it_a_log_with_no_new_form_gets_the_same_answer(self) -> None:
         for name, log in logs().items():

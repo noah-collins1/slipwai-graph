@@ -58,11 +58,11 @@ rule:**` citations among them. A log without the line never loads it and gets th
 `note:` where it has `Proposed rule:` lines, which are then not checked. A label written nearly right (another case, a
 space before the colon, underscores, another bullet) is never read, in any log, and is a `note:` naming entry and label.
 
-A log with a `Status: provisional · ratify by YYYY-MM-DD`, `ratified YYYY-MM-DD` or `reverted YYYY-MM-DD`, a
-`- **Revert:** commits carrying Decision: D<n>` or a `- **Provisional (shadow|advisory):**` line is also held to
-`provisional.py` beside this script, loaded for that log alone: a provisional entry says `Revert:` once and for its own
-number, only such an entry carries one, a malformed date is a finding naming the entry and `Status`. A log with none of
-those lines never loads it and gets the answer it always did.
+A log with a `Status: provisional · ratify by YYYY-MM-DD`, `ratified YYYY-MM-DD` or `reverted YYYY-MM-DD` or a
+`- **Provisional (shadow|advisory):**` line is also held to `provisional.py` beside this script, loaded for that log
+alone: a provisional entry says `Revert:` once and for its own number, only such an entry carries one, a malformed date
+is a finding naming the entry and `Status`. A log with none of those lines never loads it and gets the answer it always
+did; a `Revert:` alone, which an older log may carry, does not load it (D206).
 
 Every `specs/<feature>/hand-backs.md` and `specs/<feature>/slices/<id>/hand-backs.md` is held to the result-contract
 shape `docs/result-contract.md` writes down: an entry `## <UTC time> — drive-<name> — <stage>` holding one fenced
@@ -111,8 +111,10 @@ DECIDED_BY = re.compile(r"^(host \(stage recommendation\)|host \(standing decisi
 STATUS = re.compile(r"^(standing|overridden by D\d+|overridden by human \S+)$")
 REVERTED = re.compile(r"^reverted [0-9]{4}-[0-9]{2}-[0-9]{2}$")
 NEW_FIRST = [["provisional"], ["ratified"], ["reverted"]]  # a Status whose first word `provisional.py` reads
+# A lone `Revert:` does not load the new checks (D206): a log written before this release may carry one on a standing
+# entry, and it passed the earlier checker; once a new `Status` form or a rehearsal line is there, every check holds.
 PROVISIONAL_LABEL = re.compile(r"^- \*\*Status:\*\*[^\S\n]*(?:provisional|ratified|reverted)\b|"
-                               r"^- \*\*(?:Revert|Provisional \((?:shadow|advisory)\)):\*\*", re.M)
+                               r"^- \*\*Provisional \((?:shadow|advisory)\):\*\*", re.M)
 LINE_LABEL = re.compile(r"^- \*\*(?:Reversibility|Proposed rule):\*\*", re.M)
 REVERSIBILITY_LABEL = re.compile(r"^- \*\*Reversibility:\*\*", re.M)
 NEAR_LABEL = re.compile(r"^\s*[-*+]\s*[*_]*\s*(?:reversibility|proposed\s*rule)\s*[*_]*\s*:[*_]*", re.I)

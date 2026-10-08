@@ -9,7 +9,8 @@ unavailable whatever `decide` says. A missing `--reversibility` line is `hard`.
 `python3 scripts/provisional.py audit [--feature <name>]` is the completion audit: it prints `cruise: parked: ratify
 D<n>` and exits 3 while an entry of `specs/<feature>/decisions.md` has a first `Status` starting `provisional`.
 The gate (`check-decisions.py`) loads this file by path, only for a log carrying a `Status: provisional|ratified|
-reverted`, a `Revert:` or a `Provisional (shadow|advisory):` line, and `check_log()` holds those lines to their grammar.
+reverted` or a `Provisional (shadow|advisory):` line (a lone `Revert:` loads nothing, D206), and `check_log()` holds
+those lines to their grammar.
 Nothing here prints or exits outside `main`; `reversibility.py` beside this file is loaded by path, bytecode off.
 """
 from __future__ import annotations
