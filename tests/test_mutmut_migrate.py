@@ -155,6 +155,11 @@ class SweepWordsTest(unittest.TestCase):
             with self.subTest(place=place):
                 self.assertNotIn("Go or TypeScript service listed earlier", text)
 
+    def test_t035_no_sentence_of_the_catch_up_repeats_another(self) -> None:
+        sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z`*])", catch_up())
+        self.assertEqual(len(sentences), len(set(sentences)))
+        self.assertFalse([x for x in sentences if "`make mutation-full` now runs mutmut for every Python" in x])
+
     def test_t033_hold_the_default_starter_reports_its_own_survivors_and_the_minimal_one_is_green(self) -> None:
         """HOLD (teeth: reword the note's or the fragment's sentence)."""
         for place, text in place_texts().items():
