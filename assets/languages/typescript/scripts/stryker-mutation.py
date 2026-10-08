@@ -325,7 +325,14 @@ def refusal(job: Job) -> int | None:
 
 
 def listed(job: Job) -> int | None:
-    """Hold the files against the config's list: name what Stryker would not take, and stop where none is left."""
+    """Hold the files against the config's list: name what Stryker would not take, and stop where none is left. The
+    sweep reads no pattern — Stryker evaluates its own list, and a list this reader cannot is exactly when the scope
+    script sweeps (D213 item 3) — but it needs the config, without which Stryker would mutate its defaults."""
+    if not job.given:
+        if (Path(job.service) / CONFIG).is_file():
+            return None
+        say(f"mutation: {job.service}/{CONFIG}: no {CONFIG}")
+        return 2
     try:
         patterns = targets(Path(job.service))
     except Unreadable as why:
