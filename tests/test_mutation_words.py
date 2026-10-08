@@ -154,6 +154,13 @@ class SkillAndPagesTest(unittest.TestCase):
         obligations = flat((ROOT / "docs/backend-obligations.md").read_text(encoding="utf-8"))
         self.assertIn("no gate runs `make mutation` or `make mutation-full`", obligations)
 
+    def test_t028_the_requirements_row_names_the_python_3_11_a_python_service_s_mutation_run_needs(self) -> None:
+        row = flat((ROOT / "docs/requirements.md").read_text(encoding="utf-8"))
+        row = row[row.index("**Python**: Python 3"):]
+        row = row[:row.index(" | ")]
+        for words in ("**Python**: Python 3.11+ and `uv`", "`tomllib`", "Python 3.10", "sweeps", "exits 2"):
+            self.assertIn(words, row)
+
     def test_e4_the_gates_page_of_a_generated_project_is_unchanged(self) -> None:
         """HOLD: the pages a project is given say nothing of mutation, as before."""
         self.assertNotIn("mutation-full", (ROOT / "src/slipwai/project/docs.py").read_text(encoding="utf-8"))
