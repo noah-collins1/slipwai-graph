@@ -1079,7 +1079,7 @@ above rides with them.
 ### Converge pass 3 (Phase 4; neither re-opens the loop)
 
 ### T034 — [US2] MEDIUM · The mixed-project sentence names every line that stops the sweep before or after Python, not only Go and TypeScript (D223 item 4's class; converge pass 3)
-- [ ] **RED:** in `tests/test_mutmut_migrate.py` (`SweepWordsTest`) or `tests/test_mutmut_generated.py`, reach the case the sentence
+- [x] **RED:** in `tests/test_mutmut_migrate.py` (`SweepWordsTest`) or `tests/test_mutmut_generated.py`, reach the case the sentence *(Done: 961ca84 — one sentence in the note, both fragment paragraphs and the skill; no backend list.)*
   leaves out. A `java-quarkus:apps/service, python:apps/second` project (`QUARKUS_AND` in `tests/test_mutation_scope_python.py`)
   has a `mutation-full` recipe whose first line is the setup placeholder `@echo '…'; exit 2`, so make stops there on every run
   and the Python line never starts. A `java-spring` service listed earlier with a survivor stops it the same way. The note
@@ -1096,7 +1096,7 @@ above rides with them.
   `assets/toolkit/skills/mutation-testing/SKILL.md`, `tests/test_mutmut_migrate.py`, `tests/test_scoped_targets.py` (hashes).
 
 ### T035 — [US2] LOW · The Catch-up says the sweep's shape once
-- [ ] The Catch-up (`changelog.d/mutmut-mutation.md:5`) says "`make mutation-full` now runs mutmut for every Python service." and
+- [x] The Catch-up (`changelog.d/mutmut-mutation.md:5`) says "`make mutation-full` now runs mutmut for every Python service." and *(Done: ca2fbc6 — the Catch-up's own repetition removed; the first paragraph and the Catch-up still share the sweep's words, as T033 requires.)*
   then, at once, "`make mutation-full` runs every Python service, each from a fresh `mutants/` …". These are T033's two
   sentences, set beside the one that was already there. Keep the second. **GREEN:** no sentence of the fragment repeats another
   (it rides with T034's edit to the same paragraph). **Files:** `changelog.d/mutmut-mutation.md`.
