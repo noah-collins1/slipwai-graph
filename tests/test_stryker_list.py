@@ -143,13 +143,13 @@ class MainTest(Case):
         self.assertNpmNeverCalled()
         self.assertEqual(sorted(p.name for p in (self.tree / "apps/service").iterdir()), ["src", "stryker.config.json"])
 
-    def test_e4_a_matched_file_reaches_the_run_which_is_not_built_yet(self) -> None:
+    def test_e4_a_matched_file_reaches_the_run_and_the_unmatched_one_is_named_first(self) -> None:
         project(self.tree)
         done = self.run_wrapper("apps/service", "--file", "src/main.ts", "--file", "src/health.ts")
-        self.assertEqual(done.returncode, 2)
-        self.assertIn("mutation: not mutated apps/service/src/main.ts — outside Stryker's configured targets",
-                      done.stdout)
-        self.assertNpmNeverCalled()
+        self.assertEqual(done.returncode, 1, done.stdout)  # the fake `npm` wrote no report: not a pass (T004 judges it)
+        self.assertEqual(done.stdout.splitlines()[0],
+                         "mutation: not mutated apps/service/src/main.ts — outside Stryker's configured targets")
+        self.assertIn("exec --no -- stryker run --mutate src/health.ts", self.log.read_text(encoding="utf-8"))
 
     def test_e4_an_unreadable_config_is_one_line_and_exit_2(self) -> None:
         project(self.tree, patterns=["src/**/*.{ts,tsx}"])

@@ -5,8 +5,8 @@
 
 Without `--file` the whole of the service's `stryker.config.json` `mutate` list is mutated; `--file`, repeatable, hands
 over only those files. The verdict is read from `<service>/reports/mutation/mutation.json`, never from Stryker's exit
-status. Until the run itself is built out every run that reaches it is refused, the same refusal `make mutation-full`
-printed before Stryker was wired, so that it can only fail and never pass.
+status (D212): `Killed` and `Ignored` pass, `NoCoverage` is counted and reported, and every other status, a status
+nobody has heard of included, fails; a run that leaves no readable report fails whatever Stryker exited.
 
 The list of files Stryker mutates is the service's `mutate` patterns, and `--mutate` replaces that list rather than
 narrowing it (Stryker mutates a file the config excludes if it is handed one), so a `--file` is first held against the
@@ -18,7 +18,10 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
 CONFIG = "stryker.config.json"
@@ -26,6 +29,13 @@ CONFIG = "stryker.config.json"
 SYNTAX = "?[]{}()+@\\!"
 RANGE = re.compile(r":\d+(-\d+)?$")
 STRYKER = "@stryker-mutator/"
+REPORT = "reports/mutation/mutation.json"
+SANDBOX = ".stryker-tmp"
+# The verdict of each status, in one place: anything not named here fails, so a status Stryker adds later fails closed.
+PASS = ("Killed", "Ignored")
+COUNTED = ("NoCoverage",)
+FAILED_AS = {"Survived": "survived", "Timeout": "timed out", "RuntimeError": "runtime error",
+             "CompileError": "compile error", "Pending": "pending"}
 
 
 class Unreadable(ValueError):
@@ -156,9 +166,79 @@ def parse(arguments: list[str]) -> tuple[str, list[str]] | None:
     return service, files
 
 
-def run(service: str, files: list[str]) -> int:
-    say("mutation: Stryker is not wired by this script yet; a run that cannot be judged is not a pass.")
-    return 2
+def clean(service: Path) -> None:
+    """Every run starts from nothing: an earlier report must not be able to pass a run that wrote none, and an earlier
+    sandbox is not this run's."""
+    shutil.rmtree(service / "reports" / "mutation", ignore_errors=True)
+    shutil.rmtree(service / SANDBOX, ignore_errors=True)
+
+
+def read_report(path: Path) -> dict[str, dict] | None:
+    """The report's `files`, or None where there is no readable report."""
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    files = document.get("files") if isinstance(document, dict) else None
+    return files if isinstance(files, dict) else None
+
+
+def judged(files: dict[str, dict], given: list[str]) -> list[tuple[str, dict]]:
+    """The mutants the verdict is about: those of the given files, or of every file in the report when none were given."""
+    wanted = [name[2:] if name.startswith("./") else name for name in given]
+    return [(name, one) for name in sorted(files) if not wanted or name in wanted
+            for one in (files[name].get("mutants") or []) if isinstance(one, dict)]
+
+
+def failure_line(service: str, name: str, one: dict, report: str) -> str:
+    start = (one.get("location") or {}).get("start") or {}
+    replacement = " ".join(str(one.get("replacement", "")).split())
+    return (f"mutation: {one.get('status')} {service}/{name}:{start.get('line')}:{start.get('column')} "
+            f"{one.get('mutatorName')} → {replacement} (report {report})")
+
+
+def last_line(counts: Counter, failed: bool, report: str) -> str:
+    total = sum(counts.values())
+    text = (f"mutation: {total} mutants: {counts['Killed']} killed, {counts['Ignored']} ignored, "
+            f"{counts['NoCoverage']} not covered (reported, never failed)")
+    for status, count in sorted(counts.items(), key=lambda item: (item[0] not in FAILED_AS, item[0])):
+        if status not in PASS + COUNTED:
+            text += f", {count} {FAILED_AS.get(status, status)}"
+    return f"{text}; {'failed' if failed else 'passed'} — report {report}"
+
+
+def verdict(service: str, given: list[str], report: str, files: dict[str, dict]) -> int:
+    mutants = judged(files, given)
+    if not mutants:
+        if given:
+            say(f"mutation: no mutant to run — {', '.join(given)}: Stryker found no mutant in them (types or comments only)")
+            return 0
+        say(f"mutation: Stryker found nothing to mutate in {service}; a pass on nothing is not a pass")
+        return 1
+    failing = [(name, one) for name, one in mutants if one.get("status") not in PASS + COUNTED]
+    for name, one in failing:
+        say(failure_line(service, name, one, report))
+    say(last_line(Counter(str(one.get("status")) for _, one in mutants), bool(failing), report))
+    return 1 if failing else 0
+
+
+def run(service: str, given: list[str]) -> int:
+    """Stryker over the given files (or the config's whole list), judged by the report it wrote."""
+    directory = Path(service)
+    clean(directory)
+    command = ["npm", "exec", "--no", "--", "stryker", "run"]
+    if given:
+        say(f"mutation: scoped to {len(given)} given file(s): {', '.join(given)}")
+        command += ["--mutate", ",".join(given)]
+    code = subprocess.run(command, cwd=directory).returncode
+    say(f"mutation: Stryker exited {code} (its exit status is printed, never the verdict; the report is)")
+    report = f"{service}/{REPORT}"
+    files = read_report(directory / REPORT)
+    shutil.rmtree(directory / SANDBOX, ignore_errors=True)
+    if files is None:
+        say(f"mutation: Stryker exited {code} and left no readable report at {report}; that is not a pass")
+        return 1
+    return verdict(service, given, report, files)
 
 
 def main(arguments: list[str]) -> int:
