@@ -399,9 +399,22 @@ def judged(files: dict[str, dict], given: list[str]) -> list[tuple[str, dict]]:
 # What starts a statement after a newline, so a file written without semicolons is still cut where it ends.
 STATEMENT = re.compile(r"\s*(?:export|import|const|let|var|function|class|interface|type|declare|enum|async|abstract|"
                        r"namespace)\s")
-# The statements that plant nothing: type declarations and imports (by how they begin), and re-exports (whole).
+# Where TypeScript's automatic semicolon insertion ends a statement at a newline: the text before ends an operand (a name,
+# a number, a string, a closing bracket) and the next token begins one (a name, a number, a string) and is not a word that
+# continues an expression. Anything else continues the statement, and a statement read too long is classified as code.
+OPERAND_END = re.compile(r"[\w$)\]}'\"`>]")
+OPERAND_START = re.compile(r"[\w$'\"]")
+CONTINUES = re.compile(r"(?:as|satisfies|in|of|instanceof|extends|implements|is|keyof)\b")
+# The statements that plant nothing: type declarations and imports (by how they begin), re-exports (whole), ambient
+# declarations (`declare` of a value, a function, a class, a namespace; none holds an initialiser, which is checked) and an
+# enum whose members have no initialiser. `interface` and `declare` blocks must also end where their braces do (T037).
 DECLARED = re.compile(r"(?:export\s+)?(?:declare\s+)?(?:interface|type)\s+[A-Za-z_$]|import\s+(?:type\s+)?[\w{*\"']|"
                       r"export\s+type\b")
+INTERFACE = re.compile(r"(?:export\s+)?(?:declare\s+)?interface\b")
+AMBIENT = re.compile(r"(?:export\s+)?declare\s+(?:const|let|var|function|(?:abstract\s+)?class|namespace|module|global|"
+                     r"(?:const\s+)?enum)\b")
+ENUM = re.compile(r"(?:export\s+)?(?:declare\s+)?(?:const\s+)?enum\s+[A-Za-z_$][\w$]*\s*\{\s*"
+                  r"(?:[A-Za-z_$][\w$]*\s*(?:,\s*[A-Za-z_$][\w$]*\s*)*,?\s*)?\}")
 REEXPORT = re.compile(r"export\s*(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*(?:from\s+['\"][^'\"]*['\"])?")
 # A declaration whose initialiser no Stryker 10.0.0 mutator reads (research R12): a numeric literal (decimal, separators,
 # exponent, hex, octal, binary, bigint), `null`, `undefined` or a plain name or member path, with an optional plain type
@@ -413,9 +426,30 @@ INERT = re.compile(rf"(?:export\s+)?(?:const|let|var)\s+[A-Za-z_$][\w$]*(?:\s*:\
                    rf"(?:{NUMBER}|null|undefined|{NAME})(?:\s+as\s+const)?")
 
 
+def code_after(text: str, i: int) -> str:
+    """The text from the first character at or after `i` that is neither blank nor in a comment."""
+    while i < len(text):
+        if text[i].isspace():
+            i += 1
+        elif text.startswith("//", i):
+            i = text.find("\n", i) if "\n" in text[i:] else len(text)
+        elif text.startswith("/*", i):
+            i = text.find("*/", i + 2) + 2 if "*/" in text[i + 2:] else len(text)
+        else:
+            break
+    return text[i:i + 12]
+
+
+def ends_here(before: str, after: str) -> bool:
+    """Whether a newline between `before` and `after` ends a statement (automatic semicolon insertion)."""
+    return bool(before) and OPERAND_END.match(before[-1]) is not None and OPERAND_START.match(after) is not None \
+        and CONTINUES.match(after) is None
+
+
 def statements(text: str) -> list[str]:
     """The top-level statements of a TypeScript file, comments dropped and strings kept whole: cut at a `;` outside any
-    bracket, or at a newline outside any bracket that a statement-starting keyword follows."""
+    bracket, or at a newline outside any bracket where the next token cannot continue the statement or a
+    statement-starting keyword follows."""
     found, buf, depth, quote, i = [], [], 0, None, 0
     while i < len(text):
         char = text[i]
@@ -433,13 +467,45 @@ def statements(text: str) -> list[str]:
             continue
         depth += (char in "{([") - (char in "})]")
         quote = char if char in "'\"`" else None
-        if (char == ";" and depth <= 0) or (char == "\n" and depth <= 0 and STATEMENT.match(text, i + 1)):
+        if (char == ";" and depth <= 0) or (char == "\n" and depth <= 0 and (
+                STATEMENT.match(text, i + 1) or ends_here("".join(buf).rstrip(), code_after(text, i + 1)))):
             found.append("".join(buf).strip())
             buf = []
         else:
             buf.append(char)
         i += 1
     return [*found, "".join(buf).strip()]
+
+
+def closed(statement: str) -> bool:
+    """Whether the statement ends where its first brace group does (or has none): nothing follows its closing brace."""
+    depth, quote, seen, i = 0, None, False, 0
+    while i < len(statement):
+        char = statement[i]
+        if quote:
+            i += 2 if char == "\\" else 1
+            quote = None if char == quote else quote
+            continue
+        if char in "'\"`":
+            quote = char
+        elif char in "{([":
+            depth, seen = depth + 1, seen or char == "{"
+        elif char in "})]":
+            depth -= 1
+            if depth == 0 and seen and statement[i + 1:].strip():
+                return False
+        i += 1
+    return True
+
+
+def inert(statement: str) -> bool:
+    """Whether the whole of one statement plants nothing: a declaration that is entirely so, never one that merely begins
+    like it."""
+    if REEXPORT.fullmatch(statement) or INERT.fullmatch(statement) or ENUM.fullmatch(statement):
+        return True
+    if DECLARED.match(statement):
+        return INTERFACE.match(statement) is None or closed(statement)
+    return AMBIENT.match(statement) is not None and "=" not in statement.replace("=>", "") and closed(statement)
 
 
 def holds_code(path: Path) -> bool:
@@ -449,9 +515,7 @@ def holds_code(path: Path) -> bool:
         text = path.read_text(encoding="utf-8")
     except (OSError, ValueError):
         return True
-    return any(statement and not (DECLARED.match(statement) or REEXPORT.fullmatch(statement)
-                                  or INERT.fullmatch(statement))
-               for statement in statements(text))
+    return any(statement and not inert(statement) for statement in statements(text))
 
 
 def unexcused(service: str, name: str, entry: dict, one: dict) -> str | None:
