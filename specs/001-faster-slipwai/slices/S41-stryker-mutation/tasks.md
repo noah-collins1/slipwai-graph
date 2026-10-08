@@ -129,7 +129,7 @@ Each task starts from the green committed suite.
 
 ### T001 — Pin: the baseline before anything moves (host task)
 
-- [ ] **Host task; no story; no commit.** Run the pin set once and record that it is green:
+- [x] **Host task; no story; no commit.** Run the pin set once and record that it is green: *(Done: 134 tests OK, 1 skipped; `make starters` kept at `/tmp/cruise29/s41-scratch/starters-before`.)*
   `make test TESTS="test_mutation_targets test_mutation_placeholders test_mutation_words test_mutation_words_script test_mutation_dry_run test_mutation test_monorepos test_scoped_targets test_verify_stamp_pinned test_verify_scoped_rules test_scoped_adopted test_scoped_migrate test_changelog test_backend_obligations"`.
   Confirm `cat VERSION` reads `1.6.0.dev0`, that `delivery/docs/adr/0009-stryker-for-typescript-mutation.md` is `Proposed`,
   and that `npm` and network are reachable (T002 regenerates locks). Then `make starters` and keep `build/` aside
@@ -139,7 +139,7 @@ Each task starts from the green committed suite.
 
 ### T002 — [US2] What a TypeScript service is given: the dependencies, the config, the wrapper's path, the ignore lines, the recipe line, the twelve locks (R1 · AC-S41-2 part, AC-S41-11, AC-S41-13 part)
 
-- [ ] **Rule 1.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first line
+- [x] **Rule 1.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first line *(Done: 0562a84 (+ c6612c0, 8f66e69: the ignore lines).)*
   `MINOR`; a **Catch-up.** paragraph that stands alone and says only what is true at this commit: a project made before
   gains the two devDependencies, `stryker.config.json`, `scripts/stryker-mutation.py` and the ignore lines after `slipwai
   migrate`; T012 completes it). The wrapper lands here as a **skeleton**: it parses `<service> [--file <path> …]`, and
@@ -209,7 +209,7 @@ then `python3 scripts/regenerate-locks.py --check`, then `make lint typecheck ch
 
 ### T003 — [US2] The list the wrapper reads: `targets`, `matched`, `versions`, and what a config it cannot read says (R3, R7 · AC-S41-3 first clause, AC-S41-6 half)
 
-- [ ] **Rule 2.** Needs T002 (the skeleton). In `stryker-mutation.py`: `targets(service)` reads the service's
+- [x] **Rule 2.** Needs T002 (the skeleton). In `stryker-mutation.py`: `targets(service)` reads the service's *(Done: a4a72d1.)*
   `stryker.config.json` and returns `mutate`; `matched(patterns, file)` applies the patterns in order (positive marks, `!`
   unmarks) with data-model's segment rules (R3: a literal segment equal; `*` within a segment, never matching a leading
   `.` unless the pattern segment starts with one; `**` a whole segment of zero or more segments none starting with `.`; a
@@ -254,7 +254,7 @@ lines of `main`.
 
 ### T004 — [US2] The verdict is the report's, by D212's rule, and every run starts clean (R4 · AC-S41-4)
 
-- [ ] **Rule 3.** Needs T003. The wrapper deletes `<service>/reports/mutation` and `<service>/.stryker-tmp` before the
+- [x] **Rule 3.** Needs T003. The wrapper deletes `<service>/reports/mutation` and `<service>/.stryker-tmp` before the *(Done: 8d94248.)*
   run, starts Stryker as `npm exec --no -- stryker run` from the service directory (scoped: `--mutate <files>`, never
   incremental), prints Stryker's exit code and never uses it as the verdict, reads
   `reports/mutation/mutation.json`, and decides: `Killed`/`Ignored` pass; `NoCoverage` is counted on the last line; every
@@ -299,7 +299,7 @@ fails closed by construction rather than by a branch.
 
 ### T005 — [US2] Install from the committed lock, never fetch; a missing tool is a setup line (R6 · AC-S41-5)
 
-- [ ] **Rule 4.** Needs T004 (the run it guards). Install marker (`node_modules/.package-lock.json` at the project root)
+- [x] **Rule 4.** Needs T004 (the run it guards). Install marker (`node_modules/.package-lock.json` at the project root) *(Done: 131eee0.)*
   missing or older than the service's or the root's `package.json`/`package-lock.json` → `npm ci` at the project root,
   then the marker touched; one line `installing from the committed lock (npm ci)`. No `npm` on `PATH` → exit 2, one line.
   `@stryker-mutator/core` or `@stryker-mutator/vitest-runner` absent from the installed tree (looked for from the service
@@ -334,7 +334,7 @@ share in words (R6); its docstring says so, so a change to one reads the other.
 
 ### T006 — [US2] The wrapper refuses a path `--mutate` would misread (D215 d · AC-S41-7, wrapper half)
 
-- [ ] **Rule 7, wrapper half.** Needs T005. `refused(file)` returns data-model's words for a path within the service
+- [x] **Rule 7, wrapper half.** Needs T005. `refused(file)` returns data-model's words for a path within the service *(Done: 16a5a3e.)*
   containing `,` `*` `?` `{` `[` `!` or ending `:<digits>`; `main` refuses the whole invocation, exit 2, one line, **before
   `npm` is looked for, the config is read for matching, or anything is deleted** — never a narrower or wider scope.
 
@@ -362,7 +362,7 @@ or nothing, so the order the rules fix is read in one place.
 
 ### T007 — [P] [US2] TypeScript is wired in the scope script: a changed file mutates alone, an unmatched one starts nothing, the other service starts no Stryker (R5 · AC-S41-1, -2, -3, -8, D138 items 1 and 5, D213 item 4)
 
-- [ ] **Rule 5.** Needs T003 (`targets`/`matched` loaded by path); does **not** need T004–T006 (every example runs behind
+- [x] **Rule 5.** Needs T003 (`targets`/`matched` loaded by path); does **not** need T004–T006 (every example runs behind *(Done: b5045e1.)*
   `FakeRunner`; the real wrapper is T013's), so it may run beside them. In `mutation-scope.py`, tables and dispatch only:
   `WIRED` and `PRODUCTION_ROOT` gain TypeScript (`src/`), `PLACEHOLDERS` loses it; `Tools.plan/run/sweep` hand TypeScript
   to the wrapper as Go's are handed to `go-mutation.py` (`python3 scripts/stryker-mutation.py <path> --file <within>` per
@@ -416,7 +416,7 @@ then `make lint typecheck check-structure`; the new module once under `CI=true`.
 
 ### T008 — [P] [US2] What sweeps a TypeScript service: its config, the wrapper, the Stryker versions, an ignored file, a list it cannot read (R7 · AC-S41-6, D138 item 3, D215 b)
 
-- [ ] **Rule 6.** Needs T007 (same file, serial with it) and T003 (`versions`). `sweep_causes` gains data-model's table:
+- [x] **Rule 6.** Needs T007 (same file, serial with it) and T003 (`versions`). `sweep_causes` gains data-model's table: *(Done: d093aa9.)*
   `<service>/stryker.config.json` changed → that service; `scripts/stryker-mutation.py` changed → every TypeScript
   service; the parsed `@stryker-mutator/*` versions differ between base and working tree in the service's `package.json`
   → that service, or in the root `package-lock.json` → every TypeScript service; a side that cannot be parsed counts as
@@ -455,7 +455,7 @@ then `make lint typecheck check-structure`; the new module once under `CI=true`.
 
 ### T009 — [US2] A path `--mutate` would misread refuses its service in one line, no tool started (D215 d · AC-S41-7, scope half)
 
-- [ ] **Rule 7, scope half.** Needs T008 (same file) and T006 (`refused` in the wrapper, loaded by path). `Plan.refusal`:
+- [x] **Rule 7, scope half.** Needs T008 (same file) and T006 (`refused` in the wrapper, loaded by path). `Plan.refusal`: *(Done: 3131ea1.)*
   a matched changed file whose path within the service contains `,` `*` `?` `{` `[` `!` or ends `:<digits>` refuses its
   service: `refuse <service> — <the refusal words>`, status 2, counted `refused`, no tool started for it, never a sweep,
   never a narrower or wider scope; the other services still run and the run fails after all have run (S08's failure rule);
@@ -485,7 +485,7 @@ then `make lint typecheck check-structure`; under `CI=true` once. Commit by path
 
 ### T010 — [US2] The stamp, the scoped gate and the placeholders hold after a TypeScript run (R5, R8 · AC-S41-9, AC-S41-10)
 
-- [ ] **Rule 8.** Needs T009 and T002 (the ignore lines). `assets/toolkit/scripts/verify-stamp.py` gains two `EXEMPT` rows —
+- [x] **Rule 8.** Needs T009 and T002 (the ignore lines). `assets/toolkit/scripts/verify-stamp.py` gains two `EXEMPT` rows — *(Done: 79adf96.)*
   `.stryker-tmp/` and `reports/mutation/` — so a sandbox left behind and a report are neither read as the stamp's input
   nor as a reach. The remaining examples are holds over behaviour T002 and T007 produced; they sit here, after both
   exist, because their first RED is the stamp itself (a rule cut smaller would have an empty GREEN).
@@ -520,7 +520,7 @@ repository's own stamp — say so in the report). Commit by path; level line as 
 
 ### T011 — [P] [US2] The words: the Makefile note, the mutation command, `UNWIRED`, the skill, the obligations page, the gate-configuration list (R9 · AC-S41-13)
 
-- [ ] **Rule 9.** Needs T002 (`stryker.py` exists). Disjoint from the wrapper and scope-script tasks, so it may run beside
+- [x] **Rule 9.** Needs T002 (`stryker.py` exists). Disjoint from the wrapper and scope-script tasks, so it may run beside *(Done: 5a92cba.)*
   them. The words describe what T003–T010 build, as the plan and data-model fix them; this task reads none of their code.
   A TypeScript note above the target (what runs, the report path `apps/<service>/reports/mutation/mutation.json`, that
   the verdict is decided in `scripts/stryker-mutation.py`, the escape for an equivalent mutant — a `// Stryker disable
@@ -570,7 +570,7 @@ only — the note sits above `# Scoped gate`).
 
 ### T012 — [US2] A project made before is brought forward, and the fragment says what that asks of it (R10 · AC-S41-12)
 
-- [ ] **Rule 10.** Needs T010 and T011 (everything migrate must bring now exists). The fragment's **Catch-up.**
+- [x] **Rule 10.** Needs T010 and T011 (everything migrate must bring now exists). The fragment's **Catch-up.** *(Done: 90021bc.)*
   paragraph is completed: it stands alone and says how to settle a `package-lock.json` conflict (take the factory's side,
   then `npm install`), what to do where Stryker was wired by hand (remove the hand-wired script and config, keep the
   factory's, or keep yours and accept that the scope script sweeps on its change), that `make mutation-full` now runs
@@ -608,7 +608,7 @@ guaranteed RED.
 
 ### T013 — [US2] One real Stryker run on a generated starter (R11 · AC-S41-1, AC-S41-2, AC-S41-4 end to end)
 
-- [ ] **Rule 11.** Needs T012. This is the **heavy** test: it is the one place the fake `npm` of T004–T006 and the
+- [x] **Rule 11.** Needs T012. This is the **heavy** test: it is the one place the fake `npm` of T004–T006 and the *(Done: ffdfb86.)*
   `FakeRunner` of T007–T009 are checked against the real tool, Vitest 4.1.11 and TypeScript 7.0.2 (R1). Its file is named
   `tests/test_mutation_scope_real_typescript.py` and its module docstring says **heavy — S43's list**, as
   `test_mutation_scope_real_go.py` carries its gate. It is gated by `backends_under_test()` naming `typescript` and `npm`
@@ -641,6 +641,28 @@ skipped, not failed. Commit by path; level line as above when a `src/` or `asset
 **Files:** `tests/test_mutation_scope_real_typescript.py` (new), and, only if the real run proves a defect,
 `assets/languages/typescript/scripts/stryker-mutation.py`, `src/slipwai/project/stryker.py`,
 `assets/toolkit/scripts/mutation-scope.py` (each named in the report if touched).
+
+### Implementation record
+
+`drive-implement · model: sonnet · delegated, fresh context · story/rule`, one delegate, no fan-out (`split=1`). What
+differs from the text above, and why:
+- **Locks** were regenerated with npm 11.21 (installed in scratch, since removed): the machine's npm 9.2.0 cannot resolve
+  Vitest 4's peer set, so `scripts/regenerate-locks.py --check` cannot run here at all (`edgesOut` error, any commit).
+  The twelve locks carry the registry's transitive drift since they were last written (default backend lock: 164
+  packages added, 25 moved — Vite 8.3.0 → 8.3.3, rolldown 1.2.8 → 1.2.13, …). Evidence of AC-S41-11 instead: `npm ci`
+  with npm 9.2 succeeded in all ten generatable combinations (backend lock ×4; react-vite ×6 — the two `users-keycloak`
+  locks without Fastify cannot be generated, `--users keycloak` needs `--http fastify`), and `npm audit
+  --audit-level=critical` exits 0 in two of them. The `frontend-only*` and `uv*` locks were left untouched (not S41's).
+- **Ignore lines:** `apps/*/reports/mutation/` (a pattern with an inner slash is anchored at the root), and the two
+  lines now lead the TypeScript block (8f66e69) so `migrate` merges them beside `add-service`'s lines.
+- **Test modules** beyond plan.md: `tests/test_stryker_after_run.py` (T010) and `tests/test_stryker_migrate.py` (T012),
+  split off `test_stryker_generated.py` for the 350-line budget.
+- **Host fixes:** 8f66e69 — S06's `test_the_same_for_two_python_services` migrated a TypeScript project with a Python
+  service added, whose `mutation` recipe now conflicts under `migrate` (S41 rewrote the line `add-service` appends
+  beside; the fragment's Catch-up says how to settle it, `test_stryker_migrate` e4 holds it); the example now builds the
+  two Python services its name says. c524da2 — the wrapper's sweep refused a `mutate` list its own reader cannot
+  evaluate, which is exactly when the scope script sweeps (D213 item 3); the sweep now starts Stryker over any list and
+  refuses only a missing config.
 
 ---
 
