@@ -231,6 +231,25 @@ class SourceRootTest(PythonCase):
         self.assertEqual((recording.swept, recording.scoped), (["apps/service"], []), lines)
 
 
+class CauseOnceTest(PythonCase):
+    """B4: the sweep's first line names a cause once, however many Python services it sweeps."""
+
+    def test_b4_one_changed_wrapper_is_named_once_for_two_services(self) -> None:
+        self.write("scripts/mutmut-mutation.py", WRAPPER.read_text(encoding="utf-8") + "\n# changed\n")
+        status, lines, recording = self.run_planned(*TWO)
+        self.assertEqual(status, 0, lines)
+        self.assertEqual(sorted(recording.swept), ["apps/second", "apps/service"], lines)
+        self.assertEqual(lines[0].count("scripts/mutmut-mutation.py"), 1, lines[0])
+
+    def test_b4_hold_each_service_still_names_its_own_cause(self) -> None:
+        self.write("apps/service/pyproject.toml", '[tool.mutmut]\nsource_paths = ["lib"]\n')
+        self.write("apps/second/pyproject.toml", '[tool.mutmut]\nsource_paths = ["app"]\n')
+        _, lines, _ = self.run_planned(*TWO)
+        self.assertIn("apps/service/pyproject.toml", lines[0])
+        self.assertIn("apps/second/pyproject.toml", lines[0])
+        self.assertEqual(lines[0].count("apps/service/pyproject.toml"), 1, lines[0])
+
+
 def words(file: str, char: str) -> str:
     return (f"`apps/service/{file}` holds `{char}`, which mutmut reads as a pattern over mutant names; "
             "rename it, or run `make mutation-full`")

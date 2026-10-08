@@ -66,4 +66,5 @@ class SpellingTest(RecipeBase):
                 "mutation-full: ## Run\n\t@real\n\t@more\nafter:\n\t@c\n")
         self.assertEqual(module.rule_of(text, "mutation-full"), ["mutation-full: ## Run", "\t@real", "\t@more"])
         self.assertEqual(module.rule_of(text, "mutation"), [])
-        self.assertEqual(module.rule_of("a mutation-full : x\n\t@r\n", "mutation-full"), ["a mutation-full : x", "\t@r"])
+        several = module.rule_of("a mutation-full : x\n\t@r\n", "mutation-full")
+        self.assertEqual(several, ["a mutation-full : x", "\t@r"])

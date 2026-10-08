@@ -984,8 +984,8 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     missing_of = getattr(runner, "gone", lambda *_: None)  # a runner with no `gone` has no tool to start
     absent = [root for backend, root in services
               if (root in causes or root in unread) and missing_of(backend, root) is not None]  # B5: refused below, not swept
-    swept_paths = sorted(path for root, found in causes.items() if root not in absent for path in found)
-    reasons = [unread[root] for root in unread if root not in absent]
+    swept_paths = sorted(dict.fromkeys(path for root, found in causes.items() if root not in absent for path in found))
+    reasons = list(dict.fromkeys(unread[root] for root in unread if root not in absent))  # B4: a cause once
     named = sorted(f"{root}/{inside}" for root, plan in plans.items() if root not in unread
                    for inside in (production[root] if plan.refusal else plan.keep))
     outside = any(plan.left for plan in plans.values())
