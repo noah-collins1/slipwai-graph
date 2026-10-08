@@ -41,7 +41,9 @@ class ServicesCase(Case):
         self.b = self.make_service("apps/b")
 
     def sweep(self, *services: str, answers: dict[str, dict[str, Any]]) -> subprocess.CompletedProcess[str]:
-        return self.run_wrapper(*services, meta=answers, results=answers)
+        generated = {name: {file: {key: None for key in keys} for file, keys in files.items()}
+                     for name, files in answers.items()}  # nothing has a code until mutmut has run (A2)
+        return self.run_wrapper(*services, meta=generated, results=answers)
 
     def mutmut_runs(self) -> list[str]:
         return [Path(call["cwd"]).name for call in self.started_mutmut()]
@@ -64,24 +66,50 @@ class SeveralServicesTest(ServicesCase):
                                    "failed — report apps/a/mutants/",
                                    "mutation: 1 mutants: 1 killed, 0 no tests (reported, never failed); passed "
                                    "— report apps/b/mutants/"])
-        self.assertEqual(lines[-1], "mutation: 2 swept; failed: apps/a")
+        self.assertEqual(lines[-1], "mutation: 2 swept, 0 refused; failed: apps/a")
 
     def test_e2_both_green_is_the_passed_summary_and_exit_zero(self) -> None:
         done = self.sweep("apps/a", "apps/b", answers={"a": KILLED, "b": KILLED})
-        self.assertEqual((done.returncode, lines_of(done)[-1]), (0, "mutation: 2 swept; passed"))
+        self.assertEqual((done.returncode, lines_of(done)[-1]), (0, "mutation: 2 swept, 0 refused; passed"))
 
     def test_e3_both_failing_are_both_named_in_service_order(self) -> None:
         done = self.sweep("apps/b", "apps/a", answers={"a": SURVIVOR, "b": SURVIVOR})
-        self.assertEqual((done.returncode, lines_of(done)[-1]), (1, "mutation: 2 swept; failed: apps/b, apps/a"))
+        self.assertEqual((done.returncode, lines_of(done)[-1]),
+                         (1, "mutation: 2 swept, 0 refused; failed: apps/b, apps/a"))
 
     def test_e4_a_setup_exit_two_after_a_verdict_one_is_one_and_the_reverse_is_two(self) -> None:
         (self.b / "pyproject.toml").write_text("", encoding="utf-8")
         first = self.sweep("apps/a", "apps/b", answers={"a": SURVIVOR})
-        self.assertEqual((first.returncode, lines_of(first)[-1]), (1, "mutation: 2 swept; failed: apps/a, apps/b"))
+        self.assertEqual((first.returncode, lines_of(first)[-1]),
+                         (1, "mutation: 1 swept, 1 refused; failed: apps/a, apps/b"))
         self.assertIn("mutation: apps/b/pyproject.toml: no [tool.mutmut] table", lines_of(first))
         reverse = self.sweep("apps/b", "apps/a", answers={"a": SURVIVOR})
-        self.assertEqual((reverse.returncode, lines_of(reverse)[-1]), (2, "mutation: 2 swept; failed: apps/b, apps/a"))
+        self.assertEqual((reverse.returncode, lines_of(reverse)[-1]),
+                         (2, "mutation: 1 swept, 1 refused; failed: apps/b, apps/a"))
         self.assertEqual(self.mutmut_runs(), ["a", "a"], "a failed service does not stop the next")
+
+    def test_d228_a_service_that_could_not_start_is_refused_not_swept_in_each_pinned_order(self) -> None:
+        self.make_service("apps/c")
+        (self.b / "pyproject.toml").write_text("", encoding="utf-8")
+        answers = {"a": SURVIVOR, "c": KILLED}
+        for services, ended, status in (
+                (("apps/a", "apps/b", "apps/c"), "2 swept, 1 refused; failed: apps/a, apps/b", 1),
+                (("apps/b", "apps/a", "apps/c"), "2 swept, 1 refused; failed: apps/b, apps/a", 2),
+                (("apps/c", "apps/b"), "1 swept, 1 refused; failed: apps/b", 2),
+                (("apps/c", "apps/a"), "2 swept, 0 refused; failed: apps/a", 1)):
+            with self.subTest(services=services):
+                done = self.sweep(*services, answers=answers)
+                self.assertEqual((done.returncode, lines_of(done)[-1]), (status, f"mutation: {ended}"))
+
+    def test_d228_a_missing_directory_is_refused_and_both_green_services_are_passed(self) -> None:
+        done = self.sweep("apps/a", "apps/missing", "apps/b", answers={"a": KILLED, "b": KILLED})
+        self.assertEqual((done.returncode, lines_of(done)[-1]),
+                         (2, "mutation: 2 swept, 1 refused; failed: apps/missing"))
+
+    def test_d228_one_service_named_twice_is_one_service_and_prints_no_summary(self) -> None:
+        done = self.sweep("apps/a", "apps/a", answers={"a": KILLED})
+        self.assertEqual(done.returncode, 0)
+        self.assertFalse([line for line in lines_of(done) if "swept" in line])
 
     def test_e5_a_service_that_cannot_start_does_not_hold_the_lock_of_the_next(self) -> None:
         (self.b / "pyproject.toml").write_text("", encoding="utf-8")

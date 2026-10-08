@@ -35,8 +35,25 @@ USAGE = "mutation: usage: mutmut-mutation.py <service> [<service> ...] [--file <
 # The one mutmut this script was written against: it calls functions mutmut does not document as public (R3), so another
 # version is refused, and a change of the pin sweeps (T008).
 PINNED = "3.8.0"
-VERSION_CODE = "import importlib.metadata as m; print(m.version('mutmut'))"
-# Held by a run for its whole length, beside the environment it runs in; the kernel releases it when the run dies.
+# The probe says the version of mutmut on its first line, then one `shadowed <package> <directory>` line for each of mutmut
+# and libcst that Python would import from anywhere but the directory holding the distribution that was locked, such as a
+# copy on `PYTHONPATH`, which comes ahead of the environment's own and which `importlib.metadata` does not see (A4).
+VERSION_CODE = """\
+import importlib.metadata as m, importlib.util as u, pathlib as p
+print(m.version('mutmut'))
+for name in ('mutmut', 'libcst'):
+    try:
+        home = p.Path(str(m.distribution(name).locate_file(''))).resolve()
+        found = u.find_spec(name)
+        origin = p.Path(found.origin).resolve() if found and found.origin else None
+    except (m.PackageNotFoundError, ValueError, OSError):
+        continue
+    if origin is not None and home not in origin.parents:
+        print('shadowed', name, origin.parent)
+"""
+# Held by a run for its whole length, beside the environment it runs in; the kernel releases it when the last process
+# holding the descriptor dies, and `mutmut` and the generation step are handed it, so a killed wrapper's `mutmut run` that
+# lives on still holds the service (A1).
 LOCK = ".venv/mutmut-run.lock"
 # What `mutmut run` does before it collects stats, and nothing after (R3): copy `src/` and the files its tests need into
 # `mutants/`, then plant every mutant and write `mutants/<file>.meta` for each file. There is no generate-only command,
@@ -83,6 +100,10 @@ EXITED = "(its exit status and the output above are mutmut's, never the verdict;
 # What `fnmatch` reads as syntax: the characters that make a path a pattern over mutant names, not a name.
 OPENERS = "*?["
 # The packages whose version decides which mutants exist: mutmut, and libcst with everything libcst resolves to (D222).
+# What the test selection is held to (D227): the generated values, exactly, and no `tests_dir`, which mutmut appends to the
+# selection. Anything else narrows what the tests reach, and a mutant no test reaches is counted and passes (D212).
+HELD: dict[str, Any] = {"pytest_add_cli_args_test_selection": ["tests", "--ignore=tests/integration"],
+                        "pytest_add_cli_args": ["-p", "no:xdist"]}
 ROOT_PACKAGE = "mutmut"
 PARSER_PACKAGE = "libcst"
 
@@ -174,16 +195,26 @@ def targets(service: str | Path) -> dict[str, Any]:
     return config
 
 
-def matched(config: dict[str, Any], file: str) -> bool:
-    """Whether mutmut 3.8.0 would mutate this file (a path within the service): a `.py` under `source_paths` that
-    `should_mutate` takes, `fnmatch` applied to the path exactly as its `configuration.py` applies it."""
+def exclusion(config: dict[str, Any], file: str) -> str | None:
+    """Why mutmut 3.8.0 would not mutate this `.py` file (a path within the service), in the words a line names it by:
+    `should_mutate`'s three ways of saying no, `fnmatch` applied to the path exactly as its `configuration.py` applies
+    it, in its order. None where it would mutate the file, and for a path that is no `.py` file."""
     from fnmatch import fnmatch
 
+    if not file.endswith(".py"):
+        return None
     roots = [source_root(root) for root in config["source_paths"]]
-    if not file.endswith(".py") or not any(root and file.startswith(root + "/") for root in roots):
-        return False
-    included = not config["only_mutate"] or any(fnmatch(file, pattern) for pattern in config["only_mutate"])
-    return included and not any(fnmatch(file, pattern) for pattern in config["do_not_mutate"])
+    if not any(root and file.startswith(root + "/") for root in roots):
+        return f"source_paths (not under {', '.join(str(root) for root in roots)})"
+    if config["only_mutate"] and not any(fnmatch(file, pattern) for pattern in config["only_mutate"]):
+        return "only_mutate (no pattern matches)"
+    return next((f'do_not_mutate "{pattern}"' for pattern in config["do_not_mutate"] if fnmatch(file, pattern)), None)
+
+
+def matched(config: dict[str, Any], file: str) -> bool:
+    """Whether mutmut 3.8.0 would mutate this file (a path within the service): a `.py` under `source_paths` that
+    `should_mutate` takes."""
+    return file.endswith(".py") and exclusion(config, file) is None
 
 
 def refused(service: str, file: str) -> str | None:
@@ -223,6 +254,16 @@ def closure(packages: list[dict[str, Any]], root: str) -> set[str]:
     return found
 
 
+def lock_entry(package: dict[str, Any]) -> str:
+    """What a lock says of one package: its version, and where it comes from and the hashes of what is installed where
+    the lock says them, so that a rebuild of the same version or a changed source is a move too (B3)."""
+    files = [package.get("sdist"), *package.get("wheels", [])]
+    hashes = sorted(str(item["hash"]) for item in files if isinstance(item, dict) and "hash" in item)
+    held = {"source": package.get("source"), "hashes": hashes}
+    version = package["version"]
+    return f"{version} {json.dumps(held, sort_keys=True)}" if held["source"] or hashes else version
+
+
 def lock_versions(text: str) -> dict[str, list[str]]:
     packages = read_toml(text).get("package")
     if not isinstance(packages, list):
@@ -231,7 +272,7 @@ def lock_versions(text: str) -> dict[str, list[str]]:
     found: dict[str, list[str]] = {}
     for package in packages:
         if package["name"] in names:
-            found.setdefault(package["name"], []).append(package["version"])
+            found.setdefault(package["name"], []).append(lock_entry(package))
     return found
 
 
@@ -257,6 +298,7 @@ class Job:
         self.config: dict[str, Any] = {}
         self.judged: list[str] = []  # the files whose `.meta` is the verdict: the given ones, or every one in a sweep
         self.names: list[str] = []  # the mutant names a scoped run hands mutmut: every key of the given files
+        self.excluded = 0  # the `.py` files under `src/` that `[tool.mutmut]` leaves out, said in a sweep's last line
 
 
 def note(line: str) -> None:
@@ -270,7 +312,22 @@ def say(line: str) -> int:
     return 2
 
 
+def within(service: str, file: str) -> str | None:
+    """A `--file` as a path within the service: as given where it is relative and stays inside, relative to the service
+    where it is absolute and inside it, None where it leaves the service (`..` first, or an absolute path elsewhere)."""
+    if os.path.isabs(file):
+        try:
+            return Path(file).resolve().relative_to(Path(service).resolve()).as_posix()
+        except ValueError:
+            return None
+    return None if file == ".." or file.startswith("../") else file
+
+
 def check_refusal(job: Job) -> int | None:
+    for file in job.files:
+        if within(job.service, file) is None:
+            return say(f"`{file}` is not a path within {job.service}; give it relative to the service, without `..`")
+    job.files = [within(job.service, file) or file for file in job.files]
     for file in job.files:
         refusal = refused(job.service, file)
         if refusal:
@@ -283,6 +340,10 @@ def check_table(job: Job) -> int | None:
         job.config = targets(job.service)
     except Unreadable as error:
         return say(f"{job.service}/pyproject.toml: {error}")
+    for entry in job.config.get("also_copy", []):
+        if isinstance(entry, str) and within(job.service, os.path.normpath(entry)) is None:
+            return say(f'{job.service}/pyproject.toml also_copy holds "{entry}", which leaves {job.service}/mutants/; '
+                       "keep it to paths within the service")
     return None
 
 
@@ -299,12 +360,12 @@ def check_uv(job: Job) -> int | None:
 
 
 def check_environment(job: Job) -> int | None:
-    """What mutmut and `uv` are handed: this environment without `PYTEST_ADDOPTS`, which would change how every mutant's
-    tests run (`[tool.mutmut] pytest_add_cli_args` is where a service adds pytest options)."""
-    job.env = {name: value for name, value in os.environ.items() if name != "PYTEST_ADDOPTS"}
-    if "PYTEST_ADDOPTS" in os.environ:
-        say("PYTEST_ADDOPTS is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut] "
-            "pytest_add_cli_args is where this service adds pytest options")
+    """What mutmut and `uv` are handed: this environment without any `PYTEST_*` variable, which would change how every
+    mutant's tests run (`[tool.mutmut] pytest_add_cli_args` is where a service adds pytest options), each named once."""
+    job.env = {name: value for name, value in os.environ.items() if not name.startswith("PYTEST_")}
+    for name in sorted(set(os.environ) - set(job.env)):
+        note(f"{name} is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut] "
+             "pytest_add_cli_args is where this service adds pytest options")
     return None
 
 
@@ -368,8 +429,14 @@ def ensure_synced(job: Job) -> int | None:
 
 def check_mutmut_version(job: Job) -> int | None:
     done = uv(job, "run", "--no-sync", "--project", job.service, "python", "-c", VERSION_CODE)
-    found = done.stdout.strip() if done.returncode == 0 else ""
+    seen = done.stdout.strip().splitlines() if done.returncode == 0 else []
+    found = seen[0].strip() if seen else ""
     if found == PINNED:
+        for line in seen[1:]:
+            _, name, where = line.split(" ", 2) if line.startswith("shadowed ") else ("", "", "")
+            if name:
+                return say(f"{name} is imported from {where}, not from {job.service}'s environment; a package on "
+                           "PYTHONPATH ahead of the environment's is refused: remove it from PYTHONPATH")
         return None
     why = f" ({last_line(done)})" if done.returncode != 0 and last_line(done) else ""
     return say(f"mutmut {found or 'is not'} installed in {job.service}'s environment{why}; this wrapper runs mutmut "
@@ -412,8 +479,9 @@ def clean(job: Job) -> int | None:
 def in_service(job: Job, *arguments: str, capture: bool) -> subprocess.CompletedProcess[str]:
     """`uv run --no-sync` in the service's own environment, from its directory, where mutmut reads its configuration."""
     project = str(Path(job.service).resolve())
+    held = [job.lock.fileno()] if job.lock is not None else []
     return subprocess.run(["uv", "run", "--no-sync", "--project", project, *arguments], cwd=job.service, env=job.env,
-                          text=True, capture_output=capture)
+                          text=True, capture_output=capture, pass_fds=held)
 
 
 def generate(job: Job) -> int | None:
@@ -428,13 +496,25 @@ def generate(job: Job) -> int | None:
 def sweep(job: Job) -> int | None:
     """A sweep judges every file mutmut wrote a `.meta` for, and reads the silencing of every one of them first. With
     no mutant in any of them there is nothing to run, and a pass on nothing is not a pass."""
+    for file in sorted(path.relative_to(job.service).as_posix() for path in (Path(job.service) / "src").rglob("*.py")
+                       if "__pycache__" not in path.parts):
+        reason = exclusion(job.config, file)
+        if reason:
+            job.excluded += 1
+            note(f"not mutated {job.service}/{file} \u2014 excluded by [tool.mutmut] {reason}")
     root = Path(job.service) / "mutants"
-    job.judged = sorted(path.relative_to(root).as_posix()[: -len(".meta")] for path in root.rglob("*.meta"))
+    written = (path.relative_to(root).as_posix()[: -len(".meta")] for path in root.rglob("*.meta"))
+    job.judged = sorted(file for file in written if matched(job.config, file))
     failed = refuse_silenced(job)
     if not any(keys_of(job.service, file) for file in job.judged):
-        note(f"mutmut found nothing to mutate in {job.service}; a pass on nothing is not a pass")
+        note(f"mutmut found nothing to mutate in {job.service}; a pass on nothing is not a pass{excluded_tail(job)}")
         return 1
     return 1 if failed else None
+
+
+def excluded_tail(job: Job) -> str:
+    """What a sweep's last line adds when the table left files out."""
+    return f", {job.excluded} file(s) excluded by [tool.mutmut]" if job.excluded else ""
 
 
 def plan(job: Job) -> int | None:
@@ -445,9 +525,11 @@ def plan(job: Job) -> int | None:
         return sweep(job)
     keyed: dict[str, list[str]] = {}
     for file in job.files:
-        keys = keys_of(job.service, file)
+        keys = keys_of(job.service, file) if matched(job.config, file) else None
         if keys is None:
-            note(f"not mutated {job.service}/{file} \u2014 outside mutmut's configured targets")
+            reason = exclusion(job.config, file)
+            note(f"not mutated {job.service}/{file} \u2014 "
+                 + (f"excluded by [tool.mutmut] {reason}" if reason else "outside mutmut's configured targets"))
         else:
             keyed[file] = keys
     job.judged = list(keyed)
@@ -512,10 +594,26 @@ def silenced_by_file(service: str, file: str) -> list[str]:
             "only a bare \"# pragma: no mutate\" on the line excuses one" for number, word in found]
 
 
+def forged_by_file(service: str, file: str) -> list[str]:
+    """A mutant with an exit code before any test has run was not recorded by this run: `copy_src_dir` copies a `.meta`
+    file committed beside a source into `mutants/`, and mutmut keeps the codes whose hashes match (A2)."""
+    held = [key for key, code in (codes_of(service, file) or {}).items() if code is not None]
+    if not held:
+        return []
+    return [f"{service}/{file}: mutmut's generation left an exit code on {len(held)} mutant(s) before any test ran (a "
+            "committed .meta file copied into mutants/?), so the verdict cannot be trusted"]
+
+
 def silenced(job: Job) -> list[str]:
     """One line for each way a judged file or the table silences mutants without anyone looking at them: decided in
     `plan`, before any exit that finds nothing to run, so that the two cannot disagree about what silences."""
     found = []
+    for setting, held in (*HELD.items(), ("tests_dir", None)):
+        if (setting not in job.config) == (held is None) and (held is None or job.config[setting] == held):
+            continue
+        shown = "missing" if setting not in job.config else json.dumps(job.config[setting])
+        found.append(f"{job.service}/pyproject.toml {setting} is {shown}, not {'absent' if held is None else json.dumps(held)}"
+                     ", which narrows what the tests reach without anyone looking at it")
     if job.config.get("do_not_mutate_patterns"):
         found.append(f"{job.service}/pyproject.toml sets do_not_mutate_patterns, which silences every line a pattern "
                      "matches without anyone looking at its mutants; only a bare \"# pragma: no mutate\" on the "
@@ -527,6 +625,7 @@ def silenced(job: Job) -> list[str]:
         found.append(f"{job.service}/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches "
                      "through deeper calls into mutants no test reaches without anyone looking at them")
     for file in job.judged:
+        found.extend(forged_by_file(job.service, file))
         found.extend(silenced_by_file(job.service, file))
     return found
 
@@ -561,7 +660,8 @@ def judge(job: Job) -> int | None:
     parts = [f"{counts['killed']} killed", f"{counts['no tests']} no tests (reported, never failed)"]
     parts += [f"{counts[name]} {name}" for name in dict.fromkeys(order[2:] + sorted(set(counts) - set(order)))
               if counts[name]]
-    note(f"{total} mutants: {', '.join(parts)}; {'failed' if failed else 'passed'} \u2014 report {job.service}/mutants/")
+    note(f"{total} mutants: {', '.join(parts)}; {'failed' if failed else 'passed'} \u2014 report {job.service}/mutants/"
+         f"{excluded_tail(job)}")
     return 1 if failed else 0
 
 
@@ -592,12 +692,15 @@ def main(arguments: list[str]) -> int:
     if parsed is None:
         print(USAGE)
         return 2
-    services, files = parsed
+    services = list(dict.fromkeys(parsed[0]))
+    files = parsed[1]
     if len(services) == 1:
         return run_service(services[0], files)
-    statuses = {service: run_service(service, files) for service in dict.fromkeys(services)}
+    statuses = {service: run_service(service, files) for service in services}
+    refused_count = sum(status == 2 for status in statuses.values())
     failed = [service for service, status in statuses.items() if status]
-    note(f"{len(statuses)} swept; {'failed: ' + ', '.join(failed) if failed else 'passed'}")
+    note(f"{len(statuses) - refused_count} swept, {refused_count} refused; "
+         f"{'failed: ' + ', '.join(failed) if failed else 'passed'}")
     return next((status for status in statuses.values() if status), 0)
 
 

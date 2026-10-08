@@ -3,8 +3,8 @@ and the verdict it reads from the `.meta` files.
 
 The wrapper runs as a subprocess against a fake `uv` first on `PATH`, written here: it logs every call, answers the
 version `3.8.0`, refuses to generate over a `mutants/` left from an earlier run and writes the `.meta` files the example
-hands it (`FAKE_META`), then writes the results it hands it (`FAKE_RESULTS`) when `mutmut run` is called and exits as
-told. Nothing here starts mutmut: the one real run of the slice is T012's.
+hands it (`FAKE_META`), then the results it hands it (`FAKE_RESULTS`) when `mutmut run` is called, exiting as told.
+Nothing here starts mutmut: the one real run of the slice is T012's.
 """
 from __future__ import annotations
 
@@ -191,8 +191,8 @@ class NoMutantToRunTest(Case):
         done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", "--file", "scripts/x.py",
                                 meta={"src/pkg/a.py": {"pkg.x_f__mutmut_1": None}})
         lines = lines_of(done)
-        self.assertEqual(lines[0], "mutation: not mutated apps/service/scripts/x.py — outside mutmut's "
-                                   "configured targets")
+        self.assertEqual(lines[0], "mutation: not mutated apps/service/scripts/x.py — excluded by "
+                                   "[tool.mutmut] source_paths (not under src)")
         self.assertEqual(lines[1], "mutation: scoped to 1 given file(s): src/pkg/a.py — 1 mutant(s)")
         call = self.the_mutmut_call()
         self.assertEqual(call["argv"][-2:], ["--", "pkg.x_f__mutmut_1"])
@@ -284,11 +284,11 @@ class VerdictTest(Case):
                                                                     "apps/service; a pass on nothing is not a pass"))
 
     def test_e5_scoped_means_scoped_and_a_sweep_judges_every_file(self) -> None:
-        meta = {"src/pkg/a.py": {KEY: None}, "src/pkg/b.py": {"pkg.y_h__mutmut_1": 0}}
-        done = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", meta=meta, results={"src/pkg/a.py": {KEY: 1}})
-        self.assertEqual(done.returncode, 0)
-        done = self.run_wrapper("apps/service", meta=meta, results={"src/pkg/a.py": {KEY: 1}})
-        self.assertEqual(done.returncode, 1)
+        meta = {"src/pkg/a.py": {KEY: None}, "src/pkg/b.py": {"pkg.y_h__mutmut_1": None}}
+        results = {"src/pkg/a.py": {KEY: 1}, "src/pkg/b.py": {"pkg.y_h__mutmut_1": 0}}
+        scoped = self.run_wrapper("apps/service", "--file", "src/pkg/a.py", meta=meta, results=results)
+        done = self.run_wrapper("apps/service", meta=meta, results=results)
+        self.assertEqual((scoped.returncode, done.returncode), (0, 1))
         self.assertIn(f"mutation: survived apps/service pkg.y_h__mutmut_1 (mutmut show pkg.y_h__mutmut_1 in "
                       f"apps/service; {REPORT})", lines_of(done))
 

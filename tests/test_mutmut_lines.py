@@ -21,8 +21,8 @@ TEST_SELECTION = {"reads": ["assets/languages/python/scripts/mutmut-mutation.py"
                             "assets/toolkit/scripts/check-styles.py", "tests"]}
 TABLE = """\
 mutation: usage: mutmut-mutation.py <service> [<service> ...] [--file <path within the service> ...]
-mutation: <n> swept; passed
-mutation: <n> swept; failed: <service>, <service>
+mutation: <s> swept, <r> refused; passed
+mutation: <s> swept, <r> refused; failed: <service>, <service>
 mutation: mutmut needs os.fork, which this host does not have; run it under WSL
 mutation: uv is not on PATH; install it to run mutmut (see scripts/verify)
 mutation: <service>/uv.lock does not agree with <service>/pyproject.toml; run uv lock --project <service>, then this
@@ -31,10 +31,17 @@ mutation: uv sync --locked failed for <service> (exit <n>)[: <uv's last stderr l
 mutation: mutmut <found or is not> installed in <service>'s environment[ (<the probe's last stderr line>)]; this
     wrapper runs mutmut 3.8.0: add mutmut==3.8.0 to the dev group of <service>/pyproject.toml and run uv lock
     --project <service> (slipwai migrate brings the wrapper for a newer pin)
+mutation: <mutmut or libcst> is imported from <directory>, not from <service>'s environment; a package on PYTHONPATH
+    ahead of the environment's is refused: remove it from PYTHONPATH
+mutation: `<file>` is not a path within <service>; give it relative to the service, without `..`
+mutation: <service>/pyproject.toml also_copy holds "<entry>", which leaves <service>/mutants/; keep it to paths within
+    the service
 mutation: <service>/pyproject.toml: no [tool.mutmut] table
-mutation: PYTEST_ADDOPTS is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut]
+mutation: <PYTEST_* variable> is not passed to mutmut (it would change how every mutant's tests run); [tool.mutmut]
     pytest_add_cli_args is where this service adds pytest options
 mutation: not mutated <service>/<file> — outside mutmut's configured targets
+mutation: not mutated <service>/<file> — excluded by [tool.mutmut] source_paths (not under <roots>) | only_mutate (no
+    pattern matches) | do_not_mutate "<pattern>"
 mutation: nothing under <service> that was given is a file mutmut would mutate; no mutant to run
 mutation: no mutant to run — <files>: mutmut found no function to mutate in it | them
 mutation: scoped to <n> given file(s): <files> — <m> mutant(s)
@@ -42,6 +49,8 @@ mutation: mutmut exited <code> (its exit status and the output above are mutmut'
     are)
 mutation: <service>/<file>:<line> holds "# pragma: no mutate <block|start|end>", which silences mutants nobody looked
     at; only a bare "# pragma: no mutate" on the line excuses one
+mutation: <service>/pyproject.toml <setting> is <value found, or missing>, not <value held, or absent>, which narrows
+    what the tests reach without anyone looking at it
 mutation: <service>/pyproject.toml sets do_not_mutate_patterns, which silences every line a pattern matches without
     anyone looking at its mutants; only a bare "# pragma: no mutate" on the line excuses one
 mutation: <service>/pyproject.toml sets mutate_only_covered_lines, which leaves out the mutants of every line coverage
@@ -49,12 +58,15 @@ mutation: <service>/pyproject.toml sets mutate_only_covered_lines, which leaves 
 mutation: <service>/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches through deeper calls
     into mutants no test reaches without anyone looking at them
 mutation: <status> <service> <mutant name> (mutmut show <mutant name> in <service>; report <service>/mutants/)
-mutation: mutmut found nothing to mutate in <service>; a pass on nothing is not a pass
+mutation: mutmut found nothing to mutate in <service>; a pass on nothing is not a pass[, <n> file(s) excluded by
+    [tool.mutmut]]
 mutation: <n> mutants: <k> killed, <u> no tests (reported, never failed)[, <s> survived, …]; passed | failed — report
-    <service>/mutants/
+    <service>/mutants/[, <n> file(s) excluded by [tool.mutmut]]
 mutation: another mutmut run of <service> holds <service>/.venv/mutmut-run.lock; wait for it, then run this again
 mutation: mutmut could not generate mutants for <service> (exit <n>)[: <its last stderr line>]
 mutation: <service>/mutants/ could not be removed; delete it, then run this again
+mutation: <service>/<file>: mutmut's generation left an exit code on <n> mutant(s) before any test ran (a committed
+    .meta file copied into mutants/?), so the verdict cannot be trusted
 mutation: <service>/<file>: mutmut left no readable .meta, so nothing can be said of it
 mutation: <service>/<file> cannot be read as UTF-8, so its pragmas cannot be checked
 mutation: <service>/<file> cannot be read as Python, so its pragmas cannot be checked

@@ -72,13 +72,24 @@ PYTHON_MUTATION_NOTE = f"""\
 # `max_stack_depth` in the table, silence mutants nobody looked at, and the wrapper fails the run that holds them.
 #
 # `make mutation-full` runs every Python service, each from a fresh `mutants/`, and a failed service does not stop the
-# next: the run fails at the end, naming each failed one. In a mixed project make stops at the first line that fails:
-# another service's failing line stops the sweep before the one Python line starts, a failing Python line stops it before
-# any line listed after, and a Java Quarkus service's setup line always stops it.
+# next: the run ends on one line, `<s> swept, <r> refused; passed` or `<s> swept, <r> refused; failed: <service>, …`, a
+# service that could not start counting as refused and not swept, and fails at the end, naming each failed one. In a
+# mixed project make stops at the first line that fails: another service's failing line stops the sweep before the one
+# Python line starts, a failing Python line stops it before any line listed after, and a Java Quarkus service's setup
+# line always stops it.
 #
 # The default Python starter's `make mutation-full` reports survivors the day it is generated, because its own starter
 # tests leave them; a slice that edits one of those files meets that file's survivors in its scoped `make mutation`. The
 # minimal starter (no HTTP framework, the memory store) is green.
+#
+# A `.py` file under `src/` that the table leaves out (`do_not_mutate`, `only_mutate`, `source_paths`) is named on a line of
+# its own with the reason, and the sweep's last line counts them: a file the table drops is reviewed in the table, and
+# never silently.
+#
+# The wrapper does not read pytest's own configuration (`addopts` in `[tool.pytest.ini_options]`, `pytest.ini`, `tox.ini`,
+# `setup.cfg`, `conftest.py` hooks): a `--deselect`, `-k` or `-m` there, or a collection hook, narrows `make test` and
+# `make mutation` alike, and those mutants show as `no tests`. It does hold the table's test selection to the generated
+# one and drops every `PYTEST_*` variable from the environment it hands mutmut.
 #
 # Two settings in the table look odd and are not. `tests/integration` is left out of the test selection, as it is of
 # `make test`, because it needs a database. And `-p no:xdist` keeps pytest on one process, because mutmut records which

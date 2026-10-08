@@ -50,7 +50,11 @@ CATCH_UP_WORDS = (
     "`mutants/`", "`.mutmut-cache`", "`make mutation` exits 2", "`uv sync --locked`", "`make mutation-full`",
     "survivors", "WSL", "`java-quarkus`", "recorded stub", "wired by hand", "`# pragma: no mutate`",
     *FAILED_SETTINGS, "No `project.json` key changes")
-# T033 (D223 item 4, D224 item 1, D225 item 1): what the sweep does with several services, said in each place
+# T033 (D223 item 4, D224 item 1, D225 item 1): what the sweep does with several services, said in each place; D228
+# changed the summary the fragment and the note quote, and the skill (outside T041's files) still says D223's.
+SUMMARY = ("the run ends on one line, `<s> swept, <r> refused; passed` or `<s> swept, <r> refused; failed: <service>, "
+           "…`, a service that could not start counting as refused and not swept, and fails at the end, naming each "
+           "failed one. ")
 SWEEP_SHAPE = ("`make mutation-full` runs every Python service, each from a fresh `mutants/`, and a failed service "
                "does not stop the next: the run fails at the end, naming each failed one. "
                "In a mixed project make stops at the first line that fails: another service's failing line stops "
@@ -148,7 +152,8 @@ class SweepWordsTest(unittest.TestCase):
     def test_t033_every_place_says_the_sweeps_shape_in_the_same_words(self) -> None:
         for place, text in place_texts().items():
             with self.subTest(place=place):
-                self.assertIn(SWEEP_SHAPE, text)
+                self.assertIn(SWEEP_SHAPE if place == "skill" else SWEEP_SHAPE.replace(
+                    "the run fails at the end, naming each failed one. ", SUMMARY), text)
 
     def test_t034_no_place_lists_the_backends_that_stop_the_sweep(self) -> None:
         for place, text in place_texts().items():
