@@ -159,3 +159,19 @@ class TheClosedListIsHeldAgainstWhatTheStartersShipTest(unittest.TestCase):
                 name = control.as_posix()
                 self.assertTrue(module.protected(name), name)
                 self.assertTrue(module.protected(name + "/inside.txt") or name.endswith((".json", "Makefile")), name)
+
+
+class ReversibilityIsReadAsS26ReadsItTest(GateCase):
+    """T028: a near-miss label or a fenced line is no `Reversibility:` line to the provisional checks either."""
+
+    def test_t028_e1_a_near_miss_label_is_no_line_so_the_entry_is_missing_one(self) -> None:
+        for label in ("Reversibility :", "reversibility:"):
+            line = EASY_LINE.replace("Reversibility:", label)
+            self.refused(provisional(reversibility=line), "D1", "`Reversibility`", "missing")
+
+    def test_t028_e2_a_fenced_line_is_no_line_so_the_entry_is_missing_one(self) -> None:
+        self.refused(provisional(reversibility=f"```\n{EASY_LINE}\n```"), "D1", "`Reversibility`", "missing")
+
+    def test_t028_e3_a_real_line_beside_a_fenced_one_is_the_real_one(self) -> None:
+        hard = EASY_LINE.replace("easy", "hard", 1)
+        self.passes(provisional(reversibility=f"{EASY_LINE}\n```\n{hard}\n```"))

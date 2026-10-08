@@ -597,7 +597,7 @@ def reversibility_findings(path: Path) -> tuple[list[str], list[str]]:
 def provisional_findings(path: Path) -> list[str]:
     """The findings for the `Status` forms, `Revert:` and rehearsal lines of one log, from `provisional.py` beside this
     script, loaded only for a log that carries one."""
-    text = read(path)
+    text, _ = near_misses(unfenced(read(path)), path.relative_to(ROOT).as_posix())  # as S26 reads `Reversibility:`
     if not provisional_wanted(text):
         return []
     items = [(line, int(heading.group(1)) if heading else None, fields, fields.twice)
