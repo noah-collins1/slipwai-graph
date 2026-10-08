@@ -1,0 +1,17 @@
+$ git branch --show-current
+slice/S1
+$ git status --short
+ M apps/web/src/App.tsx
+$ git diff -U0 | tail -3
+@@ -59 +59 @@ export function App() {
+-        <h1>demo</h1>
++        <h1>demo app</h1>
+$ make mutation   # only apps/web/src/App.tsx changed
+mutation: no mutant to run — no service production file changed
+mutation: not mutated apps/web/src/App.tsx — browser app, not mutated by this target
+mutation: skip apps/service — no changed production file
+mutation: 0 scoped, 0 swept, 1 skipped, 0 refused; passed
+wall=.143382074 s
+exit=0
+$ git status --short
+ M apps/web/src/App.tsx

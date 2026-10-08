@@ -1,0 +1,340 @@
+$ git log --oneline main..
+b1159fe demo: health.ts comment
+$ make verify-scoped   # first run
+verify-scoped: no usable baseline (none yet on this branch) — every check that reads a tool or a variable runs
+verify-scoped: the full gate runs, as `make verify` — every check was chosen
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/cruise29/s41-demo2/demo/packages/api-client/src/schema.ts [11ms]
+npm --workspace apps/service run lint
+
+> demo-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 34 files in 21ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> demo-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> demo-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> demo-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (82 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (82 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at c0f0a3e)
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+npm --workspace apps/service test
+
+> demo-service@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/cruise29/s41-demo2/demo/apps/service
+
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  04:33:06
+   Duration  771ms (transform 313ms, setup 0ms, import 1.05s, tests 537ms, environment 1ms)
+
+npm --workspace apps/web test
+
+> demo-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/cruise29/s41-demo2/demo/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  04:33:07
+   Duration  945ms (transform 109ms, setup 284ms, import 123ms, tests 269ms, environment 1.50s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+npm --prefix scripts/event-model ci --no-audit --no-fund --loglevel=error
+
+added 5 packages in 303ms
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+verify: this pass was not recorded — a file git ignores changed while the checks ran — a check may have written one; `git status --ignored` shows it, and the next run records
+wall=8.992707226 s
+exit=0
+$ make verify-scoped   # second run
+verify-scoped: no usable baseline (none yet on this branch) — every check that reads a tool or a variable runs
+verify-scoped: the full gate runs, as `make verify` — every check was chosen
+
+> @packages/api-client@0.1.0 build
+> openapi-typescript ../../apps/service/openapi.json --output src/schema.ts
+
+✨ openapi-typescript 6.7.6
+🚀 ../../apps/service/openapi.json → file:///tmp/cruise29/s41-demo2/demo/packages/api-client/src/schema.ts [11ms]
+npm --workspace apps/service run lint
+
+> demo-service@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 34 files in 18ms. No fixes applied.
+npm --workspace apps/web run lint
+
+> demo-web@0.1.0 lint
+> biome check --error-on-warnings
+
+Checked 14 files in 6ms. No fixes applied.
+npm --workspace apps/service run typecheck
+
+> demo-service@0.1.0 typecheck
+> tsc --noEmit
+
+npm --workspace apps/web run typecheck
+
+> demo-web@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.json
+
+python3 scripts/check-imports.py
+check-imports: inward dependency rule holds (122 directory entries read)
+python3 scripts/check-migrations.py
+check-migrations: every migration is additive, or a marked contraction of an earlier one; Go migrate images embed their .sql files (122 directory entries read)
+python3 scripts/check-slice-scope.py
+check-slice-scope: slice/S1 touches only what one slice may (compared with `main` at c0f0a3e)
+python3 scripts/extensions/project.py --check
+check-extensions: no extension elected; nothing to project
+python3 scripts/agents/project.py --check
+check-agents: not initialized; no projections expected yet
+python3 scripts/agents/models.py --check && python3 scripts/agents/drive.py --check && python3 scripts/agents/cruise.py --check
+check-models: .specify/models.json names 17 stage(s) and 6 harness(es)
+check-drive: .specify/drive.json delegates per story and cycles per rule
+check-cruise: .specify/cruise.json is well-formed; /cruise is not enabled
+python3 scripts/check-speckit.py
+check-speckit: not initialized; nothing managed yet, 1 preset(s) valid
+python3 scripts/check-codegraph.py
+check-codegraph: no .codegraph/ — this project carries no code index; nothing to check
+python3 scripts/check-ux-gates.py
+check-ux-gates: not adopted (./init --extension ux-gates); nothing to check
+python3 scripts/check-constitution.py
+check-constitution: no constitution ratified yet; run /speckit-constitution (scripts/check-constitution.py --requirements prints what it must cover)
+python3 scripts/test_benchmark.py && python3 scripts/agents/benchmark.py check
+check-benchmark: 2 boundary and rendering checks pass
+check-benchmark: no record and no done slice yet — nothing to hold
+python3 scripts/check-decisions.py
+check-decisions: no decisions.md or demo-log.md under specs/ — nothing recorded yet
+npm --workspace apps/service test
+
+> demo-service@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/cruise29/s41-demo2/demo/apps/service
+
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  04:33:15
+   Duration  818ms (transform 451ms, setup 0ms, import 1.16s, tests 550ms, environment 1ms)
+
+npm --workspace apps/web test
+
+> demo-web@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /tmp/cruise29/s41-demo2/demo/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  04:33:16
+   Duration  923ms (transform 114ms, setup 287ms, import 117ms, tests 264ms, environment 1.48s)
+
+python3 scripts/check-styles.py
+check-styles: 1 web app(s), no :root custom property has two imported owners
+python3 scripts/event-model/check.py
+check-model: valid
+check-drawio: scripts/event-model/package-lock.json is not newer than the installed model tooling; not reinstalled
+node scripts/event-model/node_modules/tsx/dist/cli.mjs scripts/event-model/render-drawio.ts --check
+check-drawio: docs/event-model/model.yaml has no slices yet — nothing to check.
+
+verify: all gates passed
+wall=8.459752359 s
+exit=0
+$ make verify-scoped   # third run, before mutation
+verify: the full gate did not run; this tree already passed it at 2026-10-08T09:33:19Z (key a943a7d5d781); VERIFY_FORCE=1 runs it anyway
+wall=.464301369 s
+exit=0
+$ make mutation   # health.ts committed on slice/S1
+mutation: scoped to 1 changed file(s) since `main` at c0f0a3e: apps/service/src/health.ts
+mutation: scope apps/service — src/health.ts
+mutation: scoped to 1 given file(s): src/health.ts
+[32m04:33:21 (952344) INFO ProjectReader[39m Found 1 of 62 file(s) to be mutated.
+[32m04:33:21 (952344) INFO Instrumenter[39m Instrumented 1 source file(s) with 3 mutant(s)
+[32m04:33:21 (952344) INFO ConcurrencyTokenProvider[39m Creating 11 test runner process(es).
+[32m04:33:21 (952344) INFO DryRunExecutor[39m Starting initial test run (vitest test runner with "perTest" coverage analysis). This may take a while.
+[32m04:33:23 (952344) INFO DryRunExecutor[39m Initial test run succeeded. Ran 86 tests in 2 seconds (net 572.4028800000018 ms, overhead 1436.597119999998 ms).
+
+All tests
+  contract
+    checkpoint-store-memory.test.ts
+      ✘ the in-memory checkpoint store satisfies the checkpoint port starts a projection nothing has recorded at the beginning (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port records a position and reads it back (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port records the same projection twice without a second row (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port puts a position back to the beginning for a rebuild (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port does not record a position written in a unit of work that fails (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port claims a projection for one owner (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port refuses a claim while somebody else holds an unexpired lease (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port lets the owner renew its own lease (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port lets another owner claim a lapsed lease (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port makes a released lease claimable at once (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port does nothing when releasing a lease somebody else holds (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port does not disturb the position when the lease moves (covered 0)
+    event-store-memory.test.ts
+      ✘ the in-memory event store satisfies the event-store port reads an unknown stream as empty rather than failing (covered 0)
+      ✘ the in-memory event store satisfies the event-store port appends to a stream that does not exist yet and reports the new version (covered 0)
+      ✘ the in-memory event store satisfies the event-store port returns the stream in version order, with the facts only the store knows (covered 0)
+      ✘ the in-memory event store satisfies the event-store port round-trips the correlation and causation ids as UUIDs (covered 0)
+      ✘ the in-memory event store satisfies the event-store port reports a stale expected version as a value, not a thrown error (covered 0)
+      ✘ the in-memory event store satisfies the event-store port writes nothing when the expected version is stale (covered 0)
+      ✘ the in-memory event store satisfies the event-store port rejects a first write to a stream that already exists (covered 0)
+      ✘ the in-memory event store satisfies the event-store port treats an empty append as a no-op at the expected version (covered 0)
+      ✘ the in-memory event store satisfies the event-store port keeps streams apart (covered 0)
+      ✘ the in-memory event store satisfies the event-store port replays across all streams in global-position order (covered 0)
+      ✘ the in-memory event store satisfies the event-store port replays only from the requested position onward (covered 0)
+      ✘ the in-memory event store satisfies the event-store port indexes every event by its own stream without being asked (covered 0)
+      ✘ the in-memory event store satisfies the event-store port reports the store head with what it read (covered 0)
+      ✘ the in-memory event store satisfies the event-store port matches an event only when it carries every tag in a filter (covered 0)
+      ✘ the in-memory event store satisfies the event-store port matches any filter in the query (covered 0)
+      ✘ the in-memory event store satisfies the event-store port narrows a filter by event type (covered 0)
+      ✘ the in-memory event store satisfies the event-store port matches nothing for an empty query rather than everything (covered 0)
+      ✘ the in-memory event store satisfies the event-store port appends conditionally when nothing matching arrived since the read (covered 0)
+      ✘ the in-memory event store satisfies the event-store port refuses a conditional append when a matching event arrived since (covered 0)
+      ✘ the in-memory event store satisfies the event-store port leaves a conditionally appended event readable as part of its stream (covered 0)
+      ✘ the in-memory event store satisfies the event-store port behaves exactly as it did before when it indexes nothing (covered 0)
+      ✘ the in-memory event store satisfies the event-store port indexes a log it did not index when the events were written (covered 0)
+      ✘ the in-memory event store satisfies the event-store port counts only the events a reindex made findable by tag (covered 0)
+      ✘ the in-memory event store satisfies the event-store port reads as of a boundary and nothing after it (covered 0)
+      ✘ the in-memory event store satisfies the event-store port makes an append and its tags arrive together or not at all (covered 0)
+      ✘ the in-memory event store satisfies the event-store port leaves the log as it was when a unit of work fails (covered 0)
+      ✘ the in-memory event store satisfies the event-store port commits everything in a unit of work that completes, once (covered 0)
+      ✘ the in-memory event store satisfies the event-store port writes nothing and ends nothing when an append inside a unit of work is refused (covered 0)
+    projections-plugin.test.ts
+      ✘ the projections plugin catches a projection up without anybody calling it (covered 0)
+      ✘ the projections plugin stops passing when the server closes (covered 0)
+    projections.test.ts
+      ✘ the catch-up runner applies the whole log and leaves the checkpoint past it (covered 0)
+      ✘ the catch-up runner resumes from the checkpoint and applies nothing twice (covered 0)
+      ✘ the catch-up runner says a pass had nothing to do without touching the view (covered 0)
+      ✘ the catch-up runner applies a long log in batches of the size it was given (covered 0)
+      ✘ the catch-up runner does nothing in a second worker while the first holds the lease (covered 0)
+      ✘ the catch-up runner takes over in another worker once the lease has lapsed (covered 0)
+      ✘ the catch-up runner releases the lease when the pass is done (covered 0)
+      ✘ the catch-up runner moves neither the view nor the checkpoint when a batch fails (covered 0)
+      ✘ the catch-up runner releases the lease even when the pass fails (covered 0)
+      ✘ the catch-up runner catches up every projection in one pass (covered 0)
+      ✘ the catch-up runner applies the other projections when one of them fails (covered 0)
+      ✘ the catch-up runner empties the view and folds the whole log into it again on a rebuild (covered 0)
+      ✘ the catch-up runner leaves the view alone when a rebuild cannot take the lease (covered 0)
+  edge
+    http-app.test.ts
+      ✘ how the service logs logs JSON at info by default, with the trace context on every record (covered 0)
+      ✘ how the service logs reformats each record as one line when the environment asks for a terminal, as `make dev` does (covered 0)
+      ✘ how the service logs writes a readable line for a record and passes anything unparseable through (covered 0)
+      ✘ how the service logs is silent under the test runner unless a level is asked for (covered 0)
+      ✘ the HTTP entry point reports readiness (covered 0)
+      ✘ the HTTP entry point does not echo the requested path back on a 404 (covered 0)
+      ✘ the HTTP entry point does not reveal that a path exists under a different method (covered 0)
+      ✘ the HTTP entry point registers the routes it is given, and holds none of its own (covered 0)
+      ✘ the HTTP entry point serves this environment's flags to the browser app when it is given a source (covered 0)
+      ✘ the HTTP entry point has no flags route at all when it is given no source (covered 0)
+      ✘ the HTTP entry point is ready when the event store answers (covered 0)
+      ✘ the HTTP entry point is not ready, and says no more than the category, when the event store does not answer (covered 0)
+      ✘ the HTTP entry point is ready with nothing to ask when the project has no store (covered 0)
+      ✘ the HTTP entry point reports a schema failure in one shape, whichever route found it (covered 0)
+      ✘ the API contract refuses a body that does not match the route's schema, in the one 400 shape (covered 0)
+      ✘ the API contract refuses a field the route did not declare rather than dropping it (covered 0)
+      ✘ the API contract refuses a query string parameter no route declares (covered 0)
+      ✘ the API contract answers with what the response schema names and nothing else (covered 0)
+      ✘ the API contract publishes the document, and it carries the routes a slice registered (covered 0)
+      ✘ the environment this process was given carries the defaults .env.example writes down when nothing is set (covered 0)
+      ✘ the environment this process was given refuses to start on a variable it cannot use, and names it (covered 0)
+      ✘ the edge a browser meets sends the security headers on every response (covered 0)
+      ✘ the edge a browser meets answers a cross-origin request with nothing, until an origin is allowed (covered 0)
+      ✘ the edge a browser meets permits exactly the origins it was given, and no others (covered 0)
+      ✘ the edge a browser meets reads an allow-list the way a deployment writes one (covered 0)
+    tracing.test.ts
+      ✘ startTracing records spans and exports nothing when no endpoint was named (covered 0)
+      ✘ startTracing exports only where an endpoint says to (covered 0)
+      ✘ traceIds is empty outside a request, so nothing invents an id it does not have (covered 0)
+      ✘ traceIds correlates an event with the trace the caller sent in (covered 0)
+      ✘ traceIds starts its own trace when the caller sent none (covered 0)
+  health.test.ts
+    ✓ health reports ready (killed 3)
+
+Ran 1.00 tests per mutant on average.
+-----------|------------------|----------|-----------|------------|----------|----------|
+           | % Mutation score |          |           |            |          |          |
+File       |  total | covered | # killed | # timeout | # survived | # no cov | # errors |
+-----------|--------|---------|----------|-----------|------------|----------|----------|
+All files  | 100.00 |  100.00 |        3 |         0 |          0 |        0 |        0 |
+ health.ts | 100.00 |  100.00 |        3 |         0 |          0 |        0 |        0 |
+-----------|--------|---------|----------|-----------|------------|----------|----------|
+[32m04:33:24 (952344) INFO JsonReporter[39m Your report can be found at: file:///tmp/cruise29/s41-demo2/demo/apps/service/reports/mutation/mutation.json
+[32m04:33:24 (952344) INFO HtmlReporter[39m Your report can be found at: file:///tmp/cruise29/s41-demo2/demo/apps/service/reports/mutation/mutation.html
+[32m04:33:24 (952344) INFO MutationTestExecutor[39m Done in 3 seconds.
+mutation: Stryker exited 0 (its exit status is printed, never the verdict; the report is)
+mutation: 3 mutants: 3 killed, 0 ignored, 0 not covered (reported, never failed); passed — report apps/service/reports/mutation/mutation.json
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed
+wall=4.493907757 s
+exit=0
+$ git status --short --ignored | grep -v node_modules
+!! apps/service/.build/
+!! apps/service/reports/
+!! packages/api-client/src/schema.ts
+$ make verify-scoped   # after the mutation run
+verify: the full gate did not run; this tree already passed it at 2026-10-08T09:33:19Z (key a943a7d5d781); VERIFY_FORCE=1 runs it anyway
+wall=.460356582 s
+exit=0
+$ make verify   # stamp reuse after the mutation run
+verify: the full gate did not run; this tree already passed it at 2026-10-08T09:33:19Z (key a943a7d5d781); VERIFY_FORCE=1 runs it anyway
+wall=.445863535 s
+exit=0
+$ git status --short
+(empty = clean)
