@@ -2,8 +2,8 @@
 
 `python3 scripts/provisional.py status --decide <value> --ask no|approval|fact|must|release --when <ISO instant>
 --number D<n> [--reversibility '<the Reversibility line, with or without its label>']` prints the `Status:` line a
-decision entry carries (and, where provisional, its `Revert:` line), from the `decide` value of `.specify/cruise.json`
-(passed, never read: the verb reads no file). Provisional is `provisional` with a final tier of easy or guarded and none
+decision entry carries (and, where provisional, its `Revert:` line), for the `decide` value of `.specify/cruise.json`
+(passed, and refused with exit 2 where it differs from the file's, D209; no file is no check). Provisional is `provisional` with a final tier of easy or guarded and none
 of `ci_workflow=yes`, `migrate_file=yes`, `flag_default=yes` (FR-033); a fact, a constitution MUST and a release are
 unavailable whatever `decide` says. A missing `--reversibility` line is `hard`.
 `python3 scripts/provisional.py audit [--feature <name>]` is the completion audit: it prints `cruise: parked: ratify
@@ -12,7 +12,8 @@ with the word `provisional`, the lowest-numbered named, in the log as `reading` 
 blanked, ASCII digits in a heading: the text the gate reads, D210); `--feature` only has to name a feature under `specs/`.
 The gate (`check-decisions.py`) loads this file by path, only for a log carrying a `Status: provisional|ratified|
 reverted` or a `Provisional (shadow|advisory):` line (a lone `Revert:` loads nothing, D206), and `check_log()` holds
-those lines to their grammar.
+those lines to their grammar, reads them from one reading of the log (`reading`, D210), refuses a mode entry dated after
+the gate runs and a provisional `Status` that no mode entry to `provisional` precedes in any feature's log (D209).
 Nothing here prints or exits outside `main`; `reversibility.py` beside this file is loaded by path, bytecode off.
 """
 from __future__ import annotations
@@ -25,7 +26,7 @@ import sys
 from collections.abc import Collection, Iterable, Mapping
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 DECIDE = ("recommended-first", "skipper-always", "provisional-shadow", "provisional-advisory", "provisional")
 ASKS = ("no", "approval", "fact", "must", "release")
@@ -90,11 +91,12 @@ def calendar(text: str) -> date | None:
     return None
 
 
-def utc_day(when: str) -> date | None:
-    """The UTC calendar date of an ISO date or instant: a `T` or a space between date and time, `Z` or an offset
-    (`+05:30`, `+0530`, `+05`) after it, none read as UTC. None where `when` is not one."""
+def instant_of(when: str) -> datetime | None:
+    """The UTC instant of an ISO date or instant: a `T` or a space between date and time, `Z` or an offset
+    (`+05:30`, `+0530`, `+05`) after it, none read as UTC, a date alone as its midnight. None where `when` is not one."""
     if len(when) <= 10:
-        return calendar(when)
+        day = calendar(when)
+        return None if day is None else datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
     if calendar(when[:10]) is None:
         return None
     tail = when[10:].strip() if when[10] == " " else when[10:]
@@ -105,7 +107,13 @@ def utc_day(when: str) -> date | None:
         instant = datetime.fromisoformat(when[:10] + (" " if tail[:1] not in ("T", "t") else "") + tail)
     except ValueError:
         return None
-    return (instant.astimezone(timezone.utc) if instant.tzinfo else instant).date()
+    return instant.astimezone(timezone.utc) if instant.tzinfo else instant.replace(tzinfo=timezone.utc)
+
+
+def utc_day(when: str) -> date | None:
+    """The UTC calendar date of an ISO date or instant (`instant_of`); None where `when` is not one."""
+    instant = instant_of(when)
+    return None if instant is None else instant.date()
 
 
 def ratify_by(when: str) -> str:
@@ -336,10 +344,66 @@ def rehearsal_findings(where: str, number: int, fields: Mapping[str, str], twice
     return found
 
 
+class Mode(NamedTuple):
+    """One mode entry (`## D<n> — decide moved from <a> to <b>`, written by `cruise.py mode`): where, and when."""
+    relative: str
+    line: int
+    number: int
+    when: str
+    instant: datetime | None
+    to: str
+
+
+MODE_HEADING = re.compile(r"^## D([0-9]+) — decide moved from (\S+) to (\S+)\s*$")
+WHEN_FIELD = re.compile(r"\*\*When:\*\* (\S+)")
+
+
+def mode_entries(relative: str, view: str) -> list[Mode]:
+    """The mode entries of a log as `reading` gives it, each with the instant its Stage line's `When` is (None where it
+    is no ISO date or instant)."""
+    found: list[Mode] = []
+    heading: re.Match[str] | None = None
+    for number, line in enumerate(view.splitlines(), start=1):
+        if line.startswith("## "):
+            heading = MODE_HEADING.match(line)
+            if heading:
+                found.append(Mode(relative, number, int(heading.group(1)), "", None, heading.group(3)))
+        elif heading and not found[-1].when and (stamp := WHEN_FIELD.search(line)) and line.startswith("- **Stage:**"):
+            found[-1] = found[-1]._replace(when=stamp.group(1), instant=instant_of(stamp.group(1)))
+    return found
+
+
+def mode_findings(modes: Iterable[Mode], now: datetime) -> list[str]:
+    """One finding for each mode entry dated after `now`: a mode entry is dated when it is written, and one dated ahead
+    would stand as the last for ever (D209)."""
+    return [f"{mode.relative}:{mode.line}: D{mode.number} (decide moved to {mode.to}) is dated {mode.when}, after now; a "
+            "mode entry is dated when it is written, and one dated ahead is no record of what was in force (D209)"
+            for mode in modes if mode.instant is not None and mode.instant > now]
+
+
+def basis_findings(where: str, fields: Mapping[str, str], modes: Iterable[Mode], now: datetime) -> list[str]:
+    """The finding for a provisional entry that no climb to `provisional` stands behind: the last mode entry of any
+    feature's log dated at or before its `When` (and not after `now`) has to record `provisional` (D209)."""
+    found = re.search(r"\*\*When:\*\* (.+?)\s*(?: · |$)", fields.get("Stage", ""))
+    when = instant_of(found.group(1)) if found else None
+    if when is None:  # `date_findings` says so
+        return []
+    earlier = [mode for mode in modes if mode.instant is not None and mode.instant <= min(when, now)]
+    last = max(earlier, key=lambda mode: (mode.instant, mode.relative, mode.line), default=None)
+    if last is not None and last.to == "provisional":
+        return []
+    said = f"the last, {last.relative}:{last.line}, records `{last.to}`" if last else "there is none"
+    return [f"{where} `Status` is provisional, but no mode entry in any feature's log puts `decide` at `provisional` "
+            f"before its `When`: {said}; a provisional entry follows a person's climb to `provisional`, which `cruise.py "
+            "mode` writes down (D209)"]
+
+
 def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str, str], set[str]]],
-              ) -> list[str]:
+              modes: Iterable[Mode], now: datetime) -> list[str]:
     """The findings for one decisions log: `items` are (line, entry number or None, fields, repeated labels) as the
-    gate parsed them. Each is `<file>:<line>: D<n> ...`, one per fault, naming the field."""
+    gate parsed them; `modes` are the mode entries of every feature's log. Each is `<file>:<line>: D<n> ...`, one per
+    fault, naming the field."""
+    modes = list(modes)
     findings: list[str] = []
     for line, number, fields, twice in items:
         if number is None:
@@ -357,7 +421,8 @@ def check_log(relative: str, items: Iterable[tuple[int, int | None, Mapping[str,
         if sound and kind in ("provisional", "ratified"):
             findings += written_findings(where, fields, twice) + reversibility_findings(where, fields)
         if sound and kind == "provisional":
-            findings += date_findings(where, fields, status_date(fields["Status"]))
+            findings += date_findings(where, fields, status_date(fields["Status"])) + basis_findings(where, fields,
+                                                                                                    modes, now)
         findings += rehearsal_findings(where, number, fields, twice)
     return findings
 
@@ -385,8 +450,30 @@ def parse_status(arguments: list[str]) -> dict[str, str]:
     return options
 
 
+CONFIG_PARTS = (".specify", "cruise.json")
+
+
+def configured_decide(root: Path) -> str | None:
+    """The `decide` of the project's `.specify/cruise.json`: the bottom rung where the file names none or a value that
+    is not one of the five (as `cruise.py` reads it), None where there is no file. A file that cannot be read is Usage."""
+    path = root.joinpath(*CONFIG_PARTS)
+    if not path.is_file():
+        return None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise Usage(f"{'/'.join(CONFIG_PARTS)} cannot be read ({error}); --decide is the file's value") from error
+    if not isinstance(document, dict):
+        raise Usage(f"{'/'.join(CONFIG_PARTS)} is not a JSON object; --decide is the file's value")
+    return document["decide"] if document.get("decide") in DECIDE else DECIDE[0]
+
+
 def status_verb(arguments: list[str]) -> int:
     options = parse_status(arguments)
+    configured = configured_decide(project_root(Path(__file__).resolve()))
+    if configured is not None and options["--decide"] != configured:
+        raise Usage(f"--decide {options['--decide']!r} is not the `decide` of {'/'.join(CONFIG_PARTS)}, "
+                    f"{configured!r}; the verb takes it from the file (D209)")
     out, err = status_lines(options["--decide"], options["--ask"], options["--when"], options["--number"],
                             options.get("--reversibility"))
     print("\n".join(out))
@@ -433,6 +520,11 @@ def reading(text: str) -> tuple[str, list[tuple[int, str, str]]]:
                 hidden = True
         kept.append(piece[len(content):] if hidden else piece)
     return "".join(kept), near
+
+
+def moded(view: str) -> bool:
+    """Whether a log, as `reading` gave it, has a mode entry."""
+    return any(MODE_HEADING.match(line) for line in view.splitlines())
 
 
 def held(view: str) -> bool:

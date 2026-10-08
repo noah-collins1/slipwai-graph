@@ -14,7 +14,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from provisional_fixture import EASY_LINE, NAMES, entry, run
+from provisional_fixture import EASY_LINE, NAMES, basis, entry, run
 from reversibility_fixture import SCRIPTS, scratch
 
 sys.dont_write_bytecode = True
@@ -33,9 +33,8 @@ def gate(written: str, status: str = PROVISIONAL, origin: str | None = None, del
          extra: str = "") -> subprocess.CompletedProcess[str]:
     """The gate over one entry writing to `written`; the files it names exist, so only the list can refuse it."""
     with tempfile.TemporaryDirectory() as directory:
-        repo = scratch(directory, "", origin=origin, names=NAMES, delivery=delivery,
-                       listed=("scripts/check-decisions.py",))
-        repo = repo.resolve()
+        repo = basis(scratch(directory, "", origin=origin, names=NAMES, delivery=delivery,
+                             listed=("scripts/check-decisions.py",))).resolve()
         log = provisional(written.replace("{repo}", repo.as_posix()), status) + extra
         (repo / "specs/f/decisions.md").write_text("# Decisions\n\n" + log, encoding="utf-8")
         for name in re.findall(r"`([^`]+)`", written.replace("{repo}", repo.as_posix())) or \
@@ -105,7 +104,7 @@ class SecondLineTest(PathTest):
         log = provisional("`README.md`").replace("- **Status:**", "- **Written to:** `.github/workflows/verify.yml`\n"
                                                  "- **Status:**")
         with tempfile.TemporaryDirectory() as directory:
-            repo = scratch(directory, log, names=NAMES, listed=("scripts/check-decisions.py",))
+            repo = basis(scratch(directory, log, names=NAMES, listed=("scripts/check-decisions.py",)))
             result = run(repo, "check-decisions")
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
         self.assertTrue(any("D1" in row and "`Written to` is on more than one line" in row for row in findings(result)),
@@ -116,7 +115,8 @@ class SecondLineTest(PathTest):
         ratified = provisional("`README.md`", RATIFIED).replace("- **Status:**", second)
         standing = entry(2, "standing").replace("- **Status:**", second)
         with tempfile.TemporaryDirectory() as directory:
-            repo = scratch(directory, ratified + standing, names=NAMES, listed=("scripts/check-decisions.py",))
+            repo = basis(scratch(directory, ratified + standing, names=NAMES,
+                                 listed=("scripts/check-decisions.py",)))
             result = run(repo, "check-decisions")
         rows = findings(result)
         self.assertEqual(1, len(rows), result.stderr)

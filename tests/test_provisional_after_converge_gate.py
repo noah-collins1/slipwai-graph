@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from provisional_fixture import EASY_LINE, HARD_LINE, NAMES, entry, run, status
+from provisional_fixture import EASY_LINE, HARD_LINE, NAMES, basis, entry, run, status
 from reversibility_fixture import SCRIPTS, scratch
 
 from slipwai.assets import ROOT
@@ -37,7 +37,7 @@ def gate(log: str) -> subprocess.CompletedProcess[str]:
     """The gate over `log` in a scratch project that holds every path a `Written to` line names (it must exist);
     `.github` is a directory."""
     with tempfile.TemporaryDirectory() as directory:
-        repo = scratch(directory, log, names=NAMES, listed=("scripts/check-decisions.py",))
+        repo = basis(scratch(directory, log, names=NAMES, listed=("scripts/check-decisions.py",)))
         for name in re.findall(r"^- \*\*Written to:\*\* (.*)$", log, re.M):
             for path in re.findall(r"`([^`]+)`", name):
                 if path == ".github":

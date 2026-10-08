@@ -98,6 +98,11 @@ NOT_AN_INPUT_FOR = {
     **for_checks(("check-agents", "check-decisions"), ".claude",
                  "a segment of `provisional.py`'s closed list (a control path), compared with `Written to`, never "
                  "opened"),
+    # S27 T041 (D209): the verb `status` of `provisional.py` reads `.specify/cruise.json` (its `decide`), named as the
+    # segments `CONFIG_PARTS`; only the verb opens it, never `check-decisions` (which loads the module for its gate
+    # functions) and never `check-agents` (which reaches the module as above).
+    **for_checks(("check-agents", "check-decisions"), ".specify",
+                 "a segment of `provisional.py`'s `CONFIG_PARTS`, opened by its `status` verb alone, never by a check"),
     ("check-agents", ".slipwai/extensions.json"): "`agents/code_index.py`'s `adopted()`, which `cruise.py` imports "
                                                   "and calls on `health`/`run` paths; `cruise.py --check` never does",
 }

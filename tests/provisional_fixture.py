@@ -33,6 +33,24 @@ def scratch(directory: str, log: str = "") -> Path:
     return reversibility_scratch(directory, log, names=NAMES, listed=("scripts/check-decisions.py",))
 
 
+BASIS = ("## D1 — decide moved from provisional-advisory to provisional\n"
+         "- **Stage:** iteration start · **Slice:** none · **When:** 2026-10-01T00:00:00Z · **Iteration:** 1\n"
+         "- **Scope:** global\n- **Question:** which `decide` mode does this run work under?\n"
+         "- **Options:** a · b\n- **Decision:** provisional\n- **Why:** a person set it\n- **Decided by:** human\n"
+         "- **Confidence:** high · **Would reverse if:** a person sets `decide` again\n"
+         "- **Written to:** `.specify/cruise.json`\n- **Status:** standing\n")
+
+
+def basis(repo: Path) -> Path:
+    """The climb to `provisional` a provisional entry needs behind it (D209): a mode entry in a log of its own, dated
+    before every fixture entry, and the `cruise.json` it names."""
+    (repo / ".specify").mkdir(exist_ok=True)
+    (repo / ".specify/cruise.json").write_text('{"decide": "provisional"}\n', encoding="utf-8")
+    (repo / "specs/basis").mkdir()
+    (repo / "specs/basis/decisions.md").write_text("# Decisions\n\n" + BASIS, encoding="utf-8")
+    return repo
+
+
 def run(repo: Path, script: str, *arguments: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["python3", "-B", f"scripts/{script}.py", *arguments], cwd=repo, text=True,
                           capture_output=True, encoding="utf-8")
@@ -67,9 +85,12 @@ def audit(log: str | dict[str, str] | None, *arguments: str) -> subprocess.Compl
 
 
 def gate(log: str, *arguments: str, names: tuple[str, ...] = NAMES) -> subprocess.CompletedProcess[str]:
-    """`check-decisions.py` over a project whose `specs/f/decisions.md` holds `log`; `names` are the scripts beside."""
+    """`check-decisions.py` over a project whose `specs/f/decisions.md` holds `log`; `names` are the scripts beside. The
+    gate (no arguments) also finds the mode entry a provisional entry needs behind it (`basis`)."""
     with tempfile.TemporaryDirectory() as directory:
         repo = reversibility_scratch(directory, log, names=names, listed=("scripts/check-decisions.py",))
+        if not arguments:  # a verb names one log; the gate alone has a basis
+            basis(repo)
         return run(repo, "check-decisions", *arguments)
 
 
