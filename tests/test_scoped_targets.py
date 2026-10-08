@@ -54,13 +54,13 @@ PRE_SLICE: dict[str, str] = {
     "model-go-azure": "49c93cf01e241187020cc2bdfcdc377032c1b4b3926979308baf4df3719e29fe",
     "standard-quarkus": "74efc08991dfe6e26f8a1d08c92058adb4874763026935514074f51059ff3491",
     "standard-spring-web": "f08f581ddf2ee0fdfb8ed5ae2fe7c3446a009b182f0740604f55ab780a0e0c6e",
-    "two-python": "6d2c866491cbfc7a6bf0e1596c47fa02439b6aebea664ad10ac1f25898caac16",
+    "two-python": "908424d5321b705609d09dc13864b792b100e2df893c42675bda21aaae6a79b1",
     "go-web": "3fa01ecf6acac061b0cfe50f1e09d18aa0679c616c8abd90c140a443b127d643",
     "java-go": "917cf20ca83c1a8230030d0406a0d611137fad7225945df7e2d1b260b33c5c53",
     "java-python-web": "755789dbfd2144bd0e9243344099bc430cb97683b31abb96ce1ee6a36a60df4e",
     "two-go": "9c1b692182bce8e0af9e571a44c4b2e0b528efaa399c61933db9b4da81f94b3b",
-    "integration": "0ca262486367632ccb0e10b497a3e69c847be035ffe52c19a05c7beeaaa66154",
-    "integration-billing": "89d526b2e030fd0403434d762a836205468f609b17337ef6f216135edc055d8b",
+    "integration": "250a60dab88765bc71a06e25c411d76f3e22f01b2afa8b8048d8903e02f2bb45",
+    "integration-billing": "2701a30c39286b3020d4098b6030d45b0f0a1c663ba0f7d22216c9f2aee31736",
 }
 
 

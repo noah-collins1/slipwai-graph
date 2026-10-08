@@ -22,6 +22,7 @@ from ..tooling import for_app, verify_path
 from .languages.go import GO_COVDATA_READY, GO_COVERAGE_GATE, GO_STATICCHECK, GO_TEST
 from .mutation import GO_MUTATION_SCRIPT, JAVA_QUARKUS_MUTATION_PLACEHOLDER, scope_command
 from .mutmut import FULL_COMMAND as MUTMUT_COMMAND
+from .mutmut import one_line
 from .shared_packages import PACKAGES
 from .stryker import FULL_COMMAND
 
@@ -187,7 +188,8 @@ def merged(recipes: list[dict[str, str]]) -> dict[str, str]:
 
     A line that names a service's path differs per service and is kept for each; a line that does not —
     `npm ci`, `./scripts/verify --lint-only`, the install guard — is a repository-level step, and running
-    it once per service would install and audit the same workspace several ways.
+    it once per service would install and audit the same workspace several ways. The one exception is every Python
+    service's wrapper line: those are one line, at the first one's place (`one_line`).
     """
     result: dict[str, str] = {}
     if not recipes:
@@ -198,7 +200,7 @@ def merged(recipes: list[dict[str, str]]) -> dict[str, str]:
             for line in steps(recipe[target]):
                 if line not in lines:
                     lines.append(line)
-        result[target] = STEP.join(lines)
+        result[target] = STEP.join(one_line(lines))
     return result
 
 

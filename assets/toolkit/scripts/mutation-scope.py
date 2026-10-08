@@ -284,9 +284,11 @@ def mutation_rule(text: str) -> list[str]:
 
 def factory_recipe(services: list[tuple[str, str]]) -> list[str]:
     """The recipe lines of `mutation-full` as the factory writes them for these services: each backend's own line with its
-    path, in service order, each distinct line once as the factory merges them. The Go and Spring lines are the ones
-    this script's own runs are held equal to; a placeholder's is its setup message."""
+    path, in service order, each distinct line once as the factory merges them, except that every Python service shares
+    the one line, at the place of the first. The Go and Spring lines are the
+    ones this script's own runs are held equal to; a placeholder's is its setup message."""
     lines: list[str] = []
+    python = " ".join(path for backend, path in services if backend == "python")  # one line for all of them (D223)
     for backend, path in services:
         if backend == "go":
             line = f"python3 scripts/go-mutation.py {path} $(if $(SINCE),--since $(SINCE))"
@@ -295,7 +297,7 @@ def factory_recipe(services: list[tuple[str, str]]) -> list[str]:
         elif backend == "java-spring":
             line = f"cd {path} && " + " ".join(PIT)
         elif backend == "python":
-            line = f"python3 scripts/mutmut-mutation.py {path}"
+            line = f"python3 scripts/mutmut-mutation.py {python}"
         else:
             line = f"@echo '{PLACEHOLDERS[backend]}'; exit 2"
         if line not in lines:

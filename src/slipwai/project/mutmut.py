@@ -17,10 +17,26 @@ SCRIPT_PATH = "scripts/mutmut-mutation.py"
 SCRIPT_ASSET = LANGUAGE_ROOT / "python" / "scripts" / "mutmut-mutation.py"
 # The `mutation-full` line of a Python service, with the service's path as the token every native command carries.
 FULL_COMMAND = f"python3 {SCRIPT_PATH} {APP}"
+# What every Python line starts with, so that the lines of a project's Python services can be told from the rest.
+_PREFIX = FULL_COMMAND.removesuffix(APP)
 # Where a run leaves what it wrote, relative to the service: mutmut's copy of `src/` and one `.meta` file per mutated
 # file. Spelled once: the note, the command text and the changelog fragment all point at it.
 REPORT = "mutants/"
 META_REPORT = f"{REPORT}<file>.meta"
+
+
+def one_line(lines: list[str]) -> list[str]:
+    """The recipe lines with every Python service's wrapper line made one, at the place the first one sits: the wrapper
+    runs each service fully and fails at the end (D223), so a failing service never hides the next from make. Every other
+    line is kept as it is, in its place. `factory_recipe` in `mutation-scope.py` writes the same line."""
+    paths = " ".join(line.removeprefix(_PREFIX) for line in lines if line.startswith(_PREFIX))
+    kept: list[str] = []
+    for line in lines:
+        if not line.startswith(_PREFIX):
+            kept.append(line)
+        elif not any(held.startswith(_PREFIX) for held in kept):
+            kept.append(_PREFIX + paths)
+    return kept
 
 
 def mutmut_files(services: list[App]) -> dict[str, str]:

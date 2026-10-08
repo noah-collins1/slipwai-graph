@@ -165,7 +165,7 @@ class MutmutGeneratedTest(FactoryTestCase):
         self.assertEqual(one, ["python3 scripts/mutmut-mutation.py apps/service"])
         self.assertEqual(FULL_COMMAND.replace("__APP__", "apps/service"), one[0])
         two = recipe_of(self.makefile("two-py"), "mutation-full")
-        self.assertEqual(two, [FULL_COMMAND.replace("__APP__", f"apps/{n}") for n in ("service", "second")])
+        self.assertEqual(two, [FULL_COMMAND.replace("__APP__", "apps/service apps/second")])  # one line (D223)
         mixed = recipe_of(self.makefile("go-py"), "mutation-full")
         self.assertEqual(mixed, ["python3 scripts/go-mutation.py apps/service $(if $(SINCE),--since $(SINCE))",
                                  FULL_COMMAND.replace("__APP__", "apps/second")])
