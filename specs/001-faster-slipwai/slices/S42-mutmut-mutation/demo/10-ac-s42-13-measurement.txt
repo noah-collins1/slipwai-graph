@@ -1,0 +1,22 @@
+### AC-S42-13 measurement
+machine: 12th Gen Intel(R) Core(TM) i5-12400, nproc 12, Linux 7.0.0-31-generic; uv 0.12.21; Python 3.14.4 (service venvs); mutmut 3.8.0
+load before timed runs: 0.80 (scoped, 16:08:32) and 1.32 (sweep, 16:08:48), 1-minute average; no other heavy job running
+project: slipwai generate demo --backend python (FastAPI, Postgres) + add-service billing --backend python; branch slice/S1 off main at 8d61e56
+
+time make mutation   (apps/service/src/demo/__init__.py changed): real 3.211 s, user 4.645 s, sys 0.615 s; 4 mutants, 4 killed; billing skipped; exit 0
+time make mutation-full (both services, each from a fresh mutants/): real 18.577 s, user 69.381 s, sys 20.898 s; exit 2
+  apps/service: 992 mutants: 415 killed, 463 no tests, 114 survived; failed
+  apps/billing: 992 mutants: 415 killed, 463 no tests, 114 survived; failed
+  mutation: 2 swept; failed: apps/service, apps/billing
+ratio: about 5.8x by wall time for the scoped run (one service, 4 of 992 mutants) against the two-service sweep (1984 mutants)
+
+survivors per file (apps/service; apps/billing identical under demo_billing.*):
+      1 demo.adapters.driven.checkpoint_store_memory
+     22 demo.adapters.driven.event_store_memory
+     11 demo.adapters.driving.http.app
+     10 demo.application.ports.events
+     24 demo.logging_setup
+      9 demo.projections
+     14 demo.projections_lifespan
+      2 demo.settings
+     21 demo.tracing

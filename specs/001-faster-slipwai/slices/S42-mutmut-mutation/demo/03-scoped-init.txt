@@ -1,0 +1,112 @@
+$ echo "# a change" >> apps/service/src/demo/__init__.py
+$ time make mutation
+ 16:08:32 up 19 days, 15:41,  2 users,  load average: 0.80, 1.92, 2.33
+mutation: scoped to 1 changed file(s) since `main` at 8d61e56: apps/service/src/demo/__init__.py
+mutation: scope apps/service — src/demo/__init__.py
+⠋ Generating mutants⠙ Generating mutants⠹ Generating mutants⠸ Generating mutants⠼ Generating mutants⠴ Generating mutants⠦ Generating mutants⠧ Generating mutants⠇ Generating mutants⠏ Generating mutants⠋ Generating mutants⠙ Generating mutants⠹ Generating mutants⠸ Generating mutants⠼ Generating mutants⠴ Generating mutants⠦ Generating mutants⠧ Generating mutants⠇ Generating mutants⠏ Generating mutants⠋ Generating mutants⠙ Generating mutants⠹ Generating mutants⠸ Generating mutants⠼ Generating mutants⠴ Generating mutants⠦ Generating mutants⠧ Generating mutants⠇ Generating mutants⠏ Generating mutants⠋ Generating mutants⠙ Generating mutants⠹ Generating mutants⠸ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants⠴ Generating mutants⠦ Generating mutants⠸ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants⠴ Generating mutants⠦ Generating mutants⠴ Generating mutants⠸ Generating mutants⠦ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants⠸ Generating mutants⠼ Generating mutants
+    done in 16ms (0 files mutated, 0 ignored, 15 unmodified)
+⠸ Running stats     ⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats⠴ Running stats⠦ Running stats⠧ Running stats⠇ Running stats⠏ Running stats⠋ Running stats⠙ Running stats⠹ Running stats⠸ Running stats⠼ Running stats
+    done
+⠴ Running clean tests⠦ Running clean tests⠧ Running clean tests⠇ Running clean tests⠏ Running clean tests⠋ Running clean tests
+    done
+⠙ Running forced fail test⠹ Running forced fail test⠸ Running forced fail test⠼ Running forced fail test⠴ Running forced fail test⠦ Running forced fail test⠧ Running forced fail test⠇ Running forced fail test⠏ Running forced fail test⠋ Running forced fail test⠙ Running forced fail test⠹ Running forced fail test⠸ Running forced fail test⠼ Running forced fail test⠴ Running forced fail test⠦ Running forced fail test
+    done
+Running mutation testing
+⠧ 0/992  🎉 0 🫥 0  ⏰ 0  🤔 0  🙁 0  🔇 0  🧙 0⠇ 0/992  🎉 0 🫥 0  ⏰ 0  🤔 0  🙁 0  🔇 0  🧙 0Exception ignored in atfork callback <function BatchProcessor.__init__.<locals>.<lambda> at 0x75d0badaeda0>:
+Traceback (most recent call last):
+  File "/tmp/s42-hand/demo-out/demo/apps/service/.venv/lib/python3.14/site-packages/opentelemetry/sdk/_shared_internal/__init__.py", line 119, in <lambda>
+    os.register_at_fork(after_in_child=lambda: weak_reinit()())  # pyright: ignore[reportOptionalCall] pylint: disable=unnecessary-lambda
+TypeError: 'NoneType' object is not callable
+⠏ 0/992  🎉 0 🫥 0  ⏰ 0  🤔 0  🙁 0  🔇 0  🧙 0Exception ignored in atfork callback <function BatchProcessor.__init__.<locals>.<lambda> at 0x75d0badaeda0>:
+Traceback (most recent call last):
+  File "/tmp/s42-hand/demo-out/demo/apps/service/.venv/lib/python3.14/site-packages/opentelemetry/sdk/_shared_internal/__init__.py", line 119, in <lambda>
+    os.register_at_fork(after_in_child=lambda: weak_reinit()())  # pyright: ignore[reportOptionalCall] pylint: disable=unnecessary-lambda
+TypeError: 'NoneType' object is not callable
+⠋ 0/992  🎉 0 🫥 0  ⏰ 0  🤔 0  🙁 0  🔇 0  🧙 0Exception ignored in atfork callback <function BatchProcessor.__init__.<locals>.<lambda> at 0x75d0badaeda0>:
+Traceback (most recent call last):
+  File "/tmp/s42-hand/demo-out/demo/apps/service/.venv/lib/python3.14/site-packages/opentelemetry/sdk/_shared_internal/__init__.py", line 119, in <lambda>
+    os.register_at_fork(after_in_child=lambda: weak_reinit()())  # pyright: ignore[reportOptionalCall] pylint: disable=unnecessary-lambda
+TypeError: 'NoneType' object is not callable
+Exception ignored in atfork callback <function BatchProcessor.__init__.<locals>.<lambda> at 0x75d0badaeda0>:
+Traceback (most recent call last):
+  File "/tmp/s42-hand/demo-out/demo/apps/service/.venv/lib/python3.14/site-packages/opentelemetry/sdk/_shared_internal/__init__.py", line 119, in <lambda>
+    os.register_at_fork(after_in_child=lambda: weak_reinit()())  # pyright: ignore[reportOptionalCall] pylint: disable=unnecessary-lambda
+TypeError: 'NoneType' object is not callable
+⠙ 4/992  🎉 4 🫥 0  ⏰ 0  🤔 0  🙁 0  🔇 0  🧙 0
+107.57 mutations/second
+
+Mutant results
+--------------
+🎉 demo.x_health__mutmut_1
+🎉 demo.x_health__mutmut_2
+🎉 demo.x_health__mutmut_3
+🎉 demo.x_health__mutmut_4
+
+mutation: scoped to 1 given file(s): src/demo/__init__.py — 4 mutant(s)
+mutation: mutmut exited 0 (its exit status and the output above are mutmut's, never the verdict; the .meta files are)
+mutation: 4 mutants: 4 killed, 0 no tests (reported, never failed); passed — report apps/service/mutants/
+mutation: skip apps/billing — no changed production file
+mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; passed
+
+real	0m3.211s
+user	0m4.645s
+sys	0m0.615s
+exit 0
+$ git status --short
+ M apps/service/src/demo/__init__.py
+$ non-null meta files
+apps/service/mutants/src/demo/__init__.py.meta
+apps/service/mutants/src/demo/projections.py.meta
+apps/service/mutants/src/demo/logging_setup.py.meta
+apps/service/mutants/src/demo/main.py.meta
+apps/service/mutants/src/demo/tracing.py.meta
+apps/service/mutants/src/demo/projections_lifespan.py.meta
+apps/service/mutants/src/demo/settings.py.meta
+apps/service/mutants/src/demo/openapi.py.meta
+apps/service/mutants/src/demo/__init__.py.meta
+apps/service/mutants/src/demo/application/ports/events.py.meta
+apps/service/mutants/src/demo/application/ports/read_models.py.meta
+apps/service/mutants/src/demo/adapters/driven/event_store_postgres.py.meta
+apps/service/mutants/src/demo/adapters/driven/event_store_memory.py.meta
+apps/service/mutants/src/demo/adapters/driven/checkpoint_store_postgres.py.meta
+apps/service/mutants/src/demo/adapters/driven/checkpoint_store_memory.py.meta
+apps/service/mutants/src/demo/adapters/driving/http/app.py.meta
+{
+    "exit_code_by_key": {
+        "demo.x_health__mutmut_1": 1,
+        "demo.x_health__mutmut_2": 1,
+        "demo.x_health__mutmut_3": 1,
+        "demo.x_health__mutmut_4": 1
+    },
+    "hash_by_function_name": {
+        "x_health": "b617e624a649"
+    },
+    "type_check_error_by_key": {},
+    "durations_by_key": {
+        "demo.x_health__mutmut_1": 0.026501,
+        "demo.x_health__mutmut_2": 0.025796,
+        "demo.x_health__mutmut_3": 0.024648,
+        "demo.x_health__mutmut_4": 0.024748
+    },
+    "estimated_durations_by_key": {
+        "demo.x_health__mutmut_1": 5.9543177485466003e-05,
+        "demo.x_health__mutmut_2": 5.9543177485466003e-05,
+        "demo.x_health__mutmut_3": 5.9543177485466003e-05,
+        "demo.x_health__mutmut_4": 5.9543177485466003e-05
+    }
+}ls: cannot access 'apps/billing/mutants': No such file or directory
+mutants/src/demo/__init__.py.meta 4 non-null 4
+mutants/src/demo/adapters/driven/checkpoint_store_memory.py.meta 31 non-null 0
+mutants/src/demo/adapters/driven/checkpoint_store_postgres.py.meta 38 non-null 0
+mutants/src/demo/adapters/driven/event_store_memory.py.meta 147 non-null 0
+mutants/src/demo/adapters/driven/event_store_postgres.py.meta 331 non-null 0
+mutants/src/demo/adapters/driving/http/app.py.meta 25 non-null 0
+mutants/src/demo/application/ports/events.py.meta 38 non-null 0
+mutants/src/demo/application/ports/read_models.py.meta 0 non-null 0
+mutants/src/demo/logging_setup.py.meta 65 non-null 0
+mutants/src/demo/main.py.meta 55 non-null 0
+mutants/src/demo/openapi.py.meta 27 non-null 0
+mutants/src/demo/projections.py.meta 132 non-null 0
+mutants/src/demo/projections_lifespan.py.meta 36 non-null 0
+mutants/src/demo/settings.py.meta 14 non-null 0
+mutants/src/demo/tracing.py.meta 49 non-null 0

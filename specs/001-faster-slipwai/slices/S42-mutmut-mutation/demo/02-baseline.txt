@@ -1,0 +1,16 @@
+$ make verify (3, baseline reuse check)
+verify: the full gate did not run; this tree already passed it at 2026-10-08T21:08:20Z (key 131436670825); VERIFY_FORCE=1 runs it anyway
+
+real	0m0.552s
+user	0m0.421s
+sys	0m0.098s
+$ grep -A2 ^mutation-full: Makefile
+mutation-full: ## Run native mutation testing over every service, the whole run; `make mutation` scopes on a slice branch
+	python3 scripts/mutmut-mutation.py apps/service apps/billing
+audit: ## Run the ecosystem-native dependency vulnerability audit
+$ make mutation (nothing changed)
+mutation: no mutant to run — no production file changed
+mutation: skip apps/service — no changed production file
+mutation: skip apps/billing — no changed production file
+mutation: 0 scoped, 0 swept, 2 skipped, 0 refused; passed
+exit 0
