@@ -336,6 +336,15 @@ class WordsOfShippedFilesTest(unittest.TestCase):
         count = {5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine"}[len(names)]
         self.assertIn(f"the {count} nobody reads", docstring)
 
+    def test_t027_every_line_the_wrapper_prints_has_its_fixed_text_in_the_data_model(self) -> None:
+        model = ROOT / "specs/001-faster-slipwai/slices/S42-mutmut-mutation/data-model.md"
+        tree = ast.parse((ROOT / "assets/languages/python/scripts/mutmut-mutation.py").read_text(encoding="utf-8"))
+        spoken = [n for n in ast.walk(tree) if isinstance(n, ast.JoinedStr)
+                  or isinstance(n, ast.Call) and getattr(n.func, "id", "") in ("say", "note", "Unreadable")]
+        pieces = {c.value.strip() for n in spoken for c in ast.walk(n) if isinstance(c, ast.Constant)
+                  and isinstance(c.value, str)} - {""}
+        self.assertEqual([p for p in sorted(pieces) if p not in model.read_text(encoding="utf-8")], [])
+
 
 if __name__ == "__main__":
     unittest.main()

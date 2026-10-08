@@ -81,10 +81,23 @@ Every line is prefixed `mutation: `.
 | scoped, every file empty | `no mutant to run — <files>: mutmut found no function to mutate in it` / `in them` | 0 |
 | scoped | `scoped to <n> given file(s): <files> — <m> mutant(s)` | — |
 | mutmut's exit | `mutmut exited <code> (its exit status and the output above are mutmut's, never the verdict; the .meta files are)` | — |
-| a silencing pragma or setting | `<service>/<file>:<line> holds "# pragma: no mutate <block|start|end>", which silences mutants nobody looked at; only a bare "# pragma: no mutate" on the line excuses one` · `<service>/pyproject.toml sets do_not_mutate_patterns, which silences …` · `<service>/pyproject.toml sets mutate_only_covered_lines, which leaves out the mutants of every line coverage excludes without anyone looking at them` · `<service>/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches through deeper calls into mutants no test reaches without anyone looking at them` (any value but mutmut's default `-1`; read as mutmut 3.8.0's `_parse_pragma_token` reads a comment; decided in `plan`, before any empty exit) | 1, before mutmut starts |
+| a silencing pragma or setting | `<service>/<file>:<line> holds "# pragma: no mutate <block|start|end>", which silences mutants nobody looked at; only a bare "# pragma: no mutate" on the line excuses one` · `<service>/pyproject.toml sets do_not_mutate_patterns, which silences every line a pattern matches without anyone looking at its mutants; only a bare "# pragma: no mutate" on the line excuses one` · `<service>/pyproject.toml sets mutate_only_covered_lines, which leaves out the mutants of every line coverage excludes without anyone looking at them` · `<service>/pyproject.toml sets max_stack_depth, which turns the survivors a test reaches through deeper calls into mutants no test reaches without anyone looking at them` (any value but mutmut's default `-1`; read as mutmut 3.8.0's `_parse_pragma_token` reads a comment; decided in `plan`, before any empty exit) | 1, before mutmut starts |
 | each failing mutant | `<status> <service> <mutant name> (mutmut show <mutant name> in <service>; report <service>/mutants/)` | — |
 | sweep, zero mutants | `mutmut found nothing to mutate in <service>; a pass on nothing is not a pass` | 1 |
 | last line | `<n> mutants: <k> killed, <u> no tests (reported, never failed)[, <s> survived, <t> timed out, …]; <passed|failed> — report <service>/mutants/` | 0 / 1 |
+
+### The rest of the wrapper's lines (each `mutation: ` line, fixed text in full; `<…>` is what the run fills in)
+
+| Situation | Line | Exit |
+|---|---|---|
+| another run of the service holds its lock | `another mutmut run of <service> holds <service>/.venv/mutmut-run.lock; wait for it, then run this again` | 2 |
+| mutmut's generation step fails | `mutmut could not generate mutants for <service> (exit <n>)[: <its last stderr line>]`, after the last 2000 characters it printed | 2 |
+| `<service>/mutants/` could not be removed | `<service>/mutants/ could not be removed; delete it, then run this again` | 2 |
+| a judged file has no readable `.meta` after the run | `<service>/<file>: mutmut left no readable .meta, so nothing can be said of it` | 1 |
+| a judged file is not UTF-8 or not Python | `<service>/<file> cannot be read as UTF-8, so its pragmas cannot be checked` · `<service>/<file> cannot be read as Python, so its pragmas cannot be checked` | 1 |
+| a `--file` holding `*`, `?` or `[` | `` `<service>/<file>` holds `<char>`, which mutmut reads as a pattern over mutant names; rename it, or run `make mutation-full` `` | 2 |
+| a configuration `targets()` cannot read | `<service>/pyproject.toml: <what is wrong>`, which is one of: `no tomllib: Python 3.11 or newer reads [tool.mutmut]` · `is not valid TOML (<error>)` · `cannot be read (<error>)` · `no [tool.mutmut] table` · `source_paths must be a non-empty list of paths, not <value>` · `source_paths holds <value>, which is not a relative directory of literal segments under the service` · `only_mutate must be a list of strings, not <value>` (likewise `do_not_mutate`) | 2 |
+| a `uv.lock` the scope script reads through the wrapper's `lock_versions` and cannot place | `is not a uv lock: it has no [[package]] entries` (the service sweeps; nothing is printed by the wrapper) | — |
 
 ## What sweeps a Python service (added to `sweep_causes`)
 
