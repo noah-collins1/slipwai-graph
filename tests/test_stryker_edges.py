@@ -58,6 +58,20 @@ class EdgesTest(VerdictCase):
                       done.stdout.splitlines())
         self.assertTrue(done.stdout.splitlines()[-1].endswith(f"failed — report {REPORT}"))
 
+    def test_l5_t042_stryker_is_told_which_config_to_read_whatever_other_file_lies_beside_it(self) -> None:
+        """B1: Stryker 10 reads `stryker.conf.json`, `.js`, `.mjs`, `.cjs` and `stryker.config.js|mjs|cjs` before
+        `stryker.config.json` where none is named; the scope reads `stryker.config.json`, so the wrapper names it."""
+        for decoy in ("stryker.conf.json", "stryker.conf.js", "stryker.conf.mjs", "stryker.conf.cjs",
+                      "stryker.config.js", "stryker.config.mjs", "stryker.config.cjs"):
+            (self.tree / SERVICE / decoy).write_text("{}", encoding="utf-8")
+        for files in (("--file", "src/a.ts"), ()):
+            with self.subTest(files=files):
+                self.log.unlink(missing_ok=True)
+                code, lines = self.run_wrapper(OK, *files)
+                self.assertEqual(code, 0, lines)
+                argv = self.execs()[0]["argv"]
+                self.assertEqual(argv[argv.index("run") + 1], "stryker.config.json", argv)
+
 
 class LockTest(VerdictCase):
     installed = False

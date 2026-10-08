@@ -768,7 +768,9 @@ def judge(job: Job) -> int:
         return 2
     # `--force` runs every mutant even where `incremental` is on and an incremental file exists: a green never rests on
     # the results of an earlier run (T036, D212 item 7).
-    command = ["npm", "exec", "--no", "--", "stryker", "run", "--force"]
+    # The config is named: Stryker 10 reads `stryker.conf.json`, `.js`, `.mjs`, `.cjs` and `stryker.config.js|mjs|cjs`
+    # before `stryker.config.json` where none is, and the scope script reads only the last (T042, D213).
+    command = ["npm", "exec", "--no", "--", "stryker", "run", CONFIG, "--force"]
     if given:
         say(f"mutation: scoped to {len(given)} given file(s): {', '.join(given)}")
         command += ["--mutate", ",".join(given)]

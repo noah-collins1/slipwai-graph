@@ -26,7 +26,7 @@ TEST_SELECTION = {"reads": ["assets/languages/typescript/scripts/stryker-mutatio
 SERVICE = "apps/service"
 REPORT = f"{SERVICE}/reports/mutation/mutation.json"
 # What the wrapper starts Stryker as, before any `--mutate`.
-RUN = ["exec", "--no", "--", "stryker", "run", "--force"]
+RUN = ["exec", "--no", "--", "stryker", "run", "stryker.config.json", "--force"]
 FAKE_NPM = f"""#!{sys.executable}
 import json, os, shutil, sys, time
 from pathlib import Path
