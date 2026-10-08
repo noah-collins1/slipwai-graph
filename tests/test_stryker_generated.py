@@ -203,8 +203,9 @@ class StrykerGeneratedTest(FactoryTestCase):
             self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
 
 
-# sha256 of what the other backends' notes and the gates page said before this slice: not this rule's to change.
-BEFORE = {"go": "db4dabb3917fb51911370261d9328bda8137d8b165bd111f64385d7dbc46d76f",
+# sha256 of what the other backends' notes and the gates page said before this slice: not this rule's to change. The
+# Go digest is of the note's words wrapped to 120 columns (S42 T029; it ran 121 and 126 before): the same text.
+BEFORE = {"go": "10416724626b8a2f6b9cfee328e5561f082506f708ed07828bf1cff1d3d47600",
           "java-spring": "ccfe2452d786d21eb47acc8d17d02a0d9ca8103932c3cd2f0ebba5273d657fcf",
           "java-quarkus": "74fde152fd96f87e4597fb976e8827555cba9631feccb67bd7196c4776bd283a"}
 GATES_PAGE = "53dad482d8dc5e54762bdcb6edf5045e520235cd201f8e38089034be900e1660"

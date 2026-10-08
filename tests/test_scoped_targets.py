@@ -25,6 +25,8 @@ from test_verify_stamp_scan import SHAPES as SCAN_SHAPES
 from test_verify_stamp_scan import makefile_rules
 
 from slipwai.assets import ROOT
+from slipwai.project.mutation import mutation_notes
+from slipwai.services import App
 
 sys.dont_write_bytecode = True
 
@@ -45,20 +47,20 @@ SHAPES["integration-billing"] = (
 # sha256 of each shape's Makefile before this slice's section, from the commit that came before it (R3 e5). A gate
 # that changes on purpose regenerates these; this slice adds text after everything and moves nothing before it.
 PRE_SLICE: dict[str, str] = {
-    "standard-python": "43cc8165fb348480777e1078a7c99bcc9d8d7e078f415388c2bfb8c1fd62ef21",
-    "model-typescript-web": "984e9a38b969f4362834e5288e14ea7b6fb352e9980531fbd799c7071aa4661d",
-    "model-typescript-web-cloud": "ac36b4ebcdf92e5cfc0b452e89f4abe9297c61d3a5f10aef031c4fd64bdcb00c",
-    "model-python-sqlite": "b62b53d0cb93cf53f04cf6187eb44bfa67eef7203b5efabb9aad83be7cacf1f3",
-    "model-go-azure": "4e1460b376ec99d6df9dbb610d9e9cbf36303cd96f146c9108dd926a92b8e71f",
+    "standard-python": "7bf0566e0936365cf1a1d316a95860f292f26a246ba813cfae6c86e9070f032e",
+    "model-typescript-web": "ca06fb369e785a134705fcd8850a5dd5cbb28686b08650647fb7d40ea5da74b1",
+    "model-typescript-web-cloud": "0eec6cfa921951453690d97633299cc67fd80ccc78b94ec66a50095af81c171f",
+    "model-python-sqlite": "18d0ea697a9dc13ff77b664908d6d3cbc034034a57d0a512489b05ffe7b9522e",
+    "model-go-azure": "49c93cf01e241187020cc2bdfcdc377032c1b4b3926979308baf4df3719e29fe",
     "standard-quarkus": "74efc08991dfe6e26f8a1d08c92058adb4874763026935514074f51059ff3491",
     "standard-spring-web": "f08f581ddf2ee0fdfb8ed5ae2fe7c3446a009b182f0740604f55ab780a0e0c6e",
-    "two-python": "30cd1d19bb6bc62f9c9d8ca949d864cdadc71147654216d05ccfcdfd8cb07aae",
-    "go-web": "247491616ca93133108871785fd8863c27c2ca410058b2fa415c8749b7afe52a",
-    "java-go": "1e4574d4f9cb761120d338e0b17c3f227b475f6f2c2b8aa134e852ab823773b5",
-    "java-python-web": "b3a27db9e84afb2841bc08115eec9e78d0255659c1eeeb71be859dfedd0f65c8",
-    "two-go": "6fbf55df732ad2b631de9f105cd7d9a713123dfece1681f6d335b86d7271dcd7",
-    "integration": "2b6328abd7fddddd4fde75d6266c309de5bc5d17d0b9d5a0859036be6bc563ac",
-    "integration-billing": "4e29fbc33b5aa0349a5346020e62ee3ec9d3fd62ec988bbe0cee3e75c852135a",
+    "two-python": "6d2c866491cbfc7a6bf0e1596c47fa02439b6aebea664ad10ac1f25898caac16",
+    "go-web": "3fa01ecf6acac061b0cfe50f1e09d18aa0679c616c8abd90c140a443b127d643",
+    "java-go": "917cf20ca83c1a8230030d0406a0d611137fad7225945df7e2d1b260b33c5c53",
+    "java-python-web": "755789dbfd2144bd0e9243344099bc430cb97683b31abb96ce1ee6a36a60df4e",
+    "two-go": "9c1b692182bce8e0af9e571a44c4b2e0b528efaa399c61933db9b4da81f94b3b",
+    "integration": "0ca262486367632ccb0e10b497a3e69c847be035ffe52c19a05c7beeaaa66154",
+    "integration-billing": "89d526b2e030fd0403434d762a836205468f609b17337ef6f216135edc055d8b",
 }
 
 
@@ -235,6 +237,30 @@ class ScopedTargetsTest(FactoryTestCase):
                 for target in targets:
                     self.assertNotRegex(helped, rf"^\s+{re.escape(target)}\s", target)
 
+    def test_t029_every_backends_note_is_its_own_block_and_stays_within_120_columns_for_two_services(self) -> None:
+        def services(*backends: str) -> list[App]:
+            return [App(name, f"apps/{name}", "service", backend.partition("-")[0],
+                        {"spring": "spring-boot", "quarkus": "quarkus"}.get(backend.partition("-")[2]), 3000)
+                    for backend in backends for name in ("service", "billing")]
+
+        backends = ("go", "java-spring", "java-quarkus", "typescript", "python")
+        for backend in backends:
+            with self.subTest(backend=backend):
+                note = mutation_notes(services(backend))
+                self.assertEqual([line for line in note.splitlines() if len(line) > 120], [])
+        together = mutation_notes(services(*backends)).splitlines()
+        self.assertEqual([line for line in together if len(line) > 120], [])
+        starts = [i for i, line in enumerate(together) if line.startswith(("# Wired up", "# Not wired"))]
+        self.assertEqual(len(starts), len(backends))
+        for start in starts[1:]:
+            self.assertEqual(together[start - 1], "#", "each note is its own block, one comment line from the last")
+            self.assertNotEqual(together[start - 2], "#")
+        for name in ("two-python", "java-python-web"):  # the generated Makefile carries the same text
+            with self.subTest(project=name):
+                above = (self.project(name) / "Makefile").read_text(encoding="utf-8").split("\nmutation:")[0]
+                comments = [line for line in above.splitlines()[::-1] if line.startswith("#")]
+                self.assertTrue(comments)
+                self.assertEqual([line for line in comments if len(line) > 120], [])
 
 if __name__ == "__main__":
     unittest.main()

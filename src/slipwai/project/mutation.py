@@ -14,6 +14,9 @@ under Spring Boot's test harness and times out under Quarkus's.
 """
 from __future__ import annotations
 
+import re
+import textwrap
+
 from ..backends import APP
 from ..services import App, backends_of, services_of
 from .mutmut import PYTHON_MUTATION_NOTE, PYTHON_REPORT_TEXT
@@ -238,16 +241,44 @@ MUTATION_NOTES = {
 NAMED_FILES = ("pom.xml", GO_GREMLINS_CONFIG, GO_GREMLINS_REPORT, CONFIG_NAME, REPORT, "pyproject.toml", MUTMUT_REPORT)
 
 
+NOTE_WIDTH = 120
+ITEM = re.compile(r"#   \d+\. ")  # a numbered item of a note: `#   1. text`, its lines continued by `#      `
+
+
+def rewrap(note: str) -> str:
+    """A note with no line over `NOTE_WIDTH` columns. A paragraph (or numbered item) holding a longer line, as a note
+    does once `__APP__/<file>` has been replaced by several services' paths, is filled again; the rest is left as it
+    was written."""
+    blocks: list[list[str]] = []
+    for line in note.splitlines():
+        if line == "#" or ITEM.match(line) or not blocks or blocks[-1] == ["#"]:
+            blocks.append([line])
+        else:
+            blocks[-1].append(line)
+    wrapped = []
+    for block in blocks:
+        item = bool(ITEM.match(block[0]))
+        if block == ["#"] or all(len(line) <= NOTE_WIDTH for line in block):
+            wrapped.extend(block)
+            continue
+        text = " ".join(line.removeprefix("#").strip() for line in block)
+        wrapped.append(textwrap.fill(text, NOTE_WIDTH, initial_indent="#   " if item else "# ",
+                                     subsequent_indent="#      " if item else "# ", break_long_words=False,
+                                     break_on_hyphens=False))
+    return "\n".join(wrapped) + "\n"
+
+
 def mutation_notes(apps: list[App]) -> str:
-    """Each present backend's note once, naming that backend's own services where a note names a file."""
+    """Each present backend's note once, naming that backend's own services where a note names a file, as its own block
+    of comment lines: one `#` line between two notes, and none over `NOTE_WIDTH` columns for however many services."""
     notes = []
     for backend in backends_of(apps):
         note = MUTATION_NOTES.get(backend, "")
         for file in NAMED_FILES:
             named = " and ".join(f"`{s.path}/{file}`" for s in services_of(apps) if s.backend == backend)
             note = note.replace(f"`{APP}/{file}`", named)
-        notes.append(note)
-    return "".join(dict.fromkeys(notes))
+        notes.append(rewrap(note) if note else note)
+    return "#\n".join(note for note in dict.fromkeys(notes) if note)
 
 
 # Said once, read by the command text: how `make mutation` is scoped and what sweeps (D137 to D139).
