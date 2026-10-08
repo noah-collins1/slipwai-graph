@@ -1,0 +1,18 @@
+$ git show --stat HEAD
+demo: reword a read-models.ts comment
+
+ apps/service/src/application/ports/read-models.ts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ make mutation   # only a doc comment in the starter port read-models.ts changed, committed
+mutation: scoped to 1 changed file(s) since `main` at 7287334: apps/service/src/application/ports/read-models.ts
+mutation: scope apps/service — src/application/ports/read-models.ts
+mutation: scoped to 1 given file(s): src/application/ports/read-models.ts
+[32m04:05:32 (831962) INFO Instrumenter[39m Instrumented 1 source file(s) with 0 mutant(s)
+mutation: Stryker exited 0 (its exit status is printed, never the verdict; the report is)
+mutation: Stryker found no mutant in apps/service/src/application/ports/read-models.ts, which holds code it could mutate; that is not a pass (report apps/service/reports/mutation/mutation.json)
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; failed: apps/service
+make: *** [Makefile:248: mutation] Error 1
+exit=2
+$ grep -n "^export const" apps/service/src/application/ports/read-models.ts
+32:export const FROM_THE_BEGINNING = 0;
+# Stryker 10 has no numeric-literal mutator, so `= 0` holds no mutant; the full sweep above (q2) lists no entry for read-models.ts either.

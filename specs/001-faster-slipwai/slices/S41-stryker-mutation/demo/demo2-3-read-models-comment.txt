@@ -1,0 +1,136 @@
+$ git show --stat HEAD
+    demo: reword a read-models.ts comment
+
+ apps/service/src/application/ports/read-models.ts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ git show HEAD -U0 | tail -4
++++ b/apps/service/src/application/ports/read-models.ts
+@@ -2 +2 @@
+- * The read-side port: where a projection has got to, and who is allowed to advance it.
++ * The read-side port: how far a projection has got, and who is allowed to advance it.
+$ grep -n "^export const" apps/service/src/application/ports/read-models.ts
+32:export const FROM_THE_BEGINNING = 0;
+$ make mutation   # only a doc comment in read-models.ts changed, committed
+mutation: scoped to 1 changed file(s) since `main` at c0f0a3e: apps/service/src/application/ports/read-models.ts
+mutation: scope apps/service — src/application/ports/read-models.ts
+mutation: scoped to 1 given file(s): src/application/ports/read-models.ts
+[32m04:32:28 (949155) INFO ProjectReader[39m Found 1 of 37 file(s) to be mutated.
+[32m04:32:28 (949155) INFO Instrumenter[39m Instrumented 1 source file(s) with 0 mutant(s)
+[32m04:32:28 (949155) INFO ConcurrencyTokenProvider[39m Creating 11 test runner process(es).
+[32m04:32:29 (949155) INFO DryRunExecutor[39m Starting initial test run (vitest test runner with "perTest" coverage analysis). This may take a while.
+[32m04:32:31 (949155) INFO DryRunExecutor[39m Initial test run succeeded. Ran 86 tests in 1 second (net 544.1822069999986 ms, overhead 1418.8177930000015 ms).
+
+All tests
+  contract
+    checkpoint-store-memory.test.ts
+      ✘ the in-memory checkpoint store satisfies the checkpoint port starts a projection nothing has recorded at the beginning (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port records a position and reads it back (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port records the same projection twice without a second row (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port puts a position back to the beginning for a rebuild (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port does not record a position written in a unit of work that fails (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port claims a projection for one owner (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port refuses a claim while somebody else holds an unexpired lease (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port lets the owner renew its own lease (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port lets another owner claim a lapsed lease (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port makes a released lease claimable at once (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port does nothing when releasing a lease somebody else holds (covered 0)
+      ✘ the in-memory checkpoint store satisfies the checkpoint port does not disturb the position when the lease moves (covered 0)
+    event-store-memory.test.ts
+      ✘ the in-memory event store satisfies the event-store port reads an unknown stream as empty rather than failing (covered 0)
+      ✘ the in-memory event store satisfies the event-store port appends to a stream that does not exist yet and reports the new version (covered 0)
+      ✘ the in-memory event store satisfies the event-store port returns the stream in version order, with the facts only the store knows (covered 0)
+      ✘ the in-memory event store satisfies the event-store port round-trips the correlation and causation ids as UUIDs (covered 0)
+      ✘ the in-memory event store satisfies the event-store port reports a stale expected version as a value, not a thrown error (covered 0)
+      ✘ the in-memory event store satisfies the event-store port writes nothing when the expected version is stale (covered 0)
+      ✘ the in-memory event store satisfies the event-store port rejects a first write to a stream that already exists (covered 0)
+      ✘ the in-memory event store satisfies the event-store port treats an empty append as a no-op at the expected version (covered 0)
+      ✘ the in-memory event store satisfies the event-store port keeps streams apart (covered 0)
+      ✘ the in-memory event store satisfies the event-store port replays across all streams in global-position order (covered 0)
+      ✘ the in-memory event store satisfies the event-store port replays only from the requested position onward (covered 0)
+      ✘ the in-memory event store satisfies the event-store port indexes every event by its own stream without being asked (covered 0)
+      ✘ the in-memory event store satisfies the event-store port reports the store head with what it read (covered 0)
+      ✘ the in-memory event store satisfies the event-store port matches an event only when it carries every tag in a filter (covered 0)
+      ✘ the in-memory event store satisfies the event-store port matches any filter in the query (covered 0)
+      ✘ the in-memory event store satisfies the event-store port narrows a filter by event type (covered 0)
+      ✘ the in-memory event store satisfies the event-store port matches nothing for an empty query rather than everything (covered 0)
+      ✘ the in-memory event store satisfies the event-store port appends conditionally when nothing matching arrived since the read (covered 0)
+      ✘ the in-memory event store satisfies the event-store port refuses a conditional append when a matching event arrived since (covered 0)
+      ✘ the in-memory event store satisfies the event-store port leaves a conditionally appended event readable as part of its stream (covered 0)
+      ✘ the in-memory event store satisfies the event-store port behaves exactly as it did before when it indexes nothing (covered 0)
+      ✘ the in-memory event store satisfies the event-store port indexes a log it did not index when the events were written (covered 0)
+      ✘ the in-memory event store satisfies the event-store port counts only the events a reindex made findable by tag (covered 0)
+      ✘ the in-memory event store satisfies the event-store port reads as of a boundary and nothing after it (covered 0)
+      ✘ the in-memory event store satisfies the event-store port makes an append and its tags arrive together or not at all (covered 0)
+      ✘ the in-memory event store satisfies the event-store port leaves the log as it was when a unit of work fails (covered 0)
+      ✘ the in-memory event store satisfies the event-store port commits everything in a unit of work that completes, once (covered 0)
+      ✘ the in-memory event store satisfies the event-store port writes nothing and ends nothing when an append inside a unit of work is refused (covered 0)
+    projections-plugin.test.ts
+      ✘ the projections plugin catches a projection up without anybody calling it (covered 0)
+      ✘ the projections plugin stops passing when the server closes (covered 0)
+    projections.test.ts
+      ✘ the catch-up runner applies the whole log and leaves the checkpoint past it (covered 0)
+      ✘ the catch-up runner resumes from the checkpoint and applies nothing twice (covered 0)
+      ✘ the catch-up runner says a pass had nothing to do without touching the view (covered 0)
+      ✘ the catch-up runner applies a long log in batches of the size it was given (covered 0)
+      ✘ the catch-up runner does nothing in a second worker while the first holds the lease (covered 0)
+      ✘ the catch-up runner takes over in another worker once the lease has lapsed (covered 0)
+      ✘ the catch-up runner releases the lease when the pass is done (covered 0)
+      ✘ the catch-up runner moves neither the view nor the checkpoint when a batch fails (covered 0)
+      ✘ the catch-up runner releases the lease even when the pass fails (covered 0)
+      ✘ the catch-up runner catches up every projection in one pass (covered 0)
+      ✘ the catch-up runner applies the other projections when one of them fails (covered 0)
+      ✘ the catch-up runner empties the view and folds the whole log into it again on a rebuild (covered 0)
+      ✘ the catch-up runner leaves the view alone when a rebuild cannot take the lease (covered 0)
+  edge
+    http-app.test.ts
+      ✘ how the service logs logs JSON at info by default, with the trace context on every record (covered 0)
+      ✘ how the service logs reformats each record as one line when the environment asks for a terminal, as `make dev` does (covered 0)
+      ✘ how the service logs writes a readable line for a record and passes anything unparseable through (covered 0)
+      ✘ how the service logs is silent under the test runner unless a level is asked for (covered 0)
+      ✘ the HTTP entry point reports readiness (covered 0)
+      ✘ the HTTP entry point does not echo the requested path back on a 404 (covered 0)
+      ✘ the HTTP entry point does not reveal that a path exists under a different method (covered 0)
+      ✘ the HTTP entry point registers the routes it is given, and holds none of its own (covered 0)
+      ✘ the HTTP entry point serves this environment's flags to the browser app when it is given a source (covered 0)
+      ✘ the HTTP entry point has no flags route at all when it is given no source (covered 0)
+      ✘ the HTTP entry point is ready when the event store answers (covered 0)
+      ✘ the HTTP entry point is not ready, and says no more than the category, when the event store does not answer (covered 0)
+      ✘ the HTTP entry point is ready with nothing to ask when the project has no store (covered 0)
+      ✘ the HTTP entry point reports a schema failure in one shape, whichever route found it (covered 0)
+      ✘ the API contract refuses a body that does not match the route's schema, in the one 400 shape (covered 0)
+      ✘ the API contract refuses a field the route did not declare rather than dropping it (covered 0)
+      ✘ the API contract refuses a query string parameter no route declares (covered 0)
+      ✘ the API contract answers with what the response schema names and nothing else (covered 0)
+      ✘ the API contract publishes the document, and it carries the routes a slice registered (covered 0)
+      ✘ the environment this process was given carries the defaults .env.example writes down when nothing is set (covered 0)
+      ✘ the environment this process was given refuses to start on a variable it cannot use, and names it (covered 0)
+      ✘ the edge a browser meets sends the security headers on every response (covered 0)
+      ✘ the edge a browser meets answers a cross-origin request with nothing, until an origin is allowed (covered 0)
+      ✘ the edge a browser meets permits exactly the origins it was given, and no others (covered 0)
+      ✘ the edge a browser meets reads an allow-list the way a deployment writes one (covered 0)
+    tracing.test.ts
+      ✘ startTracing records spans and exports nothing when no endpoint was named (covered 0)
+      ✘ startTracing exports only where an endpoint says to (covered 0)
+      ✘ traceIds is empty outside a request, so nothing invents an id it does not have (covered 0)
+      ✘ traceIds correlates an event with the trace the caller sent in (covered 0)
+      ✘ traceIds starts its own trace when the caller sent none (covered 0)
+  health.test.ts
+    ✘ health reports ready (covered 0)
+
+Ran NaN tests per mutant on average.
+----------|------------------|----------|-----------|------------|----------|----------|
+          | % Mutation score |          |           |            |          |          |
+File      |  total | covered | # killed | # timeout | # survived | # no cov | # errors |
+----------|--------|---------|----------|-----------|------------|----------|----------|
+All files |    n/a |     n/a |        0 |         0 |          0 |        0 |        0 |
+----------|--------|---------|----------|-----------|------------|----------|----------|
+[32m04:32:31 (949155) INFO JsonReporter[39m Your report can be found at: file:///tmp/cruise29/s41-demo2/demo/apps/service/reports/mutation/mutation.json
+[32m04:32:31 (949155) INFO HtmlReporter[39m Your report can be found at: file:///tmp/cruise29/s41-demo2/demo/apps/service/reports/mutation/mutation.html
+[32m04:32:31 (949155) INFO MutationTestExecutor[39m Done in 3 seconds.
+mutation: Stryker exited 0 (its exit status is printed, never the verdict; the report is)
+mutation: no mutant to run — src/application/ports/read-models.ts: Stryker found no mutant in them (types or comments only)
+mutation: 1 scoped, 0 swept, 0 skipped, 0 refused; passed
+wall=4.423402831 s
+exit=0
+$ git status --short --ignored | grep -v node_modules
+!! apps/service/reports/

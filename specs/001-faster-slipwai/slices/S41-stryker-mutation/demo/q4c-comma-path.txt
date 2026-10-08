@@ -1,0 +1,14 @@
+$ git status --short
+?? apps/service/src/a,b.ts
+$ make mutation   # a changed file named src/a,b.ts
+mutation: scoped to 1 changed file(s) since `main` at 7287334: apps/service/src/a,b.ts
+mutation: refuse apps/service — `apps/service/src/a,b.ts` holds `,`, which Stryker's --mutate reads as pattern syntax; rename it, or run `make mutation-full`
+mutation: 0 scoped, 0 swept, 0 skipped, 1 refused; failed: apps/service
+make: *** [Makefile:248: mutation] Error 2
+Command exited with non-zero status 2
+wall=0.14 s
+exit=2
+$ ls apps/service/reports
+mutation
+$ git status --short
+?? apps/service/src/a,b.ts

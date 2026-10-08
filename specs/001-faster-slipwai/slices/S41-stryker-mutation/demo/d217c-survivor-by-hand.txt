@@ -1,0 +1,56 @@
+# scratch copy: cp -a /tmp/cruise29/s41-demo/demo /tmp/cruise29/s41-demo/scratch
+# the survivor reported by make mutation-full: tracing.ts:91:7 EqualityOperator → endpoint !== undefined
+$ git diff   # the mutant, applied by hand
+diff --git a/apps/service/src/tracing.ts b/apps/service/src/tracing.ts
+index 9e71cc1..b74b53f 100644
+--- a/apps/service/src/tracing.ts
++++ b/apps/service/src/tracing.ts
+@@ -88,7 +88,7 @@ export function startTracing(config: TracingConfig, logger: TracingLogger): Trac
+     // still created, so every id below is real and every log line still carries one. They are simply not
+     // kept once they end.
+     spanProcessors:
+-      endpoint === undefined
++      endpoint !== undefined
+         ? []
+         : [
+             new BatchSpanProcessor(
+$ cd apps/service && npx vitest run   # the service suite, directly
+
+ RUN  v4.1.11 /tmp/cruise29/s41-demo/scratch/apps/service
+
+ ❯ tests/edge/tracing.test.ts (5 tests | 5 skipped) 5ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/edge/tracing.test.ts [ tests/edge/tracing.test.ts ]
+TypeError: Cannot read properties of undefined (reading 'replace')
+ ❯ startTracing src/tracing.ts:95:56
+     93|         : [
+     94|             new BatchSpanProcessor(
+     95|               new OTLPTraceExporter({ url: `${endpoint.replace(/\/$/, …
+       |                                                        ^
+     96|             ),
+     97|           ],
+ ❯ tests/edge/tracing.test.ts:20:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/edge/tracing.test.ts [ tests/edge/tracing.test.ts ]
+TypeError: Cannot read properties of undefined (reading 'shutdown')
+ ❯ tests/edge/tracing.test.ts:24:17
+     22|
+     23| afterAll(async () => {
+     24|   await tracing.shutdown();
+       |                 ^
+     25| });
+     26|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 6 passed (7)
+      Tests  81 passed | 5 skipped (86)
+   Start at  04:05:59
+   Duration  814ms (transform 314ms, setup 0ms, import 1.04s, tests 435ms, environment 1ms)
+
+exit=1

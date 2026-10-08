@@ -22,6 +22,7 @@ from ..tooling import for_app, verify_path
 from .languages.go import GO_COVDATA_READY, GO_COVERAGE_GATE, GO_STATICCHECK, GO_TEST
 from .mutation import GO_MUTATION_SCRIPT, JAVA_QUARKUS_MUTATION_PLACEHOLDER, scope_command
 from .shared_packages import PACKAGES
+from .stryker import FULL_COMMAND
 
 # How a recipe with several shell lines is spelled: each line after the first on a new line behind a tab,
 # which is where Make wants it. Every table below joins with it, and `steps` is the one way to split it.
@@ -79,7 +80,7 @@ def service_commands(backend: str, path: str, verify: str = "scripts/verify") ->
             "integration": f"npm --workspace {APP} exec -- vitest run --passWithNoTests tests/integration",
             "adversarial": f"npm --workspace {APP} exec -- vitest run --passWithNoTests -t adversarial",
             "audit": "npm audit --audit-level=critical",
-            "mutation": "@echo 'Configure the repository-selected Stryker mutator, then run its checked-in configuration.'; exit 2",
+            "mutation": FULL_COMMAND,
         },
         # `scripts/verify` loops over the services itself, so most of these are one line for the whole
         # project and `native_commands` below emits them once.

@@ -1,0 +1,1122 @@
+$ git status --short
+$ make mutation-full   # default starter, fresh, on slice/S1
+python3 scripts/stryker-mutation.py apps/service
+mutation: installing from the committed lock (npm ci)
+
+added 436 packages, and audited 440 packages in 3s
+
+110 packages are looking for funding
+  run `npm fund` for details
+
+9 vulnerabilities (2 moderate, 7 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+[32m04:31:06 (946244) INFO ProjectReader[39m Found 10 of 37 file(s) to be mutated.
+[32m04:31:06 (946244) INFO Instrumenter[39m Instrumented 10 source file(s) with 519 mutant(s)
+[32m04:31:06 (946244) INFO ConcurrencyTokenProvider[39m Creating 11 test runner process(es).
+[32m04:31:07 (946244) INFO DryRunExecutor[39m Starting initial test run (vitest test runner with "perTest" coverage analysis). This may take a while.
+[32m04:31:09 (946244) INFO DryRunExecutor[39m Initial test run succeeded. Ran 86 tests in 2 seconds (net 563.2747290000017 ms, overhead 1479.7252709999984 ms).
+[33m04:31:09 (946244) WARN MutantTestPlanner[39m Detected 74 static mutants (14% of total) that are estimated to take 53% of the time running the tests!
+  You might want to enable "ignoreStatic" to ignore these static mutants for your next run. 
+  For more information about static mutants visit: https://stryker-mutator.io/docs/mutation-testing-elements/static-mutants
+  (disable "warnings.slow" to ignore this warning)
+
+All tests
+  contract
+    checkpoint-store-memory.test.ts
+      ~ the in-memory checkpoint store satisfies the checkpoint port starts a projection nothing has recorded at the beginning (covered 16)
+      ~ the in-memory checkpoint store satisfies the checkpoint port records a position and reads it back (covered 18)
+      ~ the in-memory checkpoint store satisfies the checkpoint port records the same projection twice without a second row (covered 18)
+      ~ the in-memory checkpoint store satisfies the checkpoint port puts a position back to the beginning for a rebuild (covered 18)
+      ✓ the in-memory checkpoint store satisfies the checkpoint port does not record a position written in a unit of work that fails (killed 1)
+      ~ the in-memory checkpoint store satisfies the checkpoint port claims a projection for one owner (covered 26)
+      ~ the in-memory checkpoint store satisfies the checkpoint port refuses a claim while somebody else holds an unexpired lease (covered 31)
+      ~ the in-memory checkpoint store satisfies the checkpoint port lets the owner renew its own lease (covered 28)
+      ~ the in-memory checkpoint store satisfies the checkpoint port lets another owner claim a lapsed lease (covered 31)
+      ~ the in-memory checkpoint store satisfies the checkpoint port makes a released lease claimable at once (covered 32)
+      ✓ the in-memory checkpoint store satisfies the checkpoint port does nothing when releasing a lease somebody else holds (killed 1)
+      ~ the in-memory checkpoint store satisfies the checkpoint port does not disturb the position when the lease moves (covered 35)
+    event-store-memory.test.ts
+      ✓ the in-memory event store satisfies the event-store port reads an unknown stream as empty rather than failing (killed 1)
+      ✓ the in-memory event store satisfies the event-store port appends to a stream that does not exist yet and reports the new version (killed 14)
+      ✓ the in-memory event store satisfies the event-store port returns the stream in version order, with the facts only the store knows (killed 3)
+      ~ the in-memory event store satisfies the event-store port round-trips the correlation and causation ids as UUIDs (covered 53)
+      ✓ the in-memory event store satisfies the event-store port reports a stale expected version as a value, not a thrown error (killed 4)
+      ~ the in-memory event store satisfies the event-store port writes nothing when the expected version is stale (covered 56)
+      ✓ the in-memory event store satisfies the event-store port rejects a first write to a stream that already exists (killed 2)
+      ~ the in-memory event store satisfies the event-store port treats an empty append as a no-op at the expected version (covered 53)
+      ✓ the in-memory event store satisfies the event-store port keeps streams apart (killed 1)
+      ✓ the in-memory event store satisfies the event-store port replays across all streams in global-position order (killed 4)
+      ✓ the in-memory event store satisfies the event-store port replays only from the requested position onward (killed 3)
+      ✓ the in-memory event store satisfies the event-store port indexes every event by its own stream without being asked (killed 30)
+      ~ the in-memory event store satisfies the event-store port reports the store head with what it read (covered 87)
+      ✓ the in-memory event store satisfies the event-store port matches an event only when it carries every tag in a filter (killed 4)
+      ✓ the in-memory event store satisfies the event-store port matches any filter in the query (killed 1)
+      ✓ the in-memory event store satisfies the event-store port narrows a filter by event type (killed 3)
+      ✓ the in-memory event store satisfies the event-store port matches nothing for an empty query rather than everything (killed 3)
+      ✓ the in-memory event store satisfies the event-store port appends conditionally when nothing matching arrived since the read (killed 9)
+      ✓ the in-memory event store satisfies the event-store port refuses a conditional append when a matching event arrived since (killed 4)
+      ✓ the in-memory event store satisfies the event-store port leaves a conditionally appended event readable as part of its stream (killed 6)
+      ~ the in-memory event store satisfies the event-store port behaves exactly as it did before when it indexes nothing (covered 91)
+      ✓ the in-memory event store satisfies the event-store port indexes a log it did not index when the events were written (killed 14)
+      ✓ the in-memory event store satisfies the event-store port counts only the events a reindex made findable by tag (killed 1)
+      ✓ the in-memory event store satisfies the event-store port reads as of a boundary and nothing after it (killed 3)
+      ~ the in-memory event store satisfies the event-store port makes an append and its tags arrive together or not at all (covered 91)
+      ~ the in-memory event store satisfies the event-store port leaves the log as it was when a unit of work fails (covered 51)
+      ~ the in-memory event store satisfies the event-store port commits everything in a unit of work that completes, once (covered 53)
+      ~ the in-memory event store satisfies the event-store port writes nothing and ends nothing when an append inside a unit of work is refused (covered 56)
+    projections-plugin.test.ts
+      ✓ the projections plugin catches a projection up without anybody calling it (killed 33)
+      ✓ the projections plugin stops passing when the server closes (killed 2)
+    projections.test.ts
+      ✓ the catch-up runner applies the whole log and leaves the checkpoint past it (killed 38)
+      ✓ the catch-up runner resumes from the checkpoint and applies nothing twice (killed 3)
+      ✓ the catch-up runner says a pass had nothing to do without touching the view (killed 1)
+      ✓ the catch-up runner applies a long log in batches of the size it was given (killed 9)
+      ✓ the catch-up runner does nothing in a second worker while the first holds the lease (killed 7)
+      ✓ the catch-up runner takes over in another worker once the lease has lapsed (killed 1)
+      ✓ the catch-up runner releases the lease when the pass is done (killed 6)
+      ✓ the catch-up runner moves neither the view nor the checkpoint when a batch fails (killed 1)
+      ~ the catch-up runner releases the lease even when the pass fails (covered 103)
+      ✓ the catch-up runner catches up every projection in one pass (killed 6)
+      ✓ the catch-up runner applies the other projections when one of them fails (killed 4)
+      ✓ the catch-up runner empties the view and folds the whole log into it again on a rebuild (killed 7)
+      ✓ the catch-up runner leaves the view alone when a rebuild cannot take the lease (killed 3)
+  edge
+    http-app.test.ts
+      ✓ how the service logs logs JSON at info by default, with the trace context on every record (killed 6)
+      ✓ how the service logs reformats each record as one line when the environment asks for a terminal, as `make dev` does (killed 5)
+      ✓ how the service logs writes a readable line for a record and passes anything unparseable through (killed 17)
+      ✓ how the service logs is silent under the test runner unless a level is asked for (killed 4)
+      ✓ the HTTP entry point reports readiness (killed 24)
+      ✓ the HTTP entry point does not echo the requested path back on a 404 (killed 3)
+      ~ the HTTP entry point does not reveal that a path exists under a different method (covered 52)
+      ✓ the HTTP entry point registers the routes it is given, and holds none of its own (killed 1)
+      ✓ the HTTP entry point serves this environment's flags to the browser app when it is given a source (killed 7)
+      ✓ the HTTP entry point has no flags route at all when it is given no source (killed 1)
+      ✓ the HTTP entry point is ready when the event store answers (killed 8)
+      ✓ the HTTP entry point is not ready, and says no more than the category, when the event store does not answer (killed 7)
+      ✓ the HTTP entry point is ready with nothing to ask when the project has no store (killed 2)
+      ✓ the HTTP entry point reports a schema failure in one shape, whichever route found it (killed 30)
+      ✓ the API contract refuses a body that does not match the route's schema, in the one 400 shape (killed 8)
+      ✓ the API contract refuses a field the route did not declare rather than dropping it (killed 4)
+      ✓ the API contract refuses a query string parameter no route declares (killed 4)
+      ~ the API contract answers with what the response schema names and nothing else (covered 49)
+      ✓ the API contract publishes the document, and it carries the routes a slice registered (killed 4)
+      ✓ the environment this process was given carries the defaults .env.example writes down when nothing is set (killed 1)
+      ~ the environment this process was given refuses to start on a variable it cannot use, and names it (covered 43)
+      ~ the edge a browser meets sends the security headers on every response (covered 49)
+      ✓ the edge a browser meets answers a cross-origin request with nothing, until an origin is allowed (killed 3)
+      ✓ the edge a browser meets permits exactly the origins it was given, and no others (killed 8)
+      ✓ the edge a browser meets reads an allow-list the way a deployment writes one (killed 4)
+    tracing.test.ts
+      ✓ startTracing records spans and exports nothing when no endpoint was named (killed 4)
+      ✓ startTracing exports only where an endpoint says to (killed 3)
+      ✓ traceIds is empty outside a request, so nothing invents an id it does not have (killed 4)
+      ✓ traceIds correlates an event with the trace the caller sent in (killed 17)
+      ~ traceIds starts its own trace when the caller sent none (covered 63)
+  health.test.ts
+    ✓ health reports ready (killed 3)
+
+[Survived] EqualityOperator
+src/adapters/driven/checkpoint-store-memory.ts:35:57
+-         if (held !== undefined && held.owner !== owner && held.expiresAt > now) return undefined;
++         if (held !== undefined && held.owner !== owner && held.expiresAt >= now) return undefined;
+Tests ran:
+    the catch-up runner does nothing in a second worker while the first holds the lease
+    the catch-up runner takes over in another worker once the lease has lapsed
+    the catch-up runner leaves the view alone when a rebuild cannot take the lease
+  and 3 more tests!
+
+
+[Survived] OptionalChaining
+src/adapters/driven/checkpoint-store-memory.ts:43:11
+-         if (held?.owner === lease.owner) database.leases.delete(lease.projection);
++         if (held.owner === lease.owner) database.leases.delete(lease.projection);
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner says a pass had nothing to do without touching the view
+  and 13 more tests!
+
+
+[Survived] ConditionalExpression
+src/adapters/driven/event-store-memory.ts:117:9
+-       if (tags.length > 0) database.tags.set(globalPosition, [...tags]);
++       if (true) database.tags.set(globalPosition, [...tags]);
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner applies a long log in batches of the size it was given
+  and 39 more tests!
+
+
+[Survived] EqualityOperator
+src/adapters/driven/event-store-memory.ts:117:9
+-       if (tags.length > 0) database.tags.set(globalPosition, [...tags]);
++       if (tags.length >= 0) database.tags.set(globalPosition, [...tags]);
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner applies a long log in batches of the size it was given
+  and 39 more tests!
+
+
+[Survived] ArrayDeclaration
+src/adapters/driven/event-store-memory.ts:127:81
+-             matchesQuery(query, event, database.tags.get(event.globalPosition) ?? []),
++             matchesQuery(query, event, database.tags.get(event.globalPosition) ?? ["Stryker was here"]),
+Tests ran:
+    the in-memory event store satisfies the event-store port behaves exactly as it did before when it indexes nothing
+    the in-memory event store satisfies the event-store port indexes a log it did not index when the events were written
+
+
+[Survived] ConditionalExpression
+src/adapters/driven/event-store-memory.ts:137:13
+-           if (event.globalPosition < fromPosition) continue;
++           if (false) continue;
+Tests ran:
+    the in-memory event store satisfies the event-store port indexes a log it did not index when the events were written
+    the in-memory event store satisfies the event-store port counts only the events a reindex made findable by tag
+
+
+[Survived] EqualityOperator
+src/adapters/driven/event-store-memory.ts:137:13
+-           if (event.globalPosition < fromPosition) continue;
++           if (event.globalPosition <= fromPosition) continue;
+Tests ran:
+    the in-memory event store satisfies the event-store port indexes a log it did not index when the events were written
+    the in-memory event store satisfies the event-store port counts only the events a reindex made findable by tag
+
+
+[Survived] MethodExpression
+src/adapters/driven/event-store-memory.ts:151:7
+-         streamEvents(streamId).slice(),
++         streamEvents(streamId),
+Tests ran:
+    the in-memory checkpoint store satisfies the checkpoint port does not record a position written in a unit of work that fails
+    the in-memory event store satisfies the event-store port reads an unknown stream as empty rather than failing
+    the in-memory event store satisfies the event-store port returns the stream in version order, with the facts only the store knows
+  and 14 more tests!
+
+
+[Survived] CallExpression
+src/adapters/driven/event-store-memory.ts:204:9
+-           database.tags.clear();
++           ;
+Tests ran:
+    the in-memory event store satisfies the event-store port indexes a log it did not index when the events were written
+
+
+[NoCoverage] StringLiteral
+src/adapters/driving/http/app.ts:106:73
+-     const level = (LEVELS as readonly string[]).includes(asked) ? asked : 'info';
++     const level = (LEVELS as readonly string[]).includes(asked) ? asked : "";
+
+[NoCoverage] StringLiteral
+src/adapters/driving/http/app.ts:145:83
+-           const extra = Object.keys(rest).length > 0 ? ` ${JSON.stringify(rest)}` : '';
++           const extra = Object.keys(rest).length > 0 ? ` ${JSON.stringify(rest)}` : "Stryker was here!";
+
+[NoCoverage] StringLiteral
+src/adapters/driving/http/app.ts:147:66
+-             `${at} ${name.toUpperCase().padEnd(5)} ${String(msg ?? '')}${extra}\n`,
++             `${at} ${name.toUpperCase().padEnd(5)} ${String(msg ?? "Stryker was here!")}${extra}\n`,
+
+[NoCoverage] CallExpression
+src/adapters/driving/http/app.ts:268:5
+-       reply.send(error);
++       ;
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:105:88
+-     const asked = process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'test' ? 'silent' : 'info');
++     const asked = process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'test' ? 'silent' : "");
+Tests ran:
+    how the service logs logs JSON at info by default, with the trace context on every record
+    how the service logs reformats each record as one line when the environment asks for a terminal, as `make dev` does
+
+
+[Survived] ConditionalExpression
+src/adapters/driving/http/app.ts:141:29
+-           const at = new Date(typeof time === 'number' ? time : Date.now())
++           const at = new Date(true ? time : Date.now())
+Tests ran:
+    how the service logs writes a readable line for a record and passes anything unparseable through
+
+
+[Survived] EqualityOperator
+src/adapters/driving/http/app.ts:145:23
+-           const extra = Object.keys(rest).length > 0 ? ` ${JSON.stringify(rest)}` : '';
++           const extra = Object.keys(rest).length >= 0 ? ` ${JSON.stringify(rest)}` : '';
+Tests ran:
+    how the service logs writes a readable line for a record and passes anything unparseable through
+
+
+[Survived] ConditionalExpression
+src/adapters/driving/http/app.ts:145:23
+-           const extra = Object.keys(rest).length > 0 ? ` ${JSON.stringify(rest)}` : '';
++           const extra = true ? ` ${JSON.stringify(rest)}` : '';
+Tests ran:
+    how the service logs writes a readable line for a record and passes anything unparseable through
+
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:196:66
+-     void app.register(fastifyEnv, { schema: ConfigSchema, confKey: 'config' });
++     void app.register(fastifyEnv, { schema: ConfigSchema, confKey: "" });
+Tests ran:
+    the HTTP entry point reports readiness
+    the HTTP entry point does not echo the requested path back on a 404
+    the HTTP entry point does not reveal that a path exists under a different method
+  and 18 more tests!
+
+
+[Survived] ConditionalExpression
+src/adapters/driving/http/app.ts:239:9
+-           origin !== undefined && allowedOrigins(app.config.CORS_ALLOWED_ORIGINS).includes(origin),
++           true && allowedOrigins(app.config.CORS_ALLOWED_ORIGINS).includes(origin),
+Tests ran:
+    the HTTP entry point reports readiness
+    the HTTP entry point does not echo the requested path back on a 404
+    the HTTP entry point does not reveal that a path exists under a different method
+  and 16 more tests!
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:246:37
+-     void app.register(fastifySwagger, {
+-       openapi: {
+-         info: { title: 'demo-service', version: '0.1.0' },
+-       },
+-     });
++     void app.register(fastifySwagger, {});
+Tests ran:
+    the HTTP entry point reports readiness
+    the HTTP entry point does not echo the requested path back on a 404
+    the HTTP entry point does not reveal that a path exists under a different method
+  and 18 more tests!
+
+
+[Survived] ConditionalExpression
+src/adapters/driving/http/app.ts:264:9
+-       if (error.validation !== undefined) {
++       if (true) {
+Tests ran:
+    the API contract refuses a body that does not match the route's schema, in the one 400 shape
+    the API contract refuses a field the route did not declare rather than dropping it
+    the API contract refuses a query string parameter no route declares
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:247:14
+-       openapi: {
+-         info: { title: 'demo-service', version: '0.1.0' },
+-       },
++       openapi: {},
+Tests ran:
+    the HTTP entry point reports readiness
+    the HTTP entry point does not echo the requested path back on a 404
+    the HTTP entry point does not reveal that a path exists under a different method
+  and 18 more tests!
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:248:13
+-         info: { title: 'demo-service', version: '0.1.0' },
++         info: {},
+Tests ran:
+    the HTTP entry point reports readiness
+    the HTTP entry point does not echo the requested path back on a 404
+    the HTTP entry point does not reveal that a path exists under a different method
+  and 18 more tests!
+
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:248:22
+-         info: { title: 'demo-service', version: '0.1.0' },
++         info: { title: "", version: '0.1.0' },
+Tests ran:
+    the HTTP entry point reports readiness
+    the HTTP entry point does not echo the requested path back on a 404
+    the HTTP entry point does not reveal that a path exists under a different method
+  and 18 more tests!
+
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:248:47
+-         info: { title: 'demo-service', version: '0.1.0' },
++         info: { title: 'demo-service', version: "" },
+Tests ran:
+    the HTTP entry point reports readiness
+    the HTTP entry point does not echo the requested path back on a 404
+    the HTTP entry point does not reveal that a path exists under a different method
+  and 18 more tests!
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:311:51
+-         { schema: { querystring: NoQuery, response: { 200: HealthResponse } } },
++         { schema: { querystring: NoQuery, response: {} } },
+Tests ran:
+    the HTTP entry point reports readiness
+    the HTTP entry point does not echo the requested path back on a 404
+    the HTTP entry point does not reveal that a path exists under a different method
+  and 18 more tests!
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:338:9
+-           { schema: { querystring: NoQuery, response: { 200: FlagsResponse } } },
++           {},
+Tests ran:
+    the HTTP entry point serves this environment's flags to the browser app when it is given a source
+    the API contract publishes the document, and it carries the routes a slice registered
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:338:19
+-           { schema: { querystring: NoQuery, response: { 200: FlagsResponse } } },
++           { schema: {} },
+Tests ran:
+    the HTTP entry point serves this environment's flags to the browser app when it is given a source
+    the API contract publishes the document, and it carries the routes a slice registered
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:338:53
+-           { schema: { querystring: NoQuery, response: { 200: FlagsResponse } } },
++           { schema: { querystring: NoQuery, response: {} } },
+Tests ran:
+    the HTTP entry point serves this environment's flags to the browser app when it is given a source
+    the API contract publishes the document, and it carries the routes a slice registered
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:395:7
+-         { schema: { querystring: NoQuery, response: { 200: ReadyResponse, 503: UnreadyResponse } } },
++         {},
+Tests ran:
+    the HTTP entry point is ready when the event store answers
+    the HTTP entry point is not ready, and says no more than the category, when the event store does not answer
+    the HTTP entry point is ready with nothing to ask when the project has no store
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:395:17
+-         { schema: { querystring: NoQuery, response: { 200: ReadyResponse, 503: UnreadyResponse } } },
++         { schema: {} },
+Tests ran:
+    the HTTP entry point is ready when the event store answers
+    the HTTP entry point is not ready, and says no more than the category, when the event store does not answer
+    the HTTP entry point is ready with nothing to ask when the project has no store
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:395:51
+-         { schema: { querystring: NoQuery, response: { 200: ReadyResponse, 503: UnreadyResponse } } },
++         { schema: { querystring: NoQuery, response: {} } },
+Tests ran:
+    the HTTP entry point is ready when the event store answers
+    the HTTP entry point is not ready, and says no more than the category, when the event store does not answer
+    the HTTP entry point is ready with nothing to ask when the project has no store
+
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:397:22
+-           reply.header('cache-control', 'no-store');
++           reply.header("", 'no-store');
+Tests ran:
+    the HTTP entry point is ready when the event store answers
+    the HTTP entry point is not ready, and says no more than the category, when the event store does not answer
+    the HTTP entry point is ready with nothing to ask when the project has no store
+
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:397:39
+-           reply.header('cache-control', 'no-store');
++           reply.header('cache-control', "");
+Tests ran:
+    the HTTP entry point is ready when the event store answers
+    the HTTP entry point is not ready, and says no more than the category, when the event store does not answer
+    the HTTP entry point is ready with nothing to ask when the project has no store
+
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:403:41
+-             app.log.error({ err: error }, 'the event store did not answer; reporting not ready');
++             app.log.error({ err: error }, "");
+Tests ran:
+    the HTTP entry point is not ready, and says no more than the category, when the event store does not answer
+
+
+[Survived] ObjectLiteral
+src/adapters/driving/http/app.ts:403:25
+-             app.log.error({ err: error }, 'the event store did not answer; reporting not ready');
++             app.log.error({}, 'the event store did not answer; reporting not ready');
+Tests ran:
+    the HTTP entry point is not ready, and says no more than the category, when the event store does not answer
+
+
+[Survived] Regex
+src/adapters/driving/http/app.ts:446:53
+-     const prefix = path === '' ? '' : `${path.replace(/^\//, '').replaceAll('/', '.')}.`;
++     const prefix = path === '' ? '' : `${path.replace(/\//, '').replaceAll('/', '.')}.`;
+Tests ran:
+    the HTTP entry point reports a schema failure in one shape, whichever route found it
+
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:115:7
+-     10: 'trace',
++     10: "",
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:117:7
+-     30: 'info',
++     30: "",
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:116:7
+-     20: 'debug',
++     20: "",
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:118:7
+-     40: 'warn',
++     40: "",
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/adapters/driving/http/app.ts:120:7
+-     60: 'fatal',
++     60: "",
+Ran all tests for this mutant.
+
+[NoCoverage] StringLiteral
+src/application/ports/events.ts:51:40
+-     if (!UUID.test(raw)) throw new Error(`a ${what} must be a UUID, and '${raw}' is not`);
++     if (!UUID.test(raw)) throw new Error(``);
+
+[Survived] ArrayDeclaration
+src/application/ports/events.ts:183:33
+-     const wanted = filter.tags ?? [];
++     const wanted = filter.tags ?? ["Stryker was here"];
+Tests ran:
+    the in-memory event store satisfies the event-store port matches nothing for an empty query rather than everything
+
+
+[Survived] ConditionalExpression
+src/application/ports/events.ts:185:30
+-     if (wanted.length === 0 && types.length === 0) return false;
++     if (wanted.length === 0 && true) return false;
+Tests ran:
+    the in-memory event store satisfies the event-store port matches nothing for an empty query rather than everything
+
+
+[Survived] BlockStatement
+src/application/ports/events.ts:50:55
+-   const asUuid = (raw: string, what: string): string => {
+-     if (!UUID.test(raw)) throw new Error(`a ${what} must be a UUID, and '${raw}' is not`);
+-     return raw.toLowerCase();
+-   };
++   const asUuid = (raw: string, what: string): string => {};
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner applies a long log in batches of the size it was given
+  and 39 more tests!
+
+
+[Survived] MethodExpression
+src/application/ports/events.ts:52:10
+-     return raw.toLowerCase();
++     return raw.toUpperCase();
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner applies a long log in batches of the size it was given
+  and 39 more tests!
+
+
+[Survived] ConditionalExpression
+src/application/ports/events.ts:51:7
+-     if (!UUID.test(raw)) throw new Error(`a ${what} must be a UUID, and '${raw}' is not`);
++     if (false) throw new Error(`a ${what} must be a UUID, and '${raw}' is not`);
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner applies a long log in batches of the size it was given
+  and 39 more tests!
+
+
+[Survived] StringLiteral
+src/application/ports/events.ts:122:56
+-   export const streamTag = (streamId: string): string => `stream:${streamId}`;
++   export const streamTag = (streamId: string): string => ``;
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner applies a long log in batches of the size it was given
+  and 38 more tests!
+
+
+[Survived] OptionalChaining
+src/application/ports/events.ts:333:10
+-     return events.at(-1)?.version ?? NO_STREAM;
++     return events.at(-1).version ?? NO_STREAM;
+Tests ran:
+    the in-memory event store satisfies the event-store port rejects a first write to a stream that already exists
+    the in-memory event store satisfies the event-store port leaves a conditionally appended event readable as part of its stream
+
+
+[Survived] Regex
+src/application/ports/events.ts:43:14
+-   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
++   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+Ran all tests for this mutant.
+
+[Survived] Regex
+src/application/ports/events.ts:43:14
+-   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
++   const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+Ran all tests for this mutant.
+
+[Survived] ArrowFunction
+src/application/ports/events.ts:60:36
+-   export const createCorrelationId = (raw: string): CorrelationId =>
+-     asUuid(raw, 'correlation id') as CorrelationId; // justified: validated above, then branded
++   export const createCorrelationId = () => undefined; // justified: validated above, then branded
+Ran all tests for this mutant.
+
+[Survived] ArrowFunction
+src/application/ports/events.ts:67:34
+-   export const createCausationId = (raw: string): CausationId =>
+-     asUuid(raw, 'causation id') as CausationId; // justified: validated above, then branded
++   export const createCausationId = () => undefined; // justified: validated above, then branded
+Ran all tests for this mutant.
+
+[Survived] ArrowFunction
+src/application/ports/events.ts:122:26
+-   export const streamTag = (streamId: string): string => `stream:${streamId}`;
++   export const streamTag = () => undefined;
+Ran all tests for this mutant.
+
+[Survived] ObjectLiteral
+src/config.ts:42:46
+-     PUBLIC_BASE_URL: Type.Optional(Type.String({ pattern: '^https?://' })),
++     PUBLIC_BASE_URL: Type.Optional(Type.String({})),
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/config.ts:42:57
+-     PUBLIC_BASE_URL: Type.Optional(Type.String({ pattern: '^https?://' })),
++     PUBLIC_BASE_URL: Type.Optional(Type.String({ pattern: "" })),
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/config.ts:56:55
+-     OTEL_EXPORTER_OTLP_ENDPOINT: Type.String({ pattern: '^(https?://.+)?$', default: '' }),
++     OTEL_EXPORTER_OTLP_ENDPOINT: Type.String({ pattern: "", default: '' }),
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/config.ts:60:48
+-     CORS_ALLOWED_ORIGINS: Type.String({ default: '' }),
++     CORS_ALLOWED_ORIGINS: Type.String({ default: "Stryker was here!" }),
+Ran all tests for this mutant.
+
+[Survived] ObjectLiteral
+src/config.ts:65:43
+-     DATABASE_URL: Type.Optional(Type.String({ pattern: '^postgres(ql)?://' })),
++     DATABASE_URL: Type.Optional(Type.String({})),
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/config.ts:65:54
+-     DATABASE_URL: Type.Optional(Type.String({ pattern: '^postgres(ql)?://' })),
++     DATABASE_URL: Type.Optional(Type.String({ pattern: "" })),
+Ran all tests for this mutant.
+
+[NoCoverage] LogicalOperator
+src/projections-plugin.ts:65:45
+-     const everyMs = options.everyMs ?? Number(process.env.PROJECTIONS_EVERY_MS ?? DEFAULT_EVERY_MS);
++     const everyMs = options.everyMs ?? Number(process.env.PROJECTIONS_EVERY_MS && DEFAULT_EVERY_MS);
+
+[NoCoverage] BlockStatement
+src/projections-plugin.ts:81:23
+-       } catch (failure) {
+-         // Reported, not rethrown: an unhandled rejection in a timer takes the process down, and a projection
+-         // that fails every pass would then be a crash loop rather than a stale view. `catchUpEach` has
+-         // already tried every projection, so nothing is hidden by this.
+-         app.log.error({ err: failure }, 'projection pass failed');
+-       } finally {
++       } catch (failure) {} finally {
+
+[NoCoverage] ObjectLiteral
+src/projections-plugin.ts:85:21
+-         app.log.error({ err: failure }, 'projection pass failed');
++         app.log.error({}, 'projection pass failed');
+
+[NoCoverage] StringLiteral
+src/projections-plugin.ts:85:39
+-         app.log.error({ err: failure }, 'projection pass failed');
++         app.log.error({ err: failure }, "");
+
+[Survived] LogicalOperator
+src/projections-plugin.ts:66:17
+-     const owner = options.owner ?? `worker-${crypto.randomUUID()}`;
++     const owner = options.owner && `worker-${crypto.randomUUID()}`;
+Tests ran:
+    the projections plugin catches a projection up without anybody calling it
+    the projections plugin stops passing when the server closes
+
+
+[Survived] StringLiteral
+src/projections-plugin.ts:66:34
+-     const owner = options.owner ?? `worker-${crypto.randomUUID()}`;
++     const owner = options.owner ?? ``;
+Tests ran:
+    the projections plugin catches a projection up without anybody calling it
+    the projections plugin stops passing when the server closes
+
+
+[Survived] ConditionalExpression
+src/projections-plugin.ts:67:7
+-     if (options.projections.length === 0) return;
++     if (false) return;
+Tests ran:
+    the projections plugin catches a projection up without anybody calling it
+    the projections plugin stops passing when the server closes
+
+
+[Survived] ConditionalExpression
+src/projections-plugin.ts:74:9
+-       if (running) return;
++       if (false) return;
+Tests ran:
+    the projections plugin catches a projection up without anybody calling it
+
+
+[Survived] BooleanLiteral
+src/projections-plugin.ts:75:15
+-       running = true;
++       running = false;
+Tests ran:
+    the projections plugin catches a projection up without anybody calling it
+
+
+[Survived] BlockStatement
+src/projections-plugin.ts:86:15
+-       } finally {
+-         running = false;
+-       }
++       } finally {}
+Tests ran:
+    the projections plugin catches a projection up without anybody calling it
+
+
+[Survived] BooleanLiteral
+src/projections-plugin.ts:87:17
+-         running = false;
++         running = true;
+Tests ran:
+    the projections plugin catches a projection up without anybody calling it
+
+
+[Survived] StringLiteral
+src/projections-plugin.ts:92:15
+-     app.addHook('onClose', async () => {
++     app.addHook("", async () => {
+Tests ran:
+    the projections plugin catches a projection up without anybody calling it
+    the projections plugin stops passing when the server closes
+
+
+[NoCoverage] BlockStatement
+src/projections.ts:204:7
+-       ) {
+-         // The lease lapsed mid-pass and somebody else took it: stop where the checkpoint is, which the new
+-         // owner will read. Losing a lease is not an error — it is a slow pass.
+-         return applied;
+-       }
++       ) {}
+
+[Survived] LogicalOperator
+src/projections.ts:95:17
+-     const ttlMs = options.ttlMs ?? DEFAULT_LEASE_MS;
++     const ttlMs = options.ttlMs && DEFAULT_LEASE_MS;
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner says a pass had nothing to do without touching the view
+  and 11 more tests!
+
+
+[Survived] StringLiteral
+src/projections.ts:136:40
+-       throw new AggregateError(failures, `${failures.length} projection(s) failed to catch up`);
++       throw new AggregateError(failures, ``);
+Tests ran:
+    the catch-up runner applies the other projections when one of them fails
+
+
+[Survived] LogicalOperator
+src/projections.ts:153:17
+-     const ttlMs = options.ttlMs ?? DEFAULT_LEASE_MS;
++     const ttlMs = options.ttlMs && DEFAULT_LEASE_MS;
+Tests ran:
+    the catch-up runner empties the view and folds the whole log into it again on a rebuild
+    the catch-up runner leaves the view alone when a rebuild cannot take the lease
+
+
+[Survived] BlockStatement
+src/projections.ts:165:13
+-     } finally {
+-       await checkpoints.release(lease);
+-     }
++     } finally {}
+Tests ran:
+    the catch-up runner empties the view and folds the whole log into it again on a rebuild
+
+
+[Survived] LogicalOperator
+src/projections.ts:183:17
+-     const ttlMs = options.ttlMs ?? DEFAULT_LEASE_MS;
++     const ttlMs = options.ttlMs && DEFAULT_LEASE_MS;
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner says a pass had nothing to do without touching the view
+  and 10 more tests!
+
+
+[Survived] ConditionalExpression
+src/projections.ts:203:7
+-         (await checkpoints.claim(lease.projection, lease.owner, options.clock(), ttlMs)) === undefined
++         false
+Tests ran:
+    the catch-up runner applies a long log in batches of the size it was given
+
+
+[Survived] ConditionalExpression
+src/projections.ts:201:9
+-       if (batch.length < batchSize) return applied;
++       if (false) return applied;
+Tests ran:
+    the catch-up runner applies the whole log and leaves the checkpoint past it
+    the catch-up runner resumes from the checkpoint and applies nothing twice
+    the catch-up runner applies a long log in batches of the size it was given
+  and 7 more tests!
+
+
+[NoCoverage] BlockStatement
+src/tracing.ts:109:23
+-         } catch (error) {
+-           logger.warn(`traces could not be flushed on shutdown: ${String(error)}`);
+-         }
++         } catch (error) {}
+
+[NoCoverage] StringLiteral
+src/tracing.ts:110:21
+-           logger.warn(`traces could not be flushed on shutdown: ${String(error)}`);
++           logger.warn(``);
+
+[NoCoverage] BlockStatement
+src/tracing.ts:175:27
+-     if (span === undefined) {
+-       return {};
+-     }
++     if (span === undefined) {}
+
+[Survived] Regex
+src/tracing.ts:95:64
+-                 new OTLPTraceExporter({ url: `${endpoint.replace(/\/$/, '')}/v1/traces` }),
++                 new OTLPTraceExporter({ url: `${endpoint.replace(/\//, '')}/v1/traces` }),
+Tests ran:
+    startTracing exports only where an endpoint says to
+
+
+[Survived] ArrayDeclaration
+src/tracing.ts:93:11
+-           : [
+-               new BatchSpanProcessor(
+-                 new OTLPTraceExporter({ url: `${endpoint.replace(/\/$/, '')}/v1/traces` }),
+-               ),
+-             ],
++           : [],
+Tests ran:
+    startTracing exports only where an endpoint says to
+
+
+[Survived] ObjectLiteral
+src/tracing.ts:95:37
+-                 new OTLPTraceExporter({ url: `${endpoint.replace(/\/$/, '')}/v1/traces` }),
++                 new OTLPTraceExporter({}),
+Tests ran:
+    startTracing exports only where an endpoint says to
+
+
+[Survived] StringLiteral
+src/tracing.ts:95:71
+-                 new OTLPTraceExporter({ url: `${endpoint.replace(/\/$/, '')}/v1/traces` }),
++                 new OTLPTraceExporter({ url: `${endpoint.replace(/\/$/, "Stryker was here!")}/v1/traces` }),
+Tests ran:
+    startTracing exports only where an endpoint says to
+
+
+[Survived] ConditionalExpression
+src/tracing.ts:175:7
+-     if (span === undefined) {
++     if (false) {
+Tests ran:
+    traceIds correlates an event with the trace the caller sent in
+
+
+[Survived] ObjectLiteral
+src/tracing.ts:71:5
+-       {
+-         error: (m) => logger.error(m),
+-         warn: (m) => logger.warn(m),
+-         info: () => {},
+-         debug: () => {},
+-         verbose: () => {},
+-       },
++       {},
+Ran all tests for this mutant.
+
+[Survived] ArrowFunction
+src/tracing.ts:72:14
+-         error: (m) => logger.error(m),
++         error: () => undefined,
+Ran all tests for this mutant.
+
+[Survived] ArrowFunction
+src/tracing.ts:73:13
+-         warn: (m) => logger.warn(m),
++         warn: () => undefined,
+Ran all tests for this mutant.
+
+[Survived] EqualityOperator
+src/tracing.ts:81:5
+-       config.OTEL_EXPORTER_OTLP_ENDPOINT === '' ? undefined : config.OTEL_EXPORTER_OTLP_ENDPOINT;
++       config.OTEL_EXPORTER_OTLP_ENDPOINT !== '' ? undefined : config.OTEL_EXPORTER_OTLP_ENDPOINT;
+Ran all tests for this mutant.
+
+[Survived] ConditionalExpression
+src/tracing.ts:81:5
+-       config.OTEL_EXPORTER_OTLP_ENDPOINT === '' ? undefined : config.OTEL_EXPORTER_OTLP_ENDPOINT;
++       false ? undefined : config.OTEL_EXPORTER_OTLP_ENDPOINT;
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/tracing.ts:81:44
+-       config.OTEL_EXPORTER_OTLP_ENDPOINT === '' ? undefined : config.OTEL_EXPORTER_OTLP_ENDPOINT;
++       config.OTEL_EXPORTER_OTLP_ENDPOINT === "Stryker was here!" ? undefined : config.OTEL_EXPORTER_OTLP_ENDPOINT;
+Ran all tests for this mutant.
+
+[Survived] ObjectLiteral
+src/tracing.ts:82:43
+-     const provider = new NodeTracerProvider({
+-       resource: resourceFromAttributes({
+-         [ATTR_SERVICE_NAME]: config.OTEL_SERVICE_NAME,
+-         [ATTR_SERVICE_VERSION]: '0.1.0',
+-       }),
+-       // No processor at all is the "no exporter" state, and it is not the same as a disabled SDK: spans are
+-       // still created, so every id below is real and every log line still carries one. They are simply not
+-       // kept once they end.
+-       spanProcessors:
+-         endpoint === undefined
+-           ? []
+-           : [
+-               new BatchSpanProcessor(
+-                 new OTLPTraceExporter({ url: `${endpoint.replace(/\/$/, '')}/v1/traces` }),
+-               ),
+-             ],
+-     });
++     const provider = new NodeTracerProvider({});
+Ran all tests for this mutant.
+
+[Survived] ObjectLiteral
+src/tracing.ts:83:38
+-       resource: resourceFromAttributes({
+-         [ATTR_SERVICE_NAME]: config.OTEL_SERVICE_NAME,
+-         [ATTR_SERVICE_VERSION]: '0.1.0',
+-       }),
++       resource: resourceFromAttributes({}),
+Ran all tests for this mutant.
+
+[Survived] ConditionalExpression
+src/tracing.ts:91:7
+-         endpoint === undefined
++         false
+Ran all tests for this mutant.
+
+[Survived] StringLiteral
+src/tracing.ts:85:31
+-         [ATTR_SERVICE_VERSION]: '0.1.0',
++         [ATTR_SERVICE_VERSION]: "",
+Ran all tests for this mutant.
+
+[Survived] ConditionalExpression
+src/tracing.ts:91:7
+-         endpoint === undefined
++         true
+Ran all tests for this mutant.
+
+[Survived] EqualityOperator
+src/tracing.ts:91:7
+-         endpoint === undefined
++         endpoint !== undefined
+Ran all tests for this mutant.
+
+[Survived] BlockStatement
+src/tracing.ts:106:27
+-       shutdown: async () => {
+-         try {
+-           await provider.shutdown();
+-         } catch (error) {
+-           logger.warn(`traces could not be flushed on shutdown: ${String(error)}`);
+-         }
+-       },
++       shutdown: async () => {},
+Ran all tests for this mutant.
+
+[Survived] BlockStatement
+src/tracing.ts:107:11
+-         try {
+-           await provider.shutdown();
+-         } catch (error) {
++         try {} catch (error) {
+Ran all tests for this mutant.
+
+Ran 9.47 tests per mutant on average.
+------------------------------|------------------|----------|-----------|------------|----------|----------|
+                              | % Mutation score |          |           |            |          |          |
+File                          |  total | covered | # killed | # timeout | # survived | # no cov | # errors |
+------------------------------|--------|---------|----------|-----------|------------|----------|----------|
+All files                     |  80.15 |   82.21 |      415 |         1 |         90 |       13 |        0 |
+ adapters                     |  85.67 |   86.85 |      251 |         0 |         38 |        4 |        0 |
+  driven                      |  92.62 |   92.62 |      113 |         0 |          9 |        0 |        0 |
+   checkpoint-store-memory.ts |  92.86 |   92.86 |       26 |         0 |          2 |        0 |        0 |
+   event-store-memory.ts      |  92.55 |   92.55 |       87 |         0 |          7 |        0 |        0 |
+  driving                     |  80.70 |   82.63 |      138 |         0 |         29 |        4 |        0 |
+   http                       |  80.70 |   82.63 |      138 |         0 |         29 |        4 |        0 |
+    app.ts                    |  80.70 |   82.63 |      138 |         0 |         29 |        4 |        0 |
+ application                  |  80.60 |   81.82 |       54 |         0 |         12 |        1 |        0 |
+  ports                       |  80.60 |   81.82 |       54 |         0 |         12 |        1 |        0 |
+   events.ts                  |  80.60 |   81.82 |       54 |         0 |         12 |        1 |        0 |
+ config.ts                    |  68.42 |   68.42 |       13 |         0 |          6 |        0 |        0 |
+ health.ts                    | 100.00 |  100.00 |        3 |         0 |          0 |        0 |        0 |
+ projections-plugin.ts        |  52.00 |   61.90 |       13 |         0 |          8 |        4 |        0 |
+ projections.ts               |  87.10 |   88.52 |       53 |         1 |          7 |        1 |        0 |
+ tracing.ts                   |  56.00 |   59.57 |       28 |         0 |         19 |        3 |        0 |
+------------------------------|--------|---------|----------|-----------|------------|----------|----------|
+[32m04:31:54 (946244) INFO JsonReporter[39m Your report can be found at: file:///tmp/cruise29/s41-demo2/demo/apps/service/reports/mutation/mutation.json
+[32m04:31:54 (946244) INFO HtmlReporter[39m Your report can be found at: file:///tmp/cruise29/s41-demo2/demo/apps/service/reports/mutation/mutation.html
+[32m04:31:54 (946244) INFO MutationTestExecutor[39m Done in 48 seconds.
+mutation: Stryker exited 0 (its exit status is printed, never the verdict; the report is)
+mutation: Survived apps/service/src/adapters/driven/checkpoint-store-memory.ts:35:57 EqualityOperator → held.expiresAt >= now (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driven/checkpoint-store-memory.ts:43:11 OptionalChaining → held.owner (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driven/event-store-memory.ts:117:9 ConditionalExpression → true (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driven/event-store-memory.ts:117:9 EqualityOperator → tags.length >= 0 (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driven/event-store-memory.ts:127:81 ArrayDeclaration → ["Stryker was here"] (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driven/event-store-memory.ts:137:13 ConditionalExpression → false (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driven/event-store-memory.ts:137:13 EqualityOperator → event.globalPosition <= fromPosition (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driven/event-store-memory.ts:151:7 MethodExpression → streamEvents(streamId) (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driven/event-store-memory.ts:204:9 CallExpression → ; (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:105:88 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:141:29 ConditionalExpression → true (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:145:23 EqualityOperator → Object.keys(rest).length >= 0 (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:145:23 ConditionalExpression → true (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:196:66 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:239:9 ConditionalExpression → true (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:246:37 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:264:9 ConditionalExpression → true (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:247:14 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:248:13 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:248:22 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:248:47 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:311:51 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:338:9 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:338:19 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:338:53 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:395:7 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:395:17 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:395:51 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:397:22 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:397:39 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:403:41 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:403:25 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:446:53 Regex → /\// (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:115:7 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:117:7 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:116:7 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:118:7 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/adapters/driving/http/app.ts:120:7 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:183:33 ArrayDeclaration → ["Stryker was here"] (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:185:30 ConditionalExpression → true (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:50:55 BlockStatement → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:52:10 MethodExpression → raw.toUpperCase() (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:51:7 ConditionalExpression → false (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:122:56 StringLiteral → `` (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:333:10 OptionalChaining → events.at(-1).version (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:43:14 Regex → /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:43:14 Regex → /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:60:36 ArrowFunction → () => undefined (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:67:34 ArrowFunction → () => undefined (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/application/ports/events.ts:122:26 ArrowFunction → () => undefined (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/config.ts:42:46 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/config.ts:42:57 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/config.ts:56:55 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/config.ts:60:48 StringLiteral → "Stryker was here!" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/config.ts:65:43 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/config.ts:65:54 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections-plugin.ts:66:17 LogicalOperator → options.owner && `worker-${crypto.randomUUID()}` (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections-plugin.ts:66:34 StringLiteral → `` (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections-plugin.ts:67:7 ConditionalExpression → false (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections-plugin.ts:74:9 ConditionalExpression → false (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections-plugin.ts:75:15 BooleanLiteral → false (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections-plugin.ts:86:15 BlockStatement → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections-plugin.ts:87:17 BooleanLiteral → true (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections-plugin.ts:92:15 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections.ts:95:17 LogicalOperator → options.ttlMs && DEFAULT_LEASE_MS (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections.ts:136:40 StringLiteral → `` (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections.ts:153:17 LogicalOperator → options.ttlMs && DEFAULT_LEASE_MS (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections.ts:165:13 BlockStatement → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Timeout apps/service/src/projections.ts:187:12 BlockStatement → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections.ts:183:17 LogicalOperator → options.ttlMs && DEFAULT_LEASE_MS (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections.ts:203:7 ConditionalExpression → false (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/projections.ts:201:9 ConditionalExpression → false (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:95:64 Regex → /\// (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:93:11 ArrayDeclaration → [] (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:95:37 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:95:71 StringLiteral → "Stryker was here!" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:175:7 ConditionalExpression → false (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:71:5 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:72:14 ArrowFunction → () => undefined (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:73:13 ArrowFunction → () => undefined (report apps/service/reports/mutation/mutation.json)
+mutation: Incomplete apps/service/src/tracing.ts:81:5 EqualityOperator → config.OTEL_EXPORTER_OTLP_ENDPOINT !== '' — Stryker says it survived, but the suite ran 81 of the dry run's 86 tests under it (a hook or a file failed, so that is not a survivor and not a pass) (report apps/service/reports/mutation/mutation.json)
+mutation: Incomplete apps/service/src/tracing.ts:81:5 ConditionalExpression → false — Stryker says it survived, but the suite ran 81 of the dry run's 86 tests under it (a hook or a file failed, so that is not a survivor and not a pass) (report apps/service/reports/mutation/mutation.json)
+mutation: Incomplete apps/service/src/tracing.ts:81:44 StringLiteral → "Stryker was here!" — Stryker says it survived, but the suite ran 81 of the dry run's 86 tests under it (a hook or a file failed, so that is not a survivor and not a pass) (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:82:43 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:83:38 ObjectLiteral → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Incomplete apps/service/src/tracing.ts:91:7 ConditionalExpression → false — Stryker says it survived, but the suite ran 81 of the dry run's 86 tests under it (a hook or a file failed, so that is not a survivor and not a pass) (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:85:31 StringLiteral → "" (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:91:7 ConditionalExpression → true (report apps/service/reports/mutation/mutation.json)
+mutation: Incomplete apps/service/src/tracing.ts:91:7 EqualityOperator → endpoint !== undefined — Stryker says it survived, but the suite ran 81 of the dry run's 86 tests under it (a hook or a file failed, so that is not a survivor and not a pass) (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:106:27 BlockStatement → {} (report apps/service/reports/mutation/mutation.json)
+mutation: Survived apps/service/src/tracing.ts:107:11 BlockStatement → {} (report apps/service/reports/mutation/mutation.json)
+mutation: 519 mutants: 415 killed, 0 ignored, 13 not covered (reported, never failed), 5 survived with the suite incomplete, 85 survived, 1 timed out; failed — report apps/service/reports/mutation/mutation.json
+make: *** [Makefile:255: mutation-full] Error 1
+wall=52.672839421 s
+exit=2

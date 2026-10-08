@@ -37,7 +37,7 @@ OUTER_LAYER_FROM_APPLICATION = re.compile(
 )
 
 
-PRUNED = {".venv", "node_modules", "__pycache__", ".git"}
+PRUNED = {".venv", "node_modules", "__pycache__", ".git", ".stryker-tmp"}
 listings: dict[Path, list[Path]] = {}
 members: dict[Path, frozenset[Path]] = {}
 entries_read = 0
@@ -140,7 +140,7 @@ def deployables(kind: str) -> list[dict]:
     """Every application record of one kind, from `project.json` — the one list this repository keeps.
 
     The hexagonal rules below need no list: they apply inside every directory under `apps/` and `packages/`
-    whatever it is called — bar the five nobody reads: `.venv`, `node_modules`, `__pycache__`, `.git` and the `target`
+    whatever it is called — bar the six nobody reads: `.venv`, `node_modules`, `__pycache__`, `.git`, a mutation run's `.stryker-tmp` and the `target`
     at the root of a Java deployable `project.json` records, beside its `pom.xml`, which are never descended — and
     never a directory that is a recorded deployable's path or on the way to one. The frontend rule has to know which directories are *services* and which are
     *browser apps*, because it forbids each of the latter to import from any of the former; the context rule

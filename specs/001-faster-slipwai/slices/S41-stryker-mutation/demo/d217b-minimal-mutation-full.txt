@@ -1,0 +1,43 @@
+$ ./slipwai generate minimal --backend typescript --profile standard --event-store memory --http none --frontend none --output /tmp/cruise29/s41-demo
+$ cd minimal && time make mutation-full
+python3 scripts/stryker-mutation.py apps/service
+mutation: installing from the committed lock (npm ci)
+
+added 218 packages, and audited 220 packages in 2s
+
+58 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+[33m04:05:49 (832608) WARN ProjectReader[39m Glob pattern "!src/main.ts" did not exclude any files.
+[33m04:05:49 (832608) WARN ProjectReader[39m Glob pattern "!src/openapi.ts" did not exclude any files.
+[32m04:05:49 (832608) INFO ProjectReader[39m Found 1 of 8 file(s) to be mutated.
+[32m04:05:49 (832608) INFO Instrumenter[39m Instrumented 1 source file(s) with 3 mutant(s)
+[32m04:05:49 (832608) INFO ConcurrencyTokenProvider[39m Creating 11 test runner process(es).
+[32m04:05:50 (832608) INFO DryRunExecutor[39m Starting initial test run (vitest test runner with "perTest" coverage analysis). This may take a while.
+[32m04:05:50 (832608) INFO DryRunExecutor[39m Initial test run succeeded. Ran 1 tests in 0 seconds (net 1.9744570000000294 ms, overhead 148.02554299999997 ms).
+
+All tests/health.test.ts
+  ✓ health reports ready (killed 3)
+
+Ran 1.00 tests per mutant on average.
+-----------|------------------|----------|-----------|------------|----------|----------|
+           | % Mutation score |          |           |            |          |          |
+File       |  total | covered | # killed | # timeout | # survived | # no cov | # errors |
+-----------|--------|---------|----------|-----------|------------|----------|----------|
+All files  | 100.00 |  100.00 |        3 |         0 |          0 |        0 |        0 |
+ health.ts | 100.00 |  100.00 |        3 |         0 |          0 |        0 |        0 |
+-----------|--------|---------|----------|-----------|------------|----------|----------|
+[32m04:05:50 (832608) INFO JsonReporter[39m Your report can be found at: file:///tmp/cruise29/s41-demo/minimal/apps/service/reports/mutation/mutation.json
+[32m04:05:50 (832608) INFO HtmlReporter[39m Your report can be found at: file:///tmp/cruise29/s41-demo/minimal/apps/service/reports/mutation/mutation.html
+[32m04:05:50 (832608) INFO MutationTestExecutor[39m Done in 1 second.
+mutation: Stryker exited 0 (its exit status is printed, never the verdict; the report is)
+mutation: 3 mutants: 3 killed, 0 ignored, 0 not covered (reported, never failed); passed — report apps/service/reports/mutation/mutation.json
+wall=4.38 s
+exit=0
+$ git status --short

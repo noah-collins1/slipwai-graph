@@ -1,0 +1,37 @@
+# scratch copy of the generated project (cp -a demo scratch); Vitest run directly in apps/service
+$ npx --no vitest run   # unmutated
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  04:32:13
+   Duration  806ms (transform 413ms, setup 0ms, import 1.12s, tests 547ms, environment 1ms)
+
+exit=0
+
+## Mutant A — reported Incomplete: tracing.ts:91:7 EqualityOperator → endpoint !== undefined
+$ sed -n 91p src/tracing.ts
+      endpoint !== undefined
+$ npx --no vitest run
+ ❯ tests/edge/tracing.test.ts (5 tests | 5 skipped) 5ms
+ FAIL  tests/edge/tracing.test.ts [ tests/edge/tracing.test.ts ]
+TypeError: Cannot read properties of undefined (reading 'replace')
+ FAIL  tests/edge/tracing.test.ts [ tests/edge/tracing.test.ts ]
+TypeError: Cannot read properties of undefined (reading 'shutdown')
+ Test Files  1 failed | 6 passed (7)
+      Tests  81 passed | 5 skipped (86)
+exit=1
+
+## Mutant B — reported Survived: tracing.ts:91:7 ConditionalExpression → true
+$ sed -n 91p src/tracing.ts
+      true
+$ npx --no vitest run
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  04:32:17
+   Duration  790ms (transform 347ms, setup 0ms, import 1.11s, tests 550ms, environment 1ms)
+
+exit=0
+
+$ diff against original after restore
+identical

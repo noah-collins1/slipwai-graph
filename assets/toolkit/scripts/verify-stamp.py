@@ -82,6 +82,9 @@ EXEMPT: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (".build/", CACHE, ()),
     ("apps/*/requirements.txt", CACHE, ()),
     ("gremlins.json", CACHE, ()),
+    # Stryker's sandbox (`make mutation` removes it, and a killed run leaves it) and the report a TypeScript service writes
+    (".stryker-tmp/", CACHE, ()),
+    ("apps/*/reports/mutation/", CACHE, ()),
     (".terraform/", CACHE, ()),
     ("*.tfplan", CACHE, ()),
     ("terraform.tfstate.backup", CACHE, ()),

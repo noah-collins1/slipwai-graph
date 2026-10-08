@@ -98,7 +98,7 @@ MAVEN_CONTAINER_ENVIRONMENT = {"MAVEN_ARGS": "-Dservice.build.dir=/tmp/service-b
 MAVEN_EXECUTABLES = frozenset({f"{APP}/mvnw"})
 
 BACKEND_EXECUTABLES = {
-    "typescript": set(),
+    "typescript": frozenset({"scripts/stryker-mutation.py"}),  # `project/stryker.py` says what it is
     "python": set(),
     # The gate scripts a Go service runs through; `project/languages/go.py` writes them, `project/mutation.py` says why.
     "go": frozenset({"scripts/go-coverage.py", "scripts/go-mutation.py"}),

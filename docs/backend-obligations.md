@@ -59,7 +59,7 @@ review found Gremlins scoring the build failure that layout caused as a kill, a 
 level could see (`project/mutation.py`). So the last four rows are otherwise claims, not proofs, until someone
 runs them by hand — which is why `add-language` section 10 requires exactly that before a backend is called done.
 
-`make mutation` scopes itself on a slice branch (to the production files that differ from the trunk commit the branch was cut from), `make mutation SINCE=<ref>` scopes it on any checkout, and `make mutation-full` is the sweep it was before; no gate runs `make mutation` or `make mutation-full`, and a backend with no tool wired (TypeScript, Python, `java-quarkus`) refuses a changed service until one is.
+`make mutation` scopes itself on a slice branch (to the production files that differ from the trunk commit the branch was cut from), `make mutation SINCE=<ref>` scopes it on any checkout, and `make mutation-full` is the sweep it was before; no gate runs `make mutation` or `make mutation-full`, and a backend with no tool wired (Python, `java-quarkus`) refuses a changed service until one is. TypeScript's is wired: Stryker 10.0.0 with its Vitest runner, one `stryker.config.json` per service and `scripts/stryker-mutation.py` for the project, which decides the verdict from `<service>/reports/mutation/mutation.json` rather than from Stryker's exit status (`project/stryker.py`, ADR 0009).
 
 A project with a production target gets a second set of targets beside these eight — `build`, `push`,
 `smoke-image`, `smoke`, `deploy`, `rollback`, `url`, and `migrate-remote` where a store is applied by a task

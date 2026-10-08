@@ -1,0 +1,12 @@
+AC-S41-14 measurement — cruise iteration 29, drive-hand
+Machine: nproc 12; CPU 12th Gen Intel(R) Core(TM) i5-12400; Node v22.22.1; Stryker 10.0.0 (vitest runner, perTest coverage), 11 test-runner processes
+Project: ./slipwai generate demo --backend typescript (worktree b80c219) — event-modelling, Fastify, Postgres, react-vite; slice/S1 off main 7287334
+
+make mutation (one file changed: src/health.ts)
+  first run (includes npm ci from the committed lock, ~3 s):  7.86 s wall — 1 of 37 files, 3 mutants, 3 killed — exit 0   (q1-health-scoped.txt)
+  second run (installed tree):                                4.46 s wall — 1 of 37 files, 3 mutants, 3 killed — exit 0   (q1-health-scoped-run2.txt)
+make mutation-full (default starter)
+  49.33 s wall — 10 of 37 files (9 hold mutants), 519 mutants: 415 killed, 13 not covered, 90 survived, 1 timed out — exit 2 (red)   (q2-default-mutation-full.txt)
+make mutation-full (minimal starter: --profile standard --event-store memory --http none --frontend none)
+  4.38 s wall (includes npm ci) — 1 of 8 files, 3 mutants, 3 killed — exit 0   (d217b-minimal-mutation-full.txt)
+Ratio: scoped one-file run ~11x faster than the default sweep (4.46 s vs 49.33 s); the fixed cost of a scoped run (Stryker start + an 86-test dry run) is ~4 s.

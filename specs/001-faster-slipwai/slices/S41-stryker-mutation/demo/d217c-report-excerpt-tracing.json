@@ -1,0 +1,161 @@
+{
+ "note": "excerpt of apps/service/reports/mutation/mutation.json from the default starter sweep (q2); the dry run ran 86 tests; a static mutant reported Survived with testsCompleted 81 is one under which tests/edge/tracing.test.ts beforeAll threw and its 5 tests were skipped",
+ "mutants": [
+  {
+   "file": "src/tracing.ts",
+   "location": {
+    "end": {
+     "column": 46,
+     "line": 81
+    },
+    "start": {
+     "column": 5,
+     "line": 81
+    }
+   },
+   "mutatorName": "ConditionalExpression",
+   "replacement": "true",
+   "status": "Killed",
+   "coveredBy": [
+    "39"
+   ],
+   "killedBy": [
+    "39"
+   ],
+   "testsCompleted": 27,
+   "static": true
+  },
+  {
+   "file": "src/tracing.ts",
+   "location": {
+    "end": {
+     "column": 46,
+     "line": 81
+    },
+    "start": {
+     "column": 5,
+     "line": 81
+    }
+   },
+   "mutatorName": "ConditionalExpression",
+   "replacement": "false",
+   "status": "Survived",
+   "coveredBy": [
+    "39"
+   ],
+   "killedBy": null,
+   "testsCompleted": 81,
+   "static": true
+  },
+  {
+   "file": "src/tracing.ts",
+   "location": {
+    "end": {
+     "column": 46,
+     "line": 81
+    },
+    "start": {
+     "column": 5,
+     "line": 81
+    }
+   },
+   "mutatorName": "EqualityOperator",
+   "replacement": "config.OTEL_EXPORTER_OTLP_ENDPOINT !== ''",
+   "status": "Survived",
+   "coveredBy": [
+    "39"
+   ],
+   "killedBy": null,
+   "testsCompleted": 81,
+   "static": true
+  },
+  {
+   "file": "src/tracing.ts",
+   "location": {
+    "end": {
+     "column": 46,
+     "line": 81
+    },
+    "start": {
+     "column": 44,
+     "line": 81
+    }
+   },
+   "mutatorName": "StringLiteral",
+   "replacement": "\"Stryker was here!\"",
+   "status": "Survived",
+   "coveredBy": [
+    "39"
+   ],
+   "killedBy": null,
+   "testsCompleted": 81,
+   "static": true
+  },
+  {
+   "file": "src/tracing.ts",
+   "location": {
+    "end": {
+     "column": 29,
+     "line": 91
+    },
+    "start": {
+     "column": 7,
+     "line": 91
+    }
+   },
+   "mutatorName": "ConditionalExpression",
+   "replacement": "false",
+   "status": "Survived",
+   "coveredBy": [
+    "39"
+   ],
+   "killedBy": null,
+   "testsCompleted": 81,
+   "static": true
+  },
+  {
+   "file": "src/tracing.ts",
+   "location": {
+    "end": {
+     "column": 29,
+     "line": 91
+    },
+    "start": {
+     "column": 7,
+     "line": 91
+    }
+   },
+   "mutatorName": "ConditionalExpression",
+   "replacement": "true",
+   "status": "Survived",
+   "coveredBy": [
+    "39"
+   ],
+   "killedBy": null,
+   "testsCompleted": 86,
+   "static": true
+  },
+  {
+   "file": "src/tracing.ts",
+   "location": {
+    "end": {
+     "column": 29,
+     "line": 91
+    },
+    "start": {
+     "column": 7,
+     "line": 91
+    }
+   },
+   "mutatorName": "EqualityOperator",
+   "replacement": "endpoint !== undefined",
+   "status": "Survived",
+   "coveredBy": [
+    "39"
+   ],
+   "killedBy": null,
+   "testsCompleted": 81,
+   "static": true
+  }
+ ]
+}

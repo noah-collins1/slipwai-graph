@@ -1,0 +1,7 @@
+$ make mutation   # nothing changed on slice/S1
+mutation: no mutant to run — no production file changed
+mutation: skip apps/service — no changed production file
+mutation: 0 scoped, 0 swept, 1 skipped, 0 refused; passed
+wall=0.14 s
+exit=0
+$ git status --short

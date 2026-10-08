@@ -1,0 +1,13 @@
+$ git status --short
+ M apps/service/src/main.ts
+$ make mutation   # only main.ts changed
+mutation: no mutant to run — every changed production file is outside the tools' targets
+mutation: skip apps/service — no changed production file within the tool's targets
+mutation: not mutated apps/service/src/main.ts — outside Stryker's configured targets
+mutation: 0 scoped, 0 swept, 1 skipped, 0 refused; passed
+wall=0.14 s
+exit=0
+$ ls apps/service/reports
+ls: cannot access 'apps/service/reports': No such file or directory
+$ git status --short
+ M apps/service/src/main.ts
