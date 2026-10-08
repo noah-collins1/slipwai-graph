@@ -594,24 +594,24 @@ new tests `tests/test_provisional_adversary_*.py`. **Chain B (the run and the te
 `src/slipwai/project/cruise_agents.py`, `docs/cruise.md`, `changelog.d/provisional-decisions.md`, this slice's
 `quickstart.md`, new tests `tests/test_cruise_adversary_*.py`.
 
-- [ ] T038 [A] **HIGH — A1, A2, A7, A8; D210, AC-S27-25.** One reading of a log — fences and near-miss labels blanked,
+- [x] T038 [A] **HIGH — A1, A2, A7, A8; D210, AC-S27-25.** One reading of a log — fences and near-miss labels blanked,
   ASCII digits only in headings — decides whether the gate holds it, serves every field the provisional checks read,
   and serves the audit; a near-miss `Status` on a held entry is refused.
-- [ ] T039 [A] **HIGH — A3–A6, A9, A10; D210.** `Written to` read with S26's `written_paths` and normalised (absolute
+- [x] T039 [A] **HIGH — A3–A6, A9, A10; D210.** `Written to` read with S26's `written_paths` and normalised (absolute
   inside the project, `..`, `//`, `./`) before `protected()`; a second `Written to` on a held entry refused; the list
   gains `GNUmakefile`, `makefile`, the adopted delivery directory's scripts, Makefile and verification record, the
   runner's control paths from the registry's hook projections, `*flags*.tfvars`, `.ruff.toml`, `ruff.toml`,
   `conftest.py` and `.mvn/`.
-- [ ] T041 [A] **HIGH — B3, B4; D209, AC-S27-24.** The gate refuses a mode entry dated after it runs, and a provisional
+- [x] T041 [A] **HIGH — B3, B4; D209, AC-S27-24.** The gate refuses a mode entry dated after it runs, and a provisional
   Status with no earlier mode entry recording `provisional` in any feature's log; the verb reads `decide` from
   `.specify/cruise.json` and refuses a `--decide` that differs.
-- [ ] T040 [B] **HIGH — B1, B2, B5, B8; D208, AC-S27-23.** The runner keeps the last `decide` it saw; any raise seen —
+- [x] T040 [B] **HIGH — B1, B2, B5, B8; D208, AC-S27-23.** The runner keeps the last `decide` it saw; any raise seen —
   inside an iteration, between two, while parked, behind a broken file — parks until a `told:` message, and only a
   `told:` releases it; `--set` outside an iteration queues the confirmation; `tell` refuses inside an iteration; a step
   back never parks.
-- [ ] T042 [B] **MEDIUM — B3, B6, B7.** `mode` ignores a mode entry dated in the future; `mode` without `--feature` in
+- [x] T042 [B] **MEDIUM — B3, B6, B7.** `mode` ignores a mode entry dated in the future; `mode` without `--feature` in
   a project with several features prints the entry naming no log and exits 0; `check()` refuses a second key.
-- [ ] T043 [B] **LOW — the actor's demo-1 notes.** Quickstart step 3 creates `specs/demo/` before `mode`, scores the
+- [x] T043 [B] **LOW — the actor's demo-1 notes.** Quickstart step 3 creates `specs/demo/` before `mode`, scores the
   mode entry with `migrate_file=yes`, and numbers entries as they fall (D2, D3, D4); the `decide` row says what the
   three provisional values do and that the two off values share the bottom rung; *Provisional decisions* says hand
   ratification holds until the ratify and revert verbs ship; the Catch-up names `migrate_file=yes` for a mode entry
@@ -837,3 +837,13 @@ context: `b5669ae`), concurrently in this worktree with disjoint manifests. The 
 `test_mutation_borders`, `test_toolkit`, `test_utf8_io`, `test_changelog`, `test_assets_bytecode`): 1089 tests, three
 failures, all closed by `5cf9821` and re-run green. Chain G's question 2 (`docker-compose.yml`, `openapi.*`,
 `renovate.json`, `application.properties` left off the list as read by no gate) is noted for the adversary.
+
+### Phase 4 fixes — host
+
+T038 `c717648`, T039 `8d83cf9`, T041 `b76e635` (chain A) and T040, T042, T043 `9048f71`, `6dff555` (chain B), two
+`drive-implement` · sonnet · delegated, fresh context, concurrently in the worktree `slice/S27-phase4` with disjoint
+manifests, merged at `ee206b4`. Chain B wrote its code before its tests and showed the tests have teeth by mutation
+(recorded in its commit). 115 modules over the slice's reach: 1203 tests, OK (1 skipped). D211 settled the two
+questions they returned. Residual for the report: `--scope` still reads a log's raw `Status` for its *provisional and
+binding* label (display only; the gate and the audit share D210's reading); an iteration can still forge a
+confirmation by writing the inbox file directly — no file the run can write proves a person acted (D208).

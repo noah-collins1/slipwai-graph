@@ -721,23 +721,23 @@ Findings: twenty — nine `HIGH`, six `MEDIUM`, five `LOW`; no `CRITICAL`. All n
 
 | # | Seam | Severity | Finding | Triage | State |
 |---|---|---|---|---|---|
-| A1 | A | HIGH | A ratified entry with hard facts whose `Status` sits in a fence passes the gate and the audit. New | Confirmed; D210, S27 T038 | open |
-| A2 | A | HIGH | A near-miss `Status :` label with a fenced example elsewhere passes the gate holding hard facts. New | Confirmed; D210, T038 | open |
-| A3 | A | HIGH | `GNUmakefile` or `makefile`, which make reads ahead of `Makefile`, is not on the protected list. New | Confirmed; D210, T039 | open |
-| A4 | A | HIGH | A protected path spelled absolute, with `..`, `././` or `//` passes. New | Confirmed; D210, T039 | open |
-| A5 | A | HIGH | A bare protected path beside a backticked one passes. New | Confirmed; D210, T039 | open |
-| A6 | A | HIGH | A second `Written to` line is never read. New on a held entry | Confirmed; D210, T039 | open |
-| A7 | A | MEDIUM | A fenced `Status: standing` before the real provisional one: the gate holds the entry provisional, the audit does not. New | Confirmed; D210, T038 | open |
-| A8 | A | MEDIUM | A fullwidth digit in the heading: the gate reads the entry, the audit skips it. New | Confirmed; D210, T038 | open |
-| A9 | A | MEDIUM | An adopted layout's delivery directory (`<delivery>/scripts/…`) is protected only through S26's list. New | Confirmed; D210, T039 | open |
-| A10 | A | LOW | The registry's hook projections, flag files and tool configurations a gate reads when present are off the list. New | Confirmed; D210, T039 | open |
+| A1 | A | HIGH | A ratified entry with hard facts whose `Status` sits in a fence passes the gate and the audit. New | Confirmed; D210, S27 T038 | fixed `c717648` |
+| A2 | A | HIGH | A near-miss `Status :` label with a fenced example elsewhere passes the gate holding hard facts. New | Confirmed; D210, T038 | fixed `c717648` |
+| A3 | A | HIGH | `GNUmakefile` or `makefile`, which make reads ahead of `Makefile`, is not on the protected list. New | Confirmed; D210, T039 | fixed `8d83cf9` |
+| A4 | A | HIGH | A protected path spelled absolute, with `..`, `././` or `//` passes. New | Confirmed; D210, T039 | fixed `8d83cf9` |
+| A5 | A | HIGH | A bare protected path beside a backticked one passes. New | Confirmed; D210, T039 | fixed `8d83cf9` |
+| A6 | A | HIGH | A second `Written to` line is never read. New on a held entry | Confirmed; D210, T039 | fixed `8d83cf9` |
+| A7 | A | MEDIUM | A fenced `Status: standing` before the real provisional one: the gate holds the entry provisional, the audit does not. New | Confirmed; D210, T038 | fixed `c717648` |
+| A8 | A | MEDIUM | A fullwidth digit in the heading: the gate reads the entry, the audit skips it. New | Confirmed; D210, T038 | fixed `c717648` |
+| A9 | A | MEDIUM | An adopted layout's delivery directory (`<delivery>/scripts/…`) is protected only through S26's list. New | Confirmed; D210, T039 | fixed `8d83cf9` |
+| A10 | A | LOW | The registry's hook projections, flag files and tool configurations a gate reads when present are off the list. New | Confirmed; D210, T039 | fixed `8d83cf9` |
 | A11 | A | LOW | A log whose second `Status` is `reverted` turns red; a byte-order mark hides the first entry | Declined: a new-release Status form gets the new rules (D206); the mark is D65's | declined |
-| B1 | B | HIGH | The `decide_moved` park resumes on any change, and the raised value becomes the baseline. New | Confirmed; D208, T040 | open |
-| B2 | B | HIGH | A process an iteration leaves (`setsid`) raises `decide` after it ends, unseen; `mode` credits a person. New | Confirmed; D208, T040 | open |
-| B3 | B | HIGH | A mode entry dated in the future becomes the baseline for ever. New | Confirmed; D209, T041 (gate), T042 (`mode`) | open |
-| B4 | B | MEDIUM | `provisional.py status --decide provisional` under `recommended-first` writes a provisional entry the gate accepts. New | Confirmed; D209, T041 | open |
-| B5 | B | MEDIUM | A broken file hides a raise until a person's unrelated `--set` repairs it. New | Confirmed; D208, T040 | open |
-| B6 | B | MEDIUM | `mode` without `--feature` in a project with two features exits 1, a stray last line every iteration. New | Confirmed; S27 T042 | open |
-| B7 | B | LOW | A second `"decide"` key passes `check()`. New | Confirmed; T042 | open |
-| B8 | B | LOW | A hard link or another case passes the guard (the runner's comparison then falls to B1). New | Confirmed; D208, T040 | open |
+| B1 | B | HIGH | The `decide_moved` park resumes on any change, and the raised value becomes the baseline. New | Confirmed; D208, T040 | fixed `9048f71` |
+| B2 | B | HIGH | A process an iteration leaves (`setsid`) raises `decide` after it ends, unseen; `mode` credits a person. New | Confirmed; D208, T040 | fixed `9048f71` |
+| B3 | B | HIGH | A mode entry dated in the future becomes the baseline for ever. New | Confirmed; D209, T041 (gate), T042 (`mode`) | fixed `b76e635`, `9048f71` |
+| B4 | B | MEDIUM | `provisional.py status --decide provisional` under `recommended-first` writes a provisional entry the gate accepts. New | Confirmed; D209, T041 | fixed `b76e635` |
+| B5 | B | MEDIUM | A broken file hides a raise until a person's unrelated `--set` repairs it. New | Confirmed; D208, T040 | fixed `9048f71` |
+| B6 | B | MEDIUM | `mode` without `--feature` in a project with two features exits 1, a stray last line every iteration. New | Confirmed; S27 T042 | fixed `9048f71` |
+| B7 | B | LOW | A second `"decide"` key passes `check()`. New | Confirmed; T042 | fixed `9048f71` |
+| B8 | B | LOW | A hard link or another case passes the guard (the runner's comparison then falls to B1). New | Confirmed; D208, T040 | fixed `9048f71` |
 | B9 | B | LOW | An iteration may still `--set` `release`, `constitution`, `unblock`, `max_iterations`. Older | Declined to the Parking Lot: S27 holds `decide` (D62 for the rest is older prose) | declined |
