@@ -187,7 +187,7 @@ Each task starts from the green committed suite.
 
 ### T001 — Pin: the baseline before anything moves (host task)
 
-- [ ] **Host task; no story; no commit.** Run the pin set once and record that it is green:
+- [x] **Host task; no story; no commit.** *(Done: 166 tests OK, 2 skipped, 88 s; `VERSION` 1.6.0.dev0; ADR 0010 Proposed; uv 0.12.21; `make starters` kept at `/tmp/s42/starters-before`.)* Run the pin set once and record that it is green:
   `make test TESTS="test_mutation_targets test_mutation_placeholders test_mutation_words test_mutation_words_script test_mutation_dry_run test_mutation test_monorepos test_scoped_targets test_uv test_verify_stamp_pinned test_verify_scoped_rules test_scoped_adopted test_scoped_migrate test_changelog test_backend_obligations test_stryker_generated test_stryker_migrate test_stryker_after_run"`.
   Confirm `cat VERSION` reads `1.6.0.dev0`, that `delivery/docs/adr/0010-mutmut-for-python-mutation.md` is `Proposed`, that `uv`
   and network are reachable (T002 regenerates four locks) and `uv --version` prints 0.12 or newer. Then `make starters` and
@@ -197,7 +197,7 @@ Each task starts from the green committed suite.
 
 ### T002 — [US2] What a Python service is given: the dev pin, the table, the wrapper's path, the ignore line, the recipe line, the four locks (R1 · AC-S42-1, AC-S42-4 recipe, AC-S42-9 first clause, AC-S42-11 `mutation-full` carries no `SINCE`)
 
-- [ ] **Rule 1.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first line `MINOR`;
+- [x] **Rule 1.** First commit that changes a user-visible tree, so the fragment's first draft lands in it (first line `MINOR`; *(Done: 9c1b345 — host added to the manifest: `tests/test_scoped_migrate.py` (two-Python migrate now settles `apps/billing/pyproject.toml` and `uv.lock` with `--theirs`), `tests/test_uv.py`'s second pin; the four locks are `python_locks()`'s fresh resolution, so other dev transitive pins moved too (`ast-serialize` 0.11.2 → 0.12.1).)*
   a **Catch-up.** paragraph that stands alone and says only what is true at this commit: a project made before gains
   `mutmut==3.8.0` in every Python service's dev group and `[tool.mutmut]` where its files merge, `scripts/mutmut-mutation.py`,
   the `apps/*/mutants/` ignore line and the regenerated `scripts/verify_scoped/rules.json`; T011 completes it). The wrapper
@@ -270,7 +270,7 @@ the touched modules once under `CI=true`. Commit by path; level line as above.
 
 ### T003 — [US2] The configuration the wrapper reads: `targets`, `matched`, `refused`, `versions`, and what a table it cannot read says (R2 · AC-S42-6 half, AC-S42-8 half; D215 d's reason, D218)
 
-- [ ] **Rule 2.** Needs T002 (the skeleton). In `mutmut-mutation.py`: `targets(service)` reads the service's `pyproject.toml`
+- [x] **Rule 2.** Needs T002 (the skeleton). In `mutmut-mutation.py`: `targets(service)` reads the service's `pyproject.toml` *(Done: bdd10f5.)*
   with `tomllib` (imported inside the function; `Unreadable("no tomllib: Python 3.11 or newer reads [tool.mutmut]")` where it
   is absent) and returns the parsed table: `source_paths` (or, only where empty, deprecated `paths_to_mutate`) must be a
   non-empty list of relative POSIX strings with no `..`, no leading `/`, no `*`, `?`, `[` — else `Unreadable` naming the
@@ -327,7 +327,7 @@ first lines of `main`.
 
 ### T004 — [US2] Setup and environment: a host without `os.fork`, a project without `uv`, a lock that disagrees, an environment without mutmut 3.8.0, a stray `PYTEST_ADDOPTS`, one run at a time (R7 · AC-S42-10)
 
-- [ ] **Rule 4.** Needs T003. After the refusal and the table are read (both start nothing), `main` checks in this order, each
+- [x] **Rule 4.** Needs T003. After the refusal and the table are read (both start nothing), `main` checks in this order, each *(Done: dd4577b — the lock is taken before `uv sync` only where `.venv/pyvenv.cfg` exists, after it otherwise (a `.venv/` holding only the lock is not an environment uv accepts); host accepted the reading; `tests/test_mutmut_config.py` e5 re-pointed.)*
   an exit 2 with the data-model line: no `os.fork` (or `sys.platform` Windows) → the WSL line; no `uv` on `PATH` → the `uv`
   line; `uv sync --project <svc> --locked --quiet` refused → the `uv lock --project <svc>` line (the refusal is `uv`'s exit
   status, never parsed); `importlib.metadata.version("mutmut")` read in the service's environment through `uv run --no-sync
@@ -375,7 +375,7 @@ exit or nothing, so the order the rules fix is read in one place; one place spel
 
 ### T005 — [US2] Generate, then run: a fresh `mutants/`, mutmut's own generation, the names read from `.meta`, an empty file is *no mutant to run*, `mutmut run` handed exactly those names (R3, R5 · AC-S42-6, AC-S42-4 fresh `mutants/`, AC-S42-3 own directory and configuration)
 
-- [ ] **Rule 5.** Needs T004 (the setup it follows). `<svc>/mutants/` is deleted before every run (and kept after: it is the report).
+- [x] **Rule 5.** Needs T004 (the setup it follows). `<svc>/mutants/` is deleted before every run (and kept after: it is the report). *(Done: 82dece3 — hand probe against real mutmut 3.8.0: settings.py 14 mutants (12 killed, 2 survived), read_models.py no mutant to run, tests/x.py outside targets; `tests/test_mutmut_setup.py` end state re-pointed.)*
   Generation: `uv run --no-sync --project <svc> python -c <snippet>` from the service directory, the snippet making the same
   calls `mutmut run` makes before it collects stats (R3). Then, per given file (`src/…` within the service), `mutants/<file>.meta`'s
   `exit_code_by_key` is read: a given file with no `.meta` prints `not mutated <service>/<file> — outside mutmut's configured
@@ -428,7 +428,7 @@ keys and `application/ports/read_models.py.meta` with `{}` are what R3 saw). Com
 
 ### T006 — [US2] The verdict is the `.meta`'s, by D212's rule: killed passes, no tests is counted, everything else fails, a silenced mutant fails the run (R4 · AC-S42-5; D219's reason applied, *Applied, not decided* 2)
 
-- [ ] **Rule 3.** Needs T005. After `mutmut run`, the wrapper reads `exit_code_by_key` of the judged files — the given files
+- [x] **Rule 3.** Needs T005. After `mutmut run`, the wrapper reads `exit_code_by_key` of the judged files — the given files *(Done: ef866aa — `tests/test_mutmut_verdict.py` is at 350 lines; e4 and the e7 hold were written with the code, their RED reconstructed.)*
   (scoped) or every file that has a `.meta` (swept) — and decides with its own copy of 3.8.0's table (data-model): `1`, `3` pass;
   `5`, `33` are counted on the last line (`no tests`, "reported, never failed"); every other code, `null` and any code not in the
   table fail, one line per mutant `<status> <service> <mutant name> (mutmut show <mutant name> in <service>; report
@@ -479,7 +479,7 @@ branch; the summary line is built from the dict's order.
 
 ### T007 — [P] [US2] Python is wired in the scope script: a changed module mutates alone, an unmatched one starts nothing, the other service starts no mutmut, a refused path refuses its service, `java-quarkus` still refuses (R6 · AC-S42-2, -3, -8, -11; D138 items 1 and 5)
 
-- [ ] **Rule 6.** Needs T003 (`targets`/`matched`/`refused` loaded by path); does **not** need T004–T006 (every example runs
+- [x] **Rule 6.** Needs T003 (`targets`/`matched`/`refused` loaded by path); does **not** need T004–T006 (every example runs *(Done: a2d182d — one `WRAPPERS` table now drives plan, run and sweep for TypeScript and Python.)*
   behind `FakeRunner`; the real wrapper is T012's), so it may run beside them. In `mutation-scope.py`, tables and dispatch only:
   `WIRED = ("go", "java-spring", "typescript", "python")`, `PRODUCTION_ROOT` gains `"python": "src/"`, `PLACEHOLDERS` loses
   Python (`java-quarkus` stays), `PYTHON_REFUSED` and its use in `refusal` (`:801`) are removed, `REPORTS` gains `"python":
@@ -548,7 +548,7 @@ then `make lint typecheck check-structure`; the new module once under `CI=true`.
 
 ### T008 — [P] [US2] What sweeps a Python service: its `[tool.mutmut]`, its mutmut requirement, its mutmut or libcst lock entries, the wrapper, a table it cannot read, an ignored file (R7 · AC-S42-7; D138 item 3, D216, D222's reason)
 
-- [ ] **Rule 7.** Needs T007 (same file, serial with it) and T003 (`versions`). `sweep_causes` gains data-model's table:
+- [x] **Rule 7.** Needs T007 (same file, serial with it) and T003 (`versions`). `sweep_causes` gains data-model's table: *(Done: 5da4bb9 — `stryker_versions_moved` became `versions_moved(script, …)`, shared.)*
   `<service>/pyproject.toml` whose parsed `[tool.mutmut]` or mutmut requirement strings differ between base and working tree →
   that service; `<service>/uv.lock` whose `mutmut` or `libcst`-closure versions (keyed by name, every version) differ → that
   service; `scripts/mutmut-mutation.py` changed → every Python service; a side that cannot be parsed, or no `tomllib` → that service
@@ -592,7 +592,7 @@ then `make lint typecheck check-structure`; the new module once under `CI=true`.
 
 ### T009 — [P] [US2] The stamp, `check-imports` and the scoped gate hold after a Python run (R5, R8 · AC-S42-9)
 
-- [ ] **Rule 8.** Needs T006 and T007 (real runs of the wrapper with a fake `uv`, and the scope script's Python dispatch), and T002
+- [x] **Rule 8.** Needs T006 and T007 (real runs of the wrapper with a fake `uv`, and the scope script's Python dispatch), and T002 *(Done: 266b977 — no `EXEMPT_PATHS` row needed; `check-imports` prunes by one `OUTPUT` table (`target` beside `pom.xml`, `mutants` beside `pyproject.toml`); `check-migrations.py`'s copy of `recorded()` left Java-only (outside the manifest; it reads no `mutants/`).)*
   (the ignore line). `assets/toolkit/scripts/verify-stamp.py` gains one `EXEMPT` row — `apps/*/mutants/` — so a run's copy of `src/`
   and `tests/`, its `.meta` files and `mutmut-stats.json` are neither read as the stamp's input nor as a reach.
   `assets/toolkit/scripts/check-imports.py` prunes a directory named `mutants` at the root of a Python deployable `project.json`
@@ -640,7 +640,7 @@ stamp — say so in the report). Commit by path; level line as above.
 
 ### T010 — [P] [US2] The words: the Makefile note, the mutation command, `UNWIRED`, the skill, the obligations and requirements pages, S41's fragment narrowed, ADR 0010 held (R9 · AC-S42-11 placeholder half, the *wired* half of the criteria)
 
-- [ ] **Rule 9.** Needs T002 (`mutmut.py` exists). Disjoint from the wrapper and scope-script tasks, so it may run beside them. The
+- [x] **Rule 9.** Needs T002 (`mutmut.py` exists). Disjoint from the wrapper and scope-script tasks, so it may run beside them. The *(Done: 47a2d9a — also `docs/backend-obligations.md` §3 gained a `MUTATION_NOTES` row (`test_backend_obligations` required it); six `PRE_SLICE` hashes regenerated.)*
   words describe what T003–T009 build, as the plan and data-model fix them; this task reads none of their code. A Python note above
   the target in `mutmut.py` (what runs; the `.meta` report at `apps/<service>/mutants/`; that the verdict is decided in
   `scripts/mutmut-mutation.py`; the escape for an equivalent mutant — the bare `# pragma: no mutate` named in the commit, and that
@@ -697,7 +697,7 @@ note is assembled there), `assets/toolkit/skills/mutation-testing/SKILL.md`, `do
 
 ### T011 — [US2] A project made before is brought forward, and the fragment says what that asks of it (R10 · AC-S42-12)
 
-- [ ] **Rule 10.** Needs T009 and T010 (everything `migrate` must bring now exists) and T008. The fragment's **Catch-up.** paragraph is
+- [x] **Rule 10.** Needs T009 and T010 (everything `migrate` must bring now exists) and T008. The fragment's **Catch-up.** paragraph is *(Done: d3be2e6 — no source change needed: the three-way merge keeps a hand-added dependency beside the pin and table, and a hand-written wrapper is a kept conflict.)*
   completed: it stands alone and names the `uv.lock` conflict in every Python service (take the factory's side, then run `uv lock
   --project apps/<svc>` for each service), that a leftover `mutants/` or `.mutmut-cache` may be deleted, that `make mutation` exits 2
   until the lock is redone (the wrapper's `uv sync --locked` is refused), that `make mutation-full` now runs mutmut and its sweep of
@@ -740,7 +740,7 @@ then `make lint typecheck check-structure`; under `CI=true` once. Commit by path
 
 ### T012 — [US2] One real mutmut run on a generated starter (R11 · AC-S42-1, AC-S42-2, AC-S42-4, AC-S42-5 end to end)
 
-- [ ] **Rule 11.** Needs T011. This is the **heavy** test: it is the one place the fake `uv` of T004–T006 and the `FakeRunner` of
+- [x] **Rule 11.** Needs T011. This is the **heavy** test: it is the one place the fake `uv` of T004–T006 and the `FakeRunner` of *(Done: b68b798 — a hold against real mutmut 3.8.0: scoped 2 mutants killed, sweep 6 killed, types-only module no mutant to run, weakened test 2 survivors; ~8 s warm.)*
   T007–T008 are checked against the real tool, mutmut 3.8.0 and libcst 1.9.0 (R1) — and the generation snippet and the `.meta` shape of
   T005–T006. Its file is `tests/test_mutation_scope_real_python.py` and its module docstring says **heavy — S43's list**, as
   `test_mutation_scope_real_typescript.py` carries its gate. It is gated by `backends_under_test()` naming `python`, `uv` on `PATH`
