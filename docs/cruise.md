@@ -151,8 +151,14 @@ check, CI, a credential, a third party's behaviour, a constitution MUST and a re
 `python3 scripts/agents/cruise.py mode` records any change of `decide` as one entry in the log of the feature it works
 in, judged against the last mode entry in any feature's log; a value more than one rung above it parks the run, so
 let an iteration record each rung before setting the next. An iteration never sets `decide`: `guard` refuses an edit
-to `.specify/cruise.json` in a runner's session, `--set decide` is refused while `CRUISE_ITERATION` is set, and the
-runner parks when `decide` moved inside an iteration — a person who changed it on purpose resumes with `/cruise-tell`.
+to `.specify/cruise.json` in a runner's session (by any name for the file, a hard link included), `--set decide` and
+`tell` are refused while `CRUISE_ITERATION` is set, and the runner parks on any raise of `decide` it sees — inside an
+iteration, between two, while parked, or behind a settings file that was broken and then mended. Only a `told:`
+message releases that park, so a person who changed it on purpose resumes with `/cruise-tell`; a raise through
+`/cruise-settings` while the runner runs queues that confirmation itself and parks nothing, and a step back never
+parks. A mode entry dated after now is not read, and the settings file naming a key twice is refused. `recommended-first`
+and `skipper-always` are both the bottom rung, so either goes to `provisional-shadow` in one step. Until the ratify and
+revert verbs ship, ratification is by hand, as below.
 The completion audit runs `python3 scripts/provisional.py audit` over every feature's log: while a provisional entry
 stands, the run ends `cruise: parked: ratify D<n> in specs/<feature>/decisions.md`. Ratify by editing `Status` to
 `ratified <date>`; revert the commits carrying the trailer and write `reverted <date>`.
@@ -329,7 +335,7 @@ effect at the next iteration. `make check-agents` holds the file's shape.
 | Setting | Values | Default | Controls |
 |---|---|---|---|
 | `enabled` | `true`, `false` | `false` | whether `/cruise` runs at all |
-| `decide` | `recommended-first`, `skipper-always`, `provisional-shadow`, `provisional-advisory`, `provisional` | `recommended-first` | who answers a product question: the host where the stage recommends an answer or a standing decision covers it, and `drive-skipper` otherwise; or `drive-skipper` for every question. Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right. Let an iteration record each rung before setting the next. |
+| `decide` | `recommended-first`, `skipper-always`, `provisional-shadow`, `provisional-advisory`, `provisional` | `recommended-first` | who answers a product question: the host where the stage recommends an answer or a standing decision covers it, and `drive-skipper` otherwise; or `drive-skipper` for every question. Change it to `provisional-shadow` when always-ask questions are stalling slices and you want to see which ones would have been taken provisionally before letting any be; move on to `provisional-advisory`, then `provisional`, once the shadow lines read right. The first two take nothing and only show what `provisional` would have done; `provisional` takes an easy or guarded approval itself. `recommended-first` and `skipper-always` are both the bottom rung, so either moves to `provisional-shadow` in one step. Let an iteration record each rung before setting the next. |
 | `release` | `flagged`, `park` | `flagged` | the release-constraint stage: every slice behind a flag seeded off, so every merge is dark; or park at the push and let a person decide |
 | `constitution` | `ratify`, `park` | `ratify` | an unratified constitution: the skipper drafts and ratifies it, marked pending human review; or park |
 | `hand` | `browser`, `http`, `cli` | `browser` | the top of the hand's ladder for a demo; each falls through to the next where it cannot run |

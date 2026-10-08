@@ -60,6 +60,7 @@ class CruiseTellTest(FactoryTestCase):
             # The fake harness stands in for the person: iteration 1 queues one for the next, iteration 2 queues one
             # and asks for it between its stages, iteration 3 queues nothing and is given nothing.
             env = fake_harness(Path(directory), """mkdir -p specs && touch "specs/progress-$n"
+unset CRUISE_ITERATION
 case "$n" in
   1) python3 scripts/agents/cruise.py tell "take the payments feature next"; echo "cruise: continue";;
   2) printf 'skip the demo on %s\\n' "slice 3" | python3 scripts/agents/cruise.py tell
@@ -89,6 +90,7 @@ esac""")
             (Path(directory) / "calls").unlink()
             (Path(directory) / "prompts").unlink()
             env = fake_harness(Path(directory), """mkdir -p specs
+unset CRUISE_ITERATION
 case "$n" in
   1) python3 scripts/agents/cruise.py tell --now "stop: the demo is against the wrong build"; sleep 30
      echo "cruise: continue";;
@@ -115,6 +117,7 @@ esac""")
             (Path(directory) / "prompts").unlink()
             cruise(repo, "tell", "first")
             env = fake_harness(Path(directory), """mkdir -p specs
+unset CRUISE_ITERATION
 case "$n" in
   1) python3 scripts/agents/cruise.py tell --now "second"; sleep 30; echo "cruise: continue";;
   *) echo "cruise: done";;
