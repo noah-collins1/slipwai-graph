@@ -499,6 +499,16 @@ def sourced(backend: str | None, inside: str) -> bool:
             and named.endswith((".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts")))
 
 
+# Stryker 10's `findConfigFile` would take these; the wrapper runs `stryker.config.json` by name, so they are never read (D213).
+UNREAD_CONFIGS = tuple(f"stryker.{stem}.{extension}" for stem, extension in (
+    ("conf", "json"), ("conf", "js"), ("conf", "mjs"), ("conf", "cjs"), ("config", "js"), ("config", "mjs"), ("config", "cjs")))
+
+
+def unread_configs(root: str) -> list[str]:
+    """The Stryker config files beside a TypeScript service's own that nothing reads, in the order Stryker would try them."""
+    return [name for name in UNREAD_CONFIGS if os.path.isfile(os.path.join(root, name))]
+
+
 def python_kind(path: str) -> str:
     if path.startswith("tests/"):
         return "test"
@@ -955,6 +965,8 @@ def scope(services: list[tuple[str, str]], words: str, changes: dict[str, str], 
     status = 0
     for backend, root in services:
         plan = plans.get(root)
+        if backend == "typescript" and (unrun := unread_configs(root)):
+            say(f"note {root} — {', '.join(unrun)} not read — `make mutation` runs `stryker.config.json`")
         runs = root in causes or root in unread or (plan is not None and bool(plan.keep))
         missing = missing_of(backend, root)
         if runs and missing is not None:  # no tool starts for a service that is not there

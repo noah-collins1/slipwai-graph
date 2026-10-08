@@ -212,6 +212,27 @@ class SweepsTypeScriptTest(TypeScriptCase):
         self.assertNotIn("apps/second", lines[0])
         self.assertEqual(recording.swept, ["apps/service"])
 
+    def test_t042_a_config_file_stryker_does_not_read_is_named_once_per_service_and_no_verdict_moves(self) -> None:
+        self.write(HEALTH, "export const a = 1;\n")
+        for name in ("stryker.conf.json", "stryker.conf.js", "stryker.conf.mjs", "stryker.conf.cjs",
+                     "stryker.config.js", "stryker.config.mjs", "stryker.config.cjs"):
+            self.write(f"apps/service/{name}", "module.exports = {};\n")
+        swept, scoped, lines = self.swept(*TWO)
+        self.assertEqual((swept, scoped), ([], ["apps/service/src/health.ts"]), lines)
+        notes = [line for line in lines if "not read" in line]
+        self.assertEqual(len(notes), 1, lines)
+        self.assertTrue(notes[0].startswith("mutation: note apps/service — "), notes)
+        for name in ("stryker.conf.json", "stryker.conf.js", "stryker.conf.mjs", "stryker.conf.cjs",
+                     "stryker.config.js", "stryker.config.mjs", "stryker.config.cjs"):
+            self.assertIn(name, notes[0])
+        self.assertTrue(notes[0].endswith("not read — `make mutation` runs `stryker.config.json`"), notes)
+        self.assertEqual(lines[-1], "mutation: 1 scoped, 0 swept, 1 skipped, 0 refused; passed")
+
+    def test_t042_hold_a_service_with_only_the_config_it_runs_gets_no_note(self) -> None:
+        self.write(HEALTH, "export const a = 1;\n")
+        _, _, lines = self.swept(*TWO)
+        self.assertFalse([line for line in lines if "not read" in line], lines)
+
     def reset(self) -> None:
         super().reset()
         git(self.repo, "checkout", "-q", "-B", SLICE, "main")
