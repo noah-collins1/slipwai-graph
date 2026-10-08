@@ -151,7 +151,8 @@ class VerdictTest(VerdictCase):
                 self.assertTrue(lines[-1].endswith(f"failed — report {REPORT}"), lines[-1])
         (self.tree / SERVICE / "src/a.ts").write_text(  # the Ignored mutant is at line 3: T028's one escape
             '\n// Stryker disable next-line StringLiteral: a label\nexport const a = "x";\n', encoding="utf-8")
-        code, lines = self.run_wrapper({"report": report(src__a_ts=[mutant("Killed"), mutant("Ignored"),
+        code, lines = self.run_wrapper({"report": report(src__a_ts=[mutant("Killed"),
+                                                                    {**mutant("Ignored"), "statusReason": "a label"},
                                                                     mutant("NoCoverage")])}, "--file", "src/a.ts")
         self.assertEqual(code, 0, lines)
         self.assertEqual(lines[-1], "mutation: 3 mutants: 1 killed, 1 ignored, 1 not covered (reported, never failed); "

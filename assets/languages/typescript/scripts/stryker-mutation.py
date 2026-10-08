@@ -62,8 +62,12 @@ UNEXCUSED = "Unexcused"
 # A static `Survived` mutant under which fewer tests completed than the dry run ran is counted under this name (D217): its
 # suite did not run to completion, so Stryker's "survived" is not a verdict (research R11). Not a Stryker status either.
 INCOMPLETE = "Incomplete"
-# What D219 reads of the line above an `Ignored` mutant: Stryker's own `next-line` directive, written with `//`.
-NEXT_LINE = re.compile(r"\s*//\s?Stryker disable next-line ([a-zA-Z, ]+)(?::(.*))?")
+# What D219 reads above an `Ignored` mutant: Stryker's own `next-line` directive, written with `//`, and the `restore` that
+# undoes one (its regex, `^\s?Stryker (disable|restore)(?: (next-line))? ([a-zA-Z, ]+)(?::(.+)?)?`, on the comment's text).
+NEXT_LINE = re.compile(r"\s*//\s?Stryker (disable|restore) next-line ([a-zA-Z, ]+)(?::(.*))?")
+# Where Babel (so Stryker) counts a line: not at a form feed, a vertical tab or U+0085, which `str.splitlines` splits at.
+LINE_BREAK = re.compile(r"\r\n?|[\n\u2028\u2029]")
+COMMENT_ONLY = re.compile(r"\s*(?://|/\*|\*)")
 FAILED_AS = {UNEXCUSED: "ignored without a next-line comment", INCOMPLETE: "survived with the suite incomplete",
              "Survived": "survived", "Timeout": "timed out", "RuntimeError": "runtime error",
              "CompileError": "compile error", "Pending": "pending"}
@@ -611,11 +615,28 @@ def holds_code(path: Path) -> bool:
     return any(statement and not inert(statement) for statement in statements(text))
 
 
+def directives_above(lines: list[str], line: int) -> list[re.Match[str]]:
+    """The `// Stryker disable|restore next-line` comments that lead the code on 1-based `line`, in source order: Stryker
+    attaches a comment to the next node, so the blank and comment-only lines between a directive and its code do not
+    separate them (A8), and the first line of code above ends the search."""
+    found: list[re.Match[str]] = []
+    for text in reversed(lines[:line - 1]):
+        if not text.strip():
+            continue
+        match = NEXT_LINE.fullmatch(text.rstrip())
+        if match is not None:
+            found.insert(0, match)
+        elif COMMENT_ONLY.match(text) is None:
+            break
+    return found
+
+
 def unexcused(service: str, name: str, entry: dict, one: dict) -> str | None:
     """Why an `Ignored` mutant does not pass (D219), or None where a `// Stryker disable next-line <mutator>: <reason>`
-    comment on the line above it names its mutator with a reason. Stryker 10.0.0 marks a next-line, a block and a
-    file-wide comment alike `Ignored` (and the block and next-line ones with the same `statusReason` when they give a
-    reason), so the source decides; only `excludedMutations` is told apart by its reason (research R10)."""
+    comment above it names its mutator with a reason and is what ignored it. Stryker 10.0.0 marks a next-line, a block and
+    a file-wide comment alike `Ignored`, and gives the comment's reason (or `Ignored using a comment`) as `statusReason`,
+    so the source decides which comment, and the `statusReason` must be that comment's reason, or a block comment
+    ignored it (A6); only `excludedMutations` is told apart by its reason (research R10)."""
     if str(one.get("statusReason") or "").startswith("Ignored because of excluded mutation"):
         return "the config's mutator.excludedMutations ignored it, which is not a per-mutant comment"
     source = entry.get("source")
@@ -624,15 +645,29 @@ def unexcused(service: str, name: str, entry: dict, one: dict) -> str | None:
             source = (Path(service) / name).read_text(encoding="utf-8")
         except (OSError, ValueError):
             source = ""
-    lines = source.splitlines()
+    lines = LINE_BREAK.split(source)
     mutator = str(one.get("mutatorName"))
     line = ((one.get("location") or {}).get("start") or {}).get("line")
-    above = NEXT_LINE.fullmatch(lines[line - 2].rstrip()) if isinstance(line, int) and 2 <= line <= len(lines) + 1 else None
-    if above is None:
-        return f"the line above it is not a `// Stryker disable next-line {mutator}: <reason>` comment"
-    if mutator.lower() not in [named.strip().lower() for named in above[1].split(",")]:
+    directives = directives_above(lines, line) if isinstance(line, int) and 2 <= line <= len(lines) + 1 else []
+    # Stryker's rules chain from the nearest: the first that names the mutator, or `all`, is the one that applies.
+    def names(found: re.Match[str]) -> list[str]:
+        return [word.strip().lower() for word in found[2].split(",")]
+
+    applying = next((found for found in reversed(directives) if {mutator.lower(), "all"} & set(names(found))), None)
+    if applying is None and directives:
         return f"the next-line comment does not name {mutator}"
-    return None if (above[2] or "").strip() else "the next-line comment gives no reason"
+    if applying is None or applying[1] == "restore":
+        return f"the line above it is not a `// Stryker disable next-line {mutator}: <reason>` comment"
+    if mutator.lower() not in names(applying):
+        return f"the next-line comment does not name {mutator}"
+    reason = (applying[3] or "").strip()
+    if not reason:
+        return "the next-line comment gives no reason"
+    given = str(one.get("statusReason") or "").strip()
+    if given != reason:
+        return (f"Stryker's reason for ignoring it (`{given}`) is not the next-line comment's (`{reason}`), so another "
+                "directive ignored it")
+    return None
 
 
 def failure_line(service: str, name: str, one: dict, report: str, why: str | None = None,
