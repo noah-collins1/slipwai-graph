@@ -41,7 +41,7 @@ PRUNED = {".venv", "node_modules", "__pycache__", ".git", ".stryker-tmp"}
 listings: dict[Path, list[Path]] = {}
 members: dict[Path, frozenset[Path]] = {}
 entries_read = 0
-_recorded: tuple[set[str], set[str]] | None = None
+_recorded: tuple[set[str], dict[str, set[str]]] | None = None
 
 
 def relative(path: Path) -> str | None:
@@ -52,14 +52,14 @@ def relative(path: Path) -> str | None:
         return None
 
 
-def recorded() -> tuple[set[str], set[str]]:
-    """What `project.json` says about where deployables are: every recorded `path`, and the paths recorded as Java
-    (`language` the string `java`), each as `x` whether recorded as `x`, `x/` or `./x`. A record that is not there,
+def recorded() -> tuple[set[str], dict[str, set[str]]]:
+    """What `project.json` says about where deployables are: every recorded `path`, and the paths recorded under each
+    `language` string, each as `x` whether recorded as `x`, `x/` or `./x`. A record that is not there,
     is unreadable, is not an object, or whose `path` or `language` is not a string says nothing."""
     global _recorded
     if _recorded is None:
         paths: set[str] = set()
-        java: set[str] = set()
+        roots: dict[str, set[str]] = {}
         try:
             records = manifest().get("deployables", {}) if isinstance(manifest(), dict) else {}
         except (OSError, ValueError):
@@ -69,25 +69,33 @@ def recorded() -> tuple[set[str], set[str]]:
                 path = os.path.normpath(record["path"])
                 if path != ".":
                     paths.add(Path(path).as_posix())
-                if record.get("language") == "java":
-                    java.add(Path(path).as_posix())
-        _recorded = (paths, java)
+                if isinstance(record.get("language"), str):
+                    roots.setdefault(record["language"], set()).add(Path(path).as_posix())
+        _recorded = (paths, roots)
     return _recorded
 
 
+# What a tool writes at the root of a deployable `project.json` records as a language, beside that deployable's manifest:
+# Maven's `target` for Java, and mutmut's copy of a Python service for Python. The record decides, never a file the tree
+# holds alone.
+OUTPUT = {"java": ("target", "pom.xml"), "python": ("mutants", "pyproject.toml")}
+
+
 def skipped(directory: Path, name: str) -> bool:
-    """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own, or
-    Maven's `target` at the root of a Java deployable `project.json` records, beside that deployable's `pom.xml`.
-    The record decides, never a file the tree holds: elsewhere `target` is a source directory. A directory that is a
-    recorded deployable's path, or on the way to one, is read whatever it is called."""
+    """Is the directory `name` inside `directory` one nobody reads: an installed package, a cache, git's own, or the
+    build output (`OUTPUT`) at the root of a deployable `project.json` records, beside that deployable's manifest.
+    Elsewhere such a name is a source directory. A directory that is a recorded deployable's path, or on the way to
+    one, is read whatever it is called."""
     parent = relative(directory)
     if parent is None:
         return name in PRUNED
     here = name if parent == "." else f"{parent}/{name}"
-    paths, java = recorded()
+    paths, roots = recorded()
     if any(path == here or path.startswith(f"{here}/") for path in paths):
         return False
-    return name in PRUNED or (name == "target" and parent in java and (directory / "pom.xml").is_file())
+    return name in PRUNED or any(
+        name == output and parent in roots.get(language, ()) and (directory / manifest).is_file()
+        for language, (output, manifest) in OUTPUT.items())
 
 
 def listing(top: Path) -> list[Path]:

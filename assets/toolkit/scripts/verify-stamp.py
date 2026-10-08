@@ -85,6 +85,9 @@ EXEMPT: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     # Stryker's sandbox (`make mutation` removes it, and a killed run leaves it) and the report a TypeScript service writes
     (".stryker-tmp/", CACHE, ()),
     ("apps/*/reports/mutation/", CACHE, ()),
+    # mutmut's copy of a Python service's `src/` and `tests/`, its `.meta` files and `mutmut-stats.json`, which
+    # `make mutation` removes and writes again on every run
+    ("apps/*/mutants/", CACHE, ()),
     (".terraform/", CACHE, ()),
     ("*.tfplan", CACHE, ()),
     ("terraform.tfstate.backup", CACHE, ()),
