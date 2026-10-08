@@ -741,3 +741,39 @@ Findings: twenty — nine `HIGH`, six `MEDIUM`, five `LOW`; no `CRITICAL`. All n
 | B7 | B | LOW | A second `"decide"` key passes `check()`. New | Confirmed; T042 | fixed `9048f71` |
 | B8 | B | LOW | A hard link or another case passes the guard (the runner's comparison then falls to B1). New | Confirmed; D208, T040 | fixed `9048f71` |
 | B9 | B | LOW | An iteration may still `--set` `release`, `constitution`, `unblock`, `max_iterations`. Older | Declined to the Parking Lot: S27 holds `decide` (D62 for the rest is older prose) | declined |
+
+## S41 · 7fbe7cb · 2026-10-08
+
+Slice `S41-stryker-mutation` (cruise iteration 29), diff `b5e694f..7fbe7cb^2` (merged into adopt-method at `7fbe7cb`): every generated TypeScript service gets Stryker 10 behind a wrapper of its own (`assets/languages/typescript/scripts/stryker-mutation.py`), a checked-in `stryker.config.json`, the scope script's TypeScript rows, the twelve locks, ignore lines, the stamp's exempt rows and a MINOR fragment with a Catch-up.
+
+| Trigger | Status | Evidence |
+|---|---|---|
+| driving adapter (HTTP route, CLI command, queue consumer) | widened | A new script a project runs (`scripts/stryker-mutation.py`) and new behaviour behind `make mutation` and `make mutation-full` for TypeScript |
+| driven adapter or the provider types behind one | widened | The wrapper starts `npm ci` and `npm exec --no -- stryker run` and reads Stryker's `mutation.json` and the project's sources |
+| authorisation decision (who can reach one that already exists) | unchanged | Nothing grants or checks access |
+| concurrency, idempotency, ordering, retention, or time | widened | An install lock in the temporary directory; report and sandbox cleanup before each run; incremental results |
+
+Not the slice that closes the split; `--full` not passed. A pass is owed: three triggers `widened`.
+
+Spawned: seam A — the wrapper as a TypeScript project reaches it (verdict, excuses, `Incomplete`, the inert reader, install lock, hostile configs and arguments) · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/languages/typescript/scripts/stryker-mutation.py`
+Spawned: seam B — what scopes, sweeps, refuses or skips a TypeScript service, and what generation and `migrate` put in a project · `drive-adversary` · claude-opus-5-5 (host model) · delegated, fresh context · manifest: `assets/toolkit/scripts/mutation-scope.py`, `src/slipwai/project/stryker.py`
+Omitted: the actor's demo-2 notes (the `Incomplete` line's remedy, the inert-file wording, Stryker's table before the verdict) — known, LOW, T035
+Findings: fifteen — one `HIGH`, six `MEDIUM`, eight `LOW`; no `CRITICAL`. All new in S41 but B5's pattern, which the Go rows share.
+
+| # | Seam | Severity | Finding | Triage | State |
+|---|---|---|---|---|---|
+| A1 | A | HIGH | `incremental: true` in a project's config reuses an earlier run's kills: a gutted test helper still passes. New | Confirmed; S41 T036 | open |
+| A2 | A | MEDIUM | The inert reader reads a statement by how it begins: with no semicolons, code after an `import` or `type` line is hidden, and with `ignorePatterns` a file of real code is *no mutant to run*. New | Confirmed; T037 | open |
+| A3 | A | MEDIUM | A `.d.ts` of `declare` statements or an `enum` without initialisers fails as code Stryker could mutate. New | Confirmed; T037 | open |
+| A4 | A | MEDIUM | Two runs in one service: the second's cleanup deletes the first's report, and a scoped run whose Stryker crashed passes on the sweep's report. New | Confirmed; T038 | open |
+| A7 | A | MEDIUM | A run killed by a signal leaves the install lock: the next waits fifteen minutes and does not name the lock; the lock is keyed by `TMPDIR`. New | Confirmed; T040 | open |
+| B1 | B | MEDIUM | Stryker reads `stryker.conf.json` (and `.js`, `.mjs`, `.cjs`) ahead of `stryker.config.json`; the scope script reads only the factory's file, and `migrate` keeps a hand-wired one silently. New | Confirmed; T042 | open |
+| B2 | B | MEDIUM | `make -j mutation-full build-packages` runs two `npm ci` on one `node_modules`: the wrapper's lock does not cover the Makefile's install target. New | Confirmed; T040 | open |
+| A5 | A | LOW | A form feed or NEL shifts the wrapper's line count against Stryker's, so a reasoned comment two lines up excuses a mutant. New | Confirmed; T039 | open |
+| A6 | A | LOW | Text in a template literal that looks like a next-line comment excuses a mutant a block comment ignored. New | Confirmed; T039 | open |
+| A8 | A | LOW | A blank line or a doc comment between the next-line comment and its statement: Stryker honours it, the wrapper fails it. New | Confirmed; T039 | open |
+| A9 | A | LOW | With `ignoreStatic: true`, static survivors read *Incomplete — a hook or a file failed*. Exit right, words wrong. New | Confirmed; T041 | open |
+| A10 | A | LOW | Run from the service directory, the wrapper installs there and exits 2; a root-relative or absolute `--file` reads as outside the targets. New | Confirmed; T040 | open |
+| B3 | B | LOW | A `.spec.ts`/`.test.ts` under `src/` that the mutate list matches is scoped as a test and never mutated, then fails the sweep. New | Confirmed; T043 | open |
+| B4 | B | LOW | A move of the instrumenter's own dependencies (`@babel/*`, `weapon-regex`) in the lock does not sweep. New | Confirmed; D222, T044 | open |
+| B5 | B | LOW | A deleted service's first line says the sweep runs, then the service is refused and nothing sweeps. Older pattern (the Go rows), newly reachable | Confirmed; T045 | open |

@@ -862,9 +862,72 @@ killed. The survivors and two reproductions are the tasks below.
 - **Files:** `assets/languages/typescript/scripts/stryker-mutation.py`, its test modules.
 
 ### T018 — The adversary pass (host task)
-- [ ] `drive-adversary` over the wrapper's and the scope script's reachable boundaries (`make mutation` with hostile paths,
+- [x] *(Done, cruise iteration 29: two seams, fifteen findings — T036–T045.)* `drive-adversary` over the wrapper's and the scope script's reachable boundaries (`make mutation` with hostile paths,
   a `stryker.config.json` with odd patterns, an unreadable `package-lock.json`, a rename plus a config change, `MAKEFLAGS`
   set, a fake `npm` that prints a malformed report).
+
+### Adversary (T018, cruise iteration 29) — fifteen findings, one HIGH; rows A1–A10, B1–B5 under `## S41` in `adversary-log.md`
+
+### T036 — [US2] HIGH · A green never rests on results an earlier run left (A1; D212 item 7, AC-S41-4)
+- [ ] `incremental: true` in a project's `stryker.config.json` reuses an earlier run's kills, so a gutted test helper
+  still passes. **Sweep every way an earlier run's result reaches this one:** the wrapper forces incremental off on the
+  command line (or refuses a config that turns it on, one line), removes `reports/stryker-incremental.json` with the
+  report, and any other Stryker option that reuses results (`incrementalFile`, a `--force`-less mode) is named and
+  closed. Example: the A1 reproduction, gutted helper → red.
+- **Files:** the wrapper; its tests.
+
+### T037 — [US2] MEDIUM · The inert reader reads whole statements (A2, A3; AC-S41-3, T026, T033)
+- [ ] A statement is inert only where all of it is a declaration Stryker 10 plants nothing in — split statements on
+  what TypeScript's grammar ends them with, not on semicolons alone (ASI: a newline before a token that cannot continue
+  the statement), so `import …\nif (…)` is two statements. And `declare …` statements, `export {}`, `enum` members
+  without initialisers read inert (A3). Anything not classified fails closed. One example per A2 and A3 shape.
+- **Files:** the wrapper; `tests/test_stryker_report.py` or a split.
+
+### T038 — [US2] MEDIUM · Two runs in one service never read each other's report (A4; D212 item 7)
+- [ ] A per-service run lock (or a report tagged with this run's token and checked), so a second run's cleanup cannot
+  delete the first's report and a crashed scoped run never passes on another run's report. Example: A4's reproduction.
+- **Files:** the wrapper; its tests.
+
+### T039 — [US2] LOW · The next-line excuse is read the way Stryker reads it (A5, A6, A8; D219)
+- [ ] Lines split only at `\n`, `\r\n`, `\r`, U+2028, U+2029 (A5); the excuse also requires the `statusReason` Stryker
+  gave to be the comment's reason (A6); the nearest comment above the statement's first line, skipping blank and
+  comment-only lines, is the one read (A8). One example each.
+- **Files:** the wrapper; `tests/test_stryker_ignored.py`.
+
+### T040 — [US2] MEDIUM · One install at a time, whoever starts it, and a lock that cannot strand a run (A7, B2, A10)
+- [ ] The install lock records its holder's pid and is broken when that process is gone, is named in the waiting and
+  the failing line, and lives where every shell finds it (the project, not `TMPDIR`); the Makefile's install target
+  takes the same lock, or `mutation`/`mutation-full` reach the install only through it, without the scope script
+  reading the recipe as a project's own (G1); the wrapper finds the project root rather than assuming the current
+  directory, and a root-relative or absolute `--file` is read as the service-relative path it names. Examples: A7, B2
+  and A10's reproductions.
+- **Files:** the wrapper; `src/slipwai/project/` where the install target is written; the Makefile note; tests.
+
+### T041 — [US2] LOW · `Incomplete` only where the suite should have run whole (A9; T032)
+- [ ] Where Stryker did not run the whole suite for a static mutant (`ignoreStatic`), compare `testsCompleted` with its
+  `coveredBy`, so a real survivor reads *Survived*. Example: A9's reproduction.
+- **Files:** the wrapper; `tests/test_stryker_incomplete.py`.
+
+### T042 — [US2] MEDIUM · The config Stryker reads is the config the scope reads (B1; D213)
+- [ ] The wrapper runs `stryker run stryker.config.json`; a service holding any other file Stryker would read first
+  (`stryker.conf.json`, `.js`, `.mjs`, `.cjs`, `stryker.config.js|mjs|cjs`) sweeps or is refused with one line naming it;
+  `provisional.py`'s gate-configuration pattern covers those names; the Catch-up tells a hand-wired project.
+- **Files:** the wrapper, `assets/toolkit/scripts/mutation-scope.py`, `assets/toolkit/scripts/provisional.py`, the
+  fragment, tests.
+
+### T043 — [US2] LOW · A TypeScript file is production or test by the config's list, not by its name (B3)
+- [ ] A changed file under `src/` that the mutate list matches is scoped as production whatever its name. Example: B3.
+- **Files:** `assets/toolkit/scripts/mutation-scope.py`, `tests/test_mutation_scope_typescript.py`.
+
+### T044 — [US2] LOW · A move in the instrumenter's dependency closure sweeps (B4; D222)
+- [ ] The lock comparison covers every entry `@stryker-mutator/instrumenter` resolves, keyed by lock path. Example: a
+  move of `@babel/parser` alone sweeps every TypeScript service using that lock.
+- **Files:** the wrapper (`versions`) or the scope script, wherever T023's comparison lives; tests.
+
+### T045 — [US2] LOW · The first line says what the run will do (B5)
+- [ ] A deleted service's first line names the refusal, not a sweep — for every backend row that shares the pattern
+  (Go's too). Example: B5.
+- **Files:** `assets/toolkit/scripts/mutation-scope.py`, its tests.
 
 ### T019 — Mutation (host task)
 - [ ] Per `project.json`'s recorded mutation command for this repository (S08 recorded none: `"mutation": null`); if still

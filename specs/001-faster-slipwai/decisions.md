@@ -4893,3 +4893,15 @@
 - **Confidence:** high · **Would reverse if:** T032's real run leaves a reported survivor that a direct Vitest run kills.
 - **Written to:** `specs/001-faster-slipwai/decisions.md`
 - **Status:** standing
+
+## D222 — Does a move of the Stryker instrumenter's own dependencies in the lock sweep a TypeScript service?
+- **Stage:** adversary triage (B4) · **Slice:** S41-stryker-mutation · **When:** 2026-10-08T09:49:11Z · **Iteration:** 29
+- **Scope:** S41-stryker-mutation
+- **Question:** D215 (b) sweeps a service when a `@stryker-mutator/*` version moves in its manifest or lock. `@stryker-mutator/instrumenter` resolves `@babel/*` (which parses the source) and `weapon-regex` (which makes the regex mutants) through ranges, so either can move in the lock while every `@stryker-mutator/*` version stands — and which mutants exist changes. Sweep then too?
+- **Options:** (a) yes: the comparison covers every lock entry the instrumenter resolves (its dependency closure), keyed by lock path as T023 keys the rest — recommended by the stage, from D215 (b)'s own reason; (b) only `@stryker-mutator/*`, as D215 (b) is worded.
+- **Decision:** (a).
+- **Why:** D215 (b)'s reason is that a new tool version changes which mutants exist; a new parser or regex mutator does exactly that, and a scoped run over a changed mutant set compares nothing with what passed before.
+- **Decided by:** host (standing decision D215)
+- **Confidence:** high · **Would reverse if:** the closure is found to move on nearly every lock refresh, making the scoped run a sweep in practice — then the set narrows to the instrumenter's direct dependencies, with the reason written beside it.
+- **Written to:** `specs/001-faster-slipwai/adversary-log.md`
+- **Status:** standing
