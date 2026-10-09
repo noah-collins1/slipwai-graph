@@ -1,10 +1,10 @@
 # Benchmark — 001-faster-slipwai
 
-Drawn 2026-10-08T15:24:17Z at `a561bbe` from 25 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
+Drawn 2026-10-09T02:29:05Z at `9f5038a` from 25 record(s) under `specs/001-faster-slipwai/` by `scripts/agents/benchmark.py overview`; `/benchmark` redraws it, and so does closing a slice. Regenerated whole, never edited: the records beside each slice are the source.
 
 ## Slices
 
-24 slice(s) recorded, 111h01m+ in all.
+24 slice(s) recorded, 116h16m+ in all.
 
 | slice | delegate/cycle | wall | in | out | models | sessions | converge | +tasks | gaps | mutation | adversary | demo | verify✗ | rework | tasks | files | ±lines |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -31,7 +31,7 @@ Drawn 2026-10-08T15:24:17Z at `a561bbe` from 25 record(s) under `specs/001-faste
 | S38-factory-test-selection | rule/rule, story/rule | 18h00m | 237.8M | 352k | claude-opus-5-5, claude-sonnet-5-5 | 3 | 2 | 11 | 0/0 | — | 18 | accepted | 0 | 0 | 56 | 227 | +38148/-124 |
 | S39-benchmark-elapsed | story/rule, task/rule | 6h50m | 207.4M | 265.3k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 2 | 16 | 0/0 | — | 28 | accepted | 0 | 0 | 57 | 81 | +23082/-242 |
 | S41-stryker-mutation | story/rule | 10h04m | 222.7M (+1 unread) | 214.6k | claude-opus-5-5, claude-sonnet-5-5 | 1 | 1 | 0 | 0/11 | — | 15 | accepted | 0 | 0 | 45 | 103 | +43528/-3776 |
-| S42-mutmut-mutation | — | 10m25s | 15M | 22.2k | claude-opus-5-5 | 1 | 0 | 0 | 13/0 | — | 0 | — | 0 | 0 | — | — | — |
+| S42-mutmut-mutation | story/rule, task/rule | 5h25m+ | 178.2M (+1 unread) | 183.5k | claude-opus-5-5, claude-sonnet-5-5 | 2 | 3 | 9 | 13/8 | — | 12 | accepted | 0 | 0 | 47 | 152 | +56279/-5255 |
 | S43-test-declarations | — | 17m27s | 10.7M | 14k | claude-opus-5-5 | 1 | 0 | 0 | 11/0 | — | 0 | — | 0 | 0 | — | — | — |
 
 delegate/cycle = how implementation was delegated and driven; in = input + cache read + cache creation tokens; gaps = before/after converge; +tasks = tasks converge appended; sessions = harness sessions read; a stage's tokens are a floor (the turn that ends it is partly uncounted); a trailing + makes wall a floor because an unbracketed stage is missing; tokens are not prices.
@@ -511,11 +511,28 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 | implement | 2026-10-08 09:49 | 34m32s | 24.9M | 31.2k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | delegate=story, cycle=rule, split=2, verify_failures=0 |
 | gate | 2026-10-08 10:24 | 5h00m | 23.9M | 36.2k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | — |
 
-### S42-mutmut-mutation — 10m25s
+### S42-mutmut-mutation — 5h25m+
 
 | stage | started (UTC) | wall | in | out | model | agent | delegated | reported |
 |---|---|---|---|---|---|---|---|---|
 | gaps | 2026-10-08 05:17 | 10m25s | 15M | 22.2k | claude-opus-5-5 | drive-gaps | yes | gaps=13 |
+| plan | 2026-10-08 15:28 | 14m43s | 13.5M | 3.2k | claude-opus-5-5 | drive-slice | yes | driver=cruise |
+| tasks | 2026-10-08 15:42 | 7m26s | 3.8M | 4.5k | claude-opus-5-5, claude-sonnet-5-5 | drive-slice, drive-tasks | yes | driver=cruise |
+| implement | 2026-10-08 15:52 | 1h31m | 41.8M | 28k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise, verify_failures=0, delegate=story, cycle=rule, split=3 |
+| converge | 2026-10-08 18:01 | 14m52s | 8.5M | 9.8k | claude-opus-5-5 | drive-converge, drive-slice | yes | driver=cruise |
+| implement | 2026-10-08 18:16 | 20m37s | 12.4M | 13.3k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise, verify_failures=0, delegate=task, cycle=rule, split=0 |
+| converge | 2026-10-08 18:37 | 11m56s | 3.7M | 3k | claude-opus-5-5 | drive-converge, drive-slice | yes | driver=cruise |
+| gaps | 2026-10-08 18:49 | 14m35s | 9.6M | 5.3k | claude-opus-5-5 | drive-gaps, drive-slice | yes | driver=cruise, gaps=8 |
+| implement | 2026-10-08 19:04 | 35m38s | 20.5M | 10.2k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise, verify_failures=0, delegate=task, cycle=rule, split=0 |
+| skipper | 2026-10-08 19:40 | 4m02s | 2.4M | 9.2k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-08 19:47 | 26m54s | 10.4M | 7.5k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise, verify_failures=0, delegate=task, cycle=rule, split=0 |
+| converge | 2026-10-08 20:14 | 6m44s | 3.1M | 6.5k | claude-opus-5-5 | drive-converge, drive-slice | yes | driver=cruise |
+| implement | 2026-10-08 20:21 | 4m52s | 2.2M | 6.4k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement, drive-slice | yes | driver=cruise, verify_failures=0, delegate=task, cycle=rule, split=0 |
+| hand | 2026-10-08 21:06 | 6m22s | 2.3M | 8.4k | claude-opus-5-5 | drive-hand | yes | driver=cruise |
+| demo | 2026-10-08 21:13 | unbracketed | unknown | unknown | — | — | no | outcome=accepted, driver=cruise |
+| adversary | 2026-10-08 21:13 | 14m16s | 10.8M | 10k | claude-opus-5-5 | drive-adversary | yes | findings=12, seams=2, driver=cruise |
+| skipper | 2026-10-08 21:27 | 4m40s | 1.4M | 13.2k | claude-opus-5-5 | drive-skipper | yes | driver=cruise |
+| implement | 2026-10-08 21:33 | 36m25s | 16.6M | 22.8k | claude-opus-5-5, claude-sonnet-5-5 | drive-implement | yes | delegate=task, cycle=rule, split=2, verify_failures=0, driver=cruise |
 
 ### S43-test-declarations — 17m27s
 
@@ -528,6 +545,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 - S03-verify-stamp: converge ran 3 times, appending 15 task(s) — a slice too large, or fixes too narrow to close the class of what they found
 - S04-parallel-gate: converge ran 3 times, appending 8 task(s) — a slice too large, or fixes too narrow to close the class of what they found
 - S06-scoped-gate: converge ran 5 times, appending 19 task(s) — a slice too large, or fixes too narrow to close the class of what they found
+- S42-mutmut-mutation: converge ran 3 times, appending 9 task(s) — a slice too large, or fixes too narrow to close the class of what they found
 - S01-gate-walks: implemented as story/rule and task/example and task/rule — its wall compares with neither
 - S02-runner-bookkeeping: implemented as story/rule and task/example — its wall compares with neither
 - S03-verify-stamp: implemented as story/rule and task/rule — its wall compares with neither
@@ -544,6 +562,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 - S33-factory-gate-stamp: implemented as rule/rule and task/rule — its wall compares with neither
 - S38-factory-test-selection: implemented as rule/rule and story/rule — its wall compares with neither
 - S39-benchmark-elapsed: implemented as story/rule and task/rule — its wall compares with neither
+- S42-mutmut-mutation: implemented as story/rule and task/rule — its wall compares with neither
 - (feature) ground: cut off — a new `bosun` entry started while it was open; its wall is real, its signals were never reported
 - S00-run-path mutation: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S01-gate-walks gaps: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
@@ -558,6 +577,7 @@ delegate/cycle = how implementation was delegated and driven; in = input + cache
 - S27-provisional-decisions demo: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 - S33-factory-gate-stamp skipper: cut off — a new `implement` entry started while it was open; its wall is real, its signals were never reported
 - S41-stryker-mutation gaps: cut off — a new `skipper` entry started while it was open; its wall is real, its signals were never reported
+- S42-mutmut-mutation demo: not bracketed around its work — start and end were called in the same moment, so this stage's wall and tokens are missing, not zero.
 
 ## Reading these numbers
 
